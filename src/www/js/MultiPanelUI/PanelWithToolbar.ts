@@ -8,7 +8,7 @@ const contentClass = 'panel-with-toolbar'
 
 export class PanelWithToolbar extends Panel {
   private readonly maximizeContentArea: boolean
-  private readonly contentAreaId: string;
+  protected readonly contentAreaId: string;
 
   constructor (options: any) {
     super(options)

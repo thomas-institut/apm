@@ -31,7 +31,7 @@ export class Panel {
   protected verbose: boolean;
   protected debug: boolean;
   protected containerSelector: string;
-  private visible: boolean;
+  protected visible: boolean;
   private mode: string;
 
   constructor(options: PanelOptions = {}) {

@@ -78,7 +78,7 @@ export interface WitnessTokenInterface {
   formats?: any[];
 
   // used by FullTx Witnesses
-  textBox?: number;
+  textBox?: number | RangeInterface;
   line?: number | RangeInterface;
   sourceItems?: SourceItemInterface[];
 }
@@ -98,7 +98,23 @@ export interface FullTxItemInterface {
   text: string;
   address: FullTxItemAddressInterface;
   markType?: string;
+  hand?: number;
+  format?: string;
+  clarity?: number;
+  clarityReason?: string;
+  alternateTexts?: string[];
+  textualFlow?: number;
+  location?: string;
+  deletion?: string;
+  normalizationType?: string;
+  notes?: any[];
+  lang?: string;
+}
 
+export interface FullTxItemEditorialNote {
+  authorTid: number;
+  text: string;
+  timeStamp: string;
 }
 
 export interface FullTxItemAddressInterface {

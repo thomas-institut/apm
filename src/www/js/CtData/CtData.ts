@@ -63,6 +63,40 @@ const schemaVersions = ['0', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5'];
 
 export class CtData {
 
+  static generateCsv(collationTable: CtDataInterface, sep = ',', showNormalizations = false): string {
+      let sigla = collationTable.sigla;
+      let numWitnesses = collationTable.witnesses.length;
+
+      let output = '';
+      for (let i = 0; i < numWitnesses; i++) {
+        let siglum = sigla[i];
+        output += siglum + sep;
+        let ctRefRow = collationTable.collationMatrix[i];
+        for (let tkRefIndex = 0; tkRefIndex < ctRefRow.length; tkRefIndex++) {
+          let tokenRef = ctRefRow[tkRefIndex];
+          let tokenCsvRep = '';
+          if (tokenRef !== -1) {
+            let token = collationTable.witnesses[i].tokens[tokenRef];
+            tokenCsvRep = this.getCsvRepresentationForToken(token, showNormalizations);
+          }
+          output += tokenCsvRep + sep;
+        }
+        output += '\n';
+      }
+      return output;
+  }
+
+  private static getCsvRepresentationForToken(tkn: WitnessTokenInterface, showNormalizations: boolean) {
+    if (tkn.tokenType === 'empty') {
+      return '';
+    }
+    let text = tkn.text;
+    if (showNormalizations && tkn.normalizedText !== undefined) {
+      text = tkn.normalizedText ;
+    }
+    return '"' + text + '"';
+  }
+
   /**
    * Returns the pageIds used in every witness in ctData
    * @param {CtDataInterface}ctData

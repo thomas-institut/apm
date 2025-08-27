@@ -1,7 +1,20 @@
 // Characters to show in edition toolbars: EditionMainTextEditor and ApparatusEntryTextEditor
 
+export type ToolbarCharactersDatabase = {
+  [key: string]: ToolbarCharacters;
+};
 
-export const toolbarCharacters = {
+
+export type ToolbarCharacters = {
+ [charTitle: string]: ToolbarCharacter;
+};
+
+export interface ToolbarCharacter {
+  character: string;
+  title: string;
+}
+
+export const toolbarCharactersDefinition: ToolbarCharactersDatabase = {
   la: {
     leftDQM: {character: '“', title: 'Left Double Quotation Mark'},
     rightDQM: {character: '”', title: 'Right Double Quotation Mark'},

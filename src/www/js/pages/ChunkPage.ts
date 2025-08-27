@@ -20,14 +20,14 @@ import { AutomaticCollationTableSettingsForm } from './common/AutoCollTableSetti
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import * as WitnessType from '../Witness/WitnessType'
 
-import {CollapseToggleButton} from '../widgets/CollapseToggleButton'
+import {CollapseToggleButton} from '@/widgets/CollapseToggleButton'
 import { ConfirmDialog } from './common/ConfirmDialog'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmFormats } from './common/ApmFormats'
-import { TimeString } from '../toolbox/TimeString'
+import { TimeString } from '@/toolbox/TimeString'
 import { tr } from './common/SiteLang'
 import { HeaderAndContentPage } from './HeaderAndContentPage'
-import { Tid } from '../Tid/Tid'
+import { Tid } from '@/Tid/Tid'
 import DataTable from 'datatables.net-dt';
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'

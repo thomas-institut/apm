@@ -1,5 +1,3 @@
-// noinspection DuplicatedCode
-// TODO: remove noinspection above when getting rid of old Collation Table UI
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -27,14 +25,14 @@
  *  - Collation table manipulation: moving, grouping, normalizations
  */
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { PanelWithToolbar } from '../MultiPanelUI/PanelWithToolbar'
-import { MultiToggle, optionChange } from '../widgets/MultiToggle'
-import { NiceToggle, toggleEvent } from '../widgets/NiceToggle'
-import { NormalizerRegister } from '../pages/common/NormalizerRegister'
-import * as ArrayUtil from '../lib/ToolBox/ArrayUtil.ts'
-import * as NormalizationSource from '../constants/NormalizationSource.ts'
-import * as TranscriptionTokenType from '../Witness/WitnessTokenType.ts'
-import { defaultLanguageDefinition } from '../defaults/languages'
+import { PanelWithToolbar } from '@/MultiPanelUI/PanelWithToolbar'
+import { MultiToggle, optionChange } from '@/widgets/MultiToggle'
+import { NiceToggle, toggleEvent } from '@/widgets/NiceToggle'
+import { NormalizerRegister } from '@/pages/common/NormalizerRegister'
+import * as ArrayUtil from '../lib/ToolBox/ArrayUtil'
+import * as NormalizationSource from '../constants/NormalizationSource'
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType'
+import { defaultLanguageDefinition } from '@/defaults/languages'
 import {
   columnClearSelectionEvent,
   columnGroupEvent,
@@ -44,23 +42,60 @@ import {
   TableEditor
 } from '@/pages/common/TableEditor'
 import * as WitnessType from '../Witness/WitnessType'
-import * as TokenClass from '../Witness/WitnessTokenClass.ts'
-import * as WitnessTokenType from '../Witness/WitnessTokenType.ts'
+import * as TokenClass from '../Witness/WitnessTokenClass'
+import * as WitnessTokenType from '../Witness/WitnessTokenType'
 import * as Util from '../toolbox/Util.mjs'
 import * as CollationTableType from '../constants/CollationTableType'
 import * as CollationTableUtil from '../pages/common/CollationTableUtil'
 import * as PopoverFormatter from '../pages/common/CollationTablePopovers'
 import { FULL_TX } from '@/Witness/WitnessTokenClass'
 import { CtData } from '@/CtData/CtData'
-import { EditionWitnessTokenStringParser } from '../toolbox/EditionWitnessTokenStringParser.mjs'
-import { capitalizeFirstLetter } from '../toolbox/Util.mjs'
+import { EditionWitnessTokenStringParser } from '@/toolbox/EditionWitnessTokenStringParser.mjs'
+import { capitalizeFirstLetter } from '@/toolbox/Util'
 import { HtmlRenderer } from '@/lib/FmtText/Renderer/HtmlRenderer'
 import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
 import { Punctuation } from '@/defaults/Punctuation'
-import { toolbarCharacters} from '@/EditionComposer/ToolbarCharacters'
+import {
+  toolbarCharactersDefinition, ToolbarCharacter,
+} from '@/EditionComposer/ToolbarCharactersDefinition';
 import { SimpleConfirmDialog } from '@/pages/common/SimpleConfirmDialog'
+import {CtDataInterface, FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface} from "@/CtData/CtDataInterface";
+// @ts-expect-error No TS definitions for matrix yet
+import {Matrix} from "@thomas-inst/matrix";
 
+
+
+interface ViewSettings {
+  highlightVariants: boolean;
+  showNormalizations: boolean;
+  showWitnessTitles: boolean;
+}
 export class CollationTablePanel extends PanelWithToolbar {
+  private options: any;
+  private ctData: CtDataInterface;
+  private lang: string;
+  private tableEditModeToRestore: string;
+  private panelIsSetup: boolean;
+  private normalizerRegister: NormalizerRegister;
+  private availableNormalizers: string[];
+  private icons: any;
+  private textDirection: string;
+  private aggregatedNonTokenItemIndexes: NonTokenItemIndex[][];
+  private toolbarCharacters: ToolbarCharacter[];
+  private viewSettings: ViewSettings;
+  private popoversAreOn: boolean = true;
+  private tableEditor!: TableEditor;
+  private tokenDataCache: any;
+  private normalizationSettingsButton!: JQuery<HTMLElement>;
+  private savedNormalizerSettings!: string[];
+  private normalizationsToggle!: NiceToggle;
+  private modeToggle!: MultiToggle;
+  private popoversToggle!: NiceToggle;
+  private compactTableButton!: JQuery<HTMLElement>;
+  private exportCsvButton!: JQuery<HTMLElement>;
+  private selectedColumnsFrom!: number;
+  private selectedColumnsTo!: number;
+  private variantsMatrix: Matrix | null;
   constructor (options = {}) {
     super(options)
     let optionsDefinition = {
@@ -76,7 +111,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  'Collation Table Panel'})
     this.options = oc.getCleanOptions(options)
     this.ctData = CtData.copyFromObject(this.options.ctData)
-    this.lang = this.ctData['lang']
+    this.lang = this.ctData.lang
     this.tableEditModeToRestore = editModeOff
     this.panelIsSetup = false
     this.normalizerRegister = this.options.normalizerRegister
@@ -85,7 +120,9 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.textDirection = this.options.langDef[this.ctData['lang']].rtl ? 'rtl' : 'ltr'
     this.resetTokenDataCache()
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes();
-    this.toolbarCharacters = Object.values(toolbarCharacters[this.ctData.lang]);
+    const toolBarCharsDef = toolbarCharactersDefinition[this.ctData.lang];
+
+    this.toolbarCharacters = Object.keys(toolBarCharsDef).map( char => toolBarCharsDef[char]);
 
     // viewSettings
     this.viewSettings = {
@@ -96,19 +133,15 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     // popovers for collation table
     // this.setUpPopovers()
-    this._popoversTurnOn()
+    this.popoversTurnOn()
   }
 
   getContentAreaClasses () {
     return super.getContentAreaClasses().concat([ `${this.textDirection}text`])
   }
 
-  /**
-   *
-   * @param {object} ctData
-   * @param {string} source
-   */
-  updateCtData(ctData, source) {
+
+  updateCtData(ctData: CtData, source: string) {
     this.verbose && console.log(`Got news of changes in CT data from ${source}`)
     this.ctData = CtData.copyFromObject(ctData)
     this.panelIsSetup = false
@@ -130,7 +163,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
 
-  generateToolbarHtml (tabId, mode, visible) {
+  generateToolbarHtml (_tabId: string, _mode: string, _visible: boolean) {
 
     let apparatusLinks = this.ctData['customApparatuses'].map( (app, index) => {
       return `<a class="dropdown-item add-entry-apparatus-${index}" href="">${capitalizeFirstLetter(app.type)}</a>`
@@ -140,7 +173,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     let tbChars = this.toolbarCharacters;
     if (this.ctData.lang === 'he' || this.ctData.lang === 'ar') {
-      tbChars = tbChars.reverse();
+      tbChars = (tbChars.reverse());
     }
 
     let toolbarCharactersHtml = tbChars.map( (chData, index) => {
@@ -182,12 +215,12 @@ export class CollationTablePanel extends PanelWithToolbar {
 </div>`
   }
 
-  async generateContentHtml (tabId, mode, visible) {
+  async generateContentHtml (_tabId: string, _mode: string, _visible: boolean) {
     this.panelIsSetup = false
     return `Setting up collation table....`
   }
 
-  postRender (id, mode, visible) {
+  postRender (id: string, mode: string, visible: boolean) {
     super.postRender(id, mode, visible)
     this._setupToolBar()
     if (visible) {
@@ -233,7 +266,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         offPopoverText: 'Click to enable automatic normalizations'
       })
 
-      this.normalizationsToggle.on(toggleEvent, (ev) => {
+      this.normalizationsToggle.on(toggleEvent, (ev: any) => {
         if (ev.detail.toggleStatus) {
           thisObject.normalizationSettingsButton.show()
         } else {
@@ -273,7 +306,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       ]
     })
 
-    this.modeToggle.on(optionChange, (ev) => {
+    this.modeToggle.on(optionChange, (ev: any) => {
       this.verbose && console.log('New Edit Mode: ' + ev.detail.currentOption)
       this.tableEditor.setEditMode(ev.detail.currentOption)
     })
@@ -289,11 +322,11 @@ export class CollationTablePanel extends PanelWithToolbar {
       offPopoverText: 'Click to enable popovers'
     })
 
-    this.popoversToggle.on(toggleEvent,  (ev) => {
+    this.popoversToggle.on(toggleEvent,  (ev: any) => {
       if (ev.detail.toggleStatus) {
-        thisObject._popoversTurnOn()
+        thisObject.popoversTurnOn()
       } else {
-        thisObject._popoversTurnOff()
+        thisObject.popoversTurnOff()
       }
     })
 
@@ -311,9 +344,10 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     // EXPORT CSV
     this.exportCsvButton = $('#export-csv-button')
+    this.setCsvDownloadFile()
 
     // ADD APPARATUS ENTRY
-    this.ctData['customApparatuses'].forEach( (app, index) => {
+    this.ctData['customApparatuses'].forEach( (_app, index) => {
       $(`${this.containerSelector} .add-entry-apparatus-${index}`).on('click', this._genOnClickAddEntryButton(index))
     })
 
@@ -322,7 +356,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   _genOnClickToolbar() {
-    return (ev) => {
+    return (ev: any) => {
       if (this.tableEditor.tableEditMode !== editModeGroup) {
         return
       }
@@ -352,8 +386,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
-  _genOnClickAddEntryButton(appIndex) {
-    return (ev) => {
+  _genOnClickAddEntryButton(appIndex: number) {
+    return (ev: any) => {
       ev.preventDefault()
       ev.stopPropagation()
 
@@ -382,7 +416,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   _normalizationsGenOnClickSettingsButton(){
     let thisObject = this
-    return (ev) => {
+    return (ev: any) => {
       ev.preventDefault()
       let availableNormalizers = thisObject.normalizerRegister.getRegisteredNormalizers()
       if (availableNormalizers.length === 0) {
@@ -495,11 +529,8 @@ export class CollationTablePanel extends PanelWithToolbar {
 </div>`
   }
 
-  /**
-   *
-   * @param normalizationsToApply {string[]}
-   */
-  _normalizationApplyAutomaticNormalizations(normalizationsToApply) {
+
+  _normalizationApplyAutomaticNormalizations(normalizationsToApply: string[]) {
 
     this.ctData = CtData.applyAutomaticNormalizations(this.ctData, this.normalizerRegister, normalizationsToApply)
     // this.verbose && console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
@@ -514,17 +545,17 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
 
-  _popoversTurnOn() {
+  private popoversTurnOn() {
     this.popoversAreOn = true
-    this._popoversSetup()
+    this.popoversSetup()
   }
 
-  _popoversTurnOff() {
+  private popoversTurnOff() {
     this.popoversAreOn = false
     $(this.getContentAreaSelector()).popover('dispose')
   }
 
-  _popoversSetup() {
+  private popoversSetup() {
     $(this.getContentAreaSelector()).popover({
       trigger: "hover",
       selector: '.withpopover',
@@ -542,13 +573,16 @@ export class CollationTablePanel extends PanelWithToolbar {
     // and that is needed to get the cell index
     let thisObject = this
     return function() {
+
       if (!thisObject.popoversAreOn) {
         return ''
       }
 
+      // @ts-ignore
       let cellIndex = thisObject.tableEditor._getCellIndexFromElement($(this))
       if (cellIndex === null) {
-        console.error('Popover requested on a non-cell element!')
+        console.error('Popover requested on a non-cell element!');
+        return '';
       }
 
       if (thisObject.tableEditor.isCellInEditMode(cellIndex.row, cellIndex.col)){
@@ -562,7 +596,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
-  getPopoverHtml(witnessIndex, tokenIndex, col) {
+  getPopoverHtml(witnessIndex: number, tokenIndex: number, col: number) {
     if (tokenIndex === -1) {
       return ''
     }
@@ -585,11 +619,11 @@ export class CollationTablePanel extends PanelWithToolbar {
     return popoverHtml
   }
 
-  getPopoverHtmlFromCache(witnessIndex, tokenIndex) {
+  getPopoverHtmlFromCache(witnessIndex: number, tokenIndex: number) {
     return this.getDataFieldFromTokenDataCache('popoverHtml', witnessIndex, tokenIndex)
   }
 
-  storePopoverHtmlInCache(witnessIndex, tokenIndex, popoverHtml){
+  storePopoverHtmlInCache(witnessIndex: number, tokenIndex: number, popoverHtml: string){
     this.storeDataFieldInTokenDataCache('popoverHtml', witnessIndex, tokenIndex, popoverHtml)
   }
 
@@ -597,7 +631,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   _setupPanelContent() {
     this.verbose && console.log(`Setting up CT panel content`)
     this.replaceContent(`Loading collation table...`)
-    this._popoversSetup()
+    this.popoversSetup()
     this.setupTableEditor()
     this.verbose && console.log(`Setting tableEditor edit mode '${this.tableEditModeToRestore}'`)
     this.tableEditor.setEditMode(this.tableEditModeToRestore, false)
@@ -673,7 +707,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.tableEditor.setOption('canDeleteColumn', this.genCanDeleteColumn())
 
     // hide popovers before moving cells
-    this.tableEditor.on('cell-pre-shift', (data) => {
+    this.tableEditor.on('cell-pre-shift', (data: any) => {
       for(const selector of data.detail.selectors) {
         $(selector).popover('hide')
       }
@@ -697,7 +731,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnSelectColumns() {
-    return (ev) => {
+    return (ev: any) => {
       //console.log(`Table editor says that columns ${ev.detail.from} to ${ev.detail.to} are selected`)
       this.selectedColumnsFrom = ev.detail.from
       this.selectedColumnsTo = ev.detail.to
@@ -708,14 +742,14 @@ export class CollationTablePanel extends PanelWithToolbar {
   genOnClearColumnSelection() {
     return () => {
       //console.log(`Table editor says there are no selected columns`)
-      this.selectColumnsFrom = -1
+      this.selectedColumnsFrom = -1
       this.selectedColumnsTo = -1
       $(`${this.containerSelector} div.add-entry-dropdown`).addClass('hidden')
     }
   }
 
-  genOnGroupUngroupColumn(isGrouped) {
-    return (data) => {
+  genOnGroupUngroupColumn(isGrouped: boolean) {
+    return (data: any) => {
       this.verbose && console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`)
       this.verbose && console.log('New sequence grouped with next')
       this.ctData['groupedColumns'] = data.detail.groupedColumns
@@ -733,7 +767,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   getCollationMatrixFromTableEditor() {
     let matrix = this.tableEditor.getMatrix()
-    let cMatrix = []
+    let cMatrix: number[][] = []
     for(let row = 0; row < matrix.nRows; row++) {
       let witnessIndex = this.ctData['witnessOrder'][row]
       cMatrix[witnessIndex] = []
@@ -745,59 +779,12 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   setCsvDownloadFile() {
-    let href = 'data:text/csv,' + encodeURIComponent(this.generateCsv())
+    let href = 'data:text/csv,' + encodeURIComponent(CtData.generateCsv(this.ctData, ',', this.viewSettings.showNormalizations))
     this.exportCsvButton.attr('href', href)
   }
-
-  /**
-   * Generates a CSV string from the collation table
-   * @returns {string}
-   */
-  generateCsv() {
-    let sep = ','
-    let collationTable = this.ctData
-    let titles = collationTable['witnessTitles']
-    let numWitnesses = collationTable['witnesses'].length
-    let collationMatrix = collationTable['collationMatrix']
-    let order = collationTable['witnessOrder']
-
-    let output = ''
-    for (let i=0; i < numWitnesses; i++) {
-      if (collationTable['witnesses'][i]['witnessType'] === WitnessType.SOURCE) {
-        continue;
-      }
-      let witnessIndex = order[i]
-      let title = titles[witnessIndex]
-      output += title + sep
-      let ctRefRow = collationMatrix[witnessIndex]
-      for (let tkRefIndex = 0; tkRefIndex < ctRefRow.length; tkRefIndex++) {
-        let tokenRef = ctRefRow[tkRefIndex]
-        let tokenCsvRep = ''
-        if (tokenRef !== -1 ) {
-          let token = collationTable.witnesses[witnessIndex].tokens[tokenRef]
-          tokenCsvRep = this.getCsvRepresentationForToken(token, this.viewSettings.showNormalizations)
-        }
-        output += tokenCsvRep + sep
-      }
-      output += "\n"
-    }
-    return output
-  }
-
-  getCsvRepresentationForToken(tkn, showNormalizations) {
-    if (tkn.empty) {
-      return ''
-    }
-    let text = tkn.text
-    if (showNormalizations) {
-      text = tkn['norm']
-    }
-    return '"' + text + '"'
-  }
-
   genOnColumnDelete() {
-    return (deletedCol, lastDeletedColumnInOperation) => {
-      this.ctData['groupedColumns'] = this.tableEditor.columnSequence.groupedWithNextNumbers
+    return (deletedCol: number, lastDeletedColumnInOperation: number) => {
+      this.ctData['groupedColumns'] = this.tableEditor.columnSequence.getGroupedNumbers()
       if (this.ctData['type'] === CollationTableType.COLLATION_TABLE) {
         // nothing else to do for regular collation tables
         return
@@ -830,16 +817,16 @@ export class CollationTablePanel extends PanelWithToolbar {
     and ${this.ctData['witnesses'][editionWitnessIndex].tokens.length} tokens in the edition witness`)
   }
 
-  getEditionWitnessTokensFromMatrixRow(currentTokens, matrixRow) {
+  getEditionWitnessTokensFromMatrixRow(currentTokens: WitnessTokenInterface[], matrixRow: number[]): WitnessTokenInterface[] {
     return matrixRow.map(
-      ref => ref === -1 ?  { tokenClass: TokenClass.EDITION, tokenType: TranscriptionTokenType.EMPTY,text: ''} : currentTokens[ref]
+      ref => ref === -1 ?  { tokenClass: TokenClass.EDITION, tokenType: TranscriptionTokenType.EMPTY,text: '', fmtText: []} : currentTokens[ref]
     )
   }
 
   genOnColumnAdd() {
-    return (newCol) => {
+    return (newCol: number) => {
       this.verbose && console.log(`Adding new column: ${newCol}, at ${Date.now()}`)
-      this.ctData['groupedColumns'] = this.tableEditor.columnSequence.groupedWithNextNumbers
+      this.ctData['groupedColumns'] = this.tableEditor.columnSequence.getGroupedNumbers()
       if (this.ctData['type']===CollationTableType.EDITION) {
         this.syncEditionWitnessAndTableEditorFirstRow()
       }
@@ -852,7 +839,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnCellPostShift() {
-    return (data) => {
+    return (data: any) => {
       let direction = data.detail.direction
       let numCols = data.detail.numCols
       let firstCol = data.detail.firstCol
@@ -871,7 +858,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       let firstColToRedraw = direction === 'right' ? firstCol : firstCol-numCols
       let lastColToRedraw = direction === 'right' ? lastCol+numCols : lastCol
 
-      new Promise( (resolve) => {
+      new Promise<void>( (resolve) => {
         // TODO: somehow tell the user that something is happening!
         resolve()
       })
@@ -909,7 +896,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genCanDeleteColumn() {
-    return (col) => {
+    return (col: number) => {
       switch(this.ctData['type']) {
         case CollationTableType.COLLATION_TABLE:
           return this.tableEditor.isColumnEmpty(col)
@@ -937,7 +924,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genIsEmpty() {
-    return (row, col, ref) => {
+    return (row: number, _col: number, ref: number) => {
       if (ref === -1) {
         return true
       }
@@ -960,11 +947,8 @@ export class CollationTablePanel extends PanelWithToolbar {
    * if colStart < 0, removes all current highlight
    * if colEnd < 0, only colStart is highlighted
    * if colEnd > max column number in the table, highlights from colStart until the end of the table
-   * @param {number}colStart
-   * @param {number}colEnd
-   * @param {bool}scrollIntoView
    */
-  highlightColumnRange(colStart, colEnd = -1, scrollIntoView = true) {
+  highlightColumnRange(colStart: number, colEnd: number = -1, scrollIntoView: boolean = true) {
     if (colStart < 0 ) {
       this.removeColumnHighlight()
       return
@@ -1000,7 +984,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
 
   genOnCellConfirmEditFunction() {
-    return (tableRow, col, newText) => {
+    return (tableRow: number, col: number, newText: string) => {
       let witnessIndex = this.ctData['witnessOrder'][tableRow]
       let ref = this.ctData['collationMatrix'][witnessIndex][col]
       if (ref === -1) {
@@ -1071,7 +1055,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
-  invalidateTokenDataCacheForToken(witnessIndex, tokenIndex) {
+  invalidateTokenDataCacheForToken(witnessIndex: number, tokenIndex: number) {
     if (this.tokenDataCache[witnessIndex] === undefined) {
       this.tokenDataCache[witnessIndex] = {}
     }
@@ -1086,7 +1070,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     const EMPTY_CONTENT = '&mdash;'
     const PARAGRAPH_MARK = '&para;'
     const UNKNOWN_MARK = '???'
-    return (tableRow, col, ref) => {
+    return (tableRow: number, col: number, ref: number) => {
       if (ref === -1) {
         return EMPTY_CONTENT
       }
@@ -1123,7 +1107,8 @@ export class CollationTablePanel extends PanelWithToolbar {
         return renderer.render(token['fmtText'])
       }
       let postNotes = this.getPostNotes(witnessIndex, col, ref)
-      if (token['sourceItems'].length === 1 && postNotes.length === 0) {
+      const sourceItems = token.sourceItems ?? [];
+      if (sourceItems.length === 1 && postNotes.length === 0) {
         if (this.viewSettings.showNormalizations && token['normalizedText'] !== undefined) {
           return token['normalizedText'] + normalizationSymbol
         }
@@ -1131,9 +1116,9 @@ export class CollationTablePanel extends PanelWithToolbar {
         return token.text
       }
       // spans for different items
-      let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items']
+      let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items'] ?? [];
       let cellHtml = ''
-      for (const itemData of token['sourceItems']) {
+      for (const itemData of sourceItems) {
         let theItem = itemWithAddressArray[itemData['index']]
         let itemText = ''
         if (theItem['text'] !== undefined) {
@@ -1159,7 +1144,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
-  getClassesFromItem(item) {
+  getClassesFromItem(item: FullTxItemInterface) {
     let classes = []
     let hand = 0
     if (item.hand !== undefined) {
@@ -1189,13 +1174,13 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genGenerateCellClassesFunction() {
-    return (tableRow, col, value) => {
+    return (tableRow: number, col: number, value: number) => {
       if (value === -1) {
         return [ 'token-type-empty']
       }
       let witnessIndex = this.ctData['witnessOrder'][tableRow]
       let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens']
-      let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items']
+      let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items'] ?? [];
 
       let token = tokenArray[value]
 
@@ -1215,6 +1200,7 @@ export class CollationTablePanel extends PanelWithToolbar {
             }
           }
           // get itemZero
+          // @ts-ignore
           let itemZeroIndex = token['sourceItems'][0]['index']
           let itemZero = itemWithAddressArray[itemZeroIndex]
           // language class
@@ -1223,6 +1209,7 @@ export class CollationTablePanel extends PanelWithToolbar {
             lang = itemZero['lang']
           }
           classes.push('text-' + lang)
+          // @ts-ignore
           if (token['sourceItems'].length === 1) {
             // td inherits the classes from the single source item
             return classes.concat(this.getClassesFromItem(itemZero))
@@ -1251,7 +1238,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
-  getTokenClasses(token) {
+  getTokenClasses(token: WitnessTokenInterface) {
     let classes = []
     classes.push('token-type-' + token.tokenType)
     classes.push('token-class-' + token.tokenClass)
@@ -1261,7 +1248,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   genCellValidationFunction() {
 
-    function areAllOtherRowsEmpty(theCol, theRow) {
+    function areAllOtherRowsEmpty(theCol: number[], theRow: number) {
       for (let i = 0; i < theCol.length; i++) {
         if (i !== theRow && theCol[i]!== -1) {
           return false
@@ -1270,8 +1257,8 @@ export class CollationTablePanel extends PanelWithToolbar {
       return true
     }
 
-    return (tableRow, col, currentText) => {
-      let returnObject = { isValid: true, warnings: [], errors: [] }
+    return (tableRow: number, col: number, currentText: string) => {
+      let returnObject = { isValid: true, warnings: [], errors: <string[]>[] }
 
       // this.verbose && console.log(`Validating text '${currentText}'`)
       let trimmedText = Util.trimWhiteSpace(currentText)
@@ -1300,8 +1287,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     }
   }
 
-  // noinspection DuplicatedCode
-  getPostNotes(witnessIndex, col, tokenIndex) {
+
+  getPostNotes(witnessIndex: number, _col: number, tokenIndex: number) {
     // this.verbose && console.log(`Getting post notes for witness ${witnessIndex}, col ${col}, token index ${tokenIndex}`)
     if (this.aggregatedNonTokenItemIndexes[witnessIndex] === undefined) {
       console.warn(`Found undefined row in this.aggregatedNonTokenItemIndexes, row = ${witnessIndex}`)
@@ -1313,7 +1300,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       return []
     }
     let postItemIndexes = this.aggregatedNonTokenItemIndexes[witnessIndex][tokenIndex]['post']
-    let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items']
+    let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items'] ?? [];
     let notes = []
     for(const itemIndex of postItemIndexes) {
       let theItem = itemWithAddressArray[itemIndex]
@@ -1325,21 +1312,17 @@ export class CollationTablePanel extends PanelWithToolbar {
         notes.push(note)
       }
     }
-    // if (notes.length !== 0) {
-    //   this.verbose && console.log(`There are ${notes.length} post note(s) row ${witnessIndex} col ${col}, token index ${tokenIndex}`)
-    //   this.verbose && console.log(this.ctData['witnesses'][witnessIndex]['tokens'][tokenIndex])
-    // }
     return notes
   }
 
-  getDataFieldFromTokenDataCache(fieldName, witnessIndex, tokenIndex) {
+  getDataFieldFromTokenDataCache(fieldName: string, witnessIndex: number, tokenIndex: number) {
     if (this.tokenDataCache[witnessIndex] !== undefined && this.tokenDataCache[witnessIndex][tokenIndex] !== undefined) {
       return this.tokenDataCache[witnessIndex][tokenIndex][fieldName]
     }
     return undefined
   }
 
-  storeDataFieldInTokenDataCache(fieldName, witnessIndex, tokenIndex, data) {
+  storeDataFieldInTokenDataCache(fieldName: string, witnessIndex: number, tokenIndex: number, data: any) {
     if (this.tokenDataCache[witnessIndex] === undefined) {
       this.tokenDataCache[witnessIndex] = {}
     }
@@ -1354,7 +1337,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genGenerateCellContentEditModeFunction() {
-    return (tableRow, col, value) => {
+    return (tableRow: number, col: number, value: number) => {
       if (value === -1) {
         console.warn(`Editing a null cell (value = -1) at row ${tableRow}, col ${col}`)
         return ''
@@ -1370,7 +1353,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genIsCellEditable() {
-    return (row, col, value) => {
+    return (row: number, _col: number, value: number) => {
       if (value === -1) {
         // can't edit empty references
         return false
@@ -1389,7 +1372,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnEnterCellEditMode() {
-    return (row, col) => {
+    return (row: number, col: number) => {
       this.verbose &&  console.log(`Enter cell edit ${row}:${col}`)
       $(this.tableEditor.getTdSelector(row, col)).popover('hide').popover('disable')
       return true
@@ -1397,7 +1380,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnLeaveCellEditMode() {
-    return (row, col) => {
+    return (row: number, col: number) => {
       this.verbose && console.log(`Leave cell edit ${row}:${col}`)
       $(this.tableEditor.getTdSelector(row, col)).popover('enable')
       this.restoreHiddenPopovers()

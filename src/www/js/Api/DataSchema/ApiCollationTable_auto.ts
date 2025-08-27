@@ -6,12 +6,12 @@ export interface ApiCollationTable_auto {
   collationEngineDetails: EngineRunDetails;
   collationTable: CtDataInterface;
   automaticNormalizationsApplied: string[];
-  people: { [key: number]: AutoCTablePersonInfo };
+  people: PeopleInfoObject;
 
 }
 
 
-interface EngineRunDetails {
+export interface EngineRunDetails {
   engineName: string;
   errorCode: number;
   errorContext: string;
@@ -22,8 +22,10 @@ interface EngineRunDetails {
   cachedRunTime?: number;
 }
 
+export type PeopleInfoObject = { [key: number]: AutoCTablePersonInfo };
 
-interface AutoCTablePersonInfo {
+export interface AutoCTablePersonInfo {
   fullName: string;
   shortName: string;
+  name: string;
 }

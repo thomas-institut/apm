@@ -652,16 +652,8 @@ export class EditionComposer extends ApmPage {
           // console.log("Success archiving table")
           // console.log(apiResponse)
           this.lastSavedCtData = Util.deepCopy(thisObject.ctData);
-          // thisObject.lastSavedEditorMatrix = thisObject.tableEditor.getMatrix().clone()
           this.versionInfo = apiResponse.versionInfo;
-          // thisObject.witnessUpdates = []
-          // for(let i=0; i < thisObject.lastWitnessUpdateCheckResponse['witnesses'].length; i++) {
-          //   if (thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated']) {
-          //     thisObject.lastWitnessUpdateCheckResponse['witnesses'][i]['justUpdated'] = false
-          //   }
-          // }
           this.unsavedChanges = false;
-          // thisObject.updateWitnessInfoDiv()
           this._updateSaveArea();
           resolve(this.versionInfo);
         }).fail((resp) => {

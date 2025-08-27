@@ -22,7 +22,7 @@ import Inline from 'quill/blots/inline'
 import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
 import { isRtl } from '@/toolbox/Util.mjs'
 
-import { toolbarCharacters} from './ToolbarCharacters'
+import { toolbarCharactersDefinition} from './ToolbarCharactersDefinition'
 import Quill from '../QuillLoader'
 import Small from './QuillBlots/Small'
 import Superscript from './QuillBlots/Superscript'
@@ -134,7 +134,7 @@ export class EditionMainTextEditor {
       $(this._getBtnSelectorHeading(i+1)).on('click', this._genOnClickHeadingButton(i+1, this.quillEditor))
     }
 
-    Object.keys(toolbarCharacters[this.lang]).forEach( (key) => {
+    Object.keys(toolbarCharactersDefinition[this.lang]).forEach( (key) => {
       let btnSelector = this._getBtnSelectorCharacter(key)
       $(btnSelector).on('click', this._genOnClickCharacter(key, this.quillEditor))
     })
@@ -226,7 +226,7 @@ export class EditionMainTextEditor {
         return
       }
       quill.deleteText(range.index, range.length)
-      quill.insertText(range.index, toolbarCharacters[this.lang][characterKey].character)
+      quill.insertText(range.index, toolbarCharactersDefinition[this.lang][characterKey].character)
     }
    }
 
@@ -264,8 +264,8 @@ export class EditionMainTextEditor {
       headingButtonsHtml += `<button class="heading${i+1}-btn" title="Heading ${i+1}">${headingIcons[i+1]}</button>`
     }
 
-    let characterButtonsHtml = Object.keys(toolbarCharacters[this.lang]).map( (key) => {
-      let btnDef = toolbarCharacters[this.lang][key]
+    let characterButtonsHtml = Object.keys(toolbarCharactersDefinition[this.lang]).map( (key) => {
+      let btnDef = toolbarCharactersDefinition[this.lang][key]
       let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character
       return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`
     }).join('')

@@ -107,6 +107,28 @@ const GeoPredicatesDef = [
         'canBeCancelled' => true,
         'singleProperty' => true,
         'flags' => [],
+    ],
+    [
+        'id' => Entity::pDareLongInstCode,
+        'type' => Entity::tAttribute,
+        'name' => 'Dare Location Code (Country-City-Institution)',
+        'descr' => "Describes the location code of an institution in Dare.",
+        'allowedSubjectTypes' => [Entity::tInstitution],
+        'allowedObjectTypes'=> [Entity::ValueTypeText],
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [],
+    ],
+    [
+        'id' => Entity::pDareRepositoryId,
+        'type' => Entity::tAttribute,
+        'name' => 'Repository/Institution ID (Dare)',
+        'descr' => "Describes the id of a repository in the dare db.",
+        'allowedSubjectTypes' => [Entity::tInstitution],
+        'allowedObjectTypes'=> [Entity::ValueTypeInteger],
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [],
     ]
 ];
 

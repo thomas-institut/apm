@@ -356,7 +356,7 @@ END;
                     'code' => $code,
                     'country' => $countryName['en'] ?? '',
                     'city' => $cityName['en'] ?? '',
-                    'institution' => $institutionName
+                    'institution' => $institutionName,
                 ];
 
                 $essentialLocationData[] = $entry;
@@ -572,7 +572,7 @@ END;
      * returns the associations of city and institution codes with institution names from the dare data
      * @return array
      */
-    private function getInstitutionsDataFromDare(): array
+    public function getInstitutionsDataFromDare(): array
     {
 
         // get data from csv-files

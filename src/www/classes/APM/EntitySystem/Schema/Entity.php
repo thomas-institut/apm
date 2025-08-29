@@ -226,6 +226,8 @@ class Entity implements TidDefiner
     const int pDareCountryCode = 8007;
     const int pDareCityCode = 8008;
     const int pDareInstCode = 8009;
+    const int pDareLongInstCode = 8010;
+    const int pDareRepositoryId = 8011;
 
 
     // Edition source predicates
@@ -234,6 +236,13 @@ class Entity implements TidDefiner
     const int pApplicableLanguage = 8502;
     const int pApplicableWork = 8503;
     const int pSpecificSource = 8504;
+
+
+
+    // Bib Predicates
+
+    const int pDnbUrl = 8600;
+    const int pViafUrl = 8601;
 
     // Url Types
 
@@ -332,5 +341,6 @@ class Entity implements TidDefiner
     const int MaterialMixed = 20030;
     const int MaterialVellum = 20031;
     const int MaterialTissue = 20032;
+
 
 }

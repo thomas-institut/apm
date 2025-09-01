@@ -51,10 +51,10 @@ export default defineConfig({
         SearchPage: resolve(__dirname, 'js/pages/SearchPage.js'),
         EditionComposer: resolve(__dirname, 'js/EditionComposer/EditionComposer.ts'),
         MceComposer: resolve(__dirname, 'js/MceComposer/MceComposer.js'),
-        CollationTableEditor: resolve(__dirname, 'js/pages/CollationTableEditor.js'),
-        AutomaticCollationTable: resolve(__dirname, 'js/pages/AutomaticCollationTable/AutomaticCollationTable.js'),
+        AutomaticCollationTable: resolve(__dirname, 'js/pages/AutomaticCollationTable/AutomaticCollationTable.ts'),
         PageViewer: resolve(__dirname, 'js/pages/PageViewer/PageViewer.js'),
         reactAPM: resolve(__dirname, 'reactAPM/index.html'),
+        splitGrid: resolve(__dirname, 'test/pages/split-grid.html'),
       },
       output: {
         entryFileNames: '[name]-[hash].js',

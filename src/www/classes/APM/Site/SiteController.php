@@ -336,6 +336,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
             100% { transform: rotate(360deg); }
         }
 </style>
+
 </head>
 <body>
     <script>
@@ -352,12 +353,13 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
        }, 500);
 </script>
 </body>
+
+</html>    
     $jsHtml
     $viteImportsHtml
-<script>
-    $script
-</script>   
-</html>        
+    <script>
+        $script
+    </script>     
 END;
         $response->getBody()->write($html);
         if ($cacheKey !== '') {
@@ -390,12 +392,12 @@ END;
     {
         if ($this->systemManager->getConfig()['devMode']) {
             $viteImportsHtml = sprintf(
-                "<script type=\"module\" src=\"%s/@vite/client\"></script>",
+                "<script type=\"module\" src=\"%s/@vite/client\"></script>\n",
                 self::VITE_DEV_BASE
             );
             foreach ($viteEntryPoints as $viteEntryPoint) {
                 $viteImportsHtml .= sprintf(
-                    "<script type=\"module\" src=\"%s/$viteEntryPoint\"></script>",
+                    "<script type=\"module\" src=\"%s/$viteEntryPoint\"></script>\n",
                     self::VITE_DEV_BASE
                 );
             }

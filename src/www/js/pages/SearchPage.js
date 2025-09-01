@@ -1,7 +1,8 @@
-import { LanguageDetector } from '../toolbox/LanguageDetector.ts'
+import { LanguageDetector } from '@/toolbox/LanguageDetector'
 import { urlGen } from './common/SiteUrlGen'
 import { NormalPage } from './NormalPage'
 import { tr } from './common/SiteLang'
+import { SimpleProfiler} from '@/SimpleProfiler'
 
 // global variables used for the display of the search results
 let data_for_zooming = []

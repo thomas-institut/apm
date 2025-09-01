@@ -748,11 +748,11 @@ class SiteCollationTable extends SiteController
             '',
             $title,
             'AutomaticCollationTable',
-            'js/pages/AutomaticCollationTable/AutomaticCollationTable.js',
+            'js/pages/AutomaticCollationTable/AutomaticCollationTable.ts',
             $data,
             [],
             ['collationtable.css', 'act-settingsform.css'],
-            ['js/SimpleProfiler.js']
+//            ['js/SimpleProfiler.js']
         );
 
 

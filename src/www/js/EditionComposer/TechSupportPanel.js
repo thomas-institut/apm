@@ -16,11 +16,11 @@
  *
  */
 
-import { Panel } from '../MultiPanelUI/Panel'
+import { Panel } from '@/MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { deepCopy } from '../toolbox/Util.mjs'
 import { JSONEditor } from 'vanilla-jsoneditor'
-import { MultiToggle } from '../widgets/MultiToggle'
+import { MultiToggle } from '@/widgets/MultiToggle'
 
 /**
  * A panel with tech support tools

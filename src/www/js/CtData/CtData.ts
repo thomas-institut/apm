@@ -63,20 +63,34 @@ const schemaVersions = ['0', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5'];
 
 export class CtData {
 
-  static generateCsv(collationTable: CtDataInterface, sep = ',', showNormalizations = false): string {
-      let sigla = collationTable.sigla;
-      let numWitnesses = collationTable.witnesses.length;
+  static generateCsv(ctData: CtDataInterface, sep = ',', showNormalizations = false): string {
+      let sigla = ctData.sigla;
+      let numWitnesses = ctData.witnesses.length;
 
       let output = '';
-      for (let i = 0; i < numWitnesses; i++) {
-        let siglum = sigla[i];
+      let witnessesToInclude = [];
+      for(let i = 0; i < numWitnesses; i++) {
+        if (ctData.witnesses[i].witnessType === FULL_TX) {
+          witnessesToInclude.push(i);
+        }
+      }
+
+      if (ctData.type === CollationTableType.EDITION) {
+        witnessesToInclude =  [ ctData.editionWitnessIndex, ...witnessesToInclude ];
+      }
+
+
+
+      for (let k = 0; k < witnessesToInclude.length; k++) {
+        let witnessIndex = witnessesToInclude[k];
+        let siglum = sigla[witnessIndex];
         output += siglum + sep;
-        let ctRefRow = collationTable.collationMatrix[i];
+        let ctRefRow = ctData.collationMatrix[witnessIndex];
         for (let tkRefIndex = 0; tkRefIndex < ctRefRow.length; tkRefIndex++) {
           let tokenRef = ctRefRow[tkRefIndex];
           let tokenCsvRep = '';
           if (tokenRef !== -1) {
-            let token = collationTable.witnesses[i].tokens[tokenRef];
+            let token = ctData.witnesses[witnessIndex].tokens[tokenRef];
             tokenCsvRep = this.getCsvRepresentationForToken(token, showNormalizations);
           }
           output += tokenCsvRep + sep;

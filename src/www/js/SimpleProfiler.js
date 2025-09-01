@@ -1,4 +1,4 @@
-class SimpleProfiler {
+export class SimpleProfiler {
 
   constructor ( name, start = true) {
     this.startTime = 0

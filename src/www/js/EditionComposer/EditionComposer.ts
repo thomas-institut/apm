@@ -35,10 +35,10 @@ import {TabConfig, TabConfigInterface} from '@/MultiPanelUI/TabConfig';
 import {WitnessInfoPanel} from './WitnessInfoPanel';
 import {CollationTablePanel} from './CollationTablePanel';
 import {AdminPanel} from './AdminPanel';
-import {MainTextPanel} from './MainTextPanel';
-import {ApparatusPanel} from './ApparatusPanel';
+import type {MainTextPanel} from './MainTextPanel';
+import type {ApparatusPanel} from './ApparatusPanel';
 import {EditionPreviewPanel} from './EditionPreviewPanel';
-import {TechSupportPanel} from './TechSupportPanel';
+import type {TechSupportPanel} from './TechSupportPanel';
 
 // Widgets
 import {EditableTextField} from '@/widgets/EditableTextField';
@@ -285,6 +285,8 @@ export class EditionComposer extends ApmPage {
     console.log(`ViewOptions`, this.viewOptions);
 
     // Construct panels
+
+
     this.collationTablePanel = new CollationTablePanel({
       containerSelector: `#${collationTableTabId}`,
       normalizerRegister: this.normalizerRegister,
@@ -298,6 +300,64 @@ export class EditionComposer extends ApmPage {
       },
       verbose: true
     });
+
+    this.apparatusPanels = [];
+    if (this.ctData.type === CollationTableType.EDITION) {
+      console.log(`Loading ApparatusPanel and MainTextPanel`);
+      const { ApparatusPanel} = await import('./ApparatusPanel.js');
+      const { MainTextPanel} = await import('./MainTextPanel.js');
+      console.log(`ApparatusPanel and MainTextPanel loaded`);
+      this.apparatusPanels = this.edition.apparatuses
+      .map((apparatus, appIndex) => {
+        return new ApparatusPanel({
+          ctData: this.ctData,
+          containerSelector: `#apparatus-${appIndex}`,
+          edition: this.edition,
+          apparatusIndex: appIndex,
+          highlightMainText: this.genHighlightMainTextForApparatusPanel(apparatus.type),
+          hoverMainText: (entryIndex: number, on: boolean) => {
+            if (this.ctData.type === CollationTableType.EDITION) {
+              this.mainTextPanel.hoverEntry(appIndex, entryIndex, on);
+            }
+          },
+          highlightCollationTableRange: this.genHighlightCollationTable(),
+          onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${appIndex}`),
+          onError: (msg: string) => {
+            this._setError(`${msg} (Apparatus ${appIndex})`);
+          },
+          verbose: true,
+          editApparatusEntry: (apparatusIndex: number, mainTextFrom: number, mainTextTo: number) => {
+            this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo);
+          }
+        });
+      });
+
+      this.mainTextPanel = new MainTextPanel({
+        containerSelector: `#${mainTextTabId}`,
+        ctData: this.ctData,
+        edition: this.edition,
+        apparatusPanels: this.apparatusPanels,
+        debug: true,
+        onError: (msg: string) => {
+          this._setError(`${msg} (Main Text Panel)`);
+        },
+        onCtDataChange: this.genOnCtDataChange('mainTextPanel'),
+        editApparatusEntry: (apparatusIndex: number, mainTextFrom: number, mainTextTo: number) => {
+          this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo);
+        },
+        editionWitnessTokenNormalizer: this.genEditionWitnessTokenNormalizer(),
+        highlightEnabled: this.viewOptions.highlightEnabled,
+        popoversEnabled: this.viewOptions.popoversEnabled,
+        onChangeHighlightEnabled: (newStatus: boolean) => {
+          this.viewOptions.highlightEnabled = newStatus;
+          this.storeViewOptions(this.viewOptions);
+        },
+        onChangePopoversEnabled: (newStatus: boolean) => {
+          this.viewOptions.popoversEnabled = newStatus;
+          this.storeViewOptions(this.viewOptions);
+        }
+      });
+    }
     this.witnessInfoPanel = new WitnessInfoPanel({
       verbose: true,
       userId: this.userId,
@@ -330,63 +390,6 @@ export class EditionComposer extends ApmPage {
       onConfirmArchive: this.genOnConfirmArchive()
     });
 
-    this.apparatusPanels = this.ctData.type === CollationTableType.EDITION ? this.edition.apparatuses
-    .map((apparatus, appIndex) => {
-      return new ApparatusPanel({
-        ctData: this.ctData,
-        containerSelector: `#apparatus-${appIndex}`,
-        edition: this.edition,
-        apparatusIndex: appIndex,
-        highlightMainText: this.genHighlightMainTextForApparatusPanel(apparatus.type),
-        hoverMainText: (entryIndex: number, on: boolean) => {
-          if (this.ctData.type === CollationTableType.EDITION) {
-            this.mainTextPanel.hoverEntry(appIndex, entryIndex, on);
-          }
-        },
-        highlightCollationTableRange: this.genHighlightCollationTable(),
-        onCtDataChange: this.genOnCtDataChange(`ApparatusPanel ${appIndex}`),
-        onError: (msg: string) => {
-          this._setError(`${msg} (Apparatus ${appIndex})`);
-        },
-        verbose: true,
-        editApparatusEntry: (apparatusIndex: number, mainTextFrom: number, mainTextTo: number) => {
-          this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo);
-        }
-      });
-    }) : [];
-
-    if (this.ctData.type === CollationTableType.EDITION) {
-      this.mainTextPanel = new MainTextPanel({
-        containerSelector: `#${mainTextTabId}`,
-        ctData: this.ctData,
-        edition: this.edition,
-        apparatusPanels: this.apparatusPanels,
-        debug: true,
-        onError: (msg: string) => {
-          this._setError(`${msg} (Main Text Panel)`);
-        },
-        onCtDataChange: this.genOnCtDataChange('mainTextPanel'),
-        editApparatusEntry: (apparatusIndex: number, mainTextFrom: number, mainTextTo: number) => {
-          this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo);
-        },
-        editionWitnessTokenNormalizer: this.genEditionWitnessTokenNormalizer(),
-        highlightEnabled: this.viewOptions.highlightEnabled,
-        popoversEnabled: this.viewOptions.popoversEnabled,
-        onChangeHighlightEnabled: (newStatus: boolean) => {
-          this.viewOptions.highlightEnabled = newStatus;
-          this.storeViewOptions(this.viewOptions);
-        },
-        onChangePopoversEnabled: (newStatus: boolean) => {
-          this.viewOptions.popoversEnabled = newStatus;
-          this.storeViewOptions(this.viewOptions);
-        }
-      });
-    }
-
-
-    this.techSupportPanel = new TechSupportPanel({
-      containerSelector: `#${techSupportTabId}`, active: false, ctData: this.ctData, edition: this.edition
-    });
 
     this.editionPreviewPanel = new EditionPreviewPanel({
       containerSelector: `#${editionPreviewNewTabId}`,
@@ -419,7 +422,11 @@ export class EditionComposer extends ApmPage {
 
 
     if (this.options.isTechSupport) {
-      // console.log(`Adding tech support panel`)
+      const { TechSupportPanel} = await import('./TechSupportPanel.js');
+      this.techSupportPanel = new TechSupportPanel({
+        containerSelector: `#${techSupportTabId}`, active: false, ctData: this.ctData, edition: this.edition
+      });
+
       this.techSupportPanel.setActive(true);
       panelTwoTabs.push(TabConfig.createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel));
     }

@@ -2,7 +2,38 @@ import './split-grid.css';
 
 import {LoremIpsum} from "lorem-ipsum";
 
-document.body.innerHTML = genPage();
+genPage().then(html => {
+  document.body.innerHTML = html;
+
+
+  const divider = document.querySelector('#theContainer .divider');
+  const container = document.getElementById('theContainer');
+
+  if (divider !== null && container !== null) {
+    new SplitGrid({
+      container: container as HTMLElement,
+      divider: divider as HTMLElement,
+      initGrid: true,
+      dividerSize: 3,
+      direction: 'vertical'
+    });
+  }
+
+  const divider2 = document.querySelector('#secondContainer .divider');
+  const container2 = document.getElementById('secondContainer');
+
+
+  if (divider2 !== null && container2 !== null) {
+    new SplitGrid({
+      container: container2 as HTMLElement,
+      divider: divider2 as HTMLElement,
+      initGrid: true,
+      dividerSize: 1,
+      direction: 'horizontal'
+    });
+  }
+});
+
 
 
 interface SplitGridOptions {
@@ -103,9 +134,17 @@ class SplitGrid {
 }
 
 
-function genPage(): string {
+async function genPage(): Promise<string> {
   const lorem = new LoremIpsum();
   lorem.format = 'html';
+
+  const toolBox = await import('../../js/toolbox/ToolBox.js');
+
+  console.log("Toolbox imported", toolBox);
+
+  const myT = new toolBox.MyClass('a test');
+
+  console.log("MyT", myT.getT());
 
   return `
   <div class="pageHeaderDiv">This is a page header</div>
@@ -129,32 +168,4 @@ function genPage(): string {
         </div>
   </div>
   `;
-}
-
-
-const divider = document.querySelector('#theContainer .divider');
-const container = document.getElementById('theContainer');
-
-if (divider !== null && container !== null) {
-  new SplitGrid({
-    container: container as HTMLElement,
-    divider: divider as HTMLElement,
-    initGrid: true,
-    dividerSize: 3,
-    direction: 'vertical'
-  });
-}
-
-const divider2 = document.querySelector('#secondContainer .divider');
-const container2 = document.getElementById('secondContainer');
-
-
-if (divider2 !== null && container2 !== null) {
-  new SplitGrid({
-    container: container2 as HTMLElement,
-    divider: divider2 as HTMLElement,
-    initGrid: true,
-    dividerSize: 1,
-    direction: 'horizontal'
-  });
 }

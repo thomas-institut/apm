@@ -27,7 +27,7 @@ export class ApmPage {
   protected timeZone: string = 'UTC';
   protected lockManager: SimpleLockManager = new SimpleLockManager();
 
-  private readonly constructorPromise: Promise<void> | null = null;
+  protected readonly constructorPromise: Promise<void> | null = null;
 
 
   /**

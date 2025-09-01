@@ -144,6 +144,7 @@ export class MceComposer extends ApmPage {
   }
 
   async _init() {
+    await this.constructorPromise;
     await this.dbCache.initialize();
     await this._init_setupUi();
     await this._init_saveArea();

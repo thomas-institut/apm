@@ -101,7 +101,7 @@ class SiteCollationTable extends SiteController
             '',
             'Edit Collation Table',
             'EditionComposer',
-            'js/EditionComposer/EditionComposer.js',
+            'js/EditionComposer/EditionComposer.ts',
             [
                 'workId' => $workId,
                 'chunkNumber' => intval($chunkNumber),
@@ -122,7 +122,7 @@ class SiteCollationTable extends SiteController
                 'edition-composer.css',
                 'collation.edit.css'
             ],
-            [ 'js/SimpleProfiler.js']
+//            [ 'js/SimpleProfiler.js']
         );
 
     }
@@ -255,7 +255,7 @@ class SiteCollationTable extends SiteController
                 'edition-composer.css',
                 'collation.edit.css'
             ],
-            [ 'js/SimpleProfiler.js']
+//            [ 'js/SimpleProfiler.js']
         );
 
 //        if ($ctData['type'] === 'edition') {

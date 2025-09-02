@@ -58,6 +58,7 @@ class Entity implements TidDefiner
 
     // Special
     const int tDareMaterial = 128;
+    // const int tBibObject = 129;
 
 
     // Value types
@@ -227,6 +228,7 @@ class Entity implements TidDefiner
     const int pDareCityCode = 8008;
     const int pDareInstCode = 8009;
     const int pDareLongInstCode = 8010;
+    const int pDareLongCityCode = 8012;
     const int pDareRepositoryId = 8011;
 
 
@@ -239,10 +241,64 @@ class Entity implements TidDefiner
 
 
 
-    // Bib Predicates
+/*    // Bib Predicates
+    const int pDareBibEntryId = 8700;
+    const int pBibEntryType = 8701;
+    const int pDareCatalogId = 8702;
+    const int pTitle = 8703;
+    const int pPublicationDate = 8704;
+    const int pBibObjectLang = 8705;
+    const int pTag = 8706;
+    const int pTranscriptTitle = 8707;
+    const int pTranslatedTitle = 8708;
+    const int pShortTitle = 8709;
+    const int pAuthor = 8710;
+    const int pTranslator = 8711;
+    const int pEditor = 8712;
+    const int pVolume = 8713;
+    const int pAbstract = 8714;
+    const int pDoi = 8715;
+    const int pDareIsCatalog = 8716;
+    const int pDareInBibliography = 8717;
+    const int pDareIsInactive = 8718;
+    const int pReprintType = 8719;
+    const int pDareEntryReviewedBy = 8720;
+    const int pDareEntryReviewValidFrom = 8721;
+    const int pDareEntryReviewValidUntil = 8722;
+    const int pHasRepresentation = 8723;
+    const int pRepresentationType = 8724;
+    const int pRepresentation = 8725;
 
-    const int pDnbUrl = 8600;
-    const int pViafUrl = 8601;
+    const int pDareBookSectionId = 8726;
+    const int pPublishedIn = 8727;
+    const int pPages = 8728;
+    const int pPublisher = 8279;
+    const int pPubPlace = 8730;
+
+    const int pDareBookId = 8731;
+    const int pSeries = 8732;
+    const int pEdition = 8733;
+
+    const int pDareArticleId = 8734;
+    const int pIssue = 8735;
+
+    const int rReprintOf = 8750;
+    const int rReprintIn = 8751;
+    const int rRepresents = 8752;
+    const int rIsRepresentedBy = 8753;
+
+
+
+
+    // Bib Object Types
+    const int BibObjectTypeBook = 8800;
+    const int BibObjectTypeBookSection = 8801;
+    const int BibObjectTypeArticle = 8802;
+    const int BibObjectTypeBookSeries = 8803;
+    const int BibObjectTypeOnlineCatalog = 8804;
+    const int BibObjectTypeOldCatalog = 8805;
+    const int BibObjectTypeJournal = 8806;*/
+
 
     // Url Types
 

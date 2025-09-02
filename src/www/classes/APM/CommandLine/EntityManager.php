@@ -158,7 +158,7 @@ class EntityManager extends CommandLineUtility
                 $this->addSignaturePredicateToDocsFromApm($verbose);
                 break;
 
-            case 'associateDocsAndInstitutions':
+            case 'addStoredAt':
                 if (!isset($argv[2])) {
                     $verbose = false;
                 } else if ($argv[2] === "v") {
@@ -223,7 +223,7 @@ Available operations are:
   buildBibliography [v(erbose)] - creates bibliographic entry entities with a lot of predicates, retrieved from the dare bib-tables saved in /var/apm/share/.
 
   addSignatures  [v(erbose)] - derives the library or archive signatures of all documents in the apm entity system from their names and saves them as predicates of the doc entities.
-  associateDocsAndInstitutions  [v(erbose)] - adds a storedAt-relation with an institution as an object to each document entity depending on the location code in the document name.
+  addStoredAt  [v(erbose)] - adds a storedAt-relation with an institution as an object to each document entity. which not already stands in such a relation, depending on the location code in the document name.
   
   showEntity [tid] – shows information about an entity with the given tid
   createCountry [name]  - creates an entity of the type ,country‘ with the given english name and adds german and italian names as aliases automatically
@@ -392,6 +392,7 @@ END;
             $countryCode = $locationCodeSplitted[0];
             $cityCode = $locationCodeSplitted[1];
             $instCode = $locationCodeSplitted[2];
+            $longCityCode = $countryCode . '-' . $cityCode;
 
             if ($row->institutionDare !== '') {
                 $institutionName = $row->institutionDare;
@@ -456,6 +457,8 @@ END;
                         $this->addAltNamesToEntity($cityName, $cityTid, Entity::tCity, $creatorTid, $verbose);
 
                         $this->es->makeStatement($cityTid, Entity::pDareCityCode, $cityCode, $creatorTid, "Adding city code $cityCode automatically.");
+                        $this->es->makeStatement($cityTid, Entity::pDareLongCityCode, $longCityCode, $creatorTid, "Adding long city code $cityCode automatically.");
+
                         if ($verbose) {
                             print("\tassociated: $cityName-->pDareCityCode-->$cityCode\n");
                         }
@@ -539,7 +542,7 @@ END;
         }
 
         // display results to the user
-        print ("FINISHED!\n\t");
+        print ("\nFINISHED!\n\t");
         print("$numCreatedCountries countries created.\n\t
        $numCreatedCities cities created.\n\t
        $numCreatedInstitutions institutions created.\n\t
@@ -589,6 +592,8 @@ END;
             $createdDoc = $this->createDocument(str_replace('"', '', $document->bilderbergId));
             $tid = $createdDoc['tid'];
 
+            $institutions = $this->es->getAllEntitiesForType(Entity::tInstitution);
+
             if (str_starts_with($createdDoc['message'], 'NO')) {
                 $results['docsAlreadyExisted']++;
             } else {
@@ -598,12 +603,7 @@ END;
             $tableKeysToSkip = ['id', 'bilderbergId', 'vd16', 'edit16', 'iAureliensis', 'docEditor'];
 
             if ($verbose) {
-                print("\tAdding predicates to document...\n");
-            }
-
-            if ($verbose) {
-                $predicate = Entity::pDareSignature;
-                print("\t\tvalue for predicate $predicate has been set.\n");
+                print("\tProcessing $bilderbergId...\n");
             }
 
             // make statements
@@ -611,90 +611,70 @@ END;
 
                 if (!in_array($predicate, $tableKeysToSkip)) {
 
+                    // get entity for materialType
                     if ($predicate === 'materialType') {
-                        switch ($value) {
-                            case '1':
-                                $value = Entity::MaterialPaper;
-                                break;
-
-                            case '2':
-                                $value = Entity::MaterialParchment;
-                                break;
-
-                            case '3':
-                                $value = Entity::MaterialMixed;
-                                break;
-
-                            case '4':
-                                $value = Entity::MaterialVellum;
-                                break;
-
-                            case '5':
-                                $value = Entity::MaterialTissue;
-                                break;
-
-                            default:
-                                $value = 'unknown';
-                                break;
-                        }
-
+                        $value = $this->getEntityForDareMaterialCode($value);
                     }
 
+                    // skip empty values
                     if ($value === '' or $value === 'unknown' or $value === null) {
                         if ($verbose) {
-                            print("\t\tskipping predicate $predicate because of empty value.\n");
+                            print("\t\t\tskipping predicate $predicate because of empty value.\n");
                         }
                         $results['skippedEmptyPredicates']++;
                         continue;
                     }
 
+                    // GET CORRECT PREDICATE NAMES AND ENTITIES
                     if ($predicate === 'idno') { // this is the library or archive signature
 
                         // depending on the relation of the saved signature to the signature encoded in the bilderberg id,
                         // save the signature as different predicates
                         if (!$this->signaturesAreIdentical($value, $signatureFromBilderbergId)) {
-                            $predicate = constant(Entity::class . '::pDareSignature');
+                            $predicateName =  'pDareSignature';
 
                             if ($verbose) {
-                                print("\t\tsignature '$value' in dare doc table differs from the signature '$signatureFromBilderbergId' derived from the bilderberg id.\n");
+                                print("\t\t\tsignature '$value' in dare doc table differs from the signature '$signatureFromBilderbergId' derived from the bilderberg id.\n");
                             }
                         } else {
-                            $predicate = constant(Entity::class . '::pSignature');
+                            $predicateName =  'pSignature';
 
                             if ($verbose) {
-                                print("\t\tsignature $value in dare doc table identical with signature derived from the bilderberg id.\n");
+                                print("\t\t\tsignature $value in dare doc table identical with signature derived from the bilderberg id.\n");
                             }
                         }
 
+                        $predicate = constant(Entity::class . '::' . $predicateName);
+
                     }
 
-                    // add document type as apm standard predicate
                     else if ($predicate === 'type') {
-                        $predicate = constant(Entity::class . '::pDocumentType');
+                        $predicateName =  'pDocumentType';
+                        $predicate = constant(Entity::class . '::' . $predicateName);
 
                         if (trim($value) === 'ms') {
                             $value = Entity::DocTypeManuscript;
                         } else if (trim($value) === 'inc') {
                             $value = Entity::DocTypeIncunabulum;
                         }
-
-                    // add pDare-predicate
-                    } else {
-                        $predicate = constant(Entity::class . '::pDare' . ucfirst($predicate));
                     }
 
+                    else {
+                        $predicateName =  'pDare' . ucfirst($predicate);
+                        $predicate = constant(Entity::class  . '::' . $predicateName);
+                    }
+
+                    // MAKE STATEMENTS
                     if ($predicate !== Entity::pDareRepositoryId) {
                         $this->es->makeStatement($tid, $predicate, $value, $creatorTid, "Imported automatically from dare documents table.");
 
                         if ($verbose) {
-                            print("\t\tvalue for predicate $predicate has been set.\n");
+                            print("\t\tassociated: $predicateName -> $value\n");
                         }
                     }
 
                     // add storedAt-relation based on the given pDareRepositoryId of the doc
                     else {
-
-                        $institutions = $this->es->getAllEntitiesForType(Entity::tInstitution);
 
                         foreach ($institutions as $institutionTid) {
                             $entityData = $this->es->getEntityData($institutionTid);
@@ -705,10 +685,11 @@ END;
 
                                     if ($statement->object === $value) {
                                         $this->es->makeStatement($tid, Entity::pStoredAt, $institutionTid, $creatorTid, "Imported automatically from dare documents table, concluded from the dare repo id.");
-                                    }
 
-                                    if ($verbose) {
-                                        print("\t\tstoredAt-relation has been created.\n");
+                                        if ($verbose) {
+                                            $institutionName = $entityData->name;
+                                            print("\t\tassociated: storedAt -> $institutionName ($institutionTid).\n");
+                                        }
                                     }
 
                                     break;
@@ -727,24 +708,14 @@ END;
             foreach ($docLangs as $entry) {
                 if ($entry->docId === $document->id) {
 
-                    $langCodeDare = $entry->languageId;
+                    $langData = $this->getEntityForDareLanguageCode($entry->languageId);
+                    $langName = $langData['name'];
+                    $langTid = $langData['tid'];
 
-                    switch ($langCodeDare) {
-                        case '1':
-                            $value = Entity::LangLatin;
-                            break;
-                        case '2':
-                            $value = Entity::LangHebrew;
-                            break;
-                        case '3':
-                            $value = Entity::LangArabic;
-                            break;
-                    }
-
-                    $this->es->makeStatement($tid, $predicate, $value, $creatorTid, "Imported automatically from dare documents table.");
+                    $this->es->makeStatement($tid, $predicate, $langTid, $creatorTid, "Imported automatically from dare documents table.");
 
                     if ($verbose) {
-                        print("\t\tvalue for predicate $predicate has been set.\n");
+                        print("\t\tassociated: pDocumentLanguage -> $langName ($langTid)\n");
                     }
 
                     $results['setPredicates']++;
@@ -772,10 +743,11 @@ END;
         $this->collectFromDareBibTables();
 
         // create bib entry entity with basic predicates
-        foreach ($this->bibTables->entry as $bibEntry) {
+/*        foreach ($this->bibTables->entry as $bibEntry) {
 
-        }
+        }*/
 
+        print("building bibliography done.");
 
         return true;
     }
@@ -908,6 +880,41 @@ END;
         }
 
         return ['tid' => $locatedInObjectTid, 'location' => $location];
+    }
+
+    private function getEntityForDareMaterialCode ($code) {
+
+            switch ($code) {
+                case '1':
+                    return Entity::MaterialPaper;
+
+                case '2':
+                    return Entity::MaterialParchment;
+
+                case '3':
+                    return Entity::MaterialMixed;
+
+                case '4':
+                    return Entity::MaterialVellum;
+
+                case '5':
+                    return Entity::MaterialTissue;
+
+                default:
+                    return 'unknown';
+            }
+
+    }
+
+    private function getEntityForDareLanguageCode ($code) {
+        switch ($code) {
+            case '1':
+                return ['tid' => Entity::LangLatin, 'name' => 'latin'];
+            case '2':
+                return ['tid' => Entity::LangHebrew, 'name' => 'hebrew'];
+            case '3':
+                return ['tid' => Entity::LangArabic, 'name' => 'arabic'];
+        }
     }
 
     private function getLocationCodesForInstitutionEntities(): array {
@@ -1140,7 +1147,7 @@ SPARQL;
                 $this->es->makeStatement($entityId, Entity::pSignature, $signature, $creatorTid, "Derived automatically from the document title.");
 
                 if ($verbose) {
-                    print("\tassociated: $entityId (name: $bilderbergId)-->signature-->$signature\n");
+                    print("\tassociated: $entityId (name: $bilderbergId) -> signature -> $signature\n");
                 }
                 $numAddedSignatures++;
 
@@ -1159,7 +1166,7 @@ SPARQL;
 
         }
 
-        print("FINISHED!\n
+        print("\nFINISHED!\n
                 \t$numAddedSignatures signatures added.\n
                 \t$numSkippedDocs skipped because of wrong title format.\n");
 
@@ -1200,57 +1207,70 @@ SPARQL;
 
         foreach ($docsFromApm as $entityId) {
 
-            $docInfo = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int) $entityId);
-            $bilderbergId = $docInfo['title'];
-            $bilderbergIdSplitted = explode('-', $bilderbergId);
+            $storedAtRelationAlreadySet = false;
 
-            if ($bilderbergIdSplitted[0] === 'I' or $bilderbergIdSplitted[0] === 'M') {
+            // check if storedAt-relation is already set
+            $docEntityData = $this->es->getEntityData($entityId);
 
-                $countryCode = $bilderbergIdSplitted[1];
-                $cityCode = $bilderbergIdSplitted[2];
-                $instCode = $bilderbergIdSplitted[3];
-
-                $institutionFound = false;
-
-                foreach ($institutionEntities as $i=>$institutionTid) {
-
-                    // get entity data and institution name
-                    $entityData = $institutionEntityData[$i];
-                    $institutionName = $entityData->name;
-
-                    if ($locationCodes[$i]['institutionCode'] === $instCode and
-                        $locationCodes[$i]['countryCode'] === $countryCode and
-                        $locationCodes[$i]['cityCode'] === $cityCode) {
-
-                        $this->es->makeStatement($entityId, Entity::pStoredAt, $institutionTid, $creatorTid, "Derived automatically from the document title.");
-                        $numAddedStoredAtRelations++;
-                        $institutionFound = true;
-
-                        if ($verbose) {
-                            print("\tassociated: $entityId (name: $bilderbergId)-->storedAt-->$institutionTid (name: $institutionName)\n");
-                        }
-
-                        break;
-                    }
-                }
-
-                if (!$institutionFound) {
-                    $numSkippedDocs++;
-
-                    if ($verbose) {
-                        print("\tNO institution entity found for $bilderbergId because of missing institution entity.\n");
-                    }
-                }
-
-            } else {
-                $numSkippedDocs++;
-
-                if ($verbose) {
-                    print("\tNO institution entity found for $bilderbergId because of wrong title format.\n");
+            foreach ($docEntityData->statements as $statement) {
+                if ($statement->predicate === Entity::pStoredAt) {
+                    $storedAtRelationAlreadySet = true;
                 }
             }
 
-            $numProcessedDocs++;
+            $docInfo = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int)$entityId);
+            $bilderbergId = $docInfo['title'];
+            $bilderbergIdSplitted = explode('-', $bilderbergId);
+
+
+            if (!$storedAtRelationAlreadySet and ($bilderbergIdSplitted[0] === 'I' or $bilderbergIdSplitted[0] === 'M')) {
+
+                    $countryCode = $bilderbergIdSplitted[1];
+                    $cityCode = $bilderbergIdSplitted[2];
+                    $instCode = $bilderbergIdSplitted[3];
+
+                    $institutionFound = false;
+
+                    foreach ($institutionEntities as $i => $institutionTid) {
+
+                        // get entity data and institution name
+                        $entityData = $institutionEntityData[$i];
+                        $institutionName = $entityData->name;
+
+                        if ($locationCodes[$i]['institutionCode'] === $instCode and
+                            $locationCodes[$i]['countryCode'] === $countryCode and
+                            $locationCodes[$i]['cityCode'] === $cityCode) {
+
+                            $this->es->makeStatement($entityId, Entity::pStoredAt, $institutionTid, $creatorTid, "Derived automatically from the document title.");
+                            $numAddedStoredAtRelations++;
+                            $institutionFound = true;
+
+                            if ($verbose) {
+                                print("\tassociated: $entityId (name: $bilderbergId)-->storedAt-->$institutionTid (name: $institutionName)\n");
+                            }
+
+                            break;
+                        }
+                    }
+
+                    if (!$institutionFound) {
+                        $numSkippedDocs++;
+
+                        if ($verbose) {
+                            print("\tNO institution entity found for $bilderbergId because of missing institution entity.\n");
+                        }
+                    }
+
+                $numProcessedDocs++;
+
+            } else {
+                    $numSkippedDocs++;
+
+                    if ($verbose) {
+                        print("\tNO institution entity found for $bilderbergId because of wrong title format or storedAt-relation already set for doc entity.\n");
+
+                    }
+                }
 
             if (!$verbose) {
                 printf("   %d docs processed\r", $numProcessedDocs);
@@ -1258,9 +1278,9 @@ SPARQL;
 
         }
 
-        print("FINISHED!\n
+        print("\nFINISHED!\n
                 \t$numAddedStoredAtRelations storedAt-relations added.\n
-                \t$numSkippedDocs skipped because of wrong title format or missing institution entity.\n");
+                \t$numSkippedDocs skipped because of already existing storedAt-relation, wrong doc title format or not having found a fitting institution entity.\n");
 
         return true;
     }

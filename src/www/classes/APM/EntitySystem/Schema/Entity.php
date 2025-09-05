@@ -58,7 +58,10 @@ class Entity implements TidDefiner
 
     // Special
     const int tDareMaterial = 128;
-    // const int tBibObject = 129;
+    const int tBibObject = 129;
+    const int tBibEntry = 130;
+    const int tPublisher = 131;
+
 
 
     // Value types
@@ -240,10 +243,9 @@ class Entity implements TidDefiner
     const int pSpecificSource = 8504;
 
 
-
-/*    // Bib Predicates
+    // Bib Predicates
     const int pDareBibEntryId = 8700;
-    const int pBibEntryType = 8701;
+    const int pBibObjectType = 8701;
     const int pDareCatalogId = 8702;
     const int pTitle = 8703;
     const int pPublicationDate = 8704;
@@ -269,17 +271,17 @@ class Entity implements TidDefiner
     const int pRepresentationType = 8724;
     const int pRepresentation = 8725;
 
-    const int pDareBookSectionId = 8726;
-    const int pPublishedIn = 8727;
+    const int pDareBookSectionEntryId = 8726;
+    const int rPublishedIn = 8727;
     const int pPages = 8728;
     const int pPublisher = 8279;
     const int pPubPlace = 8730;
 
-    const int pDareBookId = 8731;
+    const int pDareBookEntryId = 8731;
     const int pSeries = 8732;
     const int pEdition = 8733;
 
-    const int pDareArticleId = 8734;
+    const int pDareArticleEntryId = 8734;
     const int pIssue = 8735;
 
     const int rReprintOf = 8750;
@@ -288,16 +290,14 @@ class Entity implements TidDefiner
     const int rIsRepresentedBy = 8753;
 
 
-
-
-    // Bib Object Types
-    const int BibObjectTypeBook = 8800;
-    const int BibObjectTypeBookSection = 8801;
-    const int BibObjectTypeArticle = 8802;
-    const int BibObjectTypeBookSeries = 8803;
-    const int BibObjectTypeOnlineCatalog = 8804;
-    const int BibObjectTypeOldCatalog = 8805;
-    const int BibObjectTypeJournal = 8806;*/
+    // Bib Objects
+    const int BibObjectBook = 8800;
+    const int BibObjectBookSection = 8801;
+    const int BibObjectArticle = 8802;
+    const int BibObjectBookSeries = 8803;
+    const int BibObjectOnlineCatalog = 8804;
+    const int BibObjectOldCatalog = 8805;
+    const int BibObjectJournal = 8806;
 
 
     // Url Types

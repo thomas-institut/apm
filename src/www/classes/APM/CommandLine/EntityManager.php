@@ -745,6 +745,9 @@ END;
         // create bib entry entity with basic predicates
 /*        foreach ($this->bibTables->entry as $bibEntry) {
 
+                $tid = $this->es->createEntity(Entity::tBibEntry, $name, '', $creatorTid);
+
+
         }*/
 
         print("building bibliography done.");

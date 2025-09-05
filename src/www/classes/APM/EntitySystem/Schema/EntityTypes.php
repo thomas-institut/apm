@@ -231,6 +231,30 @@ const EntityTypeDefinitions = [
         [],
         false
     ],
+    [
+        Entity::tBibEntry,
+        'A bibliographical entry',
+        "A bib entry, e.g. about a book or an article",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tBibObject,
+        'A bibliographical object',
+        "An object, e.g., a book or a journal",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tPublisher,
+        'A publisher,
+        "A publisher, e.g., Felix Meiner Verlag",
+        [],
+        [],
+        false
+    ],
 ];
 
 class EntityTypes implements EntityTypeDefiner

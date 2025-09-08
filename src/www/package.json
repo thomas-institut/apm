@@ -9,6 +9,7 @@
     "test": "vitest run test/js",
     "test-watch": "vitest",
     "build": "vite build --base=/dist",
+    "build-production": "vite build --base=/apm/dist",
     "dev": "vite",
     "gen-schema": "openapi-typescript ./schema/schema.yaml --root-types=true --properties-required-by-default=true -o ./schema/auto/auto-schema.d.ts"
   },

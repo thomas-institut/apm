@@ -53,8 +53,7 @@ export default defineConfig({
         MceComposer: resolve(__dirname, 'js/MceComposer/MceComposer.js'),
         AutomaticCollationTable: resolve(__dirname, 'js/pages/AutomaticCollationTable/AutomaticCollationTable.ts'),
         PageViewer: resolve(__dirname, 'js/pages/PageViewer/PageViewer.js'),
-        reactAPM: resolve(__dirname, 'reactAPM/index.html'),
-        splitGrid: resolve(__dirname, 'test/pages/split-grid.html'),
+        React_Main: resolve(__dirname, 'js/reactAPM/index.tsx'),
       },
       output: {
         entryFileNames: '[name]-[hash].js',

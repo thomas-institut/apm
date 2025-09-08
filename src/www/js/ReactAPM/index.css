@@ -1,0 +1,173 @@
+@import url('../../css/fonts.css');
+
+:root {
+    /* DEFAULT FONT */
+    --default-font-family: var(--bs-font-sans-serif), sans-serif;
+    --default-font-size: 10.5pt;
+    --default-font-color: #323232;
+    --monospace-font-family: "Noto Mono", monospace;
+
+    /* TEXT ICON FONT */
+    --text-icon-font-family: FreeSans;
+
+    /* DEFAULT SERIF FONT*/
+    --default-serif-font: APM_FreeSerif, serif;
+
+    /* LATIN FONTS */
+    /*--latin-font-family: FreeSans, sans-serif;*/
+    --latin-font-family: Arial, sans-serif;
+    --latin-font-size: 110%;
+
+    --latin-hand1-font-family: APM_FreeSerif, serif;
+    --latin-hand1-font-size: 100%;
+
+    --latin-hand2-font-family: "Noto Sans", sans-serif;
+    --latin-hand2-font-size: 100%;
+
+    /* ARABIC FONTS */
+    --arabic-font-family: "Noto Naskh Arabic", serif;
+    --arabic-font-size: 130%;
+
+    --arabic-hand1-font-family: "Noto Sans", sans-serif;
+    --arabic-hand1-font-size: 130%;
+
+    --arabic-hand2-font-family: Scheherazade, serif;
+    --arabic-hand2-font-size: 150%;
+
+    /* JUDEO ARABIC FONTS */
+    --judeoarabic-font-family: Ezra, serif;
+    --judeoarabic-font-size: 100%;
+
+    /* HEBREW FONTS */
+    --hebrew-font-family: "Noto Serif Hebrew", serif;
+    --hebrew-font-size: 110%;
+
+    --hebrew-hand1-font-family: "Noto Sans", sans-serif;
+    --hebrew-hand1-font-size: 110%;
+
+    --hebrew-hand2-font-family: FreeSerif, serif;
+    --hebrew-hand2-font-size: 110%;
+
+    /* COLORS */
+    --dimmed-blue-color: #337ab7;  /* For dimmed links*/
+    --dimmed-text-color: #c2c2c2;
+    --very-light-gray: #e7e7e7;
+    --top-bar-font-color: rgba(0, 0, 0, 0.5);
+    --top-bar-font-color-hover: rgba(38, 66, 179, 0.9);
+
+    /* OTHER */
+    --small-font-size: 0.8em;
+}
+
+/* General Text Classes */
+
+.text-en {
+    direction: ltr;
+    font-family: var(--default-font-family), sans-serif;
+    font-size: var(--default-font-size);
+}
+
+.text-ar, .text-ar.hand-0 {
+    direction: rtl;
+    font-family: var(--arabic-font-family), serif;
+    font-size: var(--arabic-font-size);
+}
+
+.text-ar.hand-1 {
+    font-family: var(--arabic-hand1-font-family), sans-serif;
+    font-size: var(--arabic-hand1-font-size);
+}
+
+.text-ar.hand-2 {
+    font-family: var(--arabic-hand2-font-family), monospace;
+    font-size: var(--arabic-hand2-font-size);
+}
+
+.text-he, .text-he.hand-0 {
+    direction: rtl;
+    font-family: var(--hebrew-font-family), serif;
+    font-size: var(--hebrew-font-size);
+}
+
+.text-he.hand-1 {
+    font-family: var(--hebrew-hand1-font-family), sans-serif;
+    font-size: var(--hebrew-hand1-font-size);
+}
+
+.text-he.hand-2 {
+    font-family: var(--hebrew-hand2-font-family), monospace;
+    font-size: var(--hebrew-hand2-font-size);
+}
+
+.text-la, .text-la.hand-0 {
+    direction: ltr;
+    font-family: var(--latin-font-family), serif;
+    font-size: var(--latin-font-size);
+}
+
+.text-la.hand-1 {
+    font-family: var(--latin-hand1-font-family), sans-serif;
+}
+
+.text-la.hand-2 {
+    font-family: var(--latin-hand2-font-family), monospace;
+}
+
+.text-jrb {
+    font-family: var(--judeoarabic-font-family), serif;
+    font-size: var(--judeoarabic-font-size);
+}
+
+
+.padding-0 {
+    padding: 0;
+}
+
+.margin-0 {
+    margin: 0;
+}
+
+
+/* override bootstrap */
+
+body {
+    font-family: var(--default-font-family), sans-serif;
+    font-size: var(--default-font-size);
+    /*color: var(--default-font-color);*/
+    text-align: inherit;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* Make the container covers the whole page */
+.container {
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* We want a compact top bar */
+.navbar {
+    padding: 0 !important;
+    /*border-bottom: 1px solid var(--very-light-gray);*/
+    margin-bottom: 0.7rem;
+}
+
+/*.navbar-brand {*/
+/*    padding: 0;*/
+/*    font-size: var(--default-font-size);*/
+/*}*/
+
+
+/* Use dimmed colors for the top bar */
+.navbar a {
+    color: var(--top-bar-font-color);
+    text-decoration: none;
+}
+
+.navbar a:hover {
+    color: var(--top-bar-font-color-hover)
+}
+
+a.dropdown-item {
+   font-size: var(--default-font-size);
+}

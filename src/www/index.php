@@ -45,6 +45,7 @@ use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePageViewer;
 use APM\Site\SitePeople;
+use APM\Site\SiteReact;
 use APM\Site\SiteSearch;
 use APM\Site\SiteSettings;
 use APM\Site\SiteWorks;
@@ -118,6 +119,7 @@ try {
 
 // Create routes
 createSiteUnauthenticatedRoutes($app, $container);
+createReactSiteRoutes($app, $container);
 createSiteRoutes($app, $container);
 createSiteDevRoutes($app, $container);
 createApiAuthenticatedRoutes($app, $container);
@@ -137,6 +139,27 @@ function exitWithErrorMessage(string $msg): void
     http_response_code(500);
     print "<pre>SERVER ERROR: $msg</pre>";
     exit();
+}
+
+function createReactSiteRoutes(App $app, ContainerInterface $container): void
+{
+
+    $app->group('/new', function (RouteCollectorProxy $group) use ($container) {
+
+        $group->get('/app-settings', function (Request $request, Response $response) use ($container) {
+            return (new SiteSettings($container))->getSiteSettings($request, $response);
+        });
+
+
+        $group->get('/{path:.*}',
+            function (Request $request, Response $response) use ($container) {
+                return (new SiteReact($container))->ReactMain($request, $response);
+            });
+
+
+    });
+
+
 }
 
 function createSiteRoutes(App $app, ContainerInterface $container): void

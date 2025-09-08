@@ -1,18 +1,20 @@
 import {RefObject, useContext, useRef, useState} from "react";
-import {AppContext} from "./index";
+import {AppContext} from "./App";
 import {urlGen} from "@/pages/common/SiteUrlGen";
-import '../css/login.css';
-import {Button, Form} from "react-bootstrap";
+import '../../css/login.css';
+import {Button, Form, InputGroup} from "react-bootstrap";
+import {Eye, EyeSlash} from "react-bootstrap-icons";
 
 export default function Login() {
 
   document.title = "Login";
 
-  const context = useContext(AppContext);
+  const appContext = useContext(AppContext);
   const logoUrl = urlGen.images() + '/apm-logo-plain.svg';
 
   const [buttonDisabled, setButtonDisabled] = useState<boolean | undefined>(true);
   const [loginError, setLoginError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const userNameInput: RefObject<HTMLInputElement | null> = useRef(null);
   const passwordInput: RefObject<HTMLInputElement | null> = useRef(null);
 
@@ -26,14 +28,18 @@ export default function Login() {
     }
   };
 
+  const handleShowPassword = () => {
+    setShowPassword( prev => !prev );
+  }
+
   const handleLogin = async () => {
     const userName = userNameInput.current?.value.trim() ?? '';
     const password = passwordInput.current?.value.trim() ?? '';
     if (userName && password) {
       // let's roll
-      const success = await context.dataProxy.apiLogin(userName, password, true);
+      const success = await appContext.dataProxy.apiLogin(userName, password, true);
       if (success) {
-        window.location.href = context.reactAppBaseUrl + '/';
+        window.location.href = appContext.reactAppBaseUrl + '/';
       } else {
         setLoginError('Login failed');
       }
@@ -54,7 +60,15 @@ export default function Login() {
 
         <Form.Group className="mb-3" controlId="formBasicPassword">
           <Form.Label>Password</Form.Label>
-          <Form.Control ref={passwordInput} type="password" placeholder="Password" onChange={handleFormChange}/>
+          <InputGroup>
+            { showPassword ?
+              (<Form.Control ref={passwordInput} type="text" placeholder="Password" onChange={handleFormChange}/>) :
+              (<Form.Control ref={passwordInput} type="password" placeholder="Password" onChange={handleFormChange}/>)
+            }
+            <Button variant="outline-secondary"  onClick={handleShowPassword}>{showPassword ? (<EyeSlash/>) : (<Eye/>)}</Button>
+
+          </InputGroup>
+
         </Form.Group>
         <Form.Group className="mb-3" controlId="formBasicCheckbox">
           <Form.Check type="checkbox" label="Remember me"/>

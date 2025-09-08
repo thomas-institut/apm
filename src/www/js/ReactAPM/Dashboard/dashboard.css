@@ -1,0 +1,29 @@
+
+div.dashboard {
+    display: flex;
+    height: 100%;
+    flex-direction: row;
+    align-items: start;
+    overflow: hidden;
+}
+
+div.dashboard-contents {
+    height: 100%;
+    width: 100%;
+    overflow-y: auto;
+    padding-right: 3rem;
+}
+
+div.dashboard-anchors {
+    margin-right: 3rem;
+    overflow-x: hidden;
+}
+
+.dashboard h1 {
+    font-size: 1.2rem;
+    margin-top: 1rem;
+}
+
+.dashboard h1.first {
+    margin-top: 0;
+}

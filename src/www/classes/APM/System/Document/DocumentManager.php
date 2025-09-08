@@ -20,8 +20,8 @@ use ThomasInstitut\EntitySystem\EntityData;
 interface DocumentManager
 {
 
-    const ORDER_BY_PAGE_NUMBER = 100;
-    const ORDER_BY_SEQ = 101;
+    const int ORDER_BY_PAGE_NUMBER = 100;
+    const int ORDER_BY_SEQ = 101;
 
 
     /**

@@ -212,9 +212,12 @@ export class ApmDataProxy {
     }
     try {
       return await this.get(urlGen.apiWhoAmI(), false, 300);
-    } catch (error) {
-      console.warn(`Error getting whoami`, error);
-      return null;
+    } catch (error: any) {
+      console.log(`Error getting whoami`, error);
+      if (error.httpStatus === 401) {
+        return null;
+      }
+      throw error;
     }
   }
 

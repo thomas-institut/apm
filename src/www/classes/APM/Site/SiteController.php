@@ -222,6 +222,95 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return preg_replace('/\"/', '\"', $string);
     }
 
+    private function getPageHtml(string $baseUrl, string $title, string $headImports, string $postBodyImports) : string
+    {
+        $viteReactPluginHtml = $this->getReactPluginModuleHtml();
+
+        $html = <<<END
+<!doctype html>
+<html lang="en">
+<head>
+    $viteReactPluginHtml
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <link href='$baseUrl/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
+    <title>$title</title>
+    $headImports
+    <style>
+    
+        div.loadMessage {
+            color: gray;
+            margin: 5em;
+            font-size: 1.2em;
+            animation: appearAfter 1s linear;
+        }
+        
+        @keyframes appearAfter {
+            from {
+                opacity: 0;
+            }
+            50% {
+                opacity: 0;
+            }
+            to {
+                opacity: 1;
+            }
+        }
+        
+        .spinner {
+            margin-top: 1em;
+            border: 0.25em solid #f3f3f3;
+            border-top: 0.25em solid gray; 
+            border-radius: 50%;
+            width: 2em;
+            height: 2em;
+            display: inline-block;
+            animation: spin 2s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+</style>
+<script>
+       window.loading = true;
+       setTimeout( 
+         () => {
+            if (window.loading) {
+              let msgDiv = document.getElementById('message');
+              msgDiv.innerHTML = 'Oops, something went wrong loading APM. Is your Internet working? If so, there might be a problem with the server. Please try again later.';
+            }
+         }, 30000);
+</script>
+</head>
+<body>
+    <div class="loadMessage" id="message">
+    APM is taking some time to load the $title page, please stand by... <div class="spinner"></div>
+    </div>
+    
+</body>
+$postBodyImports
+</html>    
+END;
+
+        return $html;
+    }
+
+    protected function renderReactPage(ResponseInterface $response, string $title,  string $viteEntryPoint) : ResponseInterface {
+        $baseUrl = $this->getBaseUrl();
+
+        // all imports are handled by Vite
+        $viteImportsHtml = $this->getViteImportHtml([$viteEntryPoint]);
+        $html = $this->getPageHtml($baseUrl, $title, $viteImportsHtml, '');
+        $response->getBody()->write($html);
+        SystemProfiler::lap('Response ready');
+        $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms", SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
+            SystemProfiler::getLaps());
+        return $response;
+    }
+
     /**
      *
      * Renders a standard page with the given parameters
@@ -306,61 +395,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 
 
         $viteImportsHtml = $this->getViteImportHtml([$viteEntryPoint, ...$extraViteEntryPoints]);
-        $viteReactPluginHtml = $this->getReactPluginModuleHtml();
 
-
-        $html = <<<END
-<!doctype html>
-<html lang="en">
-<head>
-    $viteReactPluginHtml
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <link href='$baseUrl/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
-     $cssHtml
-    <title>$title</title>
-    <style>
-        .loader {
-            margin-top: 1em;
-            border: 1em solid #f3f3f3; /* Light grey */
-            border-top: 1em solid gray; /* Blue */
-            border-radius: 50%;
-            width: 4em;
-            height: 4em;
-            animation: spin 2s linear infinite;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-</style>
-
-</head>
-<body>
-    <script>
-       window.loading = true;
-       setTimeout( () => {
-         if (window.loading) {
-            document.body.innerHTML = '<div style="margin: 40px; color: gray">APM is taking some time to load the $title page, please stand by... <div class="loader"></div></div>';
-            setTimeout( () => {
-              if (window.loading) {
-              document.body.innerHTML = '<div style="margin: 40px; color: red">Oops, something went wrong loading APM\'s $title page. Please try again.</div>';
-              }
-            }, 30000)
-         }
-       }, 500);
-</script>
-</body>
-
-</html>    
-    $jsHtml
-    $viteImportsHtml
-    <script>
-        $script
-    </script>     
-END;
+        $postBodyImports = implode('', [ $jsHtml, $viteImportsHtml, "<script> $script </script>" ]);
+        $html = $this->getPageHtml($baseUrl, $title, $cssHtml, $postBodyImports);
         $response->getBody()->write($html);
         if ($cacheKey !== '') {
             $this->systemManager->getSystemDataCache()->set($cacheKey, $html, 3600);
@@ -403,21 +440,34 @@ END;
             }
         } else {
             $baseUrl = $this->getBaseUrl();
-            $viteImports = [];
+            $viteJsImports = [];
+            $viteCssImports = [];
+
             foreach ($viteEntryPoints as $entryPoint) {
-                $viteImports = [...$viteImports, ... $this->getViteImportsFromManifest($entryPoint)];
+                $viteImports = $this->getViteImportsFromManifest($entryPoint);
+                $viteJsImports = [...$viteJsImports, ...$viteImports['js']];;
+                $viteCssImports = [...$viteCssImports, ...$viteImports['css']];
             }
-            $this->logger->debug("Vite imports: " . implode(', ', $viteImports));
+            $this->logger->debug("Vite imports: " . implode(', ', $viteJsImports));
             $viteImportsHtml = '';
-            foreach ($viteImports as $import) {
+            foreach ($viteJsImports as $import) {
                 $viteImportsHtml .= <<<END
     <script type="module" src="$baseUrl/dist/$import"></script>
+END;
+            }
+            foreach ($viteCssImports as $import) {
+                $viteImportsHtml .= <<<END
+     <link rel="stylesheet" type="text/css" href="$baseUrl/dist/$import">
 END;
             }
         }
         return $viteImportsHtml;
     }
 
+    /**
+     * @param string $entryPoint
+     * @return array
+     */
     protected function getViteImportsFromManifest(string $entryPoint): array
     {
         $manifestFileName = './dist/.vite/manifest.json';
@@ -432,16 +482,29 @@ END;
             return [];
         }
 
-        $imports = [];
-        $imports[] = $manifest[$entryPoint]["file"];
+        $jsImports = [];
+        $jsImports[] = $manifest[$entryPoint]["file"];
         foreach ($manifest[$entryPoint]["imports"] as $import) {
             if (!isset($manifest[$import])) {
                 $this->logger->error("Import $import not found in Vite manifest");
                 continue;
             }
-            $imports[] = $manifest[$import]["file"];
+            $jsImports[] = $manifest[$import]["file"];
         }
-        return $imports;
+
+        $cssImports = [];
+        if (isset($manifest[$entryPoint]["css"])) {
+            foreach ($manifest[$entryPoint]["css"] as $css) {
+                $cssImports[] = $css;
+            }
+        }
+        if (isset($manifest[$entryPoint]["cssModules"])) {
+            foreach ($manifest[$entryPoint]["cssModules"] as $cssModule) {
+                $cssImports[] = $cssModule;
+            }
+        }
+
+        return [ 'js' => $jsImports, 'css' => $cssImports] ;
     }
 
     /**

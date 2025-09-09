@@ -8,6 +8,7 @@ interface CtListForUserProps {
   userId: number;
   edRef: RefObject<any>,
   ctRef: RefObject<any>,
+  itemClassName?: string;
 }
 
 export default function CtListForUser(props: CtListForUserProps) {
@@ -20,7 +21,7 @@ export default function CtListForUser(props: CtListForUserProps) {
 
   const getListItemsForArray = (array: any[]) => {
     return array.map((item: any) => {
-      return <p key={item.id}>{item.chunkId}: {item.title}</p>;
+      return <p key={item.id} className={props.itemClassName}>{item.chunkId}: {item.title}</p>;
     });
   };
 

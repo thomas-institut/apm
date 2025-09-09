@@ -1,21 +1,19 @@
 
 div.dashboard {
-    display: flex;
+    display: grid;
     height: 100%;
-    flex-direction: row;
+    grid-template-columns: max-content 1fr;
     align-items: start;
     overflow: hidden;
 }
 
 div.dashboard-contents {
     height: 100%;
-    width: 100%;
     overflow-y: auto;
-    padding-right: 3rem;
 }
 
 div.dashboard-anchors {
-    margin-right: 3rem;
+    margin-right: 2rem;
     overflow-x: hidden;
 }
 
@@ -26,4 +24,9 @@ div.dashboard-anchors {
 
 .dashboard h1.first {
     margin-top: 0;
+}
+
+.dashboard-list-item {
+    margin: 0 0 0 1rem;
+    padding: 0.25rem;
 }

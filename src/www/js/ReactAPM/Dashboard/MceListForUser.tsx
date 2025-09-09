@@ -7,6 +7,7 @@ import {Spinner} from "react-bootstrap";
 
 interface MceListForUserProps {
   userId: number;
+  itemClassName?: string;
 }
 
 export default function MceListForUser(props: MceListForUserProps) {
@@ -30,11 +31,11 @@ export default function MceListForUser(props: MceListForUserProps) {
     return (<div>Error: {error.message}</div>)
   }
   const items = data.map((item:any) => {
-    return <li key={item.id}>
+    return <p key={item.id} className={props.itemClassName}>
       {item.title}
-    </li>
+    </p>
   })
   return <>
-    <ul>{items}</ul>
+    {items}
   </>
 }

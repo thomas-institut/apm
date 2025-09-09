@@ -171,3 +171,20 @@ body {
 a.dropdown-item {
    font-size: var(--default-font-size);
 }
+
+
+/* Anchor List  */
+
+
+div.anchor-list-item {
+    padding: 0.25em 1em 0.25em 0.25em;
+    font-size: 0.9em;
+    color: grey;
+    cursor: pointer;
+    border-right: 1px solid var(--very-light-gray);
+}
+
+div.anchor-list-item.active {
+    border-right: 1px solid grey;
+    color: black;
+}

@@ -396,7 +396,9 @@ export class EditionComposer extends ApmPage {
       edition: this.edition,
       langDef: this.options.langDef,
       onEditionTypeset: (typesetEdition: any) => {
-        this.techSupportPanel.updateTypesetEdition(typesetEdition);
+        if (this.options.isTechSupport) {
+          this.techSupportPanel.updateTypesetEdition(typesetEdition);
+        }
       },
       getPdfDownloadUrl: this.genGetPdfDownloadUrlForPreviewPanel(),
       debug: true
@@ -614,7 +616,10 @@ export class EditionComposer extends ApmPage {
     // this.editionPreviewPanel.updateData(this.ctData, this.edition)
     await this.editionPreviewPanel.updateData(this.edition);
     this.witnessInfoPanel.updateCtData(this.ctData, updateWitnessInfo);
-    this.techSupportPanel.updateData(this.ctData, this.edition);
+    if (this.options.isTechSupport) {
+      this.techSupportPanel.updateData(this.ctData, this.edition);
+    }
+
   }
 
   genEditionWitnessTokenNormalizer() {

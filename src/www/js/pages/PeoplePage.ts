@@ -1,6 +1,6 @@
 
 import { NormalPage } from './NormalPage'
-import { Tid } from '../Tid/Tid'
+import { Tid } from '@/Tid/Tid'
 import { urlGen } from './common/SiteUrlGen'
 import { tr } from './common/SiteLang'
 import { ApmPage } from './ApmPage'

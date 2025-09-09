@@ -283,7 +283,7 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/user/create/${personId}`;
   }
 
-  apiUpdateProfile(personId: number) {
+  apiUserUpdateProfile(personId: number) {
     return `${this.apiBase}/user/${personId}/update`;
   }
 

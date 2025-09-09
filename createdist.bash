@@ -25,21 +25,30 @@
 #
 
 
-USAGE="USAGE: createdist <version> [--mac]"
+USAGE="USAGE: createdist <version> <base dir, e.g. '/apm' or ''> [--mac]"
 
-if (("$#" < 1)) ; then
+if (("$#" < 2)) ; then
    echo "$USAGE"
    exit
 fi
 
 VERSION=$1
-MAC=$2
+BASE_DIR=$2
+MAC=$3
+
+if [[ $BASE_DIR != /* ]]; then
+  echo "Error: base dir must start with '/' " >&2
+  exit 1
+fi
+
 TMP=/tmp
 DIST_NAME=apm-$VERSION
 DIST_DIR=dist
 CUR_DIR=$(pwd)
 TMP_DIR=$TMP/$DIST_NAME
 TAR_NAME=$DIST_NAME.tar.gz
+
+NPM_BUILD="cd src/www; npm run build --base=/dist$BASE_DIR;cd ../.."
 
 echo Creating $DIST_DIR/"$TAR_NAME"
 if [ -d "$TMP_DIR" ]
@@ -49,6 +58,8 @@ fi
 
 mkdir "$TMP_DIR" || exit
 
+echo Building JS for production with base dir "$BASE_DIR"
+eval "$NPM_BUILD"
 
 cp -R src/typesetting-service "$TMP_DIR"
 cp -R src/db "$TMP_DIR"

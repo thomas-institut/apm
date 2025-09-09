@@ -8,8 +8,8 @@
   "scripts": {
     "test": "vitest run test/js",
     "test-watch": "vitest",
-    "build": "vite build --base=/dist",
-    "build-production": "vite build --base=/apm/dist",
+    "build-dev": "vite build --base=/dist",
+    "build": "vite build",
     "dev": "vite",
     "gen-schema": "openapi-typescript ./schema/schema.yaml --root-types=true --properties-required-by-default=true -o ./schema/auto/auto-schema.d.ts"
   },

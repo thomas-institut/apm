@@ -57,30 +57,30 @@ class ApiUsers extends ApiController
      * @return Response
      * @throws UserNotFoundException
      */
-    public function updateUserProfile(Request $request, Response $response): Response
+    public function userUpdateProfile(Request $request, Response $response): Response
     {
         $profileUserTid =  (int) $request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserTid);
 
-        $newUserManager = $this->systemManager->getUserManager();
+        $userManager = $this->systemManager->getUserManager();
 
         if ($profileUserTid === $this->apiUserId) {
             $this->logger->info("User $profileUserTid is changing their own user profile");
         } else {
-            if (!$newUserManager->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
+            if (!$userManager->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
                 $this->logger->error("Api user $this->apiUserId not allowed to update user profile $profileUserTid");
                 return $this->responseWithStatus($response, HttpStatus::UNAUTHORIZED);
             }
             $this->logger->info("User $this->apiUserId is changing user profile $profileUserTid");
         }
 
-        $postData = $request->getParsedBody();
+        $postData = json_decode($request->getBody()->getContents(), true) ?? [];
         $email = trim($postData['email']) ?? '';
         $password1 = trim($postData['password1']) ?? '';
         $password2 = trim($postData['password2']) ?? '';
 
         try {
-            $userData = $newUserManager->getUserData($profileUserTid);
+            $userData = $userManager->getUserData($profileUserTid);
         } catch (UserNotFoundException) {
             $this->logger->error("User $profileUserTid not found");
             return $this->responseWithJson($response, [ 'errorMsg' => 'User not found' ], HttpStatus::NOT_FOUND);
@@ -91,7 +91,7 @@ class ApiUsers extends ApiController
         // update email address, if it's different from current one
         if ($email !== '' && $email !== $userData->emailAddress) {
             try {
-                $newUserManager->changeEmailAddress($profileUserTid, $email);
+                $userManager->changeEmailAddress($profileUserTid, $email);
                 $changesMade = true;
             } catch (InvalidEmailAddressException) {
                 $this->logger->error("Invalid email address '$email' updating user profile $profileUserTid");
@@ -109,7 +109,7 @@ class ApiUsers extends ApiController
 
         if ($password1 !== '') {
             try {
-                $newUserManager->changePassword($profileUserTid, $password1);
+                $userManager->changePassword($profileUserTid, $password1);
                 $changesMade = true;
             } catch (InvalidPasswordException) {
                 $this->logger->error("Invalid password updating user profile $profileUserTid");
@@ -132,7 +132,7 @@ class ApiUsers extends ApiController
      * @return Response
      * @throws UserNotFoundException
      */
-    public function createNewUser(Request $request, Response $response): Response
+    public function userCreate(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
@@ -160,19 +160,15 @@ class ApiUsers extends ApiController
             return $this->responseWithJson($response, [ 'info' => 'Person already a user' ], HttpStatus::SUCCESS);
         }
 
-        $postData = $request->getParsedBody();
+        $inputData = json_decode($request->getBody()->getContents(), true) ?? [];
 
-        $userName = trim($postData['username']) ?? '';
-        $requiredData = [
-            'username' => $userName,
-        ];
+        $userName = trim($inputData['userName']) ?? '';
 
-        foreach($requiredData as $key => $value) {
-            if ($value === '') {
-                $this->logger->error("No $key given for user creation");
-                return $this->responseWithJson($response, [ 'errorMsg' => "$key not given"], HttpStatus::BAD_REQUEST);
-            }
+        if ($userName === '') {
+            $this->logger->error("No username given for user creation");
+            return $this->responseWithJson($response, [ 'errorMsg' => 'Username not given' ], HttpStatus::BAD_REQUEST);
         }
+
 
         // attempt to create the user
         try {

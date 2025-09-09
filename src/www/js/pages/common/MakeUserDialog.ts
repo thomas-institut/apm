@@ -1,7 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
-import { ApmDataProxy } from './ApmDataProxy'
+import {ApmDataProxy, DataProxyError} from './ApmDataProxy';
 import { ApmPage } from '../ApmPage'
 import { wait } from '../../toolbox/wait'
 import {getStringVal} from "../../toolbox/UiToolBox";
@@ -75,9 +75,10 @@ export class MakeUserDialog {
             this.dialog.destroy();
             resolve(true)
           })
-        }).catch( (resp:any) => {
-          let status = resp.status ?? -1;
-          let errorMessage = resp.responseJSON.errorMsg ?? tr("Unknown error");
+        }).catch( (response:any ) => {
+          const resp = response as DataProxyError;
+          let status =resp.httpStatus;
+          let errorMessage = resp.data?.errorMsg ?? tr("Unknown error");
           this.infoDiv.html(`${tr('The server found an error')}: <b>(${status}) ${errorMessage}</b>`)
             .addClass('text-danger');
           this.dialog.showAcceptButton();

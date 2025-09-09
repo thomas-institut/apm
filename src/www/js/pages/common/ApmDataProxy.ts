@@ -51,6 +51,7 @@ export interface DataProxyError {
   errorType: 'http' | 'authentication' | 'method' | 'network' | 'other';
   httpStatus: number;
   message: string;
+  data?: any;
 }
 
 export interface PdfUrlResponse {
@@ -126,6 +127,21 @@ export class ApmDataProxy {
   }
 
   async getPersonEssentialData(personId: number): Promise<any> {
+    if (personId === 0) {
+      console.warn(`getPersonEssentialData called with personId 0`);
+      console.trace();
+      return {
+        name: '',
+        sortName: '',
+        birthDate: '',
+        deathDate: '',
+        birthPlace: '',
+        deathPlace: '',
+        biography: '',
+        image: '',
+        imageData: '',
+      };
+    }
     return await this.getApmEntityData('Person', 'essential', personId, 'local');
   }
 
@@ -291,8 +307,8 @@ export class ApmDataProxy {
     }, true);
   }
 
-  async updateUserProfile(userTid: number, email: string, password1: string, password2: string): Promise<any> {
-    return this.post(urlGen.apiUpdateProfile(userTid), {
+  async userUpdateProfile(userTid: number, email: string, password1: string, password2: string): Promise<any> {
+    return this.post(urlGen.apiUserUpdateProfile(userTid), {
       email: email, password1: password1, password2: password2
     }, true);
   }
@@ -306,13 +322,13 @@ export class ApmDataProxy {
     }
   }
 
-  async createUser(personTid: number, username: string): Promise<any> {
-    return this.post(urlGen.apiCreateUser(personTid), {
-      username: username,
+  async userCreate(personId: number, userName: string): Promise<any> {
+    return this.post(urlGen.apiCreateUser(personId), {
+      userName: userName,
     }, true);
   }
 
-  async createPerson(name: string, sortName: string): Promise<any> {
+  async personCreate(name: string, sortName: string): Promise<any> {
     return this.post(urlGen.apiPersonCreate(), {
       name: name, sortName: sortName
     }, true);
@@ -561,9 +577,7 @@ export class ApmDataProxy {
       return new Promise(async (resolve, reject: (e: DataProxyError) => void) => {
         if (['GET', 'POST'].indexOf(method) === -1) {
           reject({
-            errorType: 'method',
-            httpStatus: -1,
-            message: `Invalid method ${method} for URL ${url}`
+            errorType: 'method', httpStatus: -1, message: `Invalid method ${method} for URL ${url}`
           });
         }
         let fetchOptions: any = {method: method};
@@ -571,10 +585,8 @@ export class ApmDataProxy {
           const token = await this.getBearerToken();
           if (token === null) {
             reject({
-              errorType: 'authentication',
-              httpStatus: -1,
-              message: `No authentication token available`
-            })
+              errorType: 'authentication', httpStatus: -1, message: `No authentication token available`
+            });
             return;
           }
           fetchOptions['headers'] = {'Authorization': `Bearer ${token}`};
@@ -590,18 +602,30 @@ export class ApmDataProxy {
           return fetch(url, fetchOptions);
         };
 
-        fetchFunction().then((response) => {
+        fetchFunction().then(async (response) => {
+          const responseText = await response.text();
+          let responseData: any;
+          try {
+            responseData = JSON.parse(responseText);
+          } catch (e) {
+            // no valid json
+            responseData = null;
+          }
           if (response.status === 200) {
-            return response.json().then((data) => {
-              resolve(data);
-            });
+            if (responseData !== null) {
+              resolve(responseData);
+            } else {
+              resolve(responseText);
+            }
           } else {
             console.log(`Error fetching ${url}`, response);
+            const data = responseData ? responseData : {errorMsg: responseText};
             reject({
               errorType: 'http',
               httpStatus: response.status,
+              data: data,
               message: `Error ${response.status} fetching ${url}`
-            })
+            });
           }
         });
       });

@@ -351,8 +351,7 @@ export class WitnessInfoPanel extends Panel {
         this.convertingToEdition = true;
         try {
           const apiResponse = await this.apmDataProxy.collationTable_convertToEdition({
-            tableId: this.ctData.tableId,
-            initStrategy: 'topWitness'
+            tableId: this.ctData.tableId, initStrategy: 'topWitness'
           });
           resultSpan.html(`<b>Done!</b> The new edition is available <b><a href="${urlGen.siteChunkEdition(this.ctData.tableId)}">here</a></b>`);
           resultSpan.removeClass('text-warning')
@@ -870,21 +869,20 @@ export class WitnessInfoPanel extends Panel {
 
       let position = this.getWitnessPositionFromClasses(classes);
       let numWitnesses = this.ctData['witnesses'].length;
-      // console.log('Click move ' + direction + ' button on witness ' + index + ', position ' + position)
+      console.log('Click move ' + direction + ' button on witness, position ' + position);
 
-      // TODO: change this to proper handling of source witnesses
-      // the problem is that the collation table panel assumes that the collated witnesses are
-      // in the first positions, so for the time being don't allow them to move further down the table
+      const collatedWitnessPositions: number[] = [];
+      this.ctData.witnessOrder.forEach((pos, witnessIndex) => {
 
-
-      let firstPos = this.ctData['type'] === CollationTableType.COLLATION_TABLE ? 0 : 1;
-      let lastPos = firstPos;
-      for (let i = lastPos; i < numWitnesses - 1; i++) {
-        lastPos = i;
-        if (this.ctData['witnesses'][i]['witnessType'] === WitnessType.EDITION || this.ctData['witnesses'][i]['witnessType'] === WitnessType.SOURCE) {
-          break;
+        if (this.ctData.witnesses[witnessIndex].witnessType === 'fullTx') {
+          collatedWitnessPositions.push(pos);
         }
-      }
+      })
+      console.log('collatedWitnessPositions', collatedWitnessPositions);
+      let firstPos = Math.min(...collatedWitnessPositions);
+      let lastPos = Math.max(...collatedWitnessPositions);
+      console.log('firstPos', firstPos);
+      console.log('lastPos', lastPos);
 
       if (position > lastPos) {
         console.log(`Attempting to move a witness in position ${position}, past lastPost = ${lastPos}`);
@@ -1044,16 +1042,16 @@ export class WitnessInfoPanel extends Panel {
 
   private async genWitnessTableHtml(): Promise<string> {
     let witnessRows = '';
-    for (let i = 0; i < this.ctData['witnesses'].length; i++) {
-      let witnessIndex = this.ctData['witnessOrder'][i];
+    for (let i = 0; i < this.ctData.witnesses.length; i++) {
+      let witnessIndex = this.ctData.witnessOrder[i];
       let position = i;
-      let witness = this.ctData['witnesses'][witnessIndex];
-      let siglum = this.ctData['sigla'][witnessIndex];
-      let witnessTitle = this.ctData['witnessTitles'][witnessIndex];
+      let witness = this.ctData.witnesses[witnessIndex];
+      let siglum = this.ctData.sigla[witnessIndex];
+      let witnessTitle = this.ctData.witnessTitles[witnessIndex];
       let witnessClasses = ['witness-' + witnessIndex, 'witness-type-' + witness['witnessType'], 'witness-pos-' + position];
       let row = '';
 
-      switch (this.ctData['witnesses'][witnessIndex]['witnessType']) {
+      switch (this.ctData.witnesses[witnessIndex]['witnessType']) {
         case WitnessType.EDITION:
           break;
 
@@ -1079,7 +1077,7 @@ export class WitnessInfoPanel extends Panel {
           let docLink = urlGen.siteDocPage(await this.apmDataProxy.getRealDocId((witness.docId)));
           if (docLink !== '') {
             witnessTitle = `<a href="${docLink}" target="_blank" title="Click to open document page in a new tab">
-               ${this.ctData['witnessTitles'][witnessIndex]}</a>`;
+               ${this.ctData.witnessTitles[witnessIndex]}</a>`;
           }
           row = `<tr>
                 <td class="${witnessClasses.join(' ')} cte-witness-move-td">

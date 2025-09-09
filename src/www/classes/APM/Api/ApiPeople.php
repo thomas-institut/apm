@@ -239,17 +239,17 @@ class ApiPeople extends ApiController
     }
 
 
-    public function createNewPerson(Request $request, Response $response): Response {
+    public function personCreate(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
 
+        $inputData = json_decode($request->getBody()->getContents(), true);
+        $name = $inputData['name'] ?? '';
+        $sortName = $inputData['sortName'] ?? '';
 
-        $inputData = $this->checkAndGetInputData($request, $response, [ 'name', 'sortName'], true, true);
-        if (!is_array($inputData)) {
-            return $inputData;
+        if ($name === '' || $sortName === '') {
+            $this->logger->error("New Person: no name or sortName provided", [ 'apiUserId' => $this->apiUserId, 'inputData' => $inputData]);
+            return $this->responseWithJson($response, [ 'errorMsg' => 'No name or sortName provided' ], HttpStatus::BAD_REQUEST);
         }
-
-        $name = $inputData['name'];
-        $sortName = $inputData['sortName'];
 
         $pm = $this->systemManager->getPersonManager();
 

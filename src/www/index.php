@@ -516,7 +516,7 @@ function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $c
 
     $group->post('/person/create',
         function (Request $request, Response $response) use ($container) {
-            return (new ApiPeople($container))->createNewPerson($request, $response);
+            return (new ApiPeople($container))->personCreate($request, $response);
         })
         ->setName('api.person.create');
 }
@@ -528,13 +528,13 @@ function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $co
     // API -> user : update profile
     $group->post('/user/{userTid}/update',
         function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->updateUserProfile($request, $response);
+            return (new ApiUsers($container))->userUpdateProfile($request, $response);
         })
         ->setName('api.user.update');
 
     $group->post('/user/create/{personTid}',
         function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->createNewUser($request, $response);
+            return (new ApiUsers($container))->userCreate($request, $response);
         })
         ->setName('api.user.create');
 

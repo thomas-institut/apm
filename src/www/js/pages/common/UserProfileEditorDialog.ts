@@ -3,11 +3,20 @@ import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/wait'
-import {getStringVal} from "../../toolbox/UiToolBox";
+import { wait } from '@/toolbox/wait'
+import {getStringVal} from "@/toolbox/UiToolBox";
+
+interface UserProfileEditorDialogOptions {
+  personData: any;
+  userData: any;
+  canManageUsers: boolean;
+  successWaitTime: number;
+  apmDataProxy: ApmDataProxy;
+  debug?: boolean;
+}
 
 export class UserProfileEditorDialog {
-  private options: any;
+  private options: UserProfileEditorDialogOptions;
   private readonly debug: boolean;
   private dialog!: ConfirmDialog;
   private currentEmail: string = '';
@@ -16,7 +25,7 @@ export class UserProfileEditorDialog {
   private inputPassword2!: JQuery<HTMLElement>;
   private infoDiv!: JQuery<HTMLElement>;
 
-  constructor (options: any) {
+  constructor (options: UserProfileEditorDialogOptions) {
     let oc = new OptionsChecker({
       context: 'UserProfileEditor',
       optionsDefinition: {
@@ -30,7 +39,7 @@ export class UserProfileEditorDialog {
     })
 
     this.options = oc.getCleanOptions(options);
-    this.debug = this.options.debug;
+    this.debug = this.options.debug ?? false;
 
 
   }
@@ -82,7 +91,7 @@ export class UserProfileEditorDialog {
         this.dialog.hideCancelButton();
         let loadingMessage = tr('Saving profile');
         this.infoDiv.html(ApmPage.genLoadingMessageHtml(loadingMessage)).removeClass('text-danger');
-        this.options.apmDataProxy.updateUserProfile(id, email, password1, password2).then( () => {
+        this.options.apmDataProxy.userUpdateProfile(id, email, password1, password2).then( () => {
           this.infoDiv.html(tr('Profile successfully updated'));
           wait(this.options.successWaitTime).then( () => {
             this.dialog.hide();

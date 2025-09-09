@@ -16,24 +16,24 @@
  *  
  */
 
-import { AutomaticCollationTableSettingsForm } from './common/AutoCollTableSettingsForm'
-import {OptionsChecker} from '@thomas-inst/optionschecker'
-import * as WitnessType from '../Witness/WitnessType'
+import {AutomaticCollationTableSettingsForm} from './common/AutoCollTableSettingsForm';
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import * as WitnessType from '../Witness/WitnessType';
 
-import {CollapseToggleButton} from '@/widgets/CollapseToggleButton'
-import { ConfirmDialog } from './common/ConfirmDialog'
-import { urlGen } from './common/SiteUrlGen'
-import { ApmFormats } from './common/ApmFormats'
-import { TimeString } from '@/toolbox/TimeString'
-import { tr } from './common/SiteLang'
-import { HeaderAndContentPage } from './HeaderAndContentPage'
-import { Tid } from '@/Tid/Tid'
+import {CollapseToggleButton} from '@/widgets/CollapseToggleButton';
+import {ConfirmDialog} from './common/ConfirmDialog';
+import {urlGen} from './common/SiteUrlGen';
+import {ApmFormats} from './common/ApmFormats';
+import {TimeString} from '@/toolbox/TimeString';
+import {tr} from './common/SiteLang';
+import {HeaderAndContentPage} from './HeaderAndContentPage';
+import {Tid} from '@/Tid/Tid';
 import DataTable from 'datatables.net-dt';
 
-const convertToEditionIcon = '<i class="fas fa-file-alt"></i>'
-const showWitnessInfoIcon = '<i class="fas fa-cogs"></i>'
+const convertToEditionIcon = '<i class="fas fa-file-alt"></i>';
+const showWitnessInfoIcon = '<i class="fas fa-cogs"></i>';
 
-const convertToEditionLinkClass =  'cte-link'
+const convertToEditionLinkClass = 'cte-link';
 
 /**
  * Mini JS app running in the Chunk Page
@@ -56,8 +56,7 @@ export class ChunkPage extends HeaderAndContentPage {
   constructor(options: any) {
     super(options);
     let optionsChecker = new OptionsChecker({
-      context: 'ChunkPage',
-      optionsDefinition: {
+      context: 'ChunkPage', optionsDefinition: {
         workId: {required: true, type: 'string'},
         chunkNumber: {required: true, type: 'NumberGreaterThanZero'},
         showAdminInfo: {type: 'boolean', default: false},
@@ -67,7 +66,7 @@ export class ChunkPage extends HeaderAndContentPage {
         validChunks: {type: 'Array', default: []},
         savedCollationTables: {type: 'Array', default: []}
       }
-    })
+    });
     this.options = optionsChecker.getCleanOptions(options);
     console.log('Chunk Page options');
     console.log(this.options);
@@ -77,25 +76,17 @@ export class ChunkPage extends HeaderAndContentPage {
     this.witnessTypeLabels[WitnessType.FULL_TX] = tr('Full Transcription');
 
 
-    this.invalidErrorCodes = [
-      '',
-      tr('Chunk start not defined'),
-      tr('Chunk end not defined'),
-      tr('Chunk start after chunk end'),
-      tr('Duplicate chunk start marks'),
-      tr('Duplicate chunk end marks')
-    ]
+    this.invalidErrorCodes = ['', tr('Chunk start not defined'), tr('Chunk end not defined'), tr('Chunk start after chunk end'), tr('Duplicate chunk start marks'), tr('Duplicate chunk end marks')];
 
     // // shortcuts to options
 
-    this.getPresetsUrl = urlGen.apiGetAutomaticCollationPresets()
-    this.witnessesByLang = {}
+    this.getPresetsUrl = urlGen.apiGetAutomaticCollationPresets();
+    this.witnessesByLang = {};
 
 
-
-    this.initPage().then( () => {
-      console.log(`ChunkPage initialized`)
-    })
+    this.initPage().then(() => {
+      console.log(`ChunkPage initialized`);
+    });
   }
 
   async initPage() {
@@ -104,13 +95,13 @@ export class ChunkPage extends HeaderAndContentPage {
     console.log(`ChunkPage: initPage`);
 
     // selectors and classes
-    this.ctLinksElement = $('#collationtablelinks')
-    this.chunkIdDiv = $('#chunkid')
-    this.witnessListNewDiv = $('#witnessListNew')
-    this.witnessPanelsDiv = $('#witnesspanels')
-    this.headerDiv = $('#chunkpageheader')
-    this.savedCollationTablesDiv = $('#savedcollationtables')
-    this.editionsDiv = $('#editions')
+    this.ctLinksElement = $('#collationtablelinks');
+    this.chunkIdDiv = $('#chunkid');
+    this.witnessListNewDiv = $('#witnessListNew');
+    this.witnessPanelsDiv = $('#witnesspanels');
+    this.headerDiv = $('#chunkpageheader');
+    this.savedCollationTablesDiv = $('#savedcollationtables');
+    this.editionsDiv = $('#editions');
 
     this.workData = await this.apmDataProxy.getWorkData(this.options.workId);
     console.log(`WorkData from server`, this.workData);
@@ -120,45 +111,41 @@ export class ChunkPage extends HeaderAndContentPage {
 
     this.witnessListNewDiv.html(await this.generateWitnessListNew());
 
-    this.options.witnessInfo.forEach( (info:any, i:number) => {
-      $(`.${convertToEditionLinkClass}-${i}`).on('click', this.genOnClickConvertToEditionButton(i, info))
+    this.options.witnessInfo.forEach((info: any, i: number) => {
+      $(`.${convertToEditionLinkClass}-${i}`).on('click', this.genOnClickConvertToEditionButton(i, info));
     });
-    new DataTable("#witnessTableNew",{
-      paging: false,
-      searching : false,
-      info: false,
-      columns : [
-        {}, //title
+    new DataTable("#witnessTableNew", {
+      paging: false, searching: false, info: false, columns: [{}, //title
         {}, // witness type
         {}, //doctype
         {}, // language
-        { orderable: false}, //pages
-        { orderable: false}, // info
-        { orderable: false}, // actions
-        { orderable: false} // admin
+        {orderable: false}, //pages
+        {orderable: false}, // info
+        {orderable: false}, // actions
+        {orderable: false} // admin
       ]
     });
 
     // build witness data by language
-    this.witnessesByLang = {}
+    this.witnessesByLang = {};
     for (const w in this.options.witnessInfo) {
-      if (!this.options.witnessInfo.hasOwnProperty(w)){
-        continue
+      if (!this.options.witnessInfo.hasOwnProperty(w)) {
+        continue;
       }
-      let witnessInfo = this.options.witnessInfo[w]
-      if (witnessInfo.type !==WitnessType.FULL_TX) {
+      let witnessInfo = this.options.witnessInfo[w];
+      if (witnessInfo.type !== WitnessType.FULL_TX) {
         // TODO: support other witness types!
-        continue
+        continue;
       }
       let fullTxInfo = witnessInfo["typeSpecificInfo"];
-      let title = fullTxInfo.docInfo.title
-      let lwid = fullTxInfo["localWitnessId"]
+      let title = fullTxInfo.docInfo.title;
+      let lwid = fullTxInfo["localWitnessId"];
       if (lwid !== 'A') {
-        title += ' (' + lwid + ')'
+        title += ' (' + lwid + ')';
       }
-      let witness = witnessInfo
-      witness.index = parseInt(w)
-      witness.title = title
+      let witness = witnessInfo;
+      witness.index = parseInt(w);
+      witness.title = title;
       // let witness = {
       //   index:  parseInt(w),
       //   type: witnessInfo.type,
@@ -169,61 +156,60 @@ export class ChunkPage extends HeaderAndContentPage {
       // }
       if (witnessInfo.isValid) {
         if (this.witnessesByLang[witnessInfo['languageCode']] === undefined) {
-          this.witnessesByLang[witnessInfo['languageCode']] = []
+          this.witnessesByLang[witnessInfo['languageCode']] = [];
         }
-        this.witnessesByLang[witnessInfo['languageCode']].push(witness)
-        new CollapseToggleButton($('#texttoggle-' + witness.systemId), $('#text-' + witness.systemId))
+        this.witnessesByLang[witnessInfo['languageCode']].push(witness);
+        new CollapseToggleButton($('#texttoggle-' + witness.systemId), $('#text-' + witness.systemId));
       }
     }
     console.log('Witnesses by lang');
     console.log(this.witnessesByLang);
 
 
+    this.savedCollationTablesDiv.html(await this.genSavedCollationTablesDivHtml('ctable'));
+    this.editionsDiv.html(await this.genSavedCollationTablesDivHtml('edition'));
 
-    this.savedCollationTablesDiv.html(await this.genSavedCollationTablesDivHtml('ctable'))
-    this.editionsDiv.html(await this.genSavedCollationTablesDivHtml('edition'))
 
+    this.updateCollationTableLinks();
 
-    this.updateCollationTableLinks()
-
-    this.witnessPanelsDiv.html(this.generateWitnessPanelHtml())
+    this.witnessPanelsDiv.html(this.generateWitnessPanelHtml());
 
 
     // load good witnesses into panels
 
     for (const w in this.options.witnessInfo) {
       if (!this.options.witnessInfo.hasOwnProperty(w)) {
-        continue
+        continue;
       }
-      let witnessInfo = this.options.witnessInfo[w]
+      let witnessInfo = this.options.witnessInfo[w];
       if (!witnessInfo.isValid) {
-        continue
+        continue;
       }
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          let witnessUrl = urlGen.apiWitnessGet(witnessInfo.systemId, 'html')
-          console.log('Loading witness ' + witnessInfo.systemId)
-          let formattedSelector = '#formatted-' + witnessInfo.systemId
+          let witnessUrl = urlGen.apiWitnessGet(witnessInfo.systemId, 'html');
+          console.log('Loading witness ' + witnessInfo.systemId);
+          let formattedSelector = '#formatted-' + witnessInfo.systemId;
           $(formattedSelector).html('Loading text, this might take a while <i class="fas fa-spinner fa-spin fa-fw"></i> ...');
           // TODO: change this to ApmDataProxy
           $.get(witnessUrl)
-            .done(function(data){
-              console.log('Got data for fullTx witness ' + witnessInfo.systemId)
-              $(formattedSelector).html(data)
-            })
-            .fail(function (resp){
-              console.log('Error getting data for fullTx witness ' + witnessInfo.systemId)
-              console.log(resp)
-              $(formattedSelector).html('Error loading text')
-            })
-          break
+          .done(function (data) {
+            console.log('Got data for fullTx witness ' + witnessInfo.systemId);
+            $(formattedSelector).html(data);
+          })
+          .fail(function (resp) {
+            console.log('Error getting data for fullTx witness ' + witnessInfo.systemId);
+            console.log(resp);
+            $(formattedSelector).html('Error loading text');
+          });
+          break;
 
         case WitnessType.PARTIAL_TX:
-          console.log('Partial TX witness not supported yet!')
-          break
+          console.log('Partial TX witness not supported yet!');
+          break;
 
         default:
-          console.warn('Unsupported witness type: ' + witnessInfo.type)
+          console.warn('Unsupported witness type: ' + witnessInfo.type);
       }
     }
 
@@ -236,20 +222,22 @@ export class ChunkPage extends HeaderAndContentPage {
       delay: {show: 500, hide: 0},
       placement: 'auto',
       sanitize: false
-    })
+    });
 
   }
 
   async getHeaderHtml() {
-    let breadcrumbHtml = this.getBreadcrumbNavHtml([
-      { label: tr('Works'), url:  urlGen.siteWorks()},
-      { label: this.options.workId, url: urlGen.siteWorkPage(this.options.workId)},
-      { label: `Chunk ${this.options.chunkNumber}`, active: true}
-    ])
-    return `${breadcrumbHtml} <div id="chunkpageheader"></div>`
+    let breadcrumbHtml = this.getBreadcrumbNavHtml([{
+      label: tr('Works'),
+      url: urlGen.siteWorks()
+    }, {
+      label: this.options.workId,
+      url: urlGen.siteWorkPage(this.options.workId)
+    }, {label: `Chunk ${this.options.chunkNumber}`, active: true}]);
+    return `${breadcrumbHtml} <div id="chunkpageheader"></div>`;
   }
 
-  async genContentHtml () {
+  async genContentHtml() {
     return `
     <div id="chunkid"></div>
     <div id="witnessListNew"></div>
@@ -257,14 +245,14 @@ export class ChunkPage extends HeaderAndContentPage {
     <div id="savedcollationtables" class="collationtablelinks"></div>
     <h4 id="ctlinks-header" class="hidden">${tr('Automatic Collation Tables')}</h4>
     <div id="collationtablelinks" class="collationtablelinks">  </div>
-    <div id="witnesspanels"></div>`
+    <div id="witnesspanels"></div>`;
   }
 
-  genOnClickConvertToEditionButton(index: number, info:any) {
+  genOnClickConvertToEditionButton(index: number, info: any) {
     return (ev: any) => {
-      ev.preventDefault()
-      console.log(`Click on link for witness ${index}. Witness Id = ${info.systemId}`)
-      console.log(info)
+      ev.preventDefault();
+      console.log(`Click on link for witness ${index}. Witness Id = ${info.systemId}`);
+      console.log(info);
 
       let confirmDialog = new ConfirmDialog({
         body: `
@@ -274,154 +262,150 @@ export class ChunkPage extends HeaderAndContentPage {
         acceptButtonLabel: 'Create',
         hideOnAccept: false,
         cancelButtonLabel: 'Cancel',
-        acceptFunction: (id: any, dialogObject:any) => {
-          $.get(
-            urlGen.apiWitnessToEdition(info.systemId)
-          ).done( function (apiResponse){
-            console.log("Success")
-            let tableUrl = urlGen.siteCollationTableEdit(apiResponse.tableId)
-            dialogObject.setTitle('Success')
+        acceptFunction: (id: any, dialogObject: any) => {
+          $.get(urlGen.apiWitnessToEdition(info.systemId)).done(function (apiResponse) {
+            console.log("Success");
+            let tableUrl = urlGen.siteCollationTableEdit(apiResponse.tableId);
+            dialogObject.setTitle('Success');
             dialogObject.setBody(`
 <p>The edition with witness ${info.title} was successfully created.<p><p>Click <a href="${tableUrl}" target="_blank" >here to open it on a new tab</a></p>
 <p>You can also close this window and find a link to the new edition under the 'Chunk Editions' section.</p>
-`)
-            dialogObject.hideAcceptButton()
-            dialogObject.setCancelButtonText(`Close and Refresh Page`)
-            dialogObject.editionCreated = true
-            console.log(apiResponse)
-          }).fail(function(resp){
-            dialogObject.setBody(`ERROR: Cannot create edition, please report to developers`)
-            console.error("Cannot create edition")
-            console.log(resp)
-          })
+`);
+            dialogObject.hideAcceptButton();
+            dialogObject.setCancelButtonText(`Close and Refresh Page`);
+            dialogObject.editionCreated = true;
+            console.log(apiResponse);
+          }).fail(function (resp) {
+            dialogObject.setBody(`ERROR: Cannot create edition, please report to developers`);
+            console.error("Cannot create edition");
+            console.log(resp);
+          });
         },
-        cancelFunction: (id:any, dialogObject:any) => {
+        cancelFunction: (id: any, dialogObject: any) => {
           if (dialogObject.editionCreated) {
-            console.log(`Cancel WITH edition created`)
-            window.location.reload()
+            console.log(`Cancel WITH edition created`);
+            window.location.reload();
           }
         }
-      })
+      });
       // @ts-ignore
       // TODO: fix this, cannot rely on adding a new member to the ConfirmDialog class
-      confirmDialog.editionCreated = false
-      confirmDialog.show()
-    }
+      confirmDialog.editionCreated = false;
+      confirmDialog.show();
+    };
   }
 
-  async genSavedCollationTablesDivHtml(type:string): Promise<string> {
-    let html = ''
+  async genSavedCollationTablesDivHtml(type: string): Promise<string> {
+    let html = '';
 
     const titles = {
-      ctable : tr('Saved Collation Tables'),
-      edition : tr('Chunk Editions')
-    }
+      ctable: tr('Saved Collation Tables'), edition: tr('Chunk Editions')
+    };
 
-    let tables = this.options.savedCollationTables.filter( (savedCt: { type: any }) => savedCt.type === type)
+    let tables = this.options.savedCollationTables.filter((savedCt: { type: any }) => savedCt.type === type);
 
     if (tables.length !== 0) {
       // @ts-ignore
       // TODO: try to fix this, how can I index titles with a string in TS?
-      html += `<h4>${titles[type]}</h4>`
-      html += '<ul>'
-      for(const ctInfo of tables) {
-         console.log(`Processing ctInfo`, ctInfo);
-        let url = type === 'edition' ? urlGen.siteChunkEdition(ctInfo['tableId'])
-          : urlGen.siteCollationTableEdit(ctInfo['tableId']);
-        html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] +
-          '</a>, <small>last change: ' + ApmFormats.timeString(ctInfo['lastSave']) +
-          ' by ' + await this.getAuthorLink(ctInfo['authorTid']) + '</small></li>'
+      html += `<h4>${titles[type]}</h4>`;
+      html += '<ul>';
+      for (const ctInfo of tables) {
+        console.log(`Processing ctInfo`, ctInfo);
+        let url = type === 'edition' ? urlGen.siteChunkEdition(ctInfo['tableId']) : urlGen.siteCollationTableEdit(ctInfo['tableId']);
+        html += '<li class="smallpadding"><a title="Open in new tab/window" target="_blank" href="' + url + '">' + ctInfo['title'] + '</a>, <small>last change: ' + ApmFormats.timeString(ctInfo['lastSave']) + ' by ' + await this.getAuthorLink(ctInfo['authorTid']) + '</small></li>';
       }
-      html += '</ul>'
+      html += '</ul>';
 
     }
-    return html
+    return html;
   }
 
-  getPreviousChunk(chunk:any, validChunks:any) {
-    let index = validChunks.findIndex(function(c:any) { return c===chunk })
-    if (index===0) {
+  getPreviousChunk(chunk: any, validChunks: any) {
+    let index = validChunks.findIndex(function (c: any) {
+      return c === chunk;
+    });
+    if (index === 0) {
       return -1;
     }
-    return validChunks[index-1]
+    return validChunks[index - 1];
   }
 
-  getNextChunk(chunk:any, validChunks:any) {
-    let index = validChunks.findIndex(function(c:any) { return c===chunk })
-    if (index===(validChunks.length-1)) {
+  getNextChunk(chunk: any, validChunks: any) {
+    let index = validChunks.findIndex(function (c: any) {
+      return c === chunk;
+    });
+    if (index === (validChunks.length - 1)) {
       return -1;
     }
-    return validChunks[index+1]
+    return validChunks[index + 1];
   }
 
   generateHeaderDivHtml() {
-    let html = ''
-    let arrowLeft = '<i class="fas fa-angle-left"></i>'
-    let arrowRight = '<i class="fas fa-angle-right"></i>'
+    let html = '';
+    let arrowLeft = '<i class="fas fa-angle-left"></i>';
+    let arrowRight = '<i class="fas fa-angle-right"></i>';
 
-    html += '<div class="row row-no-gutters">'
+    html += '<div class="row row-no-gutters">';
 
-    html += '<div class="col-md-11 cpheader">'
+    html += '<div class="col-md-11 cpheader">';
     //let url = this.pathFor.siteChunkPage(this.options.workId, this.options.chunkNumber-1)
 
-    let prevChunk = this.getPreviousChunk(this.options.chunkNumber, this.options.validChunks)
+    let prevChunk = this.getPreviousChunk(this.options.chunkNumber, this.options.validChunks);
     if (prevChunk !== -1) {
-      let url = urlGen.siteChunkPage(this.options.workId, prevChunk)
-      html += '<a role="button" class="btn-default" title="Go to chunk ' + prevChunk + '" href="' + url +
-        '">'+ arrowLeft + '</a>'
-      html += '&nbsp;&nbsp;'
+      let url = urlGen.siteChunkPage(this.options.workId, prevChunk);
+      html += '<a role="button" class="btn-default" title="Go to chunk ' + prevChunk + '" href="' + url + '">' + arrowLeft + '</a>';
+      html += '&nbsp;&nbsp;';
     }
     html += `<a href="${urlGen.sitePerson(Tid.toBase36String(this.authorInfo.tid))}">${this.authorInfo.name}</a>, 
         <em><a href="${urlGen.siteWorkPage(this.workData.workId)}">${this.workData.title}</a></em>, chunk ${this.options.chunkNumber}`;
 
-    html += '</div>'
+    html += '</div>';
 
-    html += '<div class="col-md1 cpheader justifyright">'
-    let nextChunk = this.getNextChunk(this.options.chunkNumber, this.options.validChunks)
+    html += '<div class="col-md1 cpheader justifyright">';
+    let nextChunk = this.getNextChunk(this.options.chunkNumber, this.options.validChunks);
     if (nextChunk !== -1) {
-      let url = urlGen.siteChunkPage(this.options.workId, nextChunk)
-      html += '<a role="button" class="btn-default" title="Go to chunk ' + nextChunk + '" href="' + url +
-        '">'+ arrowRight + '</a>'
+      let url = urlGen.siteChunkPage(this.options.workId, nextChunk);
+      html += '<a role="button" class="btn-default" title="Go to chunk ' + nextChunk + '" href="' + url + '">' + arrowRight + '</a>';
     }
-    html += '</div>'
+    html += '</div>';
 
-    html += '</div>'
-    return html
+    html += '</div>';
+    return html;
   }
 
   generateWitnessPanelHtml() {
-    let html = ''
+    let html = '';
     for (const w in this.options.witnessInfo) {
       if (!this.options.witnessInfo.hasOwnProperty(w)) {
-        continue
+        continue;
       }
-      let witnessInfo = this.options.witnessInfo[w]
+      let witnessInfo = this.options.witnessInfo[w];
       if (!witnessInfo.isValid) {
-        continue
+        continue;
       }
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
-          let localWitnessId = witnessInfo["typeSpecificInfo"].localWitnessId
-          let title =  witnessInfo["typeSpecificInfo"].docInfo.title
+          let localWitnessId = witnessInfo["typeSpecificInfo"].localWitnessId;
+          let title = witnessInfo["typeSpecificInfo"].docInfo.title;
           if (localWitnessId !== 'A') {
-            title += ' (' + localWitnessId + ')'
+            title += ' (' + localWitnessId + ')';
           }
           html += this.getWitnessCard(witnessInfo.systemId, title, witnessInfo['languageCode']);
-          break
+          break;
       }
     }
-    return html
+    return html;
   }
 
   /**
-   * 
+   *
    * @param {string}witnessSystemId
    * @param {string}title
    * @param {string}lang
    * @return {string}
    * @private
    */
-  getWitnessCard(witnessSystemId : string, title:string, lang:string): string {
+  getWitnessCard(witnessSystemId: string, title: string, lang: string): string {
     return `<div class="card witness-card">
       <div class="card-header">
       <p>${title} &nbsp;&nbsp;&nbsp; <a role="button" title="Click to show/hide text" data-toggle="collapse" 
@@ -434,7 +418,7 @@ export class ChunkPage extends HeaderAndContentPage {
       <p class="formattedchunktext text-${lang}" id="formatted-${witnessSystemId}"></p>
       </div>
       </div>
-      </div>`
+      </div>`;
   }
 
   async generateWitnessListNew() {
@@ -449,63 +433,62 @@ export class ChunkPage extends HeaderAndContentPage {
             <th></th>
             <th></th>
         </tr>
-        </thead>`
+        </thead>`;
 
-    for(const i in this.options.witnessInfo) {
+    for (const i in this.options.witnessInfo) {
       if (!this.options.witnessInfo.hasOwnProperty(i)) {
-        continue
+        continue;
       }
-      let witnessInfo = this.options.witnessInfo[i]
-      html += '<tr>'
-      let docInfo = witnessInfo["typeSpecificInfo"].docInfo
-      let lwid = witnessInfo['typeSpecificInfo'].localWitnessId
-      html += '<td>' + this.getDocLink(docInfo)
+      let witnessInfo = this.options.witnessInfo[i];
+      html += '<tr>';
+      let docInfo = witnessInfo["typeSpecificInfo"].docInfo;
+      let lwid = witnessInfo['typeSpecificInfo'].localWitnessId;
+      html += '<td>' + this.getDocLink(docInfo);
       if (lwid !== 'A') {
-        html += ' (' + lwid + ')'
+        html += ' (' + lwid + ')';
       }
-      html += '</td>'
+      html += '</td>';
       html += '<td>' + this.witnessTypeLabels[witnessInfo['type']] + '</td>';
       html += '<td>' + (await this.apmDataProxy.getEntityName(docInfo['type'])) + '</td>';
       html += '<td>' + (await this.apmDataProxy.getEntityName(witnessInfo['language'])) + '</td>';
-      let info:any = ''
+      let info: any = '';
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
           info = await this.genFullTxInfo(witnessInfo, parseInt(i));
-          break
+          break;
 
         case WitnessType.PARTIAL_TX:
-          info = { 'location' : 'tbd', 'essential': 'based on TBD', 'actions': '', 'admin' : ''}
-          break
+          info = {'location': 'tbd', 'essential': 'based on TBD', 'actions': '', 'admin': ''};
+          break;
 
         default:
-          info = 'Unknown witness type'
+          info = 'Unknown witness type';
       }
-      html += '<td>'+ info['location'] + '</td>'
-      html += '<td>'+ info['essential'] + '</td>'
-      html += '<td>'+ info['actions'] + '</td>'
+      html += '<td>' + info['location'] + '</td>';
+      html += '<td>' + info['essential'] + '</td>';
+      html += '<td>' + info['actions'] + '</td>';
       if (this.options.showAdminInfo) {
-        html += '<td>'+ info['admin'] + '</td>'
-      }
-      else {
-        html += '<td></td>'
+        html += '<td>' + info['admin'] + '</td>';
+      } else {
+        html += '<td></td>';
       }
 
-      html += '</tr>'
+      html += '</tr>';
     }
 
-    return html
+    return html;
   }
 
-  async genFullTxInfo(witnessInfo:any, index:number) {
+  async genFullTxInfo(witnessInfo: any, index: number) {
 
-    let info:any = []
-    let docInfo = witnessInfo["typeSpecificInfo"].docInfo
-    let segments = witnessInfo["typeSpecificInfo"]["segments"]
+    let info: any = [];
+    let docInfo = witnessInfo["typeSpecificInfo"].docInfo;
+    let segments = witnessInfo["typeSpecificInfo"]["segments"];
 
-    let segmentHtmlArray = []
-    for(const s in segments) {
+    let segmentHtmlArray = [];
+    for (const s in segments) {
       if (!segments.hasOwnProperty(s)) {
-        continue
+        continue;
       }
       if (segments[s] === undefined) {
         console.warn(`Segment ${s} is undefined`);
@@ -514,50 +497,52 @@ export class ChunkPage extends HeaderAndContentPage {
         console.warn(`Segment ${s} start is undefined`, segments[s]);
         segmentHtmlArray.push(`Undefined segment ${s}`);
       } else {
-        let segmenthtml = this.genPageLink(docInfo.id, segments[s].start.pageId, segments[s].start.columnNumber)
-        if (segments[s].start.pageId !==segments[s].end.pageId ) {
-          segmenthtml +=  '&ndash;' +
-            this.genPageLink(docInfo.id, segments[s].end.pageId, segments[s].end.columnNumber)
+        let segmenthtml = this.genPageLink(docInfo.id, segments[s].start.pageId, segments[s].start.columnNumber);
+        if (segments[s].start.pageId !== segments[s].end.pageId) {
+          segmenthtml += '&ndash;' + this.genPageLink(docInfo.id, segments[s].end.pageId, segments[s].end.columnNumber);
         }
-        segmentHtmlArray.push(segmenthtml)
+        segmentHtmlArray.push(segmenthtml);
       }
     }
-    info['location'] = segmentHtmlArray.join(', ')
+    info['location'] = segmentHtmlArray.join(', ');
 
-    let lastVersion = witnessInfo['typeSpecificInfo'].lastVersion
+    let lastVersion = witnessInfo['typeSpecificInfo'].lastVersion;
     if (witnessInfo.isValid) {
-      info['essential'] = '<small>Last change: ' + ApmFormats.time(TimeString.toDate(lastVersion['timeFrom'])) + ' by ' + await this.getAuthorLink(lastVersion.authorTid) + '</small>'
+      info['essential'] = '<small>Last change: ' + ApmFormats.time(TimeString.toDate(lastVersion['timeFrom'])) + ' by ' + await this.getAuthorLink(lastVersion.authorTid) + '</small>';
     } else {
-      let errorMsg = this.invalidErrorCodes[witnessInfo.errorCode]
+      let errorMsg = this.invalidErrorCodes[witnessInfo.errorCode];
       if (errorMsg === undefined) {
-        errorMsg = 'Error code ' + witnessInfo.errorCode
+        errorMsg = 'Error code ' + witnessInfo.errorCode;
       }
-      info['essential'] = '<i class="fas fa-exclamation-triangle"></i> ' + errorMsg
+      info['essential'] = '<i class="fas fa-exclamation-triangle"></i> ' + errorMsg;
     }
 
-     if (witnessInfo.isValid) {
-       info['actions'] = `<a href="" class="${convertToEditionLinkClass} ${convertToEditionLinkClass}-${index}" 
-title="Click to create edition with only this witness">${convertToEditionIcon}</a>`
-       info['admin'] = `<a href="${urlGen.apiWitnessGet(witnessInfo.systemId, 'full')}" 
-       title="Show witness details for witness ${witnessInfo.systemId}" target="_blank">${showWitnessInfoIcon}</a>`
-     } else {
-       info['actions'] = ''
-       info['admin'] = ''
-     }
-    return info
+    if (witnessInfo.isValid) {
+      info['actions'] = `<a href="" class="${convertToEditionLinkClass} ${convertToEditionLinkClass}-${index}" 
+title="Click to create edition with only this witness">${convertToEditionIcon}</a>`;
+      info['admin'] = `<a href="${urlGen.apiWitnessGet(witnessInfo.systemId, 'full')}" 
+       title="Show witness details for witness ${witnessInfo.systemId}" target="_blank">${showWitnessInfoIcon}</a>`;
+    } else {
+      info['actions'] = '';
+      info['admin'] = '';
+    }
+    return info;
   }
 
   async getAuthorLink(authorId: number) {
+    if (authorId === 0) {
+      return 'Author not set';
+    }
     let userData = await this.apmDataProxy.getPersonEssentialData(authorId);
     return `<a href="${urlGen.sitePerson(Tid.toBase36String(userData.tid))}" 
-    title="${tr('View person data')}" target="_blank">${userData.name}</a>`
+    title="${tr('View person data')}" target="_blank">${userData.name}</a>`;
   }
 
   genPageLink(docId: any, pageId: number, column: any) {
     if (pageId === 0) {
-      return '???'
+      return '???';
     }
-    let pia = this.options.pageInfo.filter( (r: { pageId: number }) => r.pageId === pageId);
+    let pia = this.options.pageInfo.filter((r: { pageId: number }) => r.pageId === pageId);
     let pageInfo = null;
     if (pia.length !== 0) {
       pageInfo = pia[0];
@@ -571,231 +556,223 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
       foliation = '';
       sequence = 0;
     } else {
-      numColumns =pageInfo.numCols
-      foliation = pageInfo.foliation
-      sequence = pageInfo.sequence
+      numColumns = pageInfo.numCols;
+      foliation = pageInfo.foliation;
+      sequence = pageInfo.sequence;
     }
 
 
-    let label = foliation
+    let label = foliation;
     if (numColumns > 1) {
-      label += ' c' + column
+      label += ' c' + column;
     }
-    let url = urlGen.sitePageView(docId, sequence , column)
+    let url = urlGen.sitePageView(docId, sequence, column);
 
-    return '<a href="' + url + '" title="View page ' + foliation + ' col ' + column + ' in new tab" target="_blank">' + label + '</a>'
+    return '<a href="' + url + '" title="View page ' + foliation + ' col ' + column + ' in new tab" target="_blank">' + label + '</a>';
   }
 
   getDocLink(docInfo: { id: string; title: string }) {
-    return '<a href="' + urlGen.siteDocPage(docInfo.id) + '" title="View document page" target="_blank">' +
-      docInfo.title + '</a>'
+    return '<a href="' + urlGen.siteDocPage(docInfo.id) + '" title="View document page" target="_blank">' + docInfo.title + '</a>';
   }
 
   generateChunkIdDivHtml() {
-    let html = ''
+    let html = '';
 
-    let numWitnesses = this.options.witnessInfo.length
-    let numValidWitnesses = this.calculateTotalValidWitnesses()
-    html += '<p>'
-    html += '<b>Chunk ID:</b> ' + this.workData.workId + '-' + this.options.chunkNumber
-    html += '<br/>'
+    let numWitnesses = this.options.witnessInfo.length;
+    let numValidWitnesses = this.calculateTotalValidWitnesses();
+    html += '<p>';
+    html += '<b>Chunk ID:</b> ' + this.workData.workId + '-' + this.options.chunkNumber;
+    html += '<br/>';
     if (numWitnesses === 0) {
-      html += '<b>Witnesses:</b> none'
+      html += '<b>Witnesses:</b> none';
     } else {
-      html += '<b>Witnesses:</b> ' + numWitnesses + ' total, '
-      html += (numValidWitnesses === numWitnesses ? ' all ' : numValidWitnesses ) + ' valid'
+      html += '<b>Witnesses:</b> ' + numWitnesses + ' total, ';
+      html += (numValidWitnesses === numWitnesses ? ' all ' : numValidWitnesses) + ' valid';
 
       if (numValidWitnesses > 0) {
 
-        let langInfoLabels = []
-        let langInfo = this.options.languageInfo
-        for(const lang in langInfo) {
+        let langInfoLabels = [];
+        let langInfo = this.options.languageInfo;
+        for (const lang in langInfo) {
           if (langInfo.hasOwnProperty(lang)) {
-            langInfoLabels.push((langInfo[lang]['validWitnesses'] === numValidWitnesses ? 'all' : langInfo[lang]['validWitnesses'] )+ ' ' + langInfo[lang]['name'])
+            langInfoLabels.push((langInfo[lang]['validWitnesses'] === numValidWitnesses ? 'all' : langInfo[lang]['validWitnesses']) + ' ' + langInfo[lang]['name']);
           }
         }
-        html += (numValidWitnesses === numWitnesses ? ', ' : ' ( ' )
-        html += langInfoLabels.join(', ')
-        html += (numValidWitnesses === numWitnesses ? '' : ' ) ' )
+        html += (numValidWitnesses === numWitnesses ? ', ' : ' ( ');
+        html += langInfoLabels.join(', ');
+        html += (numValidWitnesses === numWitnesses ? '' : ' ) ');
       }
     }
-    html += '<br/>'
-    html += '</p>'
-    return html
+    html += '<br/>';
+    html += '</p>';
+    return html;
   }
 
   calculateTotalValidWitnesses() {
-    let langInfo = this.options.languageInfo
-    let tvw = 0
+    let langInfo = this.options.languageInfo;
+    let tvw = 0;
     for (const lang in langInfo) {
       if (langInfo.hasOwnProperty(lang)) {
-        tvw += langInfo[lang]['validWitnesses']
+        tvw += langInfo[lang]['validWitnesses'];
       }
     }
-    return tvw
+    return tvw;
   }
-  
+
 
   updateCollationTableLinks() {
-    this.ctLinksElement.html('<ul id="ctlinks-ul"></ul>')
-    let langInfo = this.options.languageInfo
-    let ctLinksUl = $('#ctlinks-ul')
-    for(const l in langInfo) {
+    this.ctLinksElement.html('<ul id="ctlinks-ul"></ul>');
+    let langInfo = this.options.languageInfo;
+    let ctLinksUl = $('#ctlinks-ul');
+    for (const l in langInfo) {
       if (!langInfo.hasOwnProperty(l)) {
-        continue
+        continue;
       }
       if (langInfo[l]['validWitnesses'] >= 2) {
-        $('#ctlinks-header').removeClass('hidden')
-        let urls = []
-        let langName = langInfo[l].name
-        let insideListId = 'ct-links-ul-' + l
-        ctLinksUl.append('<li>' + langName + '</li>')
-        ctLinksUl.append('<ul id="' + insideListId + '"></ul>')
-        urls.push(
-             { 
-               lang: l,
-               name: langName,
-               url:  urlGen.siteCollationTableAutomatic(this.options.workId, this.options.chunkNumber, l),
-               urltext: 'All witnesses',
-               urltitle: 'Open automatic collation table in new tab',
-               availableWitnesses: this.witnessesByLang[l],
-               isPreset: false,
-               actSettings : { 
-                 lang: l,
-                 work: this.options.workId,
-                 chunk: this.options.chunkNumber,
-                 ignorePunctuation: true,
-                 witnesses: this.witnessesByLang[l]
-               }
-               
-             })
+        $('#ctlinks-header').removeClass('hidden');
+        let urls = [];
+        let langName = langInfo[l].name;
+        let insideListId = 'ct-links-ul-' + l;
+        ctLinksUl.append('<li>' + langName + '</li>');
+        ctLinksUl.append('<ul id="' + insideListId + '"></ul>');
+        urls.push({
+          lang: l,
+          name: langName,
+          url: urlGen.siteCollationTableAutomatic(this.options.workId, this.options.chunkNumber, l),
+          urltext: 'All witnesses',
+          urltitle: 'Open automatic collation table in new tab',
+          availableWitnesses: this.witnessesByLang[l],
+          isPreset: false,
+          actSettings: {
+            lang: l,
+            work: this.options.workId,
+            chunk: this.options.chunkNumber,
+            ignorePunctuation: true,
+            witnesses: this.witnessesByLang[l]
+          }
+
+        });
         // get applicable presets
-        let thisObject = this
-        let apiCallOptions:any = {
-          lang: langInfo[l].code,
-          userId: -1,
-          witnesses: []
-        }
-        for(const w in this.witnessesByLang[l]) {
+        let thisObject = this;
+        let apiCallOptions: any = {
+          lang: langInfo[l].code, userId: -1, witnesses: []
+        };
+        for (const w in this.witnessesByLang[l]) {
           if (!this.witnessesByLang[l].hasOwnProperty(w)) {
-            continue
+            continue;
           }
           // try to match fullTx witnesses with localWitness Id === 'A'
           // TODO: support other localWitnessId
-          let witness = this.witnessesByLang[l][w]
+          let witness = this.witnessesByLang[l][w];
           if (witness.type === 'fullTx') {
             // if (witness['typeSpecificInfo'].localWitnessId === 'A') {
             //   apiCallOptions.witnesses.push(witness['typeSpecificInfo'].docId)
             // }
-            apiCallOptions.witnesses.push('fullTx-' + witness['typeSpecificInfo'].docId + '-' +witness['typeSpecificInfo'].localWitnessId)
+            apiCallOptions.witnesses.push('fullTx-' + witness['typeSpecificInfo'].docId + '-' + witness['typeSpecificInfo'].localWitnessId);
           }
         }
-        console.log('Getting presets')
-        console.log(apiCallOptions)
-        $.post(
-          this.getPresetsUrl, 
-          { data: JSON.stringify(apiCallOptions) }
-        )
-        .done(function (data) { 
-          console.log('Got ' + data.presets.length + ' presets')
-          console.log(data.presets)
-          for(const preset of data.presets) {
-            let witnessesToInclude = []
+        console.log('Getting presets');
+        console.log(apiCallOptions);
+        $.post(this.getPresetsUrl, {data: JSON.stringify(apiCallOptions)})
+        .done(function (data) {
+          console.log('Got ' + data.presets.length + ' presets');
+          console.log(data.presets);
+          for (const preset of data.presets) {
+            let witnessesToInclude = [];
             for (const presetWitness of preset.data.witnesses) {
               let witness = false;
               let fields = presetWitness.split('-');
               let presetWitnessType = fields[0];
               let presetWitnessDocId = parseInt(fields[1]);
               let presetWitnessLwid = fields[2];
-              for(const w of thisObject.witnessesByLang[l]) {
+              for (const w of thisObject.witnessesByLang[l]) {
                 // match only fullTx witnesses with localWitnessId === 'A'
-                if (w.type=== presetWitnessType && w['typeSpecificInfo'].docId === presetWitnessDocId && w['typeSpecificInfo'].localWitnessId === presetWitnessLwid) {
-                  witness = w
+                if (w.type === presetWitnessType && w['typeSpecificInfo'].docId === presetWitnessDocId && w['typeSpecificInfo'].localWitnessId === presetWitnessLwid) {
+                  witness = w;
                 }
               }
               if (witness === false) {
-                console.error('Witness in preset not found in witnesses available, this must NEVER happen!')
-                return false
+                console.error('Witness in preset not found in witnesses available, this must NEVER happen!');
+                return false;
               }
-              witnessesToInclude.push(witness)
+              witnessesToInclude.push(witness);
             }
-            urls.push(
-             { 
-               lang: l,
-               name: langName,
-               url:  urlGen.siteCollationTablePreset(thisObject.options.workId, thisObject.options.chunkNumber, preset.presetId),
-               urltext: preset.title + ' <small><i>(' + preset.userName + ')</i></small>',
-               urltitle:  'Open collation table in new tab', 
-               availableWitnesses: thisObject.witnessesByLang[l],
-               isPreset: true,
-               preset: { 
-                 id: preset.presetId,
-                 title: preset.title,
-                 userId: preset.userId,
-                 userName: preset.userName,
-                 editable: (preset.userId === thisObject.options.userId)
-               },
-               actSettings : { 
-                 lang: l,
-                 work: thisObject.options.work,
-                 chunk: thisObject.options.chunk,
-                 ignorePunctuation: preset.data.ignorePunctuation,
-                 normalizers: preset.data.normalizers !== undefined ? preset.data.normalizers : null,
-                 witnesses: witnessesToInclude
-               }
-               
-             })
+            urls.push({
+              lang: l,
+              name: langName,
+              url: urlGen.siteCollationTablePreset(thisObject.options.workId, thisObject.options.chunkNumber, preset.presetId),
+              urltext: preset.title + ' <small><i>(' + preset.userName + ')</i></small>',
+              urltitle: 'Open collation table in new tab',
+              availableWitnesses: thisObject.witnessesByLang[l],
+              isPreset: true,
+              preset: {
+                id: preset.presetId,
+                title: preset.title,
+                userId: preset.userId,
+                userName: preset.userName,
+                editable: (preset.userId === thisObject.options.userId)
+              },
+              actSettings: {
+                lang: l,
+                work: thisObject.options.work,
+                chunk: thisObject.options.chunk,
+                ignorePunctuation: preset.data.ignorePunctuation,
+                normalizers: preset.data.normalizers !== undefined ? preset.data.normalizers : null,
+                witnesses: witnessesToInclude
+              }
+
+            });
           }
-          thisObject.fillCollationTableLinks(urls, insideListId)
+          thisObject.fillCollationTableLinks(urls, insideListId);
         })
-        .fail(function(resp) {
-          console.log('Failed API call for presets for ' + langName, ' status: ' + resp.status)
-          console.log(resp)
-          thisObject.fillCollationTableLinks(urls, insideListId)
-        })
+        .fail(function (resp) {
+          console.log('Failed API call for presets for ' + langName, ' status: ' + resp.status);
+          console.log(resp);
+          thisObject.fillCollationTableLinks(urls, insideListId);
+        });
       }
     }
   }
-  
-  fillCollationTableLinks(urls:any, containerId: string) {
-    if (urls.length !== 0 ) {
 
-      let html = ''
-      html += '<ul>'
-      for(const u in urls) {
-        if (!urls.hasOwnProperty(u)) {
-          continue
-        }
-        let liId = containerId + '-' +  u
-        html += '<li id="' + liId + '">'
-        html += urls[u].urltext + ':'
-        html += '<a class="button btn btn-default btn-sm noborder" id="' + liId + '-a' + '" href="' + urls[u].url + '" title="' + urls[u].urltitle + '" target="_blank">' 
-        html += '<i class="fas fa-external-link-alt"></i>' + '</a>'
-        html += '<button title="Edit automatic collation settings" '
-        html += 'class="ctsettingsbutton btn btn-default btn-sm noborder">'
-        html += '<i class="fas fa-pencil-alt" aria-hidden="true"></i></button>'
-        if (urls[u].preset) {
-          if (urls[u].preset.userId === this.options.userId) {
-            html += '<button title="Erase preset" '
-            html += 'class="cterasepresetbutton btn btn-default btn-sm noborder">'
-          html += '<i class="fas fa-trash" aria-hidden="true"></i></button>'
-          html += '<div id="' + liId + '-erasediv' + '"></div>'
-          }
-        }
-        
-        html += '<div id="' + liId + '-div' + '" class="actsettings"></div>'
-        html += '</li>'
-      }
-      html += '</ul>'
-      
-      $('#' + containerId).html(html)
+  fillCollationTableLinks(urls: any, containerId: string) {
+    if (urls.length !== 0) {
+
+      let html = '';
+      html += '<ul>';
       for (const u in urls) {
         if (!urls.hasOwnProperty(u)) {
-          continue
+          continue;
         }
-        let liId = containerId + '-' +  u
-        let ctSettingsFormManager =  new AutomaticCollationTableSettingsForm({
-          containerSelector : '#' + liId + '-div', 
+        let liId = containerId + '-' + u;
+        html += '<li id="' + liId + '">';
+        html += urls[u].urltext + ':';
+        html += '<a class="button btn btn-default btn-sm noborder" id="' + liId + '-a' + '" href="' + urls[u].url + '" title="' + urls[u].urltitle + '" target="_blank">';
+        html += '<i class="fas fa-external-link-alt"></i>' + '</a>';
+        html += '<button title="Edit automatic collation settings" ';
+        html += 'class="ctsettingsbutton btn btn-default btn-sm noborder">';
+        html += '<i class="fas fa-pencil-alt" aria-hidden="true"></i></button>';
+        if (urls[u].preset) {
+          if (urls[u].preset.userId === this.options.userId) {
+            html += '<button title="Erase preset" ';
+            html += 'class="cterasepresetbutton btn btn-default btn-sm noborder">';
+            html += '<i class="fas fa-trash" aria-hidden="true"></i></button>';
+            html += '<div id="' + liId + '-erasediv' + '"></div>';
+          }
+        }
+
+        html += '<div id="' + liId + '-div' + '" class="actsettings"></div>';
+        html += '</li>';
+      }
+      html += '</ul>';
+
+      $('#' + containerId).html(html);
+      for (const u in urls) {
+        if (!urls.hasOwnProperty(u)) {
+          continue;
+        }
+        let liId = containerId + '-' + u;
+        let ctSettingsFormManager = new AutomaticCollationTableSettingsForm({
+          containerSelector: '#' + liId + '-div',
           initialSettings: urls[u].actSettings,
           availableWitnesses: urls[u].availableWitnesses,
           hideTitle: true,
@@ -805,74 +782,70 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           userId: this.options.userId,
           normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData'],
           debug: false
-        })
-       $('#' + liId  + ' .cterasepresetbutton').on('click', function() { 
-            $('#' + liId + '-a').addClass('disabled')
-            $('#' + liId + ' .ctsettingsbutton').addClass('disabled')
-            $('#' + liId + ' .cterasepresetbutton').addClass('disabled')
-          let divSelector = '#' + liId + '-erasediv'
-          let eraseHtml = '<p class="bg-danger">Do you really want to erase this preset?'
-          eraseHtml += '<button class="btn btn-sm btn-default button-yes">Yes</button>'
-          eraseHtml += '<button class="btn btn-sm btn-default button-no">No</button>'
-          $(divSelector).html(eraseHtml)
-          $(divSelector +  ' .button-no').on('click', function(){
-            $(divSelector).html('')
-            $('#' + liId + '-a').removeClass('disabled')
-            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled')
-            $('#' + liId + ' .ctsettingsbutton').removeClass('disabled')
-          })
-          $(divSelector +  ' .button-yes').on('click', function(){
-            $.get(
-              urlGen.apiDeletePreset(urls[u].preset.id)
-            )
-            .done( function (){
-              thisObject.updateCollationTableLinks()
+        });
+        $('#' + liId + ' .cterasepresetbutton').on('click', function () {
+          $('#' + liId + '-a').addClass('disabled');
+          $('#' + liId + ' .ctsettingsbutton').addClass('disabled');
+          $('#' + liId + ' .cterasepresetbutton').addClass('disabled');
+          let divSelector = '#' + liId + '-erasediv';
+          let eraseHtml = '<p class="bg-danger">Do you really want to erase this preset?';
+          eraseHtml += '<button class="btn btn-sm btn-default button-yes">Yes</button>';
+          eraseHtml += '<button class="btn btn-sm btn-default button-no">No</button>';
+          $(divSelector).html(eraseHtml);
+          $(divSelector + ' .button-no').on('click', function () {
+            $(divSelector).html('');
+            $('#' + liId + '-a').removeClass('disabled');
+            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled');
+            $('#' + liId + ' .ctsettingsbutton').removeClass('disabled');
+          });
+          $(divSelector + ' .button-yes').on('click', function () {
+            $.get(urlGen.apiDeletePreset(urls[u].preset.id))
+            .done(function () {
+              thisObject.updateCollationTableLinks();
             })
-            .fail(function(resp) {
-              console.error('Cannot delete preset')
-              console.log(resp)
-            })
-            
-          })
-          
-        })
-        
-        $('#' + liId  + ' .ctsettingsbutton').on('click', function() { 
+            .fail(function (resp) {
+              console.error('Cannot delete preset');
+              console.log(resp);
+            });
+
+          });
+
+        });
+
+        $('#' + liId + ' .ctsettingsbutton').on('click', function () {
           if (ctSettingsFormManager.isHidden()) {
-            $('#' + liId + '-a').addClass('disabled')
-            $('#' + liId + ' .cterasepresetbutton').addClass('disabled')
-            ctSettingsFormManager.show()
+            $('#' + liId + '-a').addClass('disabled');
+            $('#' + liId + ' .cterasepresetbutton').addClass('disabled');
+            ctSettingsFormManager.show();
           } else {
-            ctSettingsFormManager.hide()
-            $('#' + liId + '-a').removeClass('disabled')
-            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled')
+            ctSettingsFormManager.hide();
+            $('#' + liId + '-a').removeClass('disabled');
+            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled');
           }
-        })
-        ctSettingsFormManager.on('cancel', function (){
-          ctSettingsFormManager.hide()
-          $('#' + liId + '-a').removeClass('disabled')
-           $('#' + liId + ' .cterasepresetbutton').removeClass('disabled')
-        })
-        let thisObject = this
-        ctSettingsFormManager.on('apply', function (e:any) {
-          console.log('Opening automatic collation table')
-          console.log(e.detail)
-          let formElement = $('#theform')
+        });
+        ctSettingsFormManager.on('cancel', function () {
+          ctSettingsFormManager.hide();
+          $('#' + liId + '-a').removeClass('disabled');
+          $('#' + liId + ' .cterasepresetbutton').removeClass('disabled');
+        });
+        let thisObject = this;
+        ctSettingsFormManager.on('apply', function (e: any) {
+          console.log('Opening automatic collation table');
+          console.log(e.detail);
+          let formElement = $('#theform');
           if (formElement.length !== 0) {
             //console.log('Removing hidden form')
-            formElement.remove()
+            formElement.remove();
           }
           //console.log('Adding hidden form')
-          $('body').append('<form id="theform" class="hidden" method="POST" target="_blank" action="' +
-                  urlGen.siteCollationTableCustom(thisObject.options.workId, thisObject.options.chunkNumber, urls[u].lang) + '">' +
-                  '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail})  + '\'></form>')
+          $('body').append('<form id="theform" class="hidden" method="POST" target="_blank" action="' + urlGen.siteCollationTableCustom(thisObject.options.workId, thisObject.options.chunkNumber, urls[u].lang) + '">' + '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail}) + '\'></form>');
           //console.log('Submitting')
           // @ts-ignore
-          document.getElementById('theform').submit()
-        })
-        ctSettingsFormManager.on('preset-new', function(){
-          thisObject.updateCollationTableLinks()
-        })
+          document.getElementById('theform').submit();
+        });
+        ctSettingsFormManager.on('preset-new', function () {
+          thisObject.updateCollationTableLinks();
+        });
       }
     }
   }
@@ -880,4 +853,4 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
 }
 
 // Load as global variable so that it can be referenced in the Twig template
-(window as any).ChunkPage = ChunkPage
+(window as any).ChunkPage = ChunkPage;

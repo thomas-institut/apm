@@ -2,15 +2,22 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './SiteLang'
 import { ApmDataProxy } from './ApmDataProxy'
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/wait'
+import { wait } from '@/toolbox/wait'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
-import {getStringVal} from "../../toolbox/UiToolBox";
+import {getStringVal} from "@/toolbox/UiToolBox";
+
+
+interface PersonCreationDialogOptions {
+  successWaitTime: number;
+  apmDataProxy: ApmDataProxy;
+  debug?: boolean;
+}
 
 export class PersonCreationDialog {
-  private options: any;
+  private options: PersonCreationDialogOptions;
   private readonly debug: boolean;
   private dialog!: GetDataAndProcessDialog;
-  constructor (options:any) {
+  constructor (options:PersonCreationDialogOptions) {
     let oc = new OptionsChecker({
       context: 'PersonCreationDialog',
       optionsDefinition: {
@@ -21,7 +28,7 @@ export class PersonCreationDialog {
     })
 
     this.options = oc.getCleanOptions(options);
-    this.debug = this.options.debug;
+    this.debug = this.options.debug ?? false;
   }
 
   createPerson():Promise<any> {
@@ -55,16 +62,17 @@ export class PersonCreationDialog {
         return new Promise((resolve) => {
           let name = data['name'];
           let sortName = data['sortName'];
+          console.log(`Data from form`, data);
           infoArea.html(`<span class="text-info">${ApmPage.genLoadingMessageHtml(tr('Creating new person'))}</span>`)
-          this.options.apmDataProxy.createPerson(name, sortName).then( (resp:any) => {
+          this.options.apmDataProxy.personCreate(name, sortName).then( (resp:any) => {
             infoArea.html(ApmPage.genLoadingMessageHtml(tr('Person successfully created, reloading page')));
             wait(this.options.successWaitTime).then( () => {
               resolve({ success: true, result: resp.tid})
             })
           }).catch( (resp:any) => {
             this.debug && console.log('Response', resp);
-            let status = resp.status ?? -1;
-            let errorMessage = resp.responseJSON.errorMsg ?? tr("Unknown error");
+            let status = resp.status ?? resp.httpStatus ?? -1;
+            let errorMessage = resp.responseJSON?.errorMsg ?? tr("Unknown error");
             infoArea.html(`<span class="text-danger">${tr('The server found an error')}: <b>(${status}) ${errorMessage}</b></span>`);
             resolve({ success: false});
           })

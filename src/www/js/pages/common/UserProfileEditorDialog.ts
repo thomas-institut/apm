@@ -10,7 +10,7 @@ interface UserProfileEditorDialogOptions {
   personData: any;
   userData: any;
   canManageUsers: boolean;
-  successWaitTime: number;
+  successWaitTime?: number;
   apmDataProxy: ApmDataProxy;
   debug?: boolean;
 }
@@ -24,6 +24,7 @@ export class UserProfileEditorDialog {
   private inputPassword1!: JQuery<HTMLElement>;
   private inputPassword2!: JQuery<HTMLElement>;
   private infoDiv!: JQuery<HTMLElement>;
+  private successWaitTime: number;
 
   constructor (options: UserProfileEditorDialogOptions) {
     let oc = new OptionsChecker({
@@ -40,6 +41,7 @@ export class UserProfileEditorDialog {
 
     this.options = oc.getCleanOptions(options);
     this.debug = this.options.debug ?? false;
+    this.successWaitTime = this.options.successWaitTime ?? 500;
 
 
   }
@@ -93,7 +95,7 @@ export class UserProfileEditorDialog {
         this.infoDiv.html(ApmPage.genLoadingMessageHtml(loadingMessage)).removeClass('text-danger');
         this.options.apmDataProxy.userUpdateProfile(id, email, password1, password2).then( () => {
           this.infoDiv.html(tr('Profile successfully updated'));
-          wait(this.options.successWaitTime).then( () => {
+          wait(this.successWaitTime).then( () => {
             this.dialog.hide();
             this.dialog.destroy();
             resolve(true)

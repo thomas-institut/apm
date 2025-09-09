@@ -48,9 +48,10 @@ CUR_DIR=$(pwd)
 TMP_DIR=$TMP/$DIST_NAME
 TAR_NAME=$DIST_NAME.tar.gz
 
-NPM_BUILD="cd src/www; npm run build --base=/dist$BASE_DIR;cd ../.."
+NPM_BUILD_FRONTEND="cd src/www; npm run build -- --base=/dist$BASE_DIR;cd ../.."
+NPM_BUILD_TYPESETTING="cd src/typesetting-service; npm run build; cd ../.."
 
-echo Creating $DIST_DIR/"$TAR_NAME"
+echo Creating temporary directory
 if [ -d "$TMP_DIR" ]
 then
   rm -fr "$TMP_DIR" || exit
@@ -58,9 +59,13 @@ fi
 
 mkdir "$TMP_DIR" || exit
 
-echo Building JS for production with base dir "$BASE_DIR"
-eval "$NPM_BUILD"
+echo Building frontend JS for production with base dir "$BASE_DIR"
+eval "$NPM_BUILD_FRONTEND"
 
+echo Building typesetting service JS for production
+eval "$NPM_BUILD_TYPESETTING"
+
+echo Copying files to temporary directory
 cp -R src/typesetting-service "$TMP_DIR"
 cp -R src/db "$TMP_DIR"
 cp -R src/bin "$TMP_DIR"
@@ -99,13 +104,15 @@ chmod a+w "$TMP_DIR"/www/downloads/pdf
 
 cd "$TMP" || exit
 
+
+echo "Creating tar file $DIST_DIR/$TAR_NAME"
 if [ "$MAC" = "--mac" ]
 then
-  COPYFILE_DISABLE=1 tar cfz "$TAR_NAME" "$DIST_NAME"
-else
-  tar cfz "$TAR_NAME" "$DIST_NAME"
+  COPYFILE_DISABLE=1; export COPYFILE_DISABLE
+  COPY_EXTENDED_ATTRIBUTES_DISABLE=1; export COPY_EXTENDED_ATTRIBUTES_DISABLE
 fi
 
+tar cfz "$TAR_NAME" "$DIST_NAME"
 rm -fr "$DIST_NAME"
 mv "$TAR_NAME" "$CUR_DIR"/$DIST_DIR/
 

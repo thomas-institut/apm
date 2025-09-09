@@ -3,17 +3,25 @@ import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
 import {ApmDataProxy, DataProxyError} from './ApmDataProxy';
 import { ApmPage } from '../ApmPage'
-import { wait } from '../../toolbox/wait'
-import {getStringVal} from "../../toolbox/UiToolBox";
+import { wait } from '@/toolbox/wait'
+import {getStringVal} from "@/toolbox/UiToolBox";
 
+
+interface MakeUserDialogOptions {
+  personData: any;
+  successWaitTime?: number;
+  apmDataProxy: ApmDataProxy;
+  debug?: boolean;
+}
 export class MakeUserDialog {
 
-  private options: any;
+  private options: MakeUserDialogOptions;
   private readonly debug: boolean;
   private dialog!: ConfirmDialog;
   private currentUserName: string = '';
   private inputUserName!: JQuery<HTMLElement>;
   private infoDiv!: JQuery<HTMLElement>;
+  private successWaitTime: number;
 
   constructor (options:any) {
     let oc = new OptionsChecker({
@@ -27,7 +35,8 @@ export class MakeUserDialog {
     })
 
     this.options = oc.getCleanOptions(options);
-    this.debug = this.options.debug;
+    this.successWaitTime = this.options.successWaitTime ?? 500;
+    this.debug = this.options.debug ?? false;
   }
 
   show() {
@@ -68,9 +77,9 @@ export class MakeUserDialog {
         this.dialog.hideCancelButton();
         let loadingMessage = tr('Making new user');
         this.infoDiv.html(ApmPage.genLoadingMessageHtml(loadingMessage)).removeClass('text-danger');
-        this.options.apmDataProxy.createUser(id, username).then( () => {
+        this.options.apmDataProxy.userCreate(id, username).then( () => {
           this.infoDiv.html(tr('User successfully created'));
-          wait(this.options.successWaitTime).then( () => {
+          wait(this.successWaitTime).then( () => {
             this.dialog.hide();
             this.dialog.destroy();
             resolve(true)

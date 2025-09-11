@@ -8,7 +8,7 @@ import {Punctuation} from "../defaults/Punctuation";
 import {Group} from "./SequenceWithGroups";
 
 import {ApparatusInterface} from "./EditionInterface.js";
-import {Apparatus} from "@/Edition/Apparatus";
+import {Apparatus} from "./Apparatus.js";
 
 export class ApparatusTools {
 

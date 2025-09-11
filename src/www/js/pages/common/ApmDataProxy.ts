@@ -32,6 +32,8 @@ import {ApiCollationTable_auto} from "@/Api/DataSchema/ApiCollationTable_auto";
 import {
   ApiCollationTable_convertToEdition, ApiCollationTable_convertToEdition_input
 } from "@/Api/DataSchema/ApiCollationTable_convertToEdition";
+import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
+import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -320,6 +322,14 @@ export class ApmDataProxy {
       console.error(`Error checking witness updates`, error);
       return {status: 'Error', message: 'Error checking witness updates', witnesses: [], timeStamp: ''};
     }
+  }
+
+  async userMultiChunkEditions(userId: number, ttl?: number): Promise<ApiUserMultiChunkEdition[]> {
+    return this.get(urlGen.apiUserGetMultiChunkEditionInfo(userId), false, ttl ?? TtlOneMinute);
+  }
+
+  async userCollationTables(userId: number, ttl?: number): Promise<ApiUserCollationTables> {
+    return this.get(urlGen.apiUserGetCollationTableInfo(userId), false, ttl ?? TtlOneMinute);
   }
 
   async userCreate(personId: number, userName: string): Promise<any> {
@@ -700,7 +710,7 @@ export class ApmDataProxy {
     // use a lock here too, just in case some guerrilla function somewhere
     // else in the code is trying to do the same
     await this.lockManager.getLock(url);
-    let data: EntityDataInterface = await $.get(urlGen.apiEntityGetData(tid));
+    let data: EntityDataInterface = await this.get(urlGen.apiEntityGetData(tid));
     this.lockManager.releaseLock(url);
     return data;
   }

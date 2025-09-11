@@ -28,16 +28,20 @@ export class UpdaterToOnePointOne extends CtDataUpdater {
         app['entries'] = app['entries'].map((entry, entryIndex) => {
           entry['subEntries'] = entry['subEntries'].map((subEntry, subEntryIndex) => {
             switch (subEntry['type']) {
+              // @ts-expect-error converting to new type
               case 'disableAuto':
                 subEntry['type'] = 'auto';
                 subEntry['enabled'] = false;
                 break;
 
+              // @ts-expect-error converting to new type
               case 'custom':
                 this.verbose && console.log(`Updating custom entry for apparatus '${app.type}', entry ${entryIndex}, subEntry ${subEntryIndex}`);
                 subEntry['type'] = 'fullCustom';
                 subEntry['enabled'] = true;
+                // @ts-expect-error removing property once used by mistake
                 delete subEntry['plainText'];
+                // @ts-expect-error removing property once used by mistake
                 delete subEntry['source'];
                 // @ts-expect-error removing property once used by mistake
                 delete subEntry['WitnessData'];

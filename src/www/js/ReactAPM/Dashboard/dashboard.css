@@ -1,3 +1,6 @@
+:root {
+    --dashboard-list-indent: 1rem;
+}
 
 div.dashboard {
     display: grid;
@@ -19,7 +22,7 @@ div.dashboard-anchors {
 
 .dashboard h1 {
     font-size: 1.2rem;
-    margin-top: 1rem;
+    margin-top: 2em;
 }
 
 .dashboard h1.first {
@@ -27,6 +30,11 @@ div.dashboard-anchors {
 }
 
 .dashboard-list-item {
-    margin: 0 0 0 1rem;
+    margin: 0 0 0 var(--dashboard-list-indent);
     padding: 0.25rem;
+}
+
+.dashboard-list-item-2 {
+    margin: 0 0 0 calc(3 * var(--dashboard-list-indent));
+    padding: 0.1rem;
 }

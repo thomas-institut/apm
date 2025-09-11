@@ -18,7 +18,13 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {CtData} from '@/CtData/CtData';
-import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
+import {
+  CtDataInterface,
+  CustomApparatusEntryInterface,
+  CustomApparatusInterface,
+  CustomApparatusSubEntryInterface,
+  WitnessTokenInterface
+} from "@/CtData/CtDataInterface";
 import * as ApparatusType from '@/constants/ApparatusType';
 
 import {EditionGenerator} from './EditionGenerator';
@@ -40,6 +46,7 @@ import * as MainTextTokenType from "../MainTextTokenType.js";
 import {Punctuation} from "@/defaults/Punctuation";
 import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface} from "../EditionInterface.js";
 import {Apparatus} from "@/Edition/Apparatus";
+import {Custom} from "vitest";
 
 export class CtDataEditionGenerator extends EditionGenerator {
   private options: any;
@@ -57,7 +64,8 @@ export class CtDataEditionGenerator extends EditionGenerator {
     this.options = oc.getCleanOptions(options);
     this.lastFoliationChanges = this.options.lastFoliationChanges;
     this.ctData = this.options.ctData;
-    this.debug = false;
+    this.verbose = true;
+    this.debug = true;
   }
 
 
@@ -121,7 +129,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
    * @param apparatusType
    * @private
    */
-  private getCustomApparatus(apparatusType: string): ApparatusInterface | null {
+  private getCustomApparatus(apparatusType: string): CustomApparatusInterface | null {
     if (this.ctData.customApparatuses === undefined) {
       return null;
     }
@@ -155,7 +163,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     customApparatus.entries.forEach((ctDataCustomEntry) => {
       if (ctIndexToMainTextMap[ctDataCustomEntry.from] === undefined) {
         // this is an entry to an empty token in the main text
-        console.warn(`Custom apparatus criticus entry for an empty token, from` + `${ctDataCustomEntry.from} to ${ctDataCustomEntry.to}, lemmaText: '${ctDataCustomEntry.lemmaText}'`);
+        console.warn(`Custom apparatus criticus entry for an empty token, from` + `${ctDataCustomEntry.from} to ${ctDataCustomEntry.to}, lemmaText: '${ctDataCustomEntry.lemma}'`);
         console.log('ctIndexToMainTextMap');
         console.log(ctIndexToMainTextMap);
         return;
@@ -185,14 +193,17 @@ export class CtDataEditionGenerator extends EditionGenerator {
       const autoSubEntryTypes = [SubEntryType.AUTO, SubEntryType.AUTO_FOLIATION];
 
       let customSubEntries = ctDataCustomEntry.subEntries.filter((se) => {
-        return autoSubEntryTypes.indexOf(se.type) === -1;
+        return !autoSubEntryTypes.includes(se.type);
       });
       let customAutoSubEntries = ctDataCustomEntry.subEntries.filter((se) => {
-        return autoSubEntryTypes.indexOf(se.type) !== -1;
+        return autoSubEntryTypes.includes(se.type);
       });
       if (customAutoSubEntries.length !== 0) {
         this.verbose && console.log(`There are custom auto entries: ${mainTextFrom} -> ${mainTextTo}`);
         this.verbose && console.log(customAutoSubEntries);
+      } else {
+        this.verbose && console.log(`There are no custom auto entries: ${mainTextFrom} -> ${mainTextTo}`);
+        this.verbose && console.log(customSubEntries);
       }
 
       let currentEntryIndex = ApparatusTools.findEntryIndex(generatedApparatus, mainTextFrom, mainTextTo);
@@ -217,7 +228,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
           this.debug && console.log(`The custom entry does not have lemma customizations or full custom sub-entries, nothing to add`);
         }
       } else {
-        // this.debug && console.log(`Entry belongs to automatic apparatus entry index ${currentEntryIndex}`)
+        this.debug && console.log(`Entry belongs to automatic apparatus entry index ${currentEntryIndex}`)
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           generatedApparatus.entries[currentEntryIndex].preLemma = ctDataCustomEntry.preLemma;
           generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
@@ -262,7 +273,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
   }
 
 
-  private hasEntryCustomizations(customEntry: ApparatusEntryInterface) {
+  private hasEntryCustomizations(customEntry: CustomApparatusEntryInterface) {
     if (customEntry['tags'].length !== 0) {
       return true;
     }
@@ -276,7 +287,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     return false;
   }
 
-  private applyCustomAutoSubEntriesToGeneratedSubEntries(generatedSubEntries: ApparatusSubEntry[], customAutoSubEntries: ApparatusSubEntryInterface[]): ApparatusSubEntry[] {
+  private applyCustomAutoSubEntriesToGeneratedSubEntries(generatedSubEntries: ApparatusSubEntry[], customAutoSubEntries: CustomApparatusSubEntryInterface[]): ApparatusSubEntry[] {
 
     return generatedSubEntries.map((subEntry) => {
       let generatedSubEntryHash = subEntry.hashString();
@@ -298,16 +309,16 @@ export class CtDataEditionGenerator extends EditionGenerator {
     });
   }
 
-  private buildSubEntryArrayFromCustomSubEntries(customSubEntries: ApparatusSubEntryInterface[]): ApparatusSubEntry[] {
+  private buildSubEntryArrayFromCustomSubEntries(customSubEntries: CustomApparatusSubEntryInterface[]): ApparatusSubEntry[] {
 
     return customSubEntries.map((subEntry) => {
       let theSubEntry = new ApparatusSubEntry();
       theSubEntry.type = subEntry.type;
-      theSubEntry.fmtText = subEntry.fmtText;
+      theSubEntry.fmtText = subEntry.fmtText ?? [];
       theSubEntry.source = SubEntrySource.USER;
       theSubEntry.enabled = subEntry.enabled;
       theSubEntry.position = subEntry.position;
-      theSubEntry.keyword = subEntry.keyword;
+      theSubEntry.keyword = subEntry.keyword ?? '';
       theSubEntry.tags = [...subEntry.tags];
       if (subEntry['witnessData'] === undefined) {
         theSubEntry.witnessData = [];

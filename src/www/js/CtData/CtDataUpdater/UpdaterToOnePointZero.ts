@@ -108,6 +108,7 @@ export class UpdaterToOnePointZero extends CtDataUpdater {
           entry.separator = '';
 
           // deleted unused section
+          // @ts-expect-error Removing property not used anymore
           delete entry.section;
 
           return entry;

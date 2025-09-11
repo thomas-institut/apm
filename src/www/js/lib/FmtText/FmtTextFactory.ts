@@ -67,6 +67,9 @@ export class FmtTextFactory {
    */
   static fromAnything(theThing: any): FmtTextToken[] {
 
+    if (theThing === undefined) {
+      return [];
+    }
     if (Array.isArray(theThing)) {
       let fmtText: FmtTextToken[] = [];
       theThing.forEach((arrayElement) => {

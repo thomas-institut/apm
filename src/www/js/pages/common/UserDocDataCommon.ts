@@ -2,10 +2,10 @@
 // functions to display user doc data: transcriptions, collation tables, etc
 
 
-import { numericFieldSort, stringFieldSort } from '../../lib/ToolBox/ArrayUtil'
+import { numericFieldSort, stringFieldSort } from '@/lib/ToolBox/ArrayUtil'
 import { tr } from './SiteLang'
 import { urlGen} from './SiteUrlGen'
-import { Tid } from '../../Tid/Tid'
+import { Tid } from '@/Tid/Tid'
 
 function noneParagraph() {
   return `<p class="none"><em>${tr('None')}</em></p>`

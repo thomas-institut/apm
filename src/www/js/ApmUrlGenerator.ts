@@ -311,8 +311,8 @@ export class ApmUrlGenerator {
     return this.apiBase + '/user/' + id + '/collationTables';
   }
 
-  apiUserGetMultiChunkEditionInfo(tid: number) {
-    return `${this.apiBase}/user/${tid}/multiChunkEditions`;
+  apiUserGetMultiChunkEditionInfo(userId: number) {
+    return `${this.apiBase}/user/${userId}/multiChunkEditions`;
   }
 
   apiBulkPageSettings() {

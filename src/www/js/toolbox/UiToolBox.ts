@@ -141,12 +141,8 @@ export class UiToolBox {
    * array with two array elements: [1,2] and [2,5]
    *
    * If no class is found, returns an empty array.
-   *
-   * @param {JQuery}element
-   * @param {string}prefix
-   * @returns {number[][]}
    */
-  static getIntArrayIdFromClasses(element: JQuery, prefix: string): number[][] {
+  static getIntArrayIdFromClasses(element: JQuery<HTMLElement>, prefix: string): number[][] {
     let classes = this.getClassArray(element);
     let idArray: number[][] = []
     classes.forEach( (theClass) => {

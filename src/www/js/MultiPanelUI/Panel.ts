@@ -32,7 +32,7 @@ export class Panel {
   protected debug: boolean;
   protected containerSelector: string;
   protected visible: boolean;
-  private mode: string;
+  protected mode: string;
 
   constructor(options: PanelOptions = {}) {
     this.verbose = options.verbose ?? false;

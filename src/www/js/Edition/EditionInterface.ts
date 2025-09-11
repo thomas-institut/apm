@@ -2,7 +2,7 @@
 
 import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface.js";
 import {FmtTextToken} from "../lib/FmtText/FmtTextToken.js";
-import {SiglaGroupInterface} from "../CtData/CtDataInterface.js";
+import {SiglaGroupInterface, WitnessDataItemInterface} from "../CtData/CtDataInterface.js";
 
 export interface EditionInterface {
   lang: string;
@@ -85,6 +85,8 @@ export interface ApparatusEntryInterface {
   tags: string[];
   subEntries: ApparatusSubEntryInterface[];
   metadata: MetadataInterface;
+  mainTextFrom?: number;
+  mainTextTo?: number;
 }
 
 export interface ApparatusSubEntryInterface {
@@ -98,22 +100,6 @@ export interface ApparatusSubEntryInterface {
   position: number;
   tags: string[];
   hash: string;
-}
-
-export interface WitnessDataItemInterface {
-  witnessIndex: number;
-  hand: number;
-  location: string;
-  forceHandDisplay: boolean;
-  siglum: string;
-  omitSiglum: boolean;
-  /**
-   * If true, the data is used when there's a foliation change from
-   * a non-empty foliation to a another one. For example, from '20r' to '20v'.
-   * When a foliation changes from '' to other value, there's no actual foliation,
-   * it's simply the first time there's a foliation value for that witness.
-   */
-  realFoliationChange?: boolean;
 }
 
 export function cloneMetadata(metadata: MetadataInterface): MetadataInterface {

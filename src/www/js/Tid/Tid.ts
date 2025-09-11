@@ -17,4 +17,24 @@ export class Tid {
     }
     return str;
   }
+
+  static toCanonicalString(tid: number) {
+    return this.toBase36String(tid);
+  }
 }
+
+
+
+
+// function base58encode(num: number): string {
+//   const EncodingAlphabet = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+//   let result = '';
+//   const alphabetSize = EncodingAlphabet.length;
+//
+//   while (num > 0) {
+//     const remainder = num % alphabetSize;
+//     num = Math.floor(num / alphabetSize);
+//     result = EncodingAlphabet[remainder] + result;
+//   }
+//   return result;
+// }

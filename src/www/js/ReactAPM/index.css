@@ -49,11 +49,15 @@
     --hebrew-hand2-font-size: 110%;
 
     /* COLORS */
-    --dimmed-blue-color: #337ab7;  /* For dimmed links*/
+    --dimmed-blue-color: #337ab7;
+    --not-so-dimmed-blue-color: #0034b8;
     --dimmed-text-color: #c2c2c2;
     --very-light-gray: #e7e7e7;
     --top-bar-font-color: rgba(0, 0, 0, 0.5);
     --top-bar-font-color-hover: rgba(38, 66, 179, 0.9);
+
+    --link-color: var(--dimmed-blue-color);
+    --link-color-hover:blue;
 
     /* OTHER */
     --small-font-size: 0.8em;
@@ -145,20 +149,24 @@ body {
     max-width: 100% !important;
 }
 
-/* We want a compact top bar */
+/* Links */
+a {
+    color: var(--link-color);
+    text-decoration: none;
+}
+
+a:hover {
+    color: var(--link-color-hover);
+}
+
+
+/* Top Bar */
 .navbar {
     padding: 0 !important;
     /*border-bottom: 1px solid var(--very-light-gray);*/
     margin-bottom: 0.7rem;
 }
 
-/*.navbar-brand {*/
-/*    padding: 0;*/
-/*    font-size: var(--default-font-size);*/
-/*}*/
-
-
-/* Use dimmed colors for the top bar */
 .navbar a {
     color: var(--top-bar-font-color);
     text-decoration: none;

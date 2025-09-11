@@ -539,16 +539,16 @@ function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $co
         ->setName('api.user.create');
 
     // API -> user : get collation tables (and chunk edition) by user
-    $group->get('/user/{userTid}/collationTables',
+    $group->get('/user/{userId}/collationTables',
         function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->getCollationTableInfo($request, $response);
+            return (new ApiUsers($container))->userCollationTables($request, $response);
         })
         ->setName('api.user.collationTables');
 
     // API -> user : get multi-chunk editions by user
-    $group->get('/user/{userTid}/multiChunkEditions',
+    $group->get('/user/{userId}/multiChunkEditions',
         function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->getMultiChunkEditionsByUser($request, $response);
+            return (new ApiUsers($container))->userMultiChunkEditions($request, $response);
         })
         ->setName('api.user.multiChunkEditions');
 }

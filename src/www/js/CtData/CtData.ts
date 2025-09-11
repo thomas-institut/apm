@@ -23,7 +23,6 @@ import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
 import {Matrix} from '@thomas-inst/matrix';
 import * as CollationTableType from '../constants/CollationTableType';
 import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
-import {ApparatusEntry} from '@/Edition/ApparatusEntry';
 import {deepCopy} from '@/toolbox/Util';
 import * as NormalizationSource from '../constants/NormalizationSource';
 import * as WitnessType from '../Witness/WitnessTokenClass';
@@ -46,11 +45,16 @@ import {UpdaterToOnePointFive} from "./CtDataUpdater/UpdaterToOnePointFive";
 import {CleanerOnePointFive} from "./CtDataCleaner/CleanerOnePointFive";
 import {Punctuation} from '@/defaults/Punctuation';
 import {
-  ColumnInformation, CtDataInterface, NonTokenItemIndex, WitnessInterface, WitnessTokenInterface
+  ColumnInformation,
+  CtDataInterface,
+  CustomApparatusEntryInterface,
+  CustomApparatusInterface,
+  NonTokenItemIndex,
+  WitnessInterface,
+  WitnessTokenInterface
 } from "./CtDataInterface";
 import {FULL_TX} from "@/Witness/WitnessType";
 import {NormalizerRegister} from "@/pages/common/NormalizerRegister";
-import {ApparatusInterface} from "@/Edition/EditionInterface";
 
 
 /*
@@ -316,12 +320,9 @@ export class CtData {
   /**
    * Updates ctData with the given entry, which is normally produced by the apparatus entry editor
    * in EditionComposer's ApparatusPanel
-   * @param {CtDataInterface}ctData
-   * @param {string}apparatusType
-   * @param {ApparatusEntry}editedEntry
    */
-  static updateCustomApparatuses(ctData: CtDataInterface, apparatusType: string, editedEntry: ApparatusEntry) {
-    console.log(`Updating customs apparatuses for apparatus '${apparatusType}'`);
+  static updateCustomApparatuses(ctData: CtDataInterface, apparatusType: string, editedEntry: CustomApparatusEntryInterface): CtDataInterface {
+    console.log(`Updating customs apparatuses for apparatus '${apparatusType}'`, editedEntry);
     console.log(editedEntry);
 
     // First, let's get the right apparatus
@@ -334,9 +335,10 @@ export class CtData {
     }
 
     let customApparatus = ctData.customApparatuses[apparatusIndex];
-    let newEntry = ApparatusEntry.clone(editedEntry);
-    newEntry.lemmaText = '';
-    newEntry.metadata = {};
+    let newEntry: CustomApparatusEntryInterface = deepCopy(editedEntry);
+    // newEntry.preLemma = '';
+    // newEntry.lemmaText = '';
+
     // new entry, first get the auto subEntries
     newEntry.subEntries = editedEntry.subEntries.filter((subEntry) => {
       return subEntry.type === 'auto';
@@ -376,7 +378,7 @@ export class CtData {
     return ctData;
   }
 
-  static isEntryEqualToDefault(entry: ApparatusEntry) {
+  static isEntryEqualToDefault(entry: CustomApparatusEntryInterface): boolean {
     if (entry.subEntries.length !== 0) {
       return false;
     }
@@ -621,9 +623,9 @@ export class CtData {
     return ctData;
   }
 
-  static fixReferencesInCustomApparatusesAfterColumnAdd(ctData: CtDataInterface, col: number, numCols: number) {
+  static fixReferencesInCustomApparatusesAfterColumnAdd(ctData: CtDataInterface, col: number, numCols: number): CustomApparatusInterface[] {
     return ctData.customApparatuses.map((app) => {
-      let newApp: ApparatusInterface = deepCopy(app);
+      let newApp: CustomApparatusInterface = deepCopy(app);
       newApp.entries = app.entries.map((entry) => {
         let newEntry = deepCopy(entry);
         if (entry.from > col) {
@@ -640,7 +642,7 @@ export class CtData {
   /**
    * Updates the custom apparatus indexes after a shift in the edition witness tokens
    */
-  static fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(ctData: CtDataInterface, fromCol: number, toCol: number, numCols: number, direction: string): ApparatusInterface[] {
+  static fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(ctData: CtDataInterface, fromCol: number, toCol: number, numCols: number, direction: string): CustomApparatusInterface[] {
 
     console.log(`Fixing custom apparatus references after cell shift: ${fromCol}-${toCol}, by ${numCols} cols, ${direction}`);
     return ctData.customApparatuses.map((app) => {

@@ -260,10 +260,10 @@ class ApiUsers extends ApiController
     }
 
 
-    public function getCollationTableInfo(Request $request, Response $response) : Response
+    public function userCollationTables(Request $request, Response $response) : Response
     {
         
-        $userTid =  (int) $request->getAttribute('userTid');
+        $userTid =  (int) $request->getAttribute('userId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
 
         $cacheKey = CacheKey::ApiUsersCollationTableInfoData . $userTid;
@@ -346,8 +346,8 @@ class ApiUsers extends ApiController
         return true;
     }
 
-    public function getMultiChunkEditionsByUser(Request $request, Response $response) : Response {
-        $userTid =  (int) $request->getAttribute('userTid');
+    public function userMultiChunkEditions(Request $request, Response $response) : Response {
+        $userTid =  (int) $request->getAttribute('userId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
         $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionsByUser($userTid);
         return $this->responseWithJson($response, $editionInfo);

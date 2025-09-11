@@ -82,8 +82,10 @@ export class CleanerOnePointZero extends CtDataCleaner {
     ctData.customApparatuses = ctData.customApparatuses.map((app) => {
       app.entries = app.entries.map((entry, entryIndex) => {
         // make sure there's no section in the entry
+        // @ts-expect-error - section is not defined in the type definition
         if (entry.section !== undefined) {
           this.verbose && console.log(`Deleting 'section' from apparatus '${app['type']}', entry ${entryIndex}`);
+          // @ts-expect-error - section is not defined in the type definition
           delete entry.section;
         }
         return entry;
@@ -103,6 +105,7 @@ export class CleanerOnePointZero extends CtDataCleaner {
           // console.log(`Sub entry ${subEntryN}`)
           if (ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText !== undefined) {
             // this is a custom entry, other types do not have a fmtText
+            // @ts-expect-error - fmtText is defined at this point
             ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText = ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText.map((token: FmtTextToken) => {
               if (token.type === 'glue' && token.space === '') {
                 token.space = DEFAULT_GLUE_SPACE;

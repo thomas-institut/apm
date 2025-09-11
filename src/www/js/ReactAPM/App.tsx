@@ -5,12 +5,14 @@ import {setBaseUrl} from "@/pages/common/SiteUrlGen";
 import {DataId_EC_ViewOptions} from "@/constants/WebStorageDataId";
 import {setSiteLanguage} from "@/pages/common/SiteLang";
 import {ApmFormats} from "@/pages/common/ApmFormats";
-import {BrowserRouter, Route, Routes, useLocation, useNavigate} from "react-router";
+import {BrowserRouter, Route, Routes, useLocation, useMatch, useNavigate} from "react-router";
 import Dashboard from "@/ReactAPM/Dashboard/Dashboard";
 import Login from "@/ReactAPM/Login";
 import {Context, createContext, lazy, useEffect, useRef, useState} from "react";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import TopBar from "@/ReactAPM/TopBar";
+import {RouteUrls} from './Router/RouteUrls';
+
 
 // @ts-ignore
 const Works = lazy(() => import('./Works.js'));
@@ -20,8 +22,19 @@ const People = lazy(() => import('./People.js'));
 const Search = lazy(() => import('./Search.js'));
 // @ts-ignore
 const Docs = lazy(() => import('./Docs.js'));
+// @ts-ignore
+const MultiChunkEdition = lazy(() => import('./MultiChunkEdition.js'));
+// @ts-ignore
+const Work = lazy(() => import('./Work.js'));
+// @ts-ignore
+const Chunk = lazy(() => import('./Chunk.js'));
+// @ts-ignore
+const Person = lazy(() => import('./Person.js'));
+// @ts-ignore
+const EditionComposer = lazy( () => import('././EditionComposer'));
 
-const AppSettingsUrl: string = "app-settings";
+
+const AppSettingsUrl: string = "/app-settings";
 const ReactAppBaseUrl = '/new';
 const ApmTokenKey = 'apm-token';
 const DefaultSiteLanguage = 'en';
@@ -42,7 +55,7 @@ const DefaultAppContext: AppContextProps = {
   userName: 'Guest',
   baseUrl: '',
   apiBaseUrl: '',
-  reactAppBaseUrl: '',
+  reactAppBaseUrl: ReactAppBaseUrl,
   localCache: new WebStorageKeyCache('local', ''),
   dataProxy: new ApmDataProxy('', []),
 };
@@ -77,6 +90,7 @@ function RealApp() {
   const [firstRun, setFirstRun] = useState(true);
 
   const appSettingsLoader = async () => {
+    console.log(`Loading app settings from ${AppSettingsUrl}`);
     const response = await fetch(AppSettingsUrl);
     return await response.json();
   };
@@ -89,6 +103,7 @@ function RealApp() {
     }
     setStatus(StatusLoadingSettings);
     appSettingsLoader().then(async (data) => {
+      console.log(`Loaded app settings`, data);
       setStatus(StatusInitializing);
       const baseUrl: string = data.baseUrl;
       const apiBaseUrl: string = data.baseUrl + '/api';
@@ -118,6 +133,7 @@ function RealApp() {
         localCache: localCache,
         dataProxy: apmDataProxy,
       };
+      RouteUrls.setBaseUrl(reactAppBaseUrl);
       setStatus(StatusInitializationReady);
       setFirstRun(false);
     }).catch((error) => {
@@ -127,8 +143,10 @@ function RealApp() {
   };
 
   const checkAuthentication = async () => {
+    console.log(`Checking authentication, status is ${status} and firstRun is ${firstRun}`);
     const firingStates = [StatusInitializationReady, StatusReady];
-    if (!firstRun && !firingStates.includes(status)) {
+    if (!firingStates.includes(status)) {
+      console.log(`Ignoring checkAuthentication() because status is ${status} and firstRun is ${firstRun}`);
       return;
     }
 
@@ -138,7 +156,8 @@ function RealApp() {
       if (userData === null) {
         console.log('User is not authenticated');
         setStatus(StatusReady);
-        navigate(`${reactAppBaseUrl}/login`);
+        console.log('Navigating to login', RouteUrls.login());
+        navigate(RouteUrls.login());
       } else {
         appContext.current.userId = userData.id;
         appContext.current.userName = userData.name;
@@ -159,12 +178,25 @@ function RealApp() {
   }, [firstRun, location.pathname, navigate]);
 
   const handleLogout = () => {
-    appContext.current.localCache.delete(ApmTokenKey).then( ()=>{
-      navigate(reactAppBaseUrl);
+    appContext.current.localCache.delete(ApmTokenKey).then(() => {
+      navigate(RouteUrls.home());
     });
-  }
+  };
 
-  const isLoginPage = location.pathname === `${reactAppBaseUrl}/login`;
+
+  const routesWithTopBar = [
+    RouteUrls.home(),
+    RouteUrls.docs(),
+    RouteUrls.works(),
+    RouteUrls.people(),
+    RouteUrls.search(),
+    RouteUrls.patternPerson(),
+    RouteUrls.patternWork(),
+    RouteUrls.patternChunk(),
+  ]
+
+  const routeMatches = routesWithTopBar.map(path => useMatch(path));
+  const routeShouldHaveTopBar = routeMatches.some(match => match !== null);
 
   switch (status) {
     case StatusStart:
@@ -188,14 +220,20 @@ function RealApp() {
           <div style={{
             height: "100%", display: "flex", flexDirection: "column",
           }}>
-            {!isLoginPage && (<TopBar style={{flexGrow: 0}} onLogout={handleLogout}/>)}
+            {routeShouldHaveTopBar && (<TopBar style={{flexGrow: 0}} onLogout={handleLogout}/>)}
             <Routes>
-              <Route path={`${reactAppBaseUrl}/`} element={<Dashboard/>}/>
-              <Route path={`${reactAppBaseUrl}/docs`} element={<Docs/>}/>
-              <Route path={`${reactAppBaseUrl}/works`} element={<Works/>}/>
-              <Route path={`${reactAppBaseUrl}/people`} element={<People/>}/>
-              <Route path={`${reactAppBaseUrl}/search`} element={<Search/>}/>
-              <Route path={`${reactAppBaseUrl}/login`} element={<Login/>}/>
+              <Route path={RouteUrls.home()} element={<Dashboard/>}/>
+              <Route path={RouteUrls.docs()} element={<Docs/>}/>
+              <Route path={RouteUrls.works()} element={<Works/>}/>
+              <Route path={RouteUrls.people()} element={<People/>}/>
+              <Route path={RouteUrls.search()} element={<Search/>}/>
+              <Route path={RouteUrls.patternMultiChunkEdition()} element={<MultiChunkEdition/>}/>
+              <Route path={RouteUrls.patternSingleChunkEdition()} element={<EditionComposer/>}/>
+              <Route path={RouteUrls.patternCollationTable()} element={<EditionComposer/>}/>
+              <Route path={RouteUrls.patternChunk()} element={<Chunk/>}/>
+              <Route path={RouteUrls.patternWork()} element={<Work/>}/>
+              <Route path={RouteUrls.patternPerson()} element={<Person/>}/>
+              <Route path={RouteUrls.login()} element={<Login/>}/>
             </Routes>
           </div>
           )

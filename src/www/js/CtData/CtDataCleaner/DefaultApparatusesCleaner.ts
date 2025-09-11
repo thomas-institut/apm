@@ -21,7 +21,6 @@ import {CtDataCleaner} from './CtDataCleaner';
 import {deepCopy} from '@/toolbox/Util';
 import * as CollationTableType from '@/Witness/WitnessTokenClass';
 import {CtDataInterface} from "../CtDataInterface";
-import {ApparatusTools} from "@/Edition/ApparatusTools";
 
 const defaultApparatus = [ApparatusType.CRITICUS, ApparatusType.FONTIUM, ApparatusType.COMPARATIVUS, ApparatusType.MARGINALIA];
 
@@ -44,7 +43,9 @@ export class DefaultApparatusesCleaner extends CtDataCleaner {
       }).indexOf(appType);
       if (appIndex === -1) {
         this.verbose && console.log(`Adding empty apparatus '${appType}'`);
-        ctData.customApparatuses.push(ApparatusTools.createEmpty());
+        ctData.customApparatuses.push({
+          entries: [], type: appType
+        });
       }
     });
 

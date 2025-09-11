@@ -20,6 +20,8 @@ export class ApparatusEntry implements ApparatusEntryInterface {
   tags: string[];
   subEntries: ApparatusSubEntry[];
   metadata: MetadataInterface;
+  mainTextFrom: number;
+  mainTextTo: number;
 
   constructor() {
     this.from = -1;
@@ -32,6 +34,8 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.tags = [];
     this.subEntries = [];
     this.metadata = {};
+    this.mainTextFrom = -1;
+    this.mainTextTo = -1;
   }
 
   static clone(entry: ApparatusEntryInterface): ApparatusEntry {
@@ -86,7 +90,7 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.postLemma = entry.postLemma;
     this.separator = entry.separator;
     this.tags = [...entry.tags];
-    this.metadata = cloneMetadata(entry.metadata);
+    this.metadata = cloneMetadata(entry.metadata ?? {});
     this.subEntries = entry.subEntries.map((subEntry) => {
       return ApparatusSubEntry.clone(subEntry);
     });

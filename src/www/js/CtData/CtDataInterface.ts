@@ -1,7 +1,8 @@
 // noinspection ES6PreferShortImport
 
 
-import {ApparatusEntryInterface, MetadataInterface} from "../Edition/EditionInterface.js";
+import {MetadataInterface} from "../Edition/EditionInterface.js";
+import {FmtTextToken} from "../lib/FmtText/FmtTextToken";
 
 export interface CtDataInterface {
   lang: string;
@@ -36,9 +37,75 @@ export interface NonTokenItemIndex {
 }
 
 export interface CustomApparatusInterface {
+  /**
+   * Apparatus type, e.g. 'criticus', 'fontium', etc.
+   */
   type: string;
-  entries: ApparatusEntryInterface[];
+  entries: CustomApparatusEntryInterface[];
   metadata?: MetadataInterface;
+}
+
+export interface CustomApparatusEntryInterface  {
+  /**
+   * Starting column of the entry in the collation matrix
+   */
+  from: number;
+  /**
+   * Ending column of the entry in the collation matrix
+   */
+  to: number;
+  lemma: string | FmtTextToken[];
+  postLemma: string;
+  preLemma: string;
+  separator: string;
+  subEntries: CustomApparatusSubEntryInterface[];
+  tags: string[];
+}
+
+export interface WitnessDataItemInterface {
+  witnessIndex: number;
+  hand: number;
+  location: string;
+  forceHandDisplay: boolean;
+  siglum: string;
+  omitSiglum: boolean;
+  /**
+   * If true, the data is used when there's a foliation change from
+   * a non-empty foliation to a another one. For example, from '20r' to '20v'.
+   * When a foliation changes from '' to other value, there's no actual foliation,
+   * it's simply the first time there's a foliation value for that witness.
+   */
+  realFoliationChange?: boolean;
+}
+
+
+export const CUSTOM_APPARATUS_SUB_ENTRY_TYPE_AUTO = 'auto';
+export const CUSTOM_APPARATUS_SUB_ENTRY_TYPE_FULL_CUSTOM = 'fullCustom';
+
+export interface CustomApparatusSubEntryInterface {
+  type: 'auto' | 'fullCustom';
+  enabled: boolean;
+  position: number;
+  tags: string[];
+
+  /**
+   * Hash string used to identify an automatic entry
+   */
+  hash?: string;
+
+
+  /**
+   * Text of a fullCustom sub entry
+   */
+  fmtText?: FmtTextToken [];
+  /**
+   * Keyword of a fullCustom sub entry
+   */
+  keyword?: string;
+  /**
+   * Witness data of a fullCustom sub entry
+   */
+  witnessData?: WitnessDataItemInterface[];
 }
 
 

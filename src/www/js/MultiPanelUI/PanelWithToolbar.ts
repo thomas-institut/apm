@@ -1,4 +1,4 @@
-import { Panel } from './Panel'
+import {Panel, PanelOptions} from './Panel';
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 import { UiToolBox } from '@/toolbox/UiToolBox'
 
@@ -6,11 +6,16 @@ const toolbarClass: string = 'panel-toolbar'
 const contentAreaClass  = 'panel-content'
 const contentClass = 'panel-with-toolbar'
 
+export interface PanelWithToolbarOptions extends PanelOptions {
+  maximizeContentArea?: boolean
+  contentAreaId?: string
+}
+
 export class PanelWithToolbar extends Panel {
   private readonly maximizeContentArea: boolean
   protected readonly contentAreaId: string;
 
-  constructor (options: any) {
+  constructor (options: PanelWithToolbarOptions) {
     super(options)
     let optionsSpec = {
       maximizeContentArea: { type: 'boolean', default: true},

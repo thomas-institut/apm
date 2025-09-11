@@ -16,8 +16,9 @@
  *
  */
 
+// noinspection ES6PreferShortImport
 
-import {WitnessDataItemInterface} from "./EditionInterface.js";
+import {WitnessDataItemInterface} from "../CtData/CtDataInterface.js";
 
 export class WitnessDataItem implements WitnessDataItemInterface {
 

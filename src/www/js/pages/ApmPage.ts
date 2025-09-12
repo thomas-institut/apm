@@ -154,8 +154,8 @@ export class ApmPage {
   }
 
 
-  async saveLangInCache(lang: string) {
-    await this.localCache.store(langCacheKey, lang, 0, langCacheDataId);
+  saveLangInCache(lang: string) {
+    this.localCache.store(langCacheKey, lang, 0, langCacheDataId);
   }
 
   /**
@@ -163,9 +163,9 @@ export class ApmPage {
    * If none of the user languages is available, returns the default language.
    * @return {string}
    */
-  async detectBrowserLanguage(): Promise<string> {
+  detectBrowserLanguage(): string {
     // First, let's see if there's something in the cache
-    let cacheLang = await this.localCache.retrieve(langCacheKey, langCacheDataId);
+    let cacheLang = this.localCache.retrieve(langCacheKey, langCacheDataId);
     if (validLanguages.indexOf(cacheLang) !== -1) {
       console.log(`Site language detected in browser cache`);
       return cacheLang;

@@ -1,26 +1,17 @@
-
-import { SimpleLockManager } from './SimpleLockManager'
-import {KeyCache} from "./KeyCache/KeyCache";
+import {AsyncKeyCache} from "./KeyCache/AsyncKeyCache";
+import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 
 export class CachedFetcher {
-  private cache: KeyCache;
+  private cache: AsyncKeyCache | KeyCache;
   private debug: boolean;
   private readonly verbose: boolean;
-  private defaultTtl: number;
-  private lockManager: SimpleLockManager;
+  private readonly defaultTtl: number;
 
-  /**
-   *
-   * @param {KeyCache}cache
-   * @param {number} defaultTtl if 0, no caching is done by default
-   * @param lockManager
-   */
-  constructor (cache: KeyCache, defaultTtl: number = 0, lockManager: SimpleLockManager|null = null) {
-    this.cache = cache
+  constructor(cache: AsyncKeyCache | KeyCache, defaultTtl: number = 0) {
+    this.cache = cache;
     this.debug = false;
     this.verbose = true;
     this.defaultTtl = defaultTtl;
-    this.lockManager = lockManager ?? new SimpleLockManager();
   }
 
   /**
@@ -35,36 +26,25 @@ export class CachedFetcher {
    * @param {number} ttl
    * @return { Promise<{}>}
    */
-  fetch( key: string, fetcher: () => Promise<any>, forceActualFetch: boolean = false, ttl: number = -1): Promise<any> {
-    return new Promise(async (resolve, reject) => {
-
-      await this.lockManager.getLock(key);
+  fetch(key: string, fetcher: () => Promise<any>, forceActualFetch: boolean = false, ttl: number = -1): Promise<any> {
+    return navigator.locks.request(key, {mode: 'exclusive'}, async () => {
       if (forceActualFetch) {
-        await this.cache.delete(key)
+        await this.cache.delete(key);
       }
-      let cachedData = await this.cache.retrieve(key)
+      let cachedData = await this.cache.retrieve(key);
       if (cachedData !== null) {
-        this.lockManager.releaseLock(key);
-        resolve(cachedData);
-        return;
+        // this.verbose && console.log(`Got cached data for '${key}'`);
+        return cachedData;
       }
-
-      let  startTime = Date.now();
-
-      this.verbose && console.log(`Doing actual fetch for '${key}' at ${startTime / 1000}`);
-      fetcher().then( async (data) => {
-        this.debug && console.log(`Got data for '${key}' in ${Date.now() - startTime} ms`);
-        let actualTtl = ttl === -1 ? this.defaultTtl : ttl;
-        this.debug && console.log(`Actual ttl for '${key}' is ${actualTtl}`);
-        if (actualTtl > 0) {
-          await this.cache.store(key, data, actualTtl);
-        }
-        this.lockManager.releaseLock(key);
-        resolve(data);
-      }).catch((e) => {
-        this.lockManager.releaseLock(key);
-        reject(e)
-      });
+      let startTime = Date.now();
+      this.debug && console.log(`Doing actual fetch for '${key}'`);
+      const data = await fetcher();
+      this.verbose && console.log(`Got data for '${key}' in ${Date.now() - startTime} ms`);
+      let actualTtl = ttl === -1 ? this.defaultTtl : ttl;
+      if (actualTtl > 0) {
+        await this.cache.store(key, data, actualTtl);
+      }
+      return data;
     });
   }
 }

@@ -1,10 +1,10 @@
-import {InternalCacheObject, KeyCache} from "@/toolbox/KeyCache/KeyCache";
+import {InternalCacheObject, AsyncKeyCache} from "@/toolbox/KeyCache/AsyncKeyCache";
 
 
 const VersionNumber = 2;
 const storeName = 'cache';
 
-export class IndexedDbKeyCache extends KeyCache {
+export class IndexedDbKeyCache extends AsyncKeyCache {
 
   private readonly dbName: string;
   private readonly storeName: string;

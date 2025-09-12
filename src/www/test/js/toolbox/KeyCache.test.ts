@@ -4,7 +4,7 @@
 
 import {describe, expect, it} from 'vitest';
 import {randomAlphaString} from "@/toolbox/ToolBox";
-import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
+import {AsyncKeyCache} from "@/toolbox/KeyCache/AsyncKeyCache";
 import {KeyCacheReferenceTest} from "./KeyCacheReferenceTest";
 import {WebStorageKeyCache} from "@/toolbox/KeyCache/WebStorageKeyCache";
 import {IndexedDbKeyCache} from "@/toolbox/KeyCache/IndexedDbKeyCache";
@@ -16,7 +16,7 @@ describe('KeyCache (Memory)', () => {
   it('should perform basic functions', async () => {
     const dataId = randomAlphaString(32);
     const prefix = randomAlphaString(10);
-    await KeyCacheReferenceTest(new KeyCache(dataId, prefix));
+    await KeyCacheReferenceTest(new AsyncKeyCache(dataId, prefix));
   });
 });
 

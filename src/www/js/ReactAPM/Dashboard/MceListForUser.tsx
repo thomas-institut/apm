@@ -20,16 +20,17 @@ export default function MceListForUser(props: MceListForUserProps) {
     return appContext.dataProxy.userMultiChunkEditions(userId);
   };
 
-  const {isLoading, isError, data, error} = useQuery<ApiUserMultiChunkEdition[]>({
-    queryKey: ['mceList', userId], queryFn: () => getMceListForUser(userId),
+  const result = useQuery<ApiUserMultiChunkEdition[]>({
+     queryKey: ['mceList', userId], queryFn: () => getMceListForUser(userId),
   });
+
 
   const newMce = (
     <div style={{marginTop: '1em'}} className={props.itemClassName}><Link to={RouteUrls.multiChunkEdition('new')}
                                                                           discover="none"><FilePlus/> Create new edition</Link>
     </div>);
 
-  if (isLoading) {
+  if (result.status === 'pending') {
     return (<>
       <Placeholder as="div" animation="glow">
         <Placeholder xs={12} bg="light" style={{height: '3em'}}/>
@@ -38,9 +39,11 @@ export default function MceListForUser(props: MceListForUserProps) {
     </>);
   }
 
-  if (isError) {
-    return (<div>Error: {error.message}</div>);
+  if (result.status === 'error') {
+    return (<div>Error: {result.error.message}</div>);
   }
+
+  const data = result.data;
 
   if (data === undefined) {
     return (<div>Error: undefined data</div>);

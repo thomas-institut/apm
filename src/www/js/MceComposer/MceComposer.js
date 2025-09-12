@@ -24,7 +24,7 @@ import { MultiPanelUI } from '@/MultiPanelUI/MultiPanelUI'
 import * as Util from '../toolbox/Util.mjs'
 import { deepCopy } from '../toolbox/Util.mjs'
 import { ChunkSearchPanel } from './ChunkSearchPanel'
-import { KeyCache } from '@/toolbox/KeyCache/KeyCache'
+import { AsyncKeyCache } from '@/toolbox/KeyCache/AsyncKeyCache'
 import { CtDataEditionGenerator } from '@/Edition/EditionGenerator/CtDataEditionGenerator'
 import { EditionPreviewPanel } from '@/EditionComposer/EditionPreviewPanel'
 import { Edition } from '@/Edition/Edition'
@@ -131,7 +131,7 @@ export class MceComposer extends ApmPage {
      */
     this.singleChunkEditions = []
 
-    this.cache = new KeyCache()
+    this.cache = new AsyncKeyCache()
     this._init().then(
       () => {
         console.log(`Mce Composer initialized`)

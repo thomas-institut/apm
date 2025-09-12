@@ -93,8 +93,8 @@ export default function CtListForUser(props: CtListForUserProps) {
         return(
           <div key={type + ctTablesByWorkItem.workId} style={{marginBottom: '1em'}}>
             <p className="dashboard-list-item">
-              <PersonLink personId={worksByAuthorItem.authorId} name={worksByAuthorItem.authorName}/>,&nbsp;
-              <EntityLink id={ctTablesByWorkItem.entityId} type="work" name={ctTablesByWorkItem.workTitle}/>
+              <PersonLink personId={worksByAuthorItem.authorId}/>,&nbsp;
+              <EntityLink id={ctTablesByWorkItem.entityId} type="work"/>
             </p>
             <div>
               {tableElems}
@@ -107,7 +107,8 @@ export default function CtListForUser(props: CtListForUserProps) {
   };
 
   const {isLoading, isError, data, error} = useQuery({
-    queryKey: ['ctList', userId], queryFn: () => getCtListForUser(userId),
+    queryKey: ['ctList', userId],
+    queryFn: () => getCtListForUser(userId),
   });
 
   if (isLoading) {
@@ -122,7 +123,7 @@ export default function CtListForUser(props: CtListForUserProps) {
   }
 
   const worksByAuthor = getWorksByAuthorFromApiData(data);
-  console.log(worksByAuthor);
+  // console.log(worksByAuthor);
 
   return (<>
     <h1 ref={props.edRef}>Chunk Editions</h1>

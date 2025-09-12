@@ -80,10 +80,9 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     this.cacheKey = this.getStorageKeyFromEdition();
     this.styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(this.edition.lang);
     this.styleSheetIds = Object.keys(this.styleSheets);
-    this.webCache.retrieve(this.cacheKey).then((data) => {
-      this.currentStyleSheetId = data?.styleSheetId ?? this.styleSheetIds[0];
-      this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId);
-    })
+    const data = this.webCache.retrieve(this.cacheKey);
+    this.currentStyleSheetId = data?.styleSheetId ?? this.styleSheetIds[0];
+    this.currentStyleSheet = SystemStyleSheet.getStyleSheet(this.edition.lang, this.currentStyleSheetId);
   }
 
   generateToolbarHtml(_tabId: string, _mode: string, _visible: boolean): string {
@@ -144,7 +143,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     // this.ctData = ctData
     this.edition = edition;
     this.cacheKey = this.getStorageKeyFromEdition();
-    const savedViewSettings = await this.webCache.retrieve(this.cacheKey) ?? {
+    const savedViewSettings = this.webCache.retrieve(this.cacheKey) ?? {
       styleSheetId: this.styleSheetIds[0]
     };
     this.currentStyleSheetId = savedViewSettings.styleSheetId;

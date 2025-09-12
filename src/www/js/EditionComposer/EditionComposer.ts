@@ -24,7 +24,7 @@ import * as Util from '../toolbox/Util.mjs';
 import {capitalizeFirstLetter, deepCopy} from '@/toolbox/Util';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil';
-import {KeyCache} from '@/toolbox/KeyCache/KeyCache';
+import {AsyncKeyCache} from '@/toolbox/KeyCache/AsyncKeyCache';
 import {ServerLogger} from '@/Server/ServerLogger';
 
 // MultiPanel UI
@@ -133,7 +133,7 @@ export class EditionComposer extends ApmPage {
   private versionInfo: any;
   private lastVersion: string;
   private versionId: any;
-  private cache: KeyCache;
+  private cache: AsyncKeyCache;
   private edition: Edition;
   private convertingToEdition: boolean;
   private saving: boolean;
@@ -255,7 +255,7 @@ export class EditionComposer extends ApmPage {
       console.warn('Working on an older version of the Edition/CollationTable');
     }
 
-    this.cache = new KeyCache();
+    this.cache = new AsyncKeyCache();
 
     this.edition = new Edition();
     this.reGenerateEdition();
@@ -502,14 +502,14 @@ export class EditionComposer extends ApmPage {
   }
 
   async getViewOptions() {
-    let viewOptions = await this.localCache.retrieve(this.getViewOptionsStorageKey(), DataId_EC_ViewOptions);
+    let viewOptions = this.localCache.retrieve(this.getViewOptionsStorageKey(), DataId_EC_ViewOptions);
     return viewOptions === null ? {
       vertical: true, percentage: 50, popoversEnabled: true, highlightEnabled: true
     } : viewOptions;
   }
 
-  async storeViewOptions(viewOptions: any) {
-    await this.localCache.store(this.getViewOptionsStorageKey(), viewOptions, ViewOptionsCacheTtl, DataId_EC_ViewOptions);
+  storeViewOptions(viewOptions: any) {
+    this.localCache.store(this.getViewOptionsStorageKey(), viewOptions, ViewOptionsCacheTtl, DataId_EC_ViewOptions);
   }
 
   editApparatusEntryFromCollationTable(apparatusIndex: number, ctFrom: number, ctTo: number) {

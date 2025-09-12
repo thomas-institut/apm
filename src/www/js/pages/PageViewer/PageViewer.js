@@ -139,7 +139,7 @@ export class PageViewer extends ApmPage {
     return async (e) => {
       //console.log('OSD zoom to ' + e.zoom)
       this.layout.zoom = e.zoom
-      await this.storeViewerLayoutInCache(this.layout)
+      this.storeViewerLayoutInCache(this.layout)
     }
   }
 
@@ -151,13 +151,13 @@ export class PageViewer extends ApmPage {
         editor.numberLines()
       })
       this.layout.percentage = 100 * data.lastComponentSize / (data.lastComponentSize + data.firstComponentSize + 5)
-      await this.storeViewerLayoutInCache(this.layout)
+      this.storeViewerLayoutInCache(this.layout)
     }
   }
 
   async getViewerLayoutFromCache () {
     let layout = null
-    let layoutJson = await this.localCache.retrieve(this.layoutCacheKey, LAYOUT_CACHE_DATA_ID)
+    let layoutJson = this.localCache.retrieve(this.layoutCacheKey, LAYOUT_CACHE_DATA_ID)
     if (layoutJson !== null) {
       layout = JSON.parse(layoutJson)
     }
@@ -168,7 +168,7 @@ export class PageViewer extends ApmPage {
         percentage: 50,
         zoom: 1
       }
-      await this.storeViewerLayoutInCache(layout)
+      this.storeViewerLayoutInCache(layout)
     }
     if (layout.zoom === undefined) {
       layout.zoom = 1
@@ -176,8 +176,8 @@ export class PageViewer extends ApmPage {
     this.layout = layout
   }
 
-  async storeViewerLayoutInCache (layout) {
-    await this.localCache.store(this.layoutCacheKey, JSON.stringify(layout), DEFAULT_LAYOUT_CACHE_TTL, LAYOUT_CACHE_DATA_ID)
+  storeViewerLayoutInCache (layout) {
+    this.localCache.store(this.layoutCacheKey, JSON.stringify(layout), DEFAULT_LAYOUT_CACHE_TTL, LAYOUT_CACHE_DATA_ID)
   }
 
   genOnClickRealAddColumnButton () {

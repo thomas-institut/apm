@@ -43,12 +43,12 @@ export interface InternalCacheObject {
   setAt: number;
 }
 
-export class KeyCache {
+export class AsyncKeyCache {
   private readonly defaultDataId: string;
-  private readonly cache: { [key: string]: InternalCacheObject };
+  private readonly cache: { [key: string] : InternalCacheObject };
   private readonly prefix: string;
 
-  constructor(dataId: string = '', prefix: string = '') {
+  constructor (dataId: string = '', prefix: string = '') {
     this.cache = {};
     this.defaultDataId = dataId;
     this.prefix = prefix;
@@ -66,11 +66,18 @@ export class KeyCache {
    * If the key already exists, the value will be replaced (independently of the ttl and dataId)
    *
    */
-  public store(key: string, data: any, ttl: number = 0, dataId: string | null = null): void {
-    let now = this.now();
-    this.storeItemObject(key, {
-      data: data, dataId: dataId ?? this.defaultDataId, expires: ttl > 0 ? now + ttl : -1, setAt: now
-    });
+  public async store(key: string, data: any, ttl: number = 0, dataId: string | null = null) : Promise<void>{
+    let now = this.now()
+    await this.storeItemObject(key, {
+      data: data,
+      dataId: dataId ?? this.defaultDataId,
+      expires: ttl > 0 ? now + ttl : -1,
+      setAt: now
+    })
+  }
+
+  protected getRealKey(key: string): string {
+    return `${this.prefix}${key}`;
   }
 
   /**
@@ -84,36 +91,36 @@ export class KeyCache {
    * @param {string | null} dataId
    * @return {*|null}
    */
-  public retrieve(key: string, dataId: string | null = null): any | null {
-    let itemData = this.getItemObject(key);
-    if (itemData === undefined || itemData === null) {
-      return null;
+  public async retrieve(key: string, dataId: string | null = null): Promise<any | null> {
+    let itemData = await this.getItemObject(key)
+    if (itemData === undefined || itemData === null)  {
+      return null
     }
     if (itemData.dataId === (dataId ?? this.defaultDataId)) {
       if (itemData.expires === -1) {
         // enforce max ttl
         let realExpirationTime = itemData.setAt + MaxTtl;
         if (realExpirationTime > this.now()) {
-          return itemData.data;
+          return itemData.data
         }
       } else {
         if (itemData.expires > this.now()) {
-          return itemData.data;
+          return itemData.data
         }
       }
     }
 
     // item is expired or its dataId does not math the cache's dataId, so completely delete it from cache
-    this.delete(key);
-    return null;
+    await this.delete(key)
+    return null
   }
 
   /**
    * Deletes the item with the given key from the cache
    * @param {string} key
    */
-  public delete(key: string): void {
-    this.deleteItemObject(key);
+  public async delete(key: string) : Promise<void> {
+    await this.deleteItemObject(key)
   }
 
   /**
@@ -127,55 +134,55 @@ export class KeyCache {
    * @param ignoreDataIds array of dataIds to ignore
    * @return {number}
    */
-  public cleanCache(before = -1, ignoreDataIds: string[] = []): number {
+  public async cleanCache(before = -1, ignoreDataIds: string[] = []): Promise<number> {
     let now = this.now();
     let removedItemCount = 0;
-    for (const key of this.getKeys()) {
-      let itemObject = this.getItemObject(key);
+    for (const key of await this.getKeys()) {
+      let itemObject = await this.getItemObject(key);
       if (itemObject === null) {
         removedItemCount++;
-        this.delete(key);
+        await this.delete(key);
         break;
       }
       if (itemObject.dataId !== this.defaultDataId) {
         if (ignoreDataIds.indexOf(itemObject.dataId) === -1) {
           removedItemCount++;
-          this.delete(key);
+          await this.delete(key);
         }
         break;
       }
       let expirationTime = itemObject.expires === -1 ? itemObject.setAt + MaxTtl : itemObject.expires;
       if (expirationTime < now) {
         removedItemCount++;
-        this.delete(key);
+        await this.delete(key);
         break;
       }
       if (itemObject.setAt <= before) {
         removedItemCount++;
-        this.delete(key);
+        await this.delete(key);
       }
     }
     return removedItemCount;
 
   }
 
-  protected getRealKey(key: string): string {
-    return `${this.prefix}${key}`;
+  private now() : number {
+    return Date.now() / 1000;
   }
 
   /**
    * Returns all the keys currently in the cache, including
    * keys for expired items
    */
-  protected getKeys(): string[] {
-    return this.getKeysFromRealKeysArray(Object.keys(this.cache));
+  protected async getKeys(): Promise<string[]> {
+   return this.getKeysFromRealKeysArray(Object.keys(this.cache));
   }
 
-  protected getKeysFromRealKeysArray(realKeysArray: string[]): string[] {
+  protected getKeysFromRealKeysArray(realKeysArray : string[]): string[] {
     let prefixLength = this.prefix.length;
-    return realKeysArray.filter((realKey) => {
+    return realKeysArray.filter( (realKey) => {
       return realKey.substring(0, prefixLength) === this.prefix;
-    }).map((realKey) => {
+    }).map( (realKey) => {
       return realKey.substring(prefixLength);
     });
   }
@@ -186,7 +193,7 @@ export class KeyCache {
    * @param {string} key
    * @return { InternalCacheObject}
    */
-  protected getItemObject(key: string): InternalCacheObject | null {
+  protected async getItemObject(key: string): Promise<InternalCacheObject | null> {
     return this.cache[this.getRealKey(key)];
   }
 
@@ -195,7 +202,7 @@ export class KeyCache {
    * @param {string}key
    * @param {InternalCacheObject}itemObject
    */
-  protected storeItemObject(key: string, itemObject: InternalCacheObject): void {
+  protected async storeItemObject(key : string, itemObject: InternalCacheObject): Promise<void> {
     this.cache[this.getRealKey(key)] = itemObject;
   }
 
@@ -204,12 +211,8 @@ export class KeyCache {
    * @param {string}key
    * @protected
    */
-  protected deleteItemObject(key: string): void {
+  protected async deleteItemObject(key: string): Promise<void> {
     delete this.cache[this.getRealKey(key)];
-  }
-
-  private now(): number {
-    return Date.now() / 1000;
   }
 
 }

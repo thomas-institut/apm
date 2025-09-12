@@ -1,7 +1,8 @@
 import { expect } from 'vitest'
 import {randomAlphaString} from "@/toolbox/ToolBox";
-import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
+import {AsyncKeyCache} from "@/toolbox/KeyCache/AsyncKeyCache";
 import {wait} from "@/toolbox/wait";
+import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 
 const NumIterations = 100;
 
@@ -15,7 +16,7 @@ interface TestData {
  * A test suite that every KeyCache implementation should pass.
  * @param keyCache a KeyCache instance without any data and set up with a non-empty dataId
 */
-export async function KeyCacheReferenceTest(keyCache: KeyCache) {
+export async function KeyCacheReferenceTest(keyCache: AsyncKeyCache | KeyCache) {
 
   // get non-existent keys
   for (let i = 0; i < NumIterations; i++) {

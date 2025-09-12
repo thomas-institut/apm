@@ -12,6 +12,7 @@ import {Context, createContext, lazy, useEffect, useRef, useState} from "react";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import TopBar from "@/ReactAPM/TopBar";
 import {RouteUrls} from './Router/RouteUrls';
+import {deleteToken, retrieveToken, storeToken} from "@/ReactAPM/ToolBox/AuthenticationUtilities";
 
 
 // @ts-ignore
@@ -31,12 +32,13 @@ const Chunk = lazy(() => import('./Chunk.js'));
 // @ts-ignore
 const Person = lazy(() => import('./Person.js'));
 // @ts-ignore
-const EditionComposer = lazy( () => import('././EditionComposer'));
+const EditionComposer = lazy(() => import('././EditionComposer'));
 
 
-const AppSettingsUrl: string = "/app-settings";
-const ReactAppBaseUrl = '/new';
+const AppSettingsUrl: string = "../app-settings";
+const ReactAppBaseUrlSuffix = '/new';
 const ApmTokenKey = 'apm-token';
+const ApmTokenCookie = 'rme2';
 const DefaultSiteLanguage = 'en';
 
 
@@ -55,7 +57,7 @@ const DefaultAppContext: AppContextProps = {
   userName: 'Guest',
   baseUrl: '',
   apiBaseUrl: '',
-  reactAppBaseUrl: ReactAppBaseUrl,
+  reactAppBaseUrl: ReactAppBaseUrlSuffix,
   localCache: new WebStorageKeyCache('local', ''),
   dataProxy: new ApmDataProxy('', []),
 };
@@ -82,12 +84,17 @@ export default App;
 
 function RealApp() {
 
-  const reactAppBaseUrl: string = ReactAppBaseUrl;
+
   const queryClient = new QueryClient();
   const location = useLocation();
   const navigate = useNavigate();
   const [status, setStatus] = useState(StatusStart);
   const [firstRun, setFirstRun] = useState(true);
+
+  function getApmBasePathName(baseUrl: string): string {
+    const url = new URL(baseUrl);
+    return url.pathname;
+  }
 
   const appSettingsLoader = async () => {
     console.log(`Loading app settings from ${AppSettingsUrl}`);
@@ -107,6 +114,10 @@ function RealApp() {
       setStatus(StatusInitializing);
       const baseUrl: string = data.baseUrl;
       const apiBaseUrl: string = data.baseUrl + '/api';
+      const apmBasePathName: string = getApmBasePathName(baseUrl);
+
+      const reactAppBaseUrl: string = (apmBasePathName === '/' ? '' : apmBasePathName) + ReactAppBaseUrlSuffix;
+      console.log(`React app base URL is '${reactAppBaseUrl}'`);
 
       setBaseUrl(baseUrl, apiBaseUrl);
       const localCache = new WebStorageKeyCache('local', data.cacheDataId);
@@ -119,11 +130,9 @@ function RealApp() {
 
       console.log(`Client timezone is '${timeZone}', currently ${ApmFormats.getTimeZoneOffsetStringForDate(new Date(), false, false)}`);
       await apmDataProxy.initialize();
-      apmDataProxy.withBearerAuthentication(() => {
-        return Promise.resolve(localCache.retrieve(ApmTokenKey));
-      }, async (token: string, ttl: number) => {
-        await localCache.store(ApmTokenKey, token, ttl);
-      });
+      apmDataProxy.withBearerAuthentication(async () => retrieveToken(localCache, ApmTokenKey, ApmTokenCookie),
+
+        async (token: string, ttl: number) => storeToken(localCache, ApmTokenKey, token, ttl, ApmTokenCookie));
       appContext.current = {
         userId: -1,
         userName: 'Guest',
@@ -143,21 +152,25 @@ function RealApp() {
   };
 
   const checkAuthentication = async () => {
-    console.log(`Checking authentication, status is ${status} and firstRun is ${firstRun}`);
+    // console.log(`Checking authentication, status is ${status} and firstRun is ${firstRun}`);
     const firingStates = [StatusInitializationReady, StatusReady];
     if (!firingStates.includes(status)) {
-      console.log(`Ignoring checkAuthentication() because status is ${status} and firstRun is ${firstRun}`);
       return;
     }
 
-    setStatus(StatusCheckingAuthentication);
+    if (status !== StatusReady) {
+      // only change the state when initializing... when status is StatusReady this function
+      // will run in the background and will either navigate to login or finish silently
+      setStatus(StatusCheckingAuthentication);
+    }
+
     try {
       const userData = await appContext.current.dataProxy.whoAmI();
       if (userData === null) {
         console.log('User is not authenticated');
-        setStatus(StatusReady);
         console.log('Navigating to login', RouteUrls.login());
         navigate(RouteUrls.login());
+        setStatus(StatusNavigatingToLogin);
       } else {
         appContext.current.userId = userData.id;
         appContext.current.userName = userData.name;
@@ -178,22 +191,12 @@ function RealApp() {
   }, [firstRun, location.pathname, navigate]);
 
   const handleLogout = () => {
-    appContext.current.localCache.delete(ApmTokenKey).then(() => {
-      navigate(RouteUrls.home());
-    });
+    deleteToken(appContext.current.localCache, ApmTokenKey, ApmTokenCookie);
+    navigate(RouteUrls.login());
   };
 
 
-  const routesWithTopBar = [
-    RouteUrls.home(),
-    RouteUrls.docs(),
-    RouteUrls.works(),
-    RouteUrls.people(),
-    RouteUrls.search(),
-    RouteUrls.patternPerson(),
-    RouteUrls.patternWork(),
-    RouteUrls.patternChunk(),
-  ]
+  const routesWithTopBar = [RouteUrls.home(), RouteUrls.docs(), RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(),];
 
   const routeMatches = routesWithTopBar.map(path => useMatch(path));
   const routeShouldHaveTopBar = routeMatches.some(match => match !== null);

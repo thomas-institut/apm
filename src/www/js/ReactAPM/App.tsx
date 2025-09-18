@@ -12,6 +12,7 @@ import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import TopBar from "@/ReactAPM/TopBar";
 import {RouteUrls} from './Router/RouteUrls';
 import {deleteToken, retrieveToken, storeToken} from "@/ReactAPM/ToolBox/AuthenticationUtilities";
+import {trimCharacters} from "@/toolbox/Util.mjs";
 
 // @ts-ignore
 const Dashboard = lazy(() => import('@/ReactAPM/Pages/Dashboard/Dashboard.js'));
@@ -37,7 +38,7 @@ const EditionComposer = lazy(() => import('./Pages/EditionComposer.js'));
 const Document = lazy(() => import('./Pages/Document.js'));
 
 
-const AppSettingsUrl: string = "../app-settings";
+const AppSettingsUrl: string = "app-settings";
 const ReactAppBaseUrlSuffix = '/beta';
 const ApmTokenKey = 'apm-token';
 const ApmTokenCookie = 'rme2';
@@ -103,8 +104,21 @@ function RealApp() {
   }
 
   const appSettingsLoader = async () => {
-    console.log(`Loading app settings from ${AppSettingsUrl}`);
-    const response = await fetch(AppSettingsUrl);
+    const basePathName = trimCharacters(window.location.pathname, ['/']);
+    console.log(`Base path name is '${basePathName}'`);
+    const reactAppSuffix = trimCharacters(ReactAppBaseUrlSuffix, ['/']);
+
+    const subDirs = basePathName.split('/');
+    const reactSuffixIndex = subDirs.indexOf(reactAppSuffix);
+    console.log(`React app base URL index is ${reactSuffixIndex}`);
+    if (reactSuffixIndex === -1) {
+      console.error(`React app base URL '${ReactAppBaseUrlSuffix}' not found in path '${basePathName}'`);
+      return;
+    }
+    const appSettingsPath = (reactSuffixIndex === 0 ? '' : subDirs.slice(0, reactSuffixIndex).join('/')) + '/' + AppSettingsUrl;
+
+    console.log(`Loading app settings from ${appSettingsPath}`);
+    const response = await fetch(appSettingsPath);
     return await response.json();
   };
 

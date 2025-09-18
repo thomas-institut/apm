@@ -8,7 +8,7 @@
 #
 # This will create the version tagline "version (versionDate) versionExtra"
 
-version: '0.73.6'
+version: '0.73.7'
 versionDate: '2025-Sep-18'
 versionExtra: ''
 

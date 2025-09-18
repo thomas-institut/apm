@@ -412,7 +412,7 @@ export class ApmApiClient {
    * @return {Promise<string>}
    */
   async getEntityName(id: number): Promise<string> {
-    const debug = true;
+    const debug = false;
     if (id === null) {
       return 'Undefined';
     }

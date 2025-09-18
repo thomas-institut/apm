@@ -6,6 +6,7 @@ import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEditio
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Link} from "react-router";
 import {FilePlus} from "react-bootstrap-icons";
+import Skeleton from "@/ReactAPM/Components/Skeleton";
 
 interface MceListForUserProps {
   userId: number;
@@ -32,9 +33,7 @@ export default function MceListForUser(props: MceListForUserProps) {
 
   if (result.status === 'pending') {
     return (<>
-      <Placeholder as="div" animation="glow">
-        <Placeholder xs={12} bg="light" style={{height: '3em'}}/>
-      </Placeholder>
+      <Skeleton as="div" style={{width: '20em', height: '5em'}}></Skeleton>
       {newMce}
     </>);
   }

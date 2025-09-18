@@ -412,11 +412,13 @@ export class ApmApiClient {
    * @return {Promise<string>}
    */
   async getEntityName(id: number): Promise<string> {
-    const debug = false;
+    const debug = true;
     if (id === null) {
       return 'Undefined';
     }
-    return navigator.locks.request(`GetEntityName-${id}`, {mode: 'exclusive'}, async () => {
+    const lockName = `GetEntityName-${id}`;
+    return navigator.locks.request(lockName, {mode: 'exclusive'}, async () => {
+      debug && console.log(`Acquired lock ${lockName}`);
       const cacheKey = this.getEntityNameCacheKey(id);
       const cachedName = this.caches.local.retrieve(cacheKey);
       if (cachedName !== null) {
@@ -426,6 +428,7 @@ export class ApmApiClient {
       debug && console.log(`Entity name ${id} not found in cache, getting it from entity data`);
       const name = (await this.getEntityData(id))['name'];
       this.caches.local.store(cacheKey, name, this.getTtlWithVariability(TtlOneDay));
+      debug && console.log(`Releasing lock ${lockName} after caching entity name.`)
       return name;
     });
   }

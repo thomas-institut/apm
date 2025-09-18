@@ -62,7 +62,7 @@ export class WorksPage extends NormalPage {
 
     for (let i = 0; i < workIds.length; i++) {
       const workId = workIds[i];
-      const authorId = works[workId]['authorId'];
+      const authorId = works[workId].authorId;
       if (groupedWorks[authorId] === undefined) {
         groupedWorks[authorId] = {
           authorId: authorId,

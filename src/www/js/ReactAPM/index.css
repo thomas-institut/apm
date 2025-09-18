@@ -196,3 +196,22 @@ div.anchor-list-item.active {
     border-right: 1px solid grey;
     color: black;
 }
+
+/* Some animations */
+
+
+.appearAfterOneSecond {
+    animation: appearAfter 1s linear;
+}
+
+@keyframes appearAfter {
+    from {
+        opacity: 0;
+    }
+    50% {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

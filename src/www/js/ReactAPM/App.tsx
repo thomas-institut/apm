@@ -105,15 +105,12 @@ function RealApp() {
 
   const appSettingsLoader = async () => {
     const basePathName = trimCharacters(window.location.pathname, ['/']);
-    console.log(`Base path name is '${basePathName}'`);
     const reactAppSuffix = trimCharacters(ReactAppBaseUrlSuffix, ['/']);
 
     const subDirs = basePathName.split('/');
     const reactSuffixIndex = subDirs.indexOf(reactAppSuffix);
-    console.log(`React app base URL index is ${reactSuffixIndex}`);
     if (reactSuffixIndex === -1) {
-      console.error(`React app base URL '${ReactAppBaseUrlSuffix}' not found in path '${basePathName}'`);
-      return;
+      throw new Error(`React app base URL '${ReactAppBaseUrlSuffix}' not found in path '${basePathName}'`);
     }
     const appSettingsPath = (reactSuffixIndex === 0 ? '' : ('/' + subDirs.slice(0, reactSuffixIndex).join('/'))) + '/' + AppSettingsUrl;
 

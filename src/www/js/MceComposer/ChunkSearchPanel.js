@@ -55,7 +55,7 @@ export class ChunkSearchPanel extends Panel {
     this.mceData = this.options.mceData;
     this.icons = this.options.icons;
     /** @type ApmApiClient */
-    this.apiClient = this.options.apiClient;
+    this.apiClient = this.options.apmDataProxy;
     this.activeEditionsData = null
     this.lastFilter = ''
   }
@@ -120,7 +120,7 @@ export class ChunkSearchPanel extends Panel {
   genOnClickLoadActiveEditionData() {
     return async () => {
       this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`);
-      this.activeEditionsData = await this.apmDataProxy.get(urlGen.apiCollationTable_activeEditions());
+      this.activeEditionsData = await this.apiClient.get(urlGen.apiCollationTable_activeEditions());
       console.log(`Active edition data`, this.activeEditionsData);
       this.activeEditionTableContainer.html(await this.genActiveEditionTable(this.activeEditionsData));
       this.setupActiveEditionTableButtons(this.activeEditionsData);
@@ -216,7 +216,7 @@ export class ChunkSearchPanel extends Panel {
       } else {
         addButton = '<small>Already added</small>'
       }
-      let authorData = await this.apmDataProxy.getPersonEssentialData(versionInfo.authorTid);
+      let authorData = await this.apiClient.getPersonEssentialData(versionInfo.authorTid);
       html += `<tr>
             <td>${info['chunkId']}</td>
             <td>${info['title']}</td>

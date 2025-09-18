@@ -48,7 +48,7 @@ CUR_DIR=$(pwd)
 TMP_DIR=$TMP/$DIST_NAME
 TAR_NAME=$DIST_NAME.tar.gz
 
-NPM_BUILD_FRONTEND="cd src/www; npm run build -- --base=/dist$BASE_DIR;cd ../.."
+NPM_BUILD_FRONTEND="cd src/www; npm run build -- --base=$BASE_DIR/dist;cd ../.."
 NPM_BUILD_TYPESETTING="cd src/typesetting-service; npm run build; cd ../.."
 
 echo Creating temporary directory

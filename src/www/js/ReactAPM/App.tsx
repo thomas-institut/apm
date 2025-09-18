@@ -115,7 +115,7 @@ function RealApp() {
       console.error(`React app base URL '${ReactAppBaseUrlSuffix}' not found in path '${basePathName}'`);
       return;
     }
-    const appSettingsPath = (reactSuffixIndex === 0 ? '' : subDirs.slice(0, reactSuffixIndex).join('/')) + '/' + AppSettingsUrl;
+    const appSettingsPath = (reactSuffixIndex === 0 ? '' : ('/' + subDirs.slice(0, reactSuffixIndex).join('/'))) + '/' + AppSettingsUrl;
 
     console.log(`Loading app settings from ${appSettingsPath}`);
     const response = await fetch(appSettingsPath);

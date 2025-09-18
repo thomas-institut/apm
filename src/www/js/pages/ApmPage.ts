@@ -1,12 +1,11 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {setBaseUrl, urlGen} from './common/SiteUrlGen';
-import {ApmDataProxy} from './common/ApmDataProxy';
+import {ApmApiClient} from '@/Api/ApmApiClient';
 import {defaultLanguage, setSiteLanguage, tr, validLanguages} from './common/SiteLang';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {ApmFormats} from './common/ApmFormats';
 import {DataId_EC_ViewOptions} from '@/constants/WebStorageDataId';
 import {CommonData, CommonDataOptionsDefinition} from "./CommonData";
-import {SimpleLockManager} from "@/toolbox/SimpleLockManager";
 
 
 const langCacheKey = 'apmSiteLanguage';
@@ -20,13 +19,11 @@ export class ApmPage {
   protected commonData!: CommonData;
   protected userId: number = -1;
   protected userName: string = '';
-  protected apmDataProxy!: ApmDataProxy;
+  protected apiClient!: ApmApiClient;
   protected localCache!: WebStorageKeyCache;
   protected showLanguageSelector: boolean = false;
   protected siteLanguage: string = 'en';
   protected timeZone: string = 'UTC';
-  protected lockManager: SimpleLockManager = new SimpleLockManager();
-
   protected readonly constructorPromise: Promise<void> | null = null;
 
 
@@ -51,8 +48,8 @@ export class ApmPage {
         });
         this.commonData = optionsChecker.getCleanOptions(options.commonData);
         setBaseUrl(this.commonData.baseUrl);
-        this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, [DataId_EC_ViewOptions]);
-        await this.apmDataProxy.initialize();
+        this.apiClient = new ApmApiClient(this.commonData.cacheDataId, [DataId_EC_ViewOptions]);
+        await this.apiClient.initialize();
         this.userId = this.commonData.userInfo.id;
       } else {
         debug && console.log(`No options given, getting settings from backend`);
@@ -79,9 +76,9 @@ export class ApmPage {
           userInfo: {}
         };
         setBaseUrl(this.commonData.baseUrl);
-        this.apmDataProxy = new ApmDataProxy(this.commonData.cacheDataId, [DataId_EC_ViewOptions]);
+        this.apiClient = new ApmApiClient(this.commonData.cacheDataId, [DataId_EC_ViewOptions]);
 
-        let userData = await this.apmDataProxy.whoAmI();
+        let userData = await this.apiClient.whoAmI();
 
         if (userData === null) {
           // this means the user is not authorized

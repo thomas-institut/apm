@@ -152,7 +152,7 @@ export class AdminEntityPage extends NormalPage {
 
   genGetEntitiesForType() {
     return (type) => {
-      return this.apmDataProxy.getEntityListForType(type);
+      return this.apiClient.getEntityListForType(type);
     }
   }
 
@@ -211,7 +211,7 @@ export class AdminEntityPage extends NormalPage {
   }
 
   async initPage () {
-    let typeData = await this.apmDataProxy.getPredicateDefinitionsForType(this.data.type);
+    let typeData = await this.apiClient.getPredicateDefinitionsForType(this.data.type);
     console.log('Entity Type Data', typeData);
     this.predicateDefs = typeData['predicateDefinitions'];
     this.predicatesAllowedAsObject = typeData['predicatesAllowedAsObject'];
@@ -305,7 +305,7 @@ export class AdminEntityPage extends NormalPage {
     }
     let data;
     try {
-      data = await this.apmDataProxy.getEntityData(id, false,15 * 60);
+      data = await this.apiClient.getEntityData(id, false,15 * 60);
     } catch (e) {
       return '';
     }

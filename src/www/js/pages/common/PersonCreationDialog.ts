@@ -1,6 +1,6 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './SiteLang'
-import { ApmDataProxy } from './ApmDataProxy'
+import { ApmApiClient } from '../../Api/ApmApiClient'
 import { ApmPage } from '../ApmPage'
 import { wait } from '@/toolbox/wait'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
@@ -9,7 +9,7 @@ import {getStringVal} from "@/toolbox/UiToolBox";
 
 interface PersonCreationDialogOptions {
   successWaitTime: number;
-  apmDataProxy: ApmDataProxy;
+  apmDataProxy: ApmApiClient;
   debug?: boolean;
 }
 
@@ -22,7 +22,7 @@ export class PersonCreationDialog {
       context: 'PersonCreationDialog',
       optionsDefinition: {
         successWaitTime: { type: 'number', default: 500},
-        apmDataProxy: { type: 'object', objectClass: ApmDataProxy},
+        apmDataProxy: { type: 'object', objectClass: ApmApiClient},
         debug: { type: 'boolean', default: true},
       }
     })

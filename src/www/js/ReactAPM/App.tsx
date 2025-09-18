@@ -1,42 +1,44 @@
 import {QueryClient, QueryClientProvider} from "@tanstack/react-query";
 import {WebStorageKeyCache} from "@/toolbox/KeyCache/WebStorageKeyCache";
-import {ApmDataProxy} from "@/pages/common/ApmDataProxy";
+import {ApmApiClient} from "@/Api/ApmApiClient";
 import {setBaseUrl} from "@/pages/common/SiteUrlGen";
 import {DataId_EC_ViewOptions} from "@/constants/WebStorageDataId";
 import {setSiteLanguage} from "@/pages/common/SiteLang";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {BrowserRouter, Route, Routes, useLocation, useMatch, useNavigate} from "react-router";
-import Dashboard from "@/ReactAPM/Dashboard/Dashboard";
 import Login from "@/ReactAPM/Login";
-import {Context, createContext, lazy, useEffect, useRef, useState} from "react";
+import {Context, createContext, lazy, StrictMode, useEffect, useRef, useState} from "react";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import TopBar from "@/ReactAPM/TopBar";
 import {RouteUrls} from './Router/RouteUrls';
 import {deleteToken, retrieveToken, storeToken} from "@/ReactAPM/ToolBox/AuthenticationUtilities";
 
-
 // @ts-ignore
-const Works = lazy(() => import('./Works.js'));
+const Dashboard = lazy(() => import('@/ReactAPM/Pages/Dashboard/Dashboard.js'));
 // @ts-ignore
-const People = lazy(() => import('./People.js'));
+const Works = lazy(() => import('./Pages/Works.js'));
 // @ts-ignore
-const Search = lazy(() => import('./Search.js'));
+const People = lazy(() => import('./Pages/People.js'));
 // @ts-ignore
-const Docs = lazy(() => import('./Docs.js'));
+const Search = lazy(() => import('./Pages/Search.js'));
 // @ts-ignore
-const MultiChunkEdition = lazy(() => import('./MultiChunkEdition.js'));
+const Docs = lazy(() => import('@/ReactAPM/Pages/Docs/Docs.js'));
 // @ts-ignore
-const Work = lazy(() => import('./Work.js'));
+const MultiChunkEdition = lazy(() => import('./Pages/MultiChunkEdition.js'));
 // @ts-ignore
-const Chunk = lazy(() => import('./Chunk.js'));
+const Work = lazy(() => import('./Pages/Work.js'));
 // @ts-ignore
-const Person = lazy(() => import('./Person.js'));
+const Chunk = lazy(() => import('./Pages/Chunk.js'));
 // @ts-ignore
-const EditionComposer = lazy(() => import('././EditionComposer'));
+const Person = lazy(() => import('./Pages/Person.js'));
+// @ts-ignore
+const EditionComposer = lazy(() => import('./Pages/EditionComposer.js'));
+// @ts-ignore
+const Document = lazy(() => import('./Pages/Document.js'));
 
 
 const AppSettingsUrl: string = "../app-settings";
-const ReactAppBaseUrlSuffix = '/new';
+const ReactAppBaseUrlSuffix = '/beta';
 const ApmTokenKey = 'apm-token';
 const ApmTokenCookie = 'rme2';
 const DefaultSiteLanguage = 'en';
@@ -49,7 +51,7 @@ export interface AppContextProps {
   apiBaseUrl: string;
   reactAppBaseUrl: string,
   localCache: WebStorageKeyCache;
-  dataProxy: ApmDataProxy;
+  apiClient: ApmApiClient;
 }
 
 const DefaultAppContext: AppContextProps = {
@@ -59,7 +61,7 @@ const DefaultAppContext: AppContextProps = {
   apiBaseUrl: '',
   reactAppBaseUrl: ReactAppBaseUrlSuffix,
   localCache: new WebStorageKeyCache('local', ''),
-  dataProxy: new ApmDataProxy('', []),
+  apiClient: new ApmApiClient('', []),
 };
 export const AppContext: Context<AppContextProps> = createContext(DefaultAppContext);
 
@@ -75,9 +77,13 @@ const StatusReady = 'ready';
 
 
 function App() {
-  return (<BrowserRouter>
-    <RealApp/>
-  </BrowserRouter>);
+  return (
+    <StrictMode>
+      <BrowserRouter>
+        <RealApp/>
+      </BrowserRouter>
+    </StrictMode>
+    );
 }
 
 export default App;
@@ -121,7 +127,7 @@ function RealApp() {
 
       setBaseUrl(baseUrl, apiBaseUrl);
       const localCache = new WebStorageKeyCache('local', data.cacheDataId);
-      const apmDataProxy = new ApmDataProxy(data.cacheDataId, [DataId_EC_ViewOptions]);
+      const apmDataProxy = new ApmApiClient(data.cacheDataId, [DataId_EC_ViewOptions]);
       setSiteLanguage(DefaultSiteLanguage);
       ApmFormats.setLanguage(DefaultSiteLanguage);
 
@@ -140,7 +146,7 @@ function RealApp() {
         apiBaseUrl: apiBaseUrl,
         reactAppBaseUrl: reactAppBaseUrl,
         localCache: localCache,
-        dataProxy: apmDataProxy,
+        apiClient: apmDataProxy,
       };
       RouteUrls.setBaseUrl(reactAppBaseUrl);
       setStatus(StatusInitializationReady);
@@ -165,7 +171,7 @@ function RealApp() {
     }
 
     try {
-      const userData = await appContext.current.dataProxy.whoAmI();
+      const userData = await appContext.current.apiClient.whoAmI();
       if (userData === null) {
         console.log('User is not authenticated');
         console.log('Navigating to login', RouteUrls.login());
@@ -196,7 +202,13 @@ function RealApp() {
   };
 
 
-  const routesWithTopBar = [RouteUrls.home(), RouteUrls.docs(), RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(),];
+  const routesWithTopBar = [RouteUrls.home(), RouteUrls.docs(),
+
+    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(),
+
+    RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocument(),
+
+  ];
 
   const routeMatches = routesWithTopBar.map(path => useMatch(path));
   const routeShouldHaveTopBar = routeMatches.some(match => match !== null);
@@ -225,18 +237,20 @@ function RealApp() {
           }}>
             {routeShouldHaveTopBar && (<TopBar style={{flexGrow: 0}} onLogout={handleLogout}/>)}
             <Routes>
-              <Route path={RouteUrls.home()} element={<Dashboard/>}/>
-              <Route path={RouteUrls.docs()} element={<Docs/>}/>
-              <Route path={RouteUrls.works()} element={<Works/>}/>
-              <Route path={RouteUrls.people()} element={<People/>}/>
-              <Route path={RouteUrls.search()} element={<Search/>}/>
-              <Route path={RouteUrls.patternMultiChunkEdition()} element={<MultiChunkEdition/>}/>
-              <Route path={RouteUrls.patternSingleChunkEdition()} element={<EditionComposer/>}/>
-              <Route path={RouteUrls.patternCollationTable()} element={<EditionComposer/>}/>
-              <Route path={RouteUrls.patternChunk()} element={<Chunk/>}/>
-              <Route path={RouteUrls.patternWork()} element={<Work/>}/>
-              <Route path={RouteUrls.patternPerson()} element={<Person/>}/>
-              <Route path={RouteUrls.login()} element={<Login/>}/>
+              <Route id="home" path={RouteUrls.home()} element={<Dashboard/>}/>
+              <Route id="home2" path={RouteUrls.homeWithTrailingSlash()} element={<Dashboard/>}/>
+              <Route id="docs" path={RouteUrls.docs()} element={<Docs/>}/>
+              <Route id="works" path={RouteUrls.works()} element={<Works/>}/>
+              <Route id="people" path={RouteUrls.people()} element={<People/>}/>
+              <Route id="search" path={RouteUrls.search()} element={<Search/>}/>
+              <Route id="mce" path={RouteUrls.patternMultiChunkEdition()} element={<MultiChunkEdition/>}/>
+              <Route id="ec" path={RouteUrls.patternSingleChunkEdition()} element={<EditionComposer/>}/>
+              <Route id="ct" path={RouteUrls.patternCollationTable()} element={<EditionComposer/>}/>
+              <Route id="chunk" path={RouteUrls.patternChunk()} element={<Chunk/>}/>
+              <Route id="work" path={RouteUrls.patternWork()} element={<Work/>}/>
+              <Route id="person" path={RouteUrls.patternPerson()} element={<Person/>}/>
+              <Route id="doc" path={RouteUrls.patternDocument()} element={<Document/>}/>
+              <Route id="login" path={RouteUrls.login()} element={<Login/>}/>
             </Routes>
           </div>
           )

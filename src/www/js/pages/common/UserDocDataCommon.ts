@@ -6,6 +6,7 @@ import { numericFieldSort, stringFieldSort } from '@/lib/ToolBox/ArrayUtil'
 import { tr } from './SiteLang'
 import { urlGen} from './SiteUrlGen'
 import { Tid } from '@/Tid/Tid'
+import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 
 function noneParagraph() {
   return `<p class="none"><em>${tr('None')}</em></p>`
@@ -31,9 +32,9 @@ export class UserDocDataCommon {
     return f[0];
   }
 
-  static generateTranscriptionListHtml(apiData: { [x: string]: any[] }) {
+  static generateTranscriptionListHtml(apiData: ApiUserTranscriptions) {
     // in JS docInfoArray is not actually an array but an object
-    let docArray = Object.keys(apiData['docInfoArray']).map( (key:any) => { return apiData['docInfoArray'][key] })
+    let docArray = Object.keys(apiData.docInfoArray).map( (key:any) => { return apiData['docInfoArray'][key] })
     let html
     if (docArray.length === 0) {
       html= noneParagraph()

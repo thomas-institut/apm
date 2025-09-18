@@ -1,6 +1,6 @@
 import {CtDataInterface} from "@/CtData/CtDataInterface";
 
-export interface ApiCollationTable_auto {
+export interface ApiCollationTableAuto {
   type: string;
   collationTableCacheId: string;
   collationEngineDetails: EngineRunDetails;

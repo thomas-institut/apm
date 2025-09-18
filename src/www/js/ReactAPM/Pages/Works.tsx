@@ -7,3 +7,4 @@ export default function Works() {
   lorem.format = 'html';
   return <NormalPageContainer><h1>Works</h1><div dangerouslySetInnerHTML={{__html: lorem.generateParagraphs(20)}}></div></NormalPageContainer>;
 }
+

@@ -1,6 +1,6 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './SiteLang'
-import { ApmDataProxy } from './ApmDataProxy'
+import { ApmApiClient } from '../../Api/ApmApiClient'
 import { ApmPage } from '../ApmPage'
 import { wait } from '@/toolbox/wait'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
@@ -17,7 +17,7 @@ export class DocumentCreationDialog {
       context: 'DocumentCreationDialog',
       optionsDefinition: {
         successWaitTime: { type: 'number', default: 500},
-        apmDataProxy: { type: 'object', objectClass: ApmDataProxy},
+        apmDataProxy: { type: 'object', objectClass: ApmApiClient},
         debug: { type: 'boolean', default: true},
       }
     })
@@ -48,9 +48,9 @@ export class DocumentCreationDialog {
   }
 
   async createDocument(): Promise<any> {
-    let languages = await this.options.apmDataProxy.getAvailableLanguages();
-    let docTypes = await this.options.apmDataProxy.getAvailableDocumentTypes();
-    let imageSources = await this.options.apmDataProxy.getAvailableImagesSources();
+    let languages = await this.options.apiClient.getAvailableLanguages();
+    let docTypes = await this.options.apiClient.getAvailableDocumentTypes();
+    let imageSources = await this.options.apiClient.getAvailableImagesSources();
 
     this.dialog = new GetDataAndProcessDialog({
       title: tr('Create Document'),
@@ -105,7 +105,7 @@ export class DocumentCreationDialog {
             imageSourceData = null;
           }
           infoArea.html(`<span class="text-info">${ApmPage.genLoadingMessageHtml(tr('Creating new document'))}</span>`)
-          this.options.apmDataProxy.createDocument(name, data['docType'], data['docLang'], imageSource, imageSourceData).then( (resp:any) => {
+          this.options.apiClient.createDocument(name, data['docType'], data['docLang'], imageSource, imageSourceData).then( (resp:any) => {
             infoArea.html(ApmPage.genLoadingMessageHtml(tr('Document successfully created, loading new document page')));
             wait(this.options.successWaitTime).then( () => {
               resolve({ success: true, result: resp });

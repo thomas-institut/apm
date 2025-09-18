@@ -65,7 +65,7 @@ export default function CtListForUser(props: CtListForUserProps) {
   const appContext = useContext(AppContext);
 
   const getCtListForUser = (userId: number) => {
-    return appContext.dataProxy.userCollationTables(userId);
+    return appContext.apiClient.userCollationTables(userId);
   };
 
   const getListItems = (worksByAuthor: WorksByAuthor[], type: string) => {

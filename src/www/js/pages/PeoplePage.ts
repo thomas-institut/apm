@@ -53,7 +53,7 @@ export class PeoplePage extends NormalPage {
     async initPage(): Promise<void> {
         await super.initPage()
         console.log(`Initializing PeoplePage`)
-        this.dataFromServer = await this.apmDataProxy.getAllPersonEssentialData()
+        this.dataFromServer = await this.apiClient.getAllPersonEssentialData()
         this.peoplePageContentDiv = $('div.people-page-content')
         this.peoplePageContentDiv.html(`
             <div class="table-div">${await this.getPersonTableHtml()}</div>
@@ -80,7 +80,7 @@ export class PeoplePage extends NormalPage {
     genOnClickCreateNewPersonButton(): () => Promise<void> {
         return async () => {
             const dialog = new PersonCreationDialog({
-                apmDataProxy: this.apmDataProxy,
+                apmDataProxy: this.apiClient,
                 successWaitTime: 1000,
             })
 

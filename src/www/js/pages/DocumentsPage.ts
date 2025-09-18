@@ -1,24 +1,12 @@
-
-import { NormalPage } from './NormalPage';
-import { tr } from './common/SiteLang';
-import { OptionsChecker } from '@thomas-inst/optionschecker';
-import { Tid } from '@/Tid/Tid';
-import { urlGen } from './common/SiteUrlGen';
-import { ApmPage } from './ApmPage';
-import { DocumentCreationDialog } from './common/DocumentCreationDialog';
+import {NormalPage} from './NormalPage';
+import {tr} from './common/SiteLang';
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {Tid} from '@/Tid/Tid';
+import {urlGen} from './common/SiteUrlGen';
+import {ApmPage} from './ApmPage';
+import {DocumentCreationDialog} from './common/DocumentCreationDialog';
 import DataTable from 'datatables.net-dt';
-
-interface DocumentData {
-  docInfo: {
-    id: number;
-    title: string;
-    doc_type: number;
-    lang: number;
-  };
-  numPages: number;
-  numTranscribedPages: number;
-  transcribers: number[];
-}
+import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
 
 interface DataTableEntry {
   title: string;
@@ -85,7 +73,7 @@ export class DocumentsPage extends NormalPage {
     return async () => {
       console.log('Click');
       const dialog = new DocumentCreationDialog({
-        apmDataProxy: this.apmDataProxy,
+        apmDataProxy: this.apiClient,
         successWaitTime: 1000
       });
 
@@ -118,15 +106,15 @@ export class DocumentsPage extends NormalPage {
     for (const doc of this.docs) {
       const transcribersHtmlArray: string[] = [];
       for (const transcriberTid of doc.transcribers) {
-        const transcriberData = await this.apmDataProxy.getPersonEssentialData(transcriberTid);
+        const transcriberData = await this.apiClient.getPersonEssentialData(transcriberTid);
         transcribersHtmlArray.push(
             `<a href="${urlGen.sitePerson(Tid.toBase36String(transcriberTid))}" title="Click to view person details">${transcriberData.name}</a>`
         );
       }
       data.push({
         title: `<a href="${urlGen.siteDocPage(Tid.toBase36String(doc.docInfo.id))}">${doc.docInfo.title}</a>`,
-        type: await this.apmDataProxy.getEntityName(doc.docInfo.doc_type),
-        lang: await this.apmDataProxy.getEntityName(doc.docInfo.lang),
+        type: await this.apiClient.getEntityName(doc.docInfo.doc_type),
+        lang: await this.apiClient.getEntityName(doc.docInfo.lang),
         numPages: doc.numPages,
         numTranscribedPages: doc.numTranscribedPages,
         transcribers: transcribersHtmlArray.join(', ')

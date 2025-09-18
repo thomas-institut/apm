@@ -1,0 +1,44 @@
+
+
+div.gridTable {
+    display: grid;
+    grid-template-rows: max-content repeat(auto-fill,max-content);
+}
+
+.gridTableHeaderGroupContainer {
+    display: contents;
+}
+
+.gridTableHeaderContainer {
+    display: contents;
+}
+.gridTableHeaderItem {
+    /*grid-area: header;*/
+    position: sticky;
+    top: 0;
+    background-color: white;
+    border-bottom: 1px solid #c5c5c5;
+    border-top: 1px solid #c5c5c5;
+    z-index: 10;
+    padding: 0.5em;
+}
+
+.gridTableMainContainer {
+    display: contents;
+}
+
+div.gridTableCell {
+    padding: 0.5em;
+}
+
+div.gridTableRow {
+    display: contents;
+}
+
+.oddRow {
+    background-color: #f9f9f9;
+}
+
+.evenRow {
+    background-color: #ffffff;
+}

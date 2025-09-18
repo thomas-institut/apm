@@ -9,6 +9,9 @@ export class RouteUrls {
   }
 
   static home() {
+    return baseUrl;
+  }
+  static homeWithTrailingSlash() {
     return baseUrl + '/';
   }
 
@@ -73,9 +76,23 @@ export class RouteUrls {
     return baseUrl + '/work/' + id;
   }
 
+  static patternDocument() {
+    return baseUrl + '/doc/:id/*';
+  }
+
+  static document(id: number|string) {
+    return baseUrl + '/doc/' + id;
+  }
+
+  static docPage(id: number|string, page: number) {
+    return baseUrl + '/doc/' + id + '/page/' + page + '/view';
+  }
+
   static patternChunk() {
     return baseUrl + '/work/:workId/chunk/:chunkId';
   }
+
+
 
   static chunk(workId: number|string, chunkId: number) {
     if(typeof workId === 'number') {

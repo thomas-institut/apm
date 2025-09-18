@@ -40,13 +40,13 @@ export class DevelopmentEntityDataEditor extends NormalPage {
     console.log(`Entity Schema for type ${this.entityType}`, this.schema);
 
     // preload statement qualification object entities
-    await this.apmDataProxy.getStatementQualificationObjects(true);
+    await this.apiClient.getStatementQualificationObjects(true);
 
     new MetadataEditor2({
       containerSelector: 'div.editor-container-new',
       entityDataSchema: this.schema,
       entityData: this.entityData,
-      apmDataProxy: this.apmDataProxy,
+      apmDataProxy: this.apiClient,
     });
 
   }
@@ -76,7 +76,7 @@ export class DevelopmentEntityDataEditor extends NormalPage {
   }
 
   async getEntityData(id, forceFetch = false) {
-    return this.apmDataProxy.getEntityData(id, forceFetch);
+    return this.apiClient.getEntityData(id, forceFetch);
   }
 
 }

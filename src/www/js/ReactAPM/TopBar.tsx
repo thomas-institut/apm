@@ -1,12 +1,12 @@
 import {tr} from "@/pages/common/SiteLang";
 import {urlGen} from "@/pages/common/SiteUrlGen";
-import {Tid} from "@/Tid/Tid";
 import {CSSProperties, ReactNode, useContext} from "react";
 import {Container, Nav, Navbar, NavDropdown} from "react-bootstrap";
 
 import {NavLink, useLocation, useNavigate} from "react-router";
 import {AppContext} from "./App";
 import {PersonCircle} from "react-bootstrap-icons";
+import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 
 interface TopBarProps {
   style?: CSSProperties;
@@ -33,12 +33,6 @@ export default function TopBar(props: TopBarProps): ReactNode {
   const userName = appContext.userName;
   const baseUrl = appContext.reactAppBaseUrl;
   const navigate = useNavigate();
-  const goTo = (url: string) => (ev: any) => {
-    ev.preventDefault();
-    navigate(baseUrl + url);
-  };
-
-
 
   interface RoutedNavLinkProps {
     route: string;
@@ -50,17 +44,16 @@ export default function TopBar(props: TopBarProps): ReactNode {
     const route = props.route;
     const title = props.title;
     const location = useLocation();
-    const currentStyle = { color: "rgb(40,40,40)", fontWeight: "bold" };
+    const currentStyle = {color: "rgb(40,40,40)", fontWeight: "bold"};
     const notCurrentStyle = {};
 
-    const isCurrent = location.pathname === baseUrl + route;
+    const isCurrent = location.pathname === route;
 
     return (<Nav.Item style={{marginRight: props.marginRight ?? '0.75rem'}}>
-    <NavLink
-      to={baseUrl + route}
-      className={ () => ''}
-      style={ isCurrent ? currentStyle : notCurrentStyle }
-    >{title}</NavLink>
+      <NavLink
+        to={route}
+        style={isCurrent ? currentStyle : notCurrentStyle}
+      >{title}</NavLink>
     </Nav.Item>);
   }
 
@@ -74,14 +67,15 @@ export default function TopBar(props: TopBarProps): ReactNode {
 
   return (<Navbar variant="light" expand="lg" style={props.style ?? {}} className="justify-content-between">
     <Container>
-      <Navbar.Brand href={baseUrl + '/'} title="Click to go to the Dashboard" onClick={goTo('/')}><img src={logoUrl} alt="APM" height="30"/></Navbar.Brand>
+      <Navbar.Brand href={baseUrl} title="Click to go to the Dashboard" onClick={() => navigate(RouteUrls.home())}><img
+        src={logoUrl} alt="APM" height="30"/></Navbar.Brand>
       <Navbar.Toggle aria-controls="basic-navbar-nav"/>
       <Navbar.Collapse id="basic-navbar-nav">
-        <MyNav route="/" title={tr('Dashboard')}/>
-        <MyNav route="/docs" title={tr('Documents')}/>
-        <MyNav route="/works" title={tr('Works')}/>
-        <MyNav route="/people" title={tr('People')}/>
-        <MyNav route="/search" title={tr('Search')}/>
+        <MyNav route={RouteUrls.home()} title={tr('Dashboard')}/>
+        <MyNav route={RouteUrls.docs()} title={tr('Documents')}/>
+        <MyNav route={RouteUrls.works()} title={tr('Works')}/>
+        <MyNav route={RouteUrls.people()} title={tr('People')}/>
+        <MyNav route={RouteUrls.search()} title={tr('Search')}/>
         <Nav.Item>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</Nav.Item>
         <NavDropdown id="useful-links-dropdown" title={tr('Useful Links')}>
 
@@ -95,8 +89,9 @@ export default function TopBar(props: TopBarProps): ReactNode {
       </Navbar.Collapse>
       <Navbar.Collapse className="justify-content-end">
         <NavDropdown id="user-dropdown" title={(<UserIcon name={userName}/>)}>
-          <NavDropdown.Item className="dd-menu-item"
-                            href={urlGen.sitePerson(Tid.toBase36String(userId))}>{tr('My Profile')}</NavDropdown.Item>
+          <NavDropdown.Item className="dd-menu-item" onClick={() => navigate(RouteUrls.person(userId))}>
+            {tr('My Profile')}
+          </NavDropdown.Item>
           <NavDropdown.Divider/>
           <NavDropdown.Item className="dd-menu-item" onClick={props.onLogout}>Logout</NavDropdown.Item>
         </NavDropdown>

@@ -31,9 +31,9 @@ import {SiglaGroupsUI} from './SiglaGroupsUI';
 import {ConfirmDialog, EXTRA_LARGE_DIALOG} from '@/pages/common/ConfirmDialog';
 import {ApmFormats} from '@/pages/common/ApmFormats';
 import {NiceToggle} from '@/widgets/NiceToggle';
-import {ApmDataProxy, DataProxyError} from "@/pages/common/ApmDataProxy";
+import {ApmApiClient, ApmApiClientError} from "@/Api/ApmApiClient";
 import {CtDataInterface} from "@/CtData/CtDataInterface";
-import {WitnessUpdateData} from "@/Api/Interfaces/WitnessUpdates";
+import {WitnessUpdateData} from "@/Api/DataSchema/WitnessUpdates";
 import {urlGen} from "@/pages/common/SiteUrlGen";
 
 const icons = {
@@ -51,7 +51,7 @@ const icons = {
 };
 
 interface WitnessInfoPanelOptions extends PanelOptions {
-  apmDataProxy: ApmDataProxy;
+  apmDataProxy: ApmApiClient;
   userId: number;
   ctData: CtDataInterface;
   onCtDataChange: (ctData: CtDataInterface) => Promise<void>;
@@ -76,7 +76,7 @@ interface WitnessInfoPanelOptions extends PanelOptions {
  *  - Witness update: update status, check for updates and launch the witness update task
  */
 export class WitnessInfoPanel extends Panel {
-  private readonly apmDataProxy: ApmDataProxy;
+  private readonly apmDataProxy: ApmApiClient;
   private readonly userId: number;
 
   private readonly onSiglaChange: (newSigla: string[]) => Promise<void>;
@@ -350,7 +350,7 @@ export class WitnessInfoPanel extends Panel {
         resultSpan.html(`Waiting for server's response... ${icons.busy}`).addClass('text-warning');
         this.convertingToEdition = true;
         try {
-          const apiResponse = await this.apmDataProxy.collationTable_convertToEdition({
+          const apiResponse = await this.apmDataProxy.collationTableConvertToEdition({
             tableId: this.ctData.tableId, initStrategy: 'topWitness'
           });
           resultSpan.html(`<b>Done!</b> The new edition is available <b><a href="${urlGen.siteChunkEdition(this.ctData.tableId)}">here</a></b>`);
@@ -358,7 +358,7 @@ export class WitnessInfoPanel extends Panel {
           .addClass('text-success');
           this.convertingToEdition = false;
         } catch (e: unknown) {
-          const error = e as DataProxyError;
+          const error = e as ApmApiClientError;
           resultSpan.html(`<b>Error! Please report to administrator.<br/>Error type ${error.errorType}, status ${error.httpStatus}`)
           .removeClass('text-warning')
           .addClass('text-danger');

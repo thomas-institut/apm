@@ -103,9 +103,9 @@ export class ChunkPage extends HeaderAndContentPage {
     this.savedCollationTablesDiv = $('#savedcollationtables');
     this.editionsDiv = $('#editions');
 
-    this.workData = await this.apmDataProxy.getWorkData(this.options.workId);
+    this.workData = await this.apiClient.getWorkData(this.options.workId);
     console.log(`WorkData from server`, this.workData);
-    this.authorInfo = await this.apmDataProxy.getPersonEssentialData(this.workData.authorId);
+    this.authorInfo = await this.apiClient.getPersonEssentialData(this.workData.authorId);
     this.headerDiv.html(this.generateHeaderDivHtml());
     this.chunkIdDiv.html(this.generateChunkIdDivHtml());
 
@@ -449,8 +449,8 @@ export class ChunkPage extends HeaderAndContentPage {
       }
       html += '</td>';
       html += '<td>' + this.witnessTypeLabels[witnessInfo['type']] + '</td>';
-      html += '<td>' + (await this.apmDataProxy.getEntityName(docInfo['type'])) + '</td>';
-      html += '<td>' + (await this.apmDataProxy.getEntityName(witnessInfo['language'])) + '</td>';
+      html += '<td>' + (await this.apiClient.getEntityName(docInfo['type'])) + '</td>';
+      html += '<td>' + (await this.apiClient.getEntityName(witnessInfo['language'])) + '</td>';
       let info: any = '';
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
@@ -533,7 +533,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
     if (authorId === 0) {
       return 'Author not set';
     }
-    let userData = await this.apmDataProxy.getPersonEssentialData(authorId);
+    let userData = await this.apiClient.getPersonEssentialData(authorId);
     return `<a href="${urlGen.sitePerson(Tid.toBase36String(userData.tid))}" 
     title="${tr('View person data')}" target="_blank">${userData.name}</a>`;
   }

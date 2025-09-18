@@ -1,7 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
-import { ApmDataProxy } from './ApmDataProxy'
+import { ApmApiClient } from '../../Api/ApmApiClient'
 import { ApmPage } from '../ApmPage'
 import { wait } from '@/toolbox/wait'
 import {getStringVal} from "@/toolbox/UiToolBox";
@@ -11,7 +11,7 @@ interface UserProfileEditorDialogOptions {
   userData: any;
   canManageUsers: boolean;
   successWaitTime?: number;
-  apmDataProxy: ApmDataProxy;
+  apmDataProxy: ApmApiClient;
   debug?: boolean;
 }
 
@@ -34,7 +34,7 @@ export class UserProfileEditorDialog {
         userData: { type: 'object'},
         canManageUsers: { type: 'boolean'},
         successWaitTime: { type: 'number', default: 500},
-        apmDataProxy: { type: 'object', objectClass: ApmDataProxy},
+        apmDataProxy: { type: 'object', objectClass: ApmApiClient},
         debug: { type: 'boolean', default: true},
       }
     })

@@ -20,6 +20,7 @@
     "@pdf-lib/fontkit": "^1.1.1",
     "@popperjs/core": "^2.9.2",
     "@tanstack/react-query": "^5.85.9",
+    "@tanstack/react-table": "^8.21.3",
     "@thomas-inst/matrix": "^1.0.0",
     "@thomas-inst/optionschecker": "1.1.4",
     "bootstrap": "^4.6.2",

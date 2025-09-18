@@ -20,21 +20,23 @@
 import {AsyncKeyCache} from '@/toolbox/KeyCache/AsyncKeyCache';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {CachedFetcher} from '@/toolbox/CachedFetcher';
-import {urlGen} from './SiteUrlGen';
+import {urlGen} from '@/pages/common/SiteUrlGen';
 import {wait} from '@/toolbox/wait';
-import {SimpleLockManager} from '@/toolbox/SimpleLockManager';
-import * as Entity from '../../constants/Entity';
-import {EntityDataInterface} from "../../../schema/Schema";
-import {WitnessUpdateData} from "@/Api/Interfaces/WitnessUpdates";
+import * as Entity from '../constants/Entity';
+import {EntityDataInterface} from "../../schema/Schema";
+import {WitnessUpdateData} from "@/Api/DataSchema/WitnessUpdates";
 import {IndexedDbKeyCache} from "@/toolbox/KeyCache/IndexedDbKeyCache";
-import {ApiCollationTable_versionInfo} from "@/Api/DataSchema/ApiCollationTable_versionInfo";
-import {ApiCollationTable_auto} from "@/Api/DataSchema/ApiCollationTable_auto";
+import {ApiCollationTableVersionInfo} from "@/Api/DataSchema/ApiCollationTableVersionInfo";
+import {ApiCollationTableAuto} from "@/Api/DataSchema/ApiCollationTableAuto";
 import {
-  ApiCollationTable_convertToEdition, ApiCollationTable_convertToEdition_input
-} from "@/Api/DataSchema/ApiCollationTable_convertToEdition";
+  ApiCollationTable_convertToEdition_input, ApiCollationTableConvertToEdition
+} from "@/Api/DataSchema/ApiCollationTableConvertToEdition";
 import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
+import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
+import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
+import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -50,16 +52,13 @@ const EntityDataCacheKeyPrefix = 'EntityData';
 const MaxSystemEntityId = 10000000;
 
 
-export interface DataProxyError {
+export type EntityNameTuple = [number, string];
+
+export interface ApmApiClientError {
   errorType: 'http' | 'authentication' | 'method' | 'network' | 'other';
   httpStatus: number;
   message: string;
   data?: any;
-}
-
-export interface PdfUrlResponse {
-  url: string | null;
-  errorMsg?: string;
 }
 
 
@@ -76,11 +75,9 @@ type CacheNames = 'memory' | 'session' | 'local' | 'longTerm';
  * Class to wrap most API calls to the APM and provide caching
  * for different types of data
  */
-export class ApmDataProxy {
+export class ApmApiClient {
   private readonly cacheDataId: string;
   private readonly caches: Caches;
-  private readonly lockManager: SimpleLockManager;
-  private readonly localCacheLockManager: SimpleLockManager;
   private readonly cachedFetcher: CachedFetcher;
   private readonly localCachedFetcher: CachedFetcher;
   private readonly ignoreDataIds: string[] = [];
@@ -94,8 +91,6 @@ export class ApmDataProxy {
    */
   constructor(cacheDataId: string, ignoreDataIds: string[] = []) {
     this.cacheDataId = cacheDataId;
-    this.lockManager = new SimpleLockManager();
-    this.localCacheLockManager = new SimpleLockManager();
     this.caches = {
       memory: new AsyncKeyCache(),
       session: new WebStorageKeyCache('session', this.cacheDataId, CachePrefix),
@@ -168,20 +163,20 @@ export class ApmDataProxy {
     }
   }
 
-  async collationTable_auto(apiCallOptions: any): Promise<ApiCollationTable_auto> {
+  async collationTableAuto(apiCallOptions: any): Promise<ApiCollationTableAuto> {
     return await this.post(urlGen.apiCollationTable_auto(), apiCallOptions, true);
   }
 
   /**
    *
    * @param apiCallOptions
-   * @throws {DataProxyError}
+   * @throws {ApmApiClientError}
    */
-  async collationTable_convertToEdition(apiCallOptions: ApiCollationTable_convertToEdition_input): Promise<ApiCollationTable_convertToEdition> {
+  async collationTableConvertToEdition(apiCallOptions: ApiCollationTable_convertToEdition_input): Promise<ApiCollationTableConvertToEdition> {
     return await this.post(urlGen.apiCollationTable_convertToEdition(apiCallOptions.tableId), apiCallOptions, true);
   }
 
-  async collationTable_versionInfo(tableId: number, versionTimeString: string): Promise<ApiCollationTable_versionInfo | null> {
+  async collationTableVersionInfo(tableId: number, versionTimeString: string): Promise<ApiCollationTableVersionInfo | null> {
 
     try {
       return await this.get(urlGen.apiCollationTable_versionInfo(tableId, versionTimeString));
@@ -280,19 +275,19 @@ export class ApmDataProxy {
    *
    * @returns {Promise<any>}
    */
-  async getAvailablePageTypes(): Promise<any> {
+  async getAvailablePageTypes(): Promise<EntityNameTuple[]> {
     return this.getEntityNameTuples(await this.getAlmostStaticData('PageTypes', urlGen.apiGetPageTypes()));
   }
 
-  async getAvailableLanguages() {
+  async getAvailableLanguages(): Promise<EntityNameTuple[]> {
     return this.getEntityNameTuples(await this.getAlmostStaticData('AllLanguages', urlGen.apiEntityTypeGetEntities(Entity.tLanguage)));
   }
 
-  async getAvailableDocumentTypes() {
+  async getAvailableDocumentTypes(): Promise<EntityNameTuple[]> {
     return this.getEntityNameTuples(await this.getAlmostStaticData('DocTypes', urlGen.apiEntityTypeGetEntities(Entity.tDocumentType)));
   }
 
-  async getAvailableImagesSources() {
+  async getAvailableImagesSources(): Promise<EntityNameTuple[]> {
     return this.getEntityNameTuples(await this.getAlmostStaticData('ImageSources', urlGen.apiEntityTypeGetEntities(Entity.tImageSource)));
   }
 
@@ -329,6 +324,10 @@ export class ApmDataProxy {
     return this.get(urlGen.apiUserGetMultiChunkEditionInfo(userId), false, ttl ?? TtlOneMinute);
   }
 
+  async userTranscriptions(userId: number, ttl?: number): Promise<ApiUserTranscriptions> {
+    return this.get(urlGen.apiTranscriptionsByUserDocPageData(userId), false, ttl ?? TtlOneMinute);
+  }
+
   async userCollationTables(userId: number, ttl?: number): Promise<ApiUserCollationTables> {
     return this.get(urlGen.apiUserGetCollationTableInfo(userId), false, ttl ?? TtlOneMinute);
   }
@@ -358,6 +357,11 @@ export class ApmDataProxy {
     return this.post(urlGen.apiDocumentCreate(), {
       name: name, type: type, lang: lang, imageSource: imageSource, imageSourceData: imageSourceData
     }, true);
+  }
+
+
+  async documentAllDocuments(): Promise<DocumentData[]> {
+    return this.get(urlGen.apiDocumentsAllDocumentsData());
   }
 
   async getPersonWorks(personTid: number): Promise<any> {
@@ -398,13 +402,10 @@ export class ApmDataProxy {
     return type;
   }
 
-  getEntityNameFromCache(id: number) : string | null {
+  getEntityNameFromCache(id: number): string | null {
     return this.caches.local.retrieve(this.getEntityNameCacheKey(id));
   }
 
-  private getEntityNameCacheKey(id: number) {
-    return `EntityName-${id}`;
-  }
   /**
    *
    * @param {number}id
@@ -415,7 +416,7 @@ export class ApmDataProxy {
     if (id === null) {
       return 'Undefined';
     }
-    return navigator.locks.request(`GetEntityName-${id}`, {mode: 'exclusive'}, async () =>{
+    return navigator.locks.request(`GetEntityName-${id}`, {mode: 'exclusive'}, async () => {
       const cacheKey = this.getEntityNameCacheKey(id);
       const cachedName = this.caches.local.retrieve(cacheKey);
       if (cachedName !== null) {
@@ -426,7 +427,7 @@ export class ApmDataProxy {
       const name = (await this.getEntityData(id))['name'];
       this.caches.local.store(cacheKey, name, this.getTtlWithVariability(TtlOneDay));
       return name;
-    })
+    });
   }
 
   async apiEntityStatementsEdit(commands: any) {
@@ -460,7 +461,7 @@ export class ApmDataProxy {
         }
       }
       return data;
-    })
+    });
   }
 
   /**
@@ -554,7 +555,7 @@ export class ApmDataProxy {
           case 'Work':
             dataToStore = serverData;
         }
-        await cache.store(cacheKey, dataToStore, ttl * (1 + Math.random()))
+        await cache.store(cacheKey, dataToStore, ttl * (1 + Math.random()));
         resolve(dataToStore);
       }).catch((e) => {
         reject(e);
@@ -570,12 +571,15 @@ export class ApmDataProxy {
     return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, TtlOneHour);
   }
 
+  private getEntityNameCacheKey(id: number) {
+    return `EntityName:${id}`;
+  }
+
   /**
    * Resolves to an array of tuples containing the id and the name for each of the entities
    * in the given array
-   * @param {number[]}entityIdArray
    */
-  private async getEntityNameTuples(entityIdArray: number[]) {
+  private async getEntityNameTuples(entityIdArray: number[]): Promise<EntityNameTuple[]> {
     return Promise.all(entityIdArray.map(async (id) => {
       return [id, await this.getEntityName(id)];
     }));
@@ -602,13 +606,13 @@ export class ApmDataProxy {
    * @param {number} ttl
    * @param sessionCache
    * @return {Promise<any>}
-   * @throws {DataProxyError}
+   * @throws {ApmApiClientError}
    */
   private fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true): Promise<any> {
     let key = encodeURI(url);
     let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
     return fetcher.fetch(key, () => {
-      return new Promise(async (resolve, reject: (e: DataProxyError) => void) => {
+      return new Promise(async (resolve, reject: (e: ApmApiClientError) => void) => {
         if (['GET', 'POST'].indexOf(method) === -1) {
           reject({
             errorType: 'method', httpStatus: -1, message: `Invalid method ${method} for URL ${url}`

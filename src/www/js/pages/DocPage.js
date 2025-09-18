@@ -262,7 +262,7 @@ export class DocPage extends NormalPage {
   async initPage () {
     await super.initPage();
 
-    let pageTypesData = await this.apmDataProxy.getAvailablePageTypes();
+    let pageTypesData = await this.apiClient.getAvailablePageTypes();
     this.pageTypes = [];
     for (let i = 0; i < pageTypesData.length; i++) {
       let [id, name]  = pageTypesData[i];
@@ -270,19 +270,19 @@ export class DocPage extends NormalPage {
     }
 
 
-    this.entityData = await this.apmDataProxy.getEntityData(this.docId);
+    this.entityData = await this.apiClient.getEntityData(this.docId);
     this.schema = MetadataEditorSchema.getSchema(Entity.tDocument);
     console.log(`Entity Schema for type Document`, this.schema);
 
 
     // preload statement qualification object entities
-    await this.apmDataProxy.getStatementQualificationObjects(true);
+    await this.apiClient.getStatementQualificationObjects(true);
 
     new MetadataEditor2({
       containerSelector: 'div.metadata-editor',
       entityDataSchema: this.schema,
       entityData: this.entityData,
-      apmDataProxy: this.apmDataProxy,
+      apmDataProxy: this.apiClient,
       infoStringProviders: [
         {
           name: 'docShortInfo',
@@ -788,7 +788,7 @@ export class DocPage extends NormalPage {
    */
   async saveFoliation(pageIndex, newFoliation) {
     let page = this.pages[pageIndex]
-    await this.apmDataProxy.savePageSettings(page['pageId'], newFoliation, page['type'], page['lang'])
+    await this.apiClient.savePageSettings(page['pageId'], newFoliation, page['type'], page['lang'])
   }
 
   getPageInfoHtml(pageIndex) {
@@ -839,8 +839,8 @@ export class DocPage extends NormalPage {
       if (!this.chunkInfo.hasOwnProperty(workDareId)) {
         continue;
       }
-      let workData = await this.apmDataProxy.getWorkDataOld(workDareId)
-      let authorData = await this.apmDataProxy.getPersonEssentialData(workData['authorTid'])
+      let workData = await this.apiClient.getWorkDataOld(workDareId)
+      let authorData = await this.apiClient.getPersonEssentialData(workData['authorTid'])
       html += `<li><a href="${urlGen.sitePerson(Tid.toBase36String(authorData.tid))}">${authorData.name}</a>, 
             <a href="${urlGen.siteWorkPage(workDareId)}"><em>${workData['title']}</em> (${workDareId})</a>`
       html += '<ul><li>';
@@ -894,7 +894,7 @@ export class DocPage extends NormalPage {
       let formattedTime = ApmFormats.time(TimeString.toDate(this.versionInfo[work][chunk]['timeFrom']))
       let authorName = '';
       if (this.versionInfo[work][chunk].authorId !== 0) {
-        let authorData = await this.apmDataProxy.getPersonEssentialData(this.versionInfo[work][chunk]['authorTid'])
+        let authorData = await this.apiClient.getPersonEssentialData(this.versionInfo[work][chunk]['authorTid'])
         authorName = authorData['name']
       }
       dataContent = '<b>Last change:</b><br/>' + formattedTime + '<br/>' + authorName;
@@ -926,7 +926,7 @@ export class DocPage extends NormalPage {
     if (authorTid === 0) {
       return 'n/a';
     }
-    let authorData = await this.apmDataProxy.getPersonEssentialData(authorTid)
+    let authorData = await this.apiClient.getPersonEssentialData(authorTid)
     let url = urlGen.sitePerson(Tid.toBase36String(authorData['tid']));
     return `<a href="${url}" title="View user profile" target="_blank">${authorData['name']}</a>`;
   }

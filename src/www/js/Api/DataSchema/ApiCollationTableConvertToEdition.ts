@@ -1,5 +1,5 @@
 
-export interface ApiCollationTable_convertToEdition {
+export interface ApiCollationTableConvertToEdition {
   status: string;
   tableId: number;
   url: string;

@@ -2,7 +2,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './SiteLang'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
 import { urlGen } from './SiteUrlGen'
-import { ApmDataProxy } from './ApmDataProxy'
+import { ApmApiClient } from '../../Api/ApmApiClient'
 import {getIntVal, getStringVal} from "../../toolbox/UiToolBox";
 
 export class NewChunkEditionDialog {
@@ -14,7 +14,7 @@ export class NewChunkEditionDialog {
     let oc = new OptionsChecker({
       context: 'NewChunkEditionDialog',
       optionsDefinition: {
-        apmDataProxy: { type: 'object', objectClass: ApmDataProxy},
+        apmDataProxy: { type: 'object', objectClass: ApmApiClient},
         debug: { type: 'boolean', default: true},
       }
     })
@@ -24,7 +24,7 @@ export class NewChunkEditionDialog {
 
   createNewChunkEdition() {
     return new Promise( async () => {
-      this.systemLanguages = await this.options.apmDataProxy.getLegacySystemLanguagesArray();
+      this.systemLanguages = await this.options.apiClient.getLegacySystemLanguagesArray();
 
 
       this.dialog = new GetDataAndProcessDialog({
@@ -63,7 +63,7 @@ export class NewChunkEditionDialog {
           }
         }
         // need to reload work input selector
-        let works = (await this.options.apmDataProxy.getPersonWorks(author))['works'];
+        let works = (await this.options.apiClient.getPersonWorks(author))['works'];
         workInput.html( '<option value=""></option>' +
           works.map( (work: any) => { return `<option value="${work['workId']}">${work['workId']}: ${work['title'].substring(0, 80)}</option>` }).join('') );
         return {
@@ -86,8 +86,8 @@ export class NewChunkEditionDialog {
           this.systemLanguages.map((lang: any) => { return `<option value="${lang.code}">${tr(lang.name)}</option>` }).join('') +
          '</select>';
 
-      let authors = await this.options.apmDataProxy.getAuthors();
-      let authorData = await Promise.all( authors.map( (authorId:number) => { return this.options.apmDataProxy.getPersonEssentialData(authorId); }) );
+      let authors = await this.options.apiClient.getAuthors();
+      let authorData = await Promise.all( authors.map( (authorId:number) => { return this.options.apiClient.getPersonEssentialData(authorId); }) );
       // this.debug && console.log('Author data', authorData);
       let authorSelectHtml = '<select class="author-input">' +
         '<option value="-1"></option>' +

@@ -1,5 +1,5 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { ApmDataProxy } from '@/pages/common/ApmDataProxy'
+import { ApmApiClient } from '@/Api/ApmApiClient'
 import * as SectionType from '../defaults/MetadataEditorSchemata/SectionType'
 import { HeaderSection } from './HeaderSection'
 import { MdeSection } from './MdeSection'
@@ -19,7 +19,7 @@ export class MetadataEditor2 {
         containerSelector: { type:'string', required: true},
         entityDataSchema: {type: 'object', required: true},
         entityData: {type: 'object', required: false, default: {}},
-        apmDataProxy: { type: 'object', objectClass: ApmDataProxy, required: true},
+        apmDataProxy: { type: 'object', objectClass: ApmApiClient, required: true},
         /**
          * an array of string providers identified by name
          * These can be used to insert any custom string in different places in the editor,
@@ -49,13 +49,13 @@ export class MetadataEditor2 {
 
     this.getBootstrapHtml().then( async (html) => {
       $(this.options.containerSelector).html(html);
-      this.typeData = await this.options.apmDataProxy.getPredicateDefinitionsForType(this.entityData.type);
+      this.typeData = await this.options.apiClient.getPredicateDefinitionsForType(this.entityData.type);
 
       this.sections = this.options.entityDataSchema.sections.map( (sectionSchema: { type: any }, sectionIndex: any) => {
         switch(sectionSchema.type) {
           case SectionType.Header:
             return new HeaderSection({
-              apmDataProxy: this.options.apmDataProxy,
+              apmDataProxy: this.options.apiClient,
               predicateDefinitions: this.typeData['predicateDefinitions'],
               qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
@@ -67,7 +67,7 @@ export class MetadataEditor2 {
 
           case SectionType.VerticalList:
             return new PredicateListSection({
-              apmDataProxy: this.options.apmDataProxy,
+              apmDataProxy: this.options.apiClient,
               predicateDefinitions: this.typeData['predicateDefinitions'],
               qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
@@ -79,7 +79,7 @@ export class MetadataEditor2 {
 
           case SectionType.HorizontalList:
             return new PredicateListSection({
-              apmDataProxy: this.options.apmDataProxy,
+              apmDataProxy: this.options.apiClient,
               predicateDefinitions: this.typeData['predicateDefinitions'],
               qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
@@ -91,7 +91,7 @@ export class MetadataEditor2 {
 
           default:
             return new MdeSection({
-              apmDataProxy: this.options.apmDataProxy,
+              apmDataProxy: this.options.apiClient,
               predicateDefinitions: this.typeData['predicateDefinitions'],
               qualificationDefinitions: this.typeData['qualificationDefinitions'],
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,

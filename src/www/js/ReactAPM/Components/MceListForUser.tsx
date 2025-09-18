@@ -17,7 +17,7 @@ export default function MceListForUser(props: MceListForUserProps) {
   const appContext = useContext(AppContext);
 
   const getMceListForUser = (userId: number) => {
-    return appContext.dataProxy.userMultiChunkEditions(userId);
+    return appContext.apiClient.userMultiChunkEditions(userId);
   };
 
   const result = useQuery<ApiUserMultiChunkEdition[]>({

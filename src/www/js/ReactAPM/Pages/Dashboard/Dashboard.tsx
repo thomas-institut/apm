@@ -1,17 +1,16 @@
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
-
-
 import "./dashboard.css";
-import MceListForUser from "@/ReactAPM/Dashboard/MceListForUser";
-import {RefObject, Suspense, useContext, useRef} from "react";
+import MceListForUser from "@/ReactAPM/Components/MceListForUser";
+import {RefObject, useContext, useRef} from "react";
 import {AppContext} from "@/ReactAPM/App";
-import CtListForUser from "@/ReactAPM/Dashboard/CtListForUser";
+import CtListForUser from "@/ReactAPM/Components/CtListForUser";
 import AnchorList from "@/ReactAPM/Components/AnchorList";
+import TranscriptionsForUser from "@/ReactAPM/Components/TranscriptionsForUser";
 
 
 
 export default function Dashboard() {
-  document.title = "Dashboard";
+  document.title = "Dashboard (beta)";
 
   const appContext = useContext(AppContext);
 
@@ -39,9 +38,7 @@ export default function Dashboard() {
           <MceListForUser userId={appContext.userId} itemClassName={"dashboard-list-item"}/>
           <CtListForUser userId={appContext.userId} edRef={edRef} ctRef={ctRef} itemClassName={"dashboard-list-item"}/>
           <h1 ref={txRef}>Transcriptions</h1>
-          <ul>
-            {fakeTranscriptions}
-          </ul>
+          <TranscriptionsForUser userId={appContext.userId}/>
         </div>
       </NormalPageContainer>
     </>

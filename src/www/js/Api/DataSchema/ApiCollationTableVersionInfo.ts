@@ -1,7 +1,7 @@
 /**
  * Data returned by the collationTable versionInfo API call
  */
-export interface ApiCollationTable_versionInfo {
+export interface ApiCollationTableVersionInfo {
   tableId: number;
   type: string;
   title: string;

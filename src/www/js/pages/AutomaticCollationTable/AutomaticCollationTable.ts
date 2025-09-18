@@ -33,7 +33,7 @@ import {HeaderAndContentPage} from '../HeaderAndContentPage';
 import {
   CtDataInterface, FullTxItemEditorialNote, FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface
 } from "@/CtData/CtDataInterface";
-import {ApiCollationTable_auto, AutoCTablePersonInfo, EngineRunDetails} from "@/Api/DataSchema/ApiCollationTable_auto";
+import {ApiCollationTableAuto, AutoCTablePersonInfo, EngineRunDetails} from "@/Api/DataSchema/ApiCollationTableAuto";
 // @ts-expect-error No TS types for matrix yet
 import {Matrix} from "@thomas-inst/matrix";
 
@@ -361,7 +361,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     this.editionContainer.addClass('hidden');
     this.lastTimeLabel.html('TBD...');
     this.witnessInfoDiv.html('TBD...');
-    this.apmDataProxy.collationTable_auto(this.apiCallOptions).then((apiResponse) => {
+    this.apiClient.collationTableAuto(this.apiCallOptions).then((apiResponse) => {
       console.log('Automatic collation successful. Data:');
       console.log(apiResponse);
       this.setDataFromApiResponse(apiResponse);
@@ -400,9 +400,9 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
 
   /**
    *
-   * @param {ApiCollationTable_auto}apiResponse
+   * @param {ApiCollationTableAuto}apiResponse
    */
-  setDataFromApiResponse(apiResponse: ApiCollationTable_auto) {
+  setDataFromApiResponse(apiResponse: ApiCollationTableAuto) {
     this.ctData = CtData.getCleanAndUpdatedCtData(apiResponse.collationTable, true, true);
     this.peopleInfo = apiResponse.people;
     this.collationEngineDetails = apiResponse.collationEngineDetails;
@@ -652,8 +652,8 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       label: `${tr(this.options.langName)} ${this.options.isPartial ? `(${tr('Partial')})` : ''}`,
       active: true
     }]);
-    let workInfo = await this.apmDataProxy.getWorkDataOld(this.options.workId);
-    let authorInfo = await this.apmDataProxy.getPersonEssentialData(workInfo.authorTid);
+    let workInfo = await this.apiClient.getWorkDataOld(this.options.workId);
+    let authorInfo = await this.apiClient.getPersonEssentialData(workInfo.authorTid);
     let ctInfoDiv;
     if (this.showError) {
       ctInfoDiv = `<p>${authorInfo.name}, <em>${workInfo.title}</em>, chunk ${this.options.chunkNumber}</p>`;

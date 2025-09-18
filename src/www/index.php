@@ -119,7 +119,7 @@ try {
 
 // Create routes
 createSiteUnauthenticatedRoutes($app, $container);
-createReactSiteRoutes($app, $container);
+createBetaSiteRoutes($app, $container);
 createSiteRoutes($app, $container);
 createSiteDevRoutes($app, $container);
 createApiAuthenticatedRoutes($app, $container);
@@ -141,17 +141,17 @@ function exitWithErrorMessage(string $msg): void
     exit();
 }
 
-function createReactSiteRoutes(App $app, ContainerInterface $container): void
+function createBetaSiteRoutes(App $app, ContainerInterface $container): void
 {
 
-    $app->group('/new', function (RouteCollectorProxy $group) use ($container) {
+    $app->group('/beta', function (RouteCollectorProxy $group) use ($container) {
 
         $group->get('/app-settings', function (Request $request, Response $response) use ($container) {
             return (new SiteSettings($container))->getSiteSettings($request, $response);
         });
 
 
-        $group->get('/{path:.*}',
+        $group->get('{path:.*}',
             function (Request $request, Response $response) use ($container) {
                 return (new SiteReact($container))->ReactMain($request, $response);
             });
@@ -557,12 +557,9 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
 {
     // DOCUMENTS
 
-    // API -> create new document
-//    $group->post('/doc/new',
-//        function(Request $request, Response $response) use ($container){
-//            return (new ApiDocuments($container))->newDocumentOld($request, $response);
-//        })
-//        ->setName('api.doc.new');
+    $group->get('/docs/all', function (Request $request, Response $response) use ($container) {
+        return (new ApiDocuments($container))->allDocumentsData($request, $response);
+    });
 
 
     $group->get('/doc/getId/{docId}',

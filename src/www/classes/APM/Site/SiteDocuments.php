@@ -64,16 +64,18 @@ class SiteDocuments extends SiteController
         SystemProfiler::setName("Site:" . __FUNCTION__);
         
 
-        $cache = $this->systemManager->getSystemDataCache();
-        try {
-            $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
-        } catch (ItemNotInCacheException) {
-            // not in cache
-            $this->logger->debug("Cache miss for SiteDocuments document data");
-            $data = self::buildDocumentData($this->systemManager);
-            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
-        }
-        $docs = $data['docs'];
+//        $cache = $this->systemManager->getSystemDataCache();
+//        try {
+//            $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
+//        } catch (ItemNotInCacheException) {
+//            // not in cache
+//            $this->logger->debug("Cache miss for SiteDocuments document data");
+//            $data = self::buildDocumentData($this->systemManager);
+//            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
+//        }
+//        $docs = $data['docs'];
+
+        $docs = self::getAllDocumentsData($this->systemManager);
 
         $canManageDocuments = false;
         $userManager = $this->systemManager->getUserManager();
@@ -101,6 +103,19 @@ class SiteDocuments extends SiteController
                 'documents_page.css'
             ]
         );
+    }
+
+    public static function getAllDocumentsData(SystemManager $systemManager): array {
+        $cache = $systemManager->getSystemDataCache();
+        try {
+            $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
+        } catch (ItemNotInCacheException) {
+            // not in cache
+            $systemManager->getLogger()->debug("Cache miss for SiteDocuments document data");
+            $data = self::buildDocumentData($systemManager);
+            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
+        }
+        return $data['docs'];
     }
 
     /**

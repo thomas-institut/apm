@@ -361,7 +361,7 @@ export class EditionComposer extends ApmPage {
     this.witnessInfoPanel = new WitnessInfoPanel({
       verbose: true,
       userId: this.userId,
-      apmDataProxy: this.apmDataProxy,
+      apmDataProxy: this.apiClient,
       containerSelector: `#${witnessInfoTabId}`,
       ctData: this.ctData,
       onWitnessOrderChange: this.genOnWitnessOrderChange(),
@@ -377,7 +377,7 @@ export class EditionComposer extends ApmPage {
     });
 
     this.adminPanel = new AdminPanel({
-      apmDataProxy: this.apmDataProxy,
+      apmDataProxy: this.apiClient,
       urlGen: urlGen,
       tableId: this.tableId,
       verbose: false,
@@ -703,7 +703,7 @@ export class EditionComposer extends ApmPage {
 
   genGetPdfDownloadUrlForPreviewPanel() {
     return async (rawData: any) => {
-      return this.apmDataProxy.getPdfDownloadUrl(rawData);
+      return this.apiClient.getPdfDownloadUrl(rawData);
     };
   }
 

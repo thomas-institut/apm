@@ -20,7 +20,7 @@
 import { Panel } from '@/MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { urlGen } from '@/pages/common/SiteUrlGen'
-import { ApmDataProxy } from '@/pages/common/ApmDataProxy'
+import { ApmApiClient } from '@/Api/ApmApiClient'
 import { ApmFormats } from '@/pages/common/ApmFormats'
 
 const defaultIcons = {
@@ -39,7 +39,7 @@ export class ChunkSearchPanel extends Panel {
       optionsDefinition: {
         mceData: { type: 'object', required: true},
         icons: { type: 'object', default: defaultIcons},
-        apmDataProxy: { type: 'object', objectClass: ApmDataProxy, required: true},
+        apmDataProxy: { type: 'object', objectClass: ApmApiClient, required: true},
         // Function to be called to add a single chunk
         // edition to the multi chunk edition.
         // It should return a promise.
@@ -54,8 +54,8 @@ export class ChunkSearchPanel extends Panel {
     this.options = oc.getCleanOptions(options);
     this.mceData = this.options.mceData;
     this.icons = this.options.icons;
-    /** @type ApmDataProxy */
-    this.apmDataProxy = this.options.apmDataProxy;
+    /** @type ApmApiClient */
+    this.apiClient = this.options.apiClient;
     this.activeEditionsData = null
     this.lastFilter = ''
   }

@@ -1,7 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
-import {ApmDataProxy, DataProxyError} from './ApmDataProxy';
+import {ApmApiClient, ApmApiClientError} from '../../Api/ApmApiClient';
 import { ApmPage } from '../ApmPage'
 import { wait } from '@/toolbox/wait'
 import {getStringVal} from "@/toolbox/UiToolBox";
@@ -10,7 +10,7 @@ import {getStringVal} from "@/toolbox/UiToolBox";
 interface MakeUserDialogOptions {
   personData: any;
   successWaitTime?: number;
-  apmDataProxy: ApmDataProxy;
+  apmDataProxy: ApmApiClient;
   debug?: boolean;
 }
 export class MakeUserDialog {
@@ -29,7 +29,7 @@ export class MakeUserDialog {
       optionsDefinition: {
         personData: { type: 'object'},
         successWaitTime: { type: 'number', default: 500},
-        apmDataProxy: { type: 'object', objectClass: ApmDataProxy},
+        apmDataProxy: { type: 'object', objectClass: ApmApiClient},
         debug: { type: 'boolean', default: true},
       }
     })
@@ -85,7 +85,7 @@ export class MakeUserDialog {
             resolve(true)
           })
         }).catch( (response:any ) => {
-          const resp = response as DataProxyError;
+          const resp = response as ApmApiClientError;
           let status =resp.httpStatus;
           let errorMessage = resp.data?.errorMsg ?? tr("Unknown error");
           this.infoDiv.html(`${tr('The server found an error')}: <b>(${status}) ${errorMessage}</b>`)

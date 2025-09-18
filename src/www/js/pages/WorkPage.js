@@ -32,9 +32,9 @@ export class WorkPage extends NormalPage {
   async initPage () {
     await super.initPage();
 
-    let apiChunkData = await this.apmDataProxy.get(urlGen.apiWorkGetChunksWithTranscription(this.workData.workId));
+    let apiChunkData = await this.apiClient.get(urlGen.apiWorkGetChunksWithTranscription(this.workData.workId));
     console.log(`Transcription Data`, apiChunkData);
-    let apiCollationTableData = await this.apmDataProxy.get(urlGen.apiCollationTable_activeForWork(this.workData.workId));
+    let apiCollationTableData = await this.apiClient.get(urlGen.apiCollationTable_activeForWork(this.workData.workId));
     console.log(`Collation Table Data`, apiCollationTableData)
 
     this.aggregatedData = this.aggregateChunkData(apiChunkData['chunks'], apiCollationTableData);
@@ -115,7 +115,7 @@ export class WorkPage extends NormalPage {
       { label: this.workData.workId, active: true}
     ])
 
-    let authorData = await this.apmDataProxy.getPersonEssentialData(this.workData.authorId);
+    let authorData = await this.apiClient.getPersonEssentialData(this.workData.authorId);
 
     let infoToDisplay =  [
       [ tr('Entity Id'), Tid.toBase36String(this.workData.entityId)],

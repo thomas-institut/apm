@@ -63,19 +63,19 @@ export class PersonPage extends NormalPage {
   async initPage() {
     await super.initPage();
     document.title = this.personData.name;
-    this.entityData = await this.apmDataProxy.getEntityData(this.personId);
+    this.entityData = await this.apiClient.getEntityData(this.personId);
     this.schema = MetadataEditorSchema.getSchema(Entity.tPerson);
     console.log(`Entity Schema for type Person`, this.schema);
 
 
     // preload statement qualification object entities
-    await this.apmDataProxy.getStatementQualificationObjects(true);
+    await this.apiClient.getStatementQualificationObjects(true);
 
     new MetadataEditor2({
       containerSelector: 'div.metadata-editor',
       entityDataSchema: this.schema,
       entityData: this.entityData,
-      apmDataProxy: this.apmDataProxy,
+      apmDataProxy: this.apiClient,
     });
 
     if (this.personData.isUser) {
@@ -111,13 +111,13 @@ export class PersonPage extends NormalPage {
       $('button.edit-user-profile-btn').on('click', this.genOnClickMakeUserButton());
     }
 
-    let worksApiData = await this.apmDataProxy.getPersonWorks(this.personData.id);
+    let worksApiData = await this.apiClient.getPersonWorks(this.personData.id);
     this.works = worksApiData['works'];
     $('div.works-div').html(this.getWorksDivHtml());
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.personId));
+    let data = await this.apiClient.get(urlGen.apiUserGetMultiChunkEditionInfo(this.personId));
     if (data.length !== 0) {
       this.userContributions.push(CONTRIBUTION_MCE);
       let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data);
@@ -127,7 +127,7 @@ export class PersonPage extends NormalPage {
   }
 
   async fetchCollationTablesAndEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.personId));
+    let data = await this.apiClient.get(urlGen.apiUserGetCollationTableInfo(this.personId));
     if (data['tableInfo'].length !== 0) {
       this.userContributions.push(CONTRIBUTION_CT);
       let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
@@ -138,7 +138,7 @@ export class PersonPage extends NormalPage {
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.personId));
+    let data = await this.apiClient.userTranscriptions(this.personId);
     if (data['docIds'].length !== 0) {
       this.userContributions.push(CONTRIBUTION_TX);
       this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data));
@@ -245,7 +245,7 @@ export class PersonPage extends NormalPage {
         userData: this.userData,
         personData: this.personData,
         canManageUsers: this.canManageUsers,
-        apmDataProxy: this.apmDataProxy,
+        apmDataProxy: this.apiClient,
       })).show().then((profileUpdated) => {
         if (profileUpdated) {
           window.location.reload();
@@ -257,7 +257,7 @@ export class PersonPage extends NormalPage {
   genOnClickMakeUserButton() {
     return () => {
       (new MakeUserDialog({
-        personData: this.personData, apmDataProxy: this.apmDataProxy,
+        personData: this.personData, apmDataProxy: this.apiClient,
       })).show().then((userCreated) => {
         if (userCreated) {
           window.location.reload();

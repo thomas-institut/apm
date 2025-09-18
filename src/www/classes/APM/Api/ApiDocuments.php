@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 use APM\EntitySystem\Schema\Entity;
+use APM\Site\SiteDocuments;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\User\UserNotFoundException;
@@ -42,6 +43,20 @@ class ApiDocuments extends ApiController
 
     const string CLASS_NAME = 'Documents';
 
+
+    /**
+     * Returns data for all the documents in the system
+     *
+     * TODO: move the actual data fetching out of the SiteDocuments controller into the system manager
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+    public function allDocumentsData(Request $request, Response $response): Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
+        return $this->responseWithJson($response,  SiteDocuments::getAllDocumentsData($this->systemManager));
+    }
 
     /**
      * Returns the "true" docId, which the entity id

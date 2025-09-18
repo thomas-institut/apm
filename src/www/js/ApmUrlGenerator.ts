@@ -433,6 +433,9 @@ export class ApmUrlGenerator {
   }
 
 
+  apiDocumentsAllDocumentsData() {
+    return `${this.apiBase}/docs/all`;
+  }
 
   apiAutomaticEdition() {
     return this.apiBase + '/edition/auto';

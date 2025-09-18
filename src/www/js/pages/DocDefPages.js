@@ -59,7 +59,7 @@ export class DocDefPages extends NormalPage {
   async initPage() {
     await super.initPage();
 
-    this.pageTypes = await this.apmDataProxy.getAvailablePageTypes();
+    this.pageTypes = await this.apiClient.getAvailablePageTypes();
     this.pageDiv = $('#pages');
     this.thumbnailToggle = new MultiToggle({
       containerSelector: 'div.thumbnail-selector',

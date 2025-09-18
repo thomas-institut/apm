@@ -26,7 +26,7 @@ import {
   WitnessInterface,
   WitnessTokenInterface
 } from "@/CtData/CtDataInterface";
-import {PeopleInfoObject} from "@/Api/DataSchema/ApiCollationTable_auto";
+import {PeopleInfoObject} from "@/Api/DataSchema/ApiCollationTableAuto";
 
 // Classes
 const popoverDivClass = 'ctPopover';

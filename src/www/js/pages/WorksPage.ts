@@ -66,7 +66,7 @@ export class WorksPage extends NormalPage {
       if (groupedWorks[authorId] === undefined) {
         groupedWorks[authorId] = {
           authorId: authorId,
-          authorName: await this.apmDataProxy.getEntityName(authorId),
+          authorName: await this.apiClient.getEntityName(authorId),
           works: []
         }
       }

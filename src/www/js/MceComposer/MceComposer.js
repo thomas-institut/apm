@@ -171,7 +171,7 @@ export class MceComposer extends ApmPage {
         console.log(`Loading edition ${this.editionId}`)
         this.editionPanel.updateLoadingMessage(`Loading multi-chunk edition`)
         let apiUrl = urlGen.apiGetMultiChunkEdition(this.editionId)
-        this.apmDataProxy.get(apiUrl).then((data) => {
+        this.apiClient.get(apiUrl).then((data) => {
           console.log(`Got data from server`)
           console.log(data)
           this.mceData = MceData.fix(data.mceData)
@@ -226,7 +226,7 @@ export class MceComposer extends ApmPage {
    this.chunkSearchPanel = new ChunkSearchPanel({
      containerSelector: `#${chunkSearchPanelId}`,
      mceData: this.mceData,
-     apmDataProxy: this.apmDataProxy,
+     apmDataProxy: this.apiClient,
      addEdition: (id, timestamp) => {
        return this.chunkAdd(id, timestamp)
      },
@@ -704,27 +704,22 @@ export class MceComposer extends ApmPage {
   }
 
   async updateAutoMarginalFoliation(newAutoMarginalFoliation) {
-    let lockAcquired = await this.lockManager.getLock('autoMarginalFoliation', 10000);
-    if (lockAcquired === false) {
-      console.warn(`Could not acquire lock for auto marginal foliation`)
-      return
-    }
-    console.log(`Acquired lock for auto marginal foliation`)
-    console.log(`Current auto marginal foliation`, deepCopy(this.mceData.includeInAutoMarginalFoliation));
-    console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
-    if (arraysAreEqual(this.mceData.includeInAutoMarginalFoliation, newAutoMarginalFoliation)) {
-      console.log(`No change in auto marginal foliation`);
-      return;
-    }
-    console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
-    this.mceData.includeInAutoMarginalFoliation = newAutoMarginalFoliation;
-    this.singleChunkEditions = [];
-    this.editionPanel.updateData(this.mceData);
-    this.updateSaveUI();
-    this.previewPanel.disableUpdatePreview();
-    await this.regenerateEdition();
-    await this.previewPanel.updateData(this.edition);
-    this.lockManager.releaseLock('autoMarginalFoliation');
+    await navigator.locks.request('autoMarginalFoliation', async () => {
+      console.log(`Current auto marginal foliation`, deepCopy(this.mceData.includeInAutoMarginalFoliation));
+      console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
+      if (arraysAreEqual(this.mceData.includeInAutoMarginalFoliation, newAutoMarginalFoliation)) {
+        console.log(`No change in auto marginal foliation`);
+        return;
+      }
+      console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
+      this.mceData.includeInAutoMarginalFoliation = newAutoMarginalFoliation;
+      this.singleChunkEditions = [];
+      this.editionPanel.updateData(this.mceData);
+      this.updateSaveUI();
+      this.previewPanel.disableUpdatePreview();
+      await this.regenerateEdition();
+      await this.previewPanel.updateData(this.edition);
+    });
   }
 
   updateSigla(newSigla) {
@@ -781,7 +776,7 @@ export class MceComposer extends ApmPage {
       if (versionTimeString !== '' && useCache) {
         let cachedData = await this.dbCache.retrieve(dbKey);
         if (cachedData !== null) {
-          const versionInfo = await this.apmDataProxy.collationTable_versionInfo(tableId, versionTimeString);
+          const versionInfo = await this.apiClient.collationTableVersionInfo(tableId, versionTimeString);
           if (versionInfo !== null) {
             cachedData.isLatestVersion = versionInfo.isLatestVersion;
             resolve(cachedData);
@@ -791,7 +786,7 @@ export class MceComposer extends ApmPage {
       }
       // really get from server
       let url = urlGen.apiCollationTable_get(tableId, TimeString.compactEncode(versionTimeString))
-      this.apmDataProxy.get(url).then( async (data) => {
+      this.apiClient.get(url).then( async (data) => {
         /** @var {SingleChunkApiData} data */
         console.log(`Got data table ${tableId}, timeStamp '${versionTimeString}'`)
         console.log(data)
@@ -1136,7 +1131,7 @@ export class MceComposer extends ApmPage {
             // new witness
             let [ , tid] = witnessId.split(':');
             tid = parseInt(tid);
-            let sourceInfo = await this.apmDataProxy.getEditionSource(tid);
+            let sourceInfo = await this.apiClient.getEditionSource(tid);
             console.log(`Source info`)
             console.log(sourceInfo);
 
@@ -1234,7 +1229,7 @@ export class MceComposer extends ApmPage {
 
   genGetPdfDownloadUrlForPreviewPanel() {
     return async (rawData) => {
-      return this.apmDataProxy.getPdfDownloadUrl(rawData)
+      return this.apiClient.getPdfDownloadUrl(rawData)
     }
   }
 

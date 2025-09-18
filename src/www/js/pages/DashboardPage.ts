@@ -62,13 +62,13 @@ export class DashboardPage extends NormalPage {
 
     $('.new-chunk-edition-btn').on('click', (ev) => {
       ev.preventDefault();
-      let d = new NewChunkEditionDialog({apmDataProxy: this.apmDataProxy});
+      let d = new NewChunkEditionDialog({apmDataProxy: this.apiClient});
       d.createNewChunkEdition();
     });
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId), false, UserDataTtl);
+    let data = await this.apiClient.get(urlGen.apiUserGetMultiChunkEditionInfo(this.userId), false, UserDataTtl);
     let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data);
     let newMceUrl = urlGen.siteMultiChunkEditionNew();
     html += `<p class="new-mce"><a href="${newMceUrl}" title="${tr('Click to start a new multi-chunk edition')}" target="_blank">${newMceEditionIcon} ${tr('Create new multi-chunk edition')}</a></p>`;
@@ -76,7 +76,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchCollationTablesAndEditions() {
-    let data = await this.apmDataProxy.get(urlGen.apiUserGetCollationTableInfo(this.userId), false, UserDataTtl);
+    let data = await this.apiClient.get(urlGen.apiUserGetCollationTableInfo(this.userId), false, UserDataTtl);
     let listHtml = UserDocDataCommon.generateCtTablesAndEditionsListHtml(data['tableInfo'], data['workInfo']);
     let newChunkEditionHtml = `<p class="new-mce"><a href="" class="new-chunk-edition-btn" 
         title="${tr("Click to create a new chunk edition")}">${newMceEditionIcon} ${tr('Create new chunk edition')}</a></p>`;
@@ -87,7 +87,7 @@ export class DashboardPage extends NormalPage {
   }
 
   async fetchTranscriptions() {
-    let data = await this.apmDataProxy.get(urlGen.apiTranscriptionsByUserDocPageData(this.userId), false, UserDataTtl);
+    let data = await this.apiClient.userTranscriptions(this.userId, UserDataTtl);
     this.transcriptionsCollapse.setContent(UserDocDataCommon.generateTranscriptionListHtml(data));
   }
 

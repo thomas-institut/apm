@@ -22,7 +22,6 @@ php-sessions/
 **/log
 **/downloads
 other/
-**/docs/
 .idea/
 __pycache__
 src/python/*.pdf

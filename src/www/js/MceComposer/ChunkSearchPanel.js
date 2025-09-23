@@ -55,7 +55,7 @@ export class ChunkSearchPanel extends Panel {
     this.mceData = this.options.mceData;
     this.icons = this.options.icons;
     /** @type ApmApiClient */
-    this.apiClient = this.options.apmDataProxy;
+    this.apiClient = this.options.apiClient;
     this.activeEditionsData = null
     this.lastFilter = ''
   }

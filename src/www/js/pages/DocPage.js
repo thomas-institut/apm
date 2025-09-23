@@ -282,7 +282,7 @@ export class DocPage extends NormalPage {
       containerSelector: 'div.metadata-editor',
       entityDataSchema: this.schema,
       entityData: this.entityData,
-      apmDataProxy: this.apiClient,
+      apiClient: this.apiClient,
       infoStringProviders: [
         {
           name: 'docShortInfo',

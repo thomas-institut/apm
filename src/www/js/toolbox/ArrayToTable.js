@@ -36,7 +36,7 @@ export class ArrayToTable {
     this.options = oc.getCleanOptions(options)
 
 
-    this.data = this.options.data
+    this.data = this.options.docsTableData
 
   }
 

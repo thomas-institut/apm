@@ -160,7 +160,7 @@ export class AdminPanel extends  Panel {
 
     for(let i=this.versionInfo.length-1; i >= 0; i--)   {
       let version = this.versionInfo[i];
-      let authorData = await this.options.apmDataProxy.getPersonEssentialData(version['authorTid']);
+      let authorData = await this.options.apiClient.getPersonEssentialData(version['authorTid']);
       let authorName = authorData.name;
       html += '<tr>'
       html += '<td>' + (i+1) + '</td>'

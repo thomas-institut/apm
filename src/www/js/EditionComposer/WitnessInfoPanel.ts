@@ -692,7 +692,7 @@ export class WitnessInfoPanel extends Panel {
         id: shortId,
         index: i,
         currentSiglum: this.ctData.sigla[i],
-        presetSiglum: preset.data.witnesses[shortId]
+        presetSiglum: preset.docsTableData.witnesses[shortId]
       };
     });
   }

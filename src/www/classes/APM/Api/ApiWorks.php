@@ -2,6 +2,7 @@
 
 namespace APM\Api;
 
+use APM\Site\SiteWorks;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Work\WorkNotFoundException;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -82,6 +83,19 @@ class ApiWorks extends ApiController
     public function getAuthorList(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
         return $this->responseWithJson($response, $this->systemManager->getWorkManager()->getAuthors());
+    }
+
+
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * TODO: move the data fetching out of the SiteWorks controller
+     *
+     */
+    public function allWorksData(Request $request, Response $response) : Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
+        return $this->responseWithJson($response,  SiteWorks::getAllWorksData($this->systemManager));
     }
 
 

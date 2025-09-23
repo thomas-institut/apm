@@ -1,12 +1,16 @@
 import NormalPageContainer from "../../NormalPageContainer";
-import {useContext} from "react";
+import {useContext, useEffect} from "react";
 import {AppContext} from "@/ReactAPM/App";
 import {useQuery} from "@tanstack/react-query";
 import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
 import {
-  createColumnHelper, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable
+  createColumnHelper,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getPaginationRowModel,
+  getSortedRowModel,
+  useReactTable
 } from "@tanstack/react-table";
-import '../../Components/GridTable.css';
 import './docs.css';
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import {TablePaginationControls} from "@/ReactAPM/Components/TablePaginationControls";
@@ -14,7 +18,9 @@ import TableStateSummary from "@/ReactAPM/Components/TableStateSummary";
 import GridTable from "@/ReactAPM/Components/GridTable";
 import {Form} from "react-bootstrap";
 import {EntityNameTuple} from "@/Api/ApmApiClient";
-import {useDocsStore} from "@/ReactAPM/Stores/DocsStore";
+import {varsAreEqual} from "@/toolbox/ObjectUtil";
+import {useDataStore} from "@/ReactAPM/Stores/DataStore";
+
 
 export interface DocsTableItem {
   id: number;
@@ -26,17 +32,15 @@ export interface DocsTableItem {
   transcribers: number[];
 }
 
-
 export default function Docs() {
-
   document.title = 'Documents (beta)';
   const appContext = useContext(AppContext);
-  const data = useDocsStore((state) => state.data);
-  const setData = useDocsStore((state) => state.setData);
-  const sorting = useDocsStore((state) => state.sorting);
-  const setSorting = useDocsStore((state) => state.setSorting);
-  const pagination = useDocsStore((state) => state.pagination);
-  const setPagination = useDocsStore((state) => state.setPagination);
+  const data = useDataStore((state) => state.docsTableData);
+  const setData = useDataStore((state) => state.setDocsTableData);
+  const sorting = useDataStore((state) => state.docsTableSortingState);
+  const setSorting = useDataStore((state) => state.setDocsTableSortingState);
+  const pagination = useDataStore((state) => state.docsTablePaginationState);
+  const setPagination = useDataStore((state) => state.setDocsTablePaginationState);
 
   const getDataForTable = (data: DocumentData[], docTypes: EntityNameTuple[], languages: EntityNameTuple[]): DocsTableItem[] => {
     const dataTableEntries: DocsTableItem[] = [];
@@ -75,6 +79,17 @@ export default function Docs() {
     queryKey: ['docs'], queryFn: () => getDocData(),
   });
 
+  useEffect( () => {
+    if (queryResult.status === 'success') {
+
+      if (varsAreEqual(data, queryResult.data)) {
+        return;
+      }
+      console.log('Data changed, updating store');
+      setData(queryResult.data);
+    }
+  }, [queryResult.status]);
+
 
   const columnHelper = createColumnHelper<DocsTableItem>();
   const columns = [
@@ -86,11 +101,11 @@ export default function Docs() {
     }),
 
     columnHelper.accessor('lang', {
-      cell: info => info.getValue(), header: 'Language'
+      cell: info => info.getValue(), header: 'Language', enableSorting: false
     }),
 
     columnHelper.accessor('type', {
-      cell: info => info.getValue(), header: 'Type'
+      cell: info => info.getValue(), header: 'Type', enableSorting: false
     }),
 
     columnHelper.accessor('numPages', {
@@ -117,31 +132,18 @@ export default function Docs() {
         </>);
       }, header: 'Transcribers', enableSorting: false, enableGlobalFilter: true,
     })
-
   ];
 
   const table = useReactTable({
-    data: data ?? [],
+    data: data,
     columns: columns,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     state: {sorting, pagination},
-    onPaginationChange: (newPagination) => {
-      if (typeof newPagination === 'function') {
-        setPagination(newPagination(pagination));
-      } else {
-        setPagination(newPagination);
-      }
-    },
-    onSortingChange: (newSorting) => {
-      if (typeof newSorting === 'function') {
-        setSorting(newSorting(sorting));
-      } else {
-        setSorting(newSorting);
-      }
-    },
+    onSortingChange: setSorting,
+    onPaginationChange: setPagination,
     rowCount: data?.length ?? 0,
     debugTable: false,
     enableSortingRemoval: false,
@@ -152,12 +154,12 @@ export default function Docs() {
   let header = null;
   let queryStatusDiv = (<div></div>);
 
-  if (data !== null) {
+  if (data.length > 0) {
     header = (<div className="tableNavigationDiv"
                    style={{display: 'flex', justifyContent: 'space-between', alignItems: "center",}}>
       <div key="summary"><TableStateSummary table={table} rowNounPlural="documents"/></div>
-      <div key="search"><Form.Control type="text" className="mb-3" placeholder="Search in table..."
-                                      onChange={e => table.setGlobalFilter(e.target.value)}/></div>
+      <div key="search"><Form.Control type="text" className="mb-3" placeholder="Filter title..."
+                                      onChange={e => table.setGlobalFilter(e.target.value.trim())}/></div>
       <TablePaginationControls className="tableNavigationDiv" table={table} key="pagination"/>
     </div>);
     content = <GridTable table={table} tableId="docsTable" key="table"
@@ -171,15 +173,11 @@ export default function Docs() {
       break;
 
     case 'error':
-      if (data === null) {
+      if (data.length === 0) {
         content = <div className="text-danger">Error: {queryResult.error.message}</div>;
       } else {
         queryStatusDiv = <div className="text-danger">Error checking data, shown data may be out of date</div>;
       }
-      break;
-
-    case 'success':
-      setData(queryResult.data);
       break;
   }
 

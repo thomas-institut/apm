@@ -16,4 +16,18 @@ export class EntityData {
     return activeStatements.length === 0 ? null : activeStatements[0];
   }
 
+  static getPredicateObject(data: EntityDataInterface, predicate: number) : string | number | null {
+    let statement = this.getSingleCurrentStatement(data, predicate);
+    return statement === null ? null : statement.object;
+  }
+
+  static getAttributeValue(data: EntityDataInterface, predicate: number) : string | null {
+    return this.getPredicateObject(data, predicate) as string|null;
+  }
+
+  static getBooleanAttributeValue(data: EntityDataInterface, predicate: number) : boolean | null {
+    let value = this.getPredicateObject(data, predicate);
+    return value === null ? null : value === '1';
+  }
+
 }

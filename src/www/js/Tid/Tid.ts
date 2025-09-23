@@ -21,6 +21,10 @@ export class Tid {
   static toCanonicalString(tid: number) {
     return this.toBase36String(tid);
   }
+
+  static fromCanonicalString(str: string) {
+    return parseInt(str.replace(/-/g, '').toLowerCase(), 36);
+  }
 }
 
 

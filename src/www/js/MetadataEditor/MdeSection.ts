@@ -11,7 +11,7 @@ export class MdeSection {
   protected schema: any;
   protected title: string;
   protected containerSelector: any;
-  protected apmDataProxy: ApmApiClient;
+  protected apiClient: ApmApiClient;
   protected predicateDefinitions: any;
   protected qualificationDefinitions: any;
   private bodyElement!: JQuery<HTMLElement>;
@@ -24,7 +24,7 @@ export class MdeSection {
         entityData: {type: 'object', required: false, default: {}},
         predicateDefinitions: { type: 'object', required: true},
         qualificationDefinitions: { type: 'object', required: true},
-        apmDataProxy: { type: 'object', objectClass: ApmApiClient, required: true},
+        apiClient: { type: 'object', objectClass: ApmApiClient, required: true},
         sectionSchema: { type: 'object', required: true},
         /**
          * Async function to be called when the section originates a change in entity data
@@ -49,7 +49,7 @@ export class MdeSection {
     this.schema = this.options.sectionSchema;
     this.title = this.schema.title ?? '';
     this.containerSelector = this.options.containerSelector;
-    this.apmDataProxy = this.options.apiClient;
+    this.apiClient = this.options.apiClient;
     this.predicateDefinitions = this.options.predicateDefinitions;
     this.qualificationDefinitions = this.options.qualificationDefinitions;
   }

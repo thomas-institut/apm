@@ -101,14 +101,15 @@ class SiteWorks extends SiteController
     public function worksPage(Request $request, Response $response): Response
     {
         SystemProfiler::setName("Site:" . __FUNCTION__);
-        $cache = $this->systemManager->getSystemDataCache();
-        try {
-            $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
-        } catch (ItemNotInCacheException) {
-            // not in cache
-            $works = self::buildWorkData($this->systemManager, $this->logger);
-            $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
-        }
+        $works = self::getAllWorksData($this->systemManager);
+//        $cache = $this->systemManager->getSystemDataCache();
+//        try {
+//            $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
+//        } catch (ItemNotInCacheException) {
+//            // not in cache
+//            $works = self::buildWorkData($this->systemManager, $this->logger);
+//            $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
+//        }
 
         return $this->renderStandardPage(
             $response,
@@ -120,6 +121,19 @@ class SiteWorks extends SiteController
             [],
             [ 'works_page.css']
         );
+    }
+
+
+    public static function getAllWorksData(SystemManager $systemManager) : array {
+        $cache = $systemManager->getSystemDataCache();
+        try {
+            $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
+        } catch (ItemNotInCacheException) {
+            // not in cache
+            $works = self::buildWorkData($systemManager, $systemManager->getLogger());
+            $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
+        }
+        return $works;
     }
 
     private static function getWorkDataBasicInfo(string $workId, SystemManager $systemManager) : array {

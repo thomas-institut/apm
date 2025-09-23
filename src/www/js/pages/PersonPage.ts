@@ -75,7 +75,7 @@ export class PersonPage extends NormalPage {
       containerSelector: 'div.metadata-editor',
       entityDataSchema: this.schema,
       entityData: this.entityData,
-      apmDataProxy: this.apiClient,
+      apiClient: this.apiClient,
     });
 
     if (this.personData.isUser) {

@@ -46,7 +46,7 @@ export class DevelopmentEntityDataEditor extends NormalPage {
       containerSelector: 'div.editor-container-new',
       entityDataSchema: this.schema,
       entityData: this.entityData,
-      apmDataProxy: this.apiClient,
+      apiClient: this.apiClient,
     });
 
   }

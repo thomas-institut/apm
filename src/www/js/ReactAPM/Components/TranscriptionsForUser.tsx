@@ -1,39 +1,14 @@
-import {useContext} from "react";
-import {AppContext} from "@/ReactAPM/App";
-import {useQuery} from "@tanstack/react-query";
-import Skeleton from "@/ReactAPM/Components/Skeleton";
-import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
+import type {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 
 interface TranscriptionsForUserProps {
-  userId: number;
+  data: ApiUserTranscriptions;
 }
 
 export default function TranscriptionsForUser(props: TranscriptionsForUserProps) {
-  const {userId} = props;
-  const appContext = useContext(AppContext);
+  const data = props.data;
 
-  const getTranscriptionsForUser = (userId: number) => {
-    return appContext.apiClient.userTranscriptions(userId);
-  };
-
-  const queryResult = useQuery({
-    queryKey: ['transcriptions', userId], queryFn: () => getTranscriptionsForUser(userId),
-  });
-
-  if (queryResult.status === 'pending') {
-    return (<Skeleton as="div" style={{width: '20em', height: '5em'}}></Skeleton>);
-  }
-
-  if (queryResult.status === 'error') {
-    return (<div>Error: {queryResult.error.message}</div>);
-  }
-
-
-  const docData = getDocData(queryResult.data);
-
-  console.log(docData);
-
+  const docData = getDocData(data);
   return docData.map((doc) => {
     return (
       <div key={doc.id} style={{marginBottom: '1em'}}>

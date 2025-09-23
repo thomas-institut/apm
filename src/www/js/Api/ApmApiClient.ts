@@ -37,6 +37,8 @@ import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
+import {ApiPeopleAllPeopleDataForPeoplePageItem} from "@/Api/DataSchema/ApiPeopleAllPeopleDataForPeoplePage";
+import {ApiWorksAll} from "@/Api/DataSchema/ApiWorksAll";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -184,6 +186,14 @@ export class ApmApiClient {
       console.error(`Error getting collation table version info ${tableId}, ${versionTimeString}`, error);
       return null;
     }
+  }
+
+  async getAllPeopleData(): Promise<ApiPeopleAllPeopleDataForPeoplePageItem[]> {
+    return await this.get(urlGen.apiPersonGetDataForPeoplePage());
+  }
+
+  async getAllWorksData() : Promise<ApiWorksAll> {
+    return await this.get(urlGen.apiWorksAll());
   }
 
   async getAllPersonEssentialData(): Promise<any> {

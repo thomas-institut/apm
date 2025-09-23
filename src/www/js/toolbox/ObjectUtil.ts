@@ -1,7 +1,17 @@
+export function varsAreEqual<T>(obj1: T, obj2: T) {
 
-
-export function deepAreEqual(obj1:any, obj2:any) {
-  return JSON.stringify(obj1)=== JSON.stringify(obj2);
+  if (typeof obj1 === 'string' && typeof obj2 === 'string') {
+    return obj1 === obj2;
+  }
+  if (typeof obj1 === 'number' && typeof obj2 === 'number') {
+    return obj1 === obj2;
+  }
+  if (Array.isArray(obj1) && Array.isArray(obj2)) {
+    if (obj1.length !== obj2.length) {
+      return false;
+    }
+  }
+  return JSON.stringify(obj1) === JSON.stringify(obj2);
 }
 
 /**
@@ -13,25 +23,25 @@ export function deepAreEqual(obj1:any, obj2:any) {
  */
 export function deepGetValuesForKey(someVariable: any, key: string): any[] {
   if (someVariable === null || typeof someVariable !== 'object') {
-    return []
+    return [];
   }
   // ARRAY
   if (Array.isArray(someVariable)) {
-    let values: any[] = []
-    someVariable.forEach( (element) => {
-      values.push(...deepGetValuesForKey(element, key))
-    })
-    return values
+    let values: any[] = [];
+    someVariable.forEach((element) => {
+      values.push(...deepGetValuesForKey(element, key));
+    });
+    return values;
   }
   // OBJECT
-  let values: any[] = []
-  Object.keys(someVariable).forEach( (objectKey) => {
+  let values: any[] = [];
+  Object.keys(someVariable).forEach((objectKey) => {
     if (objectKey === key) {
-      values.push(someVariable[key])
+      values.push(someVariable[key]);
     } else {
       // for any other object element, add up all found values inside the element
-      values.push(...deepGetValuesForKey(someVariable[objectKey], key))
+      values.push(...deepGetValuesForKey(someVariable[objectKey], key));
     }
-  })
-  return values
+  });
+  return values;
 }

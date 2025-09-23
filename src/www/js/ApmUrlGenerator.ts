@@ -422,6 +422,10 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/work/${workId}/chunksWithTranscription`;
   }
 
+  apiWorksAll() {
+    return `${this.apiBase}/works/all`;
+  }
+
 
 
   apiPersonGetWorks(personId: number) {

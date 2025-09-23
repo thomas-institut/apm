@@ -94,7 +94,7 @@ export class PredicateListSection extends MdeSection {
         logoUrl: predicate.showLogo ? urlGen.entityLogoUrl(predicate.id) : '',
         getObjectUrl: async (object: number|string) => {
           if (predicate.isRelation) {
-            let data = await this.apmDataProxy.getEntityData(parseInt(object.toString()));
+            let data = await this.apiClient.getEntityData(parseInt(object.toString()));
             let url = urlGen.siteEntityPage(data.type, object);
             return url === '' ? null : url;
           } else {
@@ -149,13 +149,13 @@ export class PredicateListSection extends MdeSection {
 
   genGetEntityName() {
     return async (id: number) => {
-      return await this.apmDataProxy.getEntityName(id);
+      return await this.apiClient.getEntityName(id);
     }
   }
 
   genGetEntityType() {
     return async (id:number) => {
-      return await this.apmDataProxy.getEntityType(id);
+      return await this.apiClient.getEntityType(id);
     }
   }
 
@@ -163,7 +163,7 @@ export class PredicateListSection extends MdeSection {
     return async (types:number[]) => {
       let entities = [];
       for (let i = 0; i < types.length; i++) {
-        entities.push(...await this.apmDataProxy.getEntityListForType(types[i]));
+        entities.push(...await this.apiClient.getEntityListForType(types[i]));
       }
       return entities;
     }
@@ -230,7 +230,7 @@ export class PredicateListSection extends MdeSection {
 
   async doStatementEditCommands(commands: any, predicate: any) {
     console.log(`Edit statement`, commands);
-    let serverResponse = await this.apmDataProxy.apiEntityStatementsEdit(commands);
+    let serverResponse = await this.apiClient.apiEntityStatementsEdit(commands);
     console.log('Response from server', serverResponse);
     if (serverResponse.success === false) {
       return { success: false, msg: serverResponse.errorMessage, statements: []}
@@ -243,7 +243,7 @@ export class PredicateListSection extends MdeSection {
     })
     let msg = minorProblems.length === 0 ? 'Success' : minorProblems.join('. ');
     // need to get entity data once again
-    this.entityData = await this.apmDataProxy.getEntityData(this.entityData.id, true);
+    this.entityData = await this.apiClient.getEntityData(this.entityData.id, true);
     let newStatements = EntityData.getStatementsForPredicate(this.entityData, predicate.id, true);
     let predicateIndex = this.getPredicateIndexFromId(predicate.id);
     if (predicateIndex !== -1) {

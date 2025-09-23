@@ -25,7 +25,7 @@ export class AdminEntityPage extends NormalPage {
 
     this.options = oc.getCleanOptions(options);
     console.log('Options', this.options);
-    this.data = this.options.entityData;
+    this.docsTableData = this.options.entityData;
     this.statements = this.data.statements;
     this.entityId = this.data['id'];
     this.title = `Ent. ${this.entityId}`;

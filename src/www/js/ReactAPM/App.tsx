@@ -17,9 +17,9 @@ import {trimCharacters} from "@/toolbox/Util.mjs";
 // @ts-ignore
 const Dashboard = lazy(() => import('@/ReactAPM/Pages/Dashboard/Dashboard.js'));
 // @ts-ignore
-const Works = lazy(() => import('./Pages/Works.js'));
+const Works = lazy(() => import('./Pages/Works/Works.js'));
 // @ts-ignore
-const People = lazy(() => import('./Pages/People.js'));
+const People = lazy(() => import('./Pages/People/People.js'));
 // @ts-ignore
 const Search = lazy(() => import('./Pages/Search.js'));
 // @ts-ignore
@@ -31,7 +31,7 @@ const Work = lazy(() => import('./Pages/Work.js'));
 // @ts-ignore
 const Chunk = lazy(() => import('./Pages/Chunk.js'));
 // @ts-ignore
-const Person = lazy(() => import('./Pages/Person.js'));
+const Person = lazy(() => import('./Pages/Person/Person.js'));
 // @ts-ignore
 const EditionComposer = lazy(() => import('./Pages/EditionComposer.js'));
 // @ts-ignore

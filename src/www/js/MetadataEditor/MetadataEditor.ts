@@ -1,63 +1,75 @@
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { ApmApiClient } from '@/Api/ApmApiClient'
-import * as SectionType from '../defaults/MetadataEditorSchemata/SectionType'
-import { HeaderSection } from './HeaderSection'
-import { MdeSection } from './MdeSection'
-import { PredicateListSection } from './PredicateListSection'
-import {EntityDataInterface} from "../../schema/Schema";
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {ApmApiClient} from '@/Api/ApmApiClient';
+import * as SectionType from '@/MetadataEditor/MetadataEditorSchemata/SectionType';
+import {HeaderSection} from './HeaderSection';
+import {MdeSection} from './MdeSection';
+import {PredicateListSection} from './PredicateListSection';
+import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
+import {SchemaInterface} from "@/MetadataEditor/MetadataEditorSchemata/SchemaInterface";
 
-export class MetadataEditor2 {
-  private options: any;
-  private readonly containerSelector: any;
-  private entityData: EntityDataInterface;
-  private typeData: any;
-  private sections: any;
 
-  constructor (options:any) {
+interface InfoStringProvider {
+  name: string;
+  provider: (entityId: number) => Promise<string | null>;
+}
+
+interface MetadataEditorOptions {
+  containerSelector: string;
+  entityDataSchema: SchemaInterface;
+  entityData: EntityDataInterface;
+  apiClient: ApmApiClient;
+  infoStringProviders?: InfoStringProvider[];
+}
+
+export class MetadataEditor {
+  private options: MetadataEditorOptions;
+  private readonly containerSelector: string;
+  private readonly entityData: EntityDataInterface;
+  private infoStringProviders: InfoStringProvider[];
+  private typeData!: PredicateDefinitionsForType;
+  private sections: MdeSection[] = [];
+
+  constructor(options: MetadataEditorOptions) {
     const oc = new OptionsChecker({
-      optionsDefinition:  {
-        containerSelector: { type:'string', required: true},
+      optionsDefinition: {
+        containerSelector: {type: 'string', required: true},
         entityDataSchema: {type: 'object', required: true},
         entityData: {type: 'object', required: false, default: {}},
-        apiClient: { type: 'object', objectClass: ApmApiClient, required: true},
+        apiClient: {type: 'object', objectClass: ApmApiClient, required: true},
         /**
          * an array of string providers identified by name
          * These can be used to insert any custom string in different places in the editor,
          * for example, in the entity's description in a header section
          */
         infoStringProviders: {
-          type: 'array',
-          elementDefinition: {
-            type: 'object',
-            objectDefinition: {
-              name: { type: 'string', required: true},
-              /**
+          type: 'array', elementDefinition: {
+            type: 'object', objectDefinition: {
+              name: {type: 'string', required: true}, /**
                * an async function that takes an entity id and returns a string
                * e.g.  (id) => { ....;  return 'someString'  }
                */
-              provider: { type: 'function', required: true}
+              provider: {type: 'function', required: true}
             }
-          },
-          default: []
+          }, default: []
         }
-      },
-      context:  "MetadataEditor2"
+      }, context: "MetadataEditor2"
     });
     this.options = oc.getCleanOptions(options);
     this.containerSelector = this.options.containerSelector;
     this.entityData = this.options.entityData;
+    this.infoStringProviders = this.options.infoStringProviders ?? [];
 
-    this.getBootstrapHtml().then( async (html) => {
+    this.getBootstrapHtml().then(async (html) => {
       $(this.options.containerSelector).html(html);
       this.typeData = await this.options.apiClient.getPredicateDefinitionsForType(this.entityData.type);
 
-      this.sections = this.options.entityDataSchema.sections.map( (sectionSchema: { type: any }, sectionIndex: any) => {
-        switch(sectionSchema.type) {
+      this.sections = this.options.entityDataSchema.sections.map((sectionSchema, sectionIndex: number) => {
+        switch (sectionSchema.type) {
           case SectionType.Header:
             return new HeaderSection({
               apiClient: this.options.apiClient,
-              predicateDefinitions: this.typeData['predicateDefinitions'],
-              qualificationDefinitions: this.typeData['qualificationDefinitions'],
+              predicateDefinitions: this.typeData.predicateDefinitions,
+              qualificationDefinitions: this.typeData.qualificationDefinitions,
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.entityData,
               sectionSchema: sectionSchema,
@@ -68,8 +80,8 @@ export class MetadataEditor2 {
           case SectionType.VerticalList:
             return new PredicateListSection({
               apiClient: this.options.apiClient,
-              predicateDefinitions: this.typeData['predicateDefinitions'],
-              qualificationDefinitions: this.typeData['qualificationDefinitions'],
+              predicateDefinitions: this.typeData.predicateDefinitions,
+              qualificationDefinitions: this.typeData.qualificationDefinitions,
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
@@ -80,8 +92,8 @@ export class MetadataEditor2 {
           case SectionType.HorizontalList:
             return new PredicateListSection({
               apiClient: this.options.apiClient,
-              predicateDefinitions: this.typeData['predicateDefinitions'],
-              qualificationDefinitions: this.typeData['qualificationDefinitions'],
+              predicateDefinitions: this.typeData.predicateDefinitions,
+              qualificationDefinitions: this.typeData.qualificationDefinitions,
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
@@ -92,58 +104,53 @@ export class MetadataEditor2 {
           default:
             return new MdeSection({
               apiClient: this.options.apiClient,
-              predicateDefinitions: this.typeData['predicateDefinitions'],
-              qualificationDefinitions: this.typeData['qualificationDefinitions'],
+              predicateDefinitions: this.typeData.predicateDefinitions,
+              qualificationDefinitions: this.typeData.qualificationDefinitions,
               containerSelector: `${this.containerSelector} .mde-section-${sectionIndex}`,
               entityData: this.options.entityData,
               sectionSchema: sectionSchema,
               onEntityDataChange: this.genOnEntityDataChange(sectionIndex)
             });
         }
-      })
-      await Promise.all( this.sections.map( (section: MdeSection) => { return section.init()}));
-      this.sections.forEach( (section: MdeSection) => {
+      });
+      await Promise.all(this.sections.map((section: MdeSection) => {
+        return section.init();
+      }));
+      this.sections.forEach((section: MdeSection) => {
         section.run();
-      })
+      });
 
     });
   }
 
-  async getBootstrapHtml() {
-    return this.options.entityDataSchema.sections.map( (sectionSchema: any, sectionIndex:number) => {
+  async getBootstrapHtml(): Promise<string> {
+    return this.options.entityDataSchema.sections.map((sectionSchema: any, sectionIndex: number) => {
       return `<div class='mde-section mde-section-${sectionIndex} mde-section_type-${sectionSchema.type}'>
-         </div>`
-    })
+         </div>`;
+    }).join('');
   }
 
   genOnEntityDataChange(sectionIndex: number) {
-    return (newData: any, updatedPredicates: any) => {
+    return (newData: EntityDataInterface, updatedPredicates: number[]) => {
       return this.onEntityDataChange(newData, updatedPredicates, sectionIndex);
-    }
+    };
   }
 
   genGetInfoString() {
     return async (providerName: any) => {
       console.log(`Getting info string for provider ${providerName}`);
-      let providers = this.options.infoStringProviders.filter( (provider: { name: any }) => { return provider.name === providerName});
+      let providers = this.infoStringProviders.filter(provider => provider.name === providerName);
       if (providers.length === 0) {
         console.log(`Provider ${providerName} is undefined`);
         return null;
       }
-      return providers[0]['provider'](this.entityData.id);
-    }
+      return providers[0].provider(this.entityData.id);
+    };
   }
 
-  /**
-   *
-   * @param {{}}newData
-   * @param {number[]}updatedPredicates
-   * @param {number}originatingSectionIndex
-   * @return {Promise<boolean[]>}
-   */
-  onEntityDataChange(newData: any, updatedPredicates: any, originatingSectionIndex: number): Promise<boolean[]> {
+  onEntityDataChange(newData: EntityDataInterface, updatedPredicates: number[], originatingSectionIndex: number): Promise<boolean[]> {
     console.log(`New entity data received from section ${originatingSectionIndex}`, updatedPredicates, newData);
-    return Promise.all(this.sections.map( (section: any, index: number) => {
+    return Promise.all(this.sections.map((section: any, index: number) => {
       if (index !== originatingSectionIndex) {
         return section.updateEntityData(newData, updatedPredicates);
       }

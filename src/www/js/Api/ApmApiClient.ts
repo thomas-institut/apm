@@ -23,7 +23,6 @@ import {CachedFetcher} from '@/toolbox/CachedFetcher';
 import {urlGen} from '@/pages/common/SiteUrlGen';
 import {wait} from '@/toolbox/wait';
 import * as Entity from '../constants/Entity';
-import {EntityDataInterface} from "../../schema/Schema";
 import {WitnessUpdateData} from "@/Api/DataSchema/WitnessUpdates";
 import {IndexedDbKeyCache} from "@/toolbox/KeyCache/IndexedDbKeyCache";
 import {ApiCollationTableVersionInfo} from "@/Api/DataSchema/ApiCollationTableVersionInfo";
@@ -39,6 +38,7 @@ import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
 import {ApiPeopleAllPeopleDataForPeoplePageItem} from "@/Api/DataSchema/ApiPeopleAllPeopleDataForPeoplePage";
 import {ApiWorksAll} from "@/Api/DataSchema/ApiWorksAll";
+import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -478,35 +478,27 @@ export class ApmApiClient {
   }
 
   /**
-   * Gets statement qualification objects from the server
-   * normally saving their entity data in the respective cache
-   *
-   * @param saveData
+   * Gets statement qualification object ids from the server, saving their data
+   * in the cache
    */
-  async getStatementQualificationObjects(saveData = true) {
+  async getStatementQualificationObjects(): Promise<number[]> {
 
-    let data = await this.fetch(urlGen.apiEntityGetStatementQualificationObjects(saveData), 'GET', {}, false, false, TtlOneHour);
-
-    if (!saveData) {
-      return data;
-    }
-
-    let ids: any[] = [];
+    let data = await this.fetch(urlGen.apiEntityGetStatementQualificationObjects(true), 'GET', {}, false, false, TtlOneHour);
+    let ids: number[] = [];
 
     data.forEach((entityData: any) => {
       ids.push(entityData.id);
       this.storeEntityDataInCache(entityData);
     });
-
     return ids;
 
   }
 
-  getPredicateDefinitionsForType(type: number) {
+  getPredicateDefinitionsForType(type: number) : Promise<PredicateDefinitionsForType> {
     return this.fetch(urlGen.apiEntityGetPredicateDefinitionsForType(type), 'GET', {}, false, false, TtlOneHour);
   }
 
-  getEntityListForType(typeTid: number) {
+  getEntityListForType(typeTid: number): Promise<number[]> {
     return this.fetch(urlGen.apiEntityTypeGetEntities(typeTid), 'GET', {}, false, false, TtlOneHour);
   }
 

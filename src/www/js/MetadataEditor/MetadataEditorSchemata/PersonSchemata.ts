@@ -1,7 +1,7 @@
 import * as Entity from '../../constants/Entity'
 import * as SectionType from './SectionType'
 import * as SchemaContext from './SchemaContext'
-import {SchemaInterface} from "./SchemaInterface";
+import {PredicateDefinitionForSection, SchemaInterface} from "./SchemaInterface";
 
 const schemata : { [key: string]: SchemaInterface } = {
   default: {
@@ -55,7 +55,7 @@ const schemata : { [key: string]: SchemaInterface } = {
       {
         type: SectionType.HorizontalList,
         title: 'External Ids',
-        predicates: [Entity.pWikiDataId, Entity.pOrcid, Entity.pViafId, Entity.pGNDId, Entity.pLocId].map( (idType) => {
+        predicates: [Entity.pWikiDataId, Entity.pOrcid, Entity.pViafId, Entity.pGNDId, Entity.pLocId].map( (idType): PredicateDefinitionForSection => {
           return {
             id: idType,
             showLogo: true,
@@ -83,7 +83,7 @@ const schemata : { [key: string]: SchemaInterface } = {
 
 export class PersonSchemata {
 
-  static getSchema(context= 'default') {
+  static getSchema(context= 'default'): SchemaInterface | null   {
     return schemata[context] ?? null;
   }
 }

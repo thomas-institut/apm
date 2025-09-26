@@ -7,6 +7,7 @@ import {NavLink, useLocation, useNavigate} from "react-router";
 import {AppContext} from "./App";
 import {PersonCircle} from "react-bootstrap-icons";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
+import {Tid} from "@/Tid/Tid";
 
 interface TopBarProps {
   style?: CSSProperties;
@@ -89,7 +90,7 @@ export default function TopBar(props: TopBarProps): ReactNode {
       </Navbar.Collapse>
       <Navbar.Collapse className="justify-content-end">
         <NavDropdown id="user-dropdown" title={(<UserIcon name={userName}/>)}>
-          <NavDropdown.Item className="dd-menu-item" onClick={() => navigate(RouteUrls.person(userId))}>
+          <NavDropdown.Item className="dd-menu-item" onClick={() => navigate(RouteUrls.person(Tid.toCanonicalString(userId)))}>
             {tr('My Profile')}
           </NavDropdown.Item>
           <NavDropdown.Divider/>

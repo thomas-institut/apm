@@ -1,7 +1,8 @@
-import { MdeSection } from './MdeSection'
+import {MdeSection, MdeSectionOptions} from './MdeSection';
 import { EntityData } from '@/EntityData/EntityData'
 import * as Entity from '../constants/Entity'
 import { Tid } from '@/Tid/Tid'
+import {EntityDataInterface} from "@/Api/DataSchema/ApiEntity";
 
 export class HeaderSection extends MdeSection {
   private readonly preDescriptionInfoStringProviders: any[];
@@ -9,10 +10,10 @@ export class HeaderSection extends MdeSection {
   private nameElement!: JQuery;
   private descriptionElement!: JQuery<HTMLElement>;
 
-  constructor (options:any) {
+  constructor (options:MdeSectionOptions) {
     super(options);
-    this.preDescriptionInfoStringProviders = this.schema['preDescriptionInfoStrings'] ?? [];
-    this.postDescriptionInfoStringProviders = this.schema['postDescriptionInfoStrings'] ?? [];
+    this.preDescriptionInfoStringProviders = this.schema.preDescriptionInfoStrings ?? [];
+    this.postDescriptionInfoStringProviders = this.schema.postDescriptionInfoStrings ?? [];
   }
 
   async getBootStrapHtml () {
@@ -39,7 +40,7 @@ export class HeaderSection extends MdeSection {
         ${preDescriptionDiv}
         <div class="mde-header-description">${this.getDescription()}</div>
         ${postDescriptionDiv}
-        <div class="mde-header-info">Entity ID: ${Tid.toBase36String(this.entityData.id)}</div>
+        <div class="mde-header-info">Entity ID: ${Tid.toCanonicalString(this.entityData.id)}</div>
 `
   }
 
@@ -47,11 +48,14 @@ export class HeaderSection extends MdeSection {
     let allProviders = [ ...this.preDescriptionInfoStringProviders, ...this.postDescriptionInfoStringProviders];
     for (let i = 0; i < allProviders.length; i++) {
       let providerName = allProviders[i];
-      $(`${this.containerSelector} div.info-string-${providerName}`).html(await this.options.getInfoString(providerName) ?? '');
+      if (this.options.getInfoString !== undefined) {
+        $(`${this.containerSelector} div.info-string-${providerName}`).html(await this.options.getInfoString(providerName) ?? '');
+      }
     }
   }
 
-  async updateEntityData (newEntityData:any, updatedPredicates:number[]): Promise<boolean> {
+  async updateEntityData (newEntityData:EntityDataInterface, updatedPredicates:number[]): Promise<boolean> {
+
     await super.updateEntityData(newEntityData, updatedPredicates);
 
     if (updatedPredicates.includes(Entity.pEntityName)) {

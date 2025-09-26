@@ -1,6 +1,6 @@
 import { NormalPage } from '../NormalPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { Tid } from '../../Tid/Tid'
+import { Tid } from '@/Tid/Tid'
 import { capitalizeFirstLetter } from '../../toolbox/Util.mjs'
 import { urlGen } from '../common/SiteUrlGen'
 import { ApmFormats } from '../common/ApmFormats'

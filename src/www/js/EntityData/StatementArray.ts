@@ -1,5 +1,6 @@
 import {Statement} from './Statement'
-import {StatementDataInterface} from "../../schema/Schema";
+
+import {StatementDataInterface} from "@/Api/DataSchema/ApiEntity";
 
 
 export interface EditOperation {

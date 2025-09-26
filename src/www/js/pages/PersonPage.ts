@@ -9,10 +9,11 @@ import {ApmPage} from './ApmPage';
 import {UserProfileEditorDialog} from './common/UserProfileEditorDialog';
 import {MakeUserDialog} from './common/MakeUserDialog';
 import * as Entity from '../constants/Entity';
-import {MetadataEditorSchema} from '@/defaults/MetadataEditorSchemata/MetadataEditorSchema';
-import {MetadataEditor2} from '@/MetadataEditor/MetadataEditor2';
-import {SchemaInterface} from "@/defaults/MetadataEditorSchemata/SchemaInterface";
-import {EntityDataInterface} from "../../schema/Schema";
+import {MetadataEditorSchema} from '@/MetadataEditor/MetadataEditorSchemata/MetadataEditorSchema';
+import {MetadataEditor} from '@/MetadataEditor/MetadataEditor';
+import {SchemaInterface} from "@/MetadataEditor/MetadataEditorSchemata/SchemaInterface";
+
+import {EntityDataInterface} from "@/Api/DataSchema/ApiEntity";
 
 const CONTRIBUTION_MCE = 'mcEditions';
 const CONTRIBUTION_TX = 'transcriptions';
@@ -69,11 +70,11 @@ export class PersonPage extends NormalPage {
 
 
     // preload statement qualification object entities
-    await this.apiClient.getStatementQualificationObjects(true);
+    await this.apiClient.getStatementQualificationObjects();
 
-    new MetadataEditor2({
+    new MetadataEditor({
       containerSelector: 'div.metadata-editor',
-      entityDataSchema: this.schema,
+      entityDataSchema: this.schema ?? { type: -1, context: 'unknown', sections: []},
       entityData: this.entityData,
       apiClient: this.apiClient,
     });

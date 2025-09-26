@@ -9,6 +9,8 @@ import {Breadcrumb} from "react-bootstrap";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {EntityData} from "@/EntityData/EntityData";
 import * as Entity from "@/constants/Entity";
+import {MetadataEditorSchema} from "@/MetadataEditor/MetadataEditorSchemata/MetadataEditorSchema";
+import MetadataEditor from "@/ReactAPM/Components/MetadataEditor/MetadataEditor";
 
 
 export default function Person() {
@@ -23,6 +25,12 @@ export default function Person() {
 
   const entityId = Tid.fromCanonicalString(id);
   const canonicalId = Tid.toCanonicalString(entityId);
+
+  const personSchema = MetadataEditorSchema.getSchema(Entity.tPerson);
+
+  if (personSchema === null) {
+    return <NormalPageContainer>Error: Cannot find metadata schema to Person type</NormalPageContainer>
+  }
 
   if (entityId < 0) {
     return <NotFound/>;
@@ -57,9 +65,8 @@ export default function Person() {
         <Breadcrumb.Item linkAs={Link} linkProps={{ to: RouteUrls.people()}}>People</Breadcrumb.Item>
         <Breadcrumb.Item active>Person Details</Breadcrumb.Item>
       </Breadcrumb>
-      <h1>{name}</h1>
-      <p>Entity ID: {canonicalId}</p>
-      <p>Is User: {isUser ? 'Yes' : 'No'}</p>
+      <MetadataEditor schema={personSchema} entityData={queryResult.data} apiClient={appContext.apiClient}/>
+      <div>Is User: {isUser ? 'Yes' : 'No'}</div>
     </NormalPageContainer>
 
   )

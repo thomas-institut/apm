@@ -1,5 +1,5 @@
 import { StatementArray } from './StatementArray'
-import {EntityDataInterface, StatementDataInterface} from "../../schema/Schema";
+import {EntityDataInterface, StatementDataInterface} from "@/Api/DataSchema/ApiEntity";
 
 export class EntityData {
 

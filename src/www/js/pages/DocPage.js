@@ -33,8 +33,8 @@ import { TimeString } from '../toolbox/TimeString.mjs'
 import Split from 'split-grid'
 import { ApmPage } from './ApmPage'
 import * as Entity from '../constants/Entity'
-import { MetadataEditorSchema } from '@/defaults/MetadataEditorSchemata/MetadataEditorSchema'
-import { MetadataEditor2 } from '@/MetadataEditor/MetadataEditor2'
+import { MetadataEditorSchema } from '@/MetadataEditor/MetadataEditorSchemata/MetadataEditorSchema'
+import { MetadataEditor } from '@/MetadataEditor/MetadataEditor'
 import { WidgetAddPages } from '@/WidgetAddPages'
 import { CollapsePanel } from '@/widgets/CollapsePanel'
 import { SetLanguage } from '@/widgets/SetLanguage'
@@ -276,11 +276,11 @@ export class DocPage extends NormalPage {
 
 
     // preload statement qualification object entities
-    await this.apiClient.getStatementQualificationObjects(true);
+    await this.apiClient.getStatementQualificationObjects();
 
-    new MetadataEditor2({
+    new MetadataEditor({
       containerSelector: 'div.metadata-editor',
-      entityDataSchema: this.schema,
+      entityDataSchema: this.schema  ?? { type: -1, context: 'unknown', sections: []},
       entityData: this.entityData,
       apiClient: this.apiClient,
       infoStringProviders: [

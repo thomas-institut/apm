@@ -1,31 +1,42 @@
-import { MdeSection } from './MdeSection'
+import {MdeSection, MdeSectionOptions} from './MdeSection';
 import { EntityData } from '@/EntityData/EntityData'
-import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { BasicPredicateEditor } from './BasicPredicateEditor'
 import { urlGen } from '@/pages/common/SiteUrlGen'
 import { StatementArray } from '@/EntityData/StatementArray'
+import {PredicateDefinitionInterface, StatementDataInterface} from "@/Api/DataSchema/ApiEntity";
 
 const ShowAllLabel =  'Show All';
 const ShowActiveDataLabel = 'Show Minimal'
+
+interface PredicateListSectionOptions extends MdeSectionOptions{
+  listType: 'horizontal' | 'vertical';
+}
+
+interface Predicate {
+  id: number;
+  predicateDefinition: PredicateDefinitionInterface;
+  alwaysShow: boolean;
+  hideEvenIfActive: boolean;
+  multiLineInput: boolean;
+  label: string | null;
+  showLogo: boolean;
+  showUrl: boolean;
+  isRelation: boolean;
+  statements: StatementDataInterface[];
+}
+
 export class PredicateListSection extends MdeSection {
   private readonly listType: string;
   private toggleVisibilityButton!: JQuery<HTMLElement>;
-  private predicates: any;
+  private predicates: Predicate[] = [];
   private predicatesDiv!: JQuery<HTMLElement>;
   private predicateEditors: BasicPredicateEditor[] = [];
   private showingAll: boolean = false;
 
-  constructor (options:any) {
+  constructor (options:PredicateListSectionOptions) {
     super(options)
 
-    const oc = new OptionsChecker({
-      context: 'PredicateListSection',
-      optionsDefinition: {
-        listType: { type: 'string', default: 'vertical'}
-      }
-    })
-    let cleanOptions = oc.getCleanOptions(options);
-    this.listType = cleanOptions.listType;
+    this.listType = options.listType;
   }
 
 

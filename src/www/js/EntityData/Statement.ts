@@ -1,6 +1,6 @@
 
 import * as Entity from '../constants/Entity'
-import {StatementDataInterface, StatementMetadata} from "../../schema/Schema";
+import {StatementDataInterface, StatementMetadata} from "@/Api/DataSchema/ApiEntity";
 
 
 

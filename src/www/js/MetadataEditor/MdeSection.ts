@@ -1,49 +1,65 @@
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { ApmApiClient } from '@/Api/ApmApiClient'
-import {EntityDataInterface} from "../../schema/Schema";
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {ApmApiClient} from '@/Api/ApmApiClient';
+
+import {EntityDataInterface, PredicateDefinitionInterface} from "@/Api/DataSchema/ApiEntity";
+import {SectionSchema} from "@/MetadataEditor/MetadataEditorSchemata/SchemaInterface";
+
+export interface MdeSectionOptions {
+  containerSelector: string;
+  entityData: EntityDataInterface;
+  predicateDefinitions: PredicateDefinitionInterface[];
+  qualificationDefinitions: PredicateDefinitionInterface[];
+  apiClient: ApmApiClient;
+  sectionSchema: SectionSchema;
+  onEntityDataChange: (newData: EntityDataInterface, changedPredicates: number[]) => Promise<boolean[]>;
+  getInfoString?: (providerName: string) => Promise<string | null>;
+}
 
 /**
  * A section in the metadata editor
  */
 export class MdeSection {
-  protected options: any;
+  protected options: MdeSectionOptions;
   protected entityData: EntityDataInterface;
-  protected schema: any;
+  protected schema: SectionSchema;
   protected title: string;
-  protected containerSelector: any;
+  protected containerSelector: string;
   protected apiClient: ApmApiClient;
-  protected predicateDefinitions: any;
-  protected qualificationDefinitions: any;
-  private bodyElement!: JQuery<HTMLElement>;
+  protected predicateDefinitions: PredicateDefinitionInterface[];
+  protected qualificationDefinitions: PredicateDefinitionInterface[];
 
-  constructor (options:any) {
+
+  constructor(options: MdeSectionOptions) {
     const oc = new OptionsChecker({
-      context: "MdeSection",
-      optionsDefinition: {
-        containerSelector: { type:'string', required: true},
+      context: "MdeSection", optionsDefinition: {
+        containerSelector: {type: 'string', required: true},
         entityData: {type: 'object', required: false, default: {}},
-        predicateDefinitions: { type: 'object', required: true},
-        qualificationDefinitions: { type: 'object', required: true},
-        apiClient: { type: 'object', objectClass: ApmApiClient, required: true},
-        sectionSchema: { type: 'object', required: true},
+        predicateDefinitions: {type: 'object', required: true},
+        qualificationDefinitions: {type: 'object', required: true},
+        apiClient: {type: 'object', objectClass: ApmApiClient, required: true},
+        sectionSchema: {type: 'object', required: true},
         /**
          * Async function to be called when the section originates a change in entity data
          * It should return a boolean.
          */
-        onEntityDataChange: { type: 'function', default: async (newData:any, changedPredicates:any) => {
-          console.log(`Faking onEntityDataChange`, newData, changedPredicates);
-          return false;
-        }},
+        onEntityDataChange: {
+          type: 'function', default: async (newData: any, changedPredicates: any) => {
+            console.log(`Faking onEntityDataChange`, newData, changedPredicates);
+            return false;
+          }
+        },
         /**
          * async function to be called when the section needs a string given by a named provider
          * it must return a string or null if the provider is undefined
          */
-        getInfoString: { type: 'function', default: async (providerName:string) : Promise<string|null> => {
-          console.log(`getInfoString not set, called with provider name '${providerName}'`);
-          return null;
-        }}
+        getInfoString: {
+          type: 'function', default: async (providerName: string): Promise<string | null> => {
+            console.log(`getInfoString not set, called with provider name '${providerName}'`);
+            return null;
+          }
+        }
       }
-    })
+    });
     this.options = oc.getCleanOptions(options);
     this.entityData = this.options.entityData;
     this.schema = this.options.sectionSchema;
@@ -56,7 +72,7 @@ export class MdeSection {
 
   async init() {
     $(this.containerSelector).html(await this.getBootStrapHtml());
-    this.bodyElement = $(`${this.containerSelector} .mde-section-body`);
+    // this.bodyElement = $(`${this.containerSelector} .mde-section-body`);
   }
 
   async getBootStrapHtml() {
@@ -73,7 +89,7 @@ export class MdeSection {
    * @param {number[]}_updatedPredicates a list of predicates that have changed in the new entity data
    * @return {Promise<boolean>}
    */
-  async updateEntityData(newEntityData: any, _updatedPredicates:number[]): Promise<boolean> {
+  async updateEntityData(newEntityData: any, _updatedPredicates: number[]): Promise<boolean> {
     this.entityData = newEntityData;
     return true;
   }

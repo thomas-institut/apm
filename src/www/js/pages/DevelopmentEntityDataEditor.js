@@ -3,8 +3,8 @@ import {tr} from "./common/SiteLang";
 import {OptionsChecker} from "@thomas-inst/optionschecker";
 import { Tid } from '../Tid/Tid'
 import { urlGen } from './common/SiteUrlGen'
-import { MetadataEditor2 } from '../MetadataEditor/MetadataEditor2'
-import { MetadataEditorSchema } from '../defaults/MetadataEditorSchemata/MetadataEditorSchema'
+import { MetadataEditor } from '../MetadataEditor/MetadataEditor'
+import { MetadataEditorSchema } from '@/MetadataEditor/MetadataEditorSchemata/MetadataEditorSchema'
 
 
 export class DevelopmentEntityDataEditor extends NormalPage {
@@ -40,11 +40,11 @@ export class DevelopmentEntityDataEditor extends NormalPage {
     console.log(`Entity Schema for type ${this.entityType}`, this.schema);
 
     // preload statement qualification object entities
-    await this.apiClient.getStatementQualificationObjects(true);
+    await this.apiClient.getStatementQualificationObjects();
 
-    new MetadataEditor2({
+    new MetadataEditor({
       containerSelector: 'div.editor-container-new',
-      entityDataSchema: this.schema,
+      entityDataSchema: this.schema  ?? { type: -1, context: 'unknown', sections: []},
       entityData: this.entityData,
       apiClient: this.apiClient,
     });

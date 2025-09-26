@@ -36,8 +36,8 @@ export class ConfirmDialog {
   private readonly style: string;
   private readonly formSelector: string;
   private formElement: JQuery;
-  private acceptButton: JQuery;
-  private cancelButton: JQuery;
+  acceptButton: JQuery;
+  cancelButton: JQuery;
   private status: string;
 
 

@@ -1,19 +1,40 @@
 import { NormalPage } from '../NormalPage'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { Tid } from '@/Tid/Tid'
-import { capitalizeFirstLetter } from '../../toolbox/Util.mjs'
+import { capitalizeFirstLetter } from '@/toolbox/Util'
 import { urlGen } from '../common/SiteUrlGen'
 import { ApmFormats } from '../common/ApmFormats'
 import { GenericStatementEditor } from './GenericStatementEditor'
 import { ConfirmDialog } from '../common/ConfirmDialog'
+import {EntityDataInterface, PredicateDefinitionInterface, StatementDataInterface} from "@/Api/DataSchema/ApiEntity";
+import {getStringVal} from "@/toolbox/UiToolBox";
 
 
 const TimestampPredicates = [ 2004, 3002, 5002];
 const UrlPredicates = [ 2009];
 
+interface AdminEntityPageOptions {
+  entityData: EntityDataInterface
+}
+
+
 export class AdminEntityPage extends NormalPage {
 
-  constructor (options) {
+  options: AdminEntityPageOptions;
+  data: EntityDataInterface;
+  statements: StatementDataInterface[];
+  cancelDialog!: ConfirmDialog;
+  entityId: number;
+  title: string;
+  docsTableData: any;
+  private cancelDialogInfo!:  JQuery<HTMLElement>;
+  private cancellationNoteInput!: JQuery<HTMLElement>;
+  private predicateDefs!: { [p: number]: PredicateDefinitionInterface };
+  private predicatesAllowedAsObject: number[] = [];
+  private qualificationDefs!: { [p: number]: PredicateDefinitionInterface };
+  private predicatesAllowedAsSubject!: number[];
+
+  constructor (options: AdminEntityPageOptions) {
     super(options)
 
     let oc = new OptionsChecker({
@@ -25,6 +46,7 @@ export class AdminEntityPage extends NormalPage {
 
     this.options = oc.getCleanOptions(options);
     console.log('Options', this.options);
+    this.data = this.options.entityData;
     this.docsTableData = this.options.entityData;
     this.statements = this.data.statements;
     this.entityId = this.data['id'];
@@ -37,7 +59,7 @@ export class AdminEntityPage extends NormalPage {
   }
 
   genOnClickCancelStatementButton() {
-    return (ev) => {
+    return (ev: any) => {
       ev.preventDefault();
       let statementId = this.getIdFromClassNameString(ev.target.className, 'statement');
       if (statementId === null || statementId < 0) {
@@ -53,12 +75,12 @@ export class AdminEntityPage extends NormalPage {
           body: dialogHtml,
           hideOnAccept: false,
         })
-        this.cancelDialogInfo = `${this.cancelDialog.getSelector()} .cancel-dialog-info}`;
+        this.cancelDialogInfo = $(`${this.cancelDialog.getSelector()} .cancel-dialog-info`);
         this.cancellationNoteInput = $(`${this.cancelDialog.getSelector()} .cancellation-note-input`);
         this.cancelDialog.setAcceptFunction(() => {
-          let cancellationNote = this.cancellationNoteInput.val().trim();
+          let cancellationNote = getStringVal(this.cancellationNoteInput).trim();
           console.log(`Cancelling statement id: ${statementId}, note: '${cancellationNote}'`);
-          this.cancelDialog.cancelButton .prop('disabled', true);
+          this.cancelDialog.cancelButton.prop('disabled', true);
           this.cancelDialog.acceptButton.prop('disabled', true);
           this.cancelDialog.setAcceptButtonLabel("Cancelling statement...");
 
@@ -70,7 +92,7 @@ export class AdminEntityPage extends NormalPage {
               window.location.reload();
             } else {
               this.cancelDialogInfo.html("Errors cancelling statement:<br/>&nbsp;&nbsp;" +
-                response['commandResults'].map( (r) => { return `[${r.errorCode}] ${r.errorMessage}`})
+                response['commandResults'].map( (r: any) => { return `[${r.errorCode}] ${r.errorMessage}`})
                   .join("<br/>&nbsp;&nbsp;"));
               this.cancelDialog.setAcceptButtonLabel("Yes, try to cancel again");
               this.cancelDialog.cancelButton .prop('disabled', false);
@@ -89,7 +111,7 @@ export class AdminEntityPage extends NormalPage {
     }
   }
 
-  async getCancelDialogHtml(statementId) {
+  async getCancelDialogHtml(statementId: number) {
 
     let filteredStatements = this.statements.filter( (statement) => statement.id === statementId);
     if (filteredStatements.length === 0) {
@@ -111,7 +133,7 @@ export class AdminEntityPage extends NormalPage {
   }
 
   genOnClickEditStatementButton() {
-    return (ev) => {
+    return (ev: any) => {
       ev.preventDefault();
       console.log('Click on edit statement button')
       let statementId = this.getIdFromClassNameString(ev.target.className, 'statement');
@@ -145,18 +167,18 @@ export class AdminEntityPage extends NormalPage {
   }
 
   genGetEntityName() {
-    return (id) => {
+    return (id: number) => {
       return this.getEntityName(id, false);
     }
   }
 
   genGetEntitiesForType() {
-    return (type) => {
+    return (type: number) => {
       return this.apiClient.getEntityListForType(type);
     }
   }
 
-  getIdFromClassNameString(classNameString, prefix) {
+  getIdFromClassNameString(classNameString: string, prefix: string) {
     let classes = classNameString.split(' ');
     for (let i = 0; i < classes.length; i++) {
       let [name, value] = classes[i].split('-');
@@ -168,7 +190,7 @@ export class AdminEntityPage extends NormalPage {
   }
 
   genOnClickNewStatementButton() {
-    return (ev) => {
+    return (ev:  any) => {
       ev.preventDefault();
       console.log('Click on new statement button')
 
@@ -213,10 +235,10 @@ export class AdminEntityPage extends NormalPage {
   async initPage () {
     let typeData = await this.apiClient.getPredicateDefinitionsForType(this.data.type);
     console.log('Entity Type Data', typeData);
-    this.predicateDefs = typeData['predicateDefinitions'];
-    this.predicatesAllowedAsObject = typeData['predicatesAllowedAsObject'];
-    this.predicatesAllowedAsSubject = typeData['predicatesAllowedAsSubject'];
-    this.qualificationDefs = typeData['qualificationDefinitions'];
+    this.predicateDefs = typeData.predicateDefinitions;
+    this.predicatesAllowedAsObject = typeData.predicatesAllowedAsObject;
+    this.predicatesAllowedAsSubject = typeData.predicatesAllowedAsSubject;
+    this.qualificationDefs = typeData.qualificationDefinitions;
 
     await super.initPage();
     document.title = this.title;
@@ -226,16 +248,13 @@ export class AdminEntityPage extends NormalPage {
    * Return an array of predicates that the used as new statements for the entity
    * either because they allowed and are not yet used in any statement or
    * because the predicate allows multiple statements for the same entity
-   *
-   * @param asSubject
-   * @return {int[]}
    */
   getPredicatesAvailableForAdding(asSubject = true) {
      let predicateArray = asSubject ? this.predicatesAllowedAsSubject : this.predicatesAllowedAsObject;
 
      return predicateArray.filter( (predicate) => {
        let def = this.predicateDefs[predicate];
-       if (def['flags'].length > 0) {
+       if (def.flags !== null && def.flags.length > 0) {
          return false;
        }
        let isUsed = this.data.statements.filter( (statement) => {
@@ -246,12 +265,7 @@ export class AdminEntityPage extends NormalPage {
 
   }
 
-  /**
-   *
-   * @param {int[]}predicates
-   * @param {boolean}asSubject
-   */
-  async getPredicatesAvailableSection(predicates, asSubject) {
+  async getPredicatesAvailableSection(predicates: number[], asSubject: boolean) {
     let html = '';
     html += `<div class="available-predicates">`;
     html += '<h4>Predicates Available</h4>'
@@ -292,7 +306,7 @@ export class AdminEntityPage extends NormalPage {
         </div>`;
   }
 
-  async getEntityName(id, suppressOwnEntity = true) {
+  async getEntityName(id: number, suppressOwnEntity = true) {
     if (isNaN(id)) {
       console.warn("Request for entity name for non-numerical id", id);
       return '';
@@ -305,28 +319,23 @@ export class AdminEntityPage extends NormalPage {
     }
     let data;
     try {
-      data = await this.apiClient.getEntityData(id, false,15 * 60);
+      data = await this.apiClient.getEntityData(id, false);
     } catch (e) {
       return '';
     }
     return data['name'];
   }
 
-  async getEntityHtml(tid) {
-    let name = await this.getEntityName(tid);
+  async getEntityHtml(id: number) {
+    let name = await this.getEntityName(id);
     if (name === '') {
-      return tid;
+      return id.toString();
     }
-    return `<a href="${urlGen.siteAdminEntity(tid)}" title="Entity ${tid} = ${Tid.toBase36String(tid)}">${tid}  [${name}]</a>`
+    return `<a href="${urlGen.siteAdminEntity(id)}" title="Entity ${id} = ${Tid.toCanonicalString(id)}">${id}  [${name}]</a>`
   }
 
-  /**
-   *
-   * @param {Object}someObject
-   * @param {string[]}propertyClasses
-   * @return {Promise<string>}
-   */
-  async getSimpleElementsHtml(someObject, propertyClasses = [ 'property' ]) {
+
+  async getSimpleElementsHtml(someObject: { [key: string]: any}, propertyClasses = [ 'property' ]) {
     let items = [];
     let keys = Object.keys(someObject);
     for(let i=0; i < keys.length; i++) {
@@ -364,7 +373,7 @@ export class AdminEntityPage extends NormalPage {
     return items.join('');
   }
 
-  getObjectValueTypeFromPredicate(predicate) {
+  getObjectValueTypeFromPredicate(predicate: number) {
     if (TimestampPredicates.indexOf(predicate) !== -1) {
       return 'timestamp';
     }
@@ -374,18 +383,13 @@ export class AdminEntityPage extends NormalPage {
     return 'literal';
   }
 
-  /**
-   *
-   * @param {[]}statements
-   * @param {string}orderBy
-   * @return {Promise<string>}
-   */
-  async getStatementsTable(statements, orderBy = 'predicate') {
+  async getStatementsTable(statements: StatementDataInterface[], orderBy = 'predicate') {
     if (statements.length === 0) {
       return `<em>None</em>`;
     }
 
     statements.sort( (a, b) => {
+      // @ts-expect-error using string as key for StatementDataInterface
       return parseInt(a[orderBy]) - parseInt(b[orderBy])
     })
 
@@ -426,10 +430,10 @@ export class AdminEntityPage extends NormalPage {
         if (predicateDef === undefined) {
           console.warn(`No predicate def for ${statement['predicate']}`);
         }
-        if (predicateDef['flags'].indexOf(5) !== -1) {
+        if (predicateDef.flags !== null && predicateDef.flags.indexOf(5) !== -1) {
           spans.push('<span class="not-editable-notice">System data, editing is disabled</span>');
         } else {
-          if (predicateDef['canBeCancelled'] === false) {
+          if (!predicateDef.canBeCancelled) {
             spans.push('<span class="not-cancellable-notice">Cannot be cancelled</span>');
             spans.push(`<span class="edit-buttons-span"><a class="btn btn-outline-secondary btn-sm edit-statement-btn statement-${statement['id']}">Edit</a></span>`);
           } else {
@@ -473,7 +477,7 @@ export class AdminEntityPage extends NormalPage {
     return html;
   }
 
-  async getObjectHtml(object, valueType = 'string') {
+  async getObjectHtml(object: any, valueType = 'string') {
     if (typeof object === 'string') {
       switch(valueType) {
         case 'timestamp':
@@ -493,4 +497,5 @@ export class AdminEntityPage extends NormalPage {
 }
 
 
+// @ts-ignore
 window.AdminEntityPage = AdminEntityPage;

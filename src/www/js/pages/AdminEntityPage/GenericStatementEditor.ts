@@ -2,11 +2,42 @@ import { ConfirmDialog } from '../common/ConfirmDialog'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { urlGen } from '../common/SiteUrlGen'
 import * as Entity from "../../constants/Entity";
+import {PredicateDefinitionInterface} from "@/Api/DataSchema/ApiEntity";
+import {getStringVal} from "@/toolbox/UiToolBox";
+import {randomAlphaString} from "@/toolbox/ToolBox";
 
-const EmptyValue = 'EmptyJ2KMKDy9xIAVR8NB';
+interface GenericStatementEditorOptions {
+  statementId : number | null,
+  editableParts : [boolean, boolean, boolean],
+  subject: number | null,
+  predicate: number,
+  relation: boolean,
+  object: string | null,
+  predicateDef: PredicateDefinitionInterface;
+  qualificationDefs: PredicateDefinitionInterface[];
+  statementMetadata: [number, string][],
+  getEntityName: (id: number) => Promise<string>,
+  getEntityList: (type: number) => Promise<number[]>,
+  onSuccess: () => void,
+}
 
 export class GenericStatementEditor {
-  constructor(options) {
+  private readonly options: GenericStatementEditorOptions;
+  private readonly editSubject: boolean;
+  private readonly editObject: boolean;
+  private readonly allowedQualifications: number[];
+  private readonly canBeCancelled: boolean;
+  private readonly initialSubject: number;
+  private readonly initialObject: number | string;
+  private readonly initialQualifications: any[];
+  private readonly emptyValue: string;
+  private dialog!: ConfirmDialog;
+  private subjectInput!: JQuery<HTMLElement> | null;
+  private objectInput!: JQuery<HTMLElement> | null;
+  private editorialNoteInput!: JQuery<HTMLElement>;
+  private cancellationNoteInput!: JQuery<HTMLElement>;
+  private info!: JQuery<HTMLElement>;
+  constructor(options: GenericStatementEditorOptions) {
     let oc = new OptionsChecker({
       context: 'GenericStatementEditor',
       optionsDefinition: {
@@ -32,10 +63,10 @@ export class GenericStatementEditor {
     this.editObject = editObject;
     this.allowedQualifications = this.options.predicateDef.allowedQualifications ?? [];
     this.canBeCancelled = this.options.predicateDef.canBeCancelled;
-    this.initialSubject = this.options.subject ?? '';
+    this.initialSubject = this.options.subject ?? -1;
     this.initialObject =this.options.object ?? '';
     this.initialQualifications = this.getQualificationsFromStatementMetadata();
-    this.emptyValue = EmptyValue + Date.now();
+    this.emptyValue = randomAlphaString(64);
 
     this.getBodyHtml().then( (bodyHtml) => {
       this.dialog = new ConfirmDialog({
@@ -69,9 +100,9 @@ export class GenericStatementEditor {
     })
   }
 
-  qualificationsAreEqual(arrayA, arrayB) {
-    function toObject(qualificationsArray) {
-      let obj = {};
+  qualificationsAreEqual(arrayA:  [number, string | number][], arrayB:  [number, string | number][]) {
+    function toObject(qualificationsArray: [number, string | number][]) {
+      let obj: {[key: string]: string | number} = {};
       qualificationsArray.forEach( (metadata) => {
         obj[metadata[0]] = metadata[1];
       })
@@ -117,11 +148,11 @@ export class GenericStatementEditor {
     return true;
   }
 
-  getQualificationLabel(id) {
+  getQualificationLabel(id: number) {
     return this.options.qualificationDefs[id].name ?? '???';
   }
 
-  async getQualificationInput(id, currentValue) {
+  async getQualificationInput(id: number, currentValue: string|number) {
     let def = this.options.qualificationDefs[id] ?? null;
 
     if (def === null) {
@@ -129,10 +160,10 @@ export class GenericStatementEditor {
     }
 
     let idSpan = `<span class="predicate-help" title="${def.description}"><i class="bi bi-info-circle"></i></span>`;
-    let allowedObjectTypes = def['allowedObjectTypes'];
+    let allowedObjectTypes = def.allowedObjectTypes;
 
     if (def.type === Entity.tRelation) {
-      let allowedEntities = await this.getAllEntitiesForTypes(allowedObjectTypes);
+      let allowedEntities = allowedObjectTypes === null ? [] : await this.getAllEntitiesForTypes(allowedObjectTypes);
       let allowedEntityData = [];
       for (let i = 0; i < allowedEntities.length; i++) {
         let id = allowedEntities[i];
@@ -153,7 +184,7 @@ export class GenericStatementEditor {
 
       let inputType = 'text';
 
-      if (allowedObjectTypes.length === 1 && allowedObjectTypes[0] === Entity.ValueTypeInteger) {
+      if (allowedObjectTypes !== null && allowedObjectTypes.length === 1 && allowedObjectTypes[0] === Entity.ValueTypeInteger) {
         inputType = 'number';
       }
 
@@ -162,7 +193,7 @@ export class GenericStatementEditor {
 
   }
 
-  async getAllEntitiesForTypes(typeArray){
+  async getAllEntitiesForTypes(typeArray: number[]){
     let entities = [];
     for (let i = 0; i < typeArray.length; i++) {
       let type = typeArray[i];
@@ -172,9 +203,9 @@ export class GenericStatementEditor {
   }
 
   getQualificationsFromStatementMetadata() {
-    let qualifications = [];
+    let qualifications: [number, string | number][] = [];
     this.options.statementMetadata.forEach( (metadata) => {
-      let [ id, value] = metadata;
+      let [ id, ] = metadata;
       if (this.allowedQualifications.indexOf(id) !== -1) {
         qualifications.push(metadata);
       }
@@ -185,9 +216,9 @@ export class GenericStatementEditor {
   genOnInputChange() {
     return () => {
 
-      let currentSubject = this.subjectInput !== null ? this.subjectInput.val() : this.initialSubject.toString();
-      let currentObject = this.objectInput !== null ? this.objectInput.val() : this.initialObject.toString();
-      let currentEditorialNote = this.editorialNoteInput.val().trim();
+      let currentSubject = this.subjectInput !== null ? getStringVal(this.subjectInput) : this.initialSubject.toString();
+      let currentObject = this.objectInput !== null ? getStringVal(this.objectInput) : this.initialObject.toString();
+      let currentEditorialNote = getStringVal(this.editorialNoteInput).trim();
       let currentQualifications = this.getQualificationsFromInputFields();
 
 
@@ -239,25 +270,25 @@ export class GenericStatementEditor {
   genAcceptFunction() {
     return () => {
       console.log(`Click on accept `)
-      let newSubject = this.subjectInput === null ? this.options.subject : parseInt(this.subjectInput.val().trim());
-      let newObject = this.objectInput === null ? this.options.object : this.objectInput.val().trim();
+      let newSubject = this.subjectInput === null ? this.options.subject : parseInt( getStringVal(this.subjectInput).trim());
+      let newObject = this.objectInput === null ? this.options.object : getStringVal(this.objectInput).trim();
       let newQualifications = this.getQualificationsFromInputFields();
 
-      if (newSubject === undefined || newSubject === null || newSubject === '' || isNaN(newSubject))  {
-         this.info("ERROR: Invalid subject");
+      if (newSubject === undefined || newSubject === null || isNaN(newSubject))  {
+         this.info.html("ERROR: Invalid subject");
          console.warn("Accept button click with invalid subject", newSubject);
          return;
       }
 
-      if (newObject === undefined || newObject === null || newObject === '' || (this.options.relation && isNaN(newObject)))  {
-        this.info("ERROR: Invalid object");
+      if (newObject === undefined || newObject === null || newObject === '' || (this.options.relation && isNaN(Number(newObject))))  {
+        this.info.html("ERROR: Invalid object");
         console.warn("Accept button click with invalid object", newObject);
         return;
       }
 
       this.dialog.acceptButton.html("Saving...");
       this.dialog.acceptButton.prop('disabled', true);
-      console.log(`Saving new ${this.options.relation ? 'object' : 'value'} [${newObject}], note '${this.editorialNoteInput.val().toString()}'`);
+      console.log(`Saving new ${this.options.relation ? 'object' : 'value'} [${newObject}], note '${getStringVal(this.editorialNoteInput)}'`);
 
       let commands = [];
       if (this.options.statementId !== null && this.canBeCancelled) {
@@ -269,8 +300,8 @@ export class GenericStatementEditor {
         predicate: this.options.predicate,
         object: this.options.relation ? parseInt(newObject) : newObject.toString(),
         qualifications: newQualifications,
-        editorialNote: this.editorialNoteInput.val().trim().toString(),
-        cancellationNote: this.cancellationNoteInput.val().trim().toString()
+        editorialNote: getStringVal(this.editorialNoteInput).trim(),
+        cancellationNote: getStringVal(this.cancellationNoteInput).trim()
       });
 
       console.log(`Commands for API`);
@@ -284,7 +315,7 @@ export class GenericStatementEditor {
           this.options.onSuccess();
         } else {
           this.info.html("Errors saving data:<br/>&nbsp;&nbsp;" +
-            response['commandResults'].map( (r) => { return `[${r.errorCode}] ${r.errorMessage}`})
+            response['commandResults'].map( (r: any) => { return `[${r.errorCode}] ${r.errorMessage}`})
               .join("<br/>&nbsp;&nbsp;"));
           this.dialog.acceptButton.html("Save");
           this.dialog.acceptButton.prop('disabled', false);
@@ -298,7 +329,7 @@ export class GenericStatementEditor {
     }
   }
 
-  async getEntityLabel(id) {
+  async getEntityLabel(id: number) {
     let name = await this.options.getEntityName(id);
     return `${id} ${name === '' ? '' : `[${name}]`}`
   }
@@ -311,7 +342,7 @@ export class GenericStatementEditor {
       : 'This will cancel the given statement and will create a new one with the edited changes.';
 
     let objectLabel = this.options.relation ? 'Object' : 'Value';
-    let objectInputHtml = this.options.relation && this.initialObject !== '' ? await this.getEntityLabel(this.initialObject) : this.initialObject;
+    let objectInputHtml = this.options.relation && this.initialObject !== '' ? await this.getEntityLabel(typeof this.initialObject === 'number' ? this.initialObject : parseInt(this.initialObject)) : this.initialObject;
     if (this.editObject) {
       if (this.options.relation) {
         objectInputHtml = `<input type="text" class="object-input" value="${this.initialObject}">`;
@@ -350,12 +381,12 @@ export class GenericStatementEditor {
 `
   }
 
-  getQualificationsFromInputFields() {
-    let qualifications = [];
+  getQualificationsFromInputFields()  : [number, string | number][] {
+    let qualifications:  [number, string | number][] = [];
     for (let i = 0; i < this.allowedQualifications.length; i++) {
         let id = this.allowedQualifications[i];
         let qualificationInput = $(`.qualification-${id}`);
-        let value = qualificationInput.val().toString();
+        let value = getStringVal(qualificationInput);
         if (value !== '' && value !== this.emptyValue) {
           let predicateDef = this.options.qualificationDefs[id];
           if (predicateDef.type === Entity.tRelation) {
@@ -373,7 +404,7 @@ export class GenericStatementEditor {
    * @param predicate
    * @param statementMetadata
    */
-  getQualification(predicate, statementMetadata) {
+  getQualification(predicate: number, statementMetadata: [number, string | number][]) {
 
     let filterQualifications = statementMetadata.filter( (entry) => { return entry[0] === predicate});
 

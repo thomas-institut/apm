@@ -27,7 +27,7 @@ import * as FontStyle from '@/lib/FmtText/FontStyle.js'
 import * as FontSize from '@/lib/FmtText/FontSize.js'
 import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.js'
 import * as ParagraphStyle from '@/lib/FmtText/ParagraphStyle.js'
-import { rTrimNewlineCharacters } from '../../toolbox/Util.mjs'
+import { rTrimNewlineCharacters } from '../../toolbox/Util.ts'
 
 export class GenericQuillDeltaConverter extends QuillDeltaConverter {
 

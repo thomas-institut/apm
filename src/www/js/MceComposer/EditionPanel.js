@@ -20,7 +20,7 @@
 import { Panel } from '@/MultiPanelUI/Panel'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { MceData } from '@/MceData/MceData'
-import * as Util from '../toolbox/Util.mjs'
+import * as Util from '../toolbox/Util.ts'
 import { wait } from '@/toolbox/wait'
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil.ts'
 import { EditableTextField } from '@/widgets/EditableTextField'

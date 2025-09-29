@@ -18,7 +18,7 @@
  *
  */
 
-import { trimCharacters } from '../toolbox/Util.mjs'
+import { trimCharacters } from '../toolbox/Util.js'
 
 
 // NOTE: if not explicitly set, isPunctuationInsideWord is true

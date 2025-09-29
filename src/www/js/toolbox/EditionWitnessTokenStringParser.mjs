@@ -18,7 +18,7 @@
 
 import { Punctuation} from '@/defaults/Punctuation'
 import { WitnessToken } from '@/Witness/WitnessToken'
-import { NumeralStyles } from './NumeralStyles.mjs'
+import { NumeralStyles } from './NumeralStyles.ts'
 import { EditionWitnessToken } from '@/Witness/EditionWitnessToken'
 import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
 

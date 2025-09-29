@@ -20,7 +20,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import Inline from 'quill/blots/inline'
 
 import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
-import { isRtl } from '@/toolbox/Util.mjs'
+import { isRtl } from '@/toolbox/Util.ts'
 
 import { toolbarCharactersDefinition} from './ToolbarCharactersDefinition'
 import Quill from '../QuillLoader'

@@ -1,7 +1,7 @@
 import {MdeSection, MdeSectionOptions} from './MdeSection';
-import { EntityData } from '@/EntityData/EntityData'
-import * as Entity from '../constants/Entity'
-import { Tid } from '@/Tid/Tid'
+import {EntityData} from '@/EntityData/EntityData';
+import * as Entity from '../constants/Entity';
+import {Tid} from '@/Tid/Tid';
 import {EntityDataInterface} from "@/Api/DataSchema/ApiEntity";
 
 export class HeaderSection extends MdeSection {
@@ -10,27 +10,27 @@ export class HeaderSection extends MdeSection {
   private nameElement!: JQuery;
   private descriptionElement!: JQuery<HTMLElement>;
 
-  constructor (options:MdeSectionOptions) {
+  constructor(options: MdeSectionOptions) {
     super(options);
     this.preDescriptionInfoStringProviders = this.schema.preDescriptionInfoStrings ?? [];
     this.postDescriptionInfoStringProviders = this.schema.postDescriptionInfoStrings ?? [];
   }
 
-  async getBootStrapHtml () {
+  async getBootStrapHtml() {
     let preDescriptionDiv = '';
 
     if (this.preDescriptionInfoStringProviders.length !== 0) {
       preDescriptionDiv = '<div class="mde-header-pre-description">';
-      preDescriptionDiv += this.preDescriptionInfoStringProviders.map( (provider) => {
-        return `<div class="info-string info-string-${provider}"></div>`
+      preDescriptionDiv += this.preDescriptionInfoStringProviders.map((provider) => {
+        return `<div class="info-string info-string-${provider}"></div>`;
       }).join('');
       preDescriptionDiv += '</div>';
     }
     let postDescriptionDiv = '';
     if (this.postDescriptionInfoStringProviders.length !== 0) {
       postDescriptionDiv = '<div class="mde-header-post-description">';
-      postDescriptionDiv += this.postDescriptionInfoStringProviders.map( (provider) => {
-        return `<div class="info-string info-string-${provider}"></div>`
+      postDescriptionDiv += this.postDescriptionInfoStringProviders.map((provider) => {
+        return `<div class="info-string info-string-${provider}"></div>`;
       }).join('');
       postDescriptionDiv += '</div>';
     }
@@ -41,11 +41,11 @@ export class HeaderSection extends MdeSection {
         <div class="mde-header-description">${this.getDescription()}</div>
         ${postDescriptionDiv}
         <div class="mde-header-info">Entity ID: ${Tid.toCanonicalString(this.entityData.id)}</div>
-`
+`;
   }
 
   async updateInfoStrings() {
-    let allProviders = [ ...this.preDescriptionInfoStringProviders, ...this.postDescriptionInfoStringProviders];
+    let allProviders = [...this.preDescriptionInfoStringProviders, ...this.postDescriptionInfoStringProviders];
     for (let i = 0; i < allProviders.length; i++) {
       let providerName = allProviders[i];
       if (this.options.getInfoString !== undefined) {
@@ -54,7 +54,7 @@ export class HeaderSection extends MdeSection {
     }
   }
 
-  async updateEntityData (newEntityData:EntityDataInterface, updatedPredicates:number[]): Promise<boolean> {
+  async updateEntityData(newEntityData: EntityDataInterface, updatedPredicates: number[]): Promise<boolean> {
 
     await super.updateEntityData(newEntityData, updatedPredicates);
 
@@ -69,8 +69,8 @@ export class HeaderSection extends MdeSection {
     return true;
   }
 
-  getDescription():string {
-    let descriptionStatement = EntityData.getSingleCurrentStatement(this.entityData, Entity.pEntityDescription)
+  getDescription(): string {
+    let descriptionStatement = EntityData.getSingleCurrentStatement(this.entityData, Entity.pEntityDescription);
     return descriptionStatement === null ? '' : descriptionStatement.object.toString();
   }
 

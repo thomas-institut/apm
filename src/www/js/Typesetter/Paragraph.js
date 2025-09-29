@@ -18,7 +18,7 @@
 
 
 import * as HorizontalAlign from './HorizontalAlign'
-import { deepCopy } from '../toolbox/Util.mjs'
+import { deepCopy } from '../toolbox/Util.ts'
 
 /**
  *

@@ -23,7 +23,7 @@ import * as SubEntrySource from './SubEntrySource.js';
 import {FmtTextToken} from "../lib/FmtText/FmtTextToken";
 import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
 import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
-import {hashCodeInt32} from '../toolbox/Util.mjs';
+import {hashCodeInt32} from '../toolbox/Util.js';
 import {WitnessDataItem} from './WitnessDataItem.js';
 import {ApparatusSubEntryInterface} from "./EditionInterface.js";
 

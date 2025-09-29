@@ -148,6 +148,9 @@ export interface WitnessTokenInterface {
   textBox?: number | RangeInterface;
   line?: number | RangeInterface;
   sourceItems?: SourceItemInterface[];
+
+  // used in MainTextPanel
+  originalIndex?: number;
 }
 
 export interface SourceItemInterface {

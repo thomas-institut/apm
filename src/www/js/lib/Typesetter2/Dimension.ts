@@ -1,6 +1,6 @@
 // noinspection ES6PreferShortImport
 
-import {trimWhiteSpace} from '../../toolbox/Util.mjs';
+import {trimWhiteSpace} from '../../toolbox/Util.js';
 import {Typesetter2} from './Typesetter2.js';
 
 

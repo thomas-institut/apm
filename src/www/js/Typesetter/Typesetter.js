@@ -62,10 +62,10 @@
  */
 import * as TypesetterTokenType from './TypesetterTokenType'
 import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { NumeralStyles } from '../toolbox/NumeralStyles.mjs'
+import { NumeralStyles } from '../toolbox/NumeralStyles.ts'
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil.ts'
 import { LanguageDetector } from '@/toolbox/LanguageDetector'
-import { isRtl } from '../toolbox/Util.mjs'
+import { isRtl } from '../toolbox/Util.ts'
 
 import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.ts'
 import * as HorizontalAlign from './HorizontalAlign'

@@ -67,8 +67,8 @@ import * as NormalizationSource from '../constants/NormalizationSource.js';
  */
 
 export class EditionWitnessToken extends WitnessToken {
-  private markType: string = '';
-  private style: string = '';
+  public markType: string = '';
+  public style: string = '';
   private formats: string[] = [];
 
   constructor() {

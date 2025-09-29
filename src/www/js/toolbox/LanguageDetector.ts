@@ -1,4 +1,4 @@
-import { isNumeric, isWhiteSpace } from './Util.mjs'
+import { isNumeric, isWhiteSpace } from './Util.js'
 
 const punctuationRegex = /[.,;\]\[()]/gi
 const latinScriptNumberRegex = /[0-9]/gi

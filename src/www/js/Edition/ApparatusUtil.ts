@@ -20,7 +20,7 @@
 
 
 import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
-import {deepCopy} from '../toolbox/Util.mjs';
+import {deepCopy} from '../toolbox/Util.js';
 import {WitnessDataItem} from "./WitnessDataItem.js";
 import {SiglaGroup} from "./SiglaGroup.js";
 import {FmtTextToken} from "../lib/FmtText/FmtTextToken.js";

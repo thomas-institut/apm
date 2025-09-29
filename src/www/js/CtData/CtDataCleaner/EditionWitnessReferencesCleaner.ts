@@ -20,7 +20,7 @@ import {CtDataCleaner} from './CtDataCleaner';
 import * as TokenClass from '../../constants/CollationTableType';
 import * as TranscriptionTokenType from '../../Witness/WitnessTokenType';
 import {deepCopy} from '@/toolbox/Util';
-import {CtDataInterface} from "../CtDataInterface";
+import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface";
 
 export class EditionWitnessReferencesCleaner extends CtDataCleaner {
 
@@ -39,11 +39,11 @@ export class EditionWitnessReferencesCleaner extends CtDataCleaner {
     let ctEditionRow = ctData.collationMatrix[editionWitnessIndex];
 
     let foundNullRef = false;
-    let newEditionWitnessTokens = ctEditionRow.map((ref: number, i: number) => {
+    let newEditionWitnessTokens: WitnessTokenInterface[] = ctEditionRow.map((ref: number, i: number): WitnessTokenInterface => {
       if (ref === -1) {
         this.debug && console.log(`Adding empty token in edition witness at column ${i}`);
         foundNullRef = true;
-        return {'tokenClass': TokenClass.EDITION, 'tokenType': TranscriptionTokenType.EMPTY, 'text': ''};
+        return {'tokenClass': TokenClass.EDITION, 'tokenType': TranscriptionTokenType.EMPTY, 'text': '', fmtText: []};
       }
       return editionWitnessTokens[ref];
     });

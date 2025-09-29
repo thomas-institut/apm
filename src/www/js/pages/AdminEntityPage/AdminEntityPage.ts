@@ -1,20 +1,20 @@
-import { NormalPage } from '../NormalPage'
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { Tid } from '@/Tid/Tid'
-import { capitalizeFirstLetter } from '@/toolbox/Util'
-import { urlGen } from '../common/SiteUrlGen'
-import { ApmFormats } from '../common/ApmFormats'
-import { GenericStatementEditor } from './GenericStatementEditor'
-import { ConfirmDialog } from '../common/ConfirmDialog'
+import {NormalPage} from '../NormalPage';
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {Tid} from '@/Tid/Tid';
+import {capitalizeFirstLetter} from '@/toolbox/Util';
+import {urlGen} from '../common/SiteUrlGen';
+import {ApmFormats} from '../common/ApmFormats';
+import {GenericStatementEditor} from './GenericStatementEditor';
+import {ConfirmDialog} from '../common/ConfirmDialog';
 import {EntityDataInterface, PredicateDefinitionInterface, StatementDataInterface} from "@/Api/DataSchema/ApiEntity";
 import {getStringVal} from "@/toolbox/UiToolBox";
 
 
-const TimestampPredicates = [ 2004, 3002, 5002];
-const UrlPredicates = [ 2009];
+const TimestampPredicates = [2004, 3002, 5002];
+const UrlPredicates = [2009];
 
 interface AdminEntityPageOptions {
-  entityData: EntityDataInterface
+  entityData: EntityDataInterface;
 }
 
 
@@ -27,22 +27,21 @@ export class AdminEntityPage extends NormalPage {
   entityId: number;
   title: string;
   docsTableData: any;
-  private cancelDialogInfo!:  JQuery<HTMLElement>;
+  private cancelDialogInfo!: JQuery<HTMLElement>;
   private cancellationNoteInput!: JQuery<HTMLElement>;
   private predicateDefs!: { [p: number]: PredicateDefinitionInterface };
   private predicatesAllowedAsObject: number[] = [];
   private qualificationDefs!: { [p: number]: PredicateDefinitionInterface };
   private predicatesAllowedAsSubject!: number[];
 
-  constructor (options: AdminEntityPageOptions) {
-    super(options)
+  constructor(options: AdminEntityPageOptions) {
+    super(options);
 
     let oc = new OptionsChecker({
-      context: 'AdminEntityPage',
-      optionsDefinition: {
-        entityData: { type: 'Object', required: true},
+      context: 'AdminEntityPage', optionsDefinition: {
+        entityData: {type: 'Object', required: true},
       }
-    })
+    });
 
     this.options = oc.getCleanOptions(options);
     console.log('Options', this.options);
@@ -51,11 +50,11 @@ export class AdminEntityPage extends NormalPage {
     this.statements = this.data.statements;
     this.entityId = this.data['id'];
     this.title = `Ent. ${this.entityId}`;
-    this.initPage().then( () => {
+    this.initPage().then(() => {
       $(`.new-statement-btn`).on('click', this.genOnClickNewStatementButton());
       $('.cancel-statement-btn').on('click', this.genOnClickCancelStatementButton());
       $('.edit-statement-btn').on('click', this.genOnClickEditStatementButton());
-    })
+    });
   }
 
   genOnClickCancelStatementButton() {
@@ -67,14 +66,14 @@ export class AdminEntityPage extends NormalPage {
         return;
       }
 
-      this.getCancelDialogHtml(statementId).then( (dialogHtml) => {
+      this.getCancelDialogHtml(statementId).then((dialogHtml) => {
         this.cancelDialog = new ConfirmDialog({
           acceptButtonLabel: 'Yes, do it',
           cancelButtonLabel: 'No',
           title: "Cancel statement",
           body: dialogHtml,
           hideOnAccept: false,
-        })
+        });
         this.cancelDialogInfo = $(`${this.cancelDialog.getSelector()} .cancel-dialog-info`);
         this.cancellationNoteInput = $(`${this.cancelDialog.getSelector()} .cancellation-note-input`);
         this.cancelDialog.setAcceptFunction(() => {
@@ -84,44 +83,43 @@ export class AdminEntityPage extends NormalPage {
           this.cancelDialog.acceptButton.prop('disabled', true);
           this.cancelDialog.setAcceptButtonLabel("Cancelling statement...");
 
-          let commands = [{ command: 'cancel', statementId: statementId , editorialNote: cancellationNote}];
-          $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands)).then( (response) => {
+          let commands = [{command: 'cancel', statementId: statementId, editorialNote: cancellationNote}];
+          $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands)).then((response) => {
             console.log("Success", response);
             if (response.success === true) {
               this.cancelDialog.hide();
               window.location.reload();
             } else {
-              this.cancelDialogInfo.html("Errors cancelling statement:<br/>&nbsp;&nbsp;" +
-                response['commandResults'].map( (r: any) => { return `[${r.errorCode}] ${r.errorMessage}`})
-                  .join("<br/>&nbsp;&nbsp;"));
+              this.cancelDialogInfo.html("Errors cancelling statement:<br/>&nbsp;&nbsp;" + response['commandResults'].map((r: any) => {
+                return `[${r.errorCode}] ${r.errorMessage}`;
+              })
+              .join("<br/>&nbsp;&nbsp;"));
               this.cancelDialog.setAcceptButtonLabel("Yes, try to cancel again");
-              this.cancelDialog.cancelButton .prop('disabled', false);
+              this.cancelDialog.cancelButton.prop('disabled', false);
               this.cancelDialog.acceptButton.prop('disabled', false);
             }
-          }).catch( (response) => {
+          }).catch((response) => {
             console.error("Failure", response);
             this.cancelDialogInfo.html("Error cancelling statement, check console.");
             this.cancelDialog.setAcceptButtonLabel("Yes, try to cancel again");
-            this.cancelDialog.cancelButton .prop('disabled', false);
+            this.cancelDialog.cancelButton.prop('disabled', false);
             this.cancelDialog.acceptButton.prop('disabled', false);
-          })
+          });
         });
         this.cancelDialog.show();
-      })
-    }
+      });
+    };
   }
 
   async getCancelDialogHtml(statementId: number) {
 
-    let filteredStatements = this.statements.filter( (statement) => statement.id === statementId);
+    let filteredStatements = this.statements.filter((statement) => statement.id === statementId);
     if (filteredStatements.length === 0) {
-      return `ERROR: statement ${statementId }not found`;
+      return `ERROR: statement ${statementId}not found`;
     }
 
     let statement = filteredStatements[0];
-    let objectHtml = typeof statement.object === 'number'
-      ? `${statement.object} [${await this.getEntityName(statement.id, false)}]`
-      : `'${statement.object}'`;
+    let objectHtml = typeof statement.object === 'number' ? `${statement.object} [${await this.getEntityName(statement.id, false)}]` : `'${statement.object}'`;
 
 
     return `<p>Do you want to cancel statement ${statementId}?</p>
@@ -129,13 +127,13 @@ export class AdminEntityPage extends NormalPage {
      <b>Predicate</b>: ${statement.predicate} [${await this.getEntityName(statement.predicate)}]<br/>
      <b>Object</b>: ${objectHtml}</p>
      <p><b>Cancellation Note</b>: <textarea class="cancellation-note-input"></textarea></p>
-     <div class="cancel-dialog-info"></div>`
+     <div class="cancel-dialog-info"></div>`;
   }
 
   genOnClickEditStatementButton() {
     return (ev: any) => {
       ev.preventDefault();
-      console.log('Click on edit statement button')
+      console.log('Click on edit statement button');
       let statementId = this.getIdFromClassNameString(ev.target.className, 'statement');
       if (statementId === null || statementId < 0) {
         console.log(`Invalid statement id in classes ${ev.target.className}`);
@@ -150,7 +148,7 @@ export class AdminEntityPage extends NormalPage {
       }
       new GenericStatementEditor({
         statementId: statementId,
-        editableParts : [ false, false, true],
+        editableParts: [false, false, true],
         subject: this.entityId,
         predicate: statement.predicate,
         object: statement.object,
@@ -159,23 +157,24 @@ export class AdminEntityPage extends NormalPage {
         predicateDef: this.predicateDefs[statement.predicate],
         qualificationDefs: this.qualificationDefs,
         onSuccess: this.genOnStatementEditorSuccess(),
+        allowedQualifications: this.predicateDefs[statement.predicate].allowedQualifications,
         getEntityName: this.genGetEntityName(),
         getEntityList: this.genGetEntitiesForType(),
-      })
+      });
 
-    }
+    };
   }
 
   genGetEntityName() {
     return (id: number) => {
       return this.getEntityName(id, false);
-    }
+    };
   }
 
   genGetEntitiesForType() {
     return (type: number) => {
       return this.apiClient.getEntityListForType(type);
-    }
+    };
   }
 
   getIdFromClassNameString(classNameString: string, prefix: string) {
@@ -190,9 +189,9 @@ export class AdminEntityPage extends NormalPage {
   }
 
   genOnClickNewStatementButton() {
-    return (ev:  any) => {
+    return (ev: any) => {
       ev.preventDefault();
-      console.log('Click on new statement button')
+      console.log('Click on new statement button');
 
       let classes = ev.target.className.split(' ');
       let asSubject = classes.indexOf('as-subject') !== -1;
@@ -205,9 +204,11 @@ export class AdminEntityPage extends NormalPage {
       if (asSubject) {
         console.log(`New statement as subject, predicate ${predicate}`);
         new GenericStatementEditor({
-          editableParts : [ false, false, true],
+          statementId: -1,
+          editableParts: [false, false, true],
           subject: this.entityId,
           predicate: predicate,
+          object: null,
           relation: relation,
           allowedQualifications: this.predicateDefs[predicate].allowedQualifications,
           statementMetadata: [],
@@ -216,23 +217,23 @@ export class AdminEntityPage extends NormalPage {
           getEntityName: this.genGetEntityName(),
           getEntityList: this.genGetEntitiesForType(),
           onSuccess: this.genOnStatementEditorSuccess(),
-        })
+        });
 
       } else {
         console.log(`New statement as object, predicate ${predicate}`);
         console.log(`Not implemented yet`);
       }
 
-    }
+    };
   }
 
   genOnStatementEditorSuccess() {
     return () => {
       window.location.reload();
-    }
+    };
   }
 
-  async initPage () {
+  async initPage() {
     let typeData = await this.apiClient.getPredicateDefinitionsForType(this.data.type);
     console.log('Entity Type Data', typeData);
     this.predicateDefs = typeData.predicateDefinitions;
@@ -250,27 +251,27 @@ export class AdminEntityPage extends NormalPage {
    * because the predicate allows multiple statements for the same entity
    */
   getPredicatesAvailableForAdding(asSubject = true) {
-     let predicateArray = asSubject ? this.predicatesAllowedAsSubject : this.predicatesAllowedAsObject;
+    let predicateArray = asSubject ? this.predicatesAllowedAsSubject : this.predicatesAllowedAsObject;
 
-     return predicateArray.filter( (predicate) => {
-       let def = this.predicateDefs[predicate];
-       if (def.flags !== null && def.flags.length > 0) {
-         return false;
-       }
-       let isUsed = this.data.statements.filter( (statement) => {
-         return statement['predicate'] === predicate && statement['cancellationId'] === -1;
-       }).length > 0;
-       return !(asSubject && def['singleProperty'] && isUsed);
-     })
+    return predicateArray.filter((predicate) => {
+      let def = this.predicateDefs[predicate];
+      if (def.flags !== null && def.flags.length > 0) {
+        return false;
+      }
+      let isUsed = this.data.statements.filter((statement) => {
+        return statement['predicate'] === predicate && statement['cancellationId'] === -1;
+      }).length > 0;
+      return !(asSubject && def['singleProperty'] && isUsed);
+    });
 
   }
 
   async getPredicatesAvailableSection(predicates: number[], asSubject: boolean) {
     let html = '';
     html += `<div class="available-predicates">`;
-    html += '<h4>Predicates Available</h4>'
+    html += '<h4>Predicates Available</h4>';
     html += '<table class="available-predicates">';
-    for(let i = 0; i < predicates.length; i++) {
+    for (let i = 0; i < predicates.length; i++) {
       let def = this.predicateDefs[predicates[i]];
       let typeClass = def.type === 101 ? 'is-relation' : 'is-attribute';
       html += `<tr>
@@ -281,11 +282,11 @@ export class AdminEntityPage extends NormalPage {
         </tr>`;
     }
     html += '</table>';
-    html += '</div>'
+    html += '</div>';
     return html;
   }
 
-  async genContentHtml () {
+  async genContentHtml() {
     let availablePredicatesAsSubject = this.getPredicatesAvailableForAdding(true);
     let availablePredicatesAsObject = this.getPredicatesAvailableForAdding(false);
     let apmUrl = urlGen.siteEntityPage(this.data.type, this.entityId);
@@ -331,14 +332,14 @@ export class AdminEntityPage extends NormalPage {
     if (name === '') {
       return id.toString();
     }
-    return `<a href="${urlGen.siteAdminEntity(id)}" title="Entity ${id} = ${Tid.toCanonicalString(id)}">${id}  [${name}]</a>`
+    return `<a href="${urlGen.siteAdminEntity(id)}" title="Entity ${id} = ${Tid.toCanonicalString(id)}">${id}  [${name}]</a>`;
   }
 
 
-  async getSimpleElementsHtml(someObject: { [key: string]: any}, propertyClasses = [ 'property' ]) {
+  async getSimpleElementsHtml(someObject: { [key: string]: any }, propertyClasses = ['property']) {
     let items = [];
     let keys = Object.keys(someObject);
-    for(let i=0; i < keys.length; i++) {
+    for (let i = 0; i < keys.length; i++) {
       let key = keys[i];
       let actualValue = someObject[key];
       let valueHtml = '';
@@ -388,12 +389,12 @@ export class AdminEntityPage extends NormalPage {
       return `<em>None</em>`;
     }
 
-    statements.sort( (a, b) => {
+    statements.sort((a, b) => {
       // @ts-expect-error using string as key for StatementDataInterface
-      return parseInt(a[orderBy]) - parseInt(b[orderBy])
-    })
+      return parseInt(a[orderBy]) - parseInt(b[orderBy]);
+    });
 
-    const metadataPredicates = [ 3001, 3002, 3003];
+    const metadataPredicates = [3001, 3002, 3003];
     let rows = [];
     for (let i = 0; i < statements.length; i++) {
       let statement = statements[i];
@@ -408,7 +409,7 @@ export class AdminEntityPage extends NormalPage {
       let qualificationItems = [];
       let cancellationItems = [];
       for (let metadataIndex = 0; metadataIndex < statement['statementMetadata'].length; metadataIndex++) {
-        let [ predicate, obj] = statement['statementMetadata'][metadataIndex];
+        let [predicate, obj] = statement['statementMetadata'][metadataIndex];
         if (metadataPredicates.indexOf(predicate) !== -1) {
           metadataItems.push(`${await this.getEntityHtml(predicate)}: ${await this.getObjectHtml(obj, this.getObjectValueTypeFromPredicate(predicate))}`);
         } else {
@@ -417,7 +418,7 @@ export class AdminEntityPage extends NormalPage {
       }
 
       for (let metadataIndex = 0; metadataIndex < statement['cancellationMetadata'].length; metadataIndex++) {
-        let [ predicate, obj] = statement['cancellationMetadata'][metadataIndex];
+        let [predicate, obj] = statement['cancellationMetadata'][metadataIndex];
         cancellationItems.push(`${await this.getEntityHtml(predicate)}: ${await this.getObjectHtml(obj, this.getObjectValueTypeFromPredicate(predicate))}`);
       }
 
@@ -450,36 +451,37 @@ export class AdminEntityPage extends NormalPage {
       }
 
       rows.push({
-        statement: statement,
-        cols: cols
+        statement: statement, cols: cols
       });
     }
 
     let html = '';
     html += '<table class="statements">';
-    html += '<tr><th>Statement Id</th><th>Subject</th><th>Predicate</th><th>Object</th><th>Qualifications</th><th>Statement Metadata</th></tr>'
+    html += '<tr><th>Statement Id</th><th>Subject</th><th>Predicate</th><th>Object</th><th>Qualifications</th><th>Statement Metadata</th></tr>';
 
-    html += rows.map( (row) => {
+    html += rows.map((row) => {
 
       let tdClasses = [];
       let trClasses = [];
       if (row['statement']['cancellationId'] !== -1) {
-        tdClasses.push('cancelled')
+        tdClasses.push('cancelled');
         trClasses.push('cancelled');
       }
       let rowHtml = `<tr class="${trClasses.join(' ')}">`;
-      rowHtml += row.cols.map( (col) => { return `<td class="${tdClasses.join(' ')}">${col}</td>`}).join('');
+      rowHtml += row.cols.map((col) => {
+        return `<td class="${tdClasses.join(' ')}">${col}</td>`;
+      }).join('');
       rowHtml += '</tr>';
       return rowHtml;
     }).join('');
 
-    html += '</table>'
+    html += '</table>';
     return html;
   }
 
   async getObjectHtml(object: any, valueType = 'string') {
     if (typeof object === 'string') {
-      switch(valueType) {
+      switch (valueType) {
         case 'timestamp':
           return `<span class="timestamp-value" title="TS: ${object}">${ApmFormats.time(parseInt(object))}</span>`;
 

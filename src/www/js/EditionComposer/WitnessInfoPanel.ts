@@ -17,7 +17,7 @@
  */
 
 import {Panel, PanelOptions} from '@/MultiPanelUI/Panel';
-import * as Util from '../toolbox/Util.mjs';
+import * as Util from '../toolbox/Util';
 import {EditableTextField} from '@/widgets/EditableTextField';
 import * as CollationTableType from '../constants/CollationTableType';
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil.js';
@@ -35,6 +35,7 @@ import {ApmApiClient, ApmApiClientError} from "@/Api/ApmApiClient";
 import {CtDataInterface} from "@/CtData/CtDataInterface";
 import {WitnessUpdateData} from "@/Api/DataSchema/WitnessUpdates";
 import {urlGen} from "@/pages/common/SiteUrlGen";
+import {getClassArrayFromJQueryObject, safeGetIntVal} from "@/toolbox/UiToolBox";
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -585,7 +586,7 @@ export class WitnessInfoPanel extends Panel {
         if (apiCommand === 'new') {
           apiCallData.title = titleInput.val();
         } else {
-          apiCallData.presetId = Util.safeGetIntVal(presetSelect, 'presetSelect');
+          apiCallData.presetId = safeGetIntVal(presetSelect, 'presetSelect');
         }
 
         this.saveSiglaPreset(apiCallData).then(() => {
@@ -645,7 +646,7 @@ export class WitnessInfoPanel extends Panel {
       }).join(''));
 
       presetSelect.on('change', () => {
-        let id = Util.safeGetIntVal(presetSelect, 'presetSelect');
+        let id = safeGetIntVal(presetSelect, 'presetSelect');
         let p = this.siglaPresets.filter((p) => {
           return p.presetId === id;
         })[0];
@@ -655,7 +656,7 @@ export class WitnessInfoPanel extends Panel {
       });
 
       loadButton.on('click', async () => {
-        let id = Util.safeGetIntVal(presetSelect, 'presetSelect');
+        let id = safeGetIntVal(presetSelect, 'presetSelect');
         let p = this.siglaPresets.filter((p) => {
           return p.presetId === id;
         })[0];
@@ -865,7 +866,7 @@ export class WitnessInfoPanel extends Panel {
       if ($(ev.currentTarget).hasClass('disabled')) {
         return false;
       }
-      let classes = Util.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode));
+      let classes = getClassArrayFromJQueryObject($(ev.currentTarget.parentNode));
 
       let position = this.getWitnessPositionFromClasses(classes);
       let numWitnesses = this.ctData['witnesses'].length;

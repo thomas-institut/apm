@@ -226,3 +226,26 @@ export function getIntVal(element: JQuery) : number {
   }
   return parseInt(val);
 }
+
+export function getClassArrayFromJQueryObject(element: JQuery<HTMLElement>) {
+  if (element.attr('class') === undefined) {
+    return [];
+  }
+  return (element.attr("class") ?? '').split(/\s+/);
+}
+
+export function safeGetIntVal(element: JQuery<HTMLElement>, title: string) {
+  let val = element.val();
+  if (val === undefined) {
+    console.error(`safeGetIntVal: Undefined value for ${title}`);
+    return -1;
+  }
+  if (Array.isArray(val)) {
+    console.error(`safeGetIntVal: Value for ${title} is object/array`);
+    return -1;
+  }
+  if (typeof val === 'number') {
+    return val;
+  }
+  return parseInt(val);
+}

@@ -1,4 +1,4 @@
-import * as Util from '../../toolbox/Util.mjs'
+import * as Util from '../../toolbox/Util.ts'
 import { ParserNormalizer } from '../../Normalizer/ParserNormalizer.mjs'
 import { WitnessToken } from '../../Witness/WitnessToken.ts'
 import * as NormalizationSource from '../../constants/NormalizationSource.ts'

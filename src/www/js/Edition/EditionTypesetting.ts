@@ -33,13 +33,13 @@ import {
   GOOD_POINT_FOR_A_BREAK, INFINITE_PENALTY, Penalty, REALLY_GOOD_POINT_FOR_A_BREAK
 } from '../lib/Typesetter2/Penalty.js';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
-import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.mjs';
+import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.js';
 import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
 import {ObjectFactory} from '../lib/Typesetter2/ObjectFactory.js';
 import {uniq} from '../lib/ToolBox/ArrayUtil.js';
 import {Typesetter2StyleSheetTokenRenderer} from '../lib/FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.js';
-import {NumeralStyles} from '../toolbox/NumeralStyles.mjs';
+import {NumeralStyles} from '../toolbox/NumeralStyles.js';
 import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';
 import {SiglaGroup} from './SiglaGroup.js';
 import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';

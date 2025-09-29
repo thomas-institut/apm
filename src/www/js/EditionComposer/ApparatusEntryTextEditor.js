@@ -20,7 +20,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 
 import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
 import { FmtTextFactory } from '@/lib/FmtText/FmtTextFactory'
-import { isRtl, removeWhiteSpace } from '@/toolbox/Util.mjs'
+import { isRtl, removeWhiteSpace } from '@/toolbox/Util.ts'
 
 import { toolbarCharactersDefinition } from './ToolbarCharactersDefinition'
 import Quill from '../QuillLoader'

@@ -20,7 +20,7 @@
 import {defaultLanguageDefinition} from '@/defaults/languages';
 
 // utilities
-import * as Util from '../toolbox/Util.mjs';
+import * as Util from '../toolbox/Util';
 import {capitalizeFirstLetter, deepCopy} from '@/toolbox/Util';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil';

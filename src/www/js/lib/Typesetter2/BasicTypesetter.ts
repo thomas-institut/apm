@@ -31,7 +31,7 @@ import * as MetadataKey from './MetadataKey.js';
 import * as ListType from './ListType.js';
 import * as LineType from './LineType.js';
 import * as GlueType from './GlueType.js';
-import {toFixedPrecision} from '../../toolbox/Util.mjs';
+import {toFixedPrecision} from '../../toolbox/Util.js';
 import {FirstFitLineBreaker} from './LineBreaker/FirstFitLineBreaker.js';
 import {AddPageNumbers} from './PageProcessor/AddPageNumbers.js';
 import {AddLineNumbers} from './PageProcessor/AddLineNumbers.js';

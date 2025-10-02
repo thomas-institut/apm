@@ -41,7 +41,7 @@ export class AdminPanel extends  Panel {
   constructor (options = {}) {
     super(options)
     let optionsSpec = {
-      apmDataProxy: { type: 'object'},
+      apiClient: { type: 'object'},
       urlGen: { type: 'object'},
       tableId: { type: 'number'},
       ctType: { type: 'string', required: true},

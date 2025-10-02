@@ -52,7 +52,7 @@ const icons = {
 };
 
 interface WitnessInfoPanelOptions extends PanelOptions {
-  apmDataProxy: ApmApiClient;
+  apiClient: ApmApiClient;
   userId: number;
   ctData: CtDataInterface;
   onCtDataChange: (ctData: CtDataInterface) => Promise<void>;
@@ -77,7 +77,7 @@ interface WitnessInfoPanelOptions extends PanelOptions {
  *  - Witness update: update status, check for updates and launch the witness update task
  */
 export class WitnessInfoPanel extends Panel {
-  private readonly apmDataProxy: ApmApiClient;
+  private readonly apiClient: ApmApiClient;
   private readonly userId: number;
 
   private readonly onSiglaChange: (newSigla: string[]) => Promise<void>;
@@ -101,7 +101,7 @@ export class WitnessInfoPanel extends Panel {
 
   constructor(options: WitnessInfoPanelOptions) {
     super(options);
-    this.apmDataProxy = options.apmDataProxy;
+    this.apiClient = options.apiClient;
     this.onSiglaChange = options.onSiglaChange;
     this.onCtDataChange = options.onCtDataChange;
     this.onWitnessOrderChange = options.onWitnessOrderChange;
@@ -162,7 +162,7 @@ export class WitnessInfoPanel extends Panel {
     let pageInfoArray = await this.getPageInfo(allPageIds);
     // fix docIds
     for (let i = 0; i < pageInfoArray.length; i++) {
-      pageInfoArray[i].docId = await this.apmDataProxy.getRealDocId(pageInfoArray[i].docId);
+      pageInfoArray[i].docId = await this.apiClient.getRealDocId(pageInfoArray[i].docId);
     }
     this.ctData['witnesses'].forEach((witness, witnessIndex) => {
       if (witness['witnessType'] === WitnessType.FULL_TX) {
@@ -351,7 +351,7 @@ export class WitnessInfoPanel extends Panel {
         resultSpan.html(`Waiting for server's response... ${icons.busy}`).addClass('text-warning');
         this.convertingToEdition = true;
         try {
-          const apiResponse = await this.apmDataProxy.collationTableConvertToEdition({
+          const apiResponse = await this.apiClient.collationTableConvertToEdition({
             tableId: this.ctData.tableId, initStrategy: 'topWitness'
           });
           resultSpan.html(`<b>Done!</b> The new edition is available <b><a href="${urlGen.siteChunkEdition(this.ctData.tableId)}">here</a></b>`);
@@ -1024,7 +1024,7 @@ export class WitnessInfoPanel extends Panel {
     $(this.containerSelector + ' .witness-update-info').html(`Checking for witness updates... <i class="fas fa-spinner fa-spin"></i>`);
     $(this.containerSelector + ' .check-witness-update-btn').prop('disabled', true);
     const witnessIds = this.currentWitnessUpdateData.witnesses.map(w => w.id);
-    const newWitnessUpdateCheckData = await this.apmDataProxy.checkWitnessUpdates(witnessIds);
+    const newWitnessUpdateCheckData = await this.apiClient.checkWitnessUpdates(witnessIds);
     console.log(`Got new witness update data`, newWitnessUpdateCheckData);
     if (newWitnessUpdateCheckData.status === 'OK') {
       this.currentWitnessUpdateData = newWitnessUpdateCheckData;
@@ -1075,7 +1075,7 @@ export class WitnessInfoPanel extends Panel {
           if (witness.docId === undefined) {
             throw new Error('Witness has no docId');
           }
-          let docLink = urlGen.siteDocPage(await this.apmDataProxy.getRealDocId((witness.docId)));
+          let docLink = urlGen.siteDocPage(await this.apiClient.getRealDocId((witness.docId)));
           if (docLink !== '') {
             witnessTitle = `<a href="${docLink}" target="_blank" title="Click to open document page in a new tab">
                ${this.ctData.witnessTitles[witnessIndex]}</a>`;

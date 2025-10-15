@@ -22,7 +22,6 @@ import {ApparatusCommon} from './ApparatusCommon';
 import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
 import {CtData} from '@/CtData/CtData';
 import {onClickAndDoubleClick} from '@/toolbox/DoubleClick';
-import {FmtTextUtil} from '@/lib/FmtText/FmtTextUtil';
 import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
 import {ApparatusEntryTextEditor} from './ApparatusEntryTextEditor';
 import {capitalizeFirstLetter, getTextDirectionForLang, removeExtraWhiteSpace, trimWhiteSpace} from '@/toolbox/Util';
@@ -949,7 +948,7 @@ export class ApparatusPanel extends PanelWithToolbar {
           break;
 
         default:
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(FmtTextUtil.getPlainText(apparatusEntry.preLemma), this.edition.lang);
+          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(apparatusEntry.preLemma, this.edition.lang);
       }
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `;
 
@@ -958,7 +957,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
       let postLemmaSpan = '';
       if (apparatusEntry.postLemma !== '') {
-        let postLemma = ApparatusCommon.getKeywordHtml(FmtTextUtil.getPlainText(apparatusEntry.postLemma), this.edition.lang);
+        let postLemma = ApparatusCommon.getKeywordHtml(apparatusEntry.postLemma, this.edition.lang);
         postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
       }
 
@@ -982,7 +981,7 @@ export class ApparatusPanel extends PanelWithToolbar {
           break;
 
         default:
-          separator = FmtTextUtil.getPlainText(apparatusEntry.separator);
+          separator = apparatusEntry.separator;
       }
 
       html += `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `;
@@ -1399,7 +1398,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     let option = this.getLemmaGroupVariableToggleOption(entry[variable]);
     toggle.setOptionByName(option);
     if (option === 'custom') {
-      textInput.removeClass('hidden').val(FmtTextUtil.getPlainText(entry[variable]));
+      textInput.removeClass('hidden').val(entry[variable]);
     } else {
       textInput.addClass('hidden').val('');
     }

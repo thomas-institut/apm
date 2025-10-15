@@ -12,6 +12,7 @@ export type ToolbarCharacters = {
 export interface ToolbarCharacter {
   character: string;
   title: string;
+  rtlVersion?: string;
 }
 
 export const toolbarCharactersDefinition: ToolbarCharactersDatabase = {

@@ -20,8 +20,7 @@
 
 import {MainTextToken} from './MainTextToken.js';
 import * as EditionMainTextTokenType from './MainTextTokenType.js';
-import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
-import {FmtTextToken} from "../lib/FmtText/FmtTextToken";
+import {FmtText, fmtTextFromString, newGlueToken} from "../lib/FmtText/FmtText";
 import {MainTextTokenType} from "@/Edition/EditionInterface";
 
 export class MainTextTokenFactory {
@@ -38,7 +37,7 @@ export class MainTextTokenFactory {
   static createSimpleText(type: MainTextTokenType, text: string, editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
     let t = new MainTextToken();
     t.type = type;
-    t.fmtText = FmtTextFactory.fromString(text);
+    t.fmtText = fmtTextFromString(text);
     t.editionWitnessTokenIndex = editionWitnessTokenIndex;
     t.setLang(lang);
     return t;
@@ -48,12 +47,12 @@ export class MainTextTokenFactory {
    * Creates a new instance of MainTextToken with formatted text and specified attributes.
    *
    * @param {string} type - The type of the token to be created.
-   * @param {FmtTextToken[]} fmtText - The formatted text content for the token.
+   * @param {FmtTextTokenClass[]} fmtText - The formatted text content for the token.
    * @param {number} editionWitnessTokenIndex - The index representing the edition or witness token.
    * @param {string} [lang=''] - The language code for the token (optional, defaults to an empty string).
    * @return {MainTextToken} A new instance of MainTextToken with the specified attributes.
    */
-  static createWithFmtText(type: MainTextTokenType, fmtText: FmtTextToken[], editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
+  static createWithFmtText(type: MainTextTokenType, fmtText: FmtText, editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
     let t = new MainTextToken();
     t.type = type;
     t.fmtText = fmtText;
@@ -66,7 +65,7 @@ export class MainTextTokenFactory {
     let t = new MainTextToken();
     t.type = EditionMainTextTokenType.GLUE;
     t.space = 'normal';
-    t.fmtText = FmtTextFactory.oneNormalSpace();
+    t.fmtText = [ newGlueToken()];
     return t;
   }
 

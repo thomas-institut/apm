@@ -19,11 +19,10 @@
  */
 
 
-import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
 import {deepCopy} from '../toolbox/Util.js';
 import {WitnessDataItem} from "./WitnessDataItem.js";
 import {SiglaGroup} from "./SiglaGroup.js";
-import {FmtTextToken} from "../lib/FmtText/FmtTextToken.js";
+import {CompactFmtText, fromCompact, getPlainText} from "../lib/FmtText/FmtText.js";
 
 const enDash = String.fromCodePoint(0x2013);
 
@@ -39,10 +38,10 @@ export interface LemmaComponents {
 
 export class ApparatusUtil {
 
-  static getLemmaComponents(apparatusEntryLemma: string | FmtTextToken[], lemmaText: string): LemmaComponents {
+  static getLemmaComponents(apparatusEntryLemma: CompactFmtText, lemmaText: string): LemmaComponents {
     let separator = '';
     let custom = false;
-    const theLemma = FmtTextUtil.getPlainText(apparatusEntryLemma);
+    const theLemma = getPlainText(fromCompact(apparatusEntryLemma));
 
     switch (theLemma) {
       case '':
@@ -58,7 +57,7 @@ export class ApparatusUtil {
         custom = true;
     }
     if (custom) {
-      return {type: 'custom', text: FmtTextUtil.getPlainText(apparatusEntryLemma)};
+      return {type: 'custom', text: getPlainText(fromCompact(apparatusEntryLemma))};
     }
     if (lemmaText === '') {
       lemmaText = 'pre';

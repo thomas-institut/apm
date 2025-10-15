@@ -1,6 +1,7 @@
 import { ConfirmDialog, MEDIUM_DIALOG, SMALL_DIALOG } from '@/pages/common/ConfirmDialog'
 import { varsAreEqual } from '@/lib/ToolBox/ArrayUtil'
-import { trimWhiteSpace } from '../toolbox/Util.ts'
+import { trimWhiteSpace } from '@/toolbox/Util'
+import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 
 export class SiglaGroupsUI {
 
@@ -12,7 +13,7 @@ export class SiglaGroupsUI {
    * @param {Object}icons
    * @return {string}
    */
-  static genSiglaGroupsTable(siglaGroups, sigla, icons) {
+  static genSiglaGroupsTable(siglaGroups: SiglaGroupInterface[], sigla: string[], icons: any) {
     if (siglaGroups.length === 0) {
       return `<em>No sigla groups defined</em>`
     }
@@ -32,14 +33,14 @@ export class SiglaGroupsUI {
     ].join('')
   }
 
-  static getSiglaStringForWitnessIndexArray(sigla, witnessIndexes) {
+  static getSiglaStringForWitnessIndexArray(sigla: string[], witnessIndexes: number[]) {
     return  witnessIndexes.map( (w) => { return sigla[w]}).join('')
   }
 
-  static addEditSiglaGroup(siglaGroups, index, sigla) {
+  static addEditSiglaGroup(siglaGroups: SiglaGroupInterface[], index: number, sigla: string[]) {
     return new Promise( (resolve, reject) => {
       let isNew = index === -1
-      let siglaGroup = { siglum: '', witnesses: []}
+      let siglaGroup: SiglaGroupInterface = { siglum: '', witnesses: []}
       if (!isNew) {
         siglaGroup = siglaGroups[index]
       }
@@ -98,7 +99,7 @@ export class SiglaGroupsUI {
     })
   }
 
-  static confirmDeleteSiglaGroup(siglaGroups, index, sigla) {
+  static confirmDeleteSiglaGroup(siglaGroups: SiglaGroupInterface[], index: number, sigla: string[]): Promise<void> {
     return new Promise ( (resolve, reject) => {
       let siglaGroup = siglaGroups[index]
       let dialogBody = `<p>Are you sure you want to delete this sigla group?</p> 
@@ -119,7 +120,8 @@ export class SiglaGroupsUI {
   }
 
 
-  static genSiglaGroupPreviewHtml(newSiglaGroup, originalSiglaGroup, siglaGroups, sigla) {
+  static genSiglaGroupPreviewHtml(newSiglaGroup: SiglaGroupInterface,
+                                  originalSiglaGroup: SiglaGroupInterface, siglaGroups: SiglaGroupInterface[], sigla: string[]) {
     if (newSiglaGroup.siglum === '') {
       return '<span class="text-warning">Enter a siglum</span>'
     }
@@ -164,8 +166,8 @@ export class SiglaGroupsUI {
     }
   }
 
-  static  _readSiglaGroupFromDialog(dialogSelector, sigla) {
-    let witnesses = []
+  static  _readSiglaGroupFromDialog(dialogSelector, sigla): SiglaGroupInterface {
+    let witnesses: number[] = []
    sigla.forEach( (s, i) => {
       if ($(`${dialogSelector} .siglum-checkbox-${i}`).prop('checked')) {
         witnesses.push(i)

@@ -29,16 +29,35 @@ import {OptionsChecker} from '@thomas-inst/optionschecker'
 
 import { ConfirmDialog } from '@/pages/common/ConfirmDialog'
 import * as CollationTableType from '../constants/CollationTableType'
-import { Panel } from '@/MultiPanelUI/Panel'
+import {Panel, PanelOptions} from '@/MultiPanelUI/Panel';
 import { ApmFormats } from '@/pages/common/ApmFormats'
-import { TimeString } from '../toolbox/TimeString.mjs'
+import { TimeString } from '@/toolbox/TimeString'
 import { urlGen } from '@/pages/common/SiteUrlGen'
+import {ApmApiClient} from "@/Api/ApmApiClient";
+import {ApmUrlGenerator} from "@/ApmUrlGenerator";
 
 const archiveButtonId = 'archive-table-btn'
 const versionHistoryDiv = 'version-history-div'
 
+interface AdminPanelOptions extends PanelOptions {
+  apiClient: ApmApiClient,
+  urlGen: ApmUrlGenerator,
+  tableId: number,
+  ctType: string,
+  archived: boolean,
+  versionInfo: any[],
+  peopleInfo: any[],
+  onConfirmArchive: () => Promise<any>,
+  canArchive: boolean,
+  cannotArchiveReason: string,
+}
+
 export class AdminPanel extends  Panel {
-  constructor (options = {}) {
+  private options: AdminPanelOptions;
+  private rendered: boolean;
+  private versionInfo: any;
+  private archiveButton!: JQuery<HTMLElement>;
+  constructor (options: AdminPanelOptions) {
     super(options)
     let optionsSpec = {
       apiClient: { type: 'object'},
@@ -58,7 +77,7 @@ export class AdminPanel extends  Panel {
     this.versionInfo = this.options.versionInfo
   }
 
-  async updateVersionInfo(newVersionInfo) {
+  async updateVersionInfo(newVersionInfo: any) {
     this.versionInfo = newVersionInfo
     $(`#${versionHistoryDiv}`).html(await this._genVersionTableHtml())
   }
@@ -85,7 +104,7 @@ export class AdminPanel extends  Panel {
     }
   }
 
-  disallowArchiving(reason) {
+  disallowArchiving(reason: string) {
     this.options.canArchive = true
     this.options.cannotArchiveReason = reason
     if (this.rendered) {

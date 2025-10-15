@@ -25,7 +25,7 @@ import * as VerticalAlign from '../VerticalAlign.js';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {Glue} from '@/lib/Typesetter2/Glue';
 import {TextBoxFactory} from '@/lib/Typesetter2/TextBoxFactory';
-import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
+import {FmtText} from "@/lib/FmtText/FmtText.js";
 
 const superScriptFontSize = 0.58;
 const subScriptFontSize = 0.58;
@@ -50,13 +50,8 @@ export class Typesetter2TokenRenderer extends FmtTextRenderer {
     this.options = oc.getCleanOptions(options);
   }
 
-  /**
-   *
-   * @param fmtText
-   * @param lang
-   * @return {TypesetterItem[]}
-   */
-  render(fmtText: FmtTextToken[], lang = '') {
+
+  render(fmtText: FmtText, lang = '') {
     // console.log(`Rendering fmtText as Typesetter2 items`)
     let textDirection = this.__getTextDirection(lang);
 
@@ -82,7 +77,7 @@ export class Typesetter2TokenRenderer extends FmtTextRenderer {
           }
 
         case FmtTokenType.TEXT:
-          // @ts-expect-error fmtTextToken is text, so it should have .text
+
           let textBox = TextBoxFactory.simpleText(fmtTextToken.text, {
             fontFamily: this.options.defaultFontFamily, fontSize: this.options.defaultFontSize
           }, textDirection);
@@ -111,7 +106,7 @@ export class Typesetter2TokenRenderer extends FmtTextRenderer {
   }
 
 
-  __getTextDirection(lang: string): string {
+  __getTextDirection(lang: string): 'rtl' | 'ltr' {
     switch (lang) {
       case 'ar':
       case 'he':

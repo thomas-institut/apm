@@ -18,13 +18,14 @@
 
 import {CtData} from '../CtData';
 import {CtDataCleaner} from './CtDataCleaner';
-import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
+//import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
 import {deepCopy} from '@/toolbox/Util';
 import * as CollationTableType from '../../Witness/WitnessTokenClass';
 import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner';
 import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
 import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
 import {CtDataInterface} from "../CtDataInterface";
+import {fmtTextFromString} from "@/lib/FmtText/FmtText";
 
 export class CleanerOnePointOne extends CtDataCleaner {
   private ctData!: CtDataInterface;
@@ -83,7 +84,7 @@ export class CleanerOnePointOne extends CtDataCleaner {
           if (validLemmaStrings.indexOf(entry.lemma) === -1) {
             //invalid lemma string, convert to FmtText
             this.verbose && console.log(`Fixed invalid lemma string '${entry['lemma']}' in apparatus '${app['type']}', entry ${entryIndex}`);
-            entry.lemma = FmtTextFactory.fromString(entry.lemma);
+            entry.lemma = fmtTextFromString(entry.lemma);
           }
         }
         return entry;

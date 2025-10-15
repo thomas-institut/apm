@@ -19,6 +19,7 @@
 import * as WitnessTokenType from './WitnessTokenType.js';
 import * as NormalizationSource from '../constants/NormalizationSource.js';
 import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
+import {FmtText} from "@/lib/FmtText/FmtText";
 
 /**
  * A token that can appear in a witness
@@ -35,12 +36,13 @@ import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
  */
 
 
-export class WitnessToken {
+export class WitnessToken implements WitnessTokenInterface{
   tokenType: string;
   text: string;
   tokenClass: string;
   normalizedText: string;
   normalizationSource: string;
+  fmtText?: FmtText;
 
   constructor() {
     this.tokenType = WitnessTokenType.EMPTY;

@@ -25,7 +25,7 @@ import * as FontWeight from '../FontWeight';
 import * as VerticalAlign from '../VerticalAlign';
 
 import {OptionsChecker} from '@thomas-inst/optionschecker';
-import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
+import {FmtText} from "@/lib/FmtText/FmtText.js";
 
 const superScriptFontSize = 0.58;
 const subScriptFontSize = 0.58;
@@ -45,7 +45,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
   }
 
 
-  render(fmtText: FmtTextToken[], lang = ''): TypesetterToken[] {
+  render(fmtText: FmtText, lang = ''): TypesetterToken[] {
     // console.log(`Rendering fmtText as Typesetter2 tokens`)
 
     return fmtText.filter((t) => {
@@ -53,7 +53,7 @@ export class TypesetterTokenRenderer extends FmtTextRenderer {
     }).map((fmtTextToken): TypesetterToken => {
       switch (fmtTextToken.type) {
         case FmtTokenType.GLUE:
-          if (typeof fmtTextToken.space === 'number' || fmtTextToken.space === undefined) {
+          if  (fmtTextToken.space === undefined) {
             // This is to deal with old fmtText, where normal was coded as space -1
             return (new TypesetterToken()).setSpace('normal');
           }

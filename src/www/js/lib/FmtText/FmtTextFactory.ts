@@ -16,7 +16,7 @@
  *
  */
 
-import {FmtTextToken} from "./FmtTextToken.js";
+import {FmtTextTokenClass} from "./FmtText.js";
 
 
 /*
@@ -38,7 +38,7 @@ export class FmtTextFactory {
   /**
    * Creates a FmtText array from a string
    */
-  static fromString(theString: string): FmtTextToken[] {
+  static fromString(theString: string): FmtTextTokenClass[] {
 
     let fmtText = [];
     let currentWord = '';
@@ -65,13 +65,13 @@ export class FmtTextFactory {
    * anything that can be converted to a string and arrays of those are supported
    *
    */
-  static fromAnything(theThing: any): FmtTextToken[] {
+  static fromAnything(theThing: any): FmtTextTokenClass[] {
 
     if (theThing === undefined) {
       return [];
     }
     if (Array.isArray(theThing)) {
-      let fmtText: FmtTextToken[] = [];
+      let fmtText: FmtTextTokenClass[] = [];
       theThing.forEach((arrayElement) => {
         fmtText = fmtText.concat(this.fromAnything(arrayElement));
       });
@@ -94,18 +94,8 @@ export class FmtTextFactory {
   }
 
 
-  static empty(): FmtTextToken[] {
+  static empty(): FmtTextTokenClass[] {
     return [];
-  }
-
-  /**
-   *
-   * @return {FmtTextToken[]}
-   */
-  static oneNormalSpace(): FmtTextToken[] {
-    let fmtText = [];
-    fmtText.push(FmtTextTokenFactory.normalSpace());
-    return fmtText;
   }
 }
 

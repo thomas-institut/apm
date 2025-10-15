@@ -16,17 +16,18 @@
  *
  */
 
-import { FmtTextRenderer } from '@/lib/FmtText/Renderer/FmtTextRenderer'
-import * as FmtTextTokenType from '@/lib/FmtText/FmtTextTokenType.js'
-import * as FontStyle from '@/lib/FmtText/FontStyle.js'
-import * as FontSize from '@/lib/FmtText/FontSize.js'
-import * as FontWeight from '@/lib/FmtText/FontWeight.js'
-import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.js'
-import * as MarkType from '@/lib/FmtText/MarkType.js'
-import * as ParagraphStyle from '@/lib/FmtText/ParagraphStyle.js'
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { deepCopy } from '@/toolbox/Util'
-import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
+import {FmtTextRenderer} from '@/lib/FmtText/Renderer/FmtTextRenderer';
+import * as FmtTextTokenType from '@/lib/FmtText/FmtTextTokenType.js';
+import * as FontStyle from '@/lib/FmtText/FontStyle.js';
+import * as FontSize from '@/lib/FmtText/FontSize.js';
+import * as FontWeight from '@/lib/FmtText/FontWeight.js';
+import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.js';
+import * as MarkType from '@/lib/FmtText/MarkType.js';
+import * as ParagraphStyle from '@/lib/FmtText/ParagraphStyle.js';
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {deepCopy} from '@/toolbox/Util';
+import {FmtText} from "@/lib/FmtText/FmtText.js";
+import {QuillDelta, QuillDeltaInsertOp} from "@/lib/types/Quill";
 
 
 /**
@@ -36,15 +37,6 @@ import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
 export type QuillDeltaAttributeTranslator = (attr: {[key: string]: any}) => {[key: string]: any};
 
 export type ClassToAttributeTranslators = { [key: string]: QuillDeltaAttributeTranslator}
-
-export interface QuillDelta {
-  ops: QuillDeltaInsertOp[]
-}
-
-export interface QuillDeltaInsertOp {
-  insert: string,
-  attributes?: {[key: string]: any}
-}
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
   private readonly translators: ClassToAttributeTranslators;
@@ -82,8 +74,11 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
    * Returns a Quill delta object representing the
    * given fmtText in the given language
    */
-  render (fmtText: FmtTextToken[], _lang = ''): QuillDelta {
+  render (fmtText: FmtText, _lang = ''): QuillDelta {
     let deltaOps  = fmtText.map( (fmtTextToken) : QuillDeltaInsertOp  => {
+      if (fmtTextToken.type === FmtTextTokenType.EMPTY) {
+        return { insert: ''}
+      }
       if (fmtTextToken.type === FmtTextTokenType.GLUE) {
         let attr =  deepCopy(this.options.defaultGlueAttrObject)
         return { insert: ' ', attributes: attr }

@@ -22,8 +22,8 @@ import * as FontStyle from '../FontStyle.js';
 import * as FontWeight from '../FontWeight.js';
 import * as FontSize from '../FontSize.js';
 import * as VerticalAlign from '../VerticalAlign.js';
-import {FmtTextRenderer} from './FmtTextRenderer';
-import {FmtTextToken} from "../FmtTextToken.js";
+import {FmtTextRenderer} from './FmtTextRenderer.js';
+import {FmtText} from "../FmtText.js";
 
 
 export class HtmlRenderer extends FmtTextRenderer {
@@ -50,13 +50,7 @@ export class HtmlRenderer extends FmtTextRenderer {
     }
   }
 
-  /**
-   *
-   * @param {FmtTextToken[]} fmtText
-   * @param lang
-   * @return {string}
-   */
-  render(fmtText: FmtTextToken[], lang = ''): string {
+  render(fmtText: FmtText, _lang = ''): string {
     return fmtText.map((t, i) => {
       let tokenClasses = this.options.tokenClasses;
       let classes = [];

@@ -20,9 +20,7 @@
 
 import * as SubEntryType from './SubEntryType.js';
 import * as SubEntrySource from './SubEntrySource.js';
-import {FmtTextToken} from "../lib/FmtText/FmtTextToken";
-import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
-import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
+import {FmtText, getPlainText} from "../lib/FmtText/FmtText";
 import {hashCodeInt32} from '../toolbox/Util.js';
 import {WitnessDataItem} from './WitnessDataItem.js';
 import {ApparatusSubEntryInterface} from "./EditionInterface.js";
@@ -33,7 +31,7 @@ export class ApparatusSubEntry implements ApparatusSubEntryInterface {
   type: string;
   enabled: boolean;
   source?: string;
-  fmtText: FmtTextToken[];
+  fmtText: FmtText;
   witnessData: WitnessDataItem[];
   keyword: string;
   position: number;
@@ -44,7 +42,7 @@ export class ApparatusSubEntry implements ApparatusSubEntryInterface {
     this.type = SubEntryType.EMPTY;
     this.enabled = true;
     this.source = SubEntrySource.UNKNOWN;
-    this.fmtText = FmtTextFactory.empty();
+    this.fmtText = [];
     this.witnessData = [];
     this.keyword = '';
     this.position = -1;
@@ -59,7 +57,7 @@ export class ApparatusSubEntry implements ApparatusSubEntryInterface {
     this.type = subEntry.type;
     this.enabled = subEntry.enabled;
     this.source = subEntry.source;
-    this.fmtText = FmtTextFactory.fromAnything(subEntry.fmtText);
+    this.fmtText = subEntry.fmtText;
     this.position = subEntry.position;
     this.keyword = subEntry.keyword;
     this.tags = [...subEntry.tags];
@@ -77,7 +75,7 @@ export class ApparatusSubEntry implements ApparatusSubEntryInterface {
       return `${w.witnessIndex}:h${w.hand}`;
     }).join('_');
     // FmtText.check(this.fmtText)
-    let stringRep = `${this.type}-${FmtTextUtil.getPlainText(this.fmtText)}-${witnessDataStringRep}`;
+    let stringRep = `${this.type}-${getPlainText(this.fmtText)}-${witnessDataStringRep}`;
     if (stringRep.length > 64) {
       let theHash = hashCodeInt32(stringRep);
       stringRep = stringRep.substring(0, 48) + '..#' + theHash;

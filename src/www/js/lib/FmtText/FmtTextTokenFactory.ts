@@ -16,7 +16,7 @@
  *
  */
 
-import {FmtTextToken} from './FmtTextToken.js';
+import {FmtTextMarkToken, FmtTextTokenClass, newMarkToken} from './FmtText.js';
 import * as FmtTextTokenType from './FmtTextTokenType.js';
 import * as ParagraphStyle from './ParagraphStyle.js';
 import * as MarkType from './MarkType.js';
@@ -26,28 +26,28 @@ export class FmtTextTokenFactory {
   /**
    *
    * @param {string} someString
-   * @returns {FmtTextToken}
+   * @returns {FmtTextTokenClass}
    */
-  static normalText(someString: string): FmtTextToken {
-    return (new FmtTextToken(FmtTextTokenType.TEXT)).setText(someString);
+  static normalText(someString: string): FmtTextTokenClass {
+    return (new FmtTextTokenClass(FmtTextTokenType.TEXT)).setText(someString);
   }
 
-  static normalSpace(): FmtTextToken {
-    return new FmtTextToken(FmtTextTokenType.GLUE);
+  static normalSpace(): FmtTextTokenClass {
+    return new FmtTextTokenClass(FmtTextTokenType.GLUE);
   }
 
-  static paragraphMark(style = ParagraphStyle.NORMAL): FmtTextToken {
-    return (new FmtTextToken(FmtTextTokenType.MARK)).setMarkType(MarkType.PARAGRAPH).setStyle(style);
-
+  static paragraphMark(style = ParagraphStyle.NORMAL): FmtTextMarkToken {
+    return newMarkToken(MarkType.PARAGRAPH, style);
+    // return (new FmtTextTokenClass(FmtTextTokenType.MARK)).setMarkType(MarkType.PARAGRAPH).setStyle(style);
   }
 
   /**
    *
    * @param fmtTextToken
-   * @return {FmtTextToken}
+   * @return {FmtTextTokenClass}
    */
-  static clone(fmtTextToken: FmtTextToken): FmtTextToken {
-    let newText = new FmtTextToken();
+  static clone(fmtTextToken: FmtTextTokenClass): FmtTextTokenClass {
+    let newText = new FmtTextTokenClass();
     newText.type = fmtTextToken.type;
     switch (newText.type) {
       case FmtTextTokenType.TEXT:
@@ -80,10 +80,10 @@ export class FmtTextTokenFactory {
    *
    * @param {Object} someObject
    */
-  static buildFromObject(someObject: any): FmtTextToken {
+  static buildFromObject(someObject: any): FmtTextTokenClass {
     // console.log(`Building from object`)
     // console.log(someObject)
-    if (someObject instanceof FmtTextToken) {
+    if (someObject instanceof FmtTextTokenClass) {
       return this.clone(someObject);
     }
     if (someObject.type === undefined) {
@@ -91,7 +91,7 @@ export class FmtTextTokenFactory {
     }
     switch (someObject.type) {
       case FmtTextTokenType.TEXT:
-        let newToken = new FmtTextToken(FmtTextTokenType.TEXT);
+        let newToken = new FmtTextTokenClass(FmtTextTokenType.TEXT);
         if (someObject.text === undefined) {
           throw new Error('No text in object');
         }
@@ -113,7 +113,7 @@ export class FmtTextTokenFactory {
         return glueToken;
 
       case FmtTextTokenType.MARK:
-        let markToken = new FmtTextToken(FmtTextTokenType.MARK);
+        let markToken = new FmtTextTokenClass(FmtTextTokenType.MARK);
         if (someObject.markType === undefined) {
           throw new Error('No mark type in object');
         }

@@ -33,19 +33,17 @@ import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
 import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
 import {arraysAreEqual, numericSort, varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import {CtData} from '@/CtData/CtData';
-
-import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
-import {FmtTextTokenFactory} from '@/lib/FmtText/FmtTextTokenFactory';
 import {capitalizeFirstLetter, deepCopy, trimWhiteSpace} from '@/toolbox/Util';
 import {EditionMainTextEditor} from './EditionMainTextEditor';
-import {EditionWitnessTokenStringParser} from '../toolbox/EditionWitnessTokenStringParser.mjs';
+import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser';
 import {AsyncMyersDiff} from '@/toolbox/MyersDiff/AysncMyersDiff';
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark';
 import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle';
 import * as FmtTexTokenType from '@/lib/FmtText/FmtTextTokenType.js';
+import * as MarkType from '@/lib/FmtText/MarkType.js';
+
 import {WitnessToken} from '@/Witness/WitnessToken';
-import {FmtTextUtil} from '@/lib/FmtText/FmtTextUtil';
 import {CollapsePanel} from '@/widgets/CollapsePanel';
 import {EditionWitnessToken} from '@/Witness/EditionWitnessToken';
 import {MainText} from '@/Edition/MainText';
@@ -57,8 +55,12 @@ import {UiToolBox} from '@/toolbox/UiToolBox';
 import {SimpleProfiler} from '@/SimpleProfiler';
 import {ApparatusPanel} from "@/EditionComposer/ApparatusPanel";
 import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
-import {ADD, EditCommand, KEEP} from "@/toolbox/MyersDiff/MyersDiff";
-import {FmtTextTokenInterface} from "@/lib/FmtText/FmtTextToken";
+import {ADD, DEL, EditCommand, KEEP} from "@/toolbox/MyersDiff/MyersDiff";
+import {
+  FmtText, fmtTextFromString, getPlainText, newGlueToken, newMarkToken
+} from "@/lib/FmtText/FmtText";
+import {ApparatusEntry} from "@/Edition/ApparatusEntry";
+import {Apparatus} from "@/Edition/Apparatus";
 
 const EDIT_MODE_OFF = 'off';
 const EDIT_MODE_APPARATUS = 'apparatus';
@@ -97,9 +99,10 @@ interface MainTextPanelOptions extends PanelWithToolbarOptions {
 }
 
 interface ChangeInterface {
-  newToken: WitnessTokenInterface;
+  newToken?: WitnessTokenInterface;
   currentToken: WitnessTokenInterface | null;
   index: number;
+  index2?: number;
   change: string;
 }
 
@@ -108,13 +111,13 @@ export class MainTextPanel extends PanelWithToolbar {
   private options: MainTextPanelOptions;
   private ctData: CtDataInterface;
   private edition: Edition;
-  private lang: string;
+  private readonly lang: string;
   private mainTextNeedsToBeRedrawnOnNextOnShownEvent: boolean;
   private currentEditMode: string;
   private editingTextToken: boolean;
   private originalTokenText: string;
   private tokenBeingEdited: number;
-  private textTokenEditor: null;
+  private readonly textTokenEditor: any;
   private selection: { from: number; to: number };
   private selecting: boolean;
   private cursorInToken: boolean;
@@ -255,7 +258,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   }
 
-  generateToolbarHtml(_tabId: string, _mode: string,  _visible: boolean): string {
+  generateToolbarHtml(_tabId: string, _mode: string, _visible: boolean): string {
 
     let apparatusLinks = this.edition.apparatuses.map((app, index) => {
       return `<a class="dropdown-item add-entry-apparatus-${index}" href="">${capitalizeFirstLetter(app.type)}</a>`;
@@ -301,7 +304,7 @@ export class MainTextPanel extends PanelWithToolbar {
         </div>`;
   }
 
-  async generateContentHtml(_tabId: string, _mode: string,  visible: boolean) {
+  async generateContentHtml(_tabId: string, _mode: string, visible: boolean) {
     if (!visible) {
       // if (mode !== this.lastMode) {
       this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true;
@@ -434,9 +437,7 @@ export class MainTextPanel extends PanelWithToolbar {
       wrapButtonsInDiv: true,
       buttonsDivClass: 'panel-toolbar-item',
       buttonDef: [{label: 'Off', name: EDIT_MODE_OFF, helpText: 'Turn off editing'}, {
-        label: 'Apparatus',
-        name: EDIT_MODE_APPARATUS,
-        helpText: 'Add/Edit apparatus entries'
+        label: 'Apparatus', name: EDIT_MODE_APPARATUS, helpText: 'Add/Edit apparatus entries'
       }, {label: 'Text', name: EDIT_MODE_TEXT, helpText: 'Edit main text'}]
     });
     this.modeToggle.on('toggle', (ev: any) => {
@@ -651,39 +652,6 @@ export class MainTextPanel extends PanelWithToolbar {
     // console.log(`--- Now in text mode ---`)
   }
 
-  __getWitnessTokenHtml(token: WitnessTokenInterface, full = true) {
-    if (token === null || token === undefined || token.tokenType === WitnessTokenType.EMPTY) {
-      return '';
-    }
-
-    if (token.tokenType === WitnessTokenType.WHITESPACE) {
-      return ' ';
-    }
-    if (token.tokenType === WitnessTokenType.FORMAT_MARK) {
-        if (token.markType === EditionWitnessFormatMarkType.PARAGRAPH_END) {
-          let styleHtml = '';
-          if (token.style !== 'normal') {
-            styleHtml = `(${token.style})`;
-          }
-          let html = `<span class="format-mark"><i class="bi bi-paragraph"></i> ${styleHtml}</span>`;
-          if (full) {
-            html += "<br/>";
-          }
-          return html;
-        }
-    }
-
-    if (token.tokenType === WitnessTokenType.NUMBERING_LABEL) {
-      return `<span class='numbering-label'>${token.text}</span>`;
-    }
-
-
-    // if (token.fmtText !== undefined) {
-    //   return this.htmlRenderer.render(token.fmtText);
-    // }
-    return token.text;
-  }
-
   _genMainTextWithChanges(currentWitnessTokens: WitnessTokenInterface[], changeList: ChangeInterface[]) {
 
     const replaceSign = "<span class=replace-sign'>|</span>";
@@ -697,7 +665,7 @@ export class MainTextPanel extends PanelWithToolbar {
         console.warn(`Found a change before the first CT column that is not an addition`);
         console.log(change);
       } else {
-        html += `<span class='added'>${this.__getWitnessTokenHtml(change.newToken)}</span> `;
+        html += `<span class='added'>${this.getWitnessTokenHtml(change.newToken)}</span> `;
       }
     });
 
@@ -706,32 +674,35 @@ export class MainTextPanel extends PanelWithToolbar {
         return change.index === index;
       });
       if (changesForToken.length === 0) {
-        html += `${this.__getWitnessTokenHtml(token)} `;
+        html += `${this.getWitnessTokenHtml(token)} `;
       } else {
         if (changesForToken.filter((change) => {
           return change.change === 'replace' || change.change === 'delete';
         }).length === 0) {
           // the token is neither replaced nor deleted
-          html += `${this.__getWitnessTokenHtml(token)} `;
+          html += `${this.getWitnessTokenHtml(token)} `;
         }
 
         changesForToken.forEach((change) => {
           switch (change.change) {
             case 'replace':
+              if (change.newToken === undefined) {
+                throw new Error(`Found a replacement with a null or undefined new token`);
+              }
               if (token.text === change.newToken.text) {
                 // a change in format only
-                html += `<span class="replacement">${this.__getWitnessTokenHtml(change.newToken, false)}</span> `;
+                html += `<span class="replacement">${this.getWitnessTokenHtml(change.newToken, false)}</span> `;
               } else {
-                html += `<span class='replaced'>${this.__getWitnessTokenHtml(token)}</span>${replaceSign}<span class="replacement">${this.__getWitnessTokenHtml(change.newToken)}</span> `;
+                html += `<span class='replaced'>${this.getWitnessTokenHtml(token)}</span>${replaceSign}<span class="replacement">${this.getWitnessTokenHtml(change.newToken)}</span> `;
               }
               break;
 
             case 'delete':
-              html += `<span class='deleted'>${this.__getWitnessTokenHtml(token)}</span> `;
+              html += `<span class='deleted'>${this.getWitnessTokenHtml(token)}</span> `;
               break;
 
             case 'add':
-              html += `<span class='added'>${this.__getWitnessTokenHtml(change.newToken)}</span> `;
+              html += `<span class='added'>${this.getWitnessTokenHtml(change.newToken)}</span> `;
           }
         });
       }
@@ -745,7 +716,7 @@ export class MainTextPanel extends PanelWithToolbar {
       this.textEditCommitDiv.addClass('hidden');
       this.debug && console.log(`Changes in editor`);
 
-      let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens;
+      let currentWitnessTokens = this.ctData.witnesses[this.ctData.editionWitnessIndex].tokens;
       // this.debug && console.log(`Current witness tokens`)
       // this.debug && console.log(currentWitnessTokens)
 
@@ -782,16 +753,16 @@ export class MainTextPanel extends PanelWithToolbar {
         let changeListHtml = changes.map((change) => {
           switch (change.change) {
             case 'replace':
-              return `${change.index + 1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; ${this.__getWitnessTokenHtml(change.newToken)}`;
+              return `${change.index + 1}: ${this.getWitnessTokenHtml(change.currentToken)} &rarr; ${this.getWitnessTokenHtml(change.newToken)}`;
 
             case 'add':
               if (change.index === -1) {
-                return `0: <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`;
+                return `0: <em>add</em> ${this.getWitnessTokenHtml(change.newToken)}`;
               }
-              return ` ${change.index + 1}: ${this.__getWitnessTokenHtml(change.currentToken)} <em>add</em> ${this.__getWitnessTokenHtml(change.newToken)}`;
+              return ` ${change.index + 1}: ${this.getWitnessTokenHtml(change.currentToken)} <em>add</em> ${this.getWitnessTokenHtml(change.newToken)}`;
 
             case 'delete':
-              return `${change.index + 1}: ${this.__getWitnessTokenHtml(change.currentToken)} &rarr; <em>empty</em>`;
+              return `${change.index + 1}: ${this.getWitnessTokenHtml(change.currentToken)} &rarr; <em>empty</em>`;
           }
         }).map((changeHtml) => {
           return `<li>${changeHtml}</li>`;
@@ -873,7 +844,7 @@ export class MainTextPanel extends PanelWithToolbar {
       .filter((token: WitnessTokenInterface) => {
         return token.tokenType !== 'empty';
       });
-      let editScript = await this.__getEditScript(workingCurrentWitnessTokens, newWitnessTokens);
+      let editScript = await this.getEditScript(workingCurrentWitnessTokens, newWitnessTokens);
       if (editScript === null) {
         // aborted operation
         console.log('Aborted getEditScript');
@@ -911,16 +882,13 @@ export class MainTextPanel extends PanelWithToolbar {
       this.debug && console.log('New witness tokens');
       this.debug && console.log(newWitnessTokens);
       // TODO: show something if there are more than, say, 5 affected columns
-      this.updateEditionWitness(newWitnessTokens);
+      this.updateEditionWitness();
       console.log(`:::::: Finished processing on click TextEditCommitChanges`);
     };
   }
 
-  updateEditionWitness(newWitnessTokens) {
-
+  updateEditionWitness() {
     let p = new SimpleProfiler('>>>> updateEditionWitness');
-    let currentWitnessTokens = this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens;
-    // let changes = this._getChangesInTextEditor(currentWitnessTokens, newWitnessTokens)
     let changes = this.changes;
     // console.log(`Changes`)
     // console.log(changes)
@@ -929,15 +897,16 @@ export class MainTextPanel extends PanelWithToolbar {
       // console.log(`About to process change ${changeIndex}, ${columnsAdded} column(s) added`)
       switch (change.change) {
         case 'replace':
-          this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index + columnsAdded] = change.newToken;
+          if (change.newToken === undefined) {
+            throw new Error(`Found a replacement with a null or undefined new token`);
+          }
+          this.ctData.witnesses[this.ctData.editionWitnessIndex].tokens[change.index + columnsAdded] = change.newToken;
           break;
 
         case 'delete':
           // in the current schema, we just empty the token
-          this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index + columnsAdded] = {
-            tokenClass: 'edition',
-            tokenType: WitnessTokenType.EMPTY,
-            text: ""
+          this.ctData.witnesses[this.ctData.editionWitnessIndex].tokens[change.index + columnsAdded] = {
+            tokenClass: 'edition', tokenType: WitnessTokenType.EMPTY, text: ""
           };
           break;
 
@@ -948,6 +917,9 @@ export class MainTextPanel extends PanelWithToolbar {
           // console.log(`CtData after inserting 1 column`)
           // console.log(deepCopy(this.ctData))
           columnsAdded = columnsAdded + 1;
+          if (change.newToken === undefined) {
+            throw new Error(`Found an addition with an undefined new token`);
+          }
           this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index + columnsAdded] = deepCopy(change.newToken);
           break;
 
@@ -982,10 +954,10 @@ export class MainTextPanel extends PanelWithToolbar {
     debugStateMachine && console.log(`Get change list state machine`);
 
     let state = 0;
-    let changeList:ChangeInterface[] = [];
+    let changeList: ChangeInterface[] = [];
     let lastKeptOrReplaced = -1;
-    let deleteStack = [];
-    let addStack = [];
+    let deleteStack: number[] = [];
+    let addStack: number[] = [];
     let tokenMatchScorer = new TokenMatchScorer();
 
 
@@ -1016,7 +988,7 @@ export class MainTextPanel extends PanelWithToolbar {
               });
               break;
 
-            case AsyncMyersDiff.DEL:
+            case DEL:
               // need to wait for further ADDs and DELs
               debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`);
               debugStateMachine && console.log(`DEL command in edit script (state = 0)`);
@@ -1034,10 +1006,10 @@ export class MainTextPanel extends PanelWithToolbar {
 
         case 1: // waiting for ADDs and DELs to handle replacements
           switch (editScriptItem.command) {
-            case AsyncMyersDiff.KEEP:
+            case KEEP:
             case FAKE_END_COMMAND:
               debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`);
-              if (editScriptItem.command === AsyncMyersDiff.KEEP) {
+              if (editScriptItem.command === KEEP) {
                 debugStateMachine && console.log(`KEEP command in edit script (state = 1)`);
               } else {
                 debugStateMachine && console.log(`END command in state 1`);
@@ -1060,13 +1032,18 @@ export class MainTextPanel extends PanelWithToolbar {
                   // no match, just push a deletion to the changeList
                   debugStateMachine && console.log(`------ pushing a delete to change list`);
                   changeList.push({
-                    change: 'delete', index: oldTokens[deleteIndex].originalIndex, currentToken: oldTokens[deleteIndex]
+                    change: 'delete',
+                    index: oldTokens[deleteIndex].originalIndex ?? -1,
+                    currentToken: oldTokens[deleteIndex]
                   });
 
                 } else {
                   // push all adds before the best match to the change list
                   for (let j = 0; j < bestMatch; j++) {
                     let addIndex = addStack.shift();
+                    if (addIndex === undefined) {
+                      throw new Error(`Found undefined addIndex`);
+                    }
                     debugStateMachine && console.log(`------ pushing ADD ${j} to change list, addIndex ${addIndex}`);
                     changeList.push({
                       change: 'add',
@@ -1078,10 +1055,13 @@ export class MainTextPanel extends PanelWithToolbar {
                   }
                   // push a REPLACE command
                   let addIndex = addStack.shift();
+                  if (addIndex === undefined) {
+                    throw new Error(`Found undefined addIndex`);
+                  }
                   debugStateMachine && console.log(`------ pushing REPLACE to change list, deleteIndex ${deleteIndex}, addIndex ${addIndex}`);
                   changeList.push({
                     change: 'replace',
-                    index: oldTokens[deleteIndex].originalIndex,
+                    index: oldTokens[deleteIndex].originalIndex ?? -1,
                     currentToken: oldTokens[deleteIndex],
                     index2: addIndex,
                     newToken: newTokens[addIndex]
@@ -1105,14 +1085,14 @@ export class MainTextPanel extends PanelWithToolbar {
               });
               addStack = [];
               // now take care of the keep: just update the lastKeptOrReplaced index
-              if (editScriptItem.command === AsyncMyersDiff.KEEP) {
+              if (editScriptItem.command === KEEP) {
                 lastKeptOrReplaced = editScriptItem.index;
               }
               debugStateMachine && console.log(`-- State -> 0`);
               state = 0;
               break;
 
-            case AsyncMyersDiff.DEL:
+            case DEL:
               // push it to deleteStack
               debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`);
               debugStateMachine && console.log(`DEL command in edit script (state = 1)`);
@@ -1120,7 +1100,7 @@ export class MainTextPanel extends PanelWithToolbar {
               debugStateMachine && console.log(`-- adding index to the deleteStack, which now has ${deleteStack.length} items`);
               break;
 
-            case AsyncMyersDiff.ADD:
+            case ADD:
               // push it to addStack
               debugStateMachine && console.log(`ADD command in edit script (state = 1)`);
               addStack.push(editScriptItem.seq);
@@ -1138,7 +1118,7 @@ export class MainTextPanel extends PanelWithToolbar {
     // now fix the indexes to make them correspond to the original token array
     changeList = changeList.map((change) => {
       if (change.index !== -1) {
-        change.index = change.currentToken.originalIndex;
+        change.index = change.currentToken?.originalIndex ?? -1;
       }
       return change;
     });
@@ -1146,14 +1126,7 @@ export class MainTextPanel extends PanelWithToolbar {
     return changeList;
   }
 
-  /**
-   *
-   * @param oldTokens
-   * @param newTokens
-   * @return {Promise<EditCommand[]|null>}
-   * @private
-   */
-  async __getEditScript(oldTokens, newTokens) {
+  async getEditScript(oldTokens: WitnessTokenInterface[], newTokens: WitnessTokenInterface[]) {
     const attributesToCompare = ['fontWeight', 'fontStyle'];
     this.diffEngine.setDebugMode(true);
     let waitForEngine = false;
@@ -1187,7 +1160,7 @@ export class MainTextPanel extends PanelWithToolbar {
       });
     }
 
-    return await this.diffEngine.calculate(oldTokens, newTokens, function (a, b) {
+    return await this.diffEngine.calculate(oldTokens, newTokens, function (a: WitnessTokenInterface, b: WitnessTokenInterface) {
       if (a.tokenType !== b.tokenType) {
         return false;
       }
@@ -1197,6 +1170,12 @@ export class MainTextPanel extends PanelWithToolbar {
           return false;
         }
         if (a.style !== b.style) {
+          return false;
+        }
+        if (a.formats === undefined) {
+          return b.formats === undefined;
+        }
+        if (b.formats === undefined) {
           return false;
         }
         return arraysAreEqual(a.formats, b.formats);
@@ -1241,140 +1220,6 @@ export class MainTextPanel extends PanelWithToolbar {
     });
   }
 
-  /**
-   *
-   * @param {WitnessToken[]}tokens
-   * @return WitnessToken
-   * @private
-   */
-  __consolidateTokens(tokens) {
-    let theToken = new WitnessToken();
-    if (tokens.length === 0) {
-      return theToken;
-    }
-    let type = tokens[0].tokenType;
-    let newText = [];
-    tokens.forEach((t) => {
-      let tokenFmtText = t['fmtText'] !== undefined ? t['fmtText'] : FmtTextFactory.fromString(t.text);
-      newText = FmtTextUtil.concat(newText, tokenFmtText);
-    });
-
-    theToken.tokenType = type;
-    theToken.fmtText = newText;
-    theToken.text = FmtTextUtil.getPlainText(theToken.fmtText);
-
-    return theToken;
-  }
-
-  __fmtTextToEditionWitnessTokens(fmtText: FmtTextTokenInterface[]): WitnessToken[] {
-    const attributesToCopy = ['fontWeight', 'fontStyle'];
-    let witnessTokens: WitnessToken[] = [];
-    console.log(`Processing fmtText`);
-    console.log(fmtText);
-
-    // Get all tokens
-    fmtText.forEach((fmtTextToken) => {
-      if (fmtTextToken.type === FmtTexTokenType.GLUE) {
-        witnessTokens.push((new WitnessToken()).setWhitespace());
-        return;
-      }
-      if (fmtTextToken.type === FmtTexTokenType.MARK) {
-        // only paragraphs recognized for now
-        if (fmtTextToken.markType === 'par') {
-          let style = EditionWitnessParagraphStyle.NORMAL;
-          if (fmtTextToken.style !== '') {
-            // TODO: implement a style translator so that I can use different names in fmtText and in Edition
-            //  Witness Tokens
-            style = fmtTextToken.style || '';
-          }
-          witnessTokens.push((new EditionWitnessToken()).setParagraphEnd(style));
-        }
-        return;
-      }
-      // text
-      if (fmtTextToken.classList === 'numberingLabel') {
-        witnessTokens.push((new EditionWitnessToken()).setNumberingLabel(fmtTextToken?.text ?? ''));
-        return;
-      }
-      let methodDebug = false;
-
-
-      let tmpWitnessTokens = EditionWitnessTokenStringParser.parse(fmtTextToken?.text ?? '', this.edition.lang, this.detectNumberingLabels, this.detectIntraWordQuotationMarks)
-      .map((witnessToken) => {
-        witnessToken.fmtText = FmtTextFactory.fromString(witnessToken.text).map((token) => {
-          attributesToCopy.forEach((attribute) => {
-            // @ts-expect-error using string to access object properties
-            if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
-              // @ts-expect-error using string to access object properties
-              token[attribute] = fmtTextToken[attribute];
-            }
-          });
-          return token;
-        });
-        return witnessToken;
-      });
-      if (methodDebug && tmpWitnessTokens.length > 1) {
-        console.log(`Parser returned ${tmpWitnessTokens.length} tokens`);
-        console.log(tmpWitnessTokens);
-      }
-      witnessTokens.push(...tmpWitnessTokens);
-    });
-    // console.log(`Intermediate tokens, before consolidation`)
-    // console.log(witnessTokens)
-    // consolidate text tokens: change sequences of identically formatted word token into single tokens
-    let consolidatedWitnessTokens: WitnessToken[] = [];
-    let tokensToConsolidate: WitnessToken[] = [];
-    witnessTokens.forEach((token) => {
-      if (token.tokenType === WitnessTokenType.WORD && token.normalizationSource !== PARSER_NORMALIZER) {
-        tokensToConsolidate.push(token);
-      } else {
-        if (tokensToConsolidate.length > 0) {
-          // flush token heap
-          consolidatedWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate));
-          tokensToConsolidate = [];
-        }
-        consolidatedWitnessTokens.push(token);
-      }
-    });
-    if (tokensToConsolidate.length > 0) {
-      // flush token heap
-      consolidatedWitnessTokens.push(this.__consolidateTokens(tokensToConsolidate));
-    }
-    let tokensToReturn = consolidatedWitnessTokens.filter((token) => {
-      // filter out empty and whitespace tokens
-      return token.tokenType !== WitnessTokenType.EMPTY && token.tokenType !== WitnessTokenType.WHITESPACE;
-    }).map((token) => {
-      // make it an edition witness token
-      token.tokenClass = 'edition';
-      if (token.normalizationSource !== PARSER_NORMALIZER) {
-        // apply normalizations if the token has not been normalized by the parser already
-        token = this.options.editionWitnessTokenNormalizer(token);
-      } else {
-        // token is normalized already
-        // console.log(`Token normalized by parser`)
-        // console.log(token)
-      }
-
-      // simplify text: only include fmtText if there are formats
-      if (token.fmtText !== undefined && token.fmtText.length === 1) {
-        let hasFormats = false;
-        let fmtTextToken = token.fmtText[0];
-        attributesToCopy.forEach((attribute) => {
-          if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
-            hasFormats = true;
-          }
-        });
-        if (!hasFormats) {
-          delete token.fmtText;
-        }
-      }
-      return token;
-    });
-    console.log(`Done`);
-    return tokensToReturn;
-  }
-
-
   _getLemmaFromSelection() {
     if (this.isSelectionEmpty()) {
       return '';
@@ -1393,8 +1238,8 @@ export class MainTextPanel extends PanelWithToolbar {
     // return removeExtraWhiteSpace(lemma)
   }
 
-  _genOnClickAddEntryButton(appIndex) {
-    return (ev) => {
+  _genOnClickAddEntryButton(appIndex: number) {
+    return (ev: any) => {
       ev.preventDefault();
       ev.stopPropagation();
       if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
@@ -1452,7 +1297,7 @@ export class MainTextPanel extends PanelWithToolbar {
       let mainTextToken = this.edition.mainText[tokenIndex];
       element.popover('dispose').popover({
         content: () => {
-          return this.getApparatusPopoverContent(tokenIndex, entries);
+          return this.getApparatusPopoverContent(tokenIndex, entries as [number, number][]);
         }, html: true, placement: 'bottom', container: 'body', boundary: 'window', trigger: 'manual', title: () => {
           return `${mainTextToken.lineNumber}: ${mainTextToken.getPlainText()}`;
         }, customClass: `text-${this.edition.lang}`
@@ -1467,13 +1312,10 @@ export class MainTextPanel extends PanelWithToolbar {
    *
    * For example, the input array `[ [0,1], [0,4], [1, 0]]`
    * generates the output `[ [1,4], [0]]`
-   *
-   * @param {[]}entryIndices
-   * @returns {number[][]}
    * @private
    */
-  arrangeIndicesByApparatus(entryIndices) {
-    let indicesByApparatus = [];
+  arrangeIndicesByApparatus(entryIndices: [number, number][]) {
+    let indicesByApparatus: number[][] = [];
     entryIndices.forEach((duple) => {
       let [appIndex, entryIndex] = duple;
       if (indicesByApparatus[appIndex] === undefined) {
@@ -1491,7 +1333,7 @@ export class MainTextPanel extends PanelWithToolbar {
    * @return {string}
    * @private
    */
-  getApparatusPopoverContent(tokenIndex, entryIndices) {
+  getApparatusPopoverContent(tokenIndex: number, entryIndices: [number, number][]): string {
     if (entryIndices.length === 0) {
       return `No apparatus entries`;
     }
@@ -1499,7 +1341,7 @@ export class MainTextPanel extends PanelWithToolbar {
     let indicesByApparatus = this.arrangeIndicesByApparatus(entryIndices);
 
     // helper function
-    let getSubEntriesHtml = (entry) => {
+    let getSubEntriesHtml = (entry: ApparatusEntry) => {
       let html = '';
       entry.subEntries.forEach((subEntry) => {
         let disabledClass = subEntry.enabled ? '' : 'sub-entry-disabled';
@@ -1509,7 +1351,10 @@ export class MainTextPanel extends PanelWithToolbar {
     };
 
     // helper function
-    let getEntryHtml = (apparatus, entryIndex) => {
+    let getEntryHtml = (apparatus: Apparatus, entryIndex: number) => {
+      if (this.lastMainTextTypesettingInfo === null) {
+        throw new Error(`lastMainTextTypesettingInfo is null`);
+      }
       let entry = apparatus.entries[entryIndex];
       let lineNumberString = ApparatusCommon.getLineNumberString(entry, this.lastMainTextTypesettingInfo, this.edition.lang);
       let lemmaHtml = ApparatusCommon.getLemmaHtml(entry, this.lastMainTextTypesettingInfo, this.edition.lang);
@@ -1540,8 +1385,8 @@ export class MainTextPanel extends PanelWithToolbar {
    * @private
    * @return {number[]}
    */
-  getTokensWithApparatusEntry() {
-    let indices = [];
+  getTokensWithApparatusEntry(): number[] {
+    let indices: number[] = [];
     this.edition.apparatuses.forEach((app) => {
       app.entries.forEach((entry) => {
         for (let i = entry.from; i <= entry.to; i++) {
@@ -1555,7 +1400,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _genOnMouseDownMainTextDiv() {
-    return (ev) => {
+    return (ev: any) => {
       if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return;
       }
@@ -1567,7 +1412,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _genOnMouseUpMainTextDiv() {
-    return (ev) => {
+    return (ev: any) => {
       if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return;
       }
@@ -1584,9 +1429,8 @@ export class MainTextPanel extends PanelWithToolbar {
     };
   }
 
-
   _genOnClickMainTextDiv() {
-    return (ev) => {
+    return (ev: any) => {
       if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
         return;
       }
@@ -1597,14 +1441,14 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _genOnClickMainTextToken() {
-    return (ev) => {
+    return (ev: any) => {
       ev.stopPropagation();
     };
   }
 
   _genOnMouseDownMainTextToken() {
     // TODO: deal with right mouse click
-    return (ev) => {
+    return (ev: any) => {
       ev.preventDefault();
       ev.stopPropagation();
       if (this.editingTextToken) {
@@ -1628,10 +1472,13 @@ export class MainTextPanel extends PanelWithToolbar {
     };
   }
 
-  _stopEditingMainText(text) {
+  _stopEditingMainText(text: string) {
     if (this.editingTextToken) {
       this.verbose && console.log(`Stopping editing token ${this.tokenBeingEdited}`);
-      this.textTokenEditor.destroy();
+      if (this.textTokenEditor !== undefined && this.textTokenEditor !== null) {
+        this.textTokenEditor.destroy();
+      }
+
       let tokenSelector = `.main-text-token-${this.tokenBeingEdited}`;
       this.tokenBeingEdited = -1;
       this.originalTokenText = '__null__';
@@ -1683,16 +1530,15 @@ export class MainTextPanel extends PanelWithToolbar {
     this._processNewSelection();
   }
 
-
-  _setSelection(token1, token2) {
+  _setSelection(token1: number, token2: number) {
     this.selection = this._createSelection(token1, token2);
   }
 
-  _selectionsAreEqual(sel1, sel2) {
+  _selectionsAreEqual(sel1: any, sel2: any) {
     return sel1.from === sel2.from && sel1.to === sel2.to;
   }
 
-  _createSelection(token1, token2) {
+  _createSelection(token1: number, token2: number) {
     return {
       from: Math.min(token1, token2), to: Math.max(token1, token2)
     };
@@ -1723,7 +1569,7 @@ export class MainTextPanel extends PanelWithToolbar {
    * @param entryIndex
    * @param on
    */
-  hoverEntry(appIndex, entryIndex, on) {
+  hoverEntry(appIndex: number, entryIndex: number, on: boolean) {
     let textElements = $(`${this.containerSelector} .entry-index-${appIndex}-${entryIndex}`);
     if (on) {
       textElements.addClass('main-text-hover');
@@ -1739,7 +1585,7 @@ export class MainTextPanel extends PanelWithToolbar {
    * @param {boolean}on
    * @private
    */
-  hoverEntriesInApparatusPanels(eventTargetElement, on) {
+  hoverEntriesInApparatusPanels(eventTargetElement: JQuery, on: boolean) {
     let spanElement = UiToolBox.findAncestorWithTag(eventTargetElement, 'SPAN');
     if (spanElement === null) {
       console.warn(`Could not find span element for token`, eventTargetElement);
@@ -1750,7 +1596,7 @@ export class MainTextPanel extends PanelWithToolbar {
       if (entries.length === 0) {
         return;
       }
-      this.arrangeIndicesByApparatus(entries).forEach((entryIndices, appIndex) => {
+      this.arrangeIndicesByApparatus(entries as [number, number][]).forEach((entryIndices, appIndex) => {
         entryIndices.forEach((entryIndex) => {
           // console.log(`Hover app ${appIndex}, ${entryIndex}, ${on ? 'ON' : 'OFF'}`);
           this.options.apparatusPanels[appIndex].hoverEntry(entryIndex, on);
@@ -1759,7 +1605,7 @@ export class MainTextPanel extends PanelWithToolbar {
     }
   }
 
-  showElementPopover(element) {
+  showElementPopover(element: any) {
     if (this.popoversEnabled && !this.selecting) {
       element.popover('show');
     }
@@ -1767,7 +1613,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _genOnMouseEnterToken() {
 
-    return (ev) => {
+    return (ev: any) => {
       switch (this.currentEditMode) {
         case EDIT_MODE_OFF:
           this.hoverEntriesInApparatusPanels($(ev.target), true);
@@ -1799,7 +1645,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _genOnMouseLeaveToken() {
-    return (ev) => {
+    return (ev: any) => {
       switch (this.currentEditMode) {
         case EDIT_MODE_OFF:
           this.hoverEntriesInApparatusPanels($(ev.target), false);
@@ -1819,38 +1665,6 @@ export class MainTextPanel extends PanelWithToolbar {
     };
   }
 
-  /**
-   *
-   * @returns {(function(): void)|*}
-   * @private
-   */
-  _genOnMouseUpMainTexToken() {
-    return (ev) => {
-      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
-        return;
-      }
-      ev.preventDefault();
-      ev.stopPropagation();
-      if ($(ev.target).hasClass('whitespace')) {
-        return;
-      }
-      let tokenIndex = UiToolBox.getSingleIntIdFromAncestor('SPAN', $(ev.target), 'main-text-token-');
-      if (tokenIndex === -1) {
-        this.verbose && console.log(`Mouse up on a token -1`);
-        return;
-      }
-
-      this.tokenIndexTwo = tokenIndex;
-      if (!this._selectionsAreEqual(this.selection, this._createSelection(this.tokenIndexOne, this.tokenIndexTwo))) {
-        this._setSelection(this.tokenIndexOne, this.tokenIndexTwo);
-        this._showSelectionInBrowser();
-        this._processNewSelection();
-      }
-      this._stopSelecting();
-
-    };
-  }
-
   async _updateLineNumbersAndApparatuses() {
     await wait(typesetInfoDelay);
     this.lastMainTextTypesettingInfo = ApparatusCommon.getMainTextTypesettingInfo(this.containerSelector, 'main-text-token-', this.edition.mainText);
@@ -1859,7 +1673,6 @@ export class MainTextPanel extends PanelWithToolbar {
       p.updateApparatus(this.lastMainTextTypesettingInfo);
     });
   }
-
 
   _generateMainTextHtml() {
     switch (this.currentEditMode) {
@@ -1873,36 +1686,6 @@ export class MainTextPanel extends PanelWithToolbar {
       default:
         return `Error: unknown edit mode: ${this.currentEditMode}`;
     }
-  }
-
-  /**
-   *
-   * @return {[]}
-   * @private
-   */
-  _convertMainTextToFmtText() {
-    // this.debug && console.log(`Converting Main Text to Fmt Text`)
-    // this.debug && console.log( this.edition.mainText)
-    let tokens = this.edition.mainText.map((token) => {
-      switch (token.type) {
-        case EditionMainTextTokenType.GLUE:
-          return FmtTextTokenFactory.normalSpace();
-
-        case EditionMainTextTokenType.NUMBERING_LABEL:
-          return token.fmtText[0].setClass(numberingLabelFmtTextClass);
-
-        case EditionMainTextTokenType.TEXT:
-          return token.fmtText;
-
-
-        case EditionMainTextTokenType.PARAGRAPH_END:
-          return FmtTextTokenFactory.paragraphMark(token.style);
-
-        default:
-          return [];
-      }
-    });
-    return FmtTextFactory.fromAnything(tokens);
   }
 
   _getMainTextBetaEditor() {
@@ -1947,7 +1730,7 @@ export class MainTextPanel extends PanelWithToolbar {
 
   }
 
-  _drawLineNumbers(mainTextTokensWithTypesettingInfo) {
+  _drawLineNumbers(mainTextTokensWithTypesettingInfo: MainTextTypesettingInfo) {
 
     let lineFrequency = 5;
     let mainTexDiv = $(`${this.containerSelector} .main-text`);
@@ -1959,7 +1742,8 @@ export class MainTextPanel extends PanelWithToolbar {
     // TODO: find this programmatically
     let mainTextFontSize = 18;
 
-    let offsetY = mainTexDiv.offset().top;
+
+    let offsetY = mainTexDiv.offset()?.top ?? -1;
     let margin = this.lang === 'la' ? 'left' : 'right';
     let posX = margin === 'left' ? 50 : 50;
     let lineNumberOverlays = mainTextTokensWithTypesettingInfo.lineMap
@@ -1984,5 +1768,233 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
 
     $('#main-text-line-numbers').remove();
     mainTexDiv.append(`<div id="main-text-line-numbers">${lineNumberOverlays}</div>`);
+  }
+
+  private getWitnessTokenHtml(token: WitnessTokenInterface | undefined | null, full = true) {
+    if (token === null || token === undefined || token.tokenType === WitnessTokenType.EMPTY) {
+      return '';
+    }
+
+    if (token.tokenType === WitnessTokenType.WHITESPACE) {
+      return ' ';
+    }
+    if (token.tokenType === WitnessTokenType.FORMAT_MARK) {
+      if (token.markType === EditionWitnessFormatMarkType.PARAGRAPH_END) {
+        let styleHtml = '';
+        if (token.style !== 'normal') {
+          styleHtml = `(${token.style})`;
+        }
+        let html = `<span class="format-mark"><i class="bi bi-paragraph"></i> ${styleHtml}</span>`;
+        if (full) {
+          html += "<br/>";
+        }
+        return html;
+      }
+    }
+
+    if (token.tokenType === WitnessTokenType.NUMBERING_LABEL) {
+      return `<span class='numbering-label'>${token.text}</span>`;
+    }
+
+
+    // if (token.fmtText !== undefined) {
+    //   return this.htmlRenderer.render(token.fmtText);
+    // }
+    return token.text;
+  }
+
+  private consolidateTokens(tokens: WitnessTokenInterface[]) {
+    let theToken = new WitnessToken();
+    if (tokens.length === 0) {
+      return theToken;
+    }
+    let type = tokens[0].tokenType;
+    let newText: FmtText = [];
+    tokens.forEach((t) => {
+      const tokenFmtText = t.fmtText ?? fmtTextFromString(t.text);
+      newText.push(...tokenFmtText);
+    });
+
+    theToken.tokenType = type;
+    theToken.fmtText = newText;
+    theToken.text = getPlainText(newText);
+
+    return theToken;
+  }
+
+  private __fmtTextToEditionWitnessTokens(fmtText: FmtText): WitnessToken[] {
+    const attributesToCopy = ['fontWeight', 'fontStyle'];
+    let witnessTokens: WitnessToken[] = [];
+    console.log(`Processing fmtText`);
+    console.log(fmtText);
+
+    // Get all tokens
+    fmtText.forEach((fmtTextToken) => {
+      if (fmtTextToken.type === 'empty') {
+        return;
+      }
+      if (fmtTextToken.type === FmtTexTokenType.GLUE) {
+        witnessTokens.push((new WitnessToken()).setWhitespace());
+        return;
+      }
+      if (fmtTextToken.type === FmtTexTokenType.MARK) {
+        // only paragraphs recognized for now
+        if (fmtTextToken.markType === 'par') {
+          let style = EditionWitnessParagraphStyle.NORMAL;
+          if (fmtTextToken.style !== '') {
+            // TODO: implement a style translator so that I can use different names in fmtText and in Edition
+            //  Witness Tokens
+            style = fmtTextToken.style || '';
+          }
+          witnessTokens.push((new EditionWitnessToken()).setParagraphEnd(style));
+        }
+        return;
+      }
+      // text
+      if (fmtTextToken.classList === 'numberingLabel') {
+        witnessTokens.push((new EditionWitnessToken()).setNumberingLabel(fmtTextToken?.text ?? ''));
+        return;
+      }
+      let methodDebug = false;
+
+
+      let tmpWitnessTokens = EditionWitnessTokenStringParser.parse(fmtTextToken?.text ?? '', this.edition.lang, this.detectNumberingLabels, this.detectIntraWordQuotationMarks)
+      .map((witnessToken) => {
+        witnessToken.fmtText = fmtTextFromString(witnessToken.text).map((token) => {
+          attributesToCopy.forEach((attribute) => {
+            // @ts-expect-error using string to access object properties
+            if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
+              // @ts-expect-error using string to access object properties
+              token[attribute] = fmtTextToken[attribute];
+            }
+          });
+          return token;
+        });
+        return witnessToken;
+      });
+      if (methodDebug && tmpWitnessTokens.length > 1) {
+        console.log(`Parser returned ${tmpWitnessTokens.length} tokens`);
+        console.log(tmpWitnessTokens);
+      }
+      witnessTokens.push(...tmpWitnessTokens);
+    });
+    // console.log(`Intermediate tokens, before consolidation`)
+    // console.log(witnessTokens)
+    // consolidate text tokens: change sequences of identically formatted word token into single tokens
+    let consolidatedWitnessTokens: WitnessToken[] = [];
+    let tokensToConsolidate: WitnessToken[] = [];
+    witnessTokens.forEach((token) => {
+      if (token.tokenType === WitnessTokenType.WORD && token.normalizationSource !== PARSER_NORMALIZER) {
+        tokensToConsolidate.push(token);
+      } else {
+        if (tokensToConsolidate.length > 0) {
+          // flush token heap
+          consolidatedWitnessTokens.push(this.consolidateTokens(tokensToConsolidate));
+          tokensToConsolidate = [];
+        }
+        consolidatedWitnessTokens.push(token);
+      }
+    });
+    if (tokensToConsolidate.length > 0) {
+      // flush token heap
+      consolidatedWitnessTokens.push(this.consolidateTokens(tokensToConsolidate));
+    }
+    let tokensToReturn = consolidatedWitnessTokens.filter((token) => {
+      // filter out empty and whitespace tokens
+      return token.tokenType !== WitnessTokenType.EMPTY && token.tokenType !== WitnessTokenType.WHITESPACE;
+    }).map((token) => {
+      // make it an edition witness token
+      token.tokenClass = 'edition';
+      if (token.normalizationSource !== PARSER_NORMALIZER) {
+        // apply normalizations if the token has not been normalized by the parser already
+        token = this.options.editionWitnessTokenNormalizer(token);
+      } else {
+        // token is normalized already
+        // console.log(`Token normalized by parser`)
+        // console.log(token)
+      }
+
+      // simplify text: only include fmtText if there are formats
+      if (token.fmtText !== undefined && token.fmtText.length === 1) {
+        let hasFormats = false;
+        let fmtTextToken = token.fmtText[0];
+        attributesToCopy.forEach((attribute) => {
+          // @ts-expect-error using string to access object properties
+          if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
+            hasFormats = true;
+          }
+        });
+        if (!hasFormats) {
+          delete token.fmtText;
+        }
+      }
+      return token;
+    });
+    console.log(`Done`);
+    return tokensToReturn;
+  }
+
+  /**
+   *
+   * @private
+   */
+  private _genOnMouseUpMainTexToken() {
+    return (ev: any) => {
+      if (this.currentEditMode !== EDIT_MODE_APPARATUS) {
+        return;
+      }
+      ev.preventDefault();
+      ev.stopPropagation();
+      if ($(ev.target).hasClass('whitespace')) {
+        return;
+      }
+      let tokenIndex = UiToolBox.getSingleIntIdFromAncestor('SPAN', $(ev.target), 'main-text-token-');
+      if (tokenIndex === -1) {
+        this.verbose && console.log(`Mouse up on a token -1`);
+        return;
+      }
+
+      this.tokenIndexTwo = tokenIndex;
+      if (!this._selectionsAreEqual(this.selection, this._createSelection(this.tokenIndexOne, this.tokenIndexTwo))) {
+        this._setSelection(this.tokenIndexOne, this.tokenIndexTwo);
+        this._showSelectionInBrowser();
+        this._processNewSelection();
+      }
+      this._stopSelecting();
+
+    };
+  }
+
+  private _convertMainTextToFmtText(): FmtText {
+    // this.debug && console.log(`Converting Main Text to Fmt Text`)
+    // this.debug && console.log( this.edition.mainText)
+    const fmtText: FmtText = [];
+
+    this.edition.mainText.forEach((token) => {
+      switch (token.type) {
+        case EditionMainTextTokenType.GLUE:
+          fmtText.push(newGlueToken());
+          break;
+
+        case EditionMainTextTokenType.NUMBERING_LABEL:
+          fmtText.push(...token.fmtText.map((t) => {
+            if (t.type === 'text') {
+              t.classList = numberingLabelFmtTextClass;
+            } else {
+              console.warn(`Unexpected main text token type ${t.type} converting numbering label  to FmtText`);
+            }
+            return t;
+          }));
+          break;
+
+        case EditionMainTextTokenType.TEXT:
+          fmtText.push(...token.fmtText);
+          break;
+
+        case EditionMainTextTokenType.PARAGRAPH_END:
+          fmtText.push(newMarkToken(MarkType.PARAGRAPH, token.style));
+      }
+    });
+    return fmtText;
   }
 }

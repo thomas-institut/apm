@@ -21,7 +21,7 @@ export const ADD = 1;
 export const DEL = -1;
 
 
-export type ArrayEqualityFunction = (a: any[], b: any[]) => boolean;
+export type ArrayEqualityFunction = (a: any, b: any) => boolean;
 
 export type V_Type = {
   [key: number]: number

@@ -869,7 +869,7 @@ export class WitnessInfoPanel extends Panel {
       let classes = getClassArrayFromJQueryObject($(ev.currentTarget.parentNode));
 
       let position = this.getWitnessPositionFromClasses(classes);
-      let numWitnesses = this.ctData['witnesses'].length;
+      // let numWitnesses = this.ctData['witnesses'].length;
       console.log('Click move ' + direction + ' button on witness, position ' + position);
 
       const collatedWitnessPositions: number[] = [];

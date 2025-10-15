@@ -384,10 +384,11 @@ export class EditionComposer extends ApmPage {
       containerSelector: `#${adminPanelTabId}`,
       versionInfo: this.versionInfo,
       peopleInfo: this.options.peopleInfo,
-      ctType: this.ctData['type'],
-      archived: this.ctData['archived'],
+      ctType: this.ctData.type,
+      archived: this.ctData.archived,
       canArchive: true,
-      onConfirmArchive: this.genOnConfirmArchive()
+      onConfirmArchive: this.genOnConfirmArchive(),
+      cannotArchiveReason: ''
     });
 
 

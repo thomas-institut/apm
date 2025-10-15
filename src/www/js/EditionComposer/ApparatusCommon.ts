@@ -17,25 +17,27 @@
  */
 
 
-import { TypesetterTokenFactory } from '@/Typesetter/TypesetterTokenFactory'
-import * as ApparatusSubEntryType from '../Edition/SubEntryType'
-import { NumeralStyles } from '@/toolbox/NumeralStyles'
-import { FmtTextUtil } from '@/lib/FmtText/FmtTextUtil'
-import { TypesetterTokenRenderer } from '@/lib/FmtText/Renderer/TypesetterTokenRenderer'
-import { pushArray } from '@/lib/ToolBox/ArrayUtil'
-import { HtmlRenderer } from '@/lib/FmtText/Renderer/HtmlRenderer'
-import { FmtTextFactory} from '@/lib/FmtText/FmtTextFactory'
-import { escapeHtml } from '@/toolbox/Util'
-import { ApparatusUtil } from '@/Edition/ApparatusUtil'
-import * as MainTextTokenType from '@/Edition/MainTextTokenType'
-import { StringCounter } from '@/toolbox/StringCounter'
+import {TypesetterTokenFactory} from '@/Typesetter/TypesetterTokenFactory';
+import * as ApparatusSubEntryType from '../Edition/SubEntryType';
+import {NumeralStyles} from '@/toolbox/NumeralStyles';
+import {TypesetterTokenRenderer} from '@/lib/FmtText/Renderer/TypesetterTokenRenderer';
+import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
+import {escapeHtml} from '@/toolbox/Util';
+import {ApparatusUtil} from '@/Edition/ApparatusUtil';
+import * as MainTextTokenType from '@/Edition/MainTextTokenType';
+import {StringCounter} from '@/toolbox/StringCounter';
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {TypesetterToken} from "@/Typesetter/TypesetterToken";
-import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
+import {
+  CompactFmtText, fromCompact,
+  fmtTextFromString,
+  getPlainText
+} from "@/lib/FmtText/FmtText.js";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
+import {ITALIC} from "@/lib/FmtText/FontStyle";
 
 
 export interface MainTextTypesettingInfo {
@@ -44,7 +46,7 @@ export interface MainTextTypesettingInfo {
   lineMap: PositionToLineMapEntry[],
 }
 
-export interface PositionToLineMapEntry   {
+export interface PositionToLineMapEntry {
   pY: number,
   line: number,
 }
@@ -53,32 +55,21 @@ export interface PositionToLineMapEntry   {
 
 const latinStyle = {
   strings: {
-    omission: 'om.',
-    addition: 'add.',
-    ante: 'ante',
-    post: 'post'
+    omission: 'om.', addition: 'add.', ante: 'ante', post: 'post'
   }
-}
+};
 
 const arabicStyle = {
-  smallFontFactor: 0.8,
-  strings : {
-    omission: 'نقص',
-    addition: 'ز',
-    ante: 'قبل',
-    post: 'بعد'
+  smallFontFactor: 0.8, strings: {
+    omission: 'نقص', addition: 'ز', ante: 'قبل', post: 'بعد'
   }
-}
+};
 
 const hebrewStyle = {
-  smallFontFactor: 0.8,
-  strings : {
-    omission: 'חסר',
-    addition: 'נוסף',
-    ante: 'לפני',
-    post: 'אחרי'
+  smallFontFactor: 0.8, strings: {
+    omission: 'חסר', addition: 'נוסף', ante: 'לפני', post: 'אחרי'
   }
-}
+};
 
 /**
  * Static methods for typesetting an apparatus in the browser
@@ -95,85 +86,87 @@ export class ApparatusCommon {
    * @return {string}
    */
   static genSubEntryHtmlContent(style: string, subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[] = [], fullSiglaInBrackets = false): string {
-    switch(style) {
+    switch (style) {
       case 'la':
-        return this.genSubEntryHtmlContentLatin(subEntry, sigla, siglaGroups, fullSiglaInBrackets)
+        return this.genSubEntryHtmlContentLatin(subEntry, sigla, siglaGroups, fullSiglaInBrackets);
 
       case 'ar':
-        return this.genSubEntryHtmlContentArabic(subEntry, sigla, siglaGroups, fullSiglaInBrackets)
+        return this.genSubEntryHtmlContentArabic(subEntry, sigla, siglaGroups, fullSiglaInBrackets);
 
       case 'he':
-        return this.genSubEntryHtmlContentHebrew(subEntry, sigla, siglaGroups, fullSiglaInBrackets)
+        return this.genSubEntryHtmlContentHebrew(subEntry, sigla, siglaGroups, fullSiglaInBrackets);
 
       default:
-        console.warn(`Unsupported style/language ${style}`)
-        return '---'
+        console.warn(`Unsupported style/language ${style}`);
+        return '---';
     }
   }
 
   static typesetSubEntryHebrew(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
 
-    let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
-    let theTokens: TypesetterToken[] = []
+    let theTextTokens = (new TypesetterTokenRenderer()).render(fmtTextFromString(theText));
+    let theTokens: TypesetterToken[] = [];
 
-    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'he' ).map ( (t) => { return t.setBold()})
+    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'he').map((t) => {
+      return t.setBold();
+    });
     // console.log(`Sigla tokens: `)
     // console.log(siglaTokens)
 
-    switch(subEntryType) {
+    switch (subEntryType) {
       case ApparatusSubEntryType.VARIANT:
-        pushArray(theTokens, theTextTokens)
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, siglaTokens)
-        return theTokens
+        theTokens.push(...theTextTokens);
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTextTokens.push(...siglaTokens);
+        return theTokens;
 
       case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission, 'he').setFontSize(hebrewStyle.smallFontFactor))
-        theTokens.push( TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, siglaTokens)
-        return theTokens
+        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission, 'he').setFontSize(hebrewStyle.smallFontFactor));
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTextTokens.push(...siglaTokens);
+        return theTokens;
 
       case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.addition, 'he').setFontSize(hebrewStyle.smallFontFactor))
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, theTextTokens)
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, siglaTokens)
-        return theTokens
+        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.addition, 'he').setFontSize(hebrewStyle.smallFontFactor));
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...theTextTokens);
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTextTokens.push(...siglaTokens);
+        return theTokens;
 
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        return theTextTokens
+        return theTextTokens;
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${subEntryType}`)
-        return []
+        console.warn(`Unsupported apparatus entry type: ${subEntryType}`);
+        return [];
     }
   }
 
   static getKeywordString(keyword: string, lang: string): string {
-    let stringsObject = {}
-    switch(lang) {
+    let stringsObject = {};
+    switch (lang) {
       case 'la':
-        stringsObject = latinStyle.strings
-        break
+        stringsObject = latinStyle.strings;
+        break;
 
       case 'ar':
-        stringsObject = arabicStyle.strings
-        break
+        stringsObject = arabicStyle.strings;
+        break;
 
       case 'he':
-        stringsObject = hebrewStyle.strings
-        break
+        stringsObject = hebrewStyle.strings;
+        break;
     }
 
     // @ts-expect-error Using array access
     if (stringsObject[keyword] !== undefined) {
       // @ts-expect-error Using array access
-      return stringsObject[keyword]
+      return stringsObject[keyword];
     }
-    return keyword
+    return keyword;
   }
 
   /**
@@ -185,40 +178,58 @@ export class ApparatusCommon {
    * @param {string}lang
    * @return {TypesetterToken}
    */
-  static getKeywordTypesetterTokens(keyword: FmtTextToken[] | string, lang: string): TypesetterToken[] {
-    keyword = FmtTextUtil.getPlainText(keyword)
-    let keywordString = this.getKeywordString(keyword, lang)
-    let fmtText = FmtTextFactory.fromAnything(keywordString)
-    switch(lang) {
+  static getKeywordTypesetterTokens(keyword: CompactFmtText, lang: string): TypesetterToken[] {
+    keyword = getPlainText(fromCompact(keyword));
+    let keywordString = this.getKeywordString(keyword, lang);
+    let fmtText = fmtTextFromString(keywordString);
+    switch (lang) {
       case 'he':
-        fmtText = fmtText.map( (token) => { return token.setFontSize(hebrewStyle.smallFontFactor)})
-        break
+        fmtText = fmtText.map((token) => {
+          if (token.type !== 'text') {
+            return token;
+          }
+          token.fontSize = hebrewStyle.smallFontFactor;
+          return token;
+        });
+        break;
 
       case 'ar':
-        fmtText = fmtText.map( (token) => { return token.setFontSize(arabicStyle.smallFontFactor)})
-        //token.setFontSize(arabicStyle.smallFontFactor)
-        break
+
+        fmtText = fmtText.map((token) => {
+          if (token.type !== 'text') {
+            return token;
+          }
+          token.fontSize = arabicStyle.smallFontFactor;
+          return token;
+        });
+        break;
 
       default:
-        fmtText = fmtText.map( (token) => { return token.setItalic()})
+        fmtText = fmtText.map((token) => {
+          if (token.type !== 'text') {
+            return token;
+          }
+          token.fontStyle = ITALIC;
+          return token;
+        });
     }
-    return (new TypesetterTokenRenderer()).render(fmtText)
+    return (new TypesetterTokenRenderer()).render(fmtText);
   }
 
   static getKeywordHtml(keyword: string, lang: string) {
-    let keywordString = this.getKeywordString(keyword, lang)
-    switch(lang) {
+    let keywordString = this.getKeywordString(keyword, lang);
+    switch (lang) {
       case 'ar':
       case 'he':
-        return `<small>${keywordString}</small>`
+        return `<small>${keywordString}</small>`;
 
       default:
-        return `<i>${keywordString}</i>`
+        return `<i>${keywordString}</i>`;
     }
   }
 
   static getForcedTextDirectionSpace(textDirection: string) {
-    return `<span class="force-${textDirection}">&nbsp;</span>`
+    return `<span class="force-${textDirection}">&nbsp;</span>`;
   }
 
   /**
@@ -230,75 +241,75 @@ export class ApparatusCommon {
    * @return {string}
    */
   static genSubEntryHtmlContentHebrew(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean): string {
-    let entryType = subEntry.type
-    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
-    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'he', siglaGroups, fullSiglaInBrackets)
-    let textDirection = 'rtl'
-    switch(entryType) {
+    let entryType = subEntry.type;
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText);
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'he', siglaGroups, fullSiglaInBrackets);
+    let textDirection = 'rtl';
+    switch (entryType) {
       case ApparatusSubEntryType.VARIANT:
-        return `${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
+        return `${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`;
 
       case ApparatusSubEntryType.OMISSION:
-        return `${this.getKeywordHtml('omission', 'he')}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
+        return `${this.getKeywordHtml('omission', 'he')}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`;
 
       case ApparatusSubEntryType.ADDITION:
-        return `${this.getKeywordHtml('addition', 'he')} ${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`
+        return `${this.getKeywordHtml('addition', 'he')} ${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`;
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        let keywordHtml = ''
+        let keywordHtml = '';
         switch (subEntry.keyword) {
           case 'omission':
           case 'addition':
-            keywordHtml= `${this.getKeywordHtml(subEntry.keyword, 'he')} `
+            keywordHtml = `${this.getKeywordHtml(subEntry.keyword, 'he')} `;
         }
-        let siglaHtml = ''
+        let siglaHtml = '';
         if (siglaString !== '') {
-          siglaHtml = `${this.getForcedTextDirectionSpace(textDirection)}<span class="force-rtl"><b>${siglaString}</b></span>`
+          siglaHtml = `${this.getForcedTextDirectionSpace(textDirection)}<span class="force-rtl"><b>${siglaString}</b></span>`;
         }
-        return `${keywordHtml}${theText}${siglaHtml}`
+        return `${keywordHtml}${theText}${siglaHtml}`;
 
       case ApparatusSubEntryType.AUTO_FOLIATION:
         return `${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`;
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${entryType}`)
-        return '???'
+        console.warn(`Unsupported apparatus entry type: ${entryType}`);
+        return '???';
     }
   }
 
   static typesetSubEntryArabic(entryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
 
-    let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
-    let theTokens: TypesetterToken[] = []
-    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla,siglaGroups, 'ar' )
-    switch(entryType) {
+    let theTextTokens = (new TypesetterTokenRenderer()).render(fmtTextFromString(theText));
+    let theTokens: TypesetterToken[] = [];
+    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'ar');
+    switch (entryType) {
       case ApparatusSubEntryType.VARIANT:
-        pushArray(theTokens, theTextTokens)
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, siglaTokens)
-        return theTokens
+        theTokens.push(...theTextTokens);
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...siglaTokens);
+        return theTokens;
 
       case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.omission, 'ar').setFontSize(arabicStyle.smallFontFactor))
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, siglaTokens)
-        return theTokens
+        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.omission, 'ar').setFontSize(arabicStyle.smallFontFactor));
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...siglaTokens);
+        return theTokens;
 
       case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.addition, 'ar').setFontSize(arabicStyle.smallFontFactor))
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, theTextTokens)
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, siglaTokens)
-        return theTokens
+        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.addition, 'ar').setFontSize(arabicStyle.smallFontFactor));
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...theTextTokens);
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...siglaTokens);
+        return theTokens;
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        return  theTextTokens
+        return theTextTokens;
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${entryType}`)
-        return []
+        console.warn(`Unsupported apparatus entry type: ${entryType}`);
+        return [];
     }
   }
 
@@ -311,134 +322,136 @@ export class ApparatusCommon {
    * @return {string}
    */
   static genSubEntryHtmlContentArabic(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean): string {
-    let entryType = subEntry.type
-    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
-    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla,  'ar', siglaGroups, fullSiglaInBrackets)
-    let textDirection = 'rtl'
-    switch(entryType) {
+    let entryType = subEntry.type;
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText);
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'ar', siglaGroups, fullSiglaInBrackets);
+    let textDirection = 'rtl';
+    switch (entryType) {
       case ApparatusSubEntryType.VARIANT:
-        return `${theText} ${siglaString}`
+        return `${theText} ${siglaString}`;
 
       case ApparatusSubEntryType.OMISSION:
-        return `<small>${arabicStyle.strings.omission}</small> ${siglaString}`
+        return `<small>${arabicStyle.strings.omission}</small> ${siglaString}`;
 
       case ApparatusSubEntryType.ADDITION:
-        return `<small>${arabicStyle.strings.addition}</small> ${theText} ${siglaString}`
+        return `<small>${arabicStyle.strings.addition}</small> ${theText} ${siglaString}`;
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        let keywordHtml = ''
+        let keywordHtml = '';
         switch (subEntry.keyword) {
           case 'omission':
           case 'addition':
-            keywordHtml= `${this.getKeywordHtml(subEntry.keyword, 'ar')} `
+            keywordHtml = `${this.getKeywordHtml(subEntry.keyword, 'ar')} `;
         }
-        let siglaHtml = ''
+        let siglaHtml = '';
         if (siglaString !== '') {
-          siglaHtml = `${this.getForcedTextDirectionSpace(textDirection)}<span class="force-rtl">${siglaString}</span>`
+          siglaHtml = `${this.getForcedTextDirectionSpace(textDirection)}<span class="force-rtl">${siglaString}</span>`;
         }
-        return `${keywordHtml}${theText}${siglaHtml}`
+        return `${keywordHtml}${theText}${siglaHtml}`;
 
       case ApparatusSubEntryType.AUTO_FOLIATION:
         return `${theText}${this.getForcedTextDirectionSpace(textDirection)}<b>${siglaString}</b>`;
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${entryType}`)
-        return '???'
+        console.warn(`Unsupported apparatus entry type: ${entryType}`);
+        return '???';
     }
   }
 
-  static _getSiglaTypesetterTokens(witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[], lang: string) : TypesetterToken[] {
+  static _getSiglaTypesetterTokens(witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[], lang: string): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
-    let witnessData = witnessIndices.map ( (i) => {
-      return new WitnessDataItem().setWitnessIndex(i).setHand(0)
-      })
-    let filledUpWitnessData = ApparatusUtil.getSiglaData(witnessData, sigla, siglaGroups)
+    let witnessData = witnessIndices.map((i) => {
+      return new WitnessDataItem().setWitnessIndex(i).setHand(0);
+    });
+    let filledUpWitnessData = ApparatusUtil.getSiglaData(witnessData, sigla, siglaGroups);
 
     // TODO: support hands:
-    let siglaString = filledUpWitnessData.map( (w) => { return w.siglum}).join('')
-    return [ TypesetterTokenFactory.simpleText(siglaString, lang) ]
+    let siglaString = filledUpWitnessData.map((w) => {
+      return w.siglum;
+    }).join('');
+    return [TypesetterTokenFactory.simpleText(siglaString, lang)];
   }
 
 
-  static typesetSubEntryLatin(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[] ): TypesetterToken[] {
+  static typesetSubEntryLatin(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     // let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
     // convert the text tokens to proper typesetter tokens
-    let theTextTokens = (new TypesetterTokenRenderer()).render(FmtTextFactory.fromAnything(theText))
+    let theTextTokens = (new TypesetterTokenRenderer()).render(fmtTextFromString(theText));
 
-    let theTokens: TypesetterToken[] = []
-    switch(subEntryType) {
+    let theTokens: TypesetterToken[] = [];
+    switch (subEntryType) {
       case ApparatusSubEntryType.VARIANT:
-        pushArray(theTokens, theTextTokens)
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'))
-        return theTokens
+        theTokens.push(...theTextTokens);
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
+        return theTokens;
 
       case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.omission).setItalic())
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'))
-        return theTokens
+        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.omission).setItalic());
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
+        return theTokens;
 
       case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.addition).setItalic())
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, theTextTokens)
-        theTokens.push(TypesetterTokenFactory.normalSpace())
-        pushArray(theTokens, this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'))
-        return theTokens
+        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.addition).setItalic());
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...theTextTokens);
+        theTokens.push(TypesetterTokenFactory.normalSpace());
+        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
+        return theTokens;
 
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        return theTextTokens
+        return theTextTokens;
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${subEntryType}`)
-        return []
+        console.warn(`Unsupported apparatus entry type: ${subEntryType}`);
+        return [];
     }
   }
 
   static genSubEntryHtmlContentLatin(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean) {
-    let entryType = subEntry.type
+    let entryType = subEntry.type;
 
-    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText)
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText);
 
-    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'la', siglaGroups, fullSiglaInBrackets)
-    switch(entryType) {
+    let siglaString = this._genSiglaHtmlFromWitnessData(subEntry, sigla, 'la', siglaGroups, fullSiglaInBrackets);
+    switch (entryType) {
       case ApparatusSubEntryType.VARIANT:
-        return `${theText} ${siglaString}`
+        return `${theText} ${siglaString}`;
 
       case ApparatusSubEntryType.OMISSION:
-        return `<i>${latinStyle.strings.omission}</i> ${siglaString}`
+        return `<i>${latinStyle.strings.omission}</i> ${siglaString}`;
 
       case ApparatusSubEntryType.ADDITION:
-        return `<i>${latinStyle.strings.addition}</i> ${theText} ${siglaString}`
+        return `<i>${latinStyle.strings.addition}</i> ${theText} ${siglaString}`;
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        let keywordHtml = ''
+        let keywordHtml = '';
         switch (subEntry.keyword) {
           case 'omission':
           case 'addition':
-            keywordHtml= `<i>${latinStyle.strings[subEntry.keyword]}</i> `
+            keywordHtml = `<i>${latinStyle.strings[subEntry.keyword]}</i> `;
         }
-        return `${keywordHtml}${theText} ${siglaString}`
+        return `${keywordHtml}${theText} ${siglaString}`;
 
       case ApparatusSubEntryType.AUTO_FOLIATION:
         return `${theText}<b>${siglaString}</b>`;
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${entryType}`)
-        return '???'
+        console.warn(`Unsupported apparatus entry type: ${entryType}`);
+        return '???';
     }
   }
 
   static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], numberStyle: string) {
-    return witnessData.map ( (w) => {
+    return witnessData.map((w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {
-        return w.siglum
+        return w.siglum;
       }
-      return `${w.siglum}<sup>${this.getNumberString(w.hand+1, numberStyle)}</sup>`
-    }).join('')
+      return `${w.siglum}<sup>${this.getNumberString(w.hand + 1, numberStyle)}</sup>`;
+    }).join('');
   }
 
   /**
@@ -454,21 +467,21 @@ export class ApparatusCommon {
   static _genSiglaHtmlFromWitnessData(subEntry: ApparatusSubEntry, sigla: string[], numberStyle: string, siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean = false): string {
 
     if (subEntry.witnessData.length === 0) {
-      return ''
+      return '';
     }
 
-    let fullSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, [])
-    let fullSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(fullSiglumDataArray, numberStyle)
-    let matchedSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, siglaGroups)
-    let matchedSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(matchedSiglumDataArray, numberStyle)
+    let fullSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, []);
+    let fullSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(fullSiglumDataArray, numberStyle);
+    let matchedSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, siglaGroups);
+    let matchedSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(matchedSiglumDataArray, numberStyle);
 
     if (matchedSiglaHtml === fullSiglaHtml) {
-      return fullSiglaHtml
+      return fullSiglaHtml;
     }
     if (fullSiglaInBrackets) {
-      return `${matchedSiglaHtml}  ( = ${fullSiglaHtml})`
+      return `${matchedSiglaHtml}  ( = ${fullSiglaHtml})`;
     }
-    return `<a title="= ${escapeHtml(fullSiglaHtml)}">${matchedSiglaHtml}</a>`
+    return `<a title="= ${escapeHtml(fullSiglaHtml)}">${matchedSiglaHtml}</a>`;
   }
 
   /**
@@ -479,12 +492,12 @@ export class ApparatusCommon {
    */
   static getNumberString(n: number, style: string): string {
     if (n < 0) {
-      return '???'
+      return '???';
     }
     if (style === 'ar') {
-      return NumeralStyles.toDecimalArabic(n)
+      return NumeralStyles.toDecimalArabic(n);
     }
-    return NumeralStyles.toDecimalWestern(n)
+    return NumeralStyles.toDecimalWestern(n);
   }
 
 
@@ -498,70 +511,72 @@ export class ApparatusCommon {
    * @returns {{lineMap: *[], yPositions: *[], tokens: *[]}}
    */
   static getMainTextTypesettingInfo(containerSelector: string, classPrefix: string, tokens: MainTextToken[]): MainTextTypesettingInfo {
-    let yPositions: number[] = []
-    let tokensWithInfo = tokens.map( (token, i) => {
+    let yPositions: number[] = [];
+    let tokensWithInfo = tokens.map((token, i) => {
       if (token.type === MainTextTokenType.PARAGRAPH_END) {
-        return token
+        return token;
       }
-      let span = $(`${containerSelector} .${classPrefix}${i}`)
+      let span = $(`${containerSelector} .${classPrefix}${i}`);
       let position = span.offset();
       if (position === undefined) {
-        throw new Error(`Position for token ${i} not found in DOM`)
+        throw new Error(`Position for token ${i} not found in DOM`);
       }
-      let pY = position.top
-      yPositions.push(pY)
-      token.x = position.left
-      token.y = pY
-      return token
-    })
+      let pY = position.top;
+      yPositions.push(pY);
+      token.x = position.left;
+      token.y = pY;
+      return token;
+    });
 
-    let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
+    let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => {
+      return a > b ? 1 : 0;
+    });
     let lineMap = calculateYPositionToLineMap(yPositions);
 
-    let tokensWithLineNumbers = tokensWithInfo.map( (t) => {
+    let tokensWithLineNumbers = tokensWithInfo.map((t) => {
       // @ts-expect-error y is guaranteed to be defined at this point
-      t.lineNumber = getLineNumber(t.y, lineMap)
-      return t
-    })
+      t.lineNumber = getLineNumber(t.y, lineMap);
+      return t;
+    });
     // get the occurrence number in each line
-    let currentLine = -1
-    let tokensWithOccurrencesInfo: MainTextToken[] = []
-    let occurrenceInLineCounter = new StringCounter()
-    let currentLineTokens: MainTextToken[] = []
-    tokensWithLineNumbers.forEach( (t) => {
+    let currentLine = -1;
+    let tokensWithOccurrencesInfo: MainTextToken[] = [];
+    let occurrenceInLineCounter = new StringCounter();
+    let currentLineTokens: MainTextToken[] = [];
+    tokensWithLineNumbers.forEach((t) => {
       if (t.lineNumber !== currentLine) {
-        currentLineTokens = currentLineTokens.map( (t) => {
+        currentLineTokens = currentLineTokens.map((t) => {
           if (t.type === MainTextTokenType.TEXT) {
-            t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
+            t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText());
           }
-          return t
-        })
+          return t;
+        });
         tokensWithOccurrencesInfo.push(...currentLineTokens);
-        occurrenceInLineCounter.reset()
-        currentLineTokens = []
+        occurrenceInLineCounter.reset();
+        currentLineTokens = [];
         if (t.lineNumber === undefined) {
-          throw new Error("Line number not found for token, this should never happen")
+          throw new Error("Line number not found for token, this should never happen");
         }
-        currentLine = t.lineNumber
+        currentLine = t.lineNumber;
       }
-      if (t.type === MainTextTokenType.TEXT ) {
-        let text = t.getPlainText()
-        occurrenceInLineCounter.addString(text)
-        t.occurrenceInLine = occurrenceInLineCounter.getCount(text)
+      if (t.type === MainTextTokenType.TEXT) {
+        let text = t.getPlainText();
+        occurrenceInLineCounter.addString(text);
+        t.occurrenceInLine = occurrenceInLineCounter.getCount(text);
       }
-      currentLineTokens.push(t)
-    })
+      currentLineTokens.push(t);
+    });
     if (currentLineTokens.length > 0) {
-      currentLineTokens = currentLineTokens.map( (t) => {
+      currentLineTokens = currentLineTokens.map((t) => {
         if (t.type === MainTextTokenType.TEXT) {
-          t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText())
+          t.numberOfOccurrencesInLine = occurrenceInLineCounter.getCount(t.getPlainText());
         }
-        return t
-      })
-      pushArray(tokensWithOccurrencesInfo, currentLineTokens)
+        return t;
+      });
+      tokensWithOccurrencesInfo.push(...currentLineTokens);
     }
 
-    return { yPositions: uniqueYPositions, tokens: tokensWithOccurrencesInfo, lineMap: lineMap }
+    return {yPositions: uniqueYPositions, tokens: tokensWithOccurrencesInfo, lineMap: lineMap};
 
   }
 
@@ -577,21 +592,20 @@ export class ApparatusCommon {
   static getLineNumberString(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
     if (mainTextTypesettingInfo.tokens[apparatusEntry.from] === undefined) {
       // before the main text
-      return ApparatusCommon.getNumberString(1, lang)
+      return ApparatusCommon.getNumberString(1, lang);
     }
 
-    let startLine = mainTextTypesettingInfo.tokens[apparatusEntry.from].lineNumber
-    let endLine = mainTextTypesettingInfo.tokens[apparatusEntry.to] === undefined ? -1 :
-      mainTextTypesettingInfo.tokens[apparatusEntry.to].lineNumber
+    let startLine = mainTextTypesettingInfo.tokens[apparatusEntry.from].lineNumber;
+    let endLine = mainTextTypesettingInfo.tokens[apparatusEntry.to] === undefined ? -1 : mainTextTypesettingInfo.tokens[apparatusEntry.to].lineNumber;
 
     if (startLine === undefined || endLine === undefined) {
       console.warn(`Line number data not found for apparatus entry ${apparatusEntry.from}-${apparatusEntry.to}, this should never happen`);
-      return '???'
+      return '???';
     }
     if (startLine === endLine) {
-      return ApparatusCommon.getNumberString(startLine, lang)
+      return ApparatusCommon.getNumberString(startLine, lang);
     }
-    return `${ApparatusCommon.getNumberString(startLine, lang)}-${ApparatusCommon.getNumberString(endLine, lang)}`
+    return `${ApparatusCommon.getNumberString(startLine, lang)}-${ApparatusCommon.getNumberString(endLine, lang)}`;
   }
 
   /**
@@ -602,9 +616,9 @@ export class ApparatusCommon {
    */
   static getOccurrenceInLine(mainTextTokenIndex: number, mainTextTypesettingInfo: MainTextTypesettingInfo): number {
     if (mainTextTypesettingInfo.tokens[mainTextTokenIndex] === undefined) {
-      return 1
+      return 1;
     }
-    return mainTextTypesettingInfo.tokens[mainTextTokenIndex].occurrenceInLine ?? 1
+    return mainTextTypesettingInfo.tokens[mainTextTokenIndex].occurrenceInLine ?? 1;
   }
 
   /**
@@ -615,76 +629,78 @@ export class ApparatusCommon {
    */
   static getTotalOccurrencesInLine(mainTextIndex: number, tokensWithTypesetInfo: MainTextToken[]): number {
     if (tokensWithTypesetInfo[mainTextIndex] === undefined) {
-      return 1
+      return 1;
     }
-    return tokensWithTypesetInfo[mainTextIndex].numberOfOccurrencesInLine ?? 1
+    return tokensWithTypesetInfo[mainTextIndex].numberOfOccurrencesInLine ?? 1;
   }
 
   static getLemmaHtml(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
 
-    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText)
+    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText);
 
-    switch(lemmaComponents.type) {
+    switch (lemmaComponents.type) {
       case 'custom':
-        return lemmaComponents.text
+        return lemmaComponents.text;
 
       case 'full':
-        let lemmaNumberString = ''
+        let lemmaNumberString = '';
         if (lemmaComponents.numWords === 1) {
-          let occurrenceInLine = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo)
-          let numberOfOccurrencesInLine = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens)
+          let occurrenceInLine = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);
+          let numberOfOccurrencesInLine = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens);
           if (numberOfOccurrencesInLine > 1) {
-            lemmaNumberString = `<sup>${this.getNumberString(occurrenceInLine, lang)}</sup>`
+            lemmaNumberString = `<sup>${this.getNumberString(occurrenceInLine, lang)}</sup>`;
           }
         }
-        return `${lemmaComponents.text}${lemmaNumberString}`
+        return `${lemmaComponents.text}${lemmaNumberString}`;
 
       case 'shortened':
-        let lemmaNumberStringFrom = ''
-        let occurrenceInLineFrom = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo)
-        let numberOfOccurrencesInLineFrom = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens)
+        let lemmaNumberStringFrom = '';
+        let occurrenceInLineFrom = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);
+        let numberOfOccurrencesInLineFrom = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens);
         if (numberOfOccurrencesInLineFrom > 1) {
-          lemmaNumberStringFrom = `<sup>${this.getNumberString(occurrenceInLineFrom, lang)}</sup>`
+          lemmaNumberStringFrom = `<sup>${this.getNumberString(occurrenceInLineFrom, lang)}</sup>`;
         }
-        let lemmaNumberStringTo = ''
-        let occurrenceInLineTo = this.getOccurrenceInLine(apparatusEntry.to, mainTextTypesettingInfo)
-        let numberOfOccurrencesInLineTo = this.getTotalOccurrencesInLine(apparatusEntry.to, mainTextTypesettingInfo.tokens)
+        let lemmaNumberStringTo = '';
+        let occurrenceInLineTo = this.getOccurrenceInLine(apparatusEntry.to, mainTextTypesettingInfo);
+        let numberOfOccurrencesInLineTo = this.getTotalOccurrencesInLine(apparatusEntry.to, mainTextTypesettingInfo.tokens);
         if (numberOfOccurrencesInLineTo > 1) {
-          lemmaNumberStringTo = `<sup>${this.getNumberString(occurrenceInLineTo, lang)}</sup>`
+          lemmaNumberStringTo = `<sup>${this.getNumberString(occurrenceInLineTo, lang)}</sup>`;
         }
-        return `${lemmaComponents.from}${lemmaNumberStringFrom}${lemmaComponents.separator}${lemmaComponents.to}${lemmaNumberStringTo}`
+        return `${lemmaComponents.from}${lemmaNumberStringFrom}${lemmaComponents.separator}${lemmaComponents.to}${lemmaNumberStringTo}`;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`)
-        return 'ERROR'
+        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`);
+        return 'ERROR';
     }
   }
 
 }
 
 
-function calculateYPositionToLineMap(yPositions: number[], textSizeInPixels = 16) : PositionToLineMapEntry[] {
-  let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort( (a,b) => { return a > b ? 1 : 0})
-  let halfTextSize = textSizeInPixels / 2
-  let currentYPosition = -1000
-  let currentLine = 0
-  let yPositionToLineMap = []
+function calculateYPositionToLineMap(yPositions: number[], textSizeInPixels = 16): PositionToLineMapEntry[] {
+  let uniqueYPositions = yPositions.filter((v, i, a) => a.indexOf(v) === i).sort((a, b) => {
+    return a > b ? 1 : 0;
+  });
+  let halfTextSize = textSizeInPixels / 2;
+  let currentYPosition = -1000;
+  let currentLine = 0;
+  let yPositionToLineMap = [];
   for (let i = 0; i < uniqueYPositions.length; i++) {
     if (uniqueYPositions[i] > (currentYPosition + halfTextSize)) {
-      currentYPosition = uniqueYPositions[i]
-      currentLine++
+      currentYPosition = uniqueYPositions[i];
+      currentLine++;
     }
-    yPositionToLineMap.push({ pY: uniqueYPositions[i], line: currentLine})
+    yPositionToLineMap.push({pY: uniqueYPositions[i], line: currentLine});
   }
-  return yPositionToLineMap
+  return yPositionToLineMap;
 }
 
 
 function getLineNumber(y: number, lineMap: PositionToLineMapEntry[]) {
-  for(let i = 0; i < lineMap.length; i++) {
+  for (let i = 0; i < lineMap.length; i++) {
     if (y === lineMap[i].pY) {
-      return lineMap[i].line
+      return lineMap[i].line;
     }
   }
-  return -1
+  return -1;
 }

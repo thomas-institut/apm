@@ -17,26 +17,30 @@
  */
 
 
-import { OptionsChecker } from '@thomas-inst/optionschecker'
+import {QuillDelta} from "@/lib/types/Quill";
+import {FmtText} from "@/lib/FmtText/FmtText";
 
+
+export interface QuillDeltaConverterOptions {
+  verbose?: boolean,
+  debug?: boolean,
+  ignoreParagraphs?: boolean
+}
 export class QuillDeltaConverter {
+  protected verbose: boolean;
+  protected debug: boolean;
+  protected ignoreParagraphs: boolean;
 
-  constructor (options) {
-    let optionsSpec = {
-      verbose: { type: 'boolean', default: false},
-      debug: { type: 'boolean', default: false},
-      ignoreParagraphs: { type: 'boolean', default: true}
-    }
-    let oc= new OptionsChecker({optionsDefinition: optionsSpec, context:  'QuillDeltaConverter'})
-    let cleanOptions = oc.getCleanOptions(options)
-    this.verbose = cleanOptions.verbose
-    this.debug = cleanOptions.debug
+  constructor (options: QuillDeltaConverterOptions = {}) {
+    this.ignoreParagraphs = options.ignoreParagraphs ?? true;
+    this.verbose = options.verbose ?? false;
+    this.debug = options.debug ?? false;
     if (this.debug) {
       this.verbose = true
     }
   }
 
-  toFmtText(quillDelta) {
+  toFmtText(_quillDelta: QuillDelta): FmtText {
     return []
   }
 

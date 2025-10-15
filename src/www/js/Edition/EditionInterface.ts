@@ -1,7 +1,7 @@
 // noinspection ES6PreferShortImport
 
 import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface.js";
-import {FmtTextToken} from "../lib/FmtText/FmtTextToken.js";
+import {CompactFmtText, FmtText} from "../lib/FmtText/FmtText.js";
 import {SiglaGroupInterface, WitnessDataItemInterface} from "../CtData/CtDataInterface.js";
 
 export interface EditionInterface {
@@ -37,7 +37,7 @@ export interface EditionWitnessInfoInterface {
  */
 export interface MainTextTokenInterface {
   type: MainTextTokenType;
-  fmtText: FmtTextToken[];
+  fmtText: FmtText;
   editionWitnessTokenIndex: number;
   style: string;
 }
@@ -78,7 +78,7 @@ export interface ApparatusEntryInterface {
   from: number;
   to: number;
   preLemma: string;
-  lemma: string | FmtTextToken[];
+  lemma: CompactFmtText;
   postLemma: string;
   lemmaText: string;
   separator: string;
@@ -94,7 +94,7 @@ export interface ApparatusSubEntryInterface {
   type: string;
   enabled: boolean;
   source?: string;
-  fmtText: FmtTextToken[];
+  fmtText: FmtText;
   witnessData: WitnessDataItemInterface[];
   keyword: string;
   position: number;

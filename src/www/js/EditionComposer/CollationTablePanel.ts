@@ -301,9 +301,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       wrapButtonsInDiv: true,
       buttonsDivClass: 'panel-toolbar-item',
       buttonDef: [{label: 'Off', name: 'off', helpText: 'Turn off editing'}, {
-        label: 'Move',
-        name: 'move',
-        helpText: 'Show controls to move/add/delete cells'
+        label: 'Move', name: 'move', helpText: 'Show controls to move/add/delete cells'
       }, {label: 'Group', name: 'group', helpText: 'Show controls to group columns'},]
     });
 
@@ -781,10 +779,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   getEditionWitnessTokensFromMatrixRow(currentTokens: WitnessTokenInterface[], matrixRow: number[]): WitnessTokenInterface[] {
     return matrixRow.map(ref => ref === -1 ? {
-      tokenClass: TokenClass.EDITION,
-      tokenType: TranscriptionTokenType.EMPTY,
-      text: '',
-      fmtText: []
+      tokenClass: TokenClass.EDITION, tokenType: TranscriptionTokenType.EMPTY, text: '', fmtText: []
     } : currentTokens[ref]);
   }
 

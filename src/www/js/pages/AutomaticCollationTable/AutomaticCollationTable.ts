@@ -433,15 +433,15 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
   }
 
   getVersionInfoHtml() {
-    let sigla = this.ctData['sigla'];
-    let witnesses = this.ctData['witnesses'];
+    let sigla = this.ctData.sigla;
+    let witnesses = this.ctData.witnesses;
     let html = '';
     html += '<ul>';
     for (let i = 0; i < witnesses.length; i++) {
       let witness = witnesses[i];
       let siglum = sigla[i];
       if (witness['witnessType'] === 'fullTx') {
-        html += '<li><b>' + siglum + '</b>: ' + ApmFormats.time(witness['timeStamp']) + '</li>';
+        html += '<li><b>' + siglum + '</b>: ' + ApmFormats.time(witness['timeStamp'] ?? '') + '</li>';
       }
     }
     html += '</ul>';

@@ -6,7 +6,7 @@ export type ToolbarCharactersDatabase = {
 
 
 export type ToolbarCharacters = {
- [charTitle: string]: ToolbarCharacter;
+  [charTitle: string]: ToolbarCharacter;
 };
 
 export interface ToolbarCharacter {

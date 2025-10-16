@@ -684,17 +684,6 @@ export class ApparatusPanel extends PanelWithToolbar {
     return $(`${this.getContentAreaSelector()} span.lemma-${this.options.apparatusIndex}-${entryIndex}`);
   }
 
-  private hideApparatusEntryForm() {
-    $(this.getApparatusEntryFormSelector()).addClass('hidden');
-    this._getEditEntryButtonElement().html(icons.edit).attr('title', editEntryButtonTitle);
-    if (this.currentSelectedEntryIndex === -1) {
-      this._getEditEntryButtonElement().addClass('hidden');
-    }
-    this.options.highlightCollationTableRange(-1, -1);
-    this.apparatusEntryFormIsVisible = false;
-    this.fitDivs();
-  }
-
   _showApparatusEntryForm() {
     if (this.entryInEditor === null) {
       return;
@@ -1003,6 +992,17 @@ export class ApparatusPanel extends PanelWithToolbar {
     return html;
   }
 
+  private hideApparatusEntryForm() {
+    $(this.getApparatusEntryFormSelector()).addClass('hidden');
+    this._getEditEntryButtonElement().html(icons.edit).attr('title', editEntryButtonTitle);
+    if (this.currentSelectedEntryIndex === -1) {
+      this._getEditEntryButtonElement().addClass('hidden');
+    }
+    this.options.highlightCollationTableRange(-1, -1);
+    this.apparatusEntryFormIsVisible = false;
+    this.fitDivs();
+  }
+
   private genOnClickUpdateApparatusButton() {
     return async () => {
       console.log(`Updating apparatus`);
@@ -1068,7 +1068,7 @@ export class ApparatusPanel extends PanelWithToolbar {
         }
       });
 
-      console.log(`Entry for CT data: `,  customApparatusEntryForCtData);
+      console.log(`Entry for CT data: `, customApparatusEntryForCtData);
 
       this.ctData = CtData.updateCustomApparatuses(this.ctData, this.apparatus.type, customApparatusEntryForCtData);
       this.cancelButton.removeClass('hidden');
@@ -1143,7 +1143,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     console.log(`Loading entry: apparatus ${apparatusIndex}, entry ${entryIndex}`);
 
     this.entryInEditor = this.buildEntryToEdit(entryIndex, from, to);
-    console.log(`Entry in editor = `,this.entryInEditor);
+    console.log(`Entry in editor = `, this.entryInEditor);
 
     // Form title
     if (entryIndex !== -1) {

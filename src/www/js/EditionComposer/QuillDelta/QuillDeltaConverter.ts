@@ -26,22 +26,23 @@ export interface QuillDeltaConverterOptions {
   debug?: boolean,
   ignoreParagraphs?: boolean
 }
+
 export class QuillDeltaConverter {
   protected verbose: boolean;
   protected debug: boolean;
   protected ignoreParagraphs: boolean;
 
-  constructor (options: QuillDeltaConverterOptions = {}) {
+  constructor(options: QuillDeltaConverterOptions = {}) {
     this.ignoreParagraphs = options.ignoreParagraphs ?? true;
     this.verbose = options.verbose ?? false;
     this.debug = options.debug ?? false;
     if (this.debug) {
-      this.verbose = true
+      this.verbose = true;
     }
   }
 
   toFmtText(_quillDelta: QuillDelta): FmtText {
-    return []
+    return [];
   }
 
 }

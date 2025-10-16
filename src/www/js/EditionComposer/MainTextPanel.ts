@@ -56,9 +56,7 @@ import {SimpleProfiler} from '@/SimpleProfiler';
 import {ApparatusPanel} from "@/EditionComposer/ApparatusPanel";
 import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {ADD, DEL, EditCommand, KEEP} from "@/toolbox/MyersDiff/MyersDiff";
-import {
-  FmtText, fmtTextFromString, getPlainText, newGlueToken, newMarkToken
-} from "@/lib/FmtText/FmtText";
+import {FmtText, fmtTextFromString, getPlainText, newGlueToken, newMarkToken} from "@/lib/FmtText/FmtText";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {Apparatus} from "@/Edition/Apparatus";
 

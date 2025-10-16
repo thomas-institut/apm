@@ -29,11 +29,7 @@ import {StringCounter} from '@/toolbox/StringCounter';
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {TypesetterToken} from "@/Typesetter/TypesetterToken";
-import {
-  CompactFmtText, fromCompact,
-  fmtTextFromString,
-  getPlainText
-} from "@/lib/FmtText/FmtText.js";
+import {CompactFmtText, fmtTextFromString, fromCompact, getPlainText} from "@/lib/FmtText/FmtText.js";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";

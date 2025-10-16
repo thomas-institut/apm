@@ -33,10 +33,10 @@ import {QuillDelta, QuillDeltaInsertOp} from "@/lib/types/Quill";
 /**
  * A function that takes a Quill Delta attribute object, possibly updates something in it
  * an returns the updated version
-  */
-export type QuillDeltaAttributeTranslator = (attr: {[key: string]: any}) => {[key: string]: any};
+ */
+export type QuillDeltaAttributeTranslator = (attr: { [key: string]: any }) => { [key: string]: any };
 
-export type ClassToAttributeTranslators = { [key: string]: QuillDeltaAttributeTranslator}
+export type ClassToAttributeTranslators = { [key: string]: QuillDeltaAttributeTranslator }
 
 export class QuillDeltaRenderer extends FmtTextRenderer {
   private readonly translators: ClassToAttributeTranslators;
@@ -44,10 +44,9 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
   private options: any;
 
   constructor(options: any) {
-    super()
+    super();
     let oc = new OptionsChecker({
-      context: 'QuillDeltaRenderer',
-      optionsDefinition: {
+      context: 'QuillDeltaRenderer', optionsDefinition: {
         // an object containing class translators
         // e.g.
         // {
@@ -55,18 +54,15 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
         //    otherClass: (attr) => {  ...modify attr in some way... return modifiedAttr }
         // }
         classToAttrTranslators: {
-          type: 'object',
-          default: { }
-        },
-        defaultTextAttrObject: { type: 'object', default: {}},
-        defaultGlueAttrObject: { type: 'object', default: {}}
+          type: 'object', default: {}
+        }, defaultTextAttrObject: {type: 'object', default: {}}, defaultGlueAttrObject: {type: 'object', default: {}}
       }
-    })
+    });
 
-    let cleanOptions = oc.getCleanOptions(options)
-    this.translators = cleanOptions.classToAttrTranslators
-    this.translatorsAvailable = Object.keys(this.translators)
-    this.options = cleanOptions
+    let cleanOptions = oc.getCleanOptions(options);
+    this.translators = cleanOptions.classToAttrTranslators;
+    this.translatorsAvailable = Object.keys(this.translators);
+    this.options = cleanOptions;
 
   }
 
@@ -74,80 +70,79 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
    * Returns a Quill delta object representing the
    * given fmtText in the given language
    */
-  render (fmtText: FmtText, _lang = ''): QuillDelta {
-    let deltaOps  = fmtText.map( (fmtTextToken) : QuillDeltaInsertOp  => {
+  render(fmtText: FmtText, _lang = ''): QuillDelta {
+    let deltaOps = fmtText.map((fmtTextToken): QuillDeltaInsertOp => {
       if (fmtTextToken.type === FmtTextTokenType.EMPTY) {
-        return { insert: ''}
+        return {insert: ''};
       }
       if (fmtTextToken.type === FmtTextTokenType.GLUE) {
-        let attr =  deepCopy(this.options.defaultGlueAttrObject)
-        return { insert: ' ', attributes: attr }
+        let attr = deepCopy(this.options.defaultGlueAttrObject);
+        return {insert: ' ', attributes: attr};
       }
 
       if (fmtTextToken.type === FmtTextTokenType.MARK) {
         switch (fmtTextToken.markType) {
           case MarkType.PARAGRAPH:
-            let attributes: any = {}
-            switch(fmtTextToken.style) {
+            let attributes: any = {};
+            switch (fmtTextToken.style) {
               case ParagraphStyle.HEADING1:
-                attributes.header = 1
-                break
+                attributes.header = 1;
+                break;
 
               case ParagraphStyle.HEADING2:
-                attributes.header = 2
-                break
+                attributes.header = 2;
+                break;
 
               case ParagraphStyle.HEADING3:
-                attributes.header = 3
-                break
+                attributes.header = 3;
+                break;
             }
             if (attributes.header !== undefined) {
-              return { insert: "\n", attributes: attributes}
+              return {insert: "\n", attributes: attributes};
             }
-            return { insert: "\n"}
+            return {insert: "\n"};
 
           default:
-            console.warn(`Unsupported mark type ${fmtTextToken.markType} rendering QuillDelta from fmtText`)
-            return { insert:  ' '}
+            console.warn(`Unsupported mark type ${fmtTextToken.markType} rendering QuillDelta from fmtText`);
+            return {insert: ' '};
         }
       }
 
-      let quillDeltaAttributeObject =  deepCopy(this.options.defaultTextAttrObject)
+      let quillDeltaAttributeObject = deepCopy(this.options.defaultTextAttrObject);
       // console.log(`Using default text attr object`)
       // console.log(attr)
       if (fmtTextToken.fontStyle === FontStyle.ITALIC) {
-        quillDeltaAttributeObject.italic = true
+        quillDeltaAttributeObject.italic = true;
       }
       if (fmtTextToken.fontWeight === FontWeight.BOLD) {
-        quillDeltaAttributeObject.bold = true
+        quillDeltaAttributeObject.bold = true;
       }
 
-      if ((fmtTextToken.fontSize ?? 1) <  FontSize.NORMAL) {
+      if ((fmtTextToken.fontSize ?? 1) < FontSize.NORMAL) {
         // fontsize is a numeric value, but for Quill we only have a 'small' attribute
-        switch(fmtTextToken.verticalAlign) {
+        switch (fmtTextToken.verticalAlign) {
           case VerticalAlign.SUPERSCRIPT:
-            quillDeltaAttributeObject.superscript = true
-            break
+            quillDeltaAttributeObject.superscript = true;
+            break;
           default:
-            quillDeltaAttributeObject.small = true
+            quillDeltaAttributeObject.small = true;
         }
       }
       // translate classList
       if (fmtTextToken.classList !== undefined) {
         let classArray = fmtTextToken.classList?.split(' ');
         for (let i = 0; i < classArray.length; i++) {
-          let className = classArray[i]
+          let className = classArray[i];
           if (this.translatorsAvailable.indexOf(className) !== -1) {
-            quillDeltaAttributeObject = this.translators[className](quillDeltaAttributeObject)
+            quillDeltaAttributeObject = this.translators[className](quillDeltaAttributeObject);
           }
         }
       }
 
-      return  {
-        insert: fmtTextToken.text ?? '',
-        attributes: quillDeltaAttributeObject
-      }
-    })
-    return { ops: deltaOps}
+      return {
+        insert: fmtTextToken.text ?? '', attributes: quillDeltaAttributeObject
+      };
+    });
+    return {ops: deltaOps};
   }
 }

@@ -25,19 +25,19 @@
  */
 
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import {OptionsChecker} from '@thomas-inst/optionschecker';
 
-import { ConfirmDialog } from '@/pages/common/ConfirmDialog'
-import * as CollationTableType from '../constants/CollationTableType'
+import {ConfirmDialog} from '@/pages/common/ConfirmDialog';
+import * as CollationTableType from '../constants/CollationTableType';
 import {Panel, PanelOptions} from '@/MultiPanelUI/Panel';
-import { ApmFormats } from '@/pages/common/ApmFormats'
-import { TimeString } from '@/toolbox/TimeString'
-import { urlGen } from '@/pages/common/SiteUrlGen'
+import {ApmFormats} from '@/pages/common/ApmFormats';
+import {TimeString} from '@/toolbox/TimeString';
+import {urlGen} from '@/pages/common/SiteUrlGen';
 import {ApmApiClient} from "@/Api/ApmApiClient";
 import {ApmUrlGenerator} from "@/ApmUrlGenerator";
 
-const archiveButtonId = 'archive-table-btn'
-const versionHistoryDiv = 'version-history-div'
+const archiveButtonId = 'archive-table-btn';
+const versionHistoryDiv = 'version-history-div';
 
 interface AdminPanelOptions extends PanelOptions {
   apiClient: ApmApiClient,
@@ -52,39 +52,44 @@ interface AdminPanelOptions extends PanelOptions {
   cannotArchiveReason: string,
 }
 
-export class AdminPanel extends  Panel {
+export class AdminPanel extends Panel {
   private options: AdminPanelOptions;
   private rendered: boolean;
   private versionInfo: any;
   private archiveButton!: JQuery<HTMLElement>;
-  constructor (options: AdminPanelOptions) {
-    super(options)
+
+  constructor(options: AdminPanelOptions) {
+    super(options);
     let optionsSpec = {
-      apiClient: { type: 'object'},
-      urlGen: { type: 'object'},
-      tableId: { type: 'number'},
-      ctType: { type: 'string', required: true},
-      archived: { type: 'boolean', required: true},
-      versionInfo: { type: 'array', default: []},
-      peopleInfo: { type: 'object', default: []},
-      onConfirmArchive: { type: 'function', default: () => { return Promise.resolve()}},
-      canArchive: { type: 'boolean', default: true},
-      cannotArchiveReason: { type: 'string', default: ''}
-    }
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'Admin Panel'})
-    this.options = oc.getCleanOptions(options)
-    this.rendered = false
-    this.versionInfo = this.options.versionInfo
+      apiClient: {type: 'object'},
+      urlGen: {type: 'object'},
+      tableId: {type: 'number'},
+      ctType: {type: 'string', required: true},
+      archived: {type: 'boolean', required: true},
+      versionInfo: {type: 'array', default: []},
+      peopleInfo: {type: 'object', default: []},
+      onConfirmArchive: {
+        type: 'function', default: () => {
+          return Promise.resolve();
+        }
+      },
+      canArchive: {type: 'boolean', default: true},
+      cannotArchiveReason: {type: 'string', default: ''}
+    };
+    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'Admin Panel'});
+    this.options = oc.getCleanOptions(options);
+    this.rendered = false;
+    this.versionInfo = this.options.versionInfo;
   }
 
   async updateVersionInfo(newVersionInfo: any) {
-    this.versionInfo = newVersionInfo
-    $(`#${versionHistoryDiv}`).html(await this._genVersionTableHtml())
+    this.versionInfo = newVersionInfo;
+    $(`#${versionHistoryDiv}`).html(await this._genVersionTableHtml());
   }
 
   async generateHtml() {
-    let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table'
-    let labelUpperCase = this.options.ctType === CollationTableType.EDITION ? 'Edition' : 'Collation Table'
+    let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table';
+    let labelUpperCase = this.options.ctType === CollationTableType.EDITION ? 'Edition' : 'Collation Table';
     return `
     <div id="admin-ops-div">
        <h3>Admin</h3>
@@ -93,22 +98,22 @@ export class AdminPanel extends  Panel {
        </ul>
     </div>
     <h3>Versions</h3>
-    <div id="${versionHistoryDiv}">${await this._genVersionTableHtml()}</div>`
+    <div id="${versionHistoryDiv}">${await this._genVersionTableHtml()}</div>`;
   }
 
   allowArchiving() {
-    this.options.canArchive = true
-    this.options.cannotArchiveReason = ''
+    this.options.canArchive = true;
+    this.options.cannotArchiveReason = '';
     if (this.rendered) {
-      this._showAsAllowedToArchive()
+      this._showAsAllowedToArchive();
     }
   }
 
   disallowArchiving(reason: string) {
-    this.options.canArchive = true
-    this.options.cannotArchiveReason = reason
+    this.options.canArchive = true;
+    this.options.cannotArchiveReason = reason;
     if (this.rendered) {
-      this._showAsNotAllowedToArchive()
+      this._showAsNotAllowedToArchive();
     }
   }
 
@@ -120,91 +125,95 @@ export class AdminPanel extends  Panel {
   // }
 
   postRender() {
-    this.verbose && console.log(`Post render admin panel`)
-    this.rendered = true
-    this.archiveButton =  $(`#${archiveButtonId}`)
+    this.verbose && console.log(`Post render admin panel`);
+    this.rendered = true;
+    this.archiveButton = $(`#${archiveButtonId}`);
     if (this.options.archived) {
-      this._showAsArchived()
-      return
+      this._showAsArchived();
+      return;
     }
     if (this.options.canArchive) {
-      this._showAsAllowedToArchive()
+      this._showAsAllowedToArchive();
     } else {
-      this._showAsNotAllowedToArchive()
+      this._showAsNotAllowedToArchive();
     }
-    this.archiveButton.on('click', this._genOnClickArchiveTable())
+    this.archiveButton.on('click', this._genOnClickArchiveTable());
 
   }
 
   _showAsNotAllowedToArchive() {
-    let labelUpperCase = this.options.ctType === CollationTableType.EDITION ? 'Edition' : 'Collation Table'
+    let labelUpperCase = this.options.ctType === CollationTableType.EDITION ? 'Edition' : 'Collation Table';
     this.archiveButton
-      .html(`Archive this ${labelUpperCase}`)
-      .attr('title', this.options.cannotArchiveReason)
-      .prop('disabled', true)
+    .html(`Archive this ${labelUpperCase}`)
+    .attr('title', this.options.cannotArchiveReason)
+    .prop('disabled', true);
   }
 
   _showAsAllowedToArchive() {
-    let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table'
-    let labelUpperCase = this.options.ctType === CollationTableType.EDITION ? 'Edition' : 'Collation Table'
+    let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table';
+    let labelUpperCase = this.options.ctType === CollationTableType.EDITION ? 'Edition' : 'Collation Table';
     this.archiveButton
-      .html(`Archive this ${labelUpperCase}`)
-      .attr('title', `Click to archive this ${label}`)
-      .prop('disabled', false)
+    .html(`Archive this ${labelUpperCase}`)
+    .attr('title', `Click to archive this ${label}`)
+    .prop('disabled', false);
   }
 
   _showAsArchived() {
-    let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table'
+    let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table';
     this.archiveButton
-      .html(`Archived`)
-      .attr('title', `This ${label} is already archived`)
-      .prop('disabled', true)
+    .html(`Archived`)
+    .attr('title', `This ${label} is already archived`)
+    .prop('disabled', true);
   }
 
   _showAsArchiving() {
     this.archiveButton
-      .html(`Archiving...<i class="fas fa-spinner fa-spin"></i>` )
-      .prop('disabled', true)
+    .html(`Archiving...<i class="fas fa-spinner fa-spin"></i>`)
+    .prop('disabled', true);
   }
 
   async _showUpdatedVersionInfo() {
-    $(`#${versionHistoryDiv}`).html(await this._genVersionTableHtml())
+    $(`#${versionHistoryDiv}`).html(await this._genVersionTableHtml());
   }
 
   async _genVersionTableHtml() {
-    let html = ''
+    let html = '';
 
-    html += '<table class="version-info">'
-    html += '<tr><th>N</th><th>Id</th><th>Author</th><th>Time</th><th>Description</th></tr>'
+    html += '<table class="version-info">';
+    html += '<tr><th>N</th><th>Id</th><th>Author</th><th>Time</th><th>Description</th></tr>';
 
-    for(let i=this.versionInfo.length-1; i >= 0; i--)   {
+    for (let i = this.versionInfo.length - 1; i >= 0; i--) {
       let version = this.versionInfo[i];
       let authorData = await this.options.apiClient.getPersonEssentialData(version['authorTid']);
       let authorName = authorData.name;
-      html += '<tr>'
-      html += '<td>' + (i+1) + '</td>'
-      html += `<td><a href="${urlGen.siteChunkEdition(this.options.tableId, version['id'])}">${version['id']}</a></td>`
-      html += '<td class="author">' + authorName + '</td>'
-      html += '<td class="time">' + ApmFormats.time(TimeString.toDate(version['timeFrom'])) + '</td>'
-      html += '<td>' + version['description'] + '</td>'
+      html += '<tr>';
+      html += '<td>' + (i + 1) + '</td>';
+      html += `<td><a href="${urlGen.siteChunkEdition(this.options.tableId, version['id'])}">${version['id']}</a></td>`;
+      html += '<td class="author">' + authorName + '</td>';
+      html += '<td class="time">' + ApmFormats.time(TimeString.toDate(version['timeFrom'])) + '</td>';
+      html += '<td>' + version['description'] + '</td>';
 
-      html += '<td>'
-      if (version['isMinor']) { html += '[m]'}
-      if (version['isReview']) { html += ' [r]'}
-      html += '</td>'
-      html += '</tr>'
+      html += '<td>';
+      if (version['isMinor']) {
+        html += '[m]';
+      }
+      if (version['isReview']) {
+        html += ' [r]';
+      }
+      html += '</td>';
+      html += '</tr>';
     }
-    html += '</table>'
-    return html
+    html += '</table>';
+    return html;
   }
 
 
   _genOnClickArchiveTable() {
-    let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table'
+    let label = this.options.ctType === CollationTableType.EDITION ? 'edition' : 'collation table';
     return () => {
       if (this.options.archived || !this.options.canArchive) {
-        this.verbose && console.log(`Click on archive button, but cannot archive`)
-        return
+        this.verbose && console.log(`Click on archive button, but cannot archive`);
+        return;
       }
 
       let confirmDialog = new ConfirmDialog({
@@ -214,23 +223,23 @@ export class AdminPanel extends  Panel {
         acceptButtonLabel: 'Archive',
         cancelButtonLabel: 'Cancel',
         acceptFunction: () => {
-          this._showAsArchiving()
-          this.options.onConfirmArchive().then( (newVersionInfo) => {
-            console.log("Success archiving table")
-            this.options.archived = true
-            this.options.versionInfo = newVersionInfo
-            this._showAsArchived()
-            this._showUpdatedVersionInfo().then( () => {
+          this._showAsArchiving();
+          this.options.onConfirmArchive().then((newVersionInfo) => {
+            console.log("Success archiving table");
+            this.options.archived = true;
+            this.options.versionInfo = newVersionInfo;
+            this._showAsArchived();
+            this._showUpdatedVersionInfo().then(() => {
               this.verbose && console.log(`Finished archiving table`);
-            })
-          }).catch( () => {
-            this.verbose && console.log(`Error archiving table`)
-            this.options.archived = false
-            this.archiveButton.html(`Error archiving, click to try again`)
-          })
+            });
+          }).catch(() => {
+            this.verbose && console.log(`Error archiving table`);
+            this.options.archived = false;
+            this.archiveButton.html(`Error archiving, click to try again`);
+          });
         }
-      })
-      confirmDialog.show()
-    }
+      });
+      confirmDialog.show();
+    };
   }
 }

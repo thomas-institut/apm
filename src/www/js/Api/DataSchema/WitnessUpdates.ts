@@ -8,7 +8,7 @@ export interface WitnessUpdateData {
   witnesses: WitnessUpdateInfo[]
 }
 
-interface WitnessUpdateInfo {
+export interface WitnessUpdateInfo {
   id: string,
   upToDate: boolean,
   justUpdated: boolean,

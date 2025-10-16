@@ -878,7 +878,7 @@ export class WitnessInfoPanel extends Panel {
         if (this.ctData.witnesses[witnessIndex].witnessType === 'fullTx') {
           collatedWitnessPositions.push(pos);
         }
-      })
+      });
       console.log('collatedWitnessPositions', collatedWitnessPositions);
       let firstPos = Math.min(...collatedWitnessPositions);
       let lastPos = Math.max(...collatedWitnessPositions);

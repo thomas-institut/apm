@@ -18,7 +18,7 @@
  *
  */
 
-import {FmtText, fmtTextFromString, getPlainText} from "../lib/FmtText/FmtText.js";
+import {FmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
 import {MainTextTokenInterface, MainTextTokenType} from "./EditionInterface";
 
 
@@ -60,7 +60,7 @@ export class MainTextToken implements MainTextTokenInterface {
 
   setText(theText: string, editionWitnessTokenIndex = -1, lang = ''): this {
     this.type = 'text';
-    this.fmtText = fmtTextFromString(theText);
+    this.fmtText = fromString(theText);
     this.editionWitnessTokenIndex = editionWitnessTokenIndex;
     return this.setLang(lang);
   }

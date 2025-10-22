@@ -22,7 +22,6 @@ import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
 // @ts-ignore
 import {Matrix} from '@thomas-inst/matrix';
 import * as CollationTableType from '../constants/CollationTableType';
-//import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
 import {deepCopy} from '@/toolbox/Util';
 import * as NormalizationSource from '../constants/NormalizationSource';
 import * as WitnessType from '../Witness/WitnessTokenClass';

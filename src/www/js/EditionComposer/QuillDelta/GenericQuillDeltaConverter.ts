@@ -18,7 +18,6 @@
 
 import {QuillDeltaConverter, QuillDeltaConverterOptions} from './QuillDeltaConverter';
 import {varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
-import {FmtTextTokenFactory} from '@/lib/FmtText/FmtTextTokenFactory';
 import * as FontWeight from '@/lib/FmtText/FontWeight.js';
 import * as FontStyle from '@/lib/FmtText/FontStyle.js';
 import * as FontSize from '@/lib/FmtText/FontSize.js';
@@ -26,7 +25,7 @@ import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.js';
 import * as ParagraphStyle from '@/lib/FmtText/ParagraphStyle.js';
 import {rTrimNewlineCharacters} from '@/toolbox/Util';
 import {QuillDelta} from "@/lib/types/Quill";
-import {FmtText, fmtTextFromString} from "@/lib/FmtText/FmtText";
+import {FmtText, fromString, getNormalizedFmtText, newParagraphMark} from "@/lib/FmtText/FmtText";
 
 
 type AttrToClassTranslator = (attributeValue: any, currentClassList: string) => string
@@ -79,9 +78,9 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
               headerStyle = ParagraphStyle.HEADING3;
               break;
           }
-          return [FmtTextTokenFactory.paragraphMark(headerStyle)];
+          return [newParagraphMark(headerStyle)];
         }
-        return [FmtTextTokenFactory.paragraphMark()];
+        return [newParagraphMark()];
       }
       // text with, possibly, some newline characters
       let insertText = ops.insert;
@@ -103,7 +102,7 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
       }
 
       let parsFmtText = paragraphs.map((paragraphText) => {
-        let theFmtText = fmtTextFromString(paragraphText);
+        let theFmtText = fromString(paragraphText);
         if (ops.attributes !== undefined) {
           for (let i = 0; i < theFmtText.length; i++) {
             const fmtTextToken = theFmtText[i];
@@ -138,13 +137,13 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
             fmtTextToken.classList = classList;
           }
         }
-        return theFmtText;
+        return getNormalizedFmtText(theFmtText);
       });
       let fmtText: FmtText = [];
       parsFmtText.forEach((lineFmtTxt) => {
         fmtText.push(...lineFmtTxt);
         if (!this.options.ignoreParagraphs) {
-          fmtText.push(FmtTextTokenFactory.paragraphMark());
+          fmtText.push(newParagraphMark());
         }
       });
       if (!this.options.ignoreParagraphs) {

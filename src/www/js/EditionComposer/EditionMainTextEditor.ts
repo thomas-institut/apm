@@ -26,7 +26,7 @@ import Superscript from './QuillBlots/Superscript';
 import NumberingLabel from './QuillBlots/NumberingLabel';
 import {QuillDeltaRenderer} from './QuillDelta/QuillDeltaRenderer';
 import {GenericQuillDeltaConverter} from './QuillDelta/GenericQuillDeltaConverter';
-import {CompactFmtText, fromCompact} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, fromCompactFmtText} from "@/lib/FmtText/FmtText";
 import {QuillRange} from "@/lib/types/Quill";
 
 
@@ -166,7 +166,7 @@ export class EditionMainTextEditor {
   setText(newText: CompactFmtText, silent = false) {
     this.debug && console.log(`Setting text`);
     this.debug && console.log(newText);
-    let newDelta = this.quillDeltaRenderer.render(fromCompact(newText));
+    let newDelta = this.quillDeltaRenderer.render(fromCompactFmtText(newText));
     this.debug && console.log(`Setting text with new delta`);
     this.debug && console.log(newDelta);
     let source = silent ? 'silent' : 'api';

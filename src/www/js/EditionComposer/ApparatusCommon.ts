@@ -29,7 +29,7 @@ import {StringCounter} from '@/toolbox/StringCounter';
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {TypesetterToken} from "@/Typesetter/TypesetterToken";
-import {CompactFmtText, fmtTextFromString, fromCompact, getPlainText} from "@/lib/FmtText/FmtText.js";
+import {CompactFmtText, fromString, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText.js";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
@@ -101,7 +101,7 @@ export class ApparatusCommon {
   static typesetSubEntryHebrew(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
 
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fmtTextFromString(theText));
+    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
     let theTokens: TypesetterToken[] = [];
 
     let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'he').map((t) => {
@@ -175,9 +175,9 @@ export class ApparatusCommon {
    * @return {TypesetterToken}
    */
   static getKeywordTypesetterTokens(keyword: CompactFmtText, lang: string): TypesetterToken[] {
-    keyword = getPlainText(fromCompact(keyword));
+    keyword = getPlainText(fromCompactFmtText(keyword));
     let keywordString = this.getKeywordString(keyword, lang);
-    let fmtText = fmtTextFromString(keywordString);
+    let fmtText = fromString(keywordString);
     switch (lang) {
       case 'he':
         fmtText = fmtText.map((token) => {
@@ -276,7 +276,7 @@ export class ApparatusCommon {
   static typesetSubEntryArabic(entryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
     // TODO: use witnessData instead of witnessIndices, like in the html version
 
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fmtTextFromString(theText));
+    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
     let theTokens: TypesetterToken[] = [];
     let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'ar');
     switch (entryType) {
@@ -373,7 +373,7 @@ export class ApparatusCommon {
     // TODO: use witnessData instead of witnessIndices, like in the html version
     // let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
     // convert the text tokens to proper typesetter tokens
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fmtTextFromString(theText));
+    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
 
     let theTokens: TypesetterToken[] = [];
     switch (subEntryType) {

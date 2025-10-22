@@ -27,7 +27,7 @@ import Superscript from './QuillBlots/Superscript';
 import Sigla from './QuillBlots/Sigla';
 import {QuillDeltaRenderer} from './QuillDelta/QuillDeltaRenderer';
 import {QuillRange} from "@/lib/types/Quill";
-import {CompactFmtText, fromCompact} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, fromCompactFmtText} from "@/lib/FmtText/FmtText";
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>';
 
@@ -137,7 +137,7 @@ export class ApparatusEntryTextEditor {
   }
 
   setText(newText: CompactFmtText, silent = false) {
-    let newDelta = this.quillDeltaRenderer.render(fromCompact(newText));
+    let newDelta = this.quillDeltaRenderer.render(fromCompactFmtText(newText));
     // this.debug && console.log(`Setting text with new delta`)
     // this.debug && console.log(newDelta)
     let source = silent ? 'silent' : 'api';

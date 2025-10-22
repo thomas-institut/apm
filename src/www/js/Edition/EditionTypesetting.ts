@@ -53,7 +53,7 @@ import {ApparatusInterface} from "./EditionInterface.js";
 import {Dimension} from "../lib/Typesetter2/Dimension.js";
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
-import {fmtTextFromString} from "../lib/FmtText/FmtText";
+import {fromString, fromCompactFmtText, getPlainText} from "../lib/FmtText/FmtText.js";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
@@ -265,7 +265,7 @@ export class EditionTypesetting {
               // Add foliation change markers if needed
               let witnessIndices = this.getWitnessIndicesWithFoliationChanges(mainTextToken.originalIndex);
               if (witnessIndices.length > 0) {
-                textItems.push(...await this.tokenRenderer.renderWithStyle(fmtTextFromString('|'), paragraphStyle));
+                textItems.push(...await this.tokenRenderer.renderWithStyle(fromString('|'), paragraphStyle));
                 textItems.push(this.createPenalty(INFINITE_PENALTY));
                 textItems.push(await this.createGlue(paragraphStyle));
 
@@ -578,9 +578,8 @@ export class EditionTypesetting {
           // a custom post lemma
           items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection));
           // TODO: check formatting here
-          let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(entry.postLemma).setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
+          let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(getPlainText(fromCompactFmtText(entry.postLemma))).setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
           items.push(customPostLemmaBox);
-        // items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
       }
       resolve(items);
     });
@@ -613,7 +612,7 @@ export class EditionTypesetting {
           let customPreLemmaText = entry.preLemma;
           this.debug && console.log(`Custom pre-lemma: '${customPreLemmaText}'`);
           let customPreLemmaBox = await this.ss.apply((new TextBox())
-          .setText(customPreLemmaText)
+          .setText(getPlainText(fromCompactFmtText(customPreLemmaText)))
           .setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
           items.push(customPreLemmaBox);
           items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection));
@@ -1235,7 +1234,7 @@ export class EditionTypesetting {
   private getTsItemsForString(someString: string, style = 'normal', textDirection = 'detect'): Promise<TypesetterItem[]> {
 
     return new Promise(async (resolve) => {
-      let fmtText = fmtTextFromString(someString);
+      let fmtText = fromString(someString);
       let items = await this.tokenRenderer.renderWithStyle(fmtText, style);
       items = this.setTextDirection(items, textDirection);
       resolve(items);

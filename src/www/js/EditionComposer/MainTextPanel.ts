@@ -56,7 +56,15 @@ import {SimpleProfiler} from '@/SimpleProfiler';
 import {ApparatusPanel} from "@/EditionComposer/ApparatusPanel";
 import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {ADD, DEL, EditCommand, KEEP} from "@/toolbox/MyersDiff/MyersDiff";
-import {FmtText, fmtTextFromString, getPlainText, newGlueToken, newMarkToken} from "@/lib/FmtText/FmtText";
+import {
+  FmtText,
+  fromString,
+  getCleanFmtText,
+  getNormalizedFmtText,
+  getPlainText,
+  newGlueToken,
+  newMarkToken
+} from "@/lib/FmtText/FmtText";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {Apparatus} from "@/Edition/Apparatus";
 
@@ -86,14 +94,14 @@ interface MainTextPanelOptions extends PanelWithToolbarOptions {
   ctData: CtDataInterface;
   edition: Edition;
   apparatusPanels: ApparatusPanel[];
-  onError: (error: Error) => void;
-  onCtDataChange: (ctData: CtData) => void;
+  onError: (error: string) => void;
+  onCtDataChange: (ctData: CtDataInterface) => Promise<void>;
   editionWitnessTokenNormalizer: (token: WitnessToken) => WitnessToken;
   editApparatusEntry: (apparatusIndex: number, mainTextFrom: number, mainTextTo: number) => void;
   onChangeHighlightEnabled: (newStatus: boolean) => void;
   onChangePopoversEnabled: (newStatus: boolean) => void;
-  popoversEnabled: boolean;
-  highlightEnabled: boolean;
+  popoversEnabled?: boolean;
+  highlightEnabled?: boolean;
 }
 
 interface ChangeInterface {
@@ -146,7 +154,7 @@ export class MainTextPanel extends PanelWithToolbar {
   private revisionsPanel!: CollapsePanel;
   private ctChangesPanel!: CollapsePanel;
 
-  constructor(options = {}) {
+  constructor(options: MainTextPanelOptions) {
     super(options);
     let optionsDefinition = {
       ctData: {type: 'object'},
@@ -187,9 +195,9 @@ export class MainTextPanel extends PanelWithToolbar {
 
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'Main Text Panel'});
     this.options = oc.getCleanOptions(options);
-    this.ctData = CtData.copyFromObject(this.options.ctData);
-    this.edition = this.options.edition;
-    this.lang = this.options.ctData['lang'];
+    this.ctData = CtData.copyFromObject(options.ctData);
+    this.edition = options.edition;
+    this.lang = this.ctData.lang;
     this.mainTextNeedsToBeRedrawnOnNextOnShownEvent = true;
     this.currentEditMode = EDIT_MODE_OFF;
     this.editingTextToken = false;
@@ -206,8 +214,8 @@ export class MainTextPanel extends PanelWithToolbar {
     this.detectIntraWordQuotationMarks = (this.lang === 'he');
     this.diffEngine = new AsyncMyersDiff();
     this.onchangeMainTextFreeTextEditorWaiting = false;
-    this.popoversEnabled = this.options.popoversEnabled;
-    this.highlightEnabled = this.options.highlightEnabled;
+    this.popoversEnabled = options.popoversEnabled ?? true;
+    this.highlightEnabled = options.highlightEnabled ?? true;
     this.changesInfoDivConstructed = false;
     this.htmlRenderer = new HtmlRenderer({});
     this.debug = true;
@@ -524,7 +532,7 @@ export class MainTextPanel extends PanelWithToolbar {
       case EDIT_MODE_APPARATUS:
         this.currentEditMode = newEditMode;
         if (previousEditMode === EDIT_MODE_TEXT) {
-          $(this.getContentAreaSelector()).html(this._getMainTextHtmlVersion());
+          $(this.getContentAreaSelector()).html(this.getMainTextHtmlVersion());
           $(`${this.containerSelector} .popover-toolbar-group`).removeClass('force-hidden');
           $(`${this.containerSelector} .highlight-toolbar-group`).removeClass('force-hidden');
           this.addApparatusEntryClassesToMainText();
@@ -723,8 +731,8 @@ export class MainTextPanel extends PanelWithToolbar {
       // this.debug && console.log(newFmtText)
 
       let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText);
-      this.debug && console.log(`Witness tokens from editor`);
-      this.debug && console.log(witnessTokens);
+      this.debug && console.log(`Current witness tokens`, currentWitnessTokens)
+      this.debug && console.log(`Witness tokens from editor`, witnessTokens);
 
       this.betaEditorInfoDiv.html(`Calculating changes... <span class="spinner-border spinner-border-sm" role="status"></span>`);
       this.changesInfoDivConstructed = false;
@@ -1676,7 +1684,7 @@ export class MainTextPanel extends PanelWithToolbar {
     switch (this.currentEditMode) {
       case EDIT_MODE_OFF:
       case EDIT_MODE_APPARATUS:
-        return this._getMainTextHtmlVersion();
+        return this.getMainTextHtmlVersion();
 
       case EDIT_MODE_TEXT:
         return this._getMainTextBetaEditor();
@@ -1690,9 +1698,10 @@ export class MainTextPanel extends PanelWithToolbar {
     return `<div id="${betaEditorDivId}">Editor will be here</div><div id="${betaEditorInfoDiv}" >Info will be here </div>`;
   }
 
-  _getMainTextHtmlVersion() {
+  private getMainTextHtmlVersion(): string {
     let fmtTextRenderer = new HtmlRenderer({plainMode: true});
     let paragraphs = MainText.getParagraphs(this.edition.mainText);
+    // console.log(`Main text paragraphs: ${paragraphs.length}`, paragraphs);
 
     return paragraphs.map((paragraph, paragraphIndex) => {
       let paragraphInnerHtml = paragraph.tokens.map((token) => {
@@ -1708,6 +1717,7 @@ export class MainTextPanel extends PanelWithToolbar {
             let ctIndex = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, token.editionWitnessTokenIndex);
             let typeClass = token.type === EditionMainTextTokenType.TEXT ? 'edition-text' : 'numbering-label';
             tokenClasses = ['main-text-token', `main-text-token-${token.originalIndex}`, `ct-index-${ctIndex}`, typeClass];
+            // console.log(`Token ${token.originalIndex} has ctIndex ${ctIndex}`, token);
             return `<span class="${tokenClasses.join(' ')} ">${fmtTextRenderer.render(token.fmtText)}</span>`;
 
           default:
@@ -1809,7 +1819,7 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
     let type = tokens[0].tokenType;
     let newText: FmtText = [];
     tokens.forEach((t) => {
-      const tokenFmtText = t.fmtText ?? fmtTextFromString(t.text);
+      const tokenFmtText = t.fmtText ?? fromString(t.text);
       newText.push(...tokenFmtText);
     });
 
@@ -1840,9 +1850,10 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
         if (fmtTextToken.markType === 'par') {
           let style = EditionWitnessParagraphStyle.NORMAL;
           if (fmtTextToken.style !== '') {
+            console.log(`Found par style '${fmtTextToken.style}'`)
             // TODO: implement a style translator so that I can use different names in fmtText and in Edition
             //  Witness Tokens
-            style = fmtTextToken.style || '';
+            style = fmtTextToken.style || 'normal';
           }
           witnessTokens.push((new EditionWitnessToken()).setParagraphEnd(style));
         }
@@ -1858,7 +1869,7 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
 
       let tmpWitnessTokens = EditionWitnessTokenStringParser.parse(fmtTextToken?.text ?? '', this.edition.lang, this.detectNumberingLabels, this.detectIntraWordQuotationMarks)
       .map((witnessToken) => {
-        witnessToken.fmtText = fmtTextFromString(witnessToken.text).map((token) => {
+        witnessToken.fmtText = fromString(witnessToken.text).map((token) => {
           attributesToCopy.forEach((attribute) => {
             // @ts-expect-error using string to access object properties
             if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
@@ -1986,13 +1997,13 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
           break;
 
         case EditionMainTextTokenType.TEXT:
-          fmtText.push(...token.fmtText);
+          fmtText.push(...getNormalizedFmtText(token.fmtText));
           break;
 
         case EditionMainTextTokenType.PARAGRAPH_END:
           fmtText.push(newMarkToken(MarkType.PARAGRAPH, token.style));
       }
     });
-    return fmtText;
+    return getCleanFmtText(fmtText);
   }
 }

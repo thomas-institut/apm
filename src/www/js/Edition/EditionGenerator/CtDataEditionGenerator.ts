@@ -44,9 +44,7 @@ import * as WitnessTokenType from "@/Witness/WitnessTokenType";
 import {MainTextTokenFactory} from "../MainTextTokenFactory.js";
 import * as MainTextTokenType from "../MainTextTokenType.js";
 import {Punctuation} from "@/defaults/Punctuation";
-import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface} from "../EditionInterface.js";
 import {Apparatus} from "@/Edition/Apparatus";
-import {Custom} from "vitest";
 
 export class CtDataEditionGenerator extends EditionGenerator {
   private options: any;
@@ -198,19 +196,19 @@ export class CtDataEditionGenerator extends EditionGenerator {
       let customAutoSubEntries = ctDataCustomEntry.subEntries.filter((se) => {
         return autoSubEntryTypes.includes(se.type);
       });
-      if (customAutoSubEntries.length !== 0) {
-        this.verbose && console.log(`There are custom auto entries: ${mainTextFrom} -> ${mainTextTo}`);
-        this.verbose && console.log(customAutoSubEntries);
-      } else {
-        this.verbose && console.log(`There are no custom auto entries: ${mainTextFrom} -> ${mainTextTo}`);
-        this.verbose && console.log(customSubEntries);
-      }
+      // if (customAutoSubEntries.length !== 0) {
+      //   this.verbose && console.log(`There are custom auto entries: ${mainTextFrom} -> ${mainTextTo}`);
+      //   this.verbose && console.log(customAutoSubEntries);
+      // } else {
+      //   this.verbose && console.log(`There are no custom auto entries: ${mainTextFrom} -> ${mainTextTo}`);
+      //   this.verbose && console.log(customSubEntries);
+      // }
 
       let currentEntryIndex = ApparatusTools.findEntryIndex(generatedApparatus, mainTextFrom, mainTextTo);
       if (currentEntryIndex === -1) {
         // this.debug && console.log(`Found custom entry not belonging to any automatic apparatus entry`)
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
-          this.debug && console.log(`Adding new apparatus entry for lemma ${ctDataCustomEntry.lemma}`);
+          // this.debug && console.log(`Adding new apparatus entry for lemma ${ctDataCustomEntry.lemma}`);
           let newEntry = new ApparatusEntry();
           newEntry.from = mainTextFrom;
           newEntry.to = mainTextTo;
@@ -228,7 +226,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
           this.debug && console.log(`The custom entry does not have lemma customizations or full custom sub-entries, nothing to add`);
         }
       } else {
-        this.debug && console.log(`Entry belongs to automatic apparatus entry index ${currentEntryIndex}`)
+        // this.debug && console.log(`Entry belongs to automatic apparatus entry index ${currentEntryIndex}`);
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           generatedApparatus.entries[currentEntryIndex].preLemma = ctDataCustomEntry.preLemma;
           generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
@@ -398,14 +396,17 @@ export class CtDataEditionGenerator extends EditionGenerator {
       }
 
       if (tokenType === WitnessTokenType.NUMBERING_LABEL) {
-        // console.log(`Generating main text token for numbering label '${witnessToken.text}'`)
         mainTextTokens.push(MainTextTokenFactory.createSimpleText(MainTextTokenType.NUMBERING_LABEL, witnessToken.text, witnessTokenIndex, lang));
         continue;
       }
 
+      // console.log(`Generating main text token for word '${witnessToken.text}'`);
       if (witnessToken.fmtText === undefined) {
-        mainTextTokens.push(MainTextTokenFactory.createSimpleText(MainTextTokenType.TEXT, getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore), witnessTokenIndex, lang));
-
+        const witnessTokenText = getTextFromWitnessToken(witnessToken, normalized, normalizationsToIgnore);
+        // this.debug && console.log(`  witnessTokenText = '${witnessTokenText}'`);
+        const mainTextToken = MainTextTokenFactory.createSimpleText(MainTextTokenType.TEXT, witnessTokenText, witnessTokenIndex, lang);
+        // this.debug && console.log(`  mainTextToken`, mainTextToken);
+        mainTextTokens.push(mainTextToken);
       } else {
         mainTextTokens.push(MainTextTokenFactory.createWithFmtText(MainTextTokenType.TEXT, witnessToken.fmtText, witnessTokenIndex, lang));
       }

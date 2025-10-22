@@ -22,7 +22,6 @@ import {ApparatusCommon} from './ApparatusCommon';
 import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
 import {CtData} from '@/CtData/CtData';
 import {onClickAndDoubleClick} from '@/toolbox/DoubleClick';
-import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
 import {ApparatusEntryTextEditor} from './ApparatusEntryTextEditor';
 import {capitalizeFirstLetter, getTextDirectionForLang, removeExtraWhiteSpace, trimWhiteSpace} from '@/toolbox/Util';
 import {varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
@@ -47,6 +46,7 @@ import {
 } from "@/CtData/CtDataInterface";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
+import {fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
 
 const doubleVerticalLine = String.fromCodePoint(0x2016);
 const verticalLine = String.fromCodePoint(0x007c);
@@ -926,18 +926,19 @@ export class ApparatusPanel extends PanelWithToolbar {
       }
       // build lemma section
       let preLemmaSpanHtml = '';
-      switch (apparatusEntry.preLemma) {
+      const preLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.preLemma));
+      switch (preLemmaText) {
         case '':
           // do nothing
           break;
 
         case 'ante':
         case 'post':
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(apparatusEntry.preLemma, this.edition.lang);
+          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
           break;
 
         default:
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(apparatusEntry.preLemma, this.edition.lang);
+          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
       }
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `;
 
@@ -945,8 +946,9 @@ export class ApparatusPanel extends PanelWithToolbar {
       let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, mainTextTypesettingInfo, this.edition.lang)}</span>`;
 
       let postLemmaSpan = '';
-      if (apparatusEntry.postLemma !== '') {
-        let postLemma = ApparatusCommon.getKeywordHtml(apparatusEntry.postLemma, this.edition.lang);
+      const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));
+      if (postLemmaText !== '') {
+        let postLemma = ApparatusCommon.getKeywordHtml(postLemmaText, this.edition.lang);
         postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
       }
 
@@ -1410,7 +1412,7 @@ export class ApparatusPanel extends PanelWithToolbar {
         return '';
 
       case 'custom':
-        return FmtTextFactory.fromAnything(removeExtraWhiteSpace(getStringVal(textInputElement)));
+        return removeExtraWhiteSpace(getStringVal(textInputElement));
 
       default:
         return toggle.getOption();

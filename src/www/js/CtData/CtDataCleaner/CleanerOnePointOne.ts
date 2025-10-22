@@ -25,7 +25,7 @@ import {CollationTableConsistencyCleaner} from './CollationTableConsistencyClean
 import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
 import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
 import {CtDataInterface} from "../CtDataInterface";
-import {fmtTextFromString} from "@/lib/FmtText/FmtText";
+import {fromString} from "@/lib/FmtText/FmtText";
 
 export class CleanerOnePointOne extends CtDataCleaner {
   private ctData!: CtDataInterface;
@@ -84,7 +84,7 @@ export class CleanerOnePointOne extends CtDataCleaner {
           if (validLemmaStrings.indexOf(entry.lemma) === -1) {
             //invalid lemma string, convert to FmtText
             this.verbose && console.log(`Fixed invalid lemma string '${entry['lemma']}' in apparatus '${app['type']}', entry ${entryIndex}`);
-            entry.lemma = fmtTextFromString(entry.lemma);
+            entry.lemma = fromString(entry.lemma);
           }
         }
         return entry;

@@ -20,7 +20,7 @@
 
 import * as SubEntryType from './SubEntryType.js';
 import * as SubEntrySource from './SubEntrySource.js';
-import {FmtText, getPlainText} from "../lib/FmtText/FmtText";
+import {FmtText, getPlainText} from "../lib/FmtText/FmtText.js";
 import {hashCodeInt32} from '../toolbox/Util.js';
 import {WitnessDataItem} from './WitnessDataItem.js';
 import {ApparatusSubEntryInterface} from "./EditionInterface.js";

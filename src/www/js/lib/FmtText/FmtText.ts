@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2021 Universität zu Köln
+ *  Copyright (C) 2021-25 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -17,18 +17,16 @@
  */
 
 
-import * as FmtTextTokenType from './FmtTextTokenType.js';
-import * as FontStyle from './FontStyle.js';
-import * as FontSize from './FontSize.js';
-import * as FontWeight from './FontWeight.js';
-import * as VerticalAlign from './VerticalAlign.js';
+import * as ParagraphStyle from "@/lib/FmtText/ParagraphStyle";
+import * as MarkType from "@/lib/FmtText/MarkType";
+import {trimWhiteSpace} from "@/toolbox/Util";
 
 export const DEFAULT_GLUE_SPACE = 'normal';
-
 
 export interface FmtTextEmptyToken {
   type: 'empty';
 }
+
 /**
  * A formatted text token.
  */
@@ -37,26 +35,33 @@ export interface FmtTextTextToken {
   text: string;
   /**
    * The font style, for example 'normal' or 'italic'.
+   * If empty or undefined, the typesetter will use the default font style.
    */
   fontStyle?: string;
   /**
    * The font weight, for example 'normal' or 'bold'.
+   * If empty or undefined, the typesetter will use the default font weight.
    */
   fontWeight?: string;
   /**
    * The text's vertical alignment, for example 'baseline', 'subscript' or 'superscript'.
+   * if empty or undefined, the typesetter will use the default vertical alignment.
    */
   verticalAlign?: string;
   /**
    * Font size in ems (i.e., relative to a default font size)
+   * if empty or undefined, the typesetter will use the default font size (that is,
+   * fontSize will be considered to be 1)
    */
   fontSize?: number;
   /**
-   * Space separated list of strings representing display classes defined in a typesetter
+   * Space separated list of strings representing display classes defined in a typesetter.
    */
   classList?: string;
   /*
-   * If undefined or an empty string, the typesetter needs to infer the text direction from the text.
+   * The text's direction: 'ltr' or 'rtl'
+   * If undefined or an empty string, the typesetter may use the default direction or
+   * infer it from the text.
    */
   textDirection?: '' | 'ltr' | 'rtl';
 }
@@ -77,13 +82,13 @@ export interface FmtTextGlueToken {
   type: 'glue';
   /**
    * A string that a typesetter may interpret as a style or kind of space, for example 'normal' or 'em',
-   * in case the a width is not specified.
+   * in case a width is not specified.
    */
   space?: string;
   /**
    * The glue base width in pixels.
    *
-   * If negative or undefined, defaults to a standard size or to the style given in ``space``
+   * If negative or undefined, defaults to a standard width or to the style given in ``space``
    */
   width?: number;
   /**
@@ -103,11 +108,22 @@ export interface FmtTextGlueToken {
 }
 
 /**
- * A graphical mark, for example an icon or a symbol.
+ * A  mark, for example an icon, a symbol, a paragraph break, etc.
+ *
+ * The typesetter may or may not display anything.
  */
 export interface FmtTextMarkToken {
   type: 'mark';
+  /**
+   * The type of the mark, for example 'paragraph', 'footnote', 'icon', 'symbol', etc..
+   */
   markType: string;
+  /**
+   * The mark's style.
+   *
+   * For example a paragraph mark may have a style like 'h1' or 'h2'. An icon
+   * might have a style like 'icon-1' or 'icon-2'.
+   */
   style?: string;
   /**
    * Text to show if the visual output cannot produce a correct graphical representation of the mark.
@@ -126,7 +142,7 @@ export type FmtTextToken = FmtTextEmptyToken | FmtTextTextToken | FmtTextGlueTok
  */
 export type FmtText = FmtTextToken[];
 
-export type CompactFmtText = (FmtTextToken|string)[] | string;
+export type CompactFmtText = (FmtTextToken | string)[] | string;
 
 export function newTextToken(text: string): FmtTextTextToken {
   return {
@@ -135,7 +151,10 @@ export function newTextToken(text: string): FmtTextTextToken {
 }
 
 export function newGlueToken(width: number = -1, stretch: number = 0, shrink: number = 0): FmtTextGlueToken {
-  const token: FmtTextGlueToken = {type: 'glue', width: width};
+  const token: FmtTextGlueToken = {type: 'glue'};
+  if (width >= 0) {
+    token.width = width;
+  }
   if (stretch !== 0) {
     token.stretch = stretch;
   }
@@ -153,42 +172,58 @@ export function newMarkToken(markType: string, style: string = ''): FmtTextMarkT
   return token;
 }
 
-export function getTokenPlainText(token: FmtTextToken): string {
-  if (token.type === 'text') {
-    return token.text;
-  }
-
-  if (token.type === 'glue') {
-    return ' ';
-  }
-
-  if (token.type === 'empty') {
-    return '';
-  }
-
-  return token.altText ?? '';
+export function newParagraphMark(style = ParagraphStyle.NORMAL): FmtTextMarkToken {
+  return newMarkToken(MarkType.PARAGRAPH, style);
 }
 
+
+
 export function getPlainText(fmtText: FmtText): string {
+  function getTokenPlainText(token: FmtTextToken): string {
+    if (token.type === 'text') {
+      return token.text;
+    }
+
+    if (token.type === 'glue') {
+      return ' ';
+    }
+
+    if (token.type === 'empty') {
+      return '';
+    }
+
+    return token.altText ?? '';
+  }
+
   return fmtText.map(t => getTokenPlainText(t)).join('');
 }
 
 
-export function fmtTextFromString(str: string): FmtText {
-  const wordTokens = str.split(' ').map(word => newTextToken(word));
+export function fromString(str: string): FmtText {
+  let currentWord = '';
   const fmtText: FmtText = [];
-  for (let i = 0; i < wordTokens.length - 1; i++) {
-    fmtText.push(wordTokens[i]);
-    if (i < wordTokens.length - 2) {
+  const spaceChars = [' ', '\n', '\t'];
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (spaceChars.includes(char)) {
+      if (currentWord !== '') {
+        fmtText.push(newTextToken(currentWord));
+        currentWord = '';
+      }
       fmtText.push(newGlueToken());
+    } else {
+      currentWord += char;
     }
+  }
+  if (currentWord !== '') {
+    fmtText.push(newTextToken(currentWord));
   }
   return fmtText;
 }
 
-export function fromCompact(input: CompactFmtText): FmtText {
+export function fromCompactFmtText(input: CompactFmtText): FmtText {
   if (typeof input === 'string') {
-    return fmtTextFromString(input);
+    return fromString(input);
   }
   if (input.length === 0) {
     return [];
@@ -198,118 +233,181 @@ export function fromCompact(input: CompactFmtText): FmtText {
   for (let i = 0; i < input.length; i++) {
     const item = input[i];
     if (typeof item === 'string') {
-      fmtText.push(...fmtTextFromString(item));
+      fmtText.push(...fromString(item));
     } else {
       fmtText.push(item);
     }
   }
   return fmtText;
 }
-export interface FmtTextTokenInterface {
-
-  type: string;
-
-  text?: string;
-  fontStyle?: string;
-  fontWeight?: string;
-  verticalAlign?: string;
-  fontSize?: number;
-  classList?: string;
-  textDirection?: string;
 
 
-  space?: string;
-  width?: number;
-  stretch?: number;
-  shrink?: number;
+/**
+ * Normalizes a token by removing all empty properties.
+ * @param token
+ */
+export function getNormalizedToken<T extends FmtTextToken>(token: T): T {
 
-  markType?: string;
-  style?: string;
+  function getNormalizedEmptyToken(): FmtTextEmptyToken {
+    return {type: "empty"};
+  }
+
+  function getNormalizedTextToken(token: FmtTextTextToken): FmtTextTextToken {
+    const normalizedToken = newTextToken(token.text);
+    if (token.fontSize !== undefined && token.fontSize !== 1) {
+      normalizedToken.fontSize = token.fontSize;
+    }
+    if (token.fontStyle !== undefined && token.fontStyle !== '') {
+      normalizedToken.fontStyle = token.fontStyle;
+    }
+    if (token.fontWeight !== undefined && token.fontWeight !== '') {
+      normalizedToken.fontWeight = token.fontWeight;
+    }
+    if (token.verticalAlign !== undefined && token.verticalAlign !== '') {
+      normalizedToken.verticalAlign = token.verticalAlign;
+    }
+    if (token.textDirection !== undefined && token.textDirection !== '') {
+      normalizedToken.textDirection = token.textDirection;
+    }
+    if (token.classList !== undefined) {
+      const theClassList = trimWhiteSpace(token.classList);
+      if (theClassList !== '') {
+        normalizedToken.classList = theClassList;
+      }
+    }
+    return normalizedToken;
+  }
+
+  function getNormalizedGlueToken(token: FmtTextGlueToken): FmtTextGlueToken {
+    const normalizedToken = newGlueToken();
+    if (token.space !== undefined && token.space !== '') {
+      normalizedToken.space = token.space;
+    }
+    if (token.width !== undefined && token.width >= 0) {
+      normalizedToken.width = token.width;
+    }
+    if (token.shrink !== undefined && token.shrink !== 0) {
+      normalizedToken.shrink = token.shrink;
+    }
+    if (token.stretch !== undefined && token.stretch !== 0) {
+      normalizedToken.stretch = token.stretch;
+    }
+    return normalizedToken;
+  }
+
+  function getNormalizedMarkToken(token: FmtTextMarkToken): FmtTextMarkToken {
+    const retMark = newMarkToken(token.markType);
+    if (token.style !== undefined && token.style !== '') {
+      retMark.style = token.style;
+    }
+    return retMark;
+  }
+
+  switch (token.type) {
+    case "empty":
+      return getNormalizedEmptyToken() as T;
+
+    case "text":
+      return getNormalizedTextToken(token) as T;
+
+    case "glue":
+      return getNormalizedGlueToken(token) as T;
+
+    case "mark":
+      return getNormalizedMarkToken(token) as T;
+  }
 }
 
-export class FmtTextTokenClass implements FmtTextTokenInterface {
+/**
+ * Normalizes a FmtText by removing all empty properties from all tokens.
+ *
+ * The result is a new FmtText object with exactly the same number of tokens as the input.
+ * @param fmtText
+ */
+export function getNormalizedFmtText(fmtText: FmtText): FmtText {
+  return fmtText.map(t => getNormalizedToken(t));
+}
 
-  type: string;
+/**
+ * Returns a new FmtText with normalized tokens and empty tokens removed.
+ *
+ * Empty tokens are:
+ *  - tokens with type 'empty'
+ *  - tokens with type 'text' and text === ''
+ *  - tokens with type 'glue' and width === 0
+ *  - tokens with type 'mark' and markType === ''
+ *
+ * @param fmtText
+ */
+export function getCleanFmtText(fmtText: FmtText): FmtText {
+  return getNormalizedFmtText(fmtText)
+  .filter(t => t.type !== 'empty')
+  .filter(t => t.type !== 'text' || t.text !== '')
+  .filter(t => t.type !== 'glue' || t.width !== 0)
+  .filter(t => t.type !== 'mark' || t.markType !== '');
+}
 
-  text?: string;
-  fontStyle?: string;
-  fontWeight?: string;
-  verticalAlign?: string;
-  fontSize?: number;
-  classList?: string;
-  textDirection?: string;
+export function toCompactFmtText(fmtText: FmtText): CompactFmtText {
 
-
-  space?: string;
-  width?: number;
-  stretch?: number;
-  shrink?: number;
-
-  markType?: string;
-  style?: string;
-
-  constructor(type = FmtTextTokenType.TEXT) {
-    this.type = type;
-
-    switch (type) {
-      case FmtTextTokenType.TEXT:
-        this.text = '';
-        this.fontStyle = FontStyle.NORMAL;
-        this.fontWeight = FontWeight.NORMAL;
-        this.verticalAlign = VerticalAlign.BASELINE;
-        this.fontSize = FontSize.NORMAL;
-        this.classList = '';  // a space-separated list of arbitrary text labels
-        this.textDirection = ''; // if empty, inferred from text, otherwise it can be 'rtl' or 'ltr'
-        break;
-
-      case FmtTextTokenType.GLUE:
-        this.space = DEFAULT_GLUE_SPACE; // i.e., default size, whatever that means for the typesetter/presenter context
-        break;
-
-      case FmtTextTokenType.MARK:
-        this.markType = '';
-        this.style = '';
-        break;
-
-      default:
-        console.warn(`Unsupported type in FormattedTextToken constructor: ${type}`);
-        this.type = FmtTextTokenType.EMPTY;
+  function getCompactTextToken(token: FmtTextTextToken): string | FmtTextTextToken {
+    if (token.text === '') {
+      return '';
     }
+    if (token.fontStyle === undefined && token.fontWeight === undefined && token.verticalAlign === undefined && token.fontSize === undefined && token.classList === undefined && token.textDirection === undefined) {
+      return token.text;
+    }
+    return token;
   }
-  setText(text: string): this {
-    this.text = text;
-    return this;
+
+  function getCompactGlueToken(token: FmtTextGlueToken): string | FmtTextGlueToken {
+    if (token.width === 0) {
+      return '';
+    }
+    if (token.space === undefined && token.stretch === undefined && token.shrink === undefined) {
+      return ' ';
+    }
+    return token;
   }
-  addClass(className: string) {
-    if (this.classList === '') {
-      this.classList = className;
+
+  const cleanFmtText = getCleanFmtText(fmtText);
+
+
+  const compactedFmtText: (string | FmtTextToken)[] = cleanFmtText.map(t => {
+    switch (t.type) {
+      case "empty":
+        return '';
+      case 'text':
+        return getCompactTextToken(t);
+      case 'glue':
+        return getCompactGlueToken(t);
+      case 'mark':
+        return t;
+    }
+  });
+
+  const compactedArray: (string | FmtTextToken)[] = [];
+  let currentConsolidatedString = '';
+
+  for (let i = 0; i < compactedFmtText.length; i++) {
+    const item = compactedFmtText[i];
+    if (typeof item === 'string') {
+      currentConsolidatedString += item;
     } else {
-      this.classList += ' ';
-      this.classList += className;
+      if (currentConsolidatedString !== '') {
+        compactedArray.push(currentConsolidatedString);
+        currentConsolidatedString = '';
+      }
+      compactedArray.push(item);
     }
-    return this;
   }
-
-  removeClass(className: string) {
-    let classArray = this.classList?.split(' ') ?? [];
-    this.classList = classArray.filter((currentClassName) => {
-      return currentClassName !== className;
-    }).join(' ');
-    if (this.classList.trim() === '') {
-      this.classList = undefined;
-    }
-    return this;
+  if (currentConsolidatedString !== '') {
+    compactedArray.push(currentConsolidatedString);
   }
-
-  setMarkType(markType: string) {
-    this.type = FmtTextTokenType.MARK;
-    this.markType = markType;
-    this.style = '';
-    return this;
+  if (compactedArray.length === 0) {
+    return '';
   }
-
-  setStyle(style: string): this {
-    this.style = style;
-    return this;
+  if (compactedArray.length === 1 && typeof compactedArray[0] === 'string') {
+    return compactedArray[0];
   }
+  return compactedArray;
 }

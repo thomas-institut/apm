@@ -20,7 +20,7 @@
 
 import {MainTextToken} from './MainTextToken.js';
 import * as EditionMainTextTokenType from './MainTextTokenType.js';
-import {FmtText, fmtTextFromString, newGlueToken} from "../lib/FmtText/FmtText";
+import {FmtText, fromString, getCleanFmtText, newGlueToken} from "../lib/FmtText/FmtText";
 import {MainTextTokenType} from "@/Edition/EditionInterface";
 
 export class MainTextTokenFactory {
@@ -37,7 +37,7 @@ export class MainTextTokenFactory {
   static createSimpleText(type: MainTextTokenType, text: string, editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
     let t = new MainTextToken();
     t.type = type;
-    t.fmtText = fmtTextFromString(text);
+    t.fmtText = fromString(text);
     t.editionWitnessTokenIndex = editionWitnessTokenIndex;
     t.setLang(lang);
     return t;
@@ -46,16 +46,11 @@ export class MainTextTokenFactory {
   /**
    * Creates a new instance of MainTextToken with formatted text and specified attributes.
    *
-   * @param {string} type - The type of the token to be created.
-   * @param {FmtTextTokenClass[]} fmtText - The formatted text content for the token.
-   * @param {number} editionWitnessTokenIndex - The index representing the edition or witness token.
-   * @param {string} [lang=''] - The language code for the token (optional, defaults to an empty string).
-   * @return {MainTextToken} A new instance of MainTextToken with the specified attributes.
    */
   static createWithFmtText(type: MainTextTokenType, fmtText: FmtText, editionWitnessTokenIndex: number, lang: string = ''): MainTextToken {
     let t = new MainTextToken();
     t.type = type;
-    t.fmtText = fmtText;
+    t.fmtText = getCleanFmtText(fmtText);
     t.editionWitnessTokenIndex = editionWitnessTokenIndex;
     t.setLang(lang);
     return t;

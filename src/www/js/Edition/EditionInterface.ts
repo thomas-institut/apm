@@ -58,10 +58,6 @@ export interface ApparatusInterface {
   type: string;
   entries: ApparatusEntryInterface[];
   metadata?: MetadataInterface;
-  /**
-   * @deprecated Is this actually needed? Maybe move it to metadata.
-   */
-  // rawEntries?: ApparatusEntry[];
 }
 
 export interface EditionInfoInterface extends MetadataInterface {
@@ -77,9 +73,9 @@ export interface ApparatusEntryInterface {
   section?: number[];
   from: number;
   to: number;
-  preLemma: string;
+  preLemma: CompactFmtText;
   lemma: CompactFmtText;
-  postLemma: string;
+  postLemma: CompactFmtText;
   lemmaText: string;
   separator: string;
   tags: string[];

@@ -4,7 +4,7 @@ import * as SubEntryType from './SubEntryType.js';
 import {numericFieldSort} from '../lib/ToolBox/ArrayUtil.js';
 import {ApparatusSubEntry} from './ApparatusSubEntry.js';
 import {ApparatusEntryInterface, cloneMetadata, MetadataInterface} from "./EditionInterface.js";
-import {CompactFmtText, FmtTextTokenClass} from "../lib/FmtText/FmtText.js";
+import {CompactFmtText} from "../lib/FmtText/FmtText.js";
 
 
 export class ApparatusEntry implements ApparatusEntryInterface {
@@ -12,9 +12,9 @@ export class ApparatusEntry implements ApparatusEntryInterface {
   section?: number[];
   from: number;
   to: number;
-  preLemma: string;
+  preLemma: CompactFmtText;
   lemma: CompactFmtText;
-  postLemma: string;
+  postLemma: CompactFmtText;
   lemmaText: string;
   separator: string;
   tags: string[];

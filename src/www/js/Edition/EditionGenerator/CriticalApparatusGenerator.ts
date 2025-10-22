@@ -38,7 +38,7 @@ import {WitnessDataItem} from '../WitnessDataItem';
 import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {MainTextToken} from "../MainTextToken.js";
 import {Apparatus} from "@/Edition/Apparatus";
-import {fmtTextFromString} from "@/lib/FmtText/FmtText";
+import {fromString} from "@/lib/FmtText/FmtText";
 
 export class CriticalApparatusGenerator {
   protected verbose: boolean;
@@ -309,7 +309,7 @@ export class CriticalApparatusGenerator {
     return variantArray.map((v: any) => {
       let subEntry = new ApparatusSubEntry();
       subEntry.type = subEntryType;
-      subEntry.fmtText = fmtTextFromString(v.text);
+      subEntry.fmtText = fromString(v.text);
       subEntry.witnessData = v.witnessDataArray;
       subEntry.source = SubEntrySource.AUTO;
       return subEntry;

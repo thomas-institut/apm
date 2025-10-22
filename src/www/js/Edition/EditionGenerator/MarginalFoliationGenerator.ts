@@ -7,7 +7,7 @@ import {NumeralStyles} from '@/toolbox/NumeralStyles';
 import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
 import {MainTextToken} from "../MainTextToken";
-import {FmtText, fmtTextFromString} from "@/lib/FmtText/FmtText.js";
+import {FmtText, fromString} from "@/lib/FmtText/FmtText.js";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
 
@@ -159,29 +159,22 @@ export class MarginalFoliationGenerator {
     return app;
   }
 
-  /**
-   *
-   * @param {string}siglum
-   * @param {string}foliation
-   * @return {FmtTextTokenClass[]}
-   * @private
-   */
-  getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtText {
+  private getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtText {
 
     if (this.ctData.lang === 'ar') {
 
       let fmtText: FmtText = [];
 
-      fmtText.push(...fmtTextFromString(siglum));
-      fmtText.push(...fmtTextFromString('-'));
+      fmtText.push(...fromString(siglum));
+      fmtText.push(...fromString('-'));
 
       let foliationParts = foliation.match(/^(\d+)([r|v]?)$/);
       if (foliationParts === null) {
-        fmtText.push(...fmtTextFromString(foliation));
+        fmtText.push(...fromString(foliation));
       } else {
         let [, folioNumber, folioSuffix] = foliationParts;
         folioSuffix = folioSuffix ?? '';
-        fmtText.push(...fmtTextFromString(NumeralStyles.toDecimalArabic(parseInt(folioNumber))));
+        fmtText.push(...fromString(NumeralStyles.toDecimalArabic(parseInt(folioNumber))));
         if (folioSuffix === 'r') {
           folioSuffix = 'ظ';
         }
@@ -189,14 +182,14 @@ export class MarginalFoliationGenerator {
           folioSuffix = 'و';
         }
         if (folioSuffix !== '') {
-          fmtText.push(...fmtTextFromString(folioSuffix));
+          fmtText.push(...fromString(folioSuffix));
         }
       }
 
       return fmtText;
     }
 
-    return fmtTextFromString(`${siglum}:${foliation}`);
+    return fromString(`${siglum}:${foliation}`);
   }
 
   /**

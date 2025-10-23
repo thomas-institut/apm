@@ -27,15 +27,15 @@ namespace APM\Core\Item;
  */
 class MarkType
 {
-    const NO_WB = '__nowb';
-    const CHUNK = '__chunkmark';
-    const CHAPTER = '__chapter';
-    const TEXT_BOX_BREAK = '__textBoxBreak';
-    const ITEM_BREAK = '__itemBreak';
+    const string NO_WB = '__nowb';
+    const string CHUNK = '__chunkmark';
+    const string CHAPTER = '__chapter';
+    const string TEXT_BOX_BREAK = '__textBoxBreak';
+    const string ITEM_BREAK = '__itemBreak';
 
-    const REF = 'ref';
-    const PARAGRAPH = 'paragraph';
-    const NOTE = 'note';
-    const GAP = 'gap';
+    const string REF = 'ref';
+    const string PARAGRAPH = 'paragraph';
+    const string NOTE = 'note';
+    const string GAP = 'gap';
 
 }

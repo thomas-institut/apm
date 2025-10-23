@@ -124,7 +124,7 @@ export interface WitnessInterface {
   localWitnessId?: string;
   docId?: number;
   items?: FullTxItemInterface[];
-  nonTokenItemIndexes?: NonTokenItemIndex[];
+  nonTokenItemIndexes?: { [key: number]: NonTokenItemIndex };
 
   // used by Source witnesses
   title?: string;
@@ -164,7 +164,7 @@ export interface RangeInterface {
 }
 
 export interface FullTxItemInterface {
-  type: string;
+  type: 'ChunkMark' | 'Mark' | 'TextualItem';
   text: string;
   address: FullTxItemAddressInterface;
   markType?: string;

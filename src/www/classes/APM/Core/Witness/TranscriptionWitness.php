@@ -90,7 +90,7 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
     }
     
     /**
-     * Returns an array of TranscriptionToken
+     * Returns an array of TranscriptionToken object representing the witness
      * @return TranscriptionToken[]
      */
     public function getTokens() : array {
@@ -361,8 +361,8 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
      *
      * The returned array contains one element for each token. Each
      * element is itself an array with two keys: 'pre'  and 'post'
-     * with the items that do not contribute tokens that appear immediately before and
-     * inmediately after the corresponding token. Normally, only the first element
+     * with the indices of the items that do not contribute tokens that appear immediately before and
+     * immediately after the corresponding token. Normally, only the first element
      * of the returned array, that is, the one corresponding to the first token,
      * will potentially have a non-empty 'pre' element.
      *
@@ -384,13 +384,13 @@ abstract class TranscriptionWitness extends Witness implements CodeDebugInterfac
      *
      * The returned array will be :
      *
-     *   0 => [ 'pre' => [ notemark1 ], 'post' => [] ],
+     *   0 => [ 'pre' => [ 0 ], 'post' => [] ],
      *   1 => [ 'pre' => [], 'post' => [] ],
      *   2 => [ 'pre' => [], 'post' => [] ],
      *   3 => [ 'pre' => [], 'post' => [] ],
-     *   4 => [ 'pre' => [], 'post' => [ notemark2] ],
+     *   4 => [ 'pre' => [], 'post' => [ 2 ] ],
      *   5 => [ 'pre' => [], 'post' => [] ],
-     *   6 => [ 'pre' => [], 'post' => [ notemark3] ]
+     *   6 => [ 'pre' => [], 'post' => [ 4 ] ]
      *
      * @return array
      */

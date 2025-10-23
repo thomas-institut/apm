@@ -21,6 +21,7 @@
 namespace APM\Core\Token;
 
 use APM\Core\Address\PointRange;
+use APM\Core\Transcription\ItemAddressInDocument;
 
 /**
  * A token in a transcription witness
@@ -31,13 +32,13 @@ class TranscriptionToken extends Token {
     
     /**
      *
-     * @var array Array of indexes to the transcription's item array
+     * @var int[] Array of indexes to the transcription's item array
      */
     protected array $sourceItemIndexes;
     
     /**
      *
-     * @var array Array of ItemInDocumentAddress objects
+     * @var ItemAddressInDocument[]
      */
     protected array $sourceItemAddresses;
     

@@ -3,7 +3,9 @@ import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistenc
 import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner';
 import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
 import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser.mjs';
-import {CtDataInterface} from "../CtDataInterface";
+import {CtDataInterface, NonTokenItemIndex} from "../CtDataInterface";
+import {getNonTokenItemIndices} from "@/Witness/TranscriptionWitness";
+import {arraysAreEqual} from "@/lib/ToolBox/ArrayUtil";
 
 /**
  *
@@ -37,6 +39,62 @@ export class CleanerOnePointFive extends CtDataCleaner {
       // fix '_edition_' title in single chunk editions (bug in single chunk edition generator)
       cleanData.sigla[cleanData['editionWitnessIndex']] = '-';
     }
+
+
+    // Check non item indices
+
+    console.log(`Checking consistency in nonTokenItemIndices...`);
+    let allGood = true;
+
+    cleanData.witnesses.forEach((witness, index) => {
+      if (witness.tokens === undefined) {
+        return;
+      }
+      if (witness.items === undefined) {
+        return;
+      }
+      if (witness.nonTokenItemIndexes === undefined) {
+        console.warn(`Witness ${index}: nonTokenItemIndexes is undefined`);
+        return;
+      }
+      const inCtData = witness.nonTokenItemIndexes;
+      const calculated = getNonTokenItemIndices(witness.tokens, witness.items);
+      const clean: {[key: number]: NonTokenItemIndex} = [];
+      for (let i=0; i < calculated.length; i++) {
+        if (calculated[i].pre.length === 0 && calculated[i].post.length === 0) {
+          continue;
+        }
+        clean[i] = calculated[i];
+      }
+
+      let consistent = true;
+
+      const inCtDataSlots = Object.keys(inCtData).map((key) => {return parseInt(key)});
+      const cleanSlots = Object.keys(clean).map((key) => {return parseInt(key)});
+      if (!arraysAreEqual(inCtDataSlots, cleanSlots)) {
+        consistent = false;
+      } else {
+        inCtDataSlots.forEach((index) => {
+          if (!arraysAreEqual(inCtData[index].pre, clean[index].pre)) {
+            consistent = false;
+            return;
+          }
+          if (!arraysAreEqual(inCtData[index].post, clean[index].post)) {
+            consistent = false;
+          }
+        });
+      }
+
+      if (!consistent) {
+        allGood = false;
+        console.warn(`Inconsistent witness ${index}`, witness.nonTokenItemIndexes, clean);
+      }
+
+    });
+    if (allGood) {
+      console.log('... all good!');
+    }
+
     return cleanData;
   }
 

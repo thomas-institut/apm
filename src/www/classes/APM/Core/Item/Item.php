@@ -34,13 +34,13 @@ abstract class Item {
     
     /** @var string */
     protected string $location;
-    const LOCATION_INLINE = '';
+    const string LOCATION_INLINE = '';
     
     /** @var int */
     protected int $textualFlow;
-    const FLOW_MAIN_TEXT = 0;
-    const FLOW_ADDITION = 1;
-    const FLOW_GLOSS = 2;
+    const int FLOW_MAIN_TEXT = 0;
+    const int FLOW_ADDITION = 1;
+    const int FLOW_GLOSS = 2;
     
     /** @var array */
     protected array $notes;

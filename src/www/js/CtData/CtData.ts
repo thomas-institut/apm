@@ -758,7 +758,7 @@ export class CtData {
    * Returns an array with the non-token item indices for each witness in ctData
    */
   static calculateAggregatedNonTokenItemIndexes(ctData: CtDataInterface): NonTokenItemIndex[][] {
-    let indexes = [];
+    let indexes: NonTokenItemIndex[][] = [];
     for (let witnessIndex = 0; witnessIndex < ctData.witnesses.length; witnessIndex++) {
       let tokenRefs = ctData.collationMatrix[witnessIndex];
       let witness = ctData.witnesses[witnessIndex];
@@ -783,7 +783,7 @@ export class CtData {
       if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['post'] !== undefined) {
         tokenPost = rawNonTokenItemIndexes[i].post;
       }
-      aggregatedPost = aggregatedPost.concat(tokenPost);
+      aggregatedPost.push(...tokenPost);
       let tokenIndexRef = tokenRefArray.indexOf(i);
       if (tokenIndexRef !== -1) {
         // token is in the collation table!
@@ -799,7 +799,7 @@ export class CtData {
       if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i].pre !== undefined) {
         tokenPre = rawNonTokenItemIndexes[i].pre;
       }
-      aggregatedPre = aggregatedPre.concat(tokenPre);
+      aggregatedPre.push(...tokenPre);
       let tokenIndexRef = tokenRefArray.indexOf(i);
       if (tokenIndexRef !== -1) {
         // token is in the collation table!

@@ -87,7 +87,8 @@ export class CleanerOnePointFive extends CtDataCleaner {
 
       if (!consistent) {
         allGood = false;
-        console.warn(`Inconsistent witness ${index}`, witness.nonTokenItemIndexes, clean);
+        console.warn(`Inconsistent witness ${index}, overriding with calculated data`, witness.nonTokenItemIndexes, clean);
+        cleanData.witnesses[index].nonTokenItemIndexes = clean;
       }
 
     });

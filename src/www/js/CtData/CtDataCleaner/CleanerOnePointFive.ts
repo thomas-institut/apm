@@ -59,7 +59,7 @@ export class CleanerOnePointFive extends CtDataCleaner {
       }
       const inCtData = witness.nonTokenItemIndexes;
       const calculated = getNonTokenItemIndices(witness.tokens, witness.items);
-      const clean: {[key: number]: NonTokenItemIndex} = [];
+      const clean: {[key: number]: NonTokenItemIndex} = {};
       for (let i=0; i < calculated.length; i++) {
         if (calculated[i].pre.length === 0 && calculated[i].post.length === 0) {
           continue;

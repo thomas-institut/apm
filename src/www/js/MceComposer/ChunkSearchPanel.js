@@ -22,6 +22,7 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { urlGen } from '@/pages/common/SiteUrlGen'
 import { ApmApiClient } from '@/Api/ApmApiClient'
 import { ApmFormats } from '@/pages/common/ApmFormats'
+import DataTable from 'datatables.net-dt';
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
@@ -39,7 +40,7 @@ export class ChunkSearchPanel extends Panel {
       optionsDefinition: {
         mceData: { type: 'object', required: true},
         icons: { type: 'object', default: defaultIcons},
-        apmDataProxy: { type: 'object', objectClass: ApmApiClient, required: true},
+        apiClient: { type: 'object', objectClass: ApmApiClient, required: true},
         // Function to be called to add a single chunk
         // edition to the multi chunk edition.
         // It should return a promise.
@@ -142,7 +143,7 @@ export class ChunkSearchPanel extends Panel {
       $(`${this.containerSelector} .add-edition-${info.id}`).on('click', this.genOnClickAddEdition(info.id))
     })
 
-    $("table.active-editions").DataTable({
+    new DataTable("table.active-editions", {
       paging: true,
       searching : true,
       lengthMenu: [ 25, 50, 100],
@@ -157,6 +158,22 @@ export class ChunkSearchPanel extends Panel {
         {searchable: false, orderable: false},
       ]
     });
+    //
+    // $("table.active-editions").DataTable({
+    //   paging: true,
+    //   searching : true,
+    //   lengthMenu: [ 25, 50, 100],
+    //   language: {
+    //     search: 'Filter:'
+    //   },
+    //   columns: [
+    //     null,
+    //     null,
+    //     null,
+    //     null,
+    //     {searchable: false, orderable: false},
+    //   ]
+    // });
   }
 
   /**

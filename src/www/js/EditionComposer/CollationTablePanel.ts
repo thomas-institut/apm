@@ -1250,18 +1250,18 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   getPostNotes(witnessIndex: number, _col: number, tokenIndex: number) {
-    this.debug && console.log(`Getting post notes for witness ${witnessIndex}, col ${_col}, token index ${tokenIndex}`);
+    // this.debug && console.log(`Getting post notes for witness ${witnessIndex}, col ${_col}, token index ${tokenIndex}`);
     if (this.aggregatedNonTokenItemIndexes[witnessIndex] === undefined) {
       console.warn(`Found undefined row in this.aggregatedNonTokenItemIndexes, row = ${witnessIndex}`);
       return [];
     }
 
     if (this.aggregatedNonTokenItemIndexes[witnessIndex][tokenIndex] === undefined) {
-      this.debug && console.log(`Undefined aggregate non-token item index for row ${witnessIndex}, tokenIndex ${tokenIndex}`);
+      // this.debug && console.log(`Undefined aggregate non-token item index for row ${witnessIndex}, tokenIndex ${tokenIndex}`);
       return [];
     }
     let postItemIndexes = this.aggregatedNonTokenItemIndexes[witnessIndex][tokenIndex]['post'];
-    this.debug && console.log(`postItemIndexes`, postItemIndexes);
+    // this.debug && console.log(`postItemIndexes`, postItemIndexes);
 
     let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items'] ?? [];
     let notes = [];

@@ -39,6 +39,7 @@ import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
 import {ApiPeopleAllPeopleDataForPeoplePageItem} from "@/Api/DataSchema/ApiPeopleAllPeopleDataForPeoplePage";
 import {ApiWorksAll} from "@/Api/DataSchema/ApiWorksAll";
 import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
+import {ApiPreset} from "@/Api/DataSchema/ApiPreset";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -328,6 +329,11 @@ export class ApmApiClient {
       console.error(`Error checking witness updates`, error);
       return {status: 'Error', message: 'Error checking witness updates', witnesses: [], timeStamp: ''};
     }
+  }
+
+  async getSiglaPresets(lang: string, witnessIds: string[]) : Promise<ApiPreset[]> {
+    const resp = await this.post(urlGen.apiGetSiglaPresets(), {lang: lang, witnesses: witnessIds}, true);
+    return resp['presets'];
   }
 
   async userMultiChunkEditions(userId: number, ttl?: number): Promise<ApiUserMultiChunkEdition[]> {
@@ -642,6 +648,7 @@ export class ApmApiClient {
           fetchOptions['headers'] = fetchOptions['headers'] || {};
           fetchOptions['headers']['Content-Type'] = 'application/json';
           fetchOptions['body'] = JSON.stringify(actualPayload);
+          // console.log(`Sending POST request to ${url}. Fetch options`, fetchOptions);
           return fetch(url, fetchOptions);
         };
 

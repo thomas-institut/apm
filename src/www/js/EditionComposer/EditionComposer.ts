@@ -986,28 +986,35 @@ export class EditionComposer extends ApmPage {
   }
 
   genFetchSiglaPresets() {
-    return () => {
-      return new Promise((resolve, reject) => {
-        let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets();
-        let apiCallOptions = {
-          lang: this.ctData['lang'], witnesses: this.ctData['witnesses'].filter(w => {
-            return w['witnessType'] === 'fullTx';
-          }).map(w => w['ApmWitnessId'])
-        };
-        $.post(apiSiglaPresetsUrl, {data: JSON.stringify(apiCallOptions)})
-        .done(apiResponse => {
-          //console.log(apiResponse)
-          if (apiResponse['presets'] === undefined) {
-            resolve([]);
-          } else {
-            resolve(apiResponse['presets']);
-          }
-        }).fail(resp => {
-          console.log('Error loading sigla presets');
-          console.log(resp);
-          reject(resp);
-        });
-      });
+    return async () => {
+      const lang  = this.ctData['lang'];
+      const witnesses = this.ctData['witnesses'].filter(w => {
+              return w['witnessType'] === 'fullTx';
+            }).map(w => w['ApmWitnessId']);
+
+      return this.apiClient.getSiglaPresets(lang, witnesses);
+
+      // return new Promise((resolve, reject) => {
+      //   let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets();
+      //   let apiCallOptions = {
+      //     lang: this.ctData['lang'], witnesses: this.ctData['witnesses'].filter(w => {
+      //       return w['witnessType'] === 'fullTx';
+      //     }).map(w => w['ApmWitnessId'])
+      //   };
+      //   $.post(apiSiglaPresetsUrl, {data: JSON.stringify(apiCallOptions)})
+      //   .done(apiResponse => {
+      //     //console.log(apiResponse)
+      //     if (apiResponse['presets'] === undefined) {
+      //       resolve([]);
+      //     } else {
+      //       resolve(apiResponse['presets']);
+      //     }
+      //   }).fail(resp => {
+      //     console.log('Error loading sigla presets');
+      //     console.log(resp);
+      //     reject(resp);
+      //   });
+      // });
     };
   }
 

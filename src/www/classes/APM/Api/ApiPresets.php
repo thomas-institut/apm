@@ -33,6 +33,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 
 use APM\ToolBox\Set;
 use APM\System\PresetFactory;
+use function PHPUnit\Framework\never;
 
 /**
  * Description of ApiPresets
@@ -259,18 +260,21 @@ class ApiPresets extends ApiController
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        
-        $inputData = $this->checkAndGetInputData($request, $response, ['lang', 'witnesses']);
-        if (!is_array($inputData)) {
-            return $inputData;
-        }
-
-        $tool = SystemManager::TOOL_SIGLA;
+        $inputData = json_decode($request->getBody()->getContents(), true);
+        $lang = $inputData['lang'] ?? null;
+        $requestedWitnesses = $inputData['witnesses'] ?? null;
         $userId = isset($inputData['userId']) ? intval($inputData['userId']) : 0;
-        $lang = $inputData['lang'];
-        $requestedWitnesses = $inputData['witnesses'];
+        $tool = SystemManager::TOOL_SIGLA;
 
         // Check that the input parameters make sense
+        if ($lang === null || $requestedWitnesses === null) {
+            $this->logger->error("No 'lang' or 'witnesses' field present in POST data",
+                [ 'apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_WRONG_TYPE,
+                    'data' => $inputData ]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
+        }
+
         if (!is_array($requestedWitnesses)) {
             $this->logger->error("Field 'witnesses' must be an array",
                 [ 'apiUserId' => $this->apiUserId,

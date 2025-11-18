@@ -35,6 +35,7 @@ import {ApmApiClient, ApmApiClientError} from "@/Api/ApmApiClient";
 import {CtDataInterface} from "@/CtData/CtDataInterface";
 import {WitnessUpdateData} from "@/Api/DataSchema/WitnessUpdates";
 import {urlGen} from "@/pages/common/SiteUrlGen";
+import {ApiPreset} from "@/Api/DataSchema/ApiPreset";
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -86,7 +87,7 @@ export class WitnessInfoPanel extends Panel {
   private readonly getWitnessData: (witnessId: string) => Promise<any>;
   private readonly updateWitness: (witnessIndex: number, changeData: any, newWitness: any) => Promise<boolean>;
   private readonly fetchSources: () => Promise<any>;
-  private readonly fetchSiglaPresets: () => Promise<any>;
+  private readonly fetchSiglaPresets: () => Promise<ApiPreset[]>;
   private readonly addEditionSources: (sourceDataArray: any[]) => void;
   private readonly saveSiglaPreset: (apiCallData: any) => Promise<any>;
 
@@ -471,7 +472,7 @@ export class WitnessInfoPanel extends Panel {
   }
 
   loadSiglaPresets() {
-    this.fetchSiglaPresets().then((presets: any) => {
+    this.fetchSiglaPresets().then((presets: ApiPreset[]) => {
       this.siglaPresets = presets;
       this.verbose && console.log(`Fetched sigla presets`);
       this.verbose && console.log(presets);
@@ -679,7 +680,8 @@ export class WitnessInfoPanel extends Panel {
     };
   }
 
-  getWitnessSiglaArrayFromPreset(preset: any) {
+  getWitnessSiglaArrayFromPreset(preset: ApiPreset) {
+    // console.log(`Getting sigla array from preset ${preset.presetId}`, preset);
     return this.ctData.witnesses
     .filter(w => {
       return w['witnessType'] === 'fullTx';
@@ -692,7 +694,7 @@ export class WitnessInfoPanel extends Panel {
         id: shortId,
         index: i,
         currentSiglum: this.ctData.sigla[i],
-        presetSiglum: preset.docsTableData.witnesses[shortId]
+        presetSiglum: preset.data.witnesses[shortId]
       };
     });
   }

@@ -43,18 +43,18 @@ use function PHPUnit\Framework\never;
 class ApiPresets extends ApiController
 {
 
-    const CLASS_NAME = 'Presets';
-    const API_ERROR_UNRECOGNIZED_TOOL = 4001;
-    const API_ERROR_NOT_ENOUGH_WITNESSES = 4002;
-    const API_ERROR_UNKNOWN_COMMAND = 4003;
-    const API_ERROR_INVALID_PRESET_DATA = 4004;
-    const API_ERROR_PRESET_ALREADY_EXISTS = 4005;
-    const API_ERROR_CANNOT_SAVE_PRESET = 4006;
-    const API_ERROR_PRESET_DOES_NOT_EXIST = 4007;
-    const API_ERROR_CANNOT_DELETE = 4008;
+    const string CLASS_NAME = 'Presets';
+    const int API_ERROR_UNRECOGNIZED_TOOL = 4001;
+    const int API_ERROR_NOT_ENOUGH_WITNESSES = 4002;
+    const int API_ERROR_UNKNOWN_COMMAND = 4003;
+    const int API_ERROR_INVALID_PRESET_DATA = 4004;
+    const int API_ERROR_PRESET_ALREADY_EXISTS = 4005;
+    const int API_ERROR_CANNOT_SAVE_PRESET = 4006;
+    const int API_ERROR_PRESET_DOES_NOT_EXIST = 4007;
+    const int API_ERROR_CANNOT_DELETE = 4008;
 
-    const COMMAND_NEW = 'new';
-    const COMMAND_UPDATE = 'update';
+    const string COMMAND_NEW = 'new';
+    const string COMMAND_UPDATE = 'update';
 
     /**
      * API call to get all the presets by tool
@@ -250,6 +250,9 @@ class ApiPresets extends ApiController
      * it MAY also contain
      *  userId:  int,  if different from 0, the call will return the presets
      *                 for that user only
+     *
+     * A preset is returned if it has the same language as the requested one, and
+     * if the requested witnesses are a subset of the preset's witnesses.
      *
      * @param Request $request
      * @param Response $response

@@ -68,7 +68,7 @@ abstract class SystemManager implements ErrorReporter {
 
 
     // Tool Ids (for presets)
-    const string TOOL_AUTOMATIC_COLLATION_V1 = 'automaticCollation';
+//    const string TOOL_AUTOMATIC_COLLATION_V1 = 'automaticCollation';
     const string TOOL_AUTOMATIC_COLLATION = 'automaticCollation_v2';
     const string TOOL_SIGLA = 'sigla';
 

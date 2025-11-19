@@ -638,21 +638,17 @@ export class WitnessInfoPanel extends Panel {
       let siglaTableBody = $(`${modalSelector} .sigla-table-body`);
 
       presetSelect.html(this.siglaPresets.map((p) => {
-        return `<option value="${p.presetId}">${p.title}, <em>${p.userName}</em></option>`;
+        return `<option value="${p.presetId}">${p.title} <i>(${p.userName})</i></option>`;
       }).join(''));
       let p = this.siglaPresets[0];
-      siglaTableBody.html(this.getWitnessSiglaArrayFromPreset(p).map(w => {
-        return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`;
-      }).join(''));
+      siglaTableBody.html(this.getSiglaTableBody(p));
 
       presetSelect.on('change', () => {
         let id = Util.safeGetIntVal(presetSelect, 'presetSelect');
         let p = this.siglaPresets.filter((p) => {
           return p.presetId === id;
         })[0];
-        siglaTableBody.html(this.getWitnessSiglaArrayFromPreset(p).map(w => {
-          return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`;
-        }).join(''));
+        siglaTableBody.html(this.getSiglaTableBody(p));
       });
 
       loadButton.on('click', async () => {
@@ -661,7 +657,9 @@ export class WitnessInfoPanel extends Panel {
           return p.presetId === id;
         })[0];
         this.getWitnessSiglaArrayFromPreset(p).forEach((w) => {
-          this.ctData['sigla'][w.index] = w.presetSiglum;
+          if (w.presetSiglum !== undefined && w.presetSiglum !== '' && w.presetSiglum !== w.currentSiglum) {
+            this.ctData['sigla'][w.index] = w.presetSiglum;
+          }
         });
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
@@ -879,7 +877,7 @@ export class WitnessInfoPanel extends Panel {
         if (this.ctData.witnesses[witnessIndex].witnessType === 'fullTx') {
           collatedWitnessPositions.push(pos);
         }
-      })
+      });
       console.log('collatedWitnessPositions', collatedWitnessPositions);
       let firstPos = Math.min(...collatedWitnessPositions);
       let lastPos = Math.max(...collatedWitnessPositions);
@@ -960,6 +958,16 @@ export class WitnessInfoPanel extends Panel {
       await this.onSiglaChange(this.ctData.sigla);
       return true;
     };
+  }
+
+  private getSiglaTableBody(p: any): string {
+    return this.getWitnessSiglaArrayFromPreset(p).map(w => {
+      let presetSiglumHtml = (w.presetSiglum !== undefined && w.presetSiglum !== '') ? `<b>${w.presetSiglum}</b>` : '<i title="Siglum will not be change if preset is applied">N/A</i>';
+      if (w.presetSiglum === w.currentSiglum) {
+        presetSiglumHtml = `${w.presetSiglum}`;
+      }
+      return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${presetSiglumHtml}</td></tr>`;
+    }).join('');
   }
 
   private getConvertToEditionDialogHtml(firstWitnessTitle: string) {

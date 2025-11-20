@@ -17,7 +17,7 @@
  */
 
 import {Panel, PanelOptions} from '@/MultiPanelUI/Panel';
-import * as Util from '../toolbox/Util';
+import * as Util from '../toolbox/Util.mjs';
 import {EditableTextField} from '@/widgets/EditableTextField';
 import * as CollationTableType from '../constants/CollationTableType';
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil.js';
@@ -35,7 +35,7 @@ import {ApmApiClient, ApmApiClientError} from "@/Api/ApmApiClient";
 import {CtDataInterface} from "@/CtData/CtDataInterface";
 import {WitnessUpdateData} from "@/Api/DataSchema/WitnessUpdates";
 import {urlGen} from "@/pages/common/SiteUrlGen";
-import {getClassArrayFromJQueryObject, safeGetIntVal} from "@/toolbox/UiToolBox";
+import {ApiPreset} from "@/Api/DataSchema/ApiPreset";
 
 const icons = {
   moveUp: '<i class="bi bi-arrow-up-short"></i>',
@@ -87,7 +87,7 @@ export class WitnessInfoPanel extends Panel {
   private readonly getWitnessData: (witnessId: string) => Promise<any>;
   private readonly updateWitness: (witnessIndex: number, changeData: any, newWitness: any) => Promise<boolean>;
   private readonly fetchSources: () => Promise<any>;
-  private readonly fetchSiglaPresets: () => Promise<any>;
+  private readonly fetchSiglaPresets: () => Promise<ApiPreset[]>;
   private readonly addEditionSources: (sourceDataArray: any[]) => void;
   private readonly saveSiglaPreset: (apiCallData: any) => Promise<any>;
 
@@ -472,7 +472,7 @@ export class WitnessInfoPanel extends Panel {
   }
 
   loadSiglaPresets() {
-    this.fetchSiglaPresets().then((presets: any) => {
+    this.fetchSiglaPresets().then((presets: ApiPreset[]) => {
       this.siglaPresets = presets;
       this.verbose && console.log(`Fetched sigla presets`);
       this.verbose && console.log(presets);
@@ -586,7 +586,7 @@ export class WitnessInfoPanel extends Panel {
         if (apiCommand === 'new') {
           apiCallData.title = titleInput.val();
         } else {
-          apiCallData.presetId = safeGetIntVal(presetSelect, 'presetSelect');
+          apiCallData.presetId = Util.safeGetIntVal(presetSelect, 'presetSelect');
         }
 
         this.saveSiglaPreset(apiCallData).then(() => {
@@ -638,30 +638,28 @@ export class WitnessInfoPanel extends Panel {
       let siglaTableBody = $(`${modalSelector} .sigla-table-body`);
 
       presetSelect.html(this.siglaPresets.map((p) => {
-        return `<option value="${p.presetId}">${p.title}, <em>${p.userName}</em></option>`;
+        return `<option value="${p.presetId}">${p.title} <i>(${p.userName})</i></option>`;
       }).join(''));
       let p = this.siglaPresets[0];
-      siglaTableBody.html(this.getWitnessSiglaArrayFromPreset(p).map(w => {
-        return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`;
-      }).join(''));
+      siglaTableBody.html(this.getSiglaTableBody(p));
 
       presetSelect.on('change', () => {
-        let id = safeGetIntVal(presetSelect, 'presetSelect');
+        let id = Util.safeGetIntVal(presetSelect, 'presetSelect');
         let p = this.siglaPresets.filter((p) => {
           return p.presetId === id;
         })[0];
-        siglaTableBody.html(this.getWitnessSiglaArrayFromPreset(p).map(w => {
-          return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${w.presetSiglum}</td></tr>`;
-        }).join(''));
+        siglaTableBody.html(this.getSiglaTableBody(p));
       });
 
       loadButton.on('click', async () => {
-        let id = safeGetIntVal(presetSelect, 'presetSelect');
+        let id = Util.safeGetIntVal(presetSelect, 'presetSelect');
         let p = this.siglaPresets.filter((p) => {
           return p.presetId === id;
         })[0];
         this.getWitnessSiglaArrayFromPreset(p).forEach((w) => {
-          this.ctData['sigla'][w.index] = w.presetSiglum;
+          if (w.presetSiglum !== undefined && w.presetSiglum !== '' && w.presetSiglum !== w.currentSiglum) {
+            this.ctData['sigla'][w.index] = w.presetSiglum;
+          }
         });
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
@@ -680,7 +678,8 @@ export class WitnessInfoPanel extends Panel {
     };
   }
 
-  getWitnessSiglaArrayFromPreset(preset: any) {
+  getWitnessSiglaArrayFromPreset(preset: ApiPreset) {
+    // console.log(`Getting sigla array from preset ${preset.presetId}`, preset);
     return this.ctData.witnesses
     .filter(w => {
       return w['witnessType'] === 'fullTx';
@@ -693,7 +692,7 @@ export class WitnessInfoPanel extends Panel {
         id: shortId,
         index: i,
         currentSiglum: this.ctData.sigla[i],
-        presetSiglum: preset.docsTableData.witnesses[shortId]
+        presetSiglum: preset.data.witnesses[shortId]
       };
     });
   }
@@ -866,10 +865,10 @@ export class WitnessInfoPanel extends Panel {
       if ($(ev.currentTarget).hasClass('disabled')) {
         return false;
       }
-      let classes = getClassArrayFromJQueryObject($(ev.currentTarget.parentNode));
+      let classes = Util.getClassArrayFromJQueryObject($(ev.currentTarget.parentNode));
 
       let position = this.getWitnessPositionFromClasses(classes);
-      // let numWitnesses = this.ctData['witnesses'].length;
+      let numWitnesses = this.ctData['witnesses'].length;
       console.log('Click move ' + direction + ' button on witness, position ' + position);
 
       const collatedWitnessPositions: number[] = [];
@@ -959,6 +958,16 @@ export class WitnessInfoPanel extends Panel {
       await this.onSiglaChange(this.ctData.sigla);
       return true;
     };
+  }
+
+  private getSiglaTableBody(p: any): string {
+    return this.getWitnessSiglaArrayFromPreset(p).map(w => {
+      let presetSiglumHtml = (w.presetSiglum !== undefined && w.presetSiglum !== '') ? `<b>${w.presetSiglum}</b>` : '<i title="Siglum will not be change if preset is applied">N/A</i>';
+      if (w.presetSiglum === w.currentSiglum) {
+        presetSiglumHtml = `${w.presetSiglum}`;
+      }
+      return `<tr></tr><td>${w.title}</td><td>${w.currentSiglum}</td><td>${presetSiglumHtml}</td></tr>`;
+    }).join('');
   }
 
   private getConvertToEditionDialogHtml(firstWitnessTitle: string) {

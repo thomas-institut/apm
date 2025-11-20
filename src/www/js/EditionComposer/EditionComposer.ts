@@ -70,7 +70,8 @@ import {ApmPage} from '@/pages/ApmPage';
 import {ApmFormats} from '@/pages/common/ApmFormats';
 import {urlGen} from '@/pages/common/SiteUrlGen';
 import {DataId_EC_ViewOptions} from '@/constants/WebStorageDataId';
-import {CtDataInterface} from "@/CtData/CtDataInterface";
+import {CtDataInterface, NonTokenItemIndex, WitnessInterface} from "@/CtData/CtDataInterface";
+import {getNonTokenItemIndices} from "@/Witness/TranscriptionWitness";
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -803,7 +804,7 @@ export class EditionComposer extends ApmPage {
   }
 
   genUpdateWitness() {
-    return async (witnessIndex: number, changeData: any, newWitness: any) => {
+    return async (witnessIndex: number, changeData: any, newWitness: WitnessInterface) => {
 
       console.log(`Updating witness ${witnessIndex} (${this.ctData['witnessTitles'][witnessIndex]})`);
 
@@ -858,6 +859,17 @@ export class EditionComposer extends ApmPage {
       //4. Clean up references
       let referencesCleaner = new EditionWitnessReferencesCleaner({verbose: true});
       this.ctData = referencesCleaner.getCleanCtData(this.ctData);
+
+      // 5. Recalculate non-token item indices
+      const calculated = getNonTokenItemIndices(newWitness.tokens, newWitness.items ?? []);
+      const clean: {[key: number]: NonTokenItemIndex} = {};
+      for (let i=0; i < calculated.length; i++) {
+        if (calculated[i].pre.length === 0 && calculated[i].post.length === 0) {
+          continue;
+        }
+        clean[i] = calculated[i];
+      }
+      this.ctData.witnesses[witnessIndex].nonTokenItemIndexes = clean;
 
       // 5.Fixes inconsistencies
       let consistencyCleaner = new CollationTableConsistencyCleaner({verbose: true});
@@ -975,28 +987,35 @@ export class EditionComposer extends ApmPage {
   }
 
   genFetchSiglaPresets() {
-    return () => {
-      return new Promise((resolve, reject) => {
-        let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets();
-        let apiCallOptions = {
-          lang: this.ctData['lang'], witnesses: this.ctData['witnesses'].filter(w => {
-            return w['witnessType'] === 'fullTx';
-          }).map(w => w['ApmWitnessId'])
-        };
-        $.post(apiSiglaPresetsUrl, {data: JSON.stringify(apiCallOptions)})
-        .done(apiResponse => {
-          //console.log(apiResponse)
-          if (apiResponse['presets'] === undefined) {
-            resolve([]);
-          } else {
-            resolve(apiResponse['presets']);
-          }
-        }).fail(resp => {
-          console.log('Error loading sigla presets');
-          console.log(resp);
-          reject(resp);
-        });
-      });
+    return async () => {
+      const lang  = this.ctData['lang'];
+      const witnesses = this.ctData['witnesses'].filter(w => {
+              return w['witnessType'] === 'fullTx';
+            }).map(w => w['ApmWitnessId']);
+
+      return this.apiClient.getSiglaPresets(lang, witnesses);
+
+      // return new Promise((resolve, reject) => {
+      //   let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets();
+      //   let apiCallOptions = {
+      //     lang: this.ctData['lang'], witnesses: this.ctData['witnesses'].filter(w => {
+      //       return w['witnessType'] === 'fullTx';
+      //     }).map(w => w['ApmWitnessId'])
+      //   };
+      //   $.post(apiSiglaPresetsUrl, {data: JSON.stringify(apiCallOptions)})
+      //   .done(apiResponse => {
+      //     //console.log(apiResponse)
+      //     if (apiResponse['presets'] === undefined) {
+      //       resolve([]);
+      //     } else {
+      //       resolve(apiResponse['presets']);
+      //     }
+      //   }).fail(resp => {
+      //     console.log('Error loading sigla presets');
+      //     console.log(resp);
+      //     reject(resp);
+      //   });
+      // });
     };
   }
 

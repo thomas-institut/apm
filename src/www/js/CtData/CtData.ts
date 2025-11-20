@@ -778,10 +778,7 @@ export class CtData {
     // aggregate post
     let aggregatedPost: number[] = [];
     for (let i = numTokens - 1; i >= 0; i--) {
-      let tokenPost: number[] = [];
-      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i]['post'] !== undefined) {
-        tokenPost = rawNonTokenItemIndexes[i].post;
-      }
+      const tokenPost: number[] = rawNonTokenItemIndexes[i]?.post ?? [];
       aggregatedPost.push(...tokenPost);
       let tokenIndexRef = tokenRefArray.indexOf(i);
       if (tokenIndexRef !== -1) {
@@ -794,10 +791,7 @@ export class CtData {
     // aggregate pre
     let aggregatedPre: number[] = [];
     for (let i = 0; i < numTokens; i++) {
-      let tokenPre: number[] = [];
-      if (rawNonTokenItemIndexes[i] !== undefined && rawNonTokenItemIndexes[i].pre !== undefined) {
-        tokenPre = rawNonTokenItemIndexes[i].pre;
-      }
+      const tokenPre: number[] = rawNonTokenItemIndexes[i]?.pre ?? [];
       aggregatedPre.push(...tokenPre);
       let tokenIndexRef = tokenRefArray.indexOf(i);
       if (tokenIndexRef !== -1) {

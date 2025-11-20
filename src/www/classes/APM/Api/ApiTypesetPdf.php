@@ -52,7 +52,7 @@ class ApiTypesetPdf extends ApiController
         $requestId = "APM-" . hash('sha1', $inputJson);
         $this->logger->debug("GeneratePDF request id is " . $requestId);
         $inputData = json_decode($inputJson, true);
-        $this->logger->debug("GeneratePDF input data", [ $inputData ]);
+//        $this->logger->debug("GeneratePDF input data", [ $inputData ]);
         $inputData['id'] = $requestId;
         $serviceUrl = sprintf(
                 "http://%s:%s/api/typeset",
@@ -62,7 +62,7 @@ class ApiTypesetPdf extends ApiController
 
         $guzzleClient = new Client([
             'base_uri' => $serviceUrl,
-            'timeout'  => 10.0,
+            'timeout'  => 30.0,
             'headers' => [ 'Content-Type' => 'application/json' ]
         ]);
 

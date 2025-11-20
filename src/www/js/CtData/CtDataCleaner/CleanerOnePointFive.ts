@@ -59,7 +59,7 @@ export class CleanerOnePointFive extends CtDataCleaner {
       }
       const inCtData = witness.nonTokenItemIndexes;
       const calculated = getNonTokenItemIndices(witness.tokens, witness.items);
-      const clean: {[key: number]: NonTokenItemIndex} = [];
+      const clean: {[key: number]: NonTokenItemIndex} = {};
       for (let i=0; i < calculated.length; i++) {
         if (calculated[i].pre.length === 0 && calculated[i].post.length === 0) {
           continue;
@@ -87,7 +87,8 @@ export class CleanerOnePointFive extends CtDataCleaner {
 
       if (!consistent) {
         allGood = false;
-        console.warn(`Inconsistent witness ${index}`, witness.nonTokenItemIndexes, clean);
+        console.warn(`Inconsistent witness ${index}, overriding with calculated data`, witness.nonTokenItemIndexes, clean);
+        cleanData.witnesses[index].nonTokenItemIndexes = clean;
       }
 
     });

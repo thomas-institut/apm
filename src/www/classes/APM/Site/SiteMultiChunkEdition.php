@@ -39,7 +39,7 @@ class SiteMultiChunkEdition extends SiteController
                 'editionId' => intval($request->getAttribute('editionId'))
             ],
             [],
-            [ 'multi-panel-ui/styles.css', 'mc-edition-composer.css']
+            [ '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css', 'multi-panel-ui/styles.css', 'mc-edition-composer.css']
         );
     }
 }

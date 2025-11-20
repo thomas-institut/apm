@@ -25,21 +25,24 @@ use InvalidArgumentException;
 /**
  * A class to manage all things related to system presets.
  * 
- * A preset in the system is uniquely identified by the  triplet (tool, userId, title) and by an integer id
+ * A preset in the system is uniquely identified by the  triplet (tool, userId, title). Functions to search, erase and
+ * modify presets use those three values for identification. There is also a unique integer id associated with each preset.
  *
- * Implementations of PresetManager should guarantee that presets are not duplicate in the system.
+ * Implementations of PresetManager should guarantee that there are no duplicate presets in the system.
  *
-*
- * Functions to search, erase and modify presets use those three values for identification.
- * The abstract class provides alternative versions of those
- * functions that take those values from a Preset object. 
+ * Presets have an array of string keys associated with them that serve to determine whether they apply to a particular
+ * situation within the preset's tool.  For example, automatic collation table presets have a language identifier
+ * and a list of witness identifiers as their keys. A user of this class may want to get all presets that
+ * have the same language, or that have the same witness identifiers, or both.
+ *
+ *
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 abstract class PresetManager {
 
 
-    const ERROR_PRESET_NOT_FOUND = 101;
+    const int ERROR_PRESET_NOT_FOUND = 101;
 
      // BASIC OPERATIONS
 
@@ -57,10 +60,9 @@ abstract class PresetManager {
 
     /**
      * Adds a preset to the system identified with the tool, userId and title in the given Preset.
-     * The given preset id is ignored and a new one is assigned.
+     * The preset id in the Preset input object is ignored and a new one is assigned.
      *
-     * addPreset must return false if there is already a preset
-     * that corresponds to the given $preset.
+     * Returns false if there is already a preset with the same tool, userId and title.
      *
      *
      *
@@ -70,8 +72,8 @@ abstract class PresetManager {
     abstract public function addPreset(Preset $preset) : bool;
 
     /**
-     * erasePreset must return true if the preset was erased or if it did not exist
-     * in the first place
+     * Erases the preset associated with the given tool, userId and title.
+     * Returns true if the preset was erased or not found.
      *
      * @param string $tool
      * @param int $userId
@@ -97,6 +99,9 @@ abstract class PresetManager {
     abstract public function getPreset(string $tool, int $userId, string $title) : Preset;
 
     /**
+     * Returns an array containing all the Preset objects in the system that match
+     * the given $tool and $keysToMatch.
+     *
      * @param string $tool
      * @param array $keysToMatch
      * @return Preset[]

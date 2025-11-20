@@ -38,7 +38,7 @@ use ThomasInstitut\DataTable\RowAlreadyExists;
  * The dataTable may also contain fields for particular keys from the keyArray that the manager will use to optimize
  * queries into the DataTable. Otherwise, the manager will simply retrieve all rows only possibly filtering by tool
  * and user at the DataTable level, and then searching for matches using that array. A good choice of particular keys
- * to store in their own fields may greatly increase performance when the underlying  DataTable uses a SQL database.
+ * to store in their own fields may greatly increase performance when the underlying DataTable uses a SQL database.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */

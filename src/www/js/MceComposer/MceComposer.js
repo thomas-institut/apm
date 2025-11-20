@@ -226,7 +226,7 @@ export class MceComposer extends ApmPage {
    this.chunkSearchPanel = new ChunkSearchPanel({
      containerSelector: `#${chunkSearchPanelId}`,
      mceData: this.mceData,
-     apmDataProxy: this.apiClient,
+     apiClient: this.apiClient,
      addEdition: (id, timestamp) => {
        return this.chunkAdd(id, timestamp)
      },

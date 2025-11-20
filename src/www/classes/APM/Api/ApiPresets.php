@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 
 use APM\System\Preset\Preset;
@@ -33,6 +34,7 @@ use Psr\Http\Message\ResponseInterface as Response;
 
 use APM\ToolBox\Set;
 use APM\System\PresetFactory;
+use function PHPUnit\Framework\never;
 
 /**
  * Description of ApiPresets
@@ -42,18 +44,18 @@ use APM\System\PresetFactory;
 class ApiPresets extends ApiController
 {
 
-    const CLASS_NAME = 'Presets';
-    const API_ERROR_UNRECOGNIZED_TOOL = 4001;
-    const API_ERROR_NOT_ENOUGH_WITNESSES = 4002;
-    const API_ERROR_UNKNOWN_COMMAND = 4003;
-    const API_ERROR_INVALID_PRESET_DATA = 4004;
-    const API_ERROR_PRESET_ALREADY_EXISTS = 4005;
-    const API_ERROR_CANNOT_SAVE_PRESET = 4006;
-    const API_ERROR_PRESET_DOES_NOT_EXIST = 4007;
-    const API_ERROR_CANNOT_DELETE = 4008;
+    const string CLASS_NAME = 'Presets';
+    const int API_ERROR_UNRECOGNIZED_TOOL = 4001;
+    const int API_ERROR_NOT_ENOUGH_WITNESSES = 4002;
+    const int API_ERROR_UNKNOWN_COMMAND = 4003;
+    const int API_ERROR_INVALID_PRESET_DATA = 4004;
+    const int API_ERROR_PRESET_ALREADY_EXISTS = 4005;
+    const int API_ERROR_CANNOT_SAVE_PRESET = 4006;
+    const int API_ERROR_PRESET_DOES_NOT_EXIST = 4007;
+    const int API_ERROR_CANNOT_DELETE = 4008;
 
-    const COMMAND_NEW = 'new';
-    const COMMAND_UPDATE = 'update';
+    const string COMMAND_NEW = 'new';
+    const string COMMAND_UPDATE = 'update';
 
     /**
      * API call to get all the presets by tool
@@ -250,6 +252,9 @@ class ApiPresets extends ApiController
      *  userId:  int,  if different from 0, the call will return the presets
      *                 for that user only
      *
+     * A preset is returned if it has the same language as the requested one, and
+     * if the requested witnesses are a subset of the preset's witnesses.
+     *
      * @param Request $request
      * @param Response $response
      * @return Response
@@ -259,18 +264,21 @@ class ApiPresets extends ApiController
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        
-        $inputData = $this->checkAndGetInputData($request, $response, ['lang', 'witnesses']);
-        if (!is_array($inputData)) {
-            return $inputData;
-        }
-
-        $tool = SystemManager::TOOL_SIGLA;
+        $inputData = json_decode($request->getBody()->getContents(), true);
+        $lang = $inputData['lang'] ?? null;
+        $requestedWitnesses = $inputData['witnesses'] ?? null;
         $userId = isset($inputData['userId']) ? intval($inputData['userId']) : 0;
-        $lang = $inputData['lang'];
-        $requestedWitnesses = $inputData['witnesses'];
+        $tool = SystemManager::TOOL_SIGLA;
 
         // Check that the input parameters make sense
+        if ($lang === null || $requestedWitnesses === null) {
+            $this->logger->error("No 'lang' or 'witnesses' field present in POST data",
+                [ 'apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_WRONG_TYPE,
+                    'data' => $inputData ]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
+        }
+
         if (!is_array($requestedWitnesses)) {
             $this->logger->error("Field 'witnesses' must be an array",
                 [ 'apiUserId' => $this->apiUserId,
@@ -306,7 +314,8 @@ class ApiPresets extends ApiController
         $filteredPresets = [];
         $witnessSet = new Set($witnessesToLookUp);
         foreach($presets as $preset) {
-            $presetWitnessesSet = new Set(array_keys($preset->getData()['witnesses']));
+            $newPresetData = $this->getPresetDataWithNewDocIds($preset);
+            $presetWitnessesSet = new Set(array_keys($newPresetData['witnesses']));
             if ($presetWitnessesSet->isSubsetOf($witnessSet)) {
                 $filteredPresets[] = $preset;
             }
@@ -325,13 +334,42 @@ class ApiPresets extends ApiController
         }
         return $this->responseWithJson($response,[
             'presets' => $presetsInArrayForm,
-//            'runTime' => $this->getProfilerTotalTime()
         ]);
     }
 
     private function convertFullTxIdToSiglaPresetId(string $longFormId) : string {
         $info = WitnessSystemId::getFullTxInfo($longFormId);
         return implode('-', [ 'fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
+//        try {
+//            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo(intval($info->typeSpecificInfo['docId']));
+//        } catch (DocumentNotFoundException) {
+//            $this->logger->warning("Could not find document for fullTx witness $longFormId", ['docId' => $info->typeSpecificInfo['docId']]);
+//            return implode('-', [ 'fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
+//        }
+//
+//        return implode('-', [ 'fullTx', $docInfo->id, $info->typeSpecificInfo['localWitnessId']]);
+    }
+
+    private function getPresetDataWithNewDocIds(Preset $preset): array {
+        return $preset->getData();
+//        $presetData = $preset->getData();
+//        $newWitnesses = [];
+//        foreach($presetData['witnesses'] as $witnessId => $siglum) {
+//            [ $witnessType, $docId, $localWitnessId] = explode('-', $witnessId);
+//            if ($witnessType === 'fullTx') {
+//                try {
+//                    $docInfo = $this->systemManager->getDocumentManager()->getDocInfo(intval($docId));
+//                    $newWitnessId = implode('-', [ 'fullTx', $docInfo->id, $localWitnessId]);
+//                    $newWitnesses[$newWitnessId] = $siglum;
+//                } catch (DocumentNotFoundException) {
+//                    $this->logger->warning("Could not find document for fullTx witness $docId");
+//                    $newWitnesses[$witnessId] = $siglum;
+//                }
+//            } else {
+//                $newWitnesses[$witnessId] = $siglum;
+//            }
+//        }
+//        return ['lang' => $presetData['lang'], 'witnesses' => $newWitnesses];
     }
 
     /**

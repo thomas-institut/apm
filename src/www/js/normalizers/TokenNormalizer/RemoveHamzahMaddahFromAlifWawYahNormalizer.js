@@ -17,7 +17,7 @@
  */
 
 
-import * as Util from '../../toolbox/Util.mjs'
+import * as Util from '../../toolbox/Util.ts'
 import { TokenNormalizer } from '../../Normalizer/TokenNormalizer'
 
 export class RemoveHamzahMaddahFromAlifWawYahNormalizer extends TokenNormalizer {

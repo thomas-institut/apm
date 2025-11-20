@@ -6,7 +6,7 @@ import * as MetadataKey from '../MetadataKey.js';
 import {TextBoxFactory} from '../TextBoxFactory.js';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {TextBoxMeasurer} from '../TextBoxMeasurer/TextBoxMeasurer.js';
-import {NumeralStyles} from '../../../toolbox/NumeralStyles.mjs';
+import {NumeralStyles} from '../../../toolbox/NumeralStyles.js';
 import {TypesetterPage} from "../TypesetterPage.js";
 
 export class AddPageNumbers extends PageProcessor {

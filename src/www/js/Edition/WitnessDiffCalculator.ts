@@ -18,7 +18,7 @@
 
 
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType.js';
-import * as MyersDiff from '../toolbox/MyersDiff.mjs';
+import * as MyersDiff from '../toolbox/MyersDiff/MyersDiff.js';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {WitnessInterface} from "@/CtData/CtDataInterface";
 
@@ -78,9 +78,6 @@ export class WitnessDiffCalculator {
     }
 
     // 1. Find changes in the tokens
-    if (this.debug) {
-      MyersDiff.setDebugMode();
-    }
     let editScript = MyersDiff.calculate(oldWitness['tokens'], newWitness['tokens'], function (a: any, b: any) {
       if (a['tokenType'] === b['tokenType']) {
         switch (a['tokenType']) {
@@ -101,7 +98,7 @@ export class WitnessDiffCalculator {
         }
       }
       return false;
-    });
+    }, this.debug);
 
     if (this.debug) {
       console.log('Edit Script');

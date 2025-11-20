@@ -7,8 +7,8 @@ import {SectionSchema} from "@/MetadataEditor/MetadataEditorSchemata/SchemaInter
 export interface MdeSectionOptions {
   containerSelector: string;
   entityData: EntityDataInterface;
-  predicateDefinitions: PredicateDefinitionInterface[];
-  qualificationDefinitions: PredicateDefinitionInterface[];
+  predicateDefinitions: { [p: number]: PredicateDefinitionInterface };
+  qualificationDefinitions: { [p: number]: PredicateDefinitionInterface };
   apiClient: ApmApiClient;
   sectionSchema: SectionSchema;
   onEntityDataChange: (newData: EntityDataInterface, changedPredicates: number[]) => Promise<boolean[]>;
@@ -25,8 +25,8 @@ export class MdeSection {
   protected title: string;
   protected containerSelector: string;
   protected apiClient: ApmApiClient;
-  protected predicateDefinitions: PredicateDefinitionInterface[];
-  protected qualificationDefinitions: PredicateDefinitionInterface[];
+  protected predicateDefinitions: { [p: number]: PredicateDefinitionInterface };
+  protected qualificationDefinitions: { [p: number]: PredicateDefinitionInterface };
 
 
   constructor(options: MdeSectionOptions) {

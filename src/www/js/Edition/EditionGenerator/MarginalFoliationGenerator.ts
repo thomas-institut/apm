@@ -3,13 +3,11 @@ import {ApparatusSubEntry} from '../ApparatusSubEntry';
 import * as SubEntryType from '../SubEntryType';
 import * as SubEntrySource from '../SubEntrySource';
 import {ApparatusEntry} from '../ApparatusEntry';
-import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
-import {FmtTextTokenFactory} from '@/lib/FmtText/FmtTextTokenFactory';
 import {NumeralStyles} from '@/toolbox/NumeralStyles';
 import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
 import {MainTextToken} from "../MainTextToken";
-import {FmtTextToken} from "@/lib/FmtText/FmtTextToken.js";
+import {FmtText, fromString} from "@/lib/FmtText/FmtText.js";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
 
@@ -161,29 +159,22 @@ export class MarginalFoliationGenerator {
     return app;
   }
 
-  /**
-   *
-   * @param {string}siglum
-   * @param {string}foliation
-   * @return {FmtTextToken[]}
-   * @private
-   */
-  getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtTextToken[] {
+  private getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtText {
 
     if (this.ctData.lang === 'ar') {
 
-      let fmtText: FmtTextToken[] = [];
+      let fmtText: FmtText = [];
 
-      fmtText.push(FmtTextTokenFactory.normalText(siglum));
-      fmtText.push(FmtTextTokenFactory.normalText('-'));
+      fmtText.push(...fromString(siglum));
+      fmtText.push(...fromString('-'));
 
       let foliationParts = foliation.match(/^(\d+)([r|v]?)$/);
       if (foliationParts === null) {
-        fmtText.push(FmtTextTokenFactory.normalText(foliation));
+        fmtText.push(...fromString(foliation));
       } else {
         let [, folioNumber, folioSuffix] = foliationParts;
         folioSuffix = folioSuffix ?? '';
-        fmtText.push(FmtTextTokenFactory.normalText(NumeralStyles.toDecimalArabic(parseInt(folioNumber))));
+        fmtText.push(...fromString(NumeralStyles.toDecimalArabic(parseInt(folioNumber))));
         if (folioSuffix === 'r') {
           folioSuffix = 'ظ';
         }
@@ -191,14 +182,14 @@ export class MarginalFoliationGenerator {
           folioSuffix = 'و';
         }
         if (folioSuffix !== '') {
-          fmtText.push(FmtTextTokenFactory.normalText(folioSuffix));
+          fmtText.push(...fromString(folioSuffix));
         }
       }
 
       return fmtText;
     }
 
-    return FmtTextFactory.fromString(`${siglum}:${foliation}`);
+    return fromString(`${siglum}:${foliation}`);
   }
 
   /**

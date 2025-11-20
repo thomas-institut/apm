@@ -18,16 +18,14 @@
  *
  */
 
-import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
-import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
-import {FmtTextToken} from "../lib/FmtText/FmtTextToken.js";
+import {FmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
 import {MainTextTokenInterface, MainTextTokenType} from "./EditionInterface";
 
 
 export class MainTextToken implements MainTextTokenInterface {
 
   type: MainTextTokenType;
-  fmtText: FmtTextToken[];
+  fmtText: FmtText;
   editionWitnessTokenIndex: number;
   style: string;
   space?: string;
@@ -42,14 +40,14 @@ export class MainTextToken implements MainTextTokenInterface {
 
   constructor() {
     this.type = 'empty';
-    this.fmtText = FmtTextFactory.empty();
+    this.fmtText = [];
     this.editionWitnessTokenIndex = -1;
     this.style = '';
   }
 
   setFromInterface(token: MainTextTokenInterface): this {
     this.type = token.type;
-    this.fmtText = FmtTextFactory.fromAnything(token.fmtText);
+    this.fmtText = token.fmtText;
     this.editionWitnessTokenIndex = token.editionWitnessTokenIndex;
     this.style = token.style;
     return this;
@@ -57,12 +55,12 @@ export class MainTextToken implements MainTextTokenInterface {
 
 
   getPlainText(): string {
-    return FmtTextUtil.getPlainText(this.fmtText);
+    return getPlainText(this.fmtText);
   }
 
-  setText(theText: any, editionWitnessTokenIndex = -1, lang = ''): this {
+  setText(theText: string, editionWitnessTokenIndex = -1, lang = ''): this {
     this.type = 'text';
-    this.fmtText = FmtTextFactory.fromAnything(theText);
+    this.fmtText = fromString(theText);
     this.editionWitnessTokenIndex = editionWitnessTokenIndex;
     return this.setLang(lang);
   }

@@ -20,7 +20,7 @@
 import {defaultLanguageDefinition} from '@/defaults/languages';
 
 // utilities
-import * as Util from '../toolbox/Util.mjs';
+import * as Util from '../toolbox/Util';
 import {capitalizeFirstLetter, deepCopy} from '@/toolbox/Util';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil';
@@ -305,8 +305,8 @@ export class EditionComposer extends ApmPage {
     this.apparatusPanels = [];
     if (this.ctData.type === CollationTableType.EDITION) {
       console.log(`Loading ApparatusPanel and MainTextPanel`);
-      const { ApparatusPanel} = await import('./ApparatusPanel.js');
-      const { MainTextPanel} = await import('./MainTextPanel.js');
+      const {ApparatusPanel} = await import('./ApparatusPanel.js');
+      const {MainTextPanel} = await import('./MainTextPanel.js');
       console.log(`ApparatusPanel and MainTextPanel loaded`);
       this.apparatusPanels = this.edition.apparatuses
       .map((apparatus, appIndex) => {
@@ -385,10 +385,11 @@ export class EditionComposer extends ApmPage {
       containerSelector: `#${adminPanelTabId}`,
       versionInfo: this.versionInfo,
       peopleInfo: this.options.peopleInfo,
-      ctType: this.ctData['type'],
-      archived: this.ctData['archived'],
+      ctType: this.ctData.type,
+      archived: this.ctData.archived,
       canArchive: true,
-      onConfirmArchive: this.genOnConfirmArchive()
+      onConfirmArchive: this.genOnConfirmArchive(),
+      cannotArchiveReason: ''
     });
 
 
@@ -420,12 +421,12 @@ export class EditionComposer extends ApmPage {
       panelTwoTabs.push(TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel), TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel));
     } else {
       // not an edition, show admin panel first
-      panelTwoTabs.push(TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel), TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel), );
+      panelTwoTabs.push(TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel), TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel),);
     }
 
 
     if (this.options.isTechSupport) {
-      const { TechSupportPanel} = await import('./TechSupportPanel.js');
+      const {TechSupportPanel} = await import('./TechSupportPanel.js');
       this.techSupportPanel = new TechSupportPanel({
         containerSelector: `#${techSupportTabId}`, active: false, ctData: this.ctData, edition: this.edition
       });
@@ -780,7 +781,7 @@ export class EditionComposer extends ApmPage {
   }
 
   genGetWitnessData() {
-    return (witnessId: any) => {
+    return (witnessId: string) => {
       return new Promise((resolve, reject) => {
         let apiUrl = urlGen.apiWitnessGet(witnessId, 'standardData');
         $.get(apiUrl).then((resp) => {
@@ -941,7 +942,7 @@ export class EditionComposer extends ApmPage {
       let currentNumWitnesses = this.ctData.witnesses.length;
       sourceDataArray.forEach((sourceData, index) => {
         this.ctData.witnesses.push({
-          witnessType: WitnessType.SOURCE, title: sourceData.title, ApmWitnessId: 'source:' + sourceData.tid, tokens:[]
+          witnessType: WitnessType.SOURCE, title: sourceData.title, ApmWitnessId: 'source:' + sourceData.tid, tokens: []
         });
         this.ctData.witnessTitles.push(sourceData.title);
         this.ctData.witnessOrder.push(currentNumWitnesses + index);

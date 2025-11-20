@@ -2,7 +2,7 @@
 
 
 import {MetadataInterface} from "../Edition/EditionInterface.js";
-import {FmtTextToken} from "../lib/FmtText/FmtTextToken";
+import {CompactFmtText, FmtText} from "../lib/FmtText/FmtText";
 
 export interface CtDataInterface {
   lang: string;
@@ -45,7 +45,7 @@ export interface CustomApparatusInterface {
   metadata?: MetadataInterface;
 }
 
-export interface CustomApparatusEntryInterface  {
+export interface CustomApparatusEntryInterface {
   /**
    * Starting column of the entry in the collation matrix
    */
@@ -54,9 +54,9 @@ export interface CustomApparatusEntryInterface  {
    * Ending column of the entry in the collation matrix
    */
   to: number;
-  lemma: string | FmtTextToken[];
-  postLemma: string;
-  preLemma: string;
+  lemma: CompactFmtText;
+  postLemma: CompactFmtText;
+  preLemma: CompactFmtText;
   separator: string;
   subEntries: CustomApparatusSubEntryInterface[];
   tags: string[];
@@ -97,7 +97,7 @@ export interface CustomApparatusSubEntryInterface {
   /**
    * Text of a fullCustom sub entry
    */
-  fmtText?: FmtTextToken [];
+  fmtText?: FmtText;
   /**
    * Keyword of a fullCustom sub entry
    */
@@ -137,7 +137,7 @@ export interface WitnessTokenInterface {
   tokenClass: string;
   normalizedText?: string;
   normalizationSource?: string;
-  fmtText: any[];
+  fmtText?: FmtText;
 
   // used by Edition Witnesses
   markType?: string;
@@ -148,6 +148,9 @@ export interface WitnessTokenInterface {
   textBox?: number | RangeInterface;
   line?: number | RangeInterface;
   sourceItems?: SourceItemInterface[];
+
+  // used in MainTextPanel
+  originalIndex?: number;
 }
 
 export interface SourceItemInterface {

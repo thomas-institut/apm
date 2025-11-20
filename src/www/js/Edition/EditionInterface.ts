@@ -1,7 +1,7 @@
 // noinspection ES6PreferShortImport
 
 import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface.js";
-import {FmtTextToken} from "../lib/FmtText/FmtTextToken.js";
+import {CompactFmtText, FmtText} from "../lib/FmtText/FmtText.js";
 import {SiglaGroupInterface, WitnessDataItemInterface} from "../CtData/CtDataInterface.js";
 
 export interface EditionInterface {
@@ -37,7 +37,7 @@ export interface EditionWitnessInfoInterface {
  */
 export interface MainTextTokenInterface {
   type: MainTextTokenType;
-  fmtText: FmtTextToken[];
+  fmtText: FmtText;
   editionWitnessTokenIndex: number;
   style: string;
 }
@@ -58,10 +58,6 @@ export interface ApparatusInterface {
   type: string;
   entries: ApparatusEntryInterface[];
   metadata?: MetadataInterface;
-  /**
-   * @deprecated Is this actually needed? Maybe move it to metadata.
-   */
-  // rawEntries?: ApparatusEntry[];
 }
 
 export interface EditionInfoInterface extends MetadataInterface {
@@ -77,9 +73,9 @@ export interface ApparatusEntryInterface {
   section?: number[];
   from: number;
   to: number;
-  preLemma: string;
-  lemma: string | FmtTextToken[];
-  postLemma: string;
+  preLemma: CompactFmtText;
+  lemma: CompactFmtText;
+  postLemma: CompactFmtText;
   lemmaText: string;
   separator: string;
   tags: string[];
@@ -94,7 +90,7 @@ export interface ApparatusSubEntryInterface {
   type: string;
   enabled: boolean;
   source?: string;
-  fmtText: FmtTextToken[];
+  fmtText: FmtText;
   witnessData: WitnessDataItemInterface[];
   keyword: string;
   position: number;

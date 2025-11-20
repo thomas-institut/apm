@@ -1,5 +1,5 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
-import { trimWhiteSpace } from '../toolbox/Util.mjs'
+import { trimWhiteSpace } from '../toolbox/Util.ts'
 
 
 const cacheKeyPrefix = 'apm-tag_hints'

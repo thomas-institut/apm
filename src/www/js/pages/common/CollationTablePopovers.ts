@@ -16,7 +16,7 @@
  *
  */
 
-import * as Util from '../../toolbox/Util.mjs';
+import * as Util from '../../toolbox/Util';
 import {EDITION, FULL_TX} from '@/Witness/WitnessTokenClass';
 import * as NormalizationSource from '../../constants/NormalizationSource';
 import {ApmFormats} from './ApmFormats';

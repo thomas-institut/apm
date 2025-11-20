@@ -20,7 +20,7 @@ import * as CollationTableType from '../../constants/CollationTableType';
 import {CtData} from '../CtData';
 import {CtDataCleaner} from './CtDataCleaner';
 import {deepCopy} from '@/toolbox/Util';
-import {DEFAULT_GLUE_SPACE, FmtTextToken} from '@/lib/FmtText/FmtTextToken';
+import {DEFAULT_GLUE_SPACE} from '@/lib/FmtText/FmtText';
 import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner';
 import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
 import {EDITION} from '@/constants/CollationTableType';
@@ -106,7 +106,7 @@ export class CleanerOnePointZero extends CtDataCleaner {
           if (ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText !== undefined) {
             // this is a custom entry, other types do not have a fmtText
             // @ts-expect-error - fmtText is defined at this point
-            ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText = ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText.map((token: FmtTextToken) => {
+            ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText = ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText.map((token) => {
               if (token.type === 'glue' && token.space === '') {
                 token.space = DEFAULT_GLUE_SPACE;
               }

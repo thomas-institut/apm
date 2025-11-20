@@ -2,7 +2,7 @@ import {CtDataCleaner} from './CtDataCleaner';
 import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner';
 import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner';
 import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
-import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser.mjs';
+import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser';
 import {CtDataInterface, NonTokenItemIndex} from "../CtDataInterface";
 import {getNonTokenItemIndices} from "@/Witness/TranscriptionWitness";
 import {arraysAreEqual} from "@/lib/ToolBox/ArrayUtil";

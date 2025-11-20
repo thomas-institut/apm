@@ -12,7 +12,7 @@ import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import TopBar from "@/ReactAPM/TopBar";
 import {RouteUrls} from './Router/RouteUrls';
 import {deleteToken, retrieveToken, storeToken} from "@/ReactAPM/ToolBox/AuthenticationUtilities";
-import {trimCharacters} from "@/toolbox/Util.mjs";
+import {trimCharacters} from "@/toolbox/Util";
 
 // @ts-ignore
 const Dashboard = lazy(() => import('@/ReactAPM/Pages/Dashboard/Dashboard.js'));

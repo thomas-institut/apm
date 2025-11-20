@@ -16,8 +16,7 @@
  *
  */
 
-import {FmtTextToken} from '../FmtTextToken.js';
-import {FmtTextUtil} from '../FmtTextUtil';
+import {FmtText, getPlainText} from '../FmtText.js';
 
 /**
  * Base class for FmtText renderers
@@ -29,8 +28,8 @@ export class FmtTextRenderer {
    * The render method can return anything.
    * The default is to return the plain text version of the text
    */
-  render(fmtText: FmtTextToken[], lang = ''): any {
-    return FmtTextUtil.getPlainText(fmtText);
+  render(fmtText: FmtText, _lang = ''): any {
+    return getPlainText(fmtText);
   }
 
 }

@@ -22,7 +22,6 @@ import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
 // @ts-ignore
 import {Matrix} from '@thomas-inst/matrix';
 import * as CollationTableType from '../constants/CollationTableType';
-import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
 import {deepCopy} from '@/toolbox/Util';
 import * as NormalizationSource from '../constants/NormalizationSource';
 import * as WitnessType from '../Witness/WitnessTokenClass';
@@ -286,7 +285,7 @@ export class CtData {
         for (let subEntryN = 0; subEntryN < ctData.customApparatuses[i].entries[entryN].subEntries.length; subEntryN++) {
           if (ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText !== undefined) {
             // this is a custom entry, other types do not have a fmtText
-            ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText = FmtTextFactory.fromAnything(ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText);
+            //ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText = ctData.customApparatuses[i].entries[entryN].subEntries[subEntryN].fmtText;
           }
         }
       }

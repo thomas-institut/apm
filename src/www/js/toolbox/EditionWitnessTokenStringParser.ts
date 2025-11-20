@@ -18,7 +18,7 @@
 
 import { Punctuation} from '@/defaults/Punctuation'
 import { WitnessToken } from '@/Witness/WitnessToken'
-import { NumeralStyles } from './NumeralStyles.mjs'
+import { NumeralStyles } from './NumeralStyles'
 import { EditionWitnessToken } from '@/Witness/EditionWitnessToken'
 import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
 
@@ -32,7 +32,7 @@ export class EditionWitnessTokenStringParser {
    * @param detectIntraWordQuotationMarks
    * @return {WitnessToken[]}
    */
-  static parse (str, lang, detectNumberingLabels = true, detectIntraWordQuotationMarks = false) {
+  static parse (str: string, lang: string, detectNumberingLabels = true, detectIntraWordQuotationMarks = false): WitnessToken[] {
     let debug = false
     // if (str.includes('...')) {
     //   debug = true;
@@ -94,7 +94,7 @@ export class EditionWitnessTokenStringParser {
    * @return WitnessToken[]
    * @private
    */
-  static parseNonWhiteSpaceCharacters(chars, lang, detectNumberingLabels = true, detectIntraWordQuotationMarks = false) {
+  static parseNonWhiteSpaceCharacters(chars: string[], lang: string, detectNumberingLabels: boolean = true, detectIntraWordQuotationMarks = false) {
       if (chars.length === 0) {
       return []
     }
@@ -134,7 +134,7 @@ export class EditionWitnessTokenStringParser {
     }
   }
 
-  static parseStringWithPunctuation(theString, lang, debug = false) {
+  static parseStringWithPunctuation(theString: string, lang:string) {
     // if (theString.charAt(0) === '<' || theString.charAt(0) === '〈') {
     //   console.log(`Parsing string '${theString}', lang '${lang}'`)
     // }
@@ -276,7 +276,7 @@ export class EditionWitnessTokenStringParser {
    * and enclosed in square brackets, e.g., [1.1], [1], [1.a], [1.a.iv], etc
    * @param str
    */
-  static isNumberingLabel(str) {
+  static isNumberingLabel(str: string): boolean {
     let strLength = str.length
     if (strLength < 3) {
       return false
@@ -306,7 +306,7 @@ export class EditionWitnessTokenStringParser {
    * @param {string}lang
    * @return {boolean}
    */
-  static isWordToken(text, lang = '') {
+  static isWordToken(text: string, lang: string = ''): boolean {
     return !this.hasWhiteSpace(text) && !Punctuation.stringHasPunctuation(text, lang)
   }
 
@@ -316,7 +316,7 @@ export class EditionWitnessTokenStringParser {
    * @return {boolean}
    * @private
    */
-  static hasWhiteSpace(text) {
+  static hasWhiteSpace(text: string): boolean {
     return /\s/.test(text)
   }
 

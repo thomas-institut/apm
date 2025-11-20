@@ -1,8 +1,15 @@
-import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TimeString } from '@/toolbox/TimeString'
 
 let language = 'en';
 let timeZone = 'UTC';
+
+interface TimeOptions {
+  utc?: boolean;
+  numericalMonth?: boolean;
+  withSeconds?: boolean;
+  withTimeZone?: boolean;
+  withTimeZoneOffset?: boolean;
+}
 
 export class ApmFormats {
 
@@ -12,7 +19,7 @@ export class ApmFormats {
    * @param {string}timeString
    * @param options
    */
-  static timeString(timeString: string, options: any = {}) {
+  static timeString(timeString: string, options: TimeOptions = {}) {
     let dateObject = TimeString.toDate(timeString);
     return this.time(dateObject, options);
   }
@@ -38,23 +45,14 @@ export class ApmFormats {
    *   withTimeZoneOffset: if true, add 'UTC+xx' or 'UTC-xx' with the UTC offset. Default: false. If both withTimeZone
    *   and withTimeZoneOffset are true, only a time zone offset will be shown.
    *
-   *
-   * @param dateTimeVar
-   * @param options
-   * @return {string}
    */
-  static time(dateTimeVar: any, options:any = {}) {
-    let oc = new OptionsChecker({
-      context: 'dateTimeString',
-      optionsDefinition: {
-        utc: { type: 'bool', default: false},
-        numericalMonth: { type: 'bool', default: false},
-        withSeconds: { type: 'bool', default: true},
-        withTimeZone: { type: 'bool', default: false},
-        withTimeZoneOffset: { type: 'bool', default: false}
-      }
-    })
-    let opt = oc.getCleanOptions(options);
+  static time(dateTimeVar: string | number | Date, options:TimeOptions = {}) {
+
+    const utc = options.utc ?? false;
+    const numericalMonth = options.numericalMonth ?? false;
+    const withSeconds = options.withSeconds ?? true;
+    const withTimeZone = options.withTimeZone ?? false;
+    const withTimeZoneOffset = options.withTimeZoneOffset ?? false;
 
     const monthNames: {[key:string]: string[]} = {
       'en' : ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
@@ -72,41 +70,36 @@ export class ApmFormats {
         break;
 
       case 'object':
-        if (dateTimeVar instanceof Date) {
-          d = dateTimeVar;
-        } else {
-          console.warn(`Object parameter to dateTimeString is not a Date object`);
-          return '????';
-        }
+        d = dateTimeVar;
         break;
 
       default:
         console.warn(`Wrong parameter type to dateTimeString`);
         return '????';
     }
-    let year = opt.utc ? d.getUTCFullYear() : d.getFullYear();
-    let monthNumber = opt.utc ? d.getUTCMonth() : d.getMonth();
-    let month = opt.numericalMonth ?
+    let year = utc ? d.getUTCFullYear() : d.getFullYear();
+    let monthNumber = utc ? d.getUTCMonth() : d.getMonth();
+    let month = numericalMonth ?
       monthNumber.toString().padStart(2, '0') :
       monthNames[language][monthNumber] ?? monthNames['en'][d.getMonth()];
-    let dayNumber = opt.utc ? d.getUTCDate() : d.getDate();
+    let dayNumber = utc ? d.getUTCDate() : d.getDate();
     let day = dayNumber.toString();
-    let hourNumber = opt.utc ? d.getUTCHours() : d.getHours();
+    let hourNumber = utc ? d.getUTCHours() : d.getHours();
     let hour = hourNumber.toString();
-    let minNumber = opt.utc ? d.getUTCMinutes() : d.getMinutes();
+    let minNumber = utc ? d.getUTCMinutes() : d.getMinutes();
     let min = minNumber.toString().padStart(2, '0');
     let secString = '';
-    if (opt.withSeconds) {
-      let secNumber = opt.utc ? d.getUTCSeconds() : d.getSeconds();
+    if (withSeconds) {
+      let secNumber = utc ? d.getUTCSeconds() : d.getSeconds();
       secString = `:${secNumber.toString().padStart(2, '0')}`;
     }
     let timeZoneString = '';
 
-    if (opt.withTimeZone) {
+    if (withTimeZone) {
       timeZoneString = ` ${timeZone}`
     }
-    if (opt.withTimeZoneOffset) {
-     timeZoneString = ` ${this.getTimeZoneOffsetStringForDate(d, opt.utc)}`
+    if (withTimeZoneOffset) {
+     timeZoneString = ` ${this.getTimeZoneOffsetStringForDate(d, utc)}`
     }
     return `${day} ${month} ${year}, ${hour}:${min}${secString}${timeZoneString}`
   }

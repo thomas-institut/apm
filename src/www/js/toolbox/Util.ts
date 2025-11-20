@@ -16,42 +16,34 @@
  *
  */
 
-
-// Utility functions, now as a module
-
-export function deepCopy(someVariable) {
+export function deepCopy<T>(someVariable: T) : T {
   return JSON.parse(JSON.stringify(someVariable))
 }
 
-export function removeWhiteSpace(someString) {
+export function removeWhiteSpace(someString: string): string {
   return someString.replace(/\s/g, '')
 }
 
-export function removeExtraWhiteSpace(someString) {
+export function removeExtraWhiteSpace(someString: string): string {
   return trimWhiteSpace(someString).replace(/\s+/g, ' ')
 }
 
 /**
  * Trims whitespace from the start and end of a string
- * @param {string}someString
- * @return {string}
  */
-export function trimWhiteSpace(someString) {
+export function trimWhiteSpace(someString: string): string {
   return someString.replace(/^\s+/, '').replace(/\s+$/, '')
 }
 
-export function rTrimWhiteSpace(someString) {
-  return someString.replace(/\s+$/, '')
-}
+// export function rTrimWhiteSpace(someString: string): string {
+//   return someString.replace(/\s+$/, '')
+// }
 
 /**
  * Compares two strings a and b, and return 1 is a>b, -1 if b<a or
  * 0 if the strings are equal
- * @param {string}a
- * @param {string}b
- * @return {number}
  */
-export function compareStrings(a, b) {
+export function compareStrings(a: string, b: string): number {
   if (a < b) {
     return -1;
   }
@@ -61,12 +53,7 @@ export function compareStrings(a, b) {
   return 0;
 }
 
-/**
- *
- * @param {string}someString
- * @param {string[]}charactersToTrim
- */
-export function lTrimCharacters(someString, charactersToTrim) {
+export function lTrimCharacters(someString: string, charactersToTrim: string[]) {
   let firstNonTrimmedCharacterIndex = -1
   for (let i=0; i < someString.length && firstNonTrimmedCharacterIndex === -1; i++) {
     if (charactersToTrim.indexOf(someString.charAt(i))===-1) {
@@ -79,12 +66,7 @@ export function lTrimCharacters(someString, charactersToTrim) {
   return someString.substring(firstNonTrimmedCharacterIndex, someString.length)
 }
 
-/**
- *
- * @param {string}someString
- * @param {string[]}charactersToTrim
- */
-export function rTrimCharacters(someString, charactersToTrim) {
+export function rTrimCharacters(someString: string, charactersToTrim: string[]) {
   let lastNonTrimmedCharacterIndex = -1
   for (let i= (someString.length -1); i >=0 && lastNonTrimmedCharacterIndex === -1; i--) {
     if (charactersToTrim.indexOf(someString.charAt(i))===-1) {
@@ -97,36 +79,22 @@ export function rTrimCharacters(someString, charactersToTrim) {
   return someString.substring(0, lastNonTrimmedCharacterIndex+1)
 }
 
-/**
- *
- * @param {string}someString
- * @param {string[]}charactersToTrim
- */
-export function trimCharacters(someString, charactersToTrim) {
+export function trimCharacters(someString: string, charactersToTrim: string[]) {
   return rTrimCharacters(lTrimCharacters(someString, charactersToTrim), charactersToTrim)
 }
 
 
 
 
-export function rTrimNewlineCharacters(someString) {
+export function rTrimNewlineCharacters(someString: string) {
   return someString.replace(/\n+$/, '')
-}
-
-export function getClassArrayFromJQueryObject(element) {
-  if (element.attr('class') === undefined) {
-    return []
-  }
-  return element.attr("class").split(/\s+/)
 }
 
 /**
  * Substitutes some characters like '&', '<', etc, into html entities ('&amp;', ...)
- * @param html
- * @returns {string}
  */
-export function escapeHtml(html) {
-  let entityMap = {
+export function escapeHtml(html: string) {
+  let entityMap: { [key: string]: string;} = {
     '&': '&amp;',
     '<': '&lt;',
     '>': '&gt;',
@@ -148,40 +116,25 @@ export function escapeHtml(html) {
  * @param replaceString {string}
  * @returns {string}
  */
-export function stringReplaceArray(str, searchStrings, replaceString) {
+export function stringReplaceArray(str: string, searchStrings: string[], replaceString: string): string {
   let result = str
   searchStrings.forEach( (searchString) => {
     result = result.replaceAll(searchString, replaceString)
   })
   return result
 }
-export function safeGetIntVal(element, title) {
-  let val = element.val()
-  if (val === undefined) {
-    console.error(`safeGetIntVal: Undefined value for ${title}`)
-  }
-  if (typeof val === 'object') {
-    console.error(`safeGetIntVal: Value for ${title} is object/array`)
-  }
-  return parseInt(val)
-}
 
 
-export function getIntegerSuffix(someString, prefix) {
-  return someString.startsWith(prefix) ? parseInt(someString.replace(prefix, '')) : null
-}
+// export function getIntegerSuffix(someString: string, prefix: string): number | null {
+//   return someString.startsWith(prefix) ? parseInt(someString.replace(prefix, '')) : null
+// }
 
-/**
- *
- * @param string
- * @returns {string}
- */
-export function capitalizeFirstLetter(string) {
+export function capitalizeFirstLetter(string: string): string {
   return string[0].toUpperCase() + string.slice(1);
 }
 
 
-export function  getTextDirectionForLang(lang) {
+export function  getTextDirectionForLang(lang: string): string {
   switch(lang) {
     case 'ar':
     case 'he':
@@ -192,11 +145,11 @@ export function  getTextDirectionForLang(lang) {
   }
 }
 
-export function isRtl(lang) {
+export function isRtl(lang: string): boolean {
   return getTextDirectionForLang(lang) === 'rtl'
 }
 
-export function hashCodeInt32(str){
+export function hashCodeInt32(str: string): number{
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash += Math.pow(str.charCodeAt(i) * 31, str.length - i);
@@ -205,26 +158,21 @@ export function hashCodeInt32(str){
   return hash;
 }
 
-/**
- *
- * @param {number}someNumber
- * @param {number}decimals
- */
-export function toFixedPrecision(someNumber, decimals) {
+export function toFixedPrecision(someNumber: number, decimals: number) {
   let factor = Math.pow(10, decimals)
   return Math.floor(someNumber*factor) / factor
 }
 
 
-export function isWhiteSpace(str) {
+export function isWhiteSpace(str: string): boolean {
   return trimWhiteSpace(str) === ''
 }
 
-export function isAllUpperCase(str) {
+export function isAllUpperCase(str: string): boolean {
   return str === str.toUpperCase()
 }
 
-export function isNumeric(someString) {
+export function isNumeric(someString: string): boolean {
   return (/^[0-9]/.test(someString))
 }
 

@@ -1,7 +1,6 @@
 // noinspection ES6PreferShortImport
 
 import {MainTextToken} from './MainTextToken.js';
-import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
 import {EditionWitnessInfo} from "./EditionWitnessInfo.js";
 import {SiglaGroup} from "./SiglaGroup.js";
 import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface.js";
@@ -54,7 +53,7 @@ export class Edition implements EditionInterface {
     return this.mainText.filter((_token, i) => {
       return i >= from && i <= to;
     }).map((token) => {
-      return FmtTextUtil.tokenGetPlainText(token);
+      return token.getPlainText();
     }).join('');
   }
 

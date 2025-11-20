@@ -32,7 +32,7 @@ import * as FontWeight from '../FontWeight.js';
 import {TextBox} from '../../../lib/Typesetter2/TextBox.js';
 import {ObjectFactory} from '../../../lib/Typesetter2/ObjectFactory.js';
 import {TypesetterItem} from "../../../lib/Typesetter2/TypesetterItem.js";
-import {FmtTextToken} from "../FmtTextToken.js";
+import {FmtText} from "../FmtText.js";
 
 export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
   private options: any;
@@ -54,13 +54,8 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
 
   }
 
-  /**
-   *
-   * @param {FmtTextToken[]}fmtText
-   * @param {string|string[]}styleNames
-   * @return{ Promise<TypesetterItem[]>}
-   */
-  renderWithStyle(fmtText: FmtTextToken[], styleNames: string | string[]): Promise<TypesetterItem[]> {
+
+  renderWithStyle(fmtText: FmtText, styleNames: string | string[]): Promise<TypesetterItem[]> {
     return new Promise(async (resolve) => {
       let items = [];
       for (let tokenIndex = 0; tokenIndex < fmtText.length; tokenIndex++) {
@@ -83,7 +78,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             break;
 
           case FmtTokenType.TEXT:
-            let textBox = await this.ss.apply((new TextBox().setText(token.text ?? 'Error')), styleNames);
+            let textBox = await this.ss.apply((new TextBox().setText(token.text)), styleNames);
 
             if (token.fontStyle === FontStyle.ITALIC) {
               textBox.setFontStyle('italic');
@@ -183,7 +178,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
     });
   }
 
-  render(fmtText: FmtTextToken[]): Promise<TypesetterItem[]> {
+  render(fmtText: FmtText): Promise<TypesetterItem[]> {
     return this.renderWithStyle(fmtText, 'default');
   }
 }

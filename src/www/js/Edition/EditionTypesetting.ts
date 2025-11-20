@@ -33,16 +33,14 @@ import {
   GOOD_POINT_FOR_A_BREAK, INFINITE_PENALTY, Penalty, REALLY_GOOD_POINT_FOR_A_BREAK
 } from '../lib/Typesetter2/Penalty.js';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
-import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.mjs';
-import {FmtTextFactory} from '../lib/FmtText/FmtTextFactory.js';
+import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.js';
 import {ObjectFactory} from '../lib/Typesetter2/ObjectFactory.js';
 import {uniq} from '../lib/ToolBox/ArrayUtil.js';
 import {Typesetter2StyleSheetTokenRenderer} from '../lib/FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.js';
-import {NumeralStyles} from '../toolbox/NumeralStyles.mjs';
+import {NumeralStyles} from '../toolbox/NumeralStyles.js';
 import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';
 import {SiglaGroup} from './SiglaGroup.js';
-import {FmtTextUtil} from '../lib/FmtText/FmtTextUtil.js';
 import {ParagraphStyleDef, StyleSheet} from '../lib/Typesetter2/Style/StyleSheet.js';
 import {FontConversions} from '../lib/Typesetter2/FontConversions.js';
 import {ItemLineInfo} from './ItemLineInfo.js';
@@ -55,6 +53,7 @@ import {ApparatusInterface} from "./EditionInterface.js";
 import {Dimension} from "../lib/Typesetter2/Dimension.js";
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
+import {fromString, fromCompactFmtText, getPlainText} from "../lib/FmtText/FmtText.js";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
@@ -266,7 +265,7 @@ export class EditionTypesetting {
               // Add foliation change markers if needed
               let witnessIndices = this.getWitnessIndicesWithFoliationChanges(mainTextToken.originalIndex);
               if (witnessIndices.length > 0) {
-                textItems.push(...await this.tokenRenderer.renderWithStyle(FmtTextFactory.fromString('|'), paragraphStyle));
+                textItems.push(...await this.tokenRenderer.renderWithStyle(fromString('|'), paragraphStyle));
                 textItems.push(this.createPenalty(INFINITE_PENALTY));
                 textItems.push(await this.createGlue(paragraphStyle));
 
@@ -579,9 +578,8 @@ export class EditionTypesetting {
           // a custom post lemma
           items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection));
           // TODO: check formatting here
-          let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(FmtTextUtil.getPlainText(entry.postLemma)).setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
+          let customPostLemmaBox = await this.ss.apply((new TextBox()).setText(getPlainText(fromCompactFmtText(entry.postLemma))).setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
           items.push(customPostLemmaBox);
-        // items.push((await this.createNormalSpaceGlue('apparatus')).setTextDirection(this.textDirection))
       }
       resolve(items);
     });
@@ -611,10 +609,10 @@ export class EditionTypesetting {
 
         default:
           // a custom pre-lemma
-          let customPreLemmaText = FmtTextUtil.getPlainText(entry.preLemma);
+          let customPreLemmaText = entry.preLemma;
           this.debug && console.log(`Custom pre-lemma: '${customPreLemmaText}'`);
           let customPreLemmaBox = await this.ss.apply((new TextBox())
-          .setText(customPreLemmaText)
+          .setText(getPlainText(fromCompactFmtText(customPreLemmaText)))
           .setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
           items.push(customPreLemmaBox);
           items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection));
@@ -1209,7 +1207,7 @@ export class EditionTypesetting {
 
         default:
           // custom separator
-          items.push(...await this.getTsItemsForString(removeExtraWhiteSpace(FmtTextUtil.getPlainText(entry.separator)), 'apparatus', this.textDirection));
+          items.push(...await this.getTsItemsForString(removeExtraWhiteSpace(entry.separator), 'apparatus', this.textDirection));
           break;
       }
       items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection));
@@ -1236,7 +1234,7 @@ export class EditionTypesetting {
   private getTsItemsForString(someString: string, style = 'normal', textDirection = 'detect'): Promise<TypesetterItem[]> {
 
     return new Promise(async (resolve) => {
-      let fmtText = FmtTextFactory.fromString(someString);
+      let fmtText = fromString(someString);
       let items = await this.tokenRenderer.renderWithStyle(fmtText, style);
       items = this.setTextDirection(items, textDirection);
       resolve(items);

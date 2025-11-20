@@ -17,7 +17,7 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
-import { escapeHtml } from '../toolbox/Util.mjs'
+import { escapeHtml } from '../toolbox/Util.ts'
 
 // Events
 

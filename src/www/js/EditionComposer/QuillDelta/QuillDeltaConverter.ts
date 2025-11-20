@@ -17,7 +17,32 @@
  */
 
 
-export const JUSTIFIED = 'justified'
-export const CENTERED = 'centered'
-export const RAGGED = 'ragged'     // ragged right for LTR text, ragged left for RTL text
-export const RAGGED_START = 'ragged_start' // ragged left for LTR TEXT, ragged right for RTL
+import {QuillDelta} from "@/lib/types/Quill";
+import {FmtText} from "@/lib/FmtText/FmtText";
+
+
+export interface QuillDeltaConverterOptions {
+  verbose?: boolean,
+  debug?: boolean,
+  ignoreParagraphs?: boolean
+}
+
+export class QuillDeltaConverter {
+  protected verbose: boolean;
+  protected debug: boolean;
+  protected ignoreParagraphs: boolean;
+
+  constructor(options: QuillDeltaConverterOptions = {}) {
+    this.ignoreParagraphs = options.ignoreParagraphs ?? true;
+    this.verbose = options.verbose ?? false;
+    this.debug = options.debug ?? false;
+    if (this.debug) {
+      this.verbose = true;
+    }
+  }
+
+  toFmtText(_quillDelta: QuillDelta): FmtText {
+    return [];
+  }
+
+}

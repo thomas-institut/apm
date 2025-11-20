@@ -53,7 +53,7 @@ export interface EditStatementResult {
 
 interface BasicPredicateEditorOptions {
   predicateDefinition: PredicateDefinitionInterface;
-  qualificationDefinitions: PredicateDefinitionInterface[];
+  qualificationDefinitions: { [p: number]: PredicateDefinitionInterface };
   containerSelector: string;
   statements: StatementDataInterface[];
   showLabel?: boolean;

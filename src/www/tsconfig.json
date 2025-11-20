@@ -5,11 +5,17 @@
     "module": "nodenext",
     /* Specify what module code is generated. */
     "baseUrl": ".",
+    "outDir": "./dist",
     "paths": {
       "@/*": [
         "./js/*"
       ]
     },
+    "lib": [
+      "ES2021.String",
+      "dom"
+    ],
+
     "esModuleInterop": true,
     /* Emit additional JavaScript to ease support for importing CommonJS modules. This enables 'allowSyntheticDefaultImports' for type compatibility. */
     "forceConsistentCasingInFileNames": true,
@@ -20,5 +26,6 @@
     /* Skip type checking all .d.ts files. */
     "allowJs": true,
     "jsx": "react-jsx"
-  }
+  },
+  "exclude": ["dist/**/*"]
 }

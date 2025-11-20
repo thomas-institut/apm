@@ -43,22 +43,23 @@ import {
 } from '@/pages/common/TableEditor';
 import * as WitnessType from '../Witness/WitnessType';
 import * as TokenClass from '../Witness/WitnessTokenClass';
-import * as Util from '../toolbox/Util.mjs';
+import * as Util from '../toolbox/Util';
 import * as CollationTableType from '../constants/CollationTableType';
 import * as CollationTableUtil from '../pages/common/CollationTableUtil';
 import * as PopoverFormatter from '../pages/common/CollationTablePopovers';
 import {FULL_TX} from '@/Witness/WitnessTokenClass';
 import {CtData} from '@/CtData/CtData';
-import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser.mjs';
+import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser';
 import {capitalizeFirstLetter} from '@/toolbox/Util';
 import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
-import {FmtTextUtil} from '@/lib/FmtText/FmtTextUtil';
 import {Punctuation} from '@/defaults/Punctuation';
 import {ToolbarCharacter, toolbarCharactersDefinition,} from '@/EditionComposer/ToolbarCharactersDefinition';
 import {SimpleConfirmDialog} from '@/pages/common/SimpleConfirmDialog';
 import {CtDataInterface, FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 // @ts-expect-error No TS definitions for matrix yet
 import {Matrix} from "@thomas-inst/matrix";
+import {FmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import * as FmtTextTokenType from "@/lib/FmtText/FmtTextTokenType";
 
 
 interface ViewSettings {
@@ -70,15 +71,15 @@ interface ViewSettings {
 export class CollationTablePanel extends PanelWithToolbar {
   private options: any;
   private ctData: CtDataInterface;
-  private lang: string;
+  private readonly lang: string;
   private tableEditModeToRestore: string;
   private panelIsSetup: boolean;
-  private normalizerRegister: NormalizerRegister;
-  private availableNormalizers: string[];
+  private readonly normalizerRegister: NormalizerRegister;
+  private readonly availableNormalizers: string[];
   private icons: any;
-  private textDirection: string;
+  private readonly textDirection: string;
   private aggregatedNonTokenItemIndexes: NonTokenItemIndex[][];
-  private toolbarCharacters: ToolbarCharacter[];
+  private readonly toolbarCharacters: ToolbarCharacter[];
   private viewSettings: ViewSettings;
   private popoversAreOn: boolean = true;
   private tableEditor!: TableEditor;
@@ -302,9 +303,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       wrapButtonsInDiv: true,
       buttonsDivClass: 'panel-toolbar-item',
       buttonDef: [{label: 'Off', name: 'off', helpText: 'Turn off editing'}, {
-        label: 'Move',
-        name: 'move',
-        helpText: 'Show controls to move/add/delete cells'
+        label: 'Move', name: 'move', helpText: 'Show controls to move/add/delete cells'
       }, {label: 'Group', name: 'group', helpText: 'Show controls to group columns'},]
     });
 
@@ -581,7 +580,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       //  this.verbose && console.log(`Popover from cache: '${popoverHtml}'`)
       return popoverHtml;
     }
-    let witness = this.ctData['witnesses'][witnessIndex];
+    let witness = this.ctData.witnesses[witnessIndex];
 
     popoverHtml = PopoverFormatter.getPopoverHtml(witnessIndex, tokenIndex, witness, witness['tokens'][tokenIndex]['tokenClass'] === FULL_TX ? this.getPostNotes(witnessIndex, col, tokenIndex) : [], this.options.peopleInfo);
 
@@ -770,22 +769,19 @@ export class CollationTablePanel extends PanelWithToolbar {
     let editionWitnessIndex = this.ctData['witnessOrder'][0];
     this.verbose && console.log(`Syncing edition witness and editor's first row`);
     this.verbose && console.log(`There are ${this.tableEditor.matrix.nCols} columns in the editor 
-    and ${this.ctData['witnesses'][editionWitnessIndex].tokens.length} tokens in the edition witness`);
+    and ${this.ctData.witnesses[editionWitnessIndex].tokens.length} tokens in the edition witness`);
 
-    this.ctData['witnesses'][editionWitnessIndex].tokens = this.getEditionWitnessTokensFromMatrixRow(this.ctData['witnesses'][editionWitnessIndex].tokens, this.tableEditor.matrix.getRow(0));
+    this.ctData.witnesses[editionWitnessIndex].tokens = this.getEditionWitnessTokensFromMatrixRow(this.ctData.witnesses[editionWitnessIndex].tokens, this.tableEditor.matrix.getRow(0));
     for (let i = 0; i < this.tableEditor.matrix.nCols; i++) {
       this.tableEditor.matrix.setValue(0, i, i);
     }
     this.verbose && console.log(`Now there are ${this.tableEditor.matrix.nCols} columns in the editor 
-    and ${this.ctData['witnesses'][editionWitnessIndex].tokens.length} tokens in the edition witness`);
+    and ${this.ctData.witnesses[editionWitnessIndex].tokens.length} tokens in the edition witness`);
   }
 
   getEditionWitnessTokensFromMatrixRow(currentTokens: WitnessTokenInterface[], matrixRow: number[]): WitnessTokenInterface[] {
     return matrixRow.map(ref => ref === -1 ? {
-      tokenClass: TokenClass.EDITION,
-      tokenType: TranscriptionTokenType.EMPTY,
-      text: '',
-      fmtText: []
+      tokenClass: TokenClass.EDITION, tokenType: TranscriptionTokenType.EMPTY, text: '', fmtText: []
     } : currentTokens[ref]);
   }
 
@@ -855,7 +851,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     if (this.ctData.type === 'edition') {
       refWitness = this.ctData['editionWitnessIndex'];
     }
-    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), this.ctData['witnesses'], this.ctData['witnessOrder'], refWitness);
+    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), this.ctData.witnesses, this.ctData['witnessOrder'], refWitness);
     // console.log(`Variants recalculated`)
     // console.log(this.variantsMatrix)
   }
@@ -869,7 +865,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         case CollationTableType.EDITION:
           let theMatrixCol = this.tableEditor.getMatrix().getColumn(col);
           let editionWitnessIndex = this.ctData['witnessOrder'][0];
-          let editionToken = this.ctData['witnesses'][editionWitnessIndex]['tokens'][theMatrixCol[0]];
+          let editionToken = this.ctData.witnesses[editionWitnessIndex]['tokens'][theMatrixCol[0]];
           if (editionToken !== undefined && editionToken.tokenType !== TranscriptionTokenType.EMPTY) {
             // an undefined editionToken means that the edition token is empty
             return false;
@@ -895,7 +891,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       }
 
       let witnessIndex = this.ctData['witnessOrder'][row];
-      let token = this.ctData['witnesses'][witnessIndex]['tokens'][ref];
+      let token = this.ctData.witnesses[witnessIndex]['tokens'][ref];
       return token.tokenType === TranscriptionTokenType.EMPTY;
     };
   }
@@ -955,7 +951,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         return {valueChange: false, value: ref};  // forces TableEditor to keep current value
       }
 
-      let currentText = this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'];
+      let currentText = this.ctData.witnesses[witnessIndex]['tokens'][ref]['text'];
       if (currentText === newText) {
         // no change!
         return {valueChange: false, value: ref}; // forces TableEditor to keep current value
@@ -966,22 +962,22 @@ export class CollationTablePanel extends PanelWithToolbar {
         this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, ref);
       } else {
         let tokenType = Punctuation.stringIsAllPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD;
-        if (this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'] === undefined) {
+        if (this.ctData.witnesses[witnessIndex].tokens[ref].fmtText === undefined) {
           // no formatting, just copy the text
-          this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = newText;
+          this.ctData.witnesses[witnessIndex].tokens[ref].text = newText;
         } else {
           //there is some formatting
           console.log(`Replacing edition witness token that contains formatting`);
           console.log(`newText: ${newText}`);
           console.log(`current fmtText: `);
-          console.log(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText']);
-          let newFmtText = FmtTextUtil.withPlainText(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'], newText);
-          this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText'] = newFmtText;
-          this.ctData['witnesses'][witnessIndex]['tokens'][ref]['text'] = FmtTextUtil.getPlainText(newFmtText);
+          console.log(this.ctData.witnesses[witnessIndex].tokens[ref].fmtText);
+          let newFmtText = fmtTextChangePlainText(this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText'], newText);
+          this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText'] = newFmtText;
+          this.ctData.witnesses[witnessIndex]['tokens'][ref]['text'] = getPlainText(newFmtText);
           console.log(`new fmtText: `);
-          console.log(this.ctData['witnesses'][witnessIndex]['tokens'][ref]['fmtText']);
+          console.log(this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText']);
         }
-        this.ctData['witnesses'][witnessIndex]['tokens'][ref]['tokenType'] = tokenType;
+        this.ctData.witnesses[witnessIndex]['tokens'][ref]['tokenType'] = tokenType;
         if (tokenType === TranscriptionTokenType.WORD) {
           let norm;
           let normSource;
@@ -1000,8 +996,8 @@ export class CollationTablePanel extends PanelWithToolbar {
           }
           if (newText !== norm) {
             this.verbose && console.log(`New text normalized:  ${newText} => ${norm}`);
-            this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizedText'] = norm;
-            this.ctData['witnesses'][witnessIndex]['tokens'][ref]['normalizationSource'] = normSource;
+            this.ctData.witnesses[witnessIndex]['tokens'][ref]['normalizedText'] = norm;
+            this.ctData.witnesses[witnessIndex]['tokens'][ref]['normalizationSource'] = normSource;
           }
         }
       }
@@ -1011,7 +1007,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.options.onCtDataChange(this.ctData);
 
       //  this.verbose && console.log('Edition Witness updated')
-      //  this.verbose && console.log(this.ctData['witnesses'][witnessIndex]['tokens'])
+      //  this.verbose && console.log(this.ctData.witnesses[witnessIndex]['tokens'])
       // ref stays the same
       return {valueChange: true, value: ref};
     };
@@ -1078,7 +1074,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         return token.text;
       }
       // spans for different items
-      let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items'] ?? [];
+      let itemWithAddressArray = this.ctData.witnesses[witnessIndex]['items'] ?? [];
       let cellHtml = '';
       for (const itemData of sourceItems) {
         let theItem = itemWithAddressArray[itemData['index']];
@@ -1141,8 +1137,8 @@ export class CollationTablePanel extends PanelWithToolbar {
         return ['token-type-empty'];
       }
       let witnessIndex = this.ctData['witnessOrder'][tableRow];
-      let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens'];
-      let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items'] ?? [];
+      let tokenArray = this.ctData.witnesses[witnessIndex]['tokens'];
+      let itemWithAddressArray = this.ctData.witnesses[witnessIndex]['items'] ?? [];
 
       let token = tokenArray[value];
 
@@ -1166,7 +1162,7 @@ export class CollationTablePanel extends PanelWithToolbar {
           let itemZeroIndex = token['sourceItems'][0]['index'];
           let itemZero = itemWithAddressArray[itemZeroIndex];
           // language class
-          let lang = this.ctData['witnesses'][witnessIndex]['lang'];
+          let lang = this.ctData.witnesses[witnessIndex]['lang'];
           if (itemZero['lang'] !== undefined) {
             lang = itemZero['lang'];
           }
@@ -1250,14 +1246,14 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   getPostNotes(witnessIndex: number, _col: number, tokenIndex: number) {
-    // this.debug && console.log(`Getting post notes for witness ${witnessIndex}, col ${_col}, token index ${tokenIndex}`);
+    // this.verbose && console.log(`Getting post notes for witness ${witnessIndex}, col ${col}, token index ${tokenIndex}`)
     if (this.aggregatedNonTokenItemIndexes[witnessIndex] === undefined) {
       console.warn(`Found undefined row in this.aggregatedNonTokenItemIndexes, row = ${witnessIndex}`);
       return [];
     }
 
     if (this.aggregatedNonTokenItemIndexes[witnessIndex][tokenIndex] === undefined) {
-      // this.debug && console.log(`Undefined aggregate non-token item index for row ${witnessIndex}, tokenIndex ${tokenIndex}`);
+      this.verbose && console.log(`Undefined aggregate non-token item index for row ${witnessIndex}, tokenIndex ${tokenIndex}`);
       return [];
     }
     let postItemIndexes = this.aggregatedNonTokenItemIndexes[witnessIndex][tokenIndex]['post'];
@@ -1306,7 +1302,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         return '';
       }
       let witnessIndex = this.ctData['witnessOrder'][tableRow];
-      let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens'];
+      let tokenArray = this.ctData.witnesses[witnessIndex]['tokens'];
       let token = tokenArray[value];
       if (token['tokenClass'] === TokenClass.EDITION) {
         return token['text'];
@@ -1322,12 +1318,12 @@ export class CollationTablePanel extends PanelWithToolbar {
         return false;
       }
       let witnessIndex = this.ctData['witnessOrder'][row];
-      let witness = this.ctData['witnesses'][witnessIndex];
+      let witness = this.ctData.witnesses[witnessIndex];
       if (witness['witnessType'] !== 'edition') {
         // can't edit other than edition witnesses
         return false;
       }
-      let tokenArray = this.ctData['witnesses'][witnessIndex]['tokens'];
+      let tokenArray = this.ctData.witnesses[witnessIndex]['tokens'];
       let token = tokenArray[value];
       // do not allow editing format marks
       return token['tokenType'] !== 'formatMark';
@@ -1379,4 +1375,24 @@ export class CollationTablePanel extends PanelWithToolbar {
     });
   }
 
+}
+
+function fmtTextChangePlainText(fmtText: FmtText, newPlainText: string): FmtText {
+  if (fmtText.length === 0) {
+    return [];
+  }
+  let textTokens = fmtText.filter((token) => {
+    return token.type === FmtTextTokenType.TEXT;
+  });
+  if (textTokens.length === 0) {
+    // no text
+    return fmtText;
+  }
+  if (textTokens.length > 1) {
+    console.warn(`Changing plain text of fmtText with more than one text token, this may create problems and should not normally occur`);
+  }
+
+  let theToken = JSON.parse(JSON.stringify(textTokens[0]));
+  theToken.text = newPlainText;
+  return [theToken];
 }

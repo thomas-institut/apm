@@ -16,23 +16,23 @@
  *
  */
 
-export function deepCopy<T>(someVariable: T) : T {
-  return JSON.parse(JSON.stringify(someVariable))
+export function deepCopy<T>(someVariable: T): T {
+  return JSON.parse(JSON.stringify(someVariable));
 }
 
 export function removeWhiteSpace(someString: string): string {
-  return someString.replace(/\s/g, '')
+  return someString.replace(/\s/g, '');
 }
 
 export function removeExtraWhiteSpace(someString: string): string {
-  return trimWhiteSpace(someString).replace(/\s+/g, ' ')
+  return trimWhiteSpace(someString).replace(/\s+/g, ' ');
 }
 
 /**
  * Trims whitespace from the start and end of a string
  */
 export function trimWhiteSpace(someString: string): string {
-  return someString.replace(/^\s+/, '').replace(/\s+$/, '')
+  return someString.replace(/^\s+/, '').replace(/\s+$/, '');
 }
 
 // export function rTrimWhiteSpace(someString: string): string {
@@ -54,61 +54,53 @@ export function compareStrings(a: string, b: string): number {
 }
 
 export function lTrimCharacters(someString: string, charactersToTrim: string[]) {
-  let firstNonTrimmedCharacterIndex = -1
-  for (let i=0; i < someString.length && firstNonTrimmedCharacterIndex === -1; i++) {
-    if (charactersToTrim.indexOf(someString.charAt(i))===-1) {
-      firstNonTrimmedCharacterIndex = i
+  let firstNonTrimmedCharacterIndex = -1;
+  for (let i = 0; i < someString.length && firstNonTrimmedCharacterIndex === -1; i++) {
+    if (charactersToTrim.indexOf(someString.charAt(i)) === -1) {
+      firstNonTrimmedCharacterIndex = i;
     }
   }
   if (firstNonTrimmedCharacterIndex === -1) {
-    return ''
+    return '';
   }
-  return someString.substring(firstNonTrimmedCharacterIndex, someString.length)
+  return someString.substring(firstNonTrimmedCharacterIndex, someString.length);
 }
 
 export function rTrimCharacters(someString: string, charactersToTrim: string[]) {
-  let lastNonTrimmedCharacterIndex = -1
-  for (let i= (someString.length -1); i >=0 && lastNonTrimmedCharacterIndex === -1; i--) {
-    if (charactersToTrim.indexOf(someString.charAt(i))===-1) {
-      lastNonTrimmedCharacterIndex = i
+  let lastNonTrimmedCharacterIndex = -1;
+  for (let i = (someString.length - 1); i >= 0 && lastNonTrimmedCharacterIndex === -1; i--) {
+    if (charactersToTrim.indexOf(someString.charAt(i)) === -1) {
+      lastNonTrimmedCharacterIndex = i;
     }
   }
   if (lastNonTrimmedCharacterIndex === -1) {
-    return ''
+    return '';
   }
-  return someString.substring(0, lastNonTrimmedCharacterIndex+1)
+  return someString.substring(0, lastNonTrimmedCharacterIndex + 1);
 }
 
 export function trimCharacters(someString: string, charactersToTrim: string[]) {
-  return rTrimCharacters(lTrimCharacters(someString, charactersToTrim), charactersToTrim)
+  return rTrimCharacters(lTrimCharacters(someString, charactersToTrim), charactersToTrim);
 }
 
 
-
-
 export function rTrimNewlineCharacters(someString: string) {
-  return someString.replace(/\n+$/, '')
+  return someString.replace(/\n+$/, '');
 }
 
 /**
  * Substitutes some characters like '&', '<', etc, into html entities ('&amp;', ...)
  */
 export function escapeHtml(html: string) {
-  let entityMap: { [key: string]: string;} = {
-    '&': '&amp;',
-    '<': '&lt;',
-    '>': '&gt;',
-    '"': '&quot;',
-    "'": '&#39;',
-    '/': '&#x2F;',
-    '`': '&#x60;',
-    '=': '&#x3D;'
+  let entityMap: { [key: string]: string; } = {
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '/': '&#x2F;', '`': '&#x60;', '=': '&#x3D;'
   };
 
   return String(html).replace(/[&<>"'`=\/]/g, function (s) {
     return entityMap[s];
   });
 }
+
 /**
  *
  * @param str {string}
@@ -117,11 +109,11 @@ export function escapeHtml(html: string) {
  * @returns {string}
  */
 export function stringReplaceArray(str: string, searchStrings: string[], replaceString: string): string {
-  let result = str
-  searchStrings.forEach( (searchString) => {
-    result = result.replaceAll(searchString, replaceString)
-  })
-  return result
+  let result = str;
+  searchStrings.forEach((searchString) => {
+    result = result.replaceAll(searchString, replaceString);
+  });
+  return result;
 }
 
 
@@ -134,22 +126,22 @@ export function capitalizeFirstLetter(string: string): string {
 }
 
 
-export function  getTextDirectionForLang(lang: string): string {
-  switch(lang) {
+export function getTextDirectionForLang(lang: string): string {
+  switch (lang) {
     case 'ar':
     case 'he':
-      return 'rtl'
+      return 'rtl';
 
     default:
-      return 'ltr'
+      return 'ltr';
   }
 }
 
 export function isRtl(lang: string): boolean {
-  return getTextDirectionForLang(lang) === 'rtl'
+  return getTextDirectionForLang(lang) === 'rtl';
 }
 
-export function hashCodeInt32(str: string): number{
+export function hashCodeInt32(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
     hash += Math.pow(str.charCodeAt(i) * 31, str.length - i);
@@ -159,21 +151,21 @@ export function hashCodeInt32(str: string): number{
 }
 
 export function toFixedPrecision(someNumber: number, decimals: number) {
-  let factor = Math.pow(10, decimals)
-  return Math.floor(someNumber*factor) / factor
+  let factor = Math.pow(10, decimals);
+  return Math.floor(someNumber * factor) / factor;
 }
 
 
 export function isWhiteSpace(str: string): boolean {
-  return trimWhiteSpace(str) === ''
+  return trimWhiteSpace(str) === '';
 }
 
 export function isAllUpperCase(str: string): boolean {
-  return str === str.toUpperCase()
+  return str === str.toUpperCase();
 }
 
 export function isNumeric(someString: string): boolean {
-  return (/^[0-9]/.test(someString))
+  return (/^[0-9]/.test(someString));
 }
 
 

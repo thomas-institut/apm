@@ -17,9 +17,8 @@
  */
 
 
-import * as ParagraphStyle from "@/lib/FmtText/ParagraphStyle";
-import * as MarkType from "@/lib/FmtText/MarkType";
-import {trimWhiteSpace} from "@/toolbox/Util";
+import * as ParagraphStyle from "./ParagraphStyle.js";
+import * as MarkType from "./MarkType.js";
 
 export const DEFAULT_GLUE_SPACE = 'normal';
 
@@ -270,7 +269,7 @@ export function getNormalizedToken<T extends FmtTextToken>(token: T): T {
       normalizedToken.textDirection = token.textDirection;
     }
     if (token.classList !== undefined) {
-      const theClassList = trimWhiteSpace(token.classList);
+      const theClassList = token.classList.replace(/^\s+/, '').replace(/\s+$/, '');
       if (theClassList !== '') {
         normalizedToken.classList = theClassList;
       }

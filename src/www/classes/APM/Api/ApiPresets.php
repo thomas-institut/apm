@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 
 use APM\System\Preset\Preset;
@@ -313,7 +314,8 @@ class ApiPresets extends ApiController
         $filteredPresets = [];
         $witnessSet = new Set($witnessesToLookUp);
         foreach($presets as $preset) {
-            $presetWitnessesSet = new Set(array_keys($preset->getData()['witnesses']));
+            $newPresetData = $this->getPresetDataWithNewDocIds($preset);
+            $presetWitnessesSet = new Set(array_keys($newPresetData['witnesses']));
             if ($presetWitnessesSet->isSubsetOf($witnessSet)) {
                 $filteredPresets[] = $preset;
             }
@@ -332,13 +334,42 @@ class ApiPresets extends ApiController
         }
         return $this->responseWithJson($response,[
             'presets' => $presetsInArrayForm,
-//            'runTime' => $this->getProfilerTotalTime()
         ]);
     }
 
     private function convertFullTxIdToSiglaPresetId(string $longFormId) : string {
         $info = WitnessSystemId::getFullTxInfo($longFormId);
         return implode('-', [ 'fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
+//        try {
+//            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo(intval($info->typeSpecificInfo['docId']));
+//        } catch (DocumentNotFoundException) {
+//            $this->logger->warning("Could not find document for fullTx witness $longFormId", ['docId' => $info->typeSpecificInfo['docId']]);
+//            return implode('-', [ 'fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
+//        }
+//
+//        return implode('-', [ 'fullTx', $docInfo->id, $info->typeSpecificInfo['localWitnessId']]);
+    }
+
+    private function getPresetDataWithNewDocIds(Preset $preset): array {
+        return $preset->getData();
+//        $presetData = $preset->getData();
+//        $newWitnesses = [];
+//        foreach($presetData['witnesses'] as $witnessId => $siglum) {
+//            [ $witnessType, $docId, $localWitnessId] = explode('-', $witnessId);
+//            if ($witnessType === 'fullTx') {
+//                try {
+//                    $docInfo = $this->systemManager->getDocumentManager()->getDocInfo(intval($docId));
+//                    $newWitnessId = implode('-', [ 'fullTx', $docInfo->id, $localWitnessId]);
+//                    $newWitnesses[$newWitnessId] = $siglum;
+//                } catch (DocumentNotFoundException) {
+//                    $this->logger->warning("Could not find document for fullTx witness $docId");
+//                    $newWitnesses[$witnessId] = $siglum;
+//                }
+//            } else {
+//                $newWitnesses[$witnessId] = $siglum;
+//            }
+//        }
+//        return ['lang' => $presetData['lang'], 'witnesses' => $newWitnesses];
     }
 
     /**

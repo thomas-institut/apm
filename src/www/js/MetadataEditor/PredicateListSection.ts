@@ -210,7 +210,7 @@ export class PredicateListSection extends MdeSection {
         // if the predicate is not a single property and there's a statement id,
         // we need to cancel it before creating the new one
         commands.push({
-          command: 'cancel', statementId: statementId, editorialNote: cancellationNote
+          command: 'cancel', statementId: statementId, cancellationNote: cancellationNote
         });
       }
 
@@ -231,7 +231,7 @@ export class PredicateListSection extends MdeSection {
   genCancelStatement(predicate: any) {
     return async (statementId: number, cancellationNote: string) => {
       let commands = [{
-        command: 'cancel', statementId: statementId, editorialNote: cancellationNote
+        command: 'cancel', statementId: statementId, cancellationNote: cancellationNote
       }];
       return await this.doStatementEditCommands(commands, predicate);
     };

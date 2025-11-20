@@ -307,8 +307,12 @@ export class GenericStatementEditor {
       console.log(`Saving new ${this.options.relation ? 'object' : 'value'} [${newObject}], note '${getStringVal(this.editorialNoteInput)}'`);
 
       let commands = [];
-      if (this.options.statementId !== null && this.canBeCancelled) {
-        commands.push({command: 'cancel', statementId: this.options.statementId});
+      if (this.options.statementId !== null  && this.canBeCancelled) {
+        commands.push({
+          command: 'cancel',
+          statementId: this.options.statementId,
+          cancellationNote: getStringVal(this.cancellationNoteInput).trim()
+        });
       }
       commands.push({
         command: 'create',
@@ -374,6 +378,9 @@ export class GenericStatementEditor {
       qualificationsDivs.push(`<div>${await this.getQualificationInput(qp, value)}</div>`);
     }
 
+    const cancellationArea = `<div class="edit-label">Cancellation Note</div>
+            <div><textarea class="cancellation-note" rows="3" cols="${textAreaCols}"></textarea></div>`
+
     return `
         <div class="edit-intro">${introLabel}</div>
         <div class="edit-statement-grid">
@@ -388,8 +395,7 @@ export class GenericStatementEditor {
             ${qualificationsDivs.join("\n")}
             <div class="edit-label">Editorial Note</div>
             <div><textarea class="editorial-note" rows="3" cols="${textAreaCols}"></textarea></div>
-            <div class="edit-label">Cancellation Note</div>
-            <div><textarea class="cancellation-note" rows="3" cols="${textAreaCols}"></textarea></div>
+            ${this.options.statementId !== null ? cancellationArea : ''}
         </div>
         <div class="info"></div>
 `;

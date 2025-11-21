@@ -1,4 +1,4 @@
-import {CtDataInterface} from "../CtData/CtDataInterface";
+import {CtDataInterface} from "@/CtData/CtDataInterface";
 
 
 export interface SingleChunkApiData {

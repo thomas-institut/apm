@@ -7,11 +7,11 @@ export class MceData {
    *
    * @return {MceDataInterface}
    */
-  static createEmpty(): MceDataInterface  {
+  static createEmpty(): MceDataInterface {
     return {
       chunks: [],
       chunkOrder: [],
-      title:  'New Edition',
+      title: 'New Edition',
       initialSpace: '',
       preamble: [],
       witnesses: [],
@@ -22,7 +22,7 @@ export class MceData {
       archived: false,
       schemaVersion: '1.0',
       includeInAutoMarginalFoliation: []
-    }
+    };
   }
 
   /**
@@ -31,7 +31,7 @@ export class MceData {
    * @return {boolean}
    */
   static isEmpty(mceData: MceDataInterface): boolean {
-    return mceData['chunks'].length === 0
+    return mceData['chunks'].length === 0;
   }
 
   /**
@@ -41,12 +41,16 @@ export class MceData {
    */
   static fix(mceData: MceDataInterface): MceDataInterface {
     if (mceData.chunkOrder === undefined) {
-      mceData.chunkOrder = mceData.chunks.map ( (_c,i) => { return i})
+      mceData.chunkOrder = this.getDefaultChunkOrder(mceData);
     }
     if (mceData.includeInAutoMarginalFoliation === undefined) {
       mceData.includeInAutoMarginalFoliation = [];
     }
-    return mceData
+    return mceData;
+  }
+
+  static getDefaultChunkOrder(mceData: MceDataInterface) {
+    return mceData.chunks.map((_c, i) => i);
   }
 
 }

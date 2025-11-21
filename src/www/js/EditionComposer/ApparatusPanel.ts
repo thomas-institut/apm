@@ -87,6 +87,15 @@ interface ApparatusPanelOptions extends PanelWithToolbarOptions {
   highlightCollationTableRange: (colStart: number, colEnd: number) => void,
 }
 
+interface ApparatusEntryEditor {
+  text?: ApparatusEntryTextEditor,
+  witnessData?: WitnessDataEditor,
+  keyword?: MultiToggle,
+  visible?: boolean,
+}
+
+type SubEntryEditorsArray = { [key: number]: ApparatusEntryEditor | null }
+
 export class ApparatusPanel extends PanelWithToolbar {
 
   private options: ApparatusPanelOptions;
@@ -115,7 +124,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   private updateButton!: JQuery<HTMLElement>;
   private cancelButton!: JQuery<HTMLElement>;
   private tagEditor!: TagEditor;
-  private subEntryEditors!: any[];
+  private subEntryEditors: SubEntryEditorsArray = [];
 
 
   constructor(options: ApparatusPanelOptions) {
@@ -317,8 +326,6 @@ export class ApparatusPanel extends PanelWithToolbar {
     // setup checkbox and arrow events
     $(`${formSelector} form-check-input`).off();
 
-    this.subEntryEditors = [];
-
     this.editedEntry.subEntries.forEach((subEntry, i) => {
       $(this._getCheckboxSelector(i)).on('change', this._genOnChangeSubEntryEnabledCheckBox(i));
       $(this._getMoveUpDownButtonSelector(i, true)).on('click', this.genOnClickMoveUpDownButton(i, true, numSubEntries));
@@ -335,7 +342,7 @@ export class ApparatusPanel extends PanelWithToolbar {
             containerSelector: this._getSubEntryTextEditorDivSelector(i),
             lang: this.edition.lang,
             onChange: this._genOnChangeFreeTextEditor(i),
-            debug: true
+            debug: false
           });
           this.subEntryEditors[i].text.setText(subEntry.fmtText);
 
@@ -379,6 +386,7 @@ export class ApparatusPanel extends PanelWithToolbar {
             this.updateSubEntryPreview(i);
             this._updateUpdateApparatusButton();
           });
+          this.subEntryEditors[i].visible = false;
         }
         $(this._getSubEntryEditButtonSelector(i)).on('click', this.genOnClickSubEntryEditButton(i));
         $(this._getSubEntryDeleteButtonSelector(i)).on('click', this.genOnClickSubEntryDeleteButton(i));
@@ -601,7 +609,11 @@ export class ApparatusPanel extends PanelWithToolbar {
         console.warn(`this.editedEntry is null`);
         return;
       }
-      this.editedEntry.subEntries[subEntryIndex].fmtText = this.subEntryEditors[subEntryIndex].text.getFmtText();
+      const textEditor = this.subEntryEditors[subEntryIndex]?.text ?? null;
+      if (textEditor === null) {
+        return;
+      }
+      this.editedEntry.subEntries[subEntryIndex].fmtText = textEditor.getFmtText();
       this.updateSubEntryPreview(subEntryIndex);
       this._updateUpdateApparatusButton();
     };
@@ -1222,11 +1234,19 @@ export class ApparatusPanel extends PanelWithToolbar {
   private genOnClickSubEntryEditButton(subEntryIndex: number) {
     return () => {
       this.debug && console.log(`Click on edit button for subEntry ${subEntryIndex}`);
+      if (this.subEntryEditors[subEntryIndex] === undefined || this.subEntryEditors[subEntryIndex] === null) {
+        console.warn(`this.subEntryEditors[${subEntryIndex}] is undefined or null`);
+        return;
+      }
       this.setSubEntryEditorVisibility(subEntryIndex, !this.subEntryEditors[subEntryIndex].visible);
     };
   }
 
   private setSubEntryEditorVisibility(subEntryIndex: number, visible: boolean) {
+    if (this.subEntryEditors[subEntryIndex] === undefined || this.subEntryEditors[subEntryIndex] === null) {
+      console.warn(`this.subEntryEditors[${subEntryIndex}] is undefined or null`);
+      return;
+    }
     if (visible === this.subEntryEditors[subEntryIndex].visible) {
       return;
     }
@@ -1236,6 +1256,10 @@ export class ApparatusPanel extends PanelWithToolbar {
     } else {
       if (this.editedEntry === null) {
         console.warn(`this.editedEntry is null`);
+        return;
+      }
+      if (this.subEntryEditors[subEntryIndex].text === undefined) {
+        console.warn(`this.subEntryEditors[${subEntryIndex}].text is undefined`);
         return;
       }
       this.subEntryEditors[subEntryIndex].text.setText(this.editedEntry.subEntries[subEntryIndex].fmtText);

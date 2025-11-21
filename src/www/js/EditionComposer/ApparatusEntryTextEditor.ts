@@ -27,7 +27,8 @@ import Superscript from './QuillBlots/Superscript';
 import Sigla from './QuillBlots/Sigla';
 import {QuillDeltaRenderer} from './QuillDelta/QuillDeltaRenderer';
 import {QuillRange} from "@/lib/types/Quill";
-import {CompactFmtText, fromCompactFmtText} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, FmtText, fromCompactFmtText, fromString} from "@/lib/FmtText/FmtText";
+
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>';
 
@@ -132,8 +133,13 @@ export class ApparatusEntryTextEditor {
     });
   }
 
-  getText() {
+  getText(): string {
     return this.quillEditor.getText();
+  }
+
+  getFmtText(): FmtText {
+    // TODO: need to see whether this is the right thing here.
+    return fromString(this.getText());
   }
 
   setText(newText: CompactFmtText, silent = false) {

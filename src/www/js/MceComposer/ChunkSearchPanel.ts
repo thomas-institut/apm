@@ -17,22 +17,48 @@
  */
 
 
-import { Panel } from '@/MultiPanelUI/Panel'
+import {Panel, PanelOptions} from '@/MultiPanelUI/Panel';
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { urlGen } from '@/pages/common/SiteUrlGen'
 import { ApmApiClient } from '@/Api/ApmApiClient'
 import { ApmFormats } from '@/pages/common/ApmFormats'
 import DataTable from 'datatables.net-dt';
+import {MceDataInterface} from "@/MceData/MceDataInterface";
+import {safeGetIntVal} from "@/toolbox/UiToolBox";
 
 const defaultIcons = {
   alert: '<i class="fas fa-exclamation-triangle"></i>',
   busy: '<i class="fas fa-circle-notch fa-spin"></i>',
 }
 
+interface ChunkSearchPanelIcons {
+  alert: string,
+  busy: string
+}
+
+interface ChunkSearchPanelOptions extends PanelOptions {
+  mceData: MceDataInterface,
+  icons?: ChunkSearchPanelIcons;
+  apiClient: ApmApiClient;
+  addEdition: (editionId: number, timestamp: string) => Promise<void>;
+}
+
 export class ChunkSearchPanel extends Panel {
+  private options: ChunkSearchPanelOptions;
+  private mceData: MceDataInterface;
+  private icons: ChunkSearchPanelIcons;
+  private apiClient: ApmApiClient;
+  private readonly lastFilter: string;
+  private activeEditionsData: any[] | null;
+  private loadActiveEditionDataButton!: JQuery<HTMLElement>;
+  private activeEditionTableContainer!: JQuery<HTMLElement>;
+  private tableIdInput!: JQuery<HTMLElement>;
+  private quickAddButton!: JQuery<HTMLElement>;
+  private quickAddInfoSpan!: JQuery<HTMLElement>;
+  private quickAddError!: boolean;
 
 
-  constructor (options) {
+  constructor (options: ChunkSearchPanelOptions) {
     super(options)
 
     let oc = new OptionsChecker({
@@ -44,8 +70,8 @@ export class ChunkSearchPanel extends Panel {
         // Function to be called to add a single chunk
         // edition to the multi chunk edition.
         // It should return a promise.
-        addEdition: { type: 'function', default: (id, timestamp) => {
-            return new Promise( (resolve, reject) => {
+        addEdition: { type: 'function', default: (id: number, timestamp: string) => {
+            return new Promise( (_resolve, reject) => {
               reject(`Not implemented yet (table ID: ${id}, timestamp '${timestamp}'`)
             })
           }}
@@ -54,14 +80,13 @@ export class ChunkSearchPanel extends Panel {
 
     this.options = oc.getCleanOptions(options);
     this.mceData = this.options.mceData;
-    this.icons = this.options.icons;
-    /** @type ApmApiClient */
+    this.icons = this.options.icons ?? defaultIcons;
     this.apiClient = this.options.apiClient;
     this.activeEditionsData = null
     this.lastFilter = ''
   }
 
-  async updateData(mceData) {
+  async updateData(mceData: MceDataInterface) {
     this.mceData = mceData
     $(this.getContainerSelector()).html(await this.generateHtml())
     this.setupUI()
@@ -87,7 +112,7 @@ export class ChunkSearchPanel extends Panel {
 </div>`
   }
 
-  postRender (id, mode, visible) {
+  postRender (id: string, mode: string, visible: boolean) {
     super.postRender(id, mode, visible)
     this.setupUI()
   }
@@ -101,7 +126,7 @@ export class ChunkSearchPanel extends Panel {
     this.activeEditionTableContainer = $(`${this.containerSelector} div.active-editions-table`)
 
     this.loadActiveEditionDataButton.on('click', this.genOnClickLoadActiveEditionData())
-    this.setupActiveEditionTableButtons(this.activeEditionsData)
+    this.setupActiveEditionTableButtons(this.activeEditionsData ?? [])
 
     this.tableIdInput = $(`${this.containerSelector} .table-id-input`)
     this.tableIdInput.on('keyup change', this.genOnTableIdInputValChange())
@@ -113,18 +138,14 @@ export class ChunkSearchPanel extends Panel {
     this.quickAddError = false
   }
 
-  /**
-   *
-   * @return {(function(): Promise<void>)|*}
-   * @private
-   */
+
   genOnClickLoadActiveEditionData() {
     return async () => {
       this.loadActiveEditionDataButton.html(`Loading ... ${this.icons.busy}`);
       this.activeEditionsData = await this.apiClient.get(urlGen.apiCollationTable_activeEditions());
       console.log(`Active edition data`, this.activeEditionsData);
       this.activeEditionTableContainer.html(await this.genActiveEditionTable(this.activeEditionsData));
-      this.setupActiveEditionTableButtons(this.activeEditionsData);
+      this.setupActiveEditionTableButtons(this.activeEditionsData ?? []);
       this.loadActiveEditionDataButton.html('Reload Data');
     }
   }
@@ -134,7 +155,7 @@ export class ChunkSearchPanel extends Panel {
    * @param data
    * @private
    */
-  setupActiveEditionTableButtons(data) {
+  setupActiveEditionTableButtons(data: any[]) {
     if (data === null || data.length === 0) {
       return
     }
@@ -142,6 +163,7 @@ export class ChunkSearchPanel extends Panel {
     data.forEach( (info) => {
       $(`${this.containerSelector} .add-edition-${info.id}`).on('click', this.genOnClickAddEdition(info.id))
     })
+
 
     new DataTable("table.active-editions", {
       paging: true,
@@ -151,9 +173,13 @@ export class ChunkSearchPanel extends Panel {
         search: 'Filter:'
       },
       columns: [
+        // @ts-ignore
         null,
+        // @ts-ignore
         null,
+        // @ts-ignore
         null,
+        // @ts-ignore
         null,
         {searchable: false, orderable: false},
       ]
@@ -176,13 +202,8 @@ export class ChunkSearchPanel extends Panel {
     // });
   }
 
-  /**
-   *
-   * @param editionId
-   * @return {(function(): void)|*}
-   * @private
-   */
-  genOnClickAddEdition(editionId) {
+
+  genOnClickAddEdition(editionId: number) {
     return () => {
       console.log(`Click on add edition ${editionId}`)
       console.log(`Current filter: ${this.lastFilter}`)
@@ -208,7 +229,7 @@ export class ChunkSearchPanel extends Panel {
    * @private
    */
 
-  async genActiveEditionTable(infoArray) {
+  async genActiveEditionTable(infoArray: any) {
     if (infoArray === null) {
       return `<em>No data: please click on 'Load Data' to start</em>`
     }
@@ -246,15 +267,11 @@ export class ChunkSearchPanel extends Panel {
     return html;
   }
 
-  /**
-   *
-   * @return {(function(): void)|*}
-   * @private
-   */
+
   genOnClickQuickAddButton() {
     return () => {
       console.log(`Quick add button clicked`)
-      let editionId = parseInt(this.tableIdInput.val().toString())
+      let editionId = parseInt(safeGetIntVal(this.tableIdInput, '').toString())
       this.options.addEdition(editionId, '').then( () => {
         this.debug && console.log(`Edition ${editionId} added successfully`)
         this.quickAddInfoSpan
@@ -273,18 +290,14 @@ export class ChunkSearchPanel extends Panel {
     }
   }
 
-  /**
-   *
-   * @return {(function(): void)|*}
-   * @private
-   */
+
   genOnTableIdInputValChange() {
     return () => {
       if (this.quickAddError) {
         this.quickAddInfoSpan.html('').removeClass('text-danger')
         this.quickAddError = false
       }
-      if (parseInt(this.tableIdInput.val().toString()) > 0) {
+      if (parseInt(safeGetIntVal(this.tableIdInput, '').toString()) > 0) {
         this.quickAddButton.prop('disabled', false)
       } else {
         this.quickAddButton.prop('disabled', true)

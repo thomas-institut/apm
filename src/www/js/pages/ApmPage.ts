@@ -14,6 +14,11 @@ const AppSettingsUrl = 'app-settings.json';
 
 const debug = true;
 
+
+export interface ApmPageOptions {
+  commonData: CommonData;
+}
+
 export class ApmPage {
 
   protected commonData!: CommonData;
@@ -35,7 +40,7 @@ export class ApmPage {
    *
    * @param options
    */
-  constructor(options: any = null) {
+  constructor(options: ApmPageOptions|null = null) {
     // @ts-ignore
     // Stop the loading sign from writing to the window's body
     window.loading = false;

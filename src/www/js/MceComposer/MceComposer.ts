@@ -1,0 +1,1271 @@
+/*
+ *  Copyright (C) 2022 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {MceData} from '@/MceData/MceData';
+import {EditionPanel} from './EditionPanel';
+import {TabConfig} from '@/MultiPanelUI/TabConfig';
+import {MultiPanelUI} from '@/MultiPanelUI/MultiPanelUI';
+import {deepCopy} from '@/toolbox/Util';
+import {ChunkSearchPanel} from './ChunkSearchPanel';
+import {AsyncKeyCache} from '@/toolbox/KeyCache/AsyncKeyCache';
+import {CtDataEditionGenerator} from '@/Edition/EditionGenerator/CtDataEditionGenerator';
+import {EditionPreviewPanel} from '@/EditionComposer/EditionPreviewPanel';
+import {Edition} from '@/Edition/Edition';
+
+import {defaultLanguageDefinition} from '@/defaults/languages';
+import {EditionWitnessInfo} from '@/Edition/EditionWitnessInfo';
+import {MainTextTokenFactory} from '@/Edition/MainTextTokenFactory';
+import {arraysAreEqual, uniq, varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
+import {ApparatusTools} from '@/Edition/ApparatusTools';
+import {ApparatusEntry} from '@/Edition/ApparatusEntry';
+import {ApparatusSubEntry} from '@/Edition/ApparatusSubEntry';
+import {EditableTextField} from '@/widgets/EditableTextField';
+import {TimeString} from '@/toolbox/TimeString';
+import {BasicProfiler} from '@/toolbox/BasicProfiler';
+import {CtData} from '@/CtData/CtData';
+import {urlGen} from '@/pages/common/SiteUrlGen';
+import {ApmPage, ApmPageOptions} from '@/pages/ApmPage';
+import {ApmFormats} from '@/pages/common/ApmFormats';
+import {IndexedDbAux} from '@/toolbox/KeyCache/IndexedDbAux';
+import {ChunkInMceData, MceDataInterface, WitnessInMceData} from "@/MceData/MceDataInterface";
+import {SingleChunkApiData} from "@/MceComposer/MceComposerInterfaces";
+import {CtDataInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
+import {FoliationChangeInfoInterface} from "@/Edition/FoliationChangeInfoInterface";
+import {SiglaGroup} from "@/Edition/SiglaGroup";
+import {Apparatus} from "@/Edition/Apparatus";
+
+const defaultIcons = {
+  moveUp: '&uarr;',
+  moveDown: '&darr;',
+  busy: '<i class="fas fa-circle-notch fa-spin"></i>',
+  checkOK: '<i class="far fa-check-circle"></i>',
+  checkFail: '<i class="fas fa-exclamation-triangle"></i>',
+  checkCross: '<i class="fas fa-times"></i>',
+  editText: '<small><i class="fas fa-pen"></i></small>',
+  editSettings: '<i class="fas fa-cog"></i>',
+  confirmEdit: '<i class="fas fa-check"></i>',
+  cancelEdit: '<i class="fas fa-times"></i>',
+  alert: '<i class="fas fa-exclamation-triangle"></i>',
+  savePreset: '<i class="fas fa-save"></i>',
+  saveEdition: '<i class="bi bi-cloud-arrow-up"></i>',
+  loadPreset: '<i class="fas fa-upload"></i>',
+  error: '<i class="bi bi-bug-fill"></i>',
+  addEntry: '<i class="bi bi-plus-lg"></i>'
+};
+
+const editionPanelId = 'edition-panel';
+const chunkSearchPanelId = 'chunk-search-panel';
+const previewPanelId = 'preview-panel';
+const editionTitleId = 'edition-title-label';
+const bugButtonId = 'bug-btn';
+const saveButtonId = 'save-btn';
+
+const defaultChunkBreak = 'paragraph';
+
+// save button
+const saveButtonTextClassNoChanges = 'text-muted';
+const saveButtonTextClassChanges = 'text-primary';
+const saveButtonTextClassSaving = 'text-warning';
+const saveButtonTextClassError = 'text-danger';
+
+
+interface MceComposerOptions extends ApmPageOptions {
+  editionId: number;
+  langDef: any;
+}
+
+interface MceComposerIcons {
+  moveUp: string;
+  moveDown: string;
+  busy: string;
+  checkOK: string;
+  checkFail: string;
+  checkCross: string;
+  editText: string;
+  editSettings: string;
+  confirmEdit: string;
+  cancelEdit: string;
+  alert: string;
+  savePreset: string;
+  saveEdition: string;
+  loadPreset: string;
+  error: string;
+  addEntry: string;
+}
+
+export class MceComposer extends ApmPage {
+  private dbCache: IndexedDbAux;
+  private options: any;
+  private icons: MceComposerIcons;
+  private errorDetected: boolean;
+  private errorDetail: string;
+  private editionId: number;
+  private mceData: MceDataInterface;
+  private lastSave: string;
+  private lastSavedMceData: MceDataInterface;
+  private chunksToUpdateStatuses: boolean[];
+  private unsavedChanges: boolean;
+  private saving: boolean;
+  private saveErrors: boolean;
+  private edition: Edition;
+  private singleChunkEditions: Edition[];
+  private cache: AsyncKeyCache;
+  private changes: string[];
+  private editionPanel!: EditionPanel;
+  private chunkSearchPanel!: ChunkSearchPanel;
+  private previewPanel!: EditionPreviewPanel;
+  private multiPanelUI!: MultiPanelUI;
+  private titleField!: EditableTextField;
+  private saveButtonPopoverContent!: string;
+  private saveButtonPopoverTitle!: string;
+  private saveButton!: JQuery<HTMLElement>;
+  private bugButton!: JQuery<HTMLElement>;
+  private errorButtonPopoverContent!: string;
+  private errorButtonPopoverTitle!: string;
+
+  constructor(options: MceComposerOptions) {
+    super(options);
+    let oc = new OptionsChecker({
+      context: 'Mce Composer', optionsDefinition: {
+        editionId: {type: 'number', required: true}, langDef: {type: 'object', default: defaultLanguageDefinition},
+      }
+    });
+
+    this.dbCache = new IndexedDbAux('APM', 1, 'CtData');
+
+    this.options = oc.getCleanOptions(options);
+    this.icons = defaultIcons;
+    this.errorDetected = false;
+    this.errorDetail = '';
+    this.editionId = this.options.editionId;
+
+    // create empty MceEdition
+    this.mceData = MceData.createEmpty();
+    this.lastSave = '';  // i.e., never
+    this.lastSavedMceData = deepCopy(this.mceData);
+    this.changes = [];
+    this.chunksToUpdateStatuses = [];
+    this.unsavedChanges = false;
+    this.saving = false;
+    this.saveErrors = false;
+
+    $(window).on('beforeunload', () => {
+      if (this.unsavedChanges) {
+        //console.log("There are changes in editor")
+        return false; // make the browser ask if the user wants to leave
+      }
+    });
+    document.title = this.mceData.title;
+    this.edition = new Edition();
+    this.edition.setLang('la');  // so that there's a lang definition for it
+    this.singleChunkEditions = [];
+
+    this.cache = new AsyncKeyCache();
+    this._init().then(() => {
+      console.log(`Mce Composer initialized`);
+    }, (error) => {
+      console.error(error);
+      $('body').append(`<p class="text-danger">Error initializing: ${error}`);
+    });
+  }
+
+  async _init() {
+    await this.constructorPromise;
+    await this.dbCache.initialize();
+    await this._init_setupUi();
+    await this._init_saveArea();
+    await this._init_loadEdition();
+    this._init_titleEdit();
+  }
+
+  _init_titleEdit() {
+    //  Edition title
+    this.titleField = new EditableTextField({
+      containerSelector: `#${editionTitleId}`,
+      initialText: this.mceData.title,
+      editIcon: '<i class="bi bi-pencil"></i>',
+      confirmIcon: '<i class="bi bi-check"></i>',
+      cancelIcon: '<i class="bi bi-x"></i>',
+      onConfirm: this.__genOnConfirmTitleField()
+    });
+
+  }
+
+  _genGetUpdateStatuses() {
+    return (): Promise<boolean[]> => {
+      return new Promise((resolve) => {
+        // if (force) {
+        //   // here we should actually load data from the server
+        //   console.log(`Can't force right now`);
+        // }
+        // console.log(`Update statuses`)
+        // console.log(this.chunksToUpdateStatuses)
+        resolve(this.chunksToUpdateStatuses);
+      });
+    };
+  }
+
+  __genOnConfirmTitleField() {
+
+    return (data: any) => {
+      //console.log('confirm title field')
+      //console.log(data.detail)
+      if (data.detail.newText !== data.detail.oldText) {
+        let normalizedNewTitle = this.normalizeTitleString(data.detail.newText);
+        if (normalizedNewTitle === '') {
+          console.debug('Empty new title');
+          this.titleField.setText(this.mceData.title);
+          return false;
+        }
+        console.debug('New title: ' + normalizedNewTitle);
+        this.mceData.title = normalizedNewTitle;
+        this.titleField.setText(normalizedNewTitle);
+        document.title = this.mceData.title;
+        this.updateSaveUI();
+        return true;
+      }
+      return false;
+    };
+  }
+
+  normalizeTitleString(title: string): string {
+    return title.replace(/^\s*/, '').replace(/\s*$/, '');
+  }
+
+  _init_saveArea(): Promise<void> {
+    return new Promise((resolve) => {
+      // save area
+      // popover content will be set up by updateSaveUI()
+      this.saveButtonPopoverContent = 'TBD';
+      this.saveButtonPopoverTitle = 'TBD';
+
+      this.saveButton = $(`#${saveButtonId}`);
+      this.saveButton.popover({
+        trigger: 'hover', placement: 'left', html: true, title: () => {
+          return this.saveButtonPopoverTitle;
+        }, content: () => {
+          return this.saveButtonPopoverContent;
+        }
+      }).on('click', this._genOnClickSaveButton());
+
+      this.updateSaveUI();
+      //this.saveButton.on('click', thisObject.genOnClickSaveButton())
+
+      // error
+      this.bugButton = $(`#${bugButtonId}`);
+      this.errorButtonPopoverContent = 'TBD';
+      this.errorButtonPopoverTitle = 'Error';
+      this.bugButton.popover({
+        trigger: 'hover', placement: 'left', html: true, title: () => {
+          return this.errorButtonPopoverTitle;
+        }, content: () => {
+          return this.errorButtonPopoverContent;
+        }
+      });
+      this.updateBugUI();
+      resolve();
+    });
+  }
+
+  _genOnClickSaveButton() {
+    return () => {
+      if (this.saving) {
+        console.log(`Click on save button while saving!`);
+        return;
+      }
+      let changes = this.detectChanges();
+      if (changes.length === 0) {
+        console.log(`Click on save button without changes to save`);
+        return;
+      }
+
+      this.saving = true;
+      let url = urlGen.apiSaveMultiChunkEdition();
+      let description = changes.join('. ');
+      this.saveButton.popover('hide');
+      this.saveButton.html(this.icons.busy);
+      this.saveButtonPopoverContent = 'Saving...';
+      this.saveButtonPopoverTitle = '';
+      this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassSaving);
+      console.log(`Saving edition with id ${this.editionId} with API call to ${url}`);
+      let apiCallOptions = {
+        editionId: this.editionId, mceData: this.mceData, description: description,
+      };
+      $.post(url, {data: JSON.stringify(apiCallOptions)}).done((apiResponse) => {
+        console.log(`Success saving edition, id is ${apiResponse.id}`);
+        console.log(apiResponse);
+        if (this.editionId === -1) {
+          // redirect to new edition's page
+          this.unsavedChanges = false;
+          window.location.href = urlGen.siteMultiChunkEdition(apiResponse.id);
+        } else {
+          this.saveButton.html(this.icons.saveEdition);
+          this.lastSavedMceData = deepCopy(this.mceData);
+          this.lastSave = apiResponse['saveTimeStamp'];
+          this.unsavedChanges = false;
+          this.updateSaveUI();
+          this.saving = false;
+          this.saveErrors = false;
+        }
+      }).fail((resp) => {
+        this.saveErrors = true;
+        this.saving = false;
+        this.saveButton.html(this.icons.saveEdition);
+        console.error("Could not save table");
+        console.log(resp);
+        this.updateSaveUI();
+      });
+    };
+  }
+
+  updateBugUI() {
+    if (this.errorDetected) {
+      this.bugButton.removeClass('hidden').addClass('blink');
+      this.errorButtonPopoverContent = `<p>Software error detected, please make a note of what you were doing and report it to the developers. </p>
+<p>${this.errorDetail}</p>`;
+    } else {
+      this.bugButton.removeClass('blink').addClass('hidden');
+    }
+    this.updateSaveUI();
+  }
+
+  __setButtonEnableStatus(btn: JQuery<HTMLElement>, enable: boolean) {
+    if (enable) {
+      btn.prop('disabled', false).addClass('text-primary');
+    } else {
+      btn.prop('disabled', true).removeClass('text-primary');
+    }
+  }
+
+  updateSaveUI() {
+    if (this.errorDetected) {
+      this.saveButtonPopoverTitle = 'Saving is disabled';
+      this.saveButtonPopoverContent = `<p>Software error detected</p>`;
+      this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassNoChanges);
+      this.__setButtonEnableStatus(this.saveButton, false);
+      return;
+    }
+
+    if (this.mceData['archived']) {
+      this.saveButtonPopoverTitle = 'Saving is disabled';
+      this.saveButtonPopoverContent = `<p>Edition is archived.</p>`;
+      this.__setButtonEnableStatus(this.saveButton, false);
+      return;
+    }
+
+    if (MceData.isEmpty(this.mceData)) {
+      this.saveButtonPopoverTitle = 'Nothing to save';
+      this.saveButtonPopoverContent = `<p>Edition is empty</p>`;
+      this.__setButtonEnableStatus(this.saveButton, false);
+      return;
+    }
+    this.changes = this.detectChanges();
+    if (this.changes.length === 0) {
+      this.unsavedChanges = false;
+      let lastSaveMsg = 'Never';
+      if (this.lastSave !== '') {
+        lastSaveMsg = ApmFormats.timeString(this.lastSave);
+      }
+
+      this.saveButtonPopoverContent = `Last save: ${lastSaveMsg}`;
+      this.saveButtonPopoverTitle = '<p>Nothing to save</p>';
+      this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassNoChanges);
+      this.__setButtonEnableStatus(this.saveButton, false);
+    } else {
+      this.unsavedChanges = true;
+      this.saveButtonPopoverTitle = '<p>Click to save changes</p>';
+      if (this.saveErrors) {
+        this.saveButtonPopoverContent += `<p class="text-danger">Edition could not be saved, please try again</p>`;
+        this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassError);
+        this.__setButtonEnableStatus(this.saveButton, true);
+      } else {
+        this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassChanges);
+        this.saveButtonPopoverContent = '<ul>' + this.changes.map((change) => {
+          return `<li>${change}</li>`;
+        }).join('') + '</ul>';
+        this.__setButtonEnableStatus(this.saveButton, true);
+      }
+    }
+  }
+
+  detectChanges(): string[] {
+    if (varsAreEqual(this.lastSavedMceData, this.mceData)) {
+      // console.log(`No changes`)
+      return [];
+    }
+    let changes = [];
+
+    // change in title
+    if (this.lastSavedMceData.title !== this.mceData.title) {
+      changes.push(`Changed title to '${this.mceData.title}'`);
+    }
+
+    // sigla changes
+    if (!varsAreEqual(this.lastSavedMceData.sigla, this.mceData.sigla)) {
+      changes.push(`Changes in sigla`);
+    }
+
+    // sigla groups changes
+    if (!varsAreEqual(this.lastSavedMceData.siglaGroups, this.mceData.siglaGroups)) {
+      changes.push(`Changes in sigla groups`);
+    }
+
+    // change in chunk order
+    if (!varsAreEqual(this.lastSavedMceData.chunkOrder, this.mceData.chunkOrder)) {
+      changes.push(`Chunk order changed`);
+    }
+
+    // change in auto marginal foliation settings
+    if (!varsAreEqual(this.lastSavedMceData.includeInAutoMarginalFoliation, this.mceData.includeInAutoMarginalFoliation)) {
+      changes.push(`Auto marginal foliation settings changed`);
+    }
+
+    // changes in chunks
+    if (this.lastSavedMceData.chunks.length !== this.mceData.chunks.length) {
+      let lastSavedTableIds = this.lastSavedMceData.chunks.map((chunk) => {
+        return chunk.chunkEditionTableId;
+      });
+      let currentTableIds = this.mceData.chunks.map((chunk) => {
+        return chunk.chunkEditionTableId;
+      });
+      this.mceData.chunks.filter((chunk) => {
+        return lastSavedTableIds.indexOf(chunk.chunkEditionTableId) === -1;
+      }).forEach((chunk) => {
+        changes.push(`Added chunk ${chunk.chunkId}`);
+      });
+      this.lastSavedMceData.chunks.filter((chunk) => {
+        return currentTableIds.indexOf(chunk.chunkEditionTableId) === -1;
+      }).forEach((chunk) => {
+        changes.push(`Deleted chunk ${chunk.chunkId}`);
+      });
+    } else {
+      // same number of chunks
+      this.mceData.chunks.forEach((chunk, chunkIndex) => {
+        let lastSavedChunk = this.lastSavedMceData.chunks[chunkIndex];
+        if (!varsAreEqual(chunk, lastSavedChunk)) {
+          changes.push(`Changes to ${chunk.chunkId}`);
+        }
+      });
+    }
+
+    return changes;
+  }
+
+  /**
+   * Changes the 'text-xxx' class to the new class, removing all others
+   * @param element
+   * @param newClass
+   * @private
+   */
+  _changeBootstrapTextClass(element: JQuery<HTMLElement>, newClass: string) {
+    let allClasses = 'text-primary text-secondary text-success text-danger text-warning text-info text-light text-dark text-body text-muted text-white text-black-50 text-white-50';
+    element.removeClass(allClasses).addClass(newClass);
+  }
+
+  chunkDelete(chunkIndex: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      if (this.mceData.chunks.length === 0) {
+        console.warn(`Attempt to delete chunks from empty edition`);
+        resolve();
+        return;
+      }
+      if (this.mceData.chunks.length === 1) {
+        reject(`Deleting the only chunk in the edition is not permitted`);
+        return;
+      }
+      if (chunkIndex >= this.mceData.chunks.length || chunkIndex < 0) {
+        console.warn(`Chunk delete on out of range index ${chunkIndex}`);
+        resolve();
+        return;
+      }
+      console.log(`Deleting chunk ${chunkIndex}`);
+      // let removedChunk = this.mceData.chunks.splice(chunkIndex, 1)
+      this.singleChunkEditions.splice(chunkIndex, 1);
+      this.chunksToUpdateStatuses.splice(chunkIndex, 1);
+      if (this.mceData.chunkOrder === undefined) {
+        this.mceData.chunkOrder = MceData.getDefaultChunkOrder(this.mceData);
+
+      }
+      this.mceData.chunkOrder = this.mceData.chunkOrder.map((index) => {
+        if (index === chunkIndex) {
+          return -1;
+        }
+        if (index > chunkIndex) {
+          return index - 1;
+        }
+        return index;
+      }).filter((index) => {
+        return index !== -1;
+      });
+
+      // TODO: handle witnesses and sigla
+
+      console.log(`New MceData`);
+      console.log(this.mceData);
+      this.editionPanel.updateData(this.mceData);
+      this.chunkSearchPanel.updateData(this.mceData).then(async () => {
+        this.updateSaveUI();
+        await this.regenerateEdition();
+        await this.previewPanel.updateData(this.edition);
+      });
+    });
+  }
+
+  chunkUpdate(chunkIndex: number): Promise<void> {
+    return new Promise((resolve, reject) => {
+      let tableId = this.mceData.chunks[chunkIndex].chunkEditionTableId;
+      this.getSingleChunkData(tableId, '').then((data) => {
+        let ctData = data.ctData;
+        if (ctData.archived) {
+          reject(`Table ${tableId} is now archived`);
+          return;
+        }
+
+        this.mceData.chunks[chunkIndex].version = data.timeStamp;
+        this.mceData.chunks[chunkIndex].title = ctData.title;
+        this.chunksToUpdateStatuses[chunkIndex] = false;
+
+        // TODO: deal with changes in witnesses
+
+        let eg = new CtDataEditionGenerator({ctData: ctData});
+        let edition;
+        try {
+          edition = eg.generateEdition();
+        } catch (e) {
+          console.error(`Error generating edition`);
+          console.error(e);
+          this.errorDetail = `Error generating edition for table id ${tableId}, chunk ${ctData.chunkId}`;
+          return;
+        }
+        console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`);
+        console.log(edition);
+        this.singleChunkEditions[chunkIndex] = edition;
+        this.editionPanel.updateData(this.mceData);
+        this.chunkSearchPanel.updateData(this.mceData).then(() => {
+          this.updateSaveUI();
+          this.regenerateEdition().then(async () => {
+            await this.previewPanel.updateData(this.edition);
+            resolve();
+          }, (error) => {
+            reject(error);
+          });
+        });
+      }, (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * Adds a single chunk edition to the multi chunk edition
+   * @param {number}tableId
+   * @param {string}timeString
+   */
+  chunkAdd(tableId: number, timeString: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      // first, get the table from the server
+      this.getSingleChunkData(tableId, timeString).then(async (data) => {
+        let ctData = data.ctData;
+
+        if (ctData.type !== 'edition') {
+          reject(`Table ${tableId} is not an edition`);
+          return;
+        }
+        if (ctData.archived) {
+          reject(`Table ${tableId} is archived`);
+          return;
+        }
+        if (!await this.addChunkToMceData(tableId, ctData, data.timeStamp)) {
+          reject(this.errorDetail);
+          return;
+        }
+
+        this.regenerateEdition().then(() => {
+          this.previewPanel.updateData(this.edition);
+          resolve();
+        }, (error) => {
+          reject(error);
+        });
+
+      }, (error) => {
+        console.log(error);
+        if (error.status === 404) {
+          reject(`Table not found`);
+        }
+        reject(`Error getting table: ${error.status}`);
+      });
+    });
+  }
+
+  updateChunkOrder(newOrder: number[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.mceData.chunkOrder = newOrder;
+      this.editionPanel.updateData(this.mceData);
+      this.updateSaveUI();
+      this.regenerateEdition().then(async () => {
+        await this.previewPanel.updateData(this.edition);
+        resolve();
+      }, (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  async updateAutoMarginalFoliation(newAutoMarginalFoliation: number[]) {
+    await navigator.locks.request('autoMarginalFoliation', async () => {
+      if (this.mceData.includeInAutoMarginalFoliation === undefined) {
+        this.mceData.includeInAutoMarginalFoliation = [];
+      }
+      console.log(`Current auto marginal foliation`, deepCopy(this.mceData.includeInAutoMarginalFoliation));
+      console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
+      if (arraysAreEqual(this.mceData.includeInAutoMarginalFoliation, newAutoMarginalFoliation)) {
+        console.log(`No change in auto marginal foliation`);
+        return;
+      }
+      console.log(`Updating auto marginal foliation`, newAutoMarginalFoliation);
+      this.mceData.includeInAutoMarginalFoliation = newAutoMarginalFoliation;
+      this.singleChunkEditions = [];
+      this.editionPanel.updateData(this.mceData);
+      this.updateSaveUI();
+      this.previewPanel.disableUpdatePreview();
+      await this.regenerateEdition();
+      await this.previewPanel.updateData(this.edition);
+    });
+  }
+
+  updateSigla(newSigla: string[]): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.mceData.sigla = newSigla;
+      this.editionPanel.updateData(this.mceData);
+      this.updateSaveUI();
+      this.regenerateEdition().then(async () => {
+        await this.previewPanel.updateData(this.edition);
+        resolve();
+      }, (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  async updateChunkBreak(chunkIndex: number, newBreak: string, source: string): Promise<void> {
+    this.mceData.chunks[chunkIndex].break = newBreak;
+    if (source !== 'editionPanel') {
+      this.editionPanel.updateData(this.mceData);
+    }
+    this.updateSaveUI();
+    await this.regenerateEdition();
+    await this.previewPanel.updateData(this.edition);
+  }
+
+  updateSiglaGroups(newSiglaGroups: SiglaGroupInterface[], source: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.mceData.siglaGroups = newSiglaGroups;
+      if (source !== 'editionPanel') {
+        this.editionPanel.updateData(this.mceData);
+      }
+      this.updateSaveUI();
+      this.regenerateEdition().then(async () => {
+        await this.previewPanel.updateData(this.edition);
+        resolve();
+      }, (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * Fetches chunk ctData.
+   *
+   * If the CtData object is not in the cache, fetches the data from the server
+   *
+   * @param {number}tableId
+   * @param {string}versionTimeString
+   * @param {boolean}useCache
+   * @return {Promise<SingleChunkApiData>}
+   */
+  getSingleChunkData(tableId: number, versionTimeString: string = '', useCache: boolean = true): Promise<SingleChunkApiData> {
+    return new Promise(async (resolve, reject) => {
+      let dbKey = `CtData-${tableId}-${TimeString.compactEncode(versionTimeString)}`;
+      if (versionTimeString !== '' && useCache) {
+        let cachedData = await this.dbCache.retrieve(dbKey);
+        if (cachedData !== null) {
+          const versionInfo = await this.apiClient.collationTableVersionInfo(tableId, versionTimeString);
+          if (versionInfo !== null) {
+            cachedData.isLatestVersion = versionInfo.isLatestVersion;
+            resolve(cachedData);
+            return;
+          }
+        }
+      }
+      // really get from server
+      let url = urlGen.apiCollationTable_get(tableId, TimeString.compactEncode(versionTimeString));
+      this.apiClient.get(url).then(async (data) => {
+        /** @var {SingleChunkApiData} data */
+        console.log(`Got data table ${tableId}, timeStamp '${versionTimeString}'`);
+        console.log(data);
+        data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData);
+        // cache doc info
+        for (const docInfo of data.docInfo) {
+          await this.cache.store(`DOC-${docInfo['docId']}`, docInfo);
+        }
+        // cache data
+        await this.dbCache.store(dbKey, data);
+        resolve(data);
+      }, (error) => {
+        reject(error);
+      });
+    });
+  }
+
+  /**
+   * Returns the CtData's includeInAutoFoliation array that is needed to include the witnesses
+   * given in the MceData
+   * @return {number[]}
+   * @param {MceDataInterface}mceData
+   * @param {number}chunkIndex
+   */
+  getSingleChunkIncludeInAutoFoliationArray(mceData: MceDataInterface, chunkIndex: number): number[] {
+    // basically, translate the indices in MceData's includeInAutoMarginalFoliation into
+    // indices relative to the chunk's witnesses
+    const chunkWitnessIndices = mceData.chunks[chunkIndex].witnessIndices;
+    if (mceData.includeInAutoMarginalFoliation === undefined) {
+      mceData.includeInAutoMarginalFoliation = [];
+    }
+    return mceData.includeInAutoMarginalFoliation.map((mceWitnessIndex) => {
+      return chunkWitnessIndices.indexOf(mceWitnessIndex);
+    }).filter((index) => {
+      return index !== -1;
+    });
+  }
+
+  async loadAllSingleChunkEditions() {
+    let numChunks = this.mceData.chunks.length;
+    for (let i = 0; i < numChunks; i++) {
+      this.editionPanel.updateLoadingMessage(`Loading chunk edition ${i + 1} of ${numChunks}`);
+
+      let chunk = this.mceData.chunks[i];
+      console.log(`Loading chunk edition ${i + 1} of ${numChunks}, tableId: ${chunk.chunkEditionTableId}, version ${chunk.version}`);
+      let data = await this.getSingleChunkData(chunk.chunkEditionTableId, chunk.version);
+      this.chunksToUpdateStatuses[i] = !data.isLatestVersion;
+    }
+  }
+
+  /**
+   *
+   * @param {number}chunkIndex
+   * @param {FoliationChangeInfoInterface[]}currentFoliationChanges
+   * @return {Promise<void>}
+   */
+  async regenerateSingleChunkEdition(chunkIndex: number, currentFoliationChanges: FoliationChangeInfoInterface[]): Promise<void> {
+    const chunk = this.mceData.chunks[chunkIndex];
+    if (chunk === undefined) {
+      console.warn(`Attempt to regenerate non-existent chunk ${chunkIndex}`);
+      return;
+    }
+    console.log(`Regenerating single chunk edition for chunk ${chunkIndex} ('${chunk.chunkId}' @ ${chunk.version})`, currentFoliationChanges);
+    const data = await this.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
+
+    let singleChunkCtData = data.ctData;
+
+    singleChunkCtData.includeInAutoMarginalFoliation = this.getSingleChunkIncludeInAutoFoliationArray(this.mceData, chunkIndex);
+    let eg = new CtDataEditionGenerator({
+      ctData: singleChunkCtData, lastFoliationChanges: currentFoliationChanges
+    });
+    let edition;
+    try {
+      edition = eg.generateEdition();
+    } catch (e) {
+      console.error(`Error generating edition`);
+      console.error(e);
+      this.errorDetail = `Error generating edition for table id ${chunk.chunkEditionTableId}, chunk ${chunk.chunkId}`;
+      return;
+    }
+    console.log(`Edition for edition id ${chunk.chunkEditionTableId}`);
+    console.log(edition);
+    this.singleChunkEditions[chunkIndex] = edition;
+  }
+
+  async regenerateEdition() {
+
+    this.editionPanel.updateLoadingMessage(`Regenerating edition with ${this.mceData.chunks.length} chunks`);
+
+    let profiler = new BasicProfiler('RegenerateEdition', true);
+
+    this.edition = new Edition();
+    this.edition.info = {
+      tableId: -1, singleChunk: false, source: 'multiChunk', editionId: this.editionId, chunkId: '', baseWitnessIndex: 0
+    };
+    this.edition.metadata.infoText = `Multi chunk edition`;
+
+    this.edition.siglaGroups = this.mceData.siglaGroups.map( sgi => SiglaGroup.fromObject(sgi));
+    this.edition.witnesses = this.mceData.witnesses.map((w, i) => {
+      return (new EditionWitnessInfo()).setSiglum(this.mceData.sigla[i]).setTitle(w.title);
+    });
+    // merge main text
+    let currentMainTextIndexShift = 0;
+    let nextChunkShift = 0;
+    let currentFoliationChanges: FoliationChangeInfoInterface[] = [];
+    if (this.mceData.chunkOrder === undefined) {
+      console.warn(`No chunk order in MceData`);
+      this.mceData.chunkOrder = MceData.getDefaultChunkOrder(this.mceData);
+    }
+    for (let chunkOrderIndex = 0; chunkOrderIndex < this.mceData.chunkOrder.length; chunkOrderIndex++) {
+      let chunkIndex = this.mceData.chunkOrder[chunkOrderIndex];
+      if (this.singleChunkEditions[chunkIndex] === undefined || this.singleChunkEditions[chunkIndex] === null) {
+        await this.regenerateSingleChunkEdition(chunkIndex, currentFoliationChanges);
+      }
+      let singleChunkEdition = this.singleChunkEditions[chunkIndex];
+      if (singleChunkEdition === undefined || this.singleChunkEditions[chunkIndex] === null) {
+        console.warn(`Edition for chunk ${chunkIndex} is undefined`);
+        return;
+      }
+      currentFoliationChanges = this.mergeFoliationChanges(currentFoliationChanges, singleChunkEdition.foliationChanges ?? []);
+
+      if (chunkOrderIndex === 0) {
+        this.edition.lang = singleChunkEdition.lang;
+      }
+
+      currentMainTextIndexShift = nextChunkShift;
+
+      // Add main text
+      this.edition.mainText.push(...singleChunkEdition.mainText.map((mainTextToken) => {
+        let newToken = MainTextTokenFactory.clone(mainTextToken);
+        newToken.editionWitnessTokenIndex = mainTextToken.editionWitnessTokenIndex + currentMainTextIndexShift;
+        return newToken;
+      }));
+
+      nextChunkShift += singleChunkEdition.mainText.length;
+      switch (this.mceData.chunks[chunkIndex].break) {
+        case 'paragraph':
+          if (chunkOrderIndex !== this.mceData.chunkOrder.length - 1) {
+            // add a paragraph mark if not the last chunk
+            this.edition.mainText.push(MainTextTokenFactory.createParagraphEnd());
+            nextChunkShift++;
+          }
+          break;
+
+        case '':
+          if (chunkOrderIndex !== this.mceData.chunkOrder.length - 1) {
+            // add a paragraph mark if not the last chunk
+            this.edition.mainText.push(MainTextTokenFactory.createNormalGlue());
+            nextChunkShift++;
+          }
+          break;
+
+        case 'page':
+          // TODO: implement page break
+          break;
+
+        case 'section':
+          // TODO: implement section break
+          break;
+
+        default:
+        // nothing to do!
+      }
+
+      // process apparatuses
+      for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {
+        let singleChunkApparatus = singleChunkEdition.apparatuses[appIndex];
+        let currentApparatus;
+        if (this.edition.apparatuses[appIndex] === undefined) {
+          currentApparatus = ApparatusTools.createEmpty();
+          currentApparatus.type = singleChunkApparatus.type;
+          this.edition.apparatuses.push((new Apparatus()).setFromInterface(currentApparatus));
+        } else {
+          currentApparatus = this.edition.apparatuses[appIndex];
+        }
+        /** @var {ApparatusEntry[]} */
+        let apparatusEntriesToAdd = singleChunkApparatus.entries.map((entry) => {
+          let newEntry = new ApparatusEntry();
+          newEntry.from = entry.from + currentMainTextIndexShift;
+          newEntry.to = entry.to + currentMainTextIndexShift;
+          newEntry.lemma = entry.lemma;
+          newEntry.lemmaText = entry.lemmaText;
+          newEntry.postLemma = entry.postLemma;
+          newEntry.preLemma = entry.preLemma;
+          newEntry.separator = entry.separator;
+          newEntry.subEntries = entry.subEntries.map((subEntry) => {
+            let newSubEntry = new ApparatusSubEntry();
+            newSubEntry.enabled = subEntry.enabled;
+            newSubEntry.fmtText = subEntry.fmtText;
+            newSubEntry.source = subEntry.source;
+            newSubEntry.type = subEntry.type;
+            newSubEntry.keyword = subEntry.keyword;
+            newSubEntry.witnessData = subEntry.witnessData;
+            // map((wd) => {
+            //   // let newWd = new WitnessDataItem()
+            //   // newWd.setHand(wd.hand)
+            //   // newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
+            //   // return newWd
+            //   return wd;
+            // })
+            return newSubEntry;
+          });
+          return newEntry;
+        });
+
+        // filter out empty entries
+        apparatusEntriesToAdd = apparatusEntriesToAdd.filter((entry) => {
+          return entry.subEntries.length > 0;
+        });
+
+        currentApparatus.entries.push(...apparatusEntriesToAdd);
+      }
+    }
+
+    profiler.stop();
+    console.log(`New Edition`);
+    console.log(this.edition);
+  }
+
+  /**
+   * Merges previous with current foliation changes making sure that the last foliation changes of
+   * a witness is copied into the result if there are no changes in that witness in the new foliation changes
+   *
+   * @param {FoliationChangeInfoInterface[]}previousFoliationChanges
+   * @param {FoliationChangeInfoInterface[]}currentFoliationChanges
+   * @return {FoliationChangeInfoInterface[]}
+   */
+  mergeFoliationChanges(previousFoliationChanges: FoliationChangeInfoInterface[], currentFoliationChanges: FoliationChangeInfoInterface[]): FoliationChangeInfoInterface[] {
+
+    let indicesInPrevious: number[] = [];
+    previousFoliationChanges.forEach((previousFoliationChange) => {
+      indicesInPrevious.push(previousFoliationChange.witnessIndex);
+    });
+    indicesInPrevious = uniq(indicesInPrevious);
+
+    let indicesInCurrent: number[] = [];
+    currentFoliationChanges.forEach((currentFoliationChange) => {
+      indicesInCurrent.push(currentFoliationChange.witnessIndex);
+    });
+    indicesInCurrent = uniq(indicesInCurrent);
+
+    const mergedChanges = [];
+    indicesInPrevious.forEach((previousWitnessIndex) => {
+      if (indicesInCurrent.indexOf(previousWitnessIndex) === -1) {
+        const changes = previousFoliationChanges.filter((previousFoliationChange) => {
+          return previousFoliationChange.witnessIndex === previousWitnessIndex;
+        });
+        if (changes.length > 0) {
+          mergedChanges.push(changes[changes.length - 1]);
+        }
+      }
+    });
+    mergedChanges.push(...currentFoliationChanges);
+    return mergedChanges;
+  }
+
+  /**
+   * Adds a chunk to the multi-chunk edition
+   * @param {number}tableId
+   * @param {CtDataInterface}ctData
+   * @param {string}chunkTimeString
+   * @return {Promise<boolean>}
+   * @private
+   */
+  async addChunkToMceData(tableId: number, ctData: CtDataInterface, chunkTimeString: string): Promise<boolean> {
+    // first, see if the exact chunk edition is already in
+    for (let chunkIndex = 0; chunkIndex < this.mceData.chunks.length; chunkIndex++) {
+      let chunk = this.mceData.chunks[chunkIndex];
+      if (chunk.chunkEditionTableId === tableId && chunk.version === chunkTimeString) {
+        this.errorDetail = `Table ${tableId} already included`;
+        return false;
+      }
+    }
+
+    // new chunk, check if it's the same language
+    if (this.mceData.chunks.length !== 0 && this.mceData.lang !== ctData['lang']) {
+      this.errorDetail = `Wrong language (${ctData['lang']})`;
+      return false;
+    }
+
+    if (this.mceData.chunks.length === 0) {
+      // the first chunk in the edition
+      this.mceData.lang = ctData.lang;
+    }
+
+    let newChunk: ChunkInMceData = {
+      chunkId: ctData.chunkId,
+      chunkEditionTableId: tableId,
+      version: chunkTimeString,
+      break: defaultChunkBreak,
+      lineNumbersRestart: false,
+      witnessIndices: [],
+      title: ctData.title
+    };
+    this.mceData.chunks.push(newChunk);
+
+    // add it to the end of the list
+    if (this.mceData.chunkOrder === undefined) {
+      this.mceData.chunkOrder = MceData.getDefaultChunkOrder(this.mceData);
+    }
+    this.mceData.chunkOrder.push(this.mceData.chunks.length - 1);
+    this.mceData.chunkOrder.push(this.mceData.chunks.length - 1);
+
+    // add new witnesses and sigla
+    for (let ctDataWitnessIndex = 0; ctDataWitnessIndex < ctData.witnesses.length; ctDataWitnessIndex++) {
+      let ctDataWitnessInfo = ctData.witnesses[ctDataWitnessIndex];
+      let witnessId;
+      let witnessIndex;
+      switch (ctDataWitnessInfo['witnessType']) {
+        case 'edition':
+          newChunk.witnessIndices.push(-1);
+          continue;
+
+        case 'fullTx':
+          witnessId = `${ctDataWitnessInfo['witnessType']}-${ctDataWitnessInfo.docId}-${ctDataWitnessInfo.localWitnessId}`;
+          witnessIndex = this.getWitnessIndexByWitnessId(witnessId);
+          if (witnessIndex === -1) {
+            // new witness
+            let docInfo = await this.cache.retrieve(`DOC-${ctDataWitnessInfo.docId}`);
+            let title = `Doc ${ctDataWitnessInfo.docId}`;
+            if (docInfo !== null) {
+              title = docInfo.title;
+            }
+            let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex];
+            let newWitnessIndex = this.addNewWitnessInfo({
+              type: 'fullTx',
+              witnessId: witnessId,
+              docId: ctDataWitnessInfo.docId ?? -1,
+              localWitnessId: ctDataWitnessInfo.localWitnessId ?? 'A',
+              title: title
+            }, newWitnessSiglum);
+            newChunk.witnessIndices.push(newWitnessIndex);
+          } else {
+            // witness already exists
+            newChunk.witnessIndices.push(witnessIndex);
+          }
+          break;
+
+        case 'source':
+          witnessId = ctDataWitnessInfo['ApmWitnessId'];
+          witnessIndex = this.getWitnessIndexByWitnessId(witnessId);
+          if (witnessIndex === -1) {
+            // new witness
+            let [, tidStr] = witnessId.split(':');
+            const tid = parseInt(tidStr);
+            let sourceInfo = await this.apiClient.getEditionSource(tid);
+            console.log(`Source info`);
+            console.log(sourceInfo);
+
+            let title = sourceInfo.title;
+
+            let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex];
+            let newWitnessIndex = this.addNewWitnessInfo({
+              type: 'source', witnessId: witnessId, tid: tid, title: title
+            }, newWitnessSiglum);
+            newChunk.witnessIndices.push(newWitnessIndex);
+          } else {
+            // witness already exists
+            newChunk.witnessIndices.push(witnessIndex);
+          }
+          break;
+
+        default:
+          console.warn(`Unknown witness type '${ctDataWitnessInfo['witnessType']}' found in ctData, witness index ${ctDataWitnessIndex}`);
+          console.log(ctData);
+      }
+
+
+    }
+    console.log(`MceData updated`);
+    console.log(this.mceData);
+
+    // assume this is the last version
+    this.chunksToUpdateStatuses.push(false);
+
+    let eg = new CtDataEditionGenerator({ctData: ctData});
+    let edition;
+    try {
+      edition = eg.generateEdition();
+    } catch (e) {
+      console.error(`Error generating edition`);
+      console.error(e);
+      this.errorDetail = `Error generating edition for table id ${tableId}, chunk ${ctData.chunkId}`;
+      return false;
+    }
+    // console.log(`Generated edition for table ${tableId}, chunk ${ctData.chunkId}`)
+    // console.log(edition)
+    this.singleChunkEditions.push(edition);
+    this.editionPanel.updateData(this.mceData);
+    await this.chunkSearchPanel.updateData(this.mceData);
+    this.updateSaveUI();
+    return true;
+  }
+
+  /**
+   * Adds a witness siglum to the multi-chunk edition.
+   *
+   */
+  private addNewWitnessInfo(witnessInfo: WitnessInMceData, siglum: string): number {
+    this.mceData.witnesses.push(witnessInfo);
+    let witnessIndex = this.mceData.witnesses.length - 1;
+
+    // add witness siglum at the end of this.mceData.sigla
+    if (this.mceData.sigla.indexOf(siglum) !== -1) {
+      // siglum already exists, since we don't want duplicate sigla,
+      // we need to create a new unique one that the user will surely
+      // change later on
+      this.mceData.sigla.push(`W${witnessIndex}`);
+    } else {
+      // just push it
+      this.mceData.sigla.push(siglum);
+    }
+    return witnessIndex;
+  }
+
+  /**
+   * Get the witness index for the given witness id
+   *
+   * Return -1 if the witness in not in the multi-chunk edition witness list
+   */
+  private getWitnessIndexByWitnessId(witnessId: string): number {
+    for (let i = 0; i < this.mceData.witnesses.length; i++) {
+      if (witnessId === this.mceData.witnesses[i]['witnessId']) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  genGetPdfDownloadUrlForPreviewPanel() {
+    return async (rawData: any) => {
+      return this.apiClient.getPdfDownloadUrl(rawData);
+    };
+  }
+
+  private _init_loadEdition(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.previewPanel.disableUpdatePreview();
+      if (this.editionId === -1) {
+        // create empty MceEdition
+        this.editionId = -1;
+        this.editionPanel.setLoadingStatus(false);
+        this.editionPanel.updateData(this.mceData);
+        resolve();
+      } else {
+        // load Mce Edition
+        console.log(`Loading edition ${this.editionId}`);
+        this.editionPanel.updateLoadingMessage(`Loading multi-chunk edition`);
+        let apiUrl = urlGen.apiGetMultiChunkEdition(this.editionId);
+        this.apiClient.get(apiUrl).then((data) => {
+          console.log(`Got data from server`);
+          console.log(data);
+          this.mceData = MceData.fix(data.mceData);
+          this.lastSavedMceData = deepCopy(this.mceData);
+          this.lastSave = data.validFrom;
+          document.title = this.mceData.title;
+          this.loadAllSingleChunkEditions().then(() => {
+            this.regenerateEdition().then(async () => {
+              await this.previewPanel.updateData(this.edition);
+              this.editionPanel.updateData(this.mceData);
+              this.chunkSearchPanel.updateData(this.mceData).then(() => {
+                this.updateSaveUI();
+                resolve();
+              });
+            }, (error) => {
+              console.error(error);
+              reject(`Cannot regenerate edition from data`);
+            });
+          });
+        }, (error) => {
+          console.error(error);
+          reject(`Cannot load edition`);
+        });
+      }
+    });
+  }
+
+  private _init_setupUi(): Promise<boolean> {
+    // construct panels
+    this.editionPanel = new EditionPanel({
+      containerSelector: `#${editionPanelId}`,
+      mceData: this.mceData,
+      getUpdateStatuses: this._genGetUpdateStatuses(),
+      updateChunk: (chunkIndex: number) => {
+        return this.chunkUpdate(chunkIndex);
+      },
+      deleteChunk: (chunkIndex: number) => {
+        return this.chunkDelete(chunkIndex);
+      },
+      updateChunkOrder: (newOrder: number[]) => {
+        return this.updateChunkOrder(newOrder);
+      },
+      updateSigla: (newSigla: string[]) => {
+        return this.updateSigla(newSigla);
+      },
+      updateSiglaGroups: (newSiglaGroups: SiglaGroupInterface[]) => {
+        return this.updateSiglaGroups(newSiglaGroups, 'editionPanel');
+      },
+      updateAutoMarginalFoliation: (newAutoMarginalFoliation: number[]) => {
+        return this.updateAutoMarginalFoliation(newAutoMarginalFoliation);
+      },
+      updateChunkBreak: (chunkIndex: number, newBreak: string) => {
+        return this.updateChunkBreak(chunkIndex, newBreak, 'editionPanel');
+      },
+      debug: true
+    });
+    this.chunkSearchPanel = new ChunkSearchPanel({
+      containerSelector: `#${chunkSearchPanelId}`,
+      mceData: this.mceData,
+      apiClient: this.apiClient,
+      addEdition: (id: number, timestamp: string) => {
+        return this.chunkAdd(id, timestamp);
+      },
+      debug: true
+    });
+    this.previewPanel = new EditionPreviewPanel({
+      containerSelector: `#${previewPanelId}`,
+      edition: this.edition,
+      langDef: this.options.langDef,
+      getPdfDownloadUrl: this.genGetPdfDownloadUrlForPreviewPanel(),
+      debug: true
+    });
+
+    // tab arrays
+    let panelOneTabs = [TabConfig.createTabConfig(editionPanelId, 'Edition', this.editionPanel), TabConfig.createTabConfig(chunkSearchPanelId, 'Chunk Search', this.chunkSearchPanel),];
+    let panelTwoTabs = [TabConfig.createTabConfig(previewPanelId, 'Preview', this.previewPanel),];
+
+    this.multiPanelUI = new MultiPanelUI({
+      logo: `<a href="${urlGen.siteHome()}" title="Home">
+<img src="${urlGen.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`, topBarContent: () => {
+        return `<div class="top-bar-item top-bar-title" id="${editionTitleId}">${this.mceData.title}</div>`;
+      }, topBarRightAreaContent: () => {
+        return `<div class="toolbar-group"><button class="top-bar-button text-danger" id="${bugButtonId}">${this.icons.error}</button>
+<button class="top-bar-button" id="${saveButtonId}">${this.icons.saveEdition}</button></div>`;
+      }, icons: {
+        closePanel: '&times;',
+        horizontalMode: `<img src="${urlGen.images()}/horizontal-mode.svg" alt="Horizontal Mode"/>`,
+        verticalMode: `<img src="${urlGen.images()}/vertical-mode.svg" alt="Vertical Mode"/>`
+      }, panels: [{
+        id: 'panel-one', type: 'tabs', tabs: panelOneTabs
+      }, {
+        id: 'panel-two', type: 'tabs', tabs: panelTwoTabs
+      }]
+    });
+    return this.multiPanelUI.start();
+  }
+
+}
+
+
+// Load as global variable so that it can be referenced in the Twig template
+// @ts-ignore
+window.MceComposer = MceComposer;

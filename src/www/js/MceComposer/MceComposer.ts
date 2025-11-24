@@ -49,6 +49,7 @@ import {CtDataInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {FoliationChangeInfoInterface} from "@/Edition/FoliationChangeInfoInterface";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {Apparatus} from "@/Edition/Apparatus";
+import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -891,7 +892,6 @@ export class MceComposer extends ApmPage {
         } else {
           currentApparatus = this.edition.apparatuses[appIndex];
         }
-        /** @var {ApparatusEntry[]} */
         let apparatusEntriesToAdd = singleChunkApparatus.entries.map((entry) => {
           let newEntry = new ApparatusEntry();
           newEntry.from = entry.from + currentMainTextIndexShift;
@@ -908,14 +908,12 @@ export class MceComposer extends ApmPage {
             newSubEntry.source = subEntry.source;
             newSubEntry.type = subEntry.type;
             newSubEntry.keyword = subEntry.keyword;
-            newSubEntry.witnessData = subEntry.witnessData;
-            // map((wd) => {
-            //   // let newWd = new WitnessDataItem()
-            //   // newWd.setHand(wd.hand)
-            //   // newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
-            //   // return newWd
-            //   return wd;
-            // })
+            newSubEntry.witnessData = subEntry.witnessData.map( (wd) => {
+                let newWd = new WitnessDataItem()
+                newWd.setHand(wd.hand)
+                newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
+                return newWd
+            });
             return newSubEntry;
           });
           return newEntry;

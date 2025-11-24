@@ -62,8 +62,8 @@ export class CtDataEditionGenerator extends EditionGenerator {
     this.options = oc.getCleanOptions(options);
     this.lastFoliationChanges = this.options.lastFoliationChanges;
     this.ctData = this.options.ctData;
-    this.verbose = true;
-    this.debug = true;
+    this.verbose = false;
+    this.debug = false
   }
 
 

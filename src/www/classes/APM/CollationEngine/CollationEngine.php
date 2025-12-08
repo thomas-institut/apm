@@ -70,8 +70,8 @@ abstract class CollationEngine extends Engine {
      */
     abstract public function collate(array $witnessArray) : array;
 
-    public function __construct(string $engineName) {
-        parent::__construct($engineName);
+    public function __construct(string $engineName, string $engineVersion = "") {
+        parent::__construct($engineName, $engineVersion);
     }
     
 

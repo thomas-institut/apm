@@ -18,7 +18,7 @@
 
 import { setSiteLanguage, tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
-import { ApmPage } from './ApmPage'
+import {ApmPage, ApmPageOptions} from './ApmPage';
 import { ApmFormats } from './common/ApmFormats'
 import { Tid } from '@/Tid/Tid'
 
@@ -29,6 +29,9 @@ export interface BreadCrumb {
   active?: boolean
 }
 
+export interface NormalPageOptions extends ApmPageOptions {
+
+}
 
 /**
  * Base class for all 'normal' web pages in the APM.
@@ -39,11 +42,11 @@ export interface BreadCrumb {
  *
  */
 export class NormalPage extends ApmPage {
-  private pageContentsDiv: JQuery = $();
-  private topBarDiv: JQuery = $();
-  private footerDiv: JQuery = $();
+  private pageContentsDiv!: JQuery <HTMLElement>;
+  private topBarDiv!: JQuery <HTMLElement>;
+  private footerDiv!: JQuery <HTMLElement>;
 
-  constructor(options : any = null) {
+  constructor(options : NormalPageOptions|null = null) {
     super(options)
   }
 

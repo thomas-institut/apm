@@ -31,7 +31,7 @@ const defaultHelpIcon = '<i class="fas fa-info"></i>'
 
 import {OptionsChecker} from '@thomas-inst/optionschecker'
 
-import {arraysHaveTheSameValues} from '../../lib/ToolBox/ArrayUtil.ts'
+import {arraysHaveTheSameValues} from '@/lib/ToolBox/ArrayUtil'
 import { urlGen } from './SiteUrlGen'
 
 export class AutomaticCollationTableSettingsForm {
@@ -164,7 +164,11 @@ export class AutomaticCollationTableSettingsForm {
     this.presetSaveButton.on('click', this.genOnClickPresetSaveButton())
     this.presetSave2Button.on('click', this.genOnClickPresetSave2Button())    
   }
-  
+
+  /**
+   *
+   * @param {false | AutomaticCollationSettings }newSettings
+   */
   show(newSettings = false) {
     // NOTE: make the container visible before calling setOptions!
     this.container.removeClass('hidden')
@@ -499,6 +503,11 @@ export class AutomaticCollationTableSettingsForm {
     return settings
   }
 
+  /**
+   *
+   * @param {false | AutomaticCollationSettings }settings
+   * @return {string}
+   */
   getTitleFromSettings(settings = false) {
     if (settings === false) {
       settings = this.getSettings()

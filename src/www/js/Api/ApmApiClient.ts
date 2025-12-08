@@ -25,21 +25,25 @@ import {wait} from '@/toolbox/wait';
 import * as Entity from '../constants/Entity';
 import {WitnessUpdateData} from "@/Api/DataSchema/WitnessUpdates";
 import {IndexedDbKeyCache} from "@/toolbox/KeyCache/IndexedDbKeyCache";
-import {ApiCollationTableVersionInfo} from "@/Api/DataSchema/ApiCollationTableVersionInfo";
-import {ApiCollationTableAuto} from "@/Api/DataSchema/ApiCollationTableAuto";
 import {
-  ApiCollationTable_convertToEdition_input, ApiCollationTableConvertToEdition
-} from "@/Api/DataSchema/ApiCollationTableConvertToEdition";
+  ApiCollationTable_convertToEdition_input,
+  ApiCollationTableAuto,
+  ApiCollationTableConvertToEdition,
+  ApiCollationTableVersionInfo,
+  AutomaticCollationSettings
+} from "@/Api/DataSchema/ApiCollationTable";
 import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
-import {ApiPeopleAllPeopleDataForPeoplePageItem} from "@/Api/DataSchema/ApiPeopleAllPeopleDataForPeoplePage";
-import {ApiWorksAll} from "@/Api/DataSchema/ApiWorksAll";
+import {
+  AllPeopleDataForPeoplePageItem, PersonEssentialData
+} from "@/Api/DataSchema/ApiPeople";
+import {ApiWorksAll, WorkData} from "@/Api/DataSchema/ApiWorks";
 import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
-import {ApiPreset} from "@/Api/DataSchema/ApiPreset";
+import {ApiSiglaPreset, ApiPresetsQuery, ApiAutomaticCollationTablePreset} from "@/Api/DataSchema/ApiPresets";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -127,20 +131,19 @@ export class ApmApiClient {
     return this;
   }
 
-  async getPersonEssentialData(personId: number): Promise<any> {
+  async getPersonEssentialData(personId: number): Promise<PersonEssentialData> {
     if (personId === 0) {
       console.warn(`getPersonEssentialData called with personId 0`);
       console.trace();
       return {
+        extraAttributes: [],
+        isUser: false,
+        tid: 0,
+        userEmailAddress: "",
+        userName: "",
+        userTags: [],
         name: '',
-        sortName: '',
-        birthDate: '',
-        deathDate: '',
-        birthPlace: '',
-        deathPlace: '',
-        biography: '',
-        image: '',
-        imageData: '',
+        sortName: ''
       };
     }
     return await this.getApmEntityData('Person', 'essential', personId, 'local');
@@ -166,7 +169,7 @@ export class ApmApiClient {
     }
   }
 
-  async collationTableAuto(apiCallOptions: any): Promise<ApiCollationTableAuto> {
+  async collationTableAuto(apiCallOptions: AutomaticCollationSettings): Promise<ApiCollationTableAuto> {
     return await this.post(urlGen.apiCollationTable_auto(), apiCallOptions, true);
   }
 
@@ -189,11 +192,11 @@ export class ApmApiClient {
     }
   }
 
-  async getAllPeopleData(): Promise<ApiPeopleAllPeopleDataForPeoplePageItem[]> {
+  async getAllPeopleData(): Promise<AllPeopleDataForPeoplePageItem[]> {
     return await this.get(urlGen.apiPersonGetDataForPeoplePage());
   }
 
-  async getAllWorksData() : Promise<ApiWorksAll> {
+  async getAllWorksData(): Promise<ApiWorksAll> {
     return await this.get(urlGen.apiWorksAll());
   }
 
@@ -210,7 +213,7 @@ export class ApmApiClient {
     return await this.getApmEntityData('WorkOld', '', workId, 'local');
   }
 
-  async getWorkData(workId: number): Promise<any> {
+  async getWorkData(workId: number | string): Promise<WorkData> {
     return await this.getApmEntityData('Work', '', workId, 'local');
   }
 
@@ -331,8 +334,13 @@ export class ApmApiClient {
     }
   }
 
-  async getSiglaPresets(lang: string, witnessIds: string[]) : Promise<ApiPreset[]> {
+  async getSiglaPresets(lang: string, witnessIds: string[]): Promise<ApiSiglaPreset[]> {
     const resp = await this.post(urlGen.apiGetSiglaPresets(), {lang: lang, witnesses: witnessIds}, true);
+    return resp['presets'];
+  }
+
+  async getAutomaticCollationPresets(options: ApiPresetsQuery): Promise<ApiAutomaticCollationTablePreset[]> {
+    const resp = await this.post(urlGen.apiGetAutomaticCollationPresets(), options, true);
     return resp['presets'];
   }
 
@@ -444,7 +452,7 @@ export class ApmApiClient {
       debug && console.log(`Entity name ${id} not found in cache, getting it from entity data`);
       const name = (await this.getEntityData(id))['name'];
       this.caches.local.store(cacheKey, name, this.getTtlWithVariability(TtlOneDay));
-      debug && console.log(`Releasing lock ${lockName} after caching entity name.`)
+      debug && console.log(`Releasing lock ${lockName} after caching entity name.`);
       return name;
     });
   }
@@ -500,7 +508,7 @@ export class ApmApiClient {
 
   }
 
-  getPredicateDefinitionsForType(type: number) : Promise<PredicateDefinitionsForType> {
+  getPredicateDefinitionsForType(type: number): Promise<PredicateDefinitionsForType> {
     return this.fetch(urlGen.apiEntityGetPredicateDefinitionsForType(type), 'GET', {}, false, false, TtlOneHour);
   }
 
@@ -517,7 +525,7 @@ export class ApmApiClient {
    * @return {Promise<any>}
    * @private
    */
-  getApmEntityData(entityType: string, dataType: string, entityId: number, cacheName: CacheNames = 'local'): Promise<any> {
+  getApmEntityData(entityType: string, dataType: string, entityId: number | string, cacheName: CacheNames = 'local'): Promise<any> {
 
     // @ts-ignore
     return new Promise(async (resolve, reject) => {
@@ -527,6 +535,10 @@ export class ApmApiClient {
         case 'Person':
           if (dataType === 'essential') {
             ttl = TtlOneDay * 8;
+            if (typeof entityId === 'string') {
+              reject(`Invalid entityId type for Person data: ${typeof entityId}`);
+              return;
+            }
             getUrl = urlGen.apiPersonGetEssentialData(entityId);
           } else {
             reject(`Invalid data type for Person data: ${dataType}`);
@@ -534,6 +546,10 @@ export class ApmApiClient {
           break;
 
         case 'WorkOld':
+          if (typeof entityId === 'number') {
+            reject(`Invalid entityId type for Person data: ${typeof entityId}`);
+            return;
+          }
           getUrl = urlGen.apiWorkGetInfoOld(entityId);
           break;
 
@@ -786,7 +802,7 @@ export class ApmApiClient {
    * @return {string}
    * @private
    */
-  private getCacheKey(entityType: string, dataType: string, entityId: number, attribute: string = ''): string {
+  private getCacheKey(entityType: string, dataType: string, entityId: number | string, attribute: string = ''): string {
     if (dataType === '') {
       dataType = 'default';
     }

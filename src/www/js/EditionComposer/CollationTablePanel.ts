@@ -644,7 +644,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       textDirection: this.textDirection,
       redrawOnCellShift: false,
       showInMultipleRows: true,
-      columnsPerRow: columnsPerRow,
+      columnsPerRow: columnsPerRow ?? 10,
       rowDefinition: rowDefinition,
       drawTableInConstructor: false,
       getEmptyValue: () => -1,
@@ -748,7 +748,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnColumnDelete() {
-    return (deletedCol: number, lastDeletedColumnInOperation: number) => {
+    return (deletedCol: number, isLastDeleted: boolean) => {
       this.ctData['groupedColumns'] = this.tableEditor.columnSequence.getGroupedNumbers();
       if (this.ctData['type'] === CollationTableType.COLLATION_TABLE) {
         // nothing else to do for regular collation tables
@@ -759,7 +759,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       // fix references in custom apparatuses
       this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1);
       this.setCsvDownloadFile();
-      if (lastDeletedColumnInOperation) {
+      if (isLastDeleted) {
         this.options.onCtDataChange(this.ctData);
       }
     };
@@ -849,9 +849,9 @@ export class CollationTablePanel extends PanelWithToolbar {
   recalculateVariants() {
     let refWitness = -1;
     if (this.ctData.type === 'edition') {
-      refWitness = this.ctData['editionWitnessIndex'];
+      refWitness = this.ctData.editionWitnessIndex;
     }
-    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), this.ctData.witnesses, this.ctData['witnessOrder'], refWitness);
+    this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), this.ctData.witnesses, this.ctData.witnessOrder, refWitness);
     // console.log(`Variants recalculated`)
     // console.log(this.variantsMatrix)
   }
@@ -1136,7 +1136,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       if (value === -1) {
         return ['token-type-empty'];
       }
-      let witnessIndex = this.ctData['witnessOrder'][tableRow];
+      let witnessIndex = this.ctData.witnessOrder[tableRow];
       let tokenArray = this.ctData.witnesses[witnessIndex]['tokens'];
       let itemWithAddressArray = this.ctData.witnesses[witnessIndex]['items'] ?? [];
 

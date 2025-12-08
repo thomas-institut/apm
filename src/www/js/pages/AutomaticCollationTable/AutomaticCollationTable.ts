@@ -16,7 +16,7 @@
  *  
  */
 
-import {TableEditor} from '../common/TableEditor';
+import {TableEditor, TdExtraAttributes} from '../common/TableEditor';
 import * as CollationTableUtil from '../common/CollationTableUtil';
 import {defaultLanguageDefinition} from '@/defaults/languages';
 import * as PopoverFormatter from '../common/CollationTablePopovers';
@@ -27,13 +27,15 @@ import {AutomaticCollationTableViewSettingsForm} from './AutomaticCollationTable
 import {CtData} from '@/CtData/CtData';
 import {urlGen} from '../common/SiteUrlGen';
 import {tr} from '../common/SiteLang';
-import {deepCopy} from '@/toolbox/Util';
+import {deepCopy, getTextDirectionForLang} from '@/toolbox/Util';
 import {ApmFormats} from '../common/ApmFormats';
 import {HeaderAndContentPage} from '../HeaderAndContentPage';
 import {
   CtDataInterface, FullTxItemEditorialNote, FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface
 } from "@/CtData/CtDataInterface";
-import {ApiCollationTableAuto, AutoCTablePersonInfo, EngineRunDetails} from "@/Api/DataSchema/ApiCollationTableAuto";
+import {
+  ApiCollationTableAuto, AutoCTablePersonInfo, AutomaticCollationSettings, EngineRunDetails
+} from "@/Api/DataSchema/ApiCollationTable";
 // @ts-expect-error No TS types for matrix yet
 import {Matrix} from "@thomas-inst/matrix";
 
@@ -45,8 +47,8 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
   private ltrClass!: string;
   private availableWitnesses: any;
   private apiSaveCollationUrl!: string;
-  private initialApiOptions: any;
-  private apiCallOptions: any;
+  private initialApiOptions!: AutomaticCollationSettings;
+  private apiCallOptions!: AutomaticCollationSettings;
   private collationTableDiv!: JQuery<HTMLElement>;
   private collationTableNewDivId!: string;
   private collationTableDivNew!: JQuery<HTMLElement>;
@@ -63,7 +65,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
   private collationTableActionsDiv!: JQuery<HTMLElement>;
   private saveTableButton!: JQuery<HTMLElement>;
   private ctData!: CtDataInterface;
-  private peopleInfo!: { [key: number]: AutoCTablePersonInfo};
+  private peopleInfo!: { [key: number]: AutoCTablePersonInfo };
   private ctf!: CollationTableFormatter;
   private viewSettingsFormSelector!: string;
   private viewSettingsButton!: JQuery<HTMLElement>;
@@ -361,6 +363,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     this.editionContainer.addClass('hidden');
     this.lastTimeLabel.html('TBD...');
     this.witnessInfoDiv.html('TBD...');
+    console.log(`Fetching collation table`, this.apiCallOptions);
     this.apiClient.collationTableAuto(this.apiCallOptions).then((apiResponse) => {
       console.log('Automatic collation successful. Data:');
       console.log(apiResponse);
@@ -422,7 +425,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       cedHtml += '<b>Original Date/Time:</b> ' + ced.runDateTime + '<br/>';
       cedHtml += '<b>Original Collation Runtime:</b> ' + Math.round(ced.duration * 1000.0) + ' ms' + '<br/>';
       cedHtml += '<b>Original Total Runtime:</b> ' + Math.round(ced.totalDuration * 1000.0) + ' ms' + '<br/>';
-      cedHtml += '<b>Cached Runtime:</b> ' + Math.round( (ced.cachedRunTime ?? 0) * 1000.0) + ' ms' + '<br/>';
+      cedHtml += '<b>Cached Runtime:</b> ' + Math.round((ced.cachedRunTime ?? 0) * 1000.0) + ' ms' + '<br/>';
     }
     return cedHtml;
   }
@@ -494,19 +497,39 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       generateCellContent: this.genGenerateCellContentFunction(),
       generateTableClasses: this.genGenerateTableClassesFunction(),
       generateCellClasses: this.genGenerateCellClassesFunction(),
-      generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction()
+      generateCellTdExtraAttributes: this.genGenerateCellTdExtraAttributesFunction(),
+      groupedColumns: [],
+      textDirection: getTextDirectionForLang(this.ctData.lang),
+      redrawOnCellShift: false,
+      generateCellContentEditMode: (row, col, value) => {
+        return '';
+      },
+      isCellEditable: (row, col, value) => {
+        return false;
+      },
+      onCellEnterEditMode: (row, col) => {
+        return false;
+      },
+      onCellLeaveEditMode: (row, col) => {
+        return false;
+      },
+      onCellConfirmEdit: (row, col, newValue) => {
+        return {valueChange: false, value: newValue};
+      },
+      cellValidationFunction: (row, col, currentText) => {
+        return {isValid: true, warnings: [], errors: []};
+      }
     });
     this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), collationTable['witnesses'], collationTable['witnessOrder']);
     this.tableEditor.redrawTable();
   }
 
   genGenerateCellTdExtraAttributesFunction() {
-    return (row: number, col: number, value: number) => {
+    return (row: number, col: number, value: number): TdExtraAttributes[] => {
       if (value === -1) {
-        return '';
+        return [];
       }
-      let popoverHtml = PopoverFormatter.getPopoverHtml(row, value,
-        this.ctData['witnesses'][row], this.getPostNotes(row, col, value), this.peopleInfo);
+      let popoverHtml = PopoverFormatter.getPopoverHtml(row, value, this.ctData['witnesses'][row], this.getPostNotes(row, col, value), this.peopleInfo);
       return [{attr: 'data-content', val: popoverHtml}];
     };
   }
@@ -514,7 +537,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
   genGenerateCellContentFunction() {
     let noteIconSpan = ' <span class="noteicon"><i class="far fa-comment"></i></span>';
     let normalizationSymbol = '<b><sub>N</sub></b>';
-    return (row: number, col: number, value: number)=>  {
+    return (row: number, col: number, value: number) => {
       if (value === -1) {
         return '&mdash;';
       }
@@ -567,7 +590,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
   }
 
   genGenerateCellClassesFunction() {
-    return (row: number, col: number, value: number)=> {
+    return (row: number, col: number, value: number) => {
       if (value === -1) {
         return ['emptytoken'];
       }
@@ -643,14 +666,12 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
 
   async getHeaderHtml() {
     let breadcrumbHtml = this.getBreadcrumbNavHtml([{
-      label: tr('Works'),
-      url: urlGen.siteWorks()
+      label: tr('Works'), url: urlGen.siteWorks()
     }, {label: this.options.workId, url: urlGen.siteWorkPage(this.options.workId)}, {
       label: `Chunk ${this.options.chunkNumber}`,
       url: urlGen.siteChunkPage(this.options.workId, this.options.chunkNumber)
     }, {label: tr('Automatic Collation Table')}, {
-      label: `${tr(this.options.langName)} ${this.options.isPartial ? `(${tr('Partial')})` : ''}`,
-      active: true
+      label: `${tr(this.options.langName)} ${this.options.isPartial ? `(${tr('Partial')})` : ''}`, active: true
     }]);
     let workInfo = await this.apiClient.getWorkDataOld(this.options.workId);
     let authorInfo = await this.apiClient.getPersonEssentialData(workInfo.authorTid);

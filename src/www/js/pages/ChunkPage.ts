@@ -17,57 +17,80 @@
  */
 
 import {AutomaticCollationTableSettingsForm} from './common/AutoCollTableSettingsForm';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as WitnessType from '../Witness/WitnessType';
-
 import {CollapseToggleButton} from '@/widgets/CollapseToggleButton';
 import {ConfirmDialog} from './common/ConfirmDialog';
 import {urlGen} from './common/SiteUrlGen';
 import {ApmFormats} from './common/ApmFormats';
 import {TimeString} from '@/toolbox/TimeString';
 import {tr} from './common/SiteLang';
-import {HeaderAndContentPage} from './HeaderAndContentPage';
+import {HeaderAndContentPage, HeaderAndContentPageOptions} from './HeaderAndContentPage';
 import {Tid} from '@/Tid/Tid';
 import DataTable from 'datatables.net-dt';
+import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
+import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
+import {WorkData} from "@/Api/DataSchema/ApiWorks";
+import {LanguageInfoObject} from "@/Api/DataSchema/LanguageInfo";
+import {ApiPresetsQuery} from "@/Api/DataSchema/ApiPresets";
+import {AutomaticCollationSettings} from "@/Api/DataSchema/ApiCollationTable";
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>';
 const showWitnessInfoIcon = '<i class="fas fa-cogs"></i>';
 
 const convertToEditionLinkClass = 'cte-link';
 
+interface ChunkPageOptions extends HeaderAndContentPageOptions {
+  workId: string;
+  chunkNumber: number;
+  showAdminInfo: boolean;
+  witnessInfo: WitnessInfo[];
+  pageInfo: any[];
+  languageInfo: LanguageInfoObject;
+  validChunks: number[];
+  savedCollationTables: any[];
+}
+
+interface AutomaticCollationUrl {
+  lang: string,
+  name: string,
+  url: string,
+  urlText: string;
+  urlTitle: string;
+  availableWitnesses: WitnessInfo[],
+  isPreset: boolean,
+  preset?: PresetInfo,
+  actSettings: AutomaticCollationSettings;
+}
+
+
+interface PresetInfo {
+  id: number,
+  title: string,
+  userId: number,
+  userName: string,
+  editable: boolean;
+}
+
 /**
  * Mini JS app running in the Chunk Page
  */
 export class ChunkPage extends HeaderAndContentPage {
-  private readonly options: any;
-  private readonly witnessTypeLabels: any;
+  private readonly options: ChunkPageOptions;
+  private readonly witnessTypeLabels: { [key: string]: string };
   private readonly invalidErrorCodes: string[] = [];
-  private getPresetsUrl: string;
-  private witnessesByLang: any;
+  private witnessesByLang: { [key: string]: WitnessInfo[] };
   private ctLinksElement!: JQuery;
   private chunkIdDiv!: JQuery<HTMLElement>;
   private witnessListNewDiv!: JQuery<HTMLElement>;
   private witnessPanelsDiv!: JQuery<HTMLElement>;
   private editionsDiv!: JQuery<HTMLElement>;
   private savedCollationTablesDiv!: JQuery<HTMLElement>;
-  private workData: any;
-  private authorInfo: any;
+  private workData!: WorkData;
+  private authorInfo!: PersonEssentialData;
 
-  constructor(options: any) {
+  constructor(options: ChunkPageOptions) {
     super(options);
-    let optionsChecker = new OptionsChecker({
-      context: 'ChunkPage', optionsDefinition: {
-        workId: {required: true, type: 'string'},
-        chunkNumber: {required: true, type: 'NumberGreaterThanZero'},
-        showAdminInfo: {type: 'boolean', default: false},
-        witnessInfo: {type: 'Array', default: []},
-        pageInfo: {type: 'object', default: []},
-        languageInfo: {type: 'object', default: []},
-        validChunks: {type: 'Array', default: []},
-        savedCollationTables: {type: 'Array', default: []}
-      }
-    });
-    this.options = optionsChecker.getCleanOptions(options);
+    this.options = options;
     console.log('Chunk Page options');
     console.log(this.options);
 
@@ -78,9 +101,6 @@ export class ChunkPage extends HeaderAndContentPage {
 
     this.invalidErrorCodes = ['', tr('Chunk start not defined'), tr('Chunk end not defined'), tr('Chunk start after chunk end'), tr('Duplicate chunk start marks'), tr('Duplicate chunk end marks')];
 
-    // // shortcuts to options
-
-    this.getPresetsUrl = urlGen.apiGetAutomaticCollationPresets();
     this.witnessesByLang = {};
 
 
@@ -95,7 +115,7 @@ export class ChunkPage extends HeaderAndContentPage {
     console.log(`ChunkPage: initPage`);
 
     // selectors and classes
-    this.ctLinksElement = $('#collationtablelinks');
+    this.ctLinksElement = $('#collation-table-links');
     this.chunkIdDiv = $('#chunkid');
     this.witnessListNewDiv = $('#witnessListNew');
     this.witnessPanelsDiv = $('#witnesspanels');
@@ -170,7 +190,7 @@ export class ChunkPage extends HeaderAndContentPage {
     this.editionsDiv.html(await this.genSavedCollationTablesDivHtml('edition'));
 
 
-    this.updateCollationTableLinks();
+    await this.updateCollationTableLinks();
 
     this.witnessPanelsDiv.html(this.generateWitnessPanelHtml());
 
@@ -228,11 +248,9 @@ export class ChunkPage extends HeaderAndContentPage {
 
   async getHeaderHtml() {
     let breadcrumbHtml = this.getBreadcrumbNavHtml([{
-      label: tr('Works'),
-      url: urlGen.siteWorks()
+      label: tr('Works'), url: urlGen.siteWorks()
     }, {
-      label: this.options.workId,
-      url: urlGen.siteWorkPage(this.options.workId)
+      label: this.options.workId, url: urlGen.siteWorkPage(this.options.workId)
     }, {label: `Chunk ${this.options.chunkNumber}`, active: true}]);
     return `${breadcrumbHtml} <div id="chunkpageheader"></div>`;
   }
@@ -244,7 +262,7 @@ export class ChunkPage extends HeaderAndContentPage {
     <div id="editions" class="collationtablelinks"></div>
     <div id="savedcollationtables" class="collationtablelinks"></div>
     <h4 id="ctlinks-header" class="hidden">${tr('Automatic Collation Tables')}</h4>
-    <div id="collationtablelinks" class="collationtablelinks">  </div>
+    <div id="collation-table-links" class="collationtablelinks">  </div>
     <div id="witnesspanels"></div>`;
   }
 
@@ -253,7 +271,7 @@ export class ChunkPage extends HeaderAndContentPage {
       ev.preventDefault();
       console.log(`Click on link for witness ${index}. Witness Id = ${info.systemId}`);
       console.log(info);
-
+      let editionCreated = false;
       let confirmDialog = new ConfirmDialog({
         body: `
 <p>Are you sure you want to create an edition with <b>only</b> the witness <b>${info.title}</b>?</p>
@@ -262,7 +280,7 @@ export class ChunkPage extends HeaderAndContentPage {
         acceptButtonLabel: 'Create',
         hideOnAccept: false,
         cancelButtonLabel: 'Cancel',
-        acceptFunction: (id: any, dialogObject: any) => {
+        acceptFunction: (_id: any, dialogObject: ConfirmDialog) => {
           $.get(urlGen.apiWitnessToEdition(info.systemId)).done(function (apiResponse) {
             console.log("Success");
             let tableUrl = urlGen.siteCollationTableEdit(apiResponse.tableId);
@@ -273,7 +291,7 @@ export class ChunkPage extends HeaderAndContentPage {
 `);
             dialogObject.hideAcceptButton();
             dialogObject.setCancelButtonText(`Close and Refresh Page`);
-            dialogObject.editionCreated = true;
+            editionCreated = true;
             console.log(apiResponse);
           }).fail(function (resp) {
             dialogObject.setBody(`ERROR: Cannot create edition, please report to developers`);
@@ -281,16 +299,13 @@ export class ChunkPage extends HeaderAndContentPage {
             console.log(resp);
           });
         },
-        cancelFunction: (id: any, dialogObject: any) => {
-          if (dialogObject.editionCreated) {
+        cancelFunction: () => {
+          if (editionCreated) {
             console.log(`Cancel WITH edition created`);
             window.location.reload();
           }
         }
       });
-      // @ts-ignore
-      // TODO: fix this, cannot rely on adding a new member to the ConfirmDialog class
-      confirmDialog.editionCreated = false;
       confirmDialog.show();
     };
   }
@@ -609,245 +624,355 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
   }
 
   calculateTotalValidWitnesses() {
-    let langInfo = this.options.languageInfo;
-    let tvw = 0;
-    for (const lang in langInfo) {
-      if (langInfo.hasOwnProperty(lang)) {
-        tvw += langInfo[lang]['validWitnesses'];
-      }
-    }
-    return tvw;
+    const langInfoObject = this.options.languageInfo;
+    let totalValidWitnesses = 0;
+    Object.keys(langInfoObject).forEach(lang => {
+      totalValidWitnesses += langInfoObject[lang].validWitnesses;
+    });
+    return totalValidWitnesses;
   }
 
 
-  updateCollationTableLinks() {
+  async updateCollationTableLinks() {
     this.ctLinksElement.html('<ul id="ctlinks-ul"></ul>');
-    let langInfo = this.options.languageInfo;
+    const langInfoObject = this.options.languageInfo;
     let ctLinksUl = $('#ctlinks-ul');
-    for (const l in langInfo) {
-      if (!langInfo.hasOwnProperty(l)) {
+    await Promise.all(Object.keys(langInfoObject).map(async (l) => {
+      if (langInfoObject[l]['validWitnesses'] < 2) {
+        return;
+      }
+      $('#ctlinks-header').removeClass('hidden');
+      let urls: AutomaticCollationUrl[] = [];
+      let langName = langInfoObject[l].name;
+      let insideListId = 'ct-links-ul-' + l;
+      ctLinksUl.append('<li>' + langName + '</li>');
+      ctLinksUl.append('<ul id="' + insideListId + '"></ul>');
+      urls.push({
+        lang: l,
+        name: langName,
+        url: urlGen.siteCollationTableAutomatic(this.options.workId, this.options.chunkNumber, l),
+        urlText: 'All witnesses',
+        urlTitle: 'Open automatic collation table in new tab',
+        availableWitnesses: this.witnessesByLang[l],
+        isPreset: false,
+        actSettings: {
+          collationEngine: '',
+          lang: l,
+          work: this.options.workId,
+          chunk: this.options.chunkNumber,
+          ignorePunctuation: true,
+          witnesses: this.witnessesByLang[l].filter(w => w.type === 'fullTx').map(w => {
+            return {type: 'fullTx', systemId: w.systemId, title: w.title};
+          })
+        }
+      });
+      // get applicable presets
+      let apiCallOptions: ApiPresetsQuery = {
+        lang: langInfoObject[l].code, userId: -1, witnesses: []
+      };
+      this.witnessesByLang[l].forEach(witness => {
+        // try to match fullTx witnesses with localWitness Id === 'A'
+        // TODO: support other localWitnessId
+        if (witness.type === 'fullTx') {
+          // if (witness['typeSpecificInfo'].localWitnessId === 'A') {
+          //   apiCallOptions.witnesses.push(witness['typeSpecificInfo'].docId)
+          // }
+          apiCallOptions.witnesses.push('fullTx-' + witness['typeSpecificInfo'].docId + '-' + witness['typeSpecificInfo'].localWitnessId);
+        }
+      });
+
+      console.log('Getting presets');
+      console.log(apiCallOptions);
+      try {
+        const data = await this.apiClient.getAutomaticCollationPresets(apiCallOptions);
+        console.log('Got ' + data.length + ' presets');
+        console.log(data);
+        for (const preset of data) {
+          let witnessesToInclude = [];
+          for (const presetWitness of preset.data.witnesses) {
+            let witness: WitnessInfo | null = null;
+            let fields = presetWitness.split('-');
+            let presetWitnessType = fields[0];
+            let presetWitnessDocId = parseInt(fields[1]);
+            let presetWitnessLwid = fields[2];
+            for (const w of this.witnessesByLang[l]) {
+              // match only fullTx witnesses with localWitnessId === 'A'
+              if (w.type === presetWitnessType && w['typeSpecificInfo'].docId === presetWitnessDocId && w['typeSpecificInfo'].localWitnessId === presetWitnessLwid) {
+                witness = w;
+              }
+            }
+            if (witness === null) {
+              console.error('Witness in preset not found in witnesses available, this must NEVER happen!');
+              return false;
+            }
+            witnessesToInclude.push(witness);
+          }
+          urls.push({
+            lang: l,
+            name: langName,
+            url: urlGen.siteCollationTablePreset(this.options.workId, this.options.chunkNumber, preset.presetId),
+            urlText: preset.title + ' <small><i>(' + preset.userName + ')</i></small>',
+            urlTitle: 'Open collation table in new tab',
+            availableWitnesses: this.witnessesByLang[l],
+            isPreset: true,
+            preset: {
+              id: preset.presetId,
+              title: preset.title,
+              userId: preset.userId,
+              userName: preset.userName,
+              editable: (preset.userId === this.userId)
+            },
+            actSettings: {
+              collationEngine: 'DoNothing',
+              lang: l,
+              work: this.options.workId,
+              chunk: this.options.chunkNumber,
+              ignorePunctuation: preset.data.ignorePunctuation,
+              normalizers: preset.data.normalizers,
+              witnesses: witnessesToInclude.filter(w => w.type === 'fullTx').map(w => {
+                return {type: 'fullTx', systemId: w.systemId, title: w.title};
+              })
+            }
+          });
+        }
+        this.fillCollationTableLinks(urls, insideListId);
+      } catch (e) {
+        console.log(`Error getting presets: ${e}`);
+        this.fillCollationTableLinks(urls, insideListId);
+      }
+    }));
+    // for (const l in langInfoObject) {
+    //   if (!langInfoObject.hasOwnProperty(l)) {
+    //     continue;
+    //   }
+    //   if (langInfoObject[l]['validWitnesses'] >= 2) {
+    //     $('#ctlinks-header').removeClass('hidden');
+    //     let urls = [];
+    //     let langName = langInfoObject[l].name;
+    //     let insideListId = 'ct-links-ul-' + l;
+    //     ctLinksUl.append('<li>' + langName + '</li>');
+    //     ctLinksUl.append('<ul id="' + insideListId + '"></ul>');
+    //     urls.push({
+    //       lang: l,
+    //       name: langName,
+    //       url: urlGen.siteCollationTableAutomatic(this.options.workId, this.options.chunkNumber, l),
+    //       urltext: 'All witnesses',
+    //       urltitle: 'Open automatic collation table in new tab',
+    //       availableWitnesses: this.witnessesByLang[l],
+    //       isPreset: false,
+    //       actSettings: {
+    //         collationEngine: 'DoNothing',
+    //         lang: l,
+    //         work: this.options.workId,
+    //         chunk: this.options.chunkNumber,
+    //         ignorePunctuation: true,
+    //         witnesses: this.witnessesByLang[l]
+    //       }
+    //
+    //     });
+    //     // get applicable presets
+    //     let thisObject = this;
+    //     let apiCallOptions: any = {
+    //       lang: langInfoObject[l].code, userId: -1, witnesses: []
+    //     };
+    //     for (const w in this.witnessesByLang[l]) {
+    //       if (!this.witnessesByLang[l].hasOwnProperty(w)) {
+    //         continue;
+    //       }
+    //       // try to match fullTx witnesses with localWitness Id === 'A'
+    //       // TODO: support other localWitnessId
+    //       let witness = this.witnessesByLang[l][w];
+    //       if (witness.type === 'fullTx') {
+    //         // if (witness['typeSpecificInfo'].localWitnessId === 'A') {
+    //         //   apiCallOptions.witnesses.push(witness['typeSpecificInfo'].docId)
+    //         // }
+    //         apiCallOptions.witnesses.push('fullTx-' + witness['typeSpecificInfo'].docId + '-' + witness['typeSpecificInfo'].localWitnessId);
+    //       }
+    //     }
+    //     console.log('Getting presets');
+    //     console.log(apiCallOptions);
+    //     $.post(this.getPresetsUrl, {data: JSON.stringify(apiCallOptions)})
+    //     .done(function (data) {
+    //       console.log('Got ' + data.presets.length + ' presets');
+    //       console.log(data.presets);
+    //       for (const preset of data.presets) {
+    //         let witnessesToInclude = [];
+    //         for (const presetWitness of preset.data.witnesses) {
+    //           let witness: WitnessInfo | null = null;
+    //           let fields = presetWitness.split('-');
+    //           let presetWitnessType = fields[0];
+    //           let presetWitnessDocId = parseInt(fields[1]);
+    //           let presetWitnessLwid = fields[2];
+    //           for (const w of thisObject.witnessesByLang[l]) {
+    //             // match only fullTx witnesses with localWitnessId === 'A'
+    //             if (w.type === presetWitnessType && w['typeSpecificInfo'].docId === presetWitnessDocId && w['typeSpecificInfo'].localWitnessId === presetWitnessLwid) {
+    //               witness = w;
+    //             }
+    //           }
+    //           if (witness === null) {
+    //             console.error('Witness in preset not found in witnesses available, this must NEVER happen!');
+    //             return false;
+    //           }
+    //           witnessesToInclude.push(witness);
+    //         }
+    //         urls.push({
+    //           lang: l,
+    //           name: langName,
+    //           url: urlGen.siteCollationTablePreset(thisObject.options.workId, thisObject.options.chunkNumber, preset.presetId),
+    //           urltext: preset.title + ' <small><i>(' + preset.userName + ')</i></small>',
+    //           urltitle: 'Open collation table in new tab',
+    //           availableWitnesses: thisObject.witnessesByLang[l],
+    //           isPreset: true,
+    //           preset: {
+    //             id: preset.presetId,
+    //             title: preset.title,
+    //             userId: preset.userId,
+    //             userName: preset.userName,
+    //             editable: (preset.userId === thisObject.userId)
+    //           },
+    //           actSettings: {
+    //             collationEngine: 'DoNothing',
+    //             lang: l,
+    //             work: thisObject.options.workId,
+    //             chunk: thisObject.options.chunkNumber,
+    //             ignorePunctuation: preset.data.ignorePunctuation,
+    //             normalizers: preset.data.normalizers !== undefined ? preset.data.normalizers : null,
+    //             witnesses: witnessesToInclude
+    //           }
+    //
+    //         });
+    //       }
+    //       thisObject.fillCollationTableLinks(urls, insideListId);
+    //     })
+    //     .fail(function (resp) {
+    //       console.log('Failed API call for presets for ' + langName, ' status: ' + resp.status);
+    //       console.log(resp);
+    //       thisObject.fillCollationTableLinks(urls, insideListId);
+    //     });
+    //   }
+    // }
+  }
+
+  fillCollationTableLinks(urls: AutomaticCollationUrl[], containerId: string) {
+    if (urls.length === 0) {
+      return;
+    }
+
+    let html = '';
+    html += '<ul>';
+    html += urls.map((url, index) => {
+      const liId = containerId + '-' + index;
+      let deleteButtonHtml = '';
+      if (url.isPreset && url.preset !== undefined) {
+        if (url.preset.userId === this.userId) {
+          deleteButtonHtml = `<button title="Erase preset" class="btn btn-default btn-sm ct-urls-button cterasepresetbutton">
+            <i class="fas fa-trash" aria-hidden="true"></i>
+            </button>
+            <div id="${liId}-erasediv"></div>`;
+        }
+      }
+      // urlHtml += deleteButtonHtml;
+      //
+      // urlHtml += '<div id="' + liId + '-div' + '" class="actsettings"></div>';
+      // urlHtml += '</li>';
+
+      return `<li id="${liId}">${url.urlText}: 
+<a class="btn btn-default btn-sm ct-urls-button" id="${liId}-a" href="${url.url}" title="${url.urlTitle}" target="_blank"><i class="fas fa-external-link-alt"></i></a>
+<button title="Edit automatic collation settings" class="btn btn-default btn-sm ct-urls-button ctsettingsbutton"><i class="fas fa-pencil-alt" aria-hidden="true"></i></button>
+${deleteButtonHtml}
+<div id="${liId}-div" class="actsettings"></div>
+</li>`
+      // return urlHtml;
+    }).join('');
+    html += '</ul>';
+
+    $('#' + containerId).html(html);
+
+    for (const u in urls) {
+      if (!urls.hasOwnProperty(u)) {
         continue;
       }
-      if (langInfo[l]['validWitnesses'] >= 2) {
-        $('#ctlinks-header').removeClass('hidden');
-        let urls = [];
-        let langName = langInfo[l].name;
-        let insideListId = 'ct-links-ul-' + l;
-        ctLinksUl.append('<li>' + langName + '</li>');
-        ctLinksUl.append('<ul id="' + insideListId + '"></ul>');
-        urls.push({
-          lang: l,
-          name: langName,
-          url: urlGen.siteCollationTableAutomatic(this.options.workId, this.options.chunkNumber, l),
-          urltext: 'All witnesses',
-          urltitle: 'Open automatic collation table in new tab',
-          availableWitnesses: this.witnessesByLang[l],
-          isPreset: false,
-          actSettings: {
-            lang: l,
-            work: this.options.workId,
-            chunk: this.options.chunkNumber,
-            ignorePunctuation: true,
-            witnesses: this.witnessesByLang[l]
+      let liId = containerId + '-' + u;
+      let ctSettingsFormManager = new AutomaticCollationTableSettingsForm({
+        containerSelector: '#' + liId + '-div',
+        initialSettings: urls[u].actSettings,
+        availableWitnesses: urls[u].availableWitnesses,
+        hideTitle: true,
+        isPreset: urls[u].isPreset,
+        preset: urls[u].preset,
+        applyButtonText: 'Generate Collation',
+        userId: this.userId,
+        normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData'],
+        debug: false
+      });
+      $('#' + liId + ' .cterasepresetbutton').on('click', () => {
+        $('#' + liId + '-a').addClass('disabled');
+        $('#' + liId + ' .ctsettingsbutton').addClass('disabled');
+        $('#' + liId + ' .cterasepresetbutton').addClass('disabled');
+        let divSelector = '#' + liId + '-erasediv';
+        let eraseHtml = '<p class="text-danger erase-preset-warning">Do you really want to erase this preset?';
+        eraseHtml += '<button class="btn btn-sm btn-default button-yes">Yes</button>';
+        eraseHtml += '<button class="btn btn-sm btn-default button-no">No</button>';
+        $(divSelector).html(eraseHtml);
+        $(divSelector + ' .button-no').on('click', () => {
+          $(divSelector).html('');
+          $('#' + liId + '-a').removeClass('disabled');
+          $('#' + liId + ' .cterasepresetbutton').removeClass('disabled');
+          $('#' + liId + ' .ctsettingsbutton').removeClass('disabled');
+        });
+        $(divSelector + ' .button-yes').on('click', () => {
+          if (urls[u].preset === undefined) {
+            return;
           }
+          $.get(urlGen.apiDeletePreset(urls[u].preset.id))
+          .done(async () => {
+            await this.updateCollationTableLinks();
+          })
+          .fail(function (resp) {
+            console.error('Cannot delete preset');
+            console.log(resp);
+          });
 
         });
-        // get applicable presets
-        let thisObject = this;
-        let apiCallOptions: any = {
-          lang: langInfo[l].code, userId: -1, witnesses: []
-        };
-        for (const w in this.witnessesByLang[l]) {
-          if (!this.witnessesByLang[l].hasOwnProperty(w)) {
-            continue;
-          }
-          // try to match fullTx witnesses with localWitness Id === 'A'
-          // TODO: support other localWitnessId
-          let witness = this.witnessesByLang[l][w];
-          if (witness.type === 'fullTx') {
-            // if (witness['typeSpecificInfo'].localWitnessId === 'A') {
-            //   apiCallOptions.witnesses.push(witness['typeSpecificInfo'].docId)
-            // }
-            apiCallOptions.witnesses.push('fullTx-' + witness['typeSpecificInfo'].docId + '-' + witness['typeSpecificInfo'].localWitnessId);
-          }
-        }
-        console.log('Getting presets');
-        console.log(apiCallOptions);
-        $.post(this.getPresetsUrl, {data: JSON.stringify(apiCallOptions)})
-        .done(function (data) {
-          console.log('Got ' + data.presets.length + ' presets');
-          console.log(data.presets);
-          for (const preset of data.presets) {
-            let witnessesToInclude = [];
-            for (const presetWitness of preset.data.witnesses) {
-              let witness = false;
-              let fields = presetWitness.split('-');
-              let presetWitnessType = fields[0];
-              let presetWitnessDocId = parseInt(fields[1]);
-              let presetWitnessLwid = fields[2];
-              for (const w of thisObject.witnessesByLang[l]) {
-                // match only fullTx witnesses with localWitnessId === 'A'
-                if (w.type === presetWitnessType && w['typeSpecificInfo'].docId === presetWitnessDocId && w['typeSpecificInfo'].localWitnessId === presetWitnessLwid) {
-                  witness = w;
-                }
-              }
-              if (witness === false) {
-                console.error('Witness in preset not found in witnesses available, this must NEVER happen!');
-                return false;
-              }
-              witnessesToInclude.push(witness);
-            }
-            urls.push({
-              lang: l,
-              name: langName,
-              url: urlGen.siteCollationTablePreset(thisObject.options.workId, thisObject.options.chunkNumber, preset.presetId),
-              urltext: preset.title + ' <small><i>(' + preset.userName + ')</i></small>',
-              urltitle: 'Open collation table in new tab',
-              availableWitnesses: thisObject.witnessesByLang[l],
-              isPreset: true,
-              preset: {
-                id: preset.presetId,
-                title: preset.title,
-                userId: preset.userId,
-                userName: preset.userName,
-                editable: (preset.userId === thisObject.options.userId)
-              },
-              actSettings: {
-                lang: l,
-                work: thisObject.options.work,
-                chunk: thisObject.options.chunk,
-                ignorePunctuation: preset.data.ignorePunctuation,
-                normalizers: preset.data.normalizers !== undefined ? preset.data.normalizers : null,
-                witnesses: witnessesToInclude
-              }
 
-            });
-          }
-          thisObject.fillCollationTableLinks(urls, insideListId);
-        })
-        .fail(function (resp) {
-          console.log('Failed API call for presets for ' + langName, ' status: ' + resp.status);
-          console.log(resp);
-          thisObject.fillCollationTableLinks(urls, insideListId);
-        });
-      }
-    }
-  }
+      });
 
-  fillCollationTableLinks(urls: any, containerId: string) {
-    if (urls.length !== 0) {
-
-      let html = '';
-      html += '<ul>';
-      for (const u in urls) {
-        if (!urls.hasOwnProperty(u)) {
-          continue;
-        }
-        let liId = containerId + '-' + u;
-        html += '<li id="' + liId + '">';
-        html += urls[u].urltext + ':';
-        html += '<a class="button btn btn-default btn-sm noborder" id="' + liId + '-a' + '" href="' + urls[u].url + '" title="' + urls[u].urltitle + '" target="_blank">';
-        html += '<i class="fas fa-external-link-alt"></i>' + '</a>';
-        html += '<button title="Edit automatic collation settings" ';
-        html += 'class="ctsettingsbutton btn btn-default btn-sm noborder">';
-        html += '<i class="fas fa-pencil-alt" aria-hidden="true"></i></button>';
-        if (urls[u].preset) {
-          if (urls[u].preset.userId === this.options.userId) {
-            html += '<button title="Erase preset" ';
-            html += 'class="cterasepresetbutton btn btn-default btn-sm noborder">';
-            html += '<i class="fas fa-trash" aria-hidden="true"></i></button>';
-            html += '<div id="' + liId + '-erasediv' + '"></div>';
-          }
-        }
-
-        html += '<div id="' + liId + '-div' + '" class="actsettings"></div>';
-        html += '</li>';
-      }
-      html += '</ul>';
-
-      $('#' + containerId).html(html);
-      for (const u in urls) {
-        if (!urls.hasOwnProperty(u)) {
-          continue;
-        }
-        let liId = containerId + '-' + u;
-        let ctSettingsFormManager = new AutomaticCollationTableSettingsForm({
-          containerSelector: '#' + liId + '-div',
-          initialSettings: urls[u].actSettings,
-          availableWitnesses: urls[u].availableWitnesses,
-          hideTitle: true,
-          isPreset: urls[u].isPreset,
-          preset: urls[u].preset,
-          applyButtonText: 'Generate Collation',
-          userId: this.options.userId,
-          normalizerData: this.options.languageInfo[urls[u].lang]['normalizerData'],
-          debug: false
-        });
-        $('#' + liId + ' .cterasepresetbutton').on('click', function () {
+      $('#' + liId + ' .ctsettingsbutton').on('click', function () {
+        if (ctSettingsFormManager.isHidden()) {
           $('#' + liId + '-a').addClass('disabled');
-          $('#' + liId + ' .ctsettingsbutton').addClass('disabled');
           $('#' + liId + ' .cterasepresetbutton').addClass('disabled');
-          let divSelector = '#' + liId + '-erasediv';
-          let eraseHtml = '<p class="bg-danger">Do you really want to erase this preset?';
-          eraseHtml += '<button class="btn btn-sm btn-default button-yes">Yes</button>';
-          eraseHtml += '<button class="btn btn-sm btn-default button-no">No</button>';
-          $(divSelector).html(eraseHtml);
-          $(divSelector + ' .button-no').on('click', function () {
-            $(divSelector).html('');
-            $('#' + liId + '-a').removeClass('disabled');
-            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled');
-            $('#' + liId + ' .ctsettingsbutton').removeClass('disabled');
-          });
-          $(divSelector + ' .button-yes').on('click', function () {
-            $.get(urlGen.apiDeletePreset(urls[u].preset.id))
-            .done(function () {
-              thisObject.updateCollationTableLinks();
-            })
-            .fail(function (resp) {
-              console.error('Cannot delete preset');
-              console.log(resp);
-            });
-
-          });
-
-        });
-
-        $('#' + liId + ' .ctsettingsbutton').on('click', function () {
-          if (ctSettingsFormManager.isHidden()) {
-            $('#' + liId + '-a').addClass('disabled');
-            $('#' + liId + ' .cterasepresetbutton').addClass('disabled');
-            ctSettingsFormManager.show();
-          } else {
-            ctSettingsFormManager.hide();
-            $('#' + liId + '-a').removeClass('disabled');
-            $('#' + liId + ' .cterasepresetbutton').removeClass('disabled');
-          }
-        });
-        ctSettingsFormManager.on('cancel', function () {
+          ctSettingsFormManager.show();
+        } else {
           ctSettingsFormManager.hide();
           $('#' + liId + '-a').removeClass('disabled');
           $('#' + liId + ' .cterasepresetbutton').removeClass('disabled');
-        });
-        let thisObject = this;
-        ctSettingsFormManager.on('apply', function (e: any) {
-          console.log('Opening automatic collation table');
-          console.log(e.detail);
-          let formElement = $('#theform');
-          if (formElement.length !== 0) {
-            //console.log('Removing hidden form')
-            formElement.remove();
-          }
-          //console.log('Adding hidden form')
-          $('body').append('<form id="theform" class="hidden" method="POST" target="_blank" action="' + urlGen.siteCollationTableCustom(thisObject.options.workId, thisObject.options.chunkNumber, urls[u].lang) + '">' + '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail}) + '\'></form>');
-          //console.log('Submitting')
-          // @ts-ignore
-          document.getElementById('theform').submit();
-        });
-        ctSettingsFormManager.on('preset-new', function () {
-          thisObject.updateCollationTableLinks();
-        });
-      }
+        }
+      });
+      ctSettingsFormManager.on('cancel', function () {
+        ctSettingsFormManager.hide();
+        $('#' + liId + '-a').removeClass('disabled');
+        $('#' + liId + ' .cterasepresetbutton').removeClass('disabled');
+      });
+      let thisObject = this;
+      ctSettingsFormManager.on('apply', function (e: any) {
+        console.log('Opening automatic collation table');
+        console.log(e.detail);
+        let formElement = $('#theForm');
+        if (formElement.length !== 0) {
+          //console.log('Removing hidden form')
+          formElement.remove();
+        }
+        //console.log('Adding hidden form')
+        $('body').append('<form id="theForm" class="hidden" method="POST" target="_blank" action="' + urlGen.siteCollationTableCustom(thisObject.options.workId, thisObject.options.chunkNumber, urls[u].lang) + '">' + '<input type="text" name="data" value=\'' + JSON.stringify({options: e.detail}) + '\'></form>');
+        //console.log('Submitting')
+        // @ts-ignore
+        document.getElementById('theForm').submit();
+      });
+      ctSettingsFormManager.on('preset-new', async () => {
+        await this.updateCollationTableLinks();
+      });
     }
+
   }
 
 }

@@ -1,4 +1,4 @@
-import {NormalPage} from '../NormalPage';
+import {NormalPage, NormalPageOptions} from '../NormalPage';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {Tid} from '@/Tid/Tid';
 import {capitalizeFirstLetter} from '@/toolbox/Util';
@@ -13,7 +13,7 @@ import {getStringVal} from "@/toolbox/UiToolBox";
 const TimestampPredicates = [2004, 3002, 5002];
 const UrlPredicates = [2009];
 
-interface AdminEntityPageOptions {
+interface AdminEntityPageOptions extends NormalPageOptions {
   entityData: EntityDataInterface;
 }
 

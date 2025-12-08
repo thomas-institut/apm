@@ -28,7 +28,7 @@ class DoNothingCollationEngine extends CollationEngine
 
     public function __construct()
     {
-        parent::__construct('DoNothing Engine 1.0');
+        parent::__construct('DoNothing', '');
     }
 
     /**

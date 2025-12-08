@@ -146,7 +146,7 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getImageSources() : array;
     abstract public function getLogger() : Logger;
     abstract public function getSettingsManager() : SettingsManager;
-    abstract public function getCollationEngine() : CollationEngine;
+    abstract public function getCollationEngine(string $engineSystemId = '') : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
     abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;

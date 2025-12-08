@@ -18,3 +18,12 @@ interface ApiWorksAllChunkData {
   ed: boolean;
   ct: boolean;
 }
+
+export interface WorkData {
+  authorId: number;
+  enabled: boolean;
+  entityId: number;
+  shortTitle: string;
+  title: string;
+  workId: string;
+}

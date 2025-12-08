@@ -406,11 +406,11 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/witness/${witnessId}/to/edition`;
   }
 
-  apiWorkGetInfoOld(workId: any) {
+  apiWorkGetInfoOld(workId: string) {
     return `${this.apiBase}/work/${workId}/old-info`;
   }
 
-  apiWorkGetData(workId: any) {
+  apiWorkGetData(workId: number|string) {
     return `${this.apiBase}/work/${workId}/data`;
   }
 

@@ -352,10 +352,16 @@ class ApmSystemManager extends SystemManager {
         return $this->settingsMgr;
     }
     
-    public function getCollationEngine() : CollationEngine {
+    public function getCollationEngine(string $engineSystemId = '') : CollationEngine {
 
-        if ($this->collationEngine === null) {
-            // Set up Collation Engine
+//        return new DoNothingCollationEngine();
+
+        if ($engineSystemId === ApmCollationEngine::DO_NOTHING) {
+            return new DoNothingCollationEngine();
+        }
+
+        if ($engineSystemId === '' && $this->collationEngine === null) {
+            // Set up default collation engine
             switch($this->config['collationEngine']) {
                 case ApmCollationEngine::COLLATEX_HTTP:
                     $this->collationEngine = new CollatexHttp(

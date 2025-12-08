@@ -23,7 +23,7 @@ class SiteEntity extends SiteController
                 '',
                 'Admin Entity',
                 'AdminEntityPage',
-                'js/pages/AdminEntityPage/AdminEntityPage.js',
+                'js/pages/AdminEntityPage/AdminEntityPage.ts',
                 [
                     'entityData' => $this->systemManager->getEntitySystem()->getEntityData($tid)
                 ],

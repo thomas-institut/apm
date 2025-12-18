@@ -15,3 +15,9 @@
     font-family: Ezra;
     src: local(Ezra), url(../Ezra.woff);
 }
+
+
+@font-face {
+    font-family: "SBL Hebrew";
+    src: local("SBL Hebrew"), url(../SBL_Hbrw.ttf);
+}

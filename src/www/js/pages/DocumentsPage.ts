@@ -73,7 +73,7 @@ export class DocumentsPage extends NormalPage {
     return async () => {
       console.log('Click');
       const dialog = new DocumentCreationDialog({
-        apmDataProxy: this.apiClient,
+        apiClient: this.apiClient,
         successWaitTime: 1000
       });
 

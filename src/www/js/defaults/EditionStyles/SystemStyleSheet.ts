@@ -5,6 +5,7 @@ import { latinLibertine } from './LatinLibertine.js'
 
 import { defaultArabicEditionStyle } from './Arabic.js'
 import { defaultHebrewEditionStyle } from './Hebrew.js'
+import { peetersJournalStyle} from "./Hebrew-Peeters.js";
 
 import {StyleSheet, StyleSheetDefinition} from '../../lib/Typesetter2/Style/StyleSheet.js';
 import { arabicDeGruyter } from './ArabicDeGruyter.js'
@@ -32,6 +33,7 @@ let systemStyles: SystemStylesDatabase = {
   },
   he: {
     default: defaultHebrewEditionStyle,
+    peetersjournal: peetersJournalStyle
   },
   ar: {
     default: defaultArabicEditionStyle,

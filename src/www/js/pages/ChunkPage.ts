@@ -71,6 +71,14 @@ interface PresetInfo {
   editable: boolean;
 }
 
+interface WitnessListInfo {
+  location: string;
+  essential: string;
+  actions: string;
+  admin: string;
+}
+
+
 /**
  * Mini JS app running in the Chunk Page
  */
@@ -313,15 +321,13 @@ export class ChunkPage extends HeaderAndContentPage {
   async genSavedCollationTablesDivHtml(type: string): Promise<string> {
     let html = '';
 
-    const titles = {
+    const titles: { [key: string]: string;} = {
       ctable: tr('Saved Collation Tables'), edition: tr('Chunk Editions')
     };
 
     let tables = this.options.savedCollationTables.filter((savedCt: { type: any }) => savedCt.type === type);
 
     if (tables.length !== 0) {
-      // @ts-ignore
-      // TODO: try to fix this, how can I index titles with a string in TS?
       html += `<h4>${titles[type]}</h4>`;
       html += '<ul>';
       for (const ctInfo of tables) {
@@ -335,24 +341,14 @@ export class ChunkPage extends HeaderAndContentPage {
     return html;
   }
 
-  getPreviousChunk(chunk: any, validChunks: any) {
-    let index = validChunks.findIndex(function (c: any) {
-      return c === chunk;
-    });
-    if (index === 0) {
-      return -1;
-    }
-    return validChunks[index - 1];
+  getPreviousChunk(chunk: number, validChunks: number[]) {
+    const index = validChunks.findIndex( c => c === chunk);
+    return index === 0 ? -1 : validChunks[index - 1];
   }
 
-  getNextChunk(chunk: any, validChunks: any) {
-    let index = validChunks.findIndex(function (c: any) {
-      return c === chunk;
-    });
-    if (index === (validChunks.length - 1)) {
-      return -1;
-    }
-    return validChunks[index + 1];
+  getNextChunk(chunk: number, validChunks: number[]) {
+    const index = validChunks.findIndex( c => c === chunk);
+    return index === validChunks.length - 1 ? -1 : validChunks[index + 1];
   }
 
   generateHeaderDivHtml() {
@@ -456,47 +452,47 @@ export class ChunkPage extends HeaderAndContentPage {
       }
       let witnessInfo = this.options.witnessInfo[i];
       html += '<tr>';
-      let docInfo = witnessInfo["typeSpecificInfo"].docInfo;
-      let lwid = witnessInfo['typeSpecificInfo'].localWitnessId;
+      let docInfo = witnessInfo.typeSpecificInfo.docInfo;
+      let localWitnessId = witnessInfo.typeSpecificInfo.localWitnessId;
       html += '<td>' + this.getDocLink(docInfo);
-      if (lwid !== 'A') {
-        html += ' (' + lwid + ')';
+      if (localWitnessId !== 'A') {
+        html += ' (' + localWitnessId + ')';
       }
       html += '</td>';
       html += '<td>' + this.witnessTypeLabels[witnessInfo['type']] + '</td>';
       html += '<td>' + (await this.apiClient.getEntityName(docInfo['type'])) + '</td>';
-      html += '<td>' + (await this.apiClient.getEntityName(witnessInfo['language'])) + '</td>';
-      let info: any = '';
+      html += '<td>' + (await this.apiClient.getEntityName(witnessInfo.language)) + '</td>';
+      let info: WitnessListInfo = {location: '', essential: '', actions: '', admin: ''};
       switch (witnessInfo.type) {
         case WitnessType.FULL_TX:
           info = await this.genFullTxInfo(witnessInfo, parseInt(i));
           break;
 
         case WitnessType.PARTIAL_TX:
-          info = {'location': 'tbd', 'essential': 'based on TBD', 'actions': '', 'admin': ''};
+          info.location = 'tbd';
+          info.essential = 'based on TBD';
           break;
 
         default:
-          info = 'Unknown witness type';
+          info.location = 'Unknown witness type';
       }
-      html += '<td>' + info['location'] + '</td>';
-      html += '<td>' + info['essential'] + '</td>';
-      html += '<td>' + info['actions'] + '</td>';
+      html += '<td>' + info.location + '</td>';
+      html += '<td>' + info.essential + '</td>';
+      html += '<td>' + info.actions + '</td>';
       if (this.options.showAdminInfo) {
-        html += '<td>' + info['admin'] + '</td>';
+        html += '<td>' + info.admin + '</td>';
       } else {
         html += '<td></td>';
       }
-
       html += '</tr>';
     }
 
     return html;
   }
 
-  async genFullTxInfo(witnessInfo: any, index: number) {
+  async genFullTxInfo(witnessInfo: WitnessInfo, index: number) {
 
-    let info: any = [];
+    let info: WitnessListInfo = {actions: "", admin: "", essential: "", location: ""};
     let docInfo = witnessInfo["typeSpecificInfo"].docInfo;
     let segments = witnessInfo["typeSpecificInfo"]["segments"];
 
@@ -512,16 +508,16 @@ export class ChunkPage extends HeaderAndContentPage {
         console.warn(`Segment ${s} start is undefined`, segments[s]);
         segmentHtmlArray.push(`Undefined segment ${s}`);
       } else {
-        let segmenthtml = this.genPageLink(docInfo.id, segments[s].start.pageId, segments[s].start.columnNumber);
+        let segmentHtml = this.genPageLink(docInfo.id, segments[s].start.pageId, segments[s].start.columnNumber);
         if (segments[s].start.pageId !== segments[s].end.pageId) {
-          segmenthtml += '&ndash;' + this.genPageLink(docInfo.id, segments[s].end.pageId, segments[s].end.columnNumber);
+          segmentHtml += '&ndash;' + this.genPageLink(docInfo.id, segments[s].end.pageId, segments[s].end.columnNumber);
         }
-        segmentHtmlArray.push(segmenthtml);
+        segmentHtmlArray.push(segmentHtml);
       }
     }
     info['location'] = segmentHtmlArray.join(', ');
 
-    let lastVersion = witnessInfo['typeSpecificInfo'].lastVersion;
+    let lastVersion = witnessInfo.typeSpecificInfo.lastVersion;
     if (witnessInfo.isValid) {
       info['essential'] = '<small>Last change: ' + ApmFormats.time(TimeString.toDate(lastVersion['timeFrom'])) + ' by ' + await this.getAuthorLink(lastVersion.authorTid) + '</small>';
     } else {

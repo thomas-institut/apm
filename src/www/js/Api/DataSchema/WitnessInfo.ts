@@ -9,6 +9,12 @@ export interface WitnessInfo {
   systemId: string;
   title: string;
   type: string;
-  typeSpecificInfo: any;
+  typeSpecificInfo: GenericWitnessSpecificInfo;
   workId: string;
+}
+
+
+export type GenericWitnessSpecificInfo = { [key: string]: any }
+export interface FullTxSpecificInfo  {
+  localWitnessId: string;
 }

@@ -5,12 +5,13 @@ import { latinLibertine } from './LatinLibertine.js'
 
 import { defaultArabicEditionStyle } from './Arabic.js'
 import { defaultHebrewEditionStyle } from './Hebrew.js'
-import { peetersJournalStyle} from "./Hebrew-Peeters.js";
+import { hebrewPeetersJournal} from "./Hebrew-Peeters.js";
 
 import {StyleSheet, StyleSheetDefinition} from '../../lib/Typesetter2/Style/StyleSheet.js';
 import { arabicDeGruyter } from './ArabicDeGruyter.js'
 import { arabicDeGruyterAmiri} from './ArabicDeGruyterAmiri.js'
 import { arabicDeGruyterScheherazadeNew } from './ArabicDeGruyterScheherazadeNew.js'
+import {latinPeetersJournal} from "./LatinPeetersJournal.js";
 
 
 interface SystemStylesDatabase {
@@ -29,11 +30,12 @@ export interface SystemStyles {
 let systemStyles: SystemStylesDatabase = {
   la: {
     default: defaultLatinEditionStyle,
-    libertine: latinLibertine
+    libertine: latinLibertine,
+    peetersJournal: latinPeetersJournal
   },
   he: {
     default: defaultHebrewEditionStyle,
-    peetersjournal: peetersJournalStyle
+    peetersjournal: hebrewPeetersJournal
   },
   ar: {
     default: defaultArabicEditionStyle,

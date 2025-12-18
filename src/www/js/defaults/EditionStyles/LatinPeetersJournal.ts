@@ -2,17 +2,18 @@
 
 import {StyleSheetDefinition} from "../../lib/Typesetter2/Style/StyleSheet.js";
 
-export const hebrewPeetersJournal: StyleSheetDefinition = {
+
+export const latinPeetersJournal: StyleSheetDefinition =  {
   _metaData: {
     name: 'Peeters Journal',
-    description: 'A4 paper, SBL Hebrew'
+    description: 'A4 paper, Linux Libertine'
   },
   default: {
-    strings : {
-      omission: 'חסר',
-      addition: 'נוסף',
-      ante: 'לפני',
-      post: 'אחרי',
+    strings: {
+      omission: 'om.',
+      addition: 'add.',
+      ante: 'ante',
+      post: 'post',
       defaultLemmaSeparator: ']',
       lineRangeSeparator: '\u2016',  // double vertical line
       entrySeparator:  '\u007c' // single vertical line
@@ -30,20 +31,20 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
       lineNumbersToTextDistance: "0.5 cm",
       lineNumbersFontSize: "0.8 em",
       lineNumbersPosition: "left",
-      resetLineNumbersEachPage: false
+      resetLineNumbersEachPage: true
     },
     paragraph: {
       lineSkip: "12.788 pt",
       indent: "3.759 mm",
       align: 'justified',
-      spaceBefore: '0',
-      spaceAfter: '0'
+      spaceBefore: "0",
+      spaceAfter: "0"
     },
     text: {
-      fontFamily: 'SBL Hebrew',
-      fontSize: "12 pt",
-      fontStyle: '',
-      fontWeight: '',
+      fontFamily: "EB Garamond",
+      fontSize: "11 pt",
+      fontStyle: "",
+      fontWeight: "",
       shiftY: "0"
     },
     glue: {
@@ -53,8 +54,11 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
     },
   },
   emGlue: {
-    parent: '', glue: {
-      width: '1 em', shrink: '0.02 em', stretch: '0.08 em'
+    parent: "",
+    glue: {
+      width: "1 em",
+      shrink: "0.02 em",
+      stretch: "0.08 em"
     }
   },
   small:  {
@@ -77,17 +81,16 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
       shiftY: "0.6 em"
     }
   },
-  hebrewText: {
-  },
-  latinText: {
-    text: {
-      fontFamily: "EB Garamond"
-    }
-  },
   normal: {
     parent: 'default',
     paragraph: {
       indent: '1 em'
+    }
+  },
+  arabicText: {
+    parent: "",
+    text: {
+      fontFamily: "Noto Naskh Arabic",
     }
   },
   h1: {
@@ -126,16 +129,11 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
   apparatus: {
     parent: "default",
     text: {
-      fontSize: "11 pt",
+      fontSize: "9.4 pt",
     },
     paragraph: {
-      lineSkip: "14 pt"
-    },
-    glue: {
-      width: "0.25 em",
-      shrink: "0.03 em",
-      stretch: "0.08 em"
-    },
+      lineSkip: "10.54 pt"
+    }
   },
   lineRangeSeparator: {
     text: {
@@ -144,16 +142,16 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
   },
   postLineRangeSeparator: {
     glue: {
-      width: "0.25 em",
-      shrink: "0.02 em",
-      stretch: "0.75 em"
+      width: "1.25 em",
+      stretch: "0.5 em",
+      shrink: "0.25 em"
     }
   },
   preEntrySeparator : {
     glue: {
-      width: "0.25 em",
-      shrink: "0.05 em",
-      stretch: "0.5 em"
+      width: "0.5 em",
+      stretch: "0.25 em",
+      shrink: "0.05 em"
     }
   },
   entrySeparator: {
@@ -163,9 +161,9 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
   },
   postEntrySeparator: {
     glue: {
-      width: "0.25 em",
-      shrink: "0.05 em",
-      stretch: "0.5 em"
+      width: "1.25 em",
+      stretch: "0.5 em",
+      shrink: "0.25 em"
     }
   },
   apparatusLineNumbers: {
@@ -175,12 +173,12 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
   },
   apparatusKeyword: {
     text: {
-      fontSize: "0.8 em",
+      fontStyle: 'italic',
     }
   },
   sigla: {
     text: {
-      fontWeight: "bold"
+      fontStyle: 'italic',
     }
   },
   hand: {

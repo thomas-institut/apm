@@ -1,0 +1,74 @@
+/*
+ *  Copyright (C) 2025 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
+/* Font face definitions for EB Garamond fonts hosted by APM*/
+
+
+/*Regular*/
+@font-face {
+    font-family: "EB Garamond";
+    src: local("EB Garamond"),
+        local("EB Garamond Regular"),
+        url(../EBGaramond/EBGaramond-Regular.ttf) format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "EB Garamond";
+    src: local("EB Garamond Italic"),
+        url(../EBGaramond/EBGaramond-Italic.ttf) format("truetype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+/*SemiBold*/
+@font-face {
+    font-family: "EB Garamond";
+    src: local("EB Garamond SemiBold"),
+      url(../EBGaramond/EBGaramond-Semibold.ttf) format("truetype");
+    font-weight: 600;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "EB Garamond";
+    src: local("EB Garamond SemiBold Italic"),
+      url(../EBGaramond/EBGaramond-SemiboldItalic.ttf) format("truetype");
+    font-weight: 600;
+    font-style: italic;
+}
+
+/*Bold*/
+@font-face {
+    font-family: "EB Garamond";
+    src: local("EB Garamond Bold"),
+      url(../EBGaramond/EBGaramond-Bold.ttf) format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "EB Garamond";
+    src: local("EB Garamond Bold Italic"),
+      url(../EBGaramond/EBGaramond-BoldItalic.ttf) format("truetype");
+    font-weight: 700;
+    font-style: italic;
+}
+

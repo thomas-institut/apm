@@ -58,10 +58,15 @@ class Entity implements TidDefiner
 
     // Special
     const int tDareMaterial = 128;
-    const int tBibObject = 129;
-    const int tBibEntry = 130;
-    const int tPublisher = 131;
-
+    const int tPublisher = 130;
+    const int tBook = 131;
+    const int tBookSection = 132;
+    const int tArticle = 133;
+    const int tBookSeries = 134;
+    const int tOnlineCatalog = 135;
+    const int tOldCatalog = 136;
+    const int tJournal = 137;
+    const int tRepresentation = 138;
 
 
     // Value types
@@ -144,6 +149,10 @@ class Entity implements TidDefiner
     const int pOrcid = 7015;
 
     const int pParentOf = 7016;
+    const int rAuthorOf = 7017;
+    const int rEditorOf = 7018;
+    const int rTranslatorOf = 7019;
+    const int rDareReviewerOf = 7020;
 
 
     // Work Predicates
@@ -152,6 +161,7 @@ class Entity implements TidDefiner
     const int pApmWorkId = 7502;
     const int pWorkShortTitle = 7503;
     const int pWorkIsEnabledInApm = 7504;
+    const int pDareRepresentedWorkId = 7505;
 
 
     // Document Predicates
@@ -235,6 +245,7 @@ class Entity implements TidDefiner
     const int pDareRepositoryId = 8011;
 
 
+
     // Edition source predicates
 
     const int pDefaultSiglum = 8501;
@@ -245,59 +256,52 @@ class Entity implements TidDefiner
 
     // Bib Predicates
     const int pDareBibEntryId = 8700;
-    const int pBibObjectType = 8701;
+    const int pDareId = 8701;
     const int pDareCatalogId = 8702;
     const int pTitle = 8703;
     const int pPublicationDate = 8704;
     const int pBibObjectLang = 8705;
     const int pTag = 8706;
-    const int pTranscriptTitle = 8707;
+    const int pTransliteratedTitle = 8707;
     const int pTranslatedTitle = 8708;
     const int pShortTitle = 8709;
-    const int pAuthor = 8710;
-    const int pTranslator = 8711;
-    const int pEditor = 8712;
-    const int pVolume = 8713;
+    const int rAuthoredBy = 8710;
+    const int rTranslatedBy = 8711;
+    const int rEditedBy = 8712;
+    const int pContainerVolume = 8713;
     const int pAbstract = 8714;
     const int pDoi = 8715;
     const int pDareIsCatalog = 8716;
     const int pDareInBibliography = 8717;
     const int pDareIsInactive = 8718;
-    const int pReprintType = 8719;
-    const int pDareEntryReviewedBy = 8720;
-    const int pDareEntryReviewValidFrom = 8721;
-    const int pDareEntryReviewValidUntil = 8722;
-    const int pHasRepresentation = 8723;
+    const int pDareReprintType = 8719;
+    const int rDareReviewedBy = 8720;
+    const int pRepresentationLang = 8722;
+    const int pDareRepresentationSet = 8723;
     const int pRepresentationType = 8724;
-    const int pRepresentation = 8725;
+    const int pDareBibEntryVolume = 8725;
+    const int pDareEntryType = 8726;
 
-    const int pDareBookSectionEntryId = 8726;
-    const int rPublishedIn = 8727;
+
+    const int rContainedIn = 8727;
     const int pPages = 8728;
-    const int pPublisher = 8279;
-    const int pPubPlace = 8730;
-
-    const int pDareBookEntryId = 8731;
-    const int pSeries = 8732;
+    const int rPublishedBy = 8729;
+    const int rPubPlace = 8730;
+    const int rPublishes = 8731;
+    const int rContains = 8732;
     const int pEdition = 8733;
+    const int pPubPlace = 8734;
+    const int pContainerIssue = 8735;
+    const int pDareReviewValidFrom = 8736;
+    const int pDareReviewValidUntil = 8737;
 
-    const int pDareArticleEntryId = 8734;
-    const int pIssue = 8735;
 
     const int rReprintOf = 8750;
     const int rReprintIn = 8751;
     const int rRepresents = 8752;
     const int rIsRepresentedBy = 8753;
-
-
-    // Bib Objects
-    const int BibObjectBook = 8800;
-    const int BibObjectBookSection = 8801;
-    const int BibObjectArticle = 8802;
-    const int BibObjectBookSeries = 8803;
-    const int BibObjectOnlineCatalog = 8804;
-    const int BibObjectOldCatalog = 8805;
-    const int BibObjectJournal = 8806;
+    const int rWitnessOf = 8754;
+    const int rWitnessedBy = 8755;
 
 
     // Url Types
@@ -381,7 +385,6 @@ class Entity implements TidDefiner
     const int LangLatin = 20003;
     const int LangJudeoArabic = 20004;
     const int LangAncientGreek = 20005;
-
     const int LangEnglish = 20021;
     const int LangGerman = 20022;
     const int LangFrench = 20023;
@@ -390,13 +393,139 @@ class Entity implements TidDefiner
     const int LangPortuguese = 20026;
     const int LangTurkish = 20027;
 
+    const int LangAfar = 20028;
+    const int LangAbkhazian = 20029;
+    const int LangAfrikaans = 20030;
+    const int LangAmharic = 20031;
+    const int LangAssamese = 20032;
+    const int LangAymara = 20033;
+    const int LangAzerbaijani = 20034;
+    const int LangBashkir = 20035;
+    const int LangBelarusian = 20036;
+    const int LangBulgarian = 20037;
+    const int LangBihari = 20038;
+    const int LangBislama = 20039;
+    const int LangBengaliBangla = 20040;
+    const int LangTibetan = 20041;
+    const int LangBreton = 20042;
+    const int LangCatalan = 20043;
+    const int LangCorsican = 20044;
+    const int LangCzech = 20045;
+    const int LangWelsh = 20046;
+    const int LangDanish = 20047;
+    const int LangBhutani = 20048;
+    const int LangGreek = 20049;
+    const int LangEsperanto = 20050;
+    const int LangEstonian = 20051;
+    const int LangBasque = 20052;
+    const int LangPersian = 20053;
+    const int LangFinnish = 20054;
+    const int LangFiji = 20055;
+    const int LangFaeroese = 20056;
+    const int LangFrisian = 20057;
+    const int LangIrish = 20058;
+    const int LangScotsGaelic = 20059;
+    const int LangGalician = 20060;
+    const int LangGuarani = 20061;
+    const int LangGujarati = 20062;
+    const int LangHausa = 20063;
+    const int LangHindi = 20064;
+    const int LangCroatian = 20065;
+    const int LangHungarian = 20066;
+    const int LangArmenian = 20067;
+    const int LangInterlingua = 20068;
+    const int LangInterlingue = 20069;
+    const int LangInupiak = 20070;
+    const int LangIndonesian = 20071;
+    const int LangIcelandic = 20072;
+    const int LangJapanese = 20073;
+    const int LangYiddish = 20074;
+    const int LangJavanese = 20075;
+    const int LangGeorgian = 20076;
+    const int LangKazakh = 20077;
+    const int LangGreenlandic = 20078;
+    const int LangCambodian = 20079;
+    const int LangKannada = 20080;
+    const int LangKorean = 20081;
+    const int LangKashmiri = 20082;
+    const int LangKurdish = 20083;
+    const int LangKirghiz = 20084;
+    const int LangLingala = 20085;
+    const int LangLaothian = 20086;
+    const int LangLithuanian = 20087;
+    const int LangLatvianLettish = 20088;
+    const int LangMalagasy = 20089;
+    const int LangMaori = 20090;
+    const int LangMacedonian = 20091;
+    const int LangMalayalam = 20092;
+    const int LangMongolian = 20093;
+    const int LangMoldavian = 20094;
+    const int LangMarathi = 20095;
+    const int LangMalay = 20096;
+    const int LangMaltese = 20097;
+    const int LangBurmese = 20098;
+    const int LangNauru = 20099;
+    const int LangNepali = 20100;
+    const int LangDutch = 20101;
+    const int LangNorwegian = 20102;
+    const int LangOccitan = 20103;
+    const int LangAfanOromoorOriya = 20104;
+    const int LangPunjabi = 20105;
+    const int LangPolish = 20106;
+    const int LangPashtoPushto = 20107;
+    const int LangQuechua = 20108;
+    const int LangRhaetoRomance = 20109;
+    const int LangKirundi = 20110;
+    const int LangRomanian = 20111;
+    const int LangRussian = 20112;
+    const int LangKinyarwanda = 20113;
+    const int LangSanskrit = 20114;
+    const int LangSindhi = 20115;
+    const int LangSangro = 20116;
+    const int LangSerboCroatian = 20117;
+    const int LangSinghalese = 20118;
+    const int LangSlovak = 20119;
+    const int LangSlovenian = 20120;
+    const int LangSamoan = 20121;
+    const int LangShona = 20122;
+    const int LangSomali = 20123;
+    const int LangAlbanian = 20124;
+    const int LangSerbian = 20125;
+    const int LangSiswati = 20126;
+    const int LangSesotho = 20127;
+    const int LangSundanese = 20128;
+    const int LangSwedish = 20129;
+    const int LangSwahili = 20130;
+    const int LangTamil = 20131;
+    const int LangTelugu = 20132;
+    const int LangTajik = 20133;
+    const int LangThai = 20134;
+    const int LangTigrinya = 20135;
+    const int LangTurkmen = 20136;
+    const int LangTagalog = 20137;
+    const int LangSetswana = 20138;
+    const int LangTonga = 20139;
+    const int LangTsonga = 20140;
+    const int LangTatar = 20141;
+    const int LangTwi = 20142;
+    const int LangUkrainian = 20143;
+    const int LangUrdu = 20144;
+    const int LangUzbek = 20145;
+    const int LangVietnamese = 20146;
+    const int LangVolapuk = 20147;
+    const int LangWolof = 20148;
+    const int LangXhosa = 20149;
+    const int LangYoruba = 20150;
+    const int LangChinese = 20151;
+    const int LangZulu = 20152;
+
     // Materials
 
-    const int MaterialPaper = 20028;
-    const int MaterialParchment = 20029;
-    const int MaterialMixed = 20030;
-    const int MaterialVellum = 20031;
-    const int MaterialTissue = 20032;
+    const int MaterialPaper = 20200;
+    const int MaterialParchment = 20201;
+    const int MaterialMixed = 20202;
+    const int MaterialVellum = 20203;
+    const int MaterialTissue = 20204;
 
 
 }

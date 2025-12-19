@@ -40,7 +40,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * Data id for internal kernel caches, needs to be changed every time there is a
      * change in the entity system schema or in the ApmEntitySystemKernel class
      */
-    const string dataId = '0016';
+    const string dataId = '0051';
 
     const string kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -275,7 +275,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
 //        print_r($entityData);
         // get type and name
         $entityData->type = $entityData->getObjectForPredicate(Entity::pEntityType);
-        $entityData->name = $entityData->getObjectForPredicate(Entity::pEntityName);
+        $entityData->name = $entityData->getObjectForPredicate(Entity::pEntityName) ?? "";
 
         // TODO: consider using caching here (if/when we have tons of merges)
         // use merged entities in all statements

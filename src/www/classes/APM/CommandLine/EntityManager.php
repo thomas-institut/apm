@@ -24,10 +24,11 @@ use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidEntityTypeException;
 use APM\EntitySystem\Schema\Entity;
-use APM\SystemConfig;
+use APM\EntitySystem\Schema\Languages;
 use GuzzleHttp\Client as HttpClient;
+use PHPUnit\Exception;
 use stdClass;
-
+use function PHPUnit\Framework\isType;
 
 /**
  * Description of EntityManager
@@ -49,6 +50,10 @@ class EntityManager extends CommandLineUtility
         Entity::tInstitution => [],
         Entity::tDocument => []
     ];
+
+    private array $personTidsToNames = [];
+    private array $personDareIdsToTids = [];
+    private array $citiesToTids = [];
 
     /**
      * This main function is called from the command line. Depending on the arguments given to the location entity creator command line tool,
@@ -737,24 +742,769 @@ END;
     }
 
 
-    private function buildBibliography ($verbose=false) {
+    private function buildBibliography ($verbose=false, $creatorTid=-1): void {
 
-        // collect all bib data from dare
-        $this->collectFromDareBibTables();
+        // set system as creator
+        if ($creatorTid === -1) $creatorTid = Entity::System;
 
-        // create bib entry entity with basic predicates
-/*        foreach ($this->bibTables->entry as $bibEntry) {
+        if ($verbose) {
+            print("\tcollecting bib data from dare tables...\n");
+        }
+        $this->collectDataFromDareBibTables();
 
-                $tid = $this->es->createEntity(Entity::tBibEntry, $name, '', $creatorTid);
+        // process data from reprint table for later use
+        $isReprintOfEntry = [];
+        foreach ($this->bibTables->reprint as $reprintEntry) {
+            $isReprintOfEntry[$reprintEntry->reprintIn] = ['reprintOf' => $reprintEntry->reprintOf, 'reprintType' => $reprintEntry->reprintType];
+        }
+
+        // process tags for later use
+        $entryIdsToTags = [];
+        foreach($this->bibTables->entryCategory as $entryIdAndCategory) {
+            $entryId = $entryIdAndCategory->bibEntryId;
+            $categoryId = $entryIdAndCategory->categoryId;
+
+            foreach ($this->bibTables->category as $categoryIdAndCategory) {
+                if ($categoryId === $categoryIdAndCategory->id) {
+                    if (!isset($entryIdsToTags[$entryId])) {
+                        $entryIdsToTags[$entryId] = [$categoryIdAndCategory->categoryName];
+                    } else {
+                        $entryIdsToTags[$entryId][] = $categoryIdAndCategory->categoryName;
+                    }
+                }
+            }
+        }
+
+        if ($verbose) {
+            print("\tbib data collected.\n");
+            print("\tcollecting relevant data from entity system...\n");
+        }
+
+        // collecting language data
+        $langCodesToEntities = [];
+        $langs = new Languages();
+        $langEntitiesAndCodes = $langs->getStatements();
+        foreach ($langEntitiesAndCodes as $langEntityAndCode) {
+            $langCodesToEntities[$langEntityAndCode[2]] = $langEntityAndCode[0];
+        }
+
+        // collect existing persons in entity system
+        $existingPersons = $this->es->getAllEntitiesForType(Entity::tPerson);
+        foreach ($existingPersons as $personTid) {
+            $this->personTidsToNames[$personTid] = $this->es->getEntityName($personTid);
+
+            // get dare person ids
+            $personData = $this->es->getEntityData($personTid);
+            $entityStatements = $personData->statements;
+            foreach ($entityStatements as $entityStatement) {
+                if ($entityStatement->predicate === Entity::pDarePersonId) {
+                    $this->personDareIdsToTids[$entityStatement->object] = $personTid;
+                }
+            }
+        }
+
+        // collect existing cities in entity system
+        $existingCities = $this->es->getAllEntitiesForType(Entity::tCity);
+        foreach ($existingCities as $cityTid) {
+            $this->citiesToTids[$this->es->getEntityName($cityTid)] = $cityTid;
+        }
 
 
-        }*/
+        if ($verbose) {
+            print("\tentity data collected.\n");
+            print("\tcreating representations from dare table in entity system...\n");
+        }
+        $representationEntryIdsToTids = $this->createRepresentationsFromDare($verbose, $creatorTid);
 
-        print("building bibliography done.");
+        if ($verbose) {
+            print("\n\tcreating bib objects...\n");
+        }
+
+        // create container arrays
+        $alreadyCreatedEntryIdsToTids = [];
+        $publisherNamesToTids = [];
+        $bookSeriesToTids = [];
+
+        $numBibEntries = count($this->bibTables->entry);
+
+        foreach ($this->bibTables->entry as $i=>$bibEntry) {
+
+            $bibEntriesProcessed = $i+1;
+
+//            if ($bibEntry->id <= 300) {
+//                continue;
+//            }
+
+            // get type of bib object
+            $type = $this->getBibObjectType($bibEntry->type);
+
+            // get lang entity and tags
+            $lang = $langCodesToEntities[$bibEntry->language] ?? "";
+            $tags = $entryIdsToTags[$bibEntry->id] ?? [];
+
+            // handle empty titles, seldom necessary
+            if (!isset($bibEntry->title) or trim($bibEntry->title) === "") {$bibEntry->title = "untitled";}
+
+            // create entity of a specific bib type if not already created
+            if (!isset($alreadyCreatedEntryIdsToTids[$bibEntry->id])) {
+                $tid = $this->es->createEntity($type, $bibEntry->title, '', $creatorTid);
+                if ($verbose) {
+                    print("\n\tcreated entity $bibEntriesProcessed of $numBibEntries, of type $type with tid $tid\n");
+                }
+            } else {
+                $tid = $alreadyCreatedEntryIdsToTids[$bibEntry->id];
+                if ($verbose) {
+                    print("\tentity of type $type already created in processing another entry\n");
+                }
+            }
+
+            // SET NON-TYPE-SPECIFIC PREDICATES
+            $this->makeBibObjectStatement($tid, Entity::pTitle, $bibEntry->title, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDareBibEntryId, $bibEntry->id, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDareId, $bibEntry->dareIdno, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDareCatalogId, $bibEntry->catalogIdno, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pBibObjectLang, $lang, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDareBibEntryVolume, $bibEntry->volume, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pTransliteratedTitle, $bibEntry->titleTranscript, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pTranslatedTitle, $bibEntry->titleTranslation, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pShortTitle, $bibEntry->shortTitle, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pAbstract, $bibEntry->abstract, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pUrl, explode(" ", $bibEntry->onlineUrl)[0], $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDoi, $bibEntry->doiUrl, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDareIsCatalog, $bibEntry->isCatalog, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDareInBibliography, $bibEntry->inBibliography, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDareIsInactive, $bibEntry->isInactive, $creatorTid);
+            $this->makeBibObjectStatement($tid, Entity::pDareEntryType, $bibEntry->entryType, $creatorTid);
+
+
+
+            // set tags
+            foreach ($tags as $tag) {
+                $this->makeBibObjectStatement($tid, Entity::pTag, $tag, $creatorTid);
+            }
+
+
+            $tags = implode(", ", $tags) ?? "";
+
+            if ($verbose) {
+                print("\t
+                    pTitle --> $bibEntry->title,
+                    pDareBibEntryId --> $bibEntry->id,
+                    pDareId --> $bibEntry->dareIdno,
+                    pDareCatalogId --> $bibEntry->catalogIdno,
+                    pBibObjectLang --> $lang,
+                    pTag --> $tags,
+                    pTransliteratedTitle --> $bibEntry->titleTranscript,
+                    pTranslatedTitle --> $bibEntry->titleTranslation,
+                    pShortTitle --> $bibEntry->shortTitle,
+                    pDareBibEntryVolume --> $bibEntry->volume,
+                    pAbstract --> $bibEntry->abstract,
+                    pUrl --> $bibEntry->onlineUrl,
+                    pDoiUrl --> $bibEntry->doiUrl,
+                    pDareIsCatalog --> $bibEntry->isCatalog,
+                    pDareInBibliography --> $bibEntry->inBibliography,
+                    pDareIsInactive --> $bibEntry->isInactive,
+                    pDareEntryType --> $bibEntry->entryType,
+                \n");
+            }
+
+            $this->setReprintData($tid, $bibEntry, $isReprintOfEntry, $verbose, $creatorTid);
+            $this->setAuthorsEditorsTranslators($tid, $bibEntry, $verbose, $creatorTid);
+            $this->setReviewData($tid, $bibEntry, $verbose, $creatorTid);
+            $this->setRepresentationData($tid, $bibEntry, $representationEntryIdsToTids, $verbose, $creatorTid);
+
+            // SET TYPE-SPECIFIC PREDICATES
+
+            switch ($type) {
+
+                case Entity::tBookSection:
+
+                    // set pPages
+                    foreach ($this->bibTables->bookSection as $sectionEntry) {
+                        if ($sectionEntry->id === $bibEntry->id) {
+                            $this->makeBibObjectStatement($tid, Entity::pPages, $sectionEntry->pages, $creatorTid);
+
+                            if ($verbose) {
+                                print("\t\tpPages --> $sectionEntry->pages,\n");
+                            }
+
+                            // set rContainedIn
+                            try { // make rContainedIn statement if section entity was created after the container book entity
+                                $booksInEs = $this->es->getAllEntitiesForType(Entity::tBook);
+                                foreach ($booksInEs as $bookTid) {
+                                    $entityData = $this->es->getEntityData($bookTid);
+                                    $name = $entityData->name;
+                                    $entityStatements = $entityData->statements;
+                                    foreach ($entityStatements as $entityStatement) {
+                                        if ($entityStatement->predicate === Entity::pDareBibEntryId) {
+                                            if ($entityStatement->object === $sectionEntry->sectionOf) {
+                                                $this->makeBibObjectStatement($tid, Entity::rContainedIn, $bookTid, $creatorTid);
+                                                if ($verbose) {
+                                                    print("\t\trContainedIn --> $bookTid ($name),\n");
+                                                }
+
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (Exception) {
+                            }
+
+                        }
+                    }
+
+                    break;
+
+                case Entity::tBook:
+
+                    // set publication date
+                    $this->makeBibObjectStatement($tid, Entity::pPublicationDate, $bibEntry->freeDate, $creatorTid);
+
+                    if ($verbose) {
+                        print("\t\t\tpPublicationDate --> $bibEntry->freeDate,\n");
+                    }
+
+                    // set publisher, publication place, series, volume and edition
+                    foreach ($this->bibTables->book as $bookEntry) {
+                        if ($bookEntry->id === $bibEntry->id) {
+                            if (isset($bookEntry->publisher) and !trim($bookEntry->publisher) == "") {
+
+                                $publisherName = trim($bookEntry->publisher);
+
+                                if (isset($publisherNamesToTids[$publisherName])) {
+                                    $publisherTid = $publisherNamesToTids[$publisherName];
+                                } else {
+                                    $publisherTid = $this->es->createEntity(Entity::tPublisher, $publisherName, "Imported automatically from the dare database.", $creatorTid);
+                                    $publisherNamesToTids[$publisherName] = $publisherTid;
+                                }
+
+                                $this->makeBibObjectStatement($tid, Entity::rPublishedBy, $publisherTid, $creatorTid);
+
+
+                                if ($verbose) {
+                                    print("\t\t\tpPublisher --> $bookEntry->publisher,\n");
+                                }
+                            }
+                            if (isset($bookEntry->pubplace)) {
+
+                                // extract city names from table entry
+                                $pubPlaces = explode("(", $bookEntry->pubplace)[0];
+                                $pubPlaces = explode("[", $pubPlaces)[0];
+                                $citySeparators = '/[,\/\-]/';
+                                $pubPlaces = preg_split($citySeparators, $pubPlaces, -1, PREG_SPLIT_NO_EMPTY);
+
+                                if (isset($pubPlaces[0])) {
+                                    if ($pubPlaces[0] === "Louvain") {
+                                        $pubPlaces = ["Louvain-la-Neuve"];
+                                    }
+
+                                    foreach ($pubPlaces as $pubPlace) {
+                                        $pubPlace = trim($pubPlace);
+
+                                        if (isset($this->citiesToTids[$pubPlace])) {
+                                            $pubPlaceTid = $this->citiesToTids[$pubPlace];
+                                            $this->makeBibObjectStatement($tid, Entity::rPubPlace, $pubPlaceTid, $creatorTid);
+
+                                            if ($verbose) {
+                                                print("\t\t\trPubPlace --> $pubPlace,\n");
+                                            }
+                                        } else {
+                                            $this->makeBibObjectStatement($tid, Entity::pPubPlace, $pubPlace, $creatorTid);
+
+                                            if ($verbose) {
+                                                print("\t\t\tpPubPlace --> $pubPlace,\n");
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (isset($bookEntry->volume)) {
+                                $this->makeBibObjectStatement($tid, Entity::pContainerVolume, $bookEntry->volume, $creatorTid);
+
+                                if ($verbose) {
+                                    print("\t\t\tpContainerVolume --> $bookEntry->volume,\n");
+                                }
+                            }
+                            if (isset($bookEntry->editionNo)) {
+                                $this->makeBibObjectStatement($tid, Entity::pEdition, $bookEntry->editionNo, $creatorTid);
+
+                                if ($verbose) {
+                                    print("\t\t\tpEdition --> $bookEntry->editionNo,\n");
+                                }
+                            }
+
+                            if (isset($bookEntry->bookSeries)) {
+
+                                $bookSeries = trim($bookEntry->series);
+
+                                if (!isset($bookSeriesToTids[$bookSeries])) {
+                                    $bookSeriesTid = $this->es->createEntity(Entity::tBookSeries, $bookSeries, "", $creatorTid);
+                                    if ($verbose) {
+                                        print("\t\tcreated new book series $bookEntry->series ($bookSeriesTid)\n");
+                                    }
+                                    $bookSeriesToTids[$bookSeries] = $bookSeriesTid;
+                                } else {
+                                    $bookSeriesTid = $bookSeriesToTids[$bookSeries];
+                                }
+
+                                $this->makeBibObjectStatement($tid, Entity::rContainedIn, $bookSeriesTid, $creatorTid);
+                                if ($verbose) {
+                                    print("\t\trContainedIn --> $bookSeriesTid ($bookEntry->series),");
+                                }
+                            }
+                        }
+                    }
+
+                    // set rContainedIn for already created book section
+                    foreach ($this->bibTables->bookSection as $sectionEntry) {
+                        if ($sectionEntry->sectionOf === $bibEntry->id) {
+                            try {
+                                $sectionsInEs = $this->es->getAllEntitiesForType(Entity::tBookSection);
+                                foreach ($sectionsInEs as $sectionTid) {
+                                    $entityData = $this->es->getEntityData($sectionTid);
+                                    $name = $entityData->name;
+                                    $entityStatements = $entityData->statements;
+                                    foreach ($entityStatements as $entityStatement) {
+                                        if ($entityStatement->predicate === Entity::pDareBibEntryId) {
+                                            if ($entityStatement->object === $bibEntry->id) {
+                                                $this->makeBibObjectStatement($sectionTid, Entity::rContainedIn, $tid, $creatorTid);
+                                                if ($verbose) {
+                                                    print("\t\t$sectionTid ($name) --> rContainedIn,");
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            } catch (Exception) {
+                            }
+                        }
+                    }
+
+                    break;
+
+                case Entity::tArticle:
+
+                    // set publication date
+                    $this->makeBibObjectStatement($tid, Entity::pPublicationDate, $bibEntry->freeDate, $creatorTid);
+
+                    if ($verbose) {
+                        print("\t\tpPublicationDate --> $bibEntry->freeDate,");
+                    }
+
+                    // set volume, issue, pages and journal
+                    foreach ($this->bibTables->article as $articleEntry) {
+                        if ($articleEntry->id === $bibEntry->id) {
+                            $this->makeBibObjectStatement($tid, Entity::pContainerVolume, $articleEntry->volume, $creatorTid);
+                            $this->makeBibObjectStatement($tid, Entity::pContainerIssue, $articleEntry->issue, $creatorTid);
+                            $this->makeBibObjectStatement($tid, Entity::pPages, $articleEntry->pages, $creatorTid);
+
+                            if ($verbose) {
+                                print("\t\tpContainerVolume --> $articleEntry->volume,
+                                           pContainerIssue --> $articleEntry->issue,
+                                           pPages --> $articleEntry->pages,
+                                ");
+                            }
+
+                            if ($verbose) {print("\t\tcollect all entities of type journal...");}
+                            $journalsInEs = $this->es->getAllEntitiesForType(Entity::tJournal);
+                            $journalTid = null;
+                            foreach ($journalsInEs as $journal) {
+                                $entityData = $this->es->getEntityData($journal);
+                                $journalName = $entityData->name;
+
+                                if ($journalName === $articleEntry->journalName) {
+                                    $journalTid = $journal;
+                                    break;
+                                }
+                            }
+
+                            if ($journalTid === null) {
+                                $journalTid = $this->es->createEntity(Entity::tJournal, $articleEntry->journalName, "", $creatorTid);
+                                if ($verbose) {print("\t\tcreated new journal $articleEntry->journalName ($journalTid)\n");}
+                            }
+
+                            $this->makeBibObjectStatement($tid, Entity::rContainedIn, $journalTid, $creatorTid);
+                            if ($verbose) {
+                                print("\t\trContainedIn --> $journalTid ($articleEntry->journalName)\n");
+                            }
+                        }
+
+                        break;
+
+                    }
+            }
+
+            printf("\t$bibEntriesProcessed of $numBibEntries bib entries processed.\r", $bibEntriesProcessed);
+        }
+
+        print("BUILDING BIBLIOGRAPHY DONE.");
+
+    }
+
+    private function createRepresentationsFromDare(bool $verbose, int $creatorTid): array {
+
+        // collect works and their codes from the apm es
+        $workIdsToTids = [];
+        $works = $this->es->getAllEntitiesForType(Entity::tWork);
+        $numWorks = count($works);
+
+        print("\tcollecting works from apm entity system...\n");
+        foreach ($works as $i=>$work) {
+                $workData = $this->es->getEntityData($work);
+                foreach ($workData->statements as $statement) {
+                    if ($statement->predicate === Entity::pApmWorkId) {
+                        $workId = $statement->object;
+                        $workIdsToTids[$workId] = $work;
+                    }
+                    printf("\t\t$i of $numWorks works in dare collected.\r", $i);
+                }
+        }
+
+        $representationEntryIdsToTids = [];
+        $numNewPersons = 0;
+        $numRepresentations = count($this->bibTables->work);
+
+        foreach ($this->bibTables->work as $i=>$representation) { // create representations from dare
+            if ($representation->type === "averroes") {
+
+                $workId = explode("_", $representation->repId)[0];
+
+                $representationTid = $this->es->createEntity(Entity::tRepresentation, $representation->repTitle, '', $creatorTid);
+                $this->makeBibObjectStatement($representationTid, Entity::pDareRepresentedWorkId, $representation->repId, $creatorTid);
+                $this->makeBibObjectStatement($representationTid, Entity::rRepresents, $workIdsToTids[$workId], $creatorTid);
+
+                $representationEntryIdsToTids[$representation->id] = $representationTid;
+
+                switch ($representation->language) {
+                    case 1:
+                        $language = Entity::LangLatin;
+                        break;
+                    case 2:
+                        $language = Entity::LangHebrew;
+                        break;
+                    case 3:
+                        $language = Entity::LangArabic;
+                        break;
+                    default:
+                        $language = null;
+                        break;
+                }
+
+                if ($language !== null) {
+                        $this->makeBibObjectStatement($representationTid, Entity::pRepresentationLang, $language, $creatorTid);
+                    }
+
+                // add the translator of the representation
+                if (isset($representation->translator) and $representation->translator !== "") {
+
+                    $translatorExists = false;
+
+                    foreach ($this->personTidsToNames as $personTid=>$personName) {
+                        if ($personName === $representation->translator) {
+                            $this->makeBibObjectStatement($personTid, Entity::rTranslatorOf, $representationTid, $creatorTid);
+                            $translatorExists = true;
+                            break;
+                        }
+                    }
+
+                    if (!$translatorExists) {
+                        $person = $this->es->createEntity(Entity::tPerson, $representation->translator, '', $creatorTid);
+                        $this->makeBibObjectStatement($person, Entity::rTranslatorOf, $representationTid, $creatorTid);
+                        $this->personTidsToNames[$person] = $representation->translator;
+                        $numNewPersons++;
+                    }
+                }
+            }
+
+            $representationsProcessed = $i+1;
+            printf("\t\t$representationsProcessed of $numRepresentations representations in dare collected.\r", $representationsProcessed);
+
+        }
+
+        if ($verbose) {
+            print("\n\t\tcreated $numNewPersons persons (work translators) while processing works.");
+        }
+
+        return $representationEntryIdsToTids;
+
+    }
+
+
+    private function makeBibObjectStatement (int $subject, int $predicate, $object, int $creatorTid, array $qualifications=[]): bool
+    {
+
+        if (is_string($object)) {
+            $object = trim($object);
+        }
+
+
+        if ($object !== "" and $object !== null) {
+            if ($qualifications === []) {
+                $this->es->makeStatement($subject, $predicate, $object, $creatorTid, "Imported automatically from dare database.");
+            } else {
+                $this->es->makeStatement($subject, $predicate, $object, $creatorTid, "Imported automatically from dare database.", $qualifications);
+            }
+        }
 
         return true;
     }
 
+    private function setReprintData(int $reprintTid, object $bibEntry, array $isReprintOfEntry, bool $verbose, int $creatorTid) {
+
+        $existingBooks = $this->es->getAllEntitiesForType(Entity::tBook);
+        $existingArticles = $this->es->getAllEntitiesForType(Entity::tArticle);
+        $existingBookSections = $this->es->getAllEntitiesForType(Entity::tBookSection);
+        $existingBibObjects = array_merge($existingBooks, $existingArticles, $existingBookSections);
+
+        // set reprintOf and reprintType
+        foreach ($this->bibTables->entry as $entry) { // check of which entry the current entry is a reprint, if of any
+            if (
+                    (isset($bibEntry->republicationOf) or isset($isReprintOfEntry[$bibEntry->id]['reprintOf'])) and
+                (($bibEntry->republicationOf ?? null) === $entry->id or ($isReprintOfEntry[$bibEntry->id]['reprintOf'] ?? null) === $entry->id)
+            ) {
+
+                if ($entry->id < $bibEntry->id) { // reprintOf entry already created as an entity, get this entity
+
+                    if ($verbose) {
+                        print("\t\treprintOf entry already created as an entity. getting entity...\n");
+                    }
+
+                    foreach ($existingBibObjects as $bibObjectTid) {
+
+                        $entityData = $this->es->getEntityData($bibObjectTid);
+                        $entityStatements = $entityData->statements;
+
+                        foreach ($entityStatements as $entityStatement) {
+                            if ($entityStatement->predicate === Entity::pDareBibEntryId) {
+                                if ($entityStatement->object === $entry->id) {
+                                    $reprintedTid = $bibObjectTid;
+
+                                    $this->makeBibObjectStatement($reprintTid, Entity::rReprintOf, $reprintedTid, $creatorTid);
+                                    if ($verbose) {
+                                        print("\t\trReprintOf --> $reprintedTid,\n");
+                                    }
+
+                                    $reprintType = $isReprintOfEntry[$bibEntry->id]['reprintType'] ?? null;
+                                    if ($reprintType !== null) {
+                                        $this->makeBibObjectStatement($reprintTid, Entity::pDareReprintType, $reprintType, $creatorTid);
+                                        if ($verbose) {
+                                            print("\t\tpDareReprintType--> $reprintType");
+                                        }
+                                    }
+
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                } else { // reprintOf entry not yet created as an entity, do that
+
+                    if ($verbose) {
+                        print("\t\treprintOf entry not yet created as an entity. creating entity...\n");
+                    }
+
+                    $type = $this->getBibObjectType($entry->type);
+                    $reprintedTid = $this->es->createEntity($type, $entry->title, '', $creatorTid);
+                    $alreadyCreatedEntryIdsToTids[$entry->id] = $reprintedTid;
+
+                    $this->makeBibObjectStatement($reprintTid, Entity::rReprintOf, $reprintedTid, $creatorTid);
+                    if ($verbose) {
+                        print("\t\trReprintOf --> $reprintedTid,\n");
+                    }
+
+                    $reprintType = $isReprintOfEntry[$bibEntry->id]['reprintType'] ?? null;
+                    if ($reprintType !== null) {
+                        $this->makeBibObjectStatement($reprintTid, Entity::pDareReprintType, $reprintType, $creatorTid);
+                        if ($verbose) {
+                            print("\t\tpDareReprintType--> $reprintType,\n");
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    private function setAuthorsEditorsTranslators(int $tid, object $bibEntry, bool $verbose, int $creatorTid): void {
+
+        // set authors, translators and editors (person or institution)
+        foreach ($this->bibTables->entryToPerson as $entryToPersonEntry) {
+
+            if ((int) $entryToPersonEntry->entryId === (int) $bibEntry->id) {
+
+                if (trim($entryToPersonEntry->agentType) === 'person') {
+
+                    $role = $entryToPersonEntry->role ?? null;
+                    $name = $entryToPersonEntry->freeName ?? null;
+                    $lastName = $entryToPersonEntry->freeLastName ?? "";
+                    $firstName = $entryToPersonEntry->freeFirstName ?? "";
+                    $sortName = $lastName . ", " . $firstName;
+                    $personDareId = $entryToPersonEntry->personId;
+
+                    // $personExists = false;
+
+                    if (!$role === null) {
+
+                        $agentTid = $this->personDareIdsToTids[$personDareId];
+                        // $personExists = true;
+                        if ($verbose) {
+                            print("\t\tperson already exists: $agentTid ($name / $sortName),\n");
+                        }
+                    }
+
+//                    if (!$personExists) {
+//
+//                        $personTid = $this->es->createEntity(Entity::tPerson, $name, '', $creatorTid);
+//                        $this->makeBibObjectStatement($personTid, Entity::pSortName, $sortName, $creatorTid);
+//                        if ($verbose) {
+//                            print("\t\tcreated person $personTid ($name / $sortName),\n");
+//                        }
+//
+//                        $this->personTidsToNames[$personTid] = $name;
+//
+//                    }
+
+
+                } else if (trim($entryToPersonEntry->agentType) === 'institution') {
+
+                    $institutionsInEs = $this->es->getAllEntitiesForType(Entity::tInstitution);
+                    foreach ($institutionsInEs as $institution) {
+                        $entityData = $this->es->getEntityData($tid);
+                        $name = $entityData->name;
+                        $entityStatements = $entityData->statements;
+                        foreach ($entityStatements as $entityStatement) {
+                            if ($entityStatement->predicate === Entity::pDareRepositoryId and $entityStatement->object === $entryToPersonEntry->institutionId) {
+                                $agentTid = $institution;
+                            }
+                        }
+                    }
+                }
+
+                if (isset($agentTid)) {
+
+                    switch ($role) {
+                        case 1: // author
+                            $this->makeBibObjectStatement($tid, Entity::rAuthoredBy, $agentTid, $creatorTid);
+                            if ($verbose) {
+                                print("\t\trAuthoredBy --> $agentTid ($name),\n");
+                            }
+                            break;
+                        case 2: // editor
+                            $this->makeBibObjectStatement($tid, Entity::rEditedBy, $agentTid, $creatorTid);
+                            if ($verbose) {
+                                print("\t\trEditedBy --> $agentTid ($name),\n");
+                            }
+                            break;
+                        case 3: // translator
+                            $this->makeBibObjectStatement($tid, Entity::rTranslatedBy, $agentTid, $creatorTid);
+                            if ($verbose) {
+                                print("\t\trTranslatedBy --> $agentTid ($name),\n");
+                            }
+                            break;
+                    }
+                }
+            }
+        }
+
+    }
+
+    private function setReviewData (int $tid, object $bibEntry, bool $verbose, int $creatorTid) {
+
+        // set entry review data
+        foreach ($this->bibTables->review as $reviewEntry) {
+            if ($reviewEntry->reviewOf === $bibEntry->id) {
+                $personIdentified = false;
+
+                $reviewerDareId = $reviewEntry->reviewBy;
+                $reviewValidFrom = $reviewEntry->validFrom;
+                $reviewValidUntil = $reviewEntry->validUntil;
+                $reviewerTid = $this->personDareIdsToTids[$reviewerDareId] ?? "unknown";
+
+                if ($reviewerTid !== "unknown") {
+                    $personIdentified = true;
+                    $this->makeBibObjectStatement($tid, Entity::rDareReviewedBy, $reviewerTid, $creatorTid, [[Entity::pDareReviewValidFrom, $reviewValidFrom], [Entity::pDareReviewValidUntil, $reviewValidUntil]]);
+                } else { // no person with corresponding dare id found in the es
+
+                    foreach ($this->bibTables->persons as $personEntry) {
+                        if ($reviewerDareId === $personEntry->id) {
+                            $personIdentified = true;
+                            $reviewerTid = $this->es->createEntity(Entity::tPerson, $personEntry->fullName, '', $creatorTid);
+                            $this->makeBibObjectStatement($reviewerTid, Entity::pDarePersonId, $reviewerDareId, $creatorTid);
+
+                            // add created person to data array
+                            $this->personDareIdsToTids[$reviewerDareId] = $reviewerTid;
+
+                            if ($verbose) {
+                                print("\t\tcreated person $personEntry->fullName,\n");
+                            }
+
+                            $this->makeBibObjectStatement($tid, Entity::rDareReviewedBy, $reviewerTid, $creatorTid, [[Entity::pDareReviewValidFrom, $reviewValidFrom], [Entity::pDareReviewValidUntil, $reviewValidUntil]]);
+
+                        }
+                    }
+                }
+
+                if ($verbose and $personIdentified) {
+                    print("\t\trDareReviewedBy --> $reviewerTid [$reviewValidFrom, $reviewValidUntil],\n");
+                }
+
+            }
+        }
+
+    }
+
+
+    private function setRepresentationData (int $tid, object $bibEntry, array $representationEntryIdsToTids, bool $verbose, int $creatorTid): void {
+
+        // set representation data
+        foreach ($this->bibTables->entryWork as $workEntry) {
+
+            if ($workEntry->bibEntry === $bibEntry->id and (isset($workEntry->representation) and $workEntry->representation !== "")) {
+
+                $representationTid = $representationEntryIdsToTids[$workEntry->representation];
+                $this->makeBibObjectStatement($representationTid, Entity::pDareRepresentationSet, $workEntry->representationIsSet, $creatorTid);
+                $this->makeBibObjectStatement($representationTid, Entity::pRepresentationType, $workEntry->realizationType, $creatorTid);
+                $this->makeBibObjectStatement($tid, Entity::rWitnessOf, $representationTid, $creatorTid);
+
+                if ($verbose) {
+                    print("\t\tpDareRepresentationIsSet --> $workEntry->representationIsSet,
+                                   pRepresentationType --> $workEntry->realizationType,
+                                   rWitnessOf --> $representationTid
+                        ");
+
+                }
+            }
+        }
+
+    }
+
+    private function getBibObjectType(int $type): int {
+
+        // get bib object type, e. g. book or article
+        switch ($type) {
+            case 1:
+            case 4:
+                $type = Entity::tBook;
+                break;
+            case 2:
+                $type = Entity::tBookSection;
+                break;
+            case 3:
+                $type = Entity::tArticle;
+                break;
+            case 5:
+                $type = Entity::tBookSeries;
+            case 6:
+                $type = Entity::tOnlineCatalog;
+                break;
+            case 7:
+                $type = Entity::tOldCatalog;
+                break;
+        }
+
+        return $type;
+    }
 
     private function createCountry(string $name, int $creatorTid = -1): array
     {
@@ -1384,7 +2134,7 @@ SPARQL;
         return $institutionData;
     }
 
-    private function collectFromDareBibTables() : void {
+    private function collectDataFromDareBibTables() : void {
 
         $this->bibTables = new stdClass();
 
@@ -1394,7 +2144,7 @@ SPARQL;
         $this->bibTables->bookSection = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_booksection.csv");
         $this->bibTables->category = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_category.csv");
         $this->bibTables->entryCategory = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_entry_category.csv");
-        $this->bibTables->entryPerson = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_entry_person.csv");
+        $this->bibTables->entryToPerson = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_entry_person.csv");
         $this->bibTables->entryWork = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_entry_work.csv");
         $this->bibTables->languages = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_languages.csv");
         $this->bibTables->reprint = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_reprint.csv");
@@ -1402,6 +2152,7 @@ SPARQL;
         $this->bibTables->role = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_role.csv");
         $this->bibTables->type = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/bib_type.csv");
         $this->bibTables->work = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/_work_.csv");
+        $this->bibTables->persons = $this->readCsvWithSingleHeaderToObjectArray("/var/apm/share/person_normalised.csv");
 
 
     }

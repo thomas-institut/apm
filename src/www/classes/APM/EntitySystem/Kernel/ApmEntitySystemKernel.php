@@ -9,7 +9,6 @@ use APM\EntitySystem\Exception\InvalidStatementException;
 use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\InvalidValueException;
 use APM\EntitySystem\Schema\AreaTypes;
-use APM\EntitySystem\Schema\BibObjects;
 use APM\EntitySystem\Schema\BibPredicates;
 use APM\EntitySystem\Schema\Calendars;
 use APM\EntitySystem\Schema\DocumentPredicates;
@@ -114,7 +113,6 @@ class ApmEntitySystemKernel
             new UrlTypes(),
             new Languages(),
             new Materials(),
-            new BibObjects(),
             new AreaTypes(),
             new Calendars(),
             new DocumentTypes(),

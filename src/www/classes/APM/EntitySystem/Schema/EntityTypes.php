@@ -232,24 +232,72 @@ const EntityTypeDefinitions = [
         false
     ],
     [
-        Entity::tBibEntry,
-        'A bibliographical entry',
-        "A bib entry, e.g. about a book or an article",
+        Entity::tBook,
+        'A book',
+        "A book, e. g. the critique of pure reason",
         [],
         [],
         false
     ],
     [
-        Entity::tBibObject,
-        'A bibliographical object',
-        "An object, e.g., a book or a journal",
+        Entity::tBookSection,
+        'A book section',
+        "A book section, e. g. an article in an anthology",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tBookSeries,
+        'A book series',
+        "A book series, to which several books may belong",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tArticle,
+        'An article',
+        "An article, e.g. a paper in a journal",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tJournal,
+        'A  journal',
+        "A journal, e.g. the Kant-Studien",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tOnlineCatalog,
+        'An online catalog',
+        "An online catalog (name taken from DARE)",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tOldCatalog,
+        'An old catalog',
+        "An old catalog (name taken from DARE)",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tRepresentation,
+        'A representation',
+        "A representation of a work, e. g. a translation or edition.",
         [],
         [],
         false
     ],
     [
         Entity::tPublisher,
-        'A publisher,
+        'A publisher',
         "A publisher, e.g., Felix Meiner Verlag",
         [],
         [],

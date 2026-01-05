@@ -2,8 +2,8 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './SiteLang'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
 import { urlGen } from './SiteUrlGen'
-import { ApmApiClient } from '../../Api/ApmApiClient'
-import {getIntVal, getStringVal} from "../../toolbox/UiToolBox";
+import { ApmApiClient } from '@/Api/ApmApiClient'
+import {getIntVal, getStringVal} from "@/toolbox/UiToolBox";
 
 export class NewChunkEditionDialog {
   private options: any;

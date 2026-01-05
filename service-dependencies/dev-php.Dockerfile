@@ -12,6 +12,7 @@ ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/relea
 RUN install-php-extensions gd yaml pdo pdo_mysql intl mbstring iconv zlib sockets posix
 RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y nodejs
+RUN apt-get install -y zip
 # Override default PHP config
 RUN echo "memory_limit=1024M" > /usr/local/etc/php/conf.d/memory-limit.ini
 RUN echo "post_max_size=256M" >/usr/local/etc/php/conf.d/post-size.ini

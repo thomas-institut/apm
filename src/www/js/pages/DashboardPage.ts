@@ -62,7 +62,7 @@ export class DashboardPage extends NormalPage {
 
     $('.new-chunk-edition-btn').on('click', (ev) => {
       ev.preventDefault();
-      let d = new NewChunkEditionDialog({apmDataProxy: this.apiClient});
+      let d = new NewChunkEditionDialog({apiClient: this.apiClient});
       d.createNewChunkEdition();
     });
   }

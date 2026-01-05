@@ -14,7 +14,7 @@ export class NewChunkEditionDialog {
     let oc = new OptionsChecker({
       context: 'NewChunkEditionDialog',
       optionsDefinition: {
-        apmDataProxy: { type: 'object', objectClass: ApmApiClient},
+        apiClient: { type: 'object', objectClass: ApmApiClient},
         debug: { type: 'boolean', default: true},
       }
     })

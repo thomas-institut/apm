@@ -12,7 +12,7 @@ import {SimpleLogger} from "./SimpleLogger/SimpleLogger.js";
 
 
 const Pango = GI.require('Pango');
-const usage = `Usage: node server.mjs  /absolute/path/to/config.yaml`;
+const usage = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 if (process.argv.length < 3) {
   console.log(usage);

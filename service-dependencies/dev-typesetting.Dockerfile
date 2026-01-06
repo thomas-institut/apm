@@ -15,7 +15,7 @@ RUN apt-get install -y wget python3 \
      libcairo2 libcairo2-dev \
      libpangocairo-1.0 gir1.2-pango-1.0
 RUN wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
-RUN apt-get install python3-pip libgirepository-2.0-dev
+RUN apt-get install -y python3-pip libgirepository-2.0-dev
 ENTRYPOINT ["tail", "-f", "/dev/null"]
 
 

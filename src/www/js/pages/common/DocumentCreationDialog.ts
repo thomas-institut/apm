@@ -1,6 +1,6 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './SiteLang'
-import { ApmApiClient } from '../../Api/ApmApiClient'
+import { ApmApiClient } from '@/Api/ApmApiClient'
 import { ApmPage } from '../ApmPage'
 import { wait } from '@/toolbox/wait'
 import { GetDataAndProcessDialog } from './GetDataAndProcessDialog'
@@ -17,7 +17,7 @@ export class DocumentCreationDialog {
       context: 'DocumentCreationDialog',
       optionsDefinition: {
         successWaitTime: { type: 'number', default: 500},
-        apmDataProxy: { type: 'object', objectClass: ApmApiClient},
+        apiClient: { type: 'object', objectClass: ApmApiClient},
         debug: { type: 'boolean', default: true},
       }
     })

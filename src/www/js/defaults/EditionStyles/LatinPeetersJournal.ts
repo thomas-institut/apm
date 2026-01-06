@@ -3,9 +3,9 @@
 import {StyleSheetDefinition} from "../../lib/Typesetter2/Style/StyleSheet.js";
 
 
-export const latinLibertine: StyleSheetDefinition =  {
+export const latinPeetersJournal: StyleSheetDefinition =  {
   _metaData: {
-    name: 'Libertine',
+    name: 'Peeters Journal',
     description: 'A4 paper, Linux Libertine'
   },
   default: {
@@ -19,12 +19,12 @@ export const latinLibertine: StyleSheetDefinition =  {
       entrySeparator:  '\u007c' // single vertical line
     },
     page: {
-      width: "21 cm",
-      height: "29.7 cm",
-      marginTop: "2 cm",
-      marginLeft: "3 cm",
-      marginBottom: "2 cm",
-      marginRight: "3 cm",
+      width: "16 cm",
+      height: "24 cm",
+      marginTop: "3.3846 cm",
+      marginLeft: "3.1579 cm",
+      marginBottom: "3.1579 cm",
+      marginRight: "2.4662 cm",
       minDistanceFromApparatusToText: "12 pt",
       minInterApparatusDistance: "12 pt",
       lineNumbers: "western",   //  "western", "arabic", "none"
@@ -34,15 +34,15 @@ export const latinLibertine: StyleSheetDefinition =  {
       resetLineNumbersEachPage: true
     },
     paragraph: {
-      lineSkip: "18 pt",
-      indent: "0",
+      lineSkip: "12.788 pt",
+      indent: "3.759 mm",
       align: 'justified',
       spaceBefore: "0",
       spaceAfter: "0"
     },
     text: {
-      fontFamily: "Linux Libertine",
-      fontSize: "12 pt",
+      fontFamily: "EB Garamond",
+      fontSize: "11 pt",
       fontStyle: "",
       fontWeight: "",
       shiftY: "0"
@@ -129,10 +129,10 @@ export const latinLibertine: StyleSheetDefinition =  {
   apparatus: {
     parent: "default",
     text: {
-      fontSize: "11 pt",
+      fontSize: "9.4 pt",
     },
     paragraph: {
-      lineSkip: "15 pt"
+      lineSkip: "10.54 pt"
     }
   },
   lineRangeSeparator: {

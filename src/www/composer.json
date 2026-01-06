@@ -1,6 +1,7 @@
 {
 
     "name": "thomas-institut/apm",
+    "version": "1.0.0",
     "description": "Averroes Project Manager",
     "type": "application",
     "keywords": ["mss"],
@@ -13,7 +14,7 @@
     },
 
     "require": {
-        "php": ">=8.3",
+        "php": "^8.3",
         "ext-pdo": "*",
         "ext-json": "*",
         "ext-intl": "*",

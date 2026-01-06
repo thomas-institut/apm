@@ -2,49 +2,48 @@
 
 import {StyleSheetDefinition} from "../../lib/Typesetter2/Style/StyleSheet.js";
 
-
-export const latinLibertine: StyleSheetDefinition =  {
+export const hebrewPeetersJournal: StyleSheetDefinition = {
   _metaData: {
-    name: 'Libertine',
-    description: 'A4 paper, Linux Libertine'
+    name: 'Peeters Journal',
+    description: 'A4 paper, SBL Hebrew'
   },
   default: {
-    strings: {
-      omission: 'om.',
-      addition: 'add.',
-      ante: 'ante',
-      post: 'post',
+    strings : {
+      omission: 'חסר',
+      addition: 'נוסף',
+      ante: 'לפני',
+      post: 'אחרי',
       defaultLemmaSeparator: ']',
       lineRangeSeparator: '\u2016',  // double vertical line
       entrySeparator:  '\u007c' // single vertical line
     },
     page: {
-      width: "21 cm",
-      height: "29.7 cm",
-      marginTop: "2 cm",
-      marginLeft: "3 cm",
-      marginBottom: "2 cm",
-      marginRight: "3 cm",
+      width: "16 cm",
+      height: "24 cm",
+      marginTop: "3.3846 cm",
+      marginLeft: "3.1579 cm",
+      marginBottom: "3.1579 cm",
+      marginRight: "2.4662 cm",
       minDistanceFromApparatusToText: "12 pt",
       minInterApparatusDistance: "12 pt",
       lineNumbers: "western",   //  "western", "arabic", "none"
       lineNumbersToTextDistance: "0.5 cm",
       lineNumbersFontSize: "0.8 em",
       lineNumbersPosition: "left",
-      resetLineNumbersEachPage: true
+      resetLineNumbersEachPage: false
     },
     paragraph: {
-      lineSkip: "18 pt",
-      indent: "0",
+      lineSkip: "12.788 pt",
+      indent: "3.759 mm",
       align: 'justified',
-      spaceBefore: "0",
-      spaceAfter: "0"
+      spaceBefore: '0',
+      spaceAfter: '0'
     },
     text: {
-      fontFamily: "Linux Libertine",
+      fontFamily: 'SBL Hebrew',
       fontSize: "12 pt",
-      fontStyle: "",
-      fontWeight: "",
+      fontStyle: '',
+      fontWeight: '',
       shiftY: "0"
     },
     glue: {
@@ -54,11 +53,8 @@ export const latinLibertine: StyleSheetDefinition =  {
     },
   },
   emGlue: {
-    parent: "",
-    glue: {
-      width: "1 em",
-      shrink: "0.02 em",
-      stretch: "0.08 em"
+    parent: '', glue: {
+      width: '1 em', shrink: '0.02 em', stretch: '0.08 em'
     }
   },
   small:  {
@@ -81,16 +77,17 @@ export const latinLibertine: StyleSheetDefinition =  {
       shiftY: "0.6 em"
     }
   },
+  hebrewText: {
+  },
+  latinText: {
+    text: {
+      fontFamily: "EB Garamond"
+    }
+  },
   normal: {
     parent: 'default',
     paragraph: {
       indent: '1 em'
-    }
-  },
-  arabicText: {
-    parent: "",
-    text: {
-      fontFamily: "Noto Naskh Arabic",
     }
   },
   h1: {
@@ -132,8 +129,13 @@ export const latinLibertine: StyleSheetDefinition =  {
       fontSize: "11 pt",
     },
     paragraph: {
-      lineSkip: "15 pt"
-    }
+      lineSkip: "14 pt"
+    },
+    glue: {
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.08 em"
+    },
   },
   lineRangeSeparator: {
     text: {
@@ -142,16 +144,16 @@ export const latinLibertine: StyleSheetDefinition =  {
   },
   postLineRangeSeparator: {
     glue: {
-      width: "1.25 em",
-      stretch: "0.5 em",
-      shrink: "0.25 em"
+      width: "0.25 em",
+      shrink: "0.02 em",
+      stretch: "0.75 em"
     }
   },
   preEntrySeparator : {
     glue: {
-      width: "0.5 em",
-      stretch: "0.25 em",
-      shrink: "0.05 em"
+      width: "0.25 em",
+      shrink: "0.05 em",
+      stretch: "0.5 em"
     }
   },
   entrySeparator: {
@@ -161,9 +163,9 @@ export const latinLibertine: StyleSheetDefinition =  {
   },
   postEntrySeparator: {
     glue: {
-      width: "1.25 em",
-      stretch: "0.5 em",
-      shrink: "0.25 em"
+      width: "0.25 em",
+      shrink: "0.05 em",
+      stretch: "0.5 em"
     }
   },
   apparatusLineNumbers: {
@@ -173,12 +175,12 @@ export const latinLibertine: StyleSheetDefinition =  {
   },
   apparatusKeyword: {
     text: {
-      fontStyle: 'italic',
+      fontSize: "0.8 em",
     }
   },
   sigla: {
     text: {
-      fontStyle: 'italic',
+      fontWeight: "bold"
     }
   },
   hand: {

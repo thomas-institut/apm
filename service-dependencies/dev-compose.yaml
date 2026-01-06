@@ -42,6 +42,11 @@ services:
     depends_on:
       - mysql
 
+ #
+ # In the development machine, copy apm/composer.phar to apm/dev-tmp/share/composer.phar
+ # Run the PHP container and execute: php /var/apm/composer.phar install
+#
+
   typesetting:
     container_name: typesetting
     build:

@@ -78,19 +78,16 @@ const StatusReady = 'ready';
 
 
 function App() {
-  return (
-    <StrictMode>
+  return (<StrictMode>
       <BrowserRouter>
         <RealApp/>
       </BrowserRouter>
-    </StrictMode>
-    );
+    </StrictMode>);
 }
 
 export default App;
 
 function RealApp() {
-
 
   const queryClient = new QueryClient();
   const location = useLocation();
@@ -120,7 +117,6 @@ function RealApp() {
   };
 
   const appContext = useRef<AppContextProps>(DefaultAppContext);
-
   const initialize = () => {
     if (status !== StatusStart) {
       return;
@@ -167,7 +163,6 @@ function RealApp() {
       setStatus(StatusErrorLoadingSettings);
     });
   };
-
   const checkAuthentication = async () => {
     // console.log(`Checking authentication, status is ${status} and firstRun is ${firstRun}`);
     const firingStates = [StatusInitializationReady, StatusReady];
@@ -212,14 +207,7 @@ function RealApp() {
     navigate(RouteUrls.login());
   };
 
-
-  const routesWithTopBar = [RouteUrls.home(), RouteUrls.docs(),
-
-    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(),
-
-    RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocument(),
-
-  ];
+  const routesWithTopBar = [RouteUrls.home(), RouteUrls.docs(), RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocument(),];
 
   const routeMatches = routesWithTopBar.map(path => useMatch(path));
   const routeShouldHaveTopBar = routeMatches.some(match => match !== null);

@@ -33,10 +33,14 @@ use APM\System\Transcription\TxText\Item;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\DateTimeFormat;
 use Exception;
+use stdClass;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
 use Typesense\Exceptions\TypesenseClientError;
+use GuzzleHttp\Client as HttpClient;
+
+
 
 
 /**
@@ -102,6 +106,24 @@ class IndexManager extends CommandLineUtility
         if (!isset($argv[4])) {$argv[4] = "";}
 
         switch ($operation) {
+            case 'csvFromDocTitles':
+                $this->createCsvTablesFromDocTitles();
+                break;
+
+            case 'csvFromDare':
+                $this->createCsvTableWithInstitutionCodesAndNames();
+                break;
+
+            case 'cityNames':
+                $city = $this->getCityNamesByUNLocode($argv[3]);
+                print_r($city);
+                break;
+
+            case 'countryNames':
+                $country = $this->getCountryNamesByAlpha2($argv[3]);
+                print_r($country);
+                break;
+
             case 'build': // create new or replace existing index with a specific name
                 $this->buildIndex();
                 break;
@@ -536,6 +558,7 @@ END;
 
         return '';
     }
+
 
     /**
      * Returns information about an item in the sql database.

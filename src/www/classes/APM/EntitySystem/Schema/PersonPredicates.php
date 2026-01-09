@@ -121,6 +121,54 @@ const PersonPredicateDefs = [
         'canBeCancelled' => true,
         'singleProperty' => false,
         'flags' => []
+    ],
+    [
+        'id' => Entity::rAuthorOf,
+        'type' => Entity::tRelation,
+        'name' => 'AuthorOf',
+        'descr' => "The person is the author of a bib object",
+        'reversePredicate' => Entity::rAuthoredBy,
+        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tInstitution],
+        'allowedObjectTypes'=> [ Entity::tBook, Entity::tBookSection, Entity::tArticle],
+        'canBeCancelled' => true,
+        'singleProperty' => false,
+        'flags' => []
+    ],
+    [
+        'id' => Entity::rEditorOf,
+        'type' => Entity::tRelation,
+        'name' => 'EditorOf',
+        'descr' => "The person is the editor of a bib object",
+        'reversePredicate' => Entity::rEditedBy,
+        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tInstitution],
+        'allowedObjectTypes'=>[ Entity::tBook, Entity::tBookSeries, Entity::tJournal, Entity::tRepresentation],
+        'canBeCancelled' => true,
+        'singleProperty' => false,
+        'flags' => []
+    ],
+    [
+        'id' => Entity::rTranslatorOf,
+        'type' => Entity::tRelation,
+        'name' => 'TranslatorOf',
+        'descr' => "The person is the translator of a bib object",
+        'reversePredicate' => Entity::rTranslatedBy,
+        'allowedSubjectTypes' => [ Entity::tPerson, Entity::tInstitution],
+        'allowedObjectTypes'=> [ Entity::tBook, Entity::tBookSection, Entity::tArticle, Entity::tRepresentation],
+        'canBeCancelled' => true,
+        'singleProperty' => false,
+        'flags' => []
+    ],
+    [
+        'id' => Entity::rDareReviewerOf,
+        'type' => Entity::tRelation,
+        'name' => 'ReviewerOf (Dare)',
+        'descr' => "The person is the reviewer of a dare bib entry.",
+        'reversePredicate' => Entity::rDareReviewedBy,
+        'allowedSubjectTypes' => [ Entity::tPerson],
+        'allowedObjectTypes'=> [ Entity::tBook, Entity::tBookSeries, Entity::tBookSection, Entity::tArticle, Entity::tOldCatalog, Entity::tOnlineCatalog],
+        'canBeCancelled' => true,
+        'singleProperty' => false,
+        'flags' => []
     ]
 
 ];

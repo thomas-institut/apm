@@ -119,7 +119,7 @@ class ApmSystemManager extends SystemManager {
     const int DB_VERSION = 37;
 
     // Entity system Data ID: key for entity system caches
-    const string ES_DATA_ID = '0009';
+    const string ES_DATA_ID = '0010'; // 2026 Jan 9
 
     const string MemCachePrefix_Apm_ES = 'Es';
     const string MemCachePrefix_TypedMultiStorage_ES = 'MsEs';

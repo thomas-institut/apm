@@ -199,6 +199,110 @@ const EntityTypeDefinitions = [
         [],
         true
     ],
+    [
+        Entity::tCountry,
+        'Country',
+        "A country, e.g., Germany",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tCity,
+        'City',
+        "A city, e.g., Berlin",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tInstitution,
+        'Institution',
+        "An institution, e.g., Berliner Staatsbibliothek",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tDareMaterial,
+        'Document Material (Dare)',
+        "A material, e.g., paper",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tBook,
+        'A book',
+        "A book, e. g. the critique of pure reason",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tBookSection,
+        'A book section',
+        "A book section, e. g. an article in an anthology",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tBookSeries,
+        'A book series',
+        "A book series, to which several books may belong",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tArticle,
+        'An article',
+        "An article, e.g. a paper in a journal",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tJournal,
+        'A  journal',
+        "A journal, e.g. the Kant-Studien",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tOnlineCatalog,
+        'An online catalog',
+        "An online catalog (name taken from DARE)",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tOldCatalog,
+        'An old catalog',
+        "An old catalog (name taken from DARE)",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tRepresentation,
+        'A representation',
+        "A representation of a work, e. g. a translation or edition.",
+        [],
+        [],
+        false
+    ],
+    [
+        Entity::tPublisher,
+        'A publisher',
+        "A publisher, e.g., Felix Meiner Verlag",
+        [],
+        [],
+        false
+    ],
 ];
 
 class EntityTypes implements EntityTypeDefiner

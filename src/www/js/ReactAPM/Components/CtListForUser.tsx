@@ -3,6 +3,8 @@ import PersonLink from "@/ReactAPM/Components/PersonLink";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Link} from "react-router";
+import {urlGen} from "@/pages/common/SiteUrlGen";
+import {Tid} from "@/Tid/Tid";
 
 type ListType = 'ctable' | 'edition';
 interface CtListForUserProps {
@@ -79,10 +81,11 @@ export default function CtListForUser(props: CtListForUserProps) {
           (a,b) => {return parseInt(a.chunk) - parseInt(b.chunk)}
         ).map((ctableInfo: TableInfo) => {
           const url = type === 'edition' ? RouteUrls.singleChunkEdition(ctableInfo.id) : RouteUrls.collationTable(ctableInfo.id);
+          const entityType = type === 'edition' ? 'singleChunkEdition' : 'collationTable';
           return (
             <p key={ctableInfo.id} className="dashboard-list-item-2">
-              <Link to={RouteUrls.chunk(ctTablesByWorkItem.entityId, parseInt(ctableInfo.chunk))}>{ctableInfo.chunk}</Link>
-              : <Link to={url}>{ctableInfo.title}</Link>
+              <a href={urlGen.siteChunkPage(ctableInfo.work, parseInt(ctableInfo.chunk))}>{ctableInfo.chunk}</a> :
+              <EntityLink id={ctableInfo.id} type={entityType} name={ctableInfo.title} active={true} openInNewTab={true}/>
             </p>
           )
         })

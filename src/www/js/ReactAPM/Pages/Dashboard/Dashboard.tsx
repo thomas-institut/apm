@@ -13,7 +13,7 @@ import {useDataStore} from "@/ReactAPM/Stores/DataStore";
 
 
 export default function Dashboard() {
-  document.title = "Dashboard (beta)";
+  document.title = "Dashboard";
 
   const appContext = useContext(AppContext);
   const userId = appContext.userId;

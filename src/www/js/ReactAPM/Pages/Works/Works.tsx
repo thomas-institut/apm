@@ -9,6 +9,7 @@ import PersonLink from "@/ReactAPM/Components/PersonLink";
 import {WorkId} from "@/toolbox/WorkId";
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
 import {varsAreEqual} from "@/toolbox/ObjectUtil";
+import {ApmUrlGenerator} from "@/ApmUrlGenerator";
 
 export interface WorksByAuthorData {
   authorId: number;
@@ -33,10 +34,11 @@ interface ChunkData {
 
 export default function Works() {
 
-  document.title = 'Works (beta)';
+  document.title = 'Works';
   const appContext = useContext(AppContext);
   const data = useDataStore((state) => state.worksByAuthorData);
   const setData = useDataStore((state) => state.setWorksByAuthorData);
+  const urlGen = new ApmUrlGenerator(appContext.baseUrl);
 
   const getWorksData = async () => {
 
@@ -106,7 +108,7 @@ export default function Works() {
                                    header={<EntityLink id={workData.entityId} type='work' name={`${workData.workId}: ${workData.title}`}/>} startOpen={false}>
                   <div className="worksChunksDiv">
                     {workData.chunks.map((chunkData) => {
-                      return (<div className="chunkDiv" key={chunkData.chunkNumber}>{chunkData.chunkNumber}</div>);
+                      return (<div className="chunkDiv" key={chunkData.chunkNumber}><a href={urlGen.siteChunkPage(workData.workId, chunkData.chunkNumber)}>{chunkData.chunkNumber}</a></div>);
                     })}
                   </div>
                 </Collapsible>);

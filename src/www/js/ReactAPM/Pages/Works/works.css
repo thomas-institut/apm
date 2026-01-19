@@ -20,6 +20,7 @@ div.workCollapsible {
 div.worksChunksDiv {
     margin-top: 1em;
     margin-left: 5em;
+    margin-bottom: 2em;
     display: grid;
     gap: 0.5em;
     grid-template-columns: repeat(20, 2.5em);

@@ -1,4 +1,4 @@
-import {RefObject, useContext, useRef, useState} from "react";
+import {RefObject, useContext, useRef, useState, KeyboardEvent} from "react";
 import {AppContext} from "./App";
 import {urlGen} from "@/pages/common/SiteUrlGen";
 import '../../css/login.css';
@@ -7,7 +7,7 @@ import {Eye, EyeSlash} from "react-bootstrap-icons";
 
 export default function Login() {
 
-  document.title = "Login";
+  document.title = "APM Login";
 
   const appContext = useContext(AppContext);
   const logoUrl = urlGen.images() + '/apm-logo-plain.svg';
@@ -46,7 +46,14 @@ export default function Login() {
     }
   }
 
-  return (<div className="login-div">
+  const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Enter') {
+      console.log('Enter pressed');
+      handleLogin().then();
+    }
+  }
+
+  return (<div className="login-div" onKeyDown={handleKeyDown}>
     <div className="mb-3" style={{display: "flex", justifyContent: "space-around", width: "100%"}}>
       <span className="login-logo">APM</span> <img src={logoUrl} alt="APM" width="250"/>
     </div>

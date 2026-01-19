@@ -118,12 +118,13 @@ try {
 
 
 // Create routes
-createSiteUnauthenticatedRoutes($app, $container);
-createBetaSiteRoutes($app, $container);
-createSiteRoutes($app, $container);
-createSiteDevRoutes($app, $container);
 createApiAuthenticatedRoutes($app, $container);
 createApiUnauthenticatedRoutes($app, $container);
+createSiteUnauthenticatedRoutes($app, $container);
+createBetaSiteRoutes($app, $container);
+createSiteDevRoutes($app, $container);
+createSiteRoutes($app, $container); // must be the last
+
 
 // RUN!!
 SystemProfiler::lap('Ready');
@@ -144,20 +145,12 @@ function exitWithErrorMessage(string $msg): void
 function createBetaSiteRoutes(App $app, ContainerInterface $container): void
 {
 
-    $app->group('/beta', function (RouteCollectorProxy $group) use ($container) {
-
-        $group->get('/app-settings', function (Request $request, Response $response) use ($container) {
-            return (new SiteSettings($container))->getSiteSettings($request, $response);
-        });
-
-
-        $group->get('{path:.*}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteReact($container))->ReactMain($request, $response);
-            });
-
-
-    });
+//    $app->group('/beta', function (RouteCollectorProxy $group) use ($container) {
+//        $group->get('{path:.*}',
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SiteReact($container))->ReactMain($request, $response);
+//            });
+//    });
 
 
 }
@@ -166,11 +159,12 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 {
     $app->group('', function (RouteCollectorProxy $group) use ($container) {
         // HOME
-        $group->get('/',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteHomePage($container))->homePage($response);
-            })
-            ->setName('home');
+//        $group->get('/',
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SiteHomePage($container))->homePage($response);
+//            })
+//            ->setName('home');
+
 
         // Search Page
         $group->get('/search',
@@ -181,11 +175,11 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 
         // People and Person Pages
 
-        $group->get('/people',
-            function (Request $request, Response $response) use ($container) {
-                return (new SitePeople($container))->peoplePage($request, $response);
-            })
-            ->setName('people');
+//        $group->get('/people',
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SitePeople($container))->peoplePage($request, $response);
+//            })
+//            ->setName('people');
 
         $group->get('/person/{id}',
             function (Request $request, Response $response) use ($container) {
@@ -201,19 +195,19 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
             ->setName('entity');
 
         // DASHBOARD
-        $group->get('/dashboard',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteDashboard($container))->DashboardPage($request, $response);
-            })
-            ->setName('dashboard');
+//        $group->get('/dashboard',
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SiteDashboard($container))->DashboardPage($request, $response);
+//            })
+//            ->setName('dashboard');
 
         // WORKS
 
-        $group->get('/works',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteWorks($container))->worksPage($request, $response);
-            })
-            ->setName('works');
+//        $group->get('/works',
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SiteWorks($container))->worksPage($request, $response);
+//            })
+//            ->setName('works');
 
         $group->get('/work/{id}',
             function (Request $request, Response $response) use ($container) {
@@ -283,11 +277,11 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 
         // DOCS
 
-        $group->get('/documents',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteDocuments($container))->documentsPage($request, $response);
-            })
-            ->setName('docs');
+//        $group->get('/documents',
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SiteDocuments($container))->documentsPage($request, $response);
+//            })
+//            ->setName('docs');
 
 
         // will be deprecated soon
@@ -319,6 +313,12 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
                 return (new SiteDocuments($container))->documentPage($request, $response, $args);
             })
             ->setName('doc.show');
+
+        // for everything else, go to React
+        $group->get('{path:.*}',
+            function (Request $request, Response $response) use ($container) {
+                return (new SiteReact($container))->ReactMain($request, $response);
+            });
 
 
     })->add(function (Request $request, RequestHandlerInterface $handler) use ($container) {
@@ -880,16 +880,18 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterfa
 function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container): void
 {
     $app->any('/login',
+
         function (Request $request, Response $response) use ($container) {
-            return (new Authenticator($container))->login($request, $response);
+            return (new SiteReact($container))->ReactMain($request, $response);
+//            return (new Authenticator($container))->login($request, $response);
         })
         ->setName('login');
-
-    $app->any('/logout',
-        function (Request $request, Response $response) use ($container) {
-            return (new Authenticator($container))->logout($request, $response);
-        })
-        ->setName('logout');
+//
+//    $app->any('/logout',
+//        function (Request $request, Response $response) use ($container) {
+//            return (new Authenticator($container))->logout($request, $response);
+//        })
+//        ->setName('logout');
 
     $app->get('/app-settings', function (Request $request, Response $response) use ($container) {
         return (new SiteSettings($container))->getSiteSettings($request, $response);

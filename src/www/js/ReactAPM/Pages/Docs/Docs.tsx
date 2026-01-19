@@ -33,7 +33,7 @@ export interface DocsTableItem {
 }
 
 export default function Docs() {
-  document.title = 'Documents (beta)';
+  document.title = 'Documents';
   const appContext = useContext(AppContext);
   const data = useDataStore((state) => state.docsTableData);
   const setData = useDataStore((state) => state.setDocsTableData);

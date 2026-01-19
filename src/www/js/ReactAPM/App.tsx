@@ -5,14 +5,19 @@ import {setBaseUrl} from "@/pages/common/SiteUrlGen";
 import {DataId_EC_ViewOptions} from "@/constants/WebStorageDataId";
 import {setSiteLanguage} from "@/pages/common/SiteLang";
 import {ApmFormats} from "@/pages/common/ApmFormats";
-import {BrowserRouter, Route, Routes, useLocation, useMatch, useNavigate} from "react-router";
+import {BrowserRouter, Navigate, Route, Routes, useLocation, useMatch, useNavigate} from "react-router";
 import Login from "@/ReactAPM/Login";
-import {Context, createContext, lazy, StrictMode, useEffect, useRef, useState} from "react";
+import {Context, createContext, lazy, StrictMode, useContext, useEffect, useRef, useState} from "react";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import TopBar from "@/ReactAPM/TopBar";
 import {RouteUrls} from './Router/RouteUrls';
 import {deleteToken, retrieveToken, storeToken} from "@/ReactAPM/ToolBox/AuthenticationUtilities";
+<<<<<<< Updated upstream
 import {trimCharacters} from "@/toolbox/Util";
+=======
+import {trimCharacters} from "@/toolbox/Util.mjs";
+import NotFound from "@/ReactAPM/NotFound";
+>>>>>>> Stashed changes
 
 // @ts-ignore
 const Dashboard = lazy(() => import('@/ReactAPM/Pages/Dashboard/Dashboard.js'));
@@ -39,7 +44,7 @@ const Document = lazy(() => import('./Pages/Document.js'));
 
 
 const AppSettingsUrl: string = "app-settings";
-const ReactAppBaseUrlSuffix = '/beta';
+const ReactAppBaseUrlSuffix = '';
 const ApmTokenKey = 'apm-token';
 const ApmTokenCookie = 'rme2';
 const DefaultSiteLanguage = 'en';
@@ -53,6 +58,16 @@ export interface AppContextProps {
   reactAppBaseUrl: string,
   localCache: WebStorageKeyCache;
   apiClient: ApmApiClient;
+}
+
+interface AppSettings {
+  appVersion: string;
+  _info: string;
+  baseUrl: string;
+  cacheDataId: string;
+  versionDate: string;
+  versionExtra: string;
+  devMode: boolean;
 }
 
 const DefaultAppContext: AppContextProps = {
@@ -79,10 +94,17 @@ const StatusReady = 'ready';
 
 function App() {
   return (<StrictMode>
+<<<<<<< Updated upstream
       <BrowserRouter>
         <RealApp/>
       </BrowserRouter>
     </StrictMode>);
+=======
+    <BrowserRouter>
+      <RealApp/>
+    </BrowserRouter>
+  </StrictMode>);
+>>>>>>> Stashed changes
 }
 
 export default App;
@@ -100,20 +122,31 @@ function RealApp() {
     return url.pathname;
   }
 
-  const appSettingsLoader = async () => {
+  const appSettingsLoader: () => Promise<AppSettings> = async () => {
     const basePathName = trimCharacters(window.location.pathname, ['/']);
-    const reactAppSuffix = trimCharacters(ReactAppBaseUrlSuffix, ['/']);
+    let subDirs = basePathName.split('/');
+    subDirs = ['', ...subDirs];
+    const appSettingsPossibleUrls = subDirs.map(dir => dir + '/' + AppSettingsUrl);
 
-    const subDirs = basePathName.split('/');
-    const reactSuffixIndex = subDirs.indexOf(reactAppSuffix);
-    if (reactSuffixIndex === -1) {
-      throw new Error(`React app base URL '${ReactAppBaseUrlSuffix}' not found in path '${basePathName}'`);
+    for (let i = 0; i < appSettingsPossibleUrls.length; i++) {
+      const appSettingsPath = appSettingsPossibleUrls[i];
+      // console.log(`Trying app settings path '${appSettingsPath}'`);
+      const response = await fetch(appSettingsPath);
+      if (response.ok) {
+        try {
+          const data = await response.json();
+          if (data.devMode) {
+            //console.log(`Loaded app settings from '${appSettingsPath}'`);
+          }
+          return data;
+        } catch (error) {
+          // console.log(`Error parsing JSON from '${appSettingsPath}': ${error}`);
+        }
+      }
     }
-    const appSettingsPath = (reactSuffixIndex === 0 ? '' : ('/' + subDirs.slice(0, reactSuffixIndex).join('/'))) + '/' + AppSettingsUrl;
 
-    console.log(`Loading app settings from ${appSettingsPath}`);
-    const response = await fetch(appSettingsPath);
-    return await response.json();
+    throw new Error(`Could not find app settings file '${AppSettingsUrl}' in any of the subdirectories of '${basePathName}'`);
+
   };
 
   const appContext = useRef<AppContextProps>(DefaultAppContext);
@@ -123,14 +156,19 @@ function RealApp() {
     }
     setStatus(StatusLoadingSettings);
     appSettingsLoader().then(async (data) => {
-      console.log(`Loaded app settings`, data);
+      // console.log(`Loaded app settings`, data);
       setStatus(StatusInitializing);
+      console.log(`Welcome to APM ${data.appVersion} (${data.versionDate}${data.versionExtra !== '' ? ', ' + data.versionExtra : ''})`);
+      if (data.devMode) {
+        console.log('Running in development mode');
+        console.log(` - cacheDataId = ${data.cacheDataId}`);
+        console.log(` - baseUrl = ${data.baseUrl}`);
+      }
       const baseUrl: string = data.baseUrl;
       const apiBaseUrl: string = data.baseUrl + '/api';
       const apmBasePathName: string = getApmBasePathName(baseUrl);
 
       const reactAppBaseUrl: string = (apmBasePathName === '/' ? '' : apmBasePathName) + ReactAppBaseUrlSuffix;
-      console.log(`React app base URL is '${reactAppBaseUrl}'`);
 
       setBaseUrl(baseUrl, apiBaseUrl);
       const localCache = new WebStorageKeyCache('local', data.cacheDataId);
@@ -207,7 +245,18 @@ function RealApp() {
     navigate(RouteUrls.login());
   };
 
+<<<<<<< Updated upstream
   const routesWithTopBar = [RouteUrls.home(), RouteUrls.docs(), RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocument(),];
+=======
+
+  const routesWithTopBar = [RouteUrls.home(), RouteUrls.dashboard(), RouteUrls.docs(),
+
+    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(),
+
+    RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocument(),
+
+  ];
+>>>>>>> Stashed changes
 
   const routeMatches = routesWithTopBar.map(path => useMatch(path));
   const routeShouldHaveTopBar = routeMatches.some(match => match !== null);
@@ -236,8 +285,10 @@ function RealApp() {
           }}>
             {routeShouldHaveTopBar && (<TopBar style={{flexGrow: 0}} onLogout={handleLogout}/>)}
             <Routes>
-              <Route id="home" path={RouteUrls.home()} element={<Dashboard/>}/>
-              <Route id="home2" path={RouteUrls.homeWithTrailingSlash()} element={<Dashboard/>}/>
+              <Route id="home" path={RouteUrls.home()} element={<Navigate to={RouteUrls.dashboard()} replace/>}/>
+              <Route id="home2" path={RouteUrls.homeWithTrailingSlash()}
+                     element={<Navigate to={RouteUrls.dashboard()} replace/>}/>
+              <Route id="dashboard" path={RouteUrls.dashboard()} element={<Dashboard/>}/>
               <Route id="docs" path={RouteUrls.docs()} element={<Docs/>}/>
               <Route id="works" path={RouteUrls.works()} element={<Works/>}/>
               <Route id="people" path={RouteUrls.people()} element={<People/>}/>
@@ -250,6 +301,8 @@ function RealApp() {
               <Route id="person" path={RouteUrls.patternPerson()} element={<Person/>}/>
               <Route id="doc" path={RouteUrls.patternDocument()} element={<Document/>}/>
               <Route id="login" path={RouteUrls.login()} element={<Login/>}/>
+              <Route id="logout" path={RouteUrls.logout()} element={<Logout/>}/>
+              <Route id="catchall" path="*" element={<NotFound/>}></Route>
             </Routes>
           </div>
           )
@@ -257,4 +310,19 @@ function RealApp() {
       </AppContext>);
 
   }
+}
+
+
+function Logout() {
+  const navigate = useNavigate();
+  const appContext = useContext(AppContext);
+  const handleLogout = () => {
+    deleteToken(appContext.localCache, ApmTokenKey, ApmTokenCookie);
+    navigate(RouteUrls.login());
+  };
+
+  useEffect(() => {
+    handleLogout();
+  }, []);
+  return (<div>Logging out...</div>);
 }

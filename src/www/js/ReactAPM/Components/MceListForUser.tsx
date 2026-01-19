@@ -2,6 +2,7 @@ import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEditio
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Link} from "react-router";
 import {FilePlus} from "react-bootstrap-icons";
+import EntityLink from "@/ReactAPM/Components/EntityLink";
 
 interface MceListForUserProps {
   itemClassName?: string;
@@ -28,7 +29,7 @@ export default function MceListForUser(props: MceListForUserProps) {
     return a.title.localeCompare(b.title);
   }).map((item: any) => {
     return <p key={item.id} className={props.itemClassName}>
-      <Link to={RouteUrls.multiChunkEdition(item.id)}>{item.title}</Link>
+      <EntityLink id={item.id} name={item.title} type="multiChunkEdition" active={true} openInNewTab={true}/>
     </p>;
   });
   return <>

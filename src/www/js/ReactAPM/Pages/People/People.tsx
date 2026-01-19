@@ -25,7 +25,7 @@ export interface PeopleTableItem {
 
 
 export default function People() {
-  document.title = 'People (beta)';
+  document.title = 'People';
   const appContext = useContext(AppContext);
   const data = useDataStore((state) => state.peopleTableData);
   const setData = useDataStore((state) => state.setPeopleTableData);

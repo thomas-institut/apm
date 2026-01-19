@@ -9,6 +9,7 @@ use APM\EntitySystem\Exception\InvalidStatementException;
 use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Exception\InvalidValueException;
 use APM\EntitySystem\Schema\AreaTypes;
+use APM\EntitySystem\Schema\BibPredicates;
 use APM\EntitySystem\Schema\Calendars;
 use APM\EntitySystem\Schema\DocumentPredicates;
 use APM\EntitySystem\Schema\DocumentTypes;
@@ -19,6 +20,7 @@ use APM\EntitySystem\Schema\EntityTypes;
 use APM\EntitySystem\Schema\GeoPredicates;
 use APM\EntitySystem\Schema\IdTypes;
 use APM\EntitySystem\Schema\Languages;
+use APM\EntitySystem\Schema\Materials;
 use APM\EntitySystem\Schema\OrganizationTypes;
 use APM\EntitySystem\Schema\PageTypes;
 use APM\EntitySystem\Schema\PersonPredicates;
@@ -96,7 +98,8 @@ class ApmEntitySystemKernel
             new EditionSourcePredicates(),
             new GeoPredicates(),
             new LegacyDatabaseIdPredicates(),
-            new DocumentPredicates()
+            new DocumentPredicates(),
+            new BibPredicates()
         ];
 
         $valueTypeDefiners = [
@@ -109,6 +112,7 @@ class ApmEntitySystemKernel
             new OrganizationTypes(),
             new UrlTypes(),
             new Languages(),
+            new Materials(),
             new AreaTypes(),
             new Calendars(),
             new DocumentTypes(),

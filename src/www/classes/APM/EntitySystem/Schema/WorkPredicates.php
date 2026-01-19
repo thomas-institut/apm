@@ -52,6 +52,17 @@ const WorkPredicateDef = [
         'singleProperty' => true,
         'flags' => [ PredicateFlag::SystemPredicate ]
     ],
+    [
+        'id' => Entity::pDareRepresentedWorkId,
+        'type' => Entity::tAttribute,
+        'name' => 'Work Id (Dare)',
+        'descr' => "Id of a work in dare.",
+        'allowedSubjectTypes' => [ Entity::tRepresentation],
+        'allowedObjectTypes'=> [ Entity::ValueTypeText],
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [ ]
+    ]
 
 ];
 

@@ -15,10 +15,8 @@ export const TranscriptionLanguages = [
  *
  * Returns an empty string if the given id does not correspond to
  * a configured transcription language.
- * @param langId
- * @returns {string}
  */
-export function getLangCodeFromLangId (langId) {
+export function getLangCodeFromLangId (langId: number) {
   for (let i = 0; i < TranscriptionLanguages.length; i++) {
     if (TranscriptionLanguages[i].id === langId) {
       return TranscriptionLanguages[i].code
@@ -31,18 +29,17 @@ export function getLangCodeFromLangId (langId) {
  * Returns the language entity id for the given language ISO code or
  * -1 if the given code is not defined
  *
- * @param langCode
- * @returns {number}
  */
-export function getLangIdFromLangCode (langCode) {
+export function getLangIdFromLangCode (langCode: string) {
   for (let i = 0; i < TranscriptionLanguages.length; i++) {
     if (TranscriptionLanguages[i].code === langCode) {
       return TranscriptionLanguages[i].id
     }
   }
+  return -1;
 }
 
-export function getLangName (langId) {
+export function getLangName (langId: number) {
   for (let i = 0; i < TranscriptionLanguages.length; i++) {
     if (TranscriptionLanguages[i].id === langId) {
       return TranscriptionLanguages[i].name

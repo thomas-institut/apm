@@ -197,6 +197,10 @@ div.anchor-list-item.active {
     color: black;
 }
 
+.hidden {
+    display: none;
+}
+
 /* Some animations */
 
 

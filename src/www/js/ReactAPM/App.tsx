@@ -12,12 +12,9 @@ import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import TopBar from "@/ReactAPM/TopBar";
 import {RouteUrls} from './Router/RouteUrls';
 import {deleteToken, retrieveToken, storeToken} from "@/ReactAPM/ToolBox/AuthenticationUtilities";
-<<<<<<< Updated upstream
 import {trimCharacters} from "@/toolbox/Util";
-=======
-import {trimCharacters} from "@/toolbox/Util.mjs";
 import NotFound from "@/ReactAPM/NotFound";
->>>>>>> Stashed changes
+
 
 // @ts-ignore
 const Dashboard = lazy(() => import('@/ReactAPM/Pages/Dashboard/Dashboard.js'));
@@ -94,17 +91,10 @@ const StatusReady = 'ready';
 
 function App() {
   return (<StrictMode>
-<<<<<<< Updated upstream
       <BrowserRouter>
         <RealApp/>
       </BrowserRouter>
     </StrictMode>);
-=======
-    <BrowserRouter>
-      <RealApp/>
-    </BrowserRouter>
-  </StrictMode>);
->>>>>>> Stashed changes
 }
 
 export default App;
@@ -245,9 +235,7 @@ function RealApp() {
     navigate(RouteUrls.login());
   };
 
-<<<<<<< Updated upstream
-  const routesWithTopBar = [RouteUrls.home(), RouteUrls.docs(), RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocument(),];
-=======
+
 
   const routesWithTopBar = [RouteUrls.home(), RouteUrls.dashboard(), RouteUrls.docs(),
 
@@ -256,7 +244,6 @@ function RealApp() {
     RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocument(),
 
   ];
->>>>>>> Stashed changes
 
   const routeMatches = routesWithTopBar.map(path => useMatch(path));
   const routeShouldHaveTopBar = routeMatches.some(match => match !== null);

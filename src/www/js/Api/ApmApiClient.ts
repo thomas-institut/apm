@@ -44,6 +44,7 @@ import {
 import {ApiWorksAll, WorkData} from "@/Api/DataSchema/ApiWorks";
 import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
 import {ApiSiglaPreset, ApiPresetsQuery, ApiAutomaticCollationTablePreset} from "@/Api/DataSchema/ApiPresets";
+import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -221,8 +222,8 @@ export class ApmApiClient {
     return await this.getAlmostStaticData('SystemLanguages', urlGen.apiSystemGetLanguages());
   }
 
-  async getAuthors(): Promise<any> {
-    return this.get(urlGen.apiWorksGetAuthors(), false, TtlOneMinute);
+  async getAuthors(): Promise<number[]> {
+    return this.get(urlGen.apiWorksGetAuthors(), false, TtlOneHour);
   }
 
   /**
@@ -388,8 +389,8 @@ export class ApmApiClient {
     return this.get(urlGen.apiDocumentsAllDocumentsData());
   }
 
-  async getPersonWorks(personTid: number): Promise<any> {
-    return this.get(urlGen.apiPersonGetWorks(personTid), false, TtlOneMinute);
+  async getPersonWorks(personTid: number): Promise<ApiPersonWorksResponse> {
+    return this.get(urlGen.apiPersonGetWorks(personTid), false, TtlOneHour);
   }
 
   /**

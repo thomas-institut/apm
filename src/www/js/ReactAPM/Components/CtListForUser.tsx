@@ -2,11 +2,14 @@ import {ApiUserCollationTables, TableInfo} from "@/Api/DataSchema/ApiUserCollati
 import PersonLink from "@/ReactAPM/Components/PersonLink";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
-import {Link} from "react-router";
-import {urlGen} from "@/pages/common/SiteUrlGen";
-import {Tid} from "@/Tid/Tid";
+import {FilePlus} from "react-bootstrap-icons";
+import {useContext, useState} from "react";
+import {NewChunkEditionDialog, NewChunkEditionParams} from "@/ReactAPM/Components/NewChunkEditionDialog";
+import {AppContext} from "@/ReactAPM/App";
+import {ApmUrlGenerator} from "@/ApmUrlGenerator";
 
 type ListType = 'ctable' | 'edition';
+
 interface CtListForUserProps {
   data: ApiUserCollationTables;
   itemClassName?: string;
@@ -32,7 +35,7 @@ function getWorksByAuthorFromApiData(data: ApiUserCollationTables): WorksByAutho
   data.tableInfo.forEach((item: TableInfo) => {
     let ctTablesByWork = allCtTablesByWork.find(w => w.workId === item.work);
     if (ctTablesByWork === undefined) {
-      ctTablesByWork = {workId: item.work, workTitle: '', entityId: -1,  cTables: []};
+      ctTablesByWork = {workId: item.work, workTitle: '', entityId: -1, cTables: []};
       allCtTablesByWork.push(ctTablesByWork);
     }
     if (ctTablesByWork.workTitle === '') {
@@ -44,7 +47,7 @@ function getWorksByAuthorFromApiData(data: ApiUserCollationTables): WorksByAutho
   const worksByAuthor: WorksByAuthor[] = [];
   Object.keys(data.workInfo).forEach((workId: string) => {
     const workInfo = data.workInfo[workId];
-    let worksByAuthorItem = worksByAuthor.find( w => w.authorId === workInfo.authorId);
+    let worksByAuthorItem = worksByAuthor.find(w => w.authorId === workInfo.authorId);
     if (worksByAuthorItem === undefined) {
       worksByAuthorItem = {authorId: workInfo.authorId, authorName: workInfo.author_name, works: []};
       worksByAuthor.push(worksByAuthorItem);
@@ -60,8 +63,27 @@ function getWorksByAuthorFromApiData(data: ApiUserCollationTables): WorksByAutho
 
 export default function CtListForUser(props: CtListForUserProps) {
 
-  const data= props.data;
+  const data = props.data;
   const type = props.type;
+
+  const [showEditionCreationDialog, setShowEditionCreationDialog] = useState(false);
+  const context = useContext(AppContext);
+  const urlGen = new ApmUrlGenerator(context.baseUrl);
+
+
+  const handleCreate = async (params: NewChunkEditionParams) => {
+
+    if (type !== 'edition') {
+      return;
+    }
+    console.log(`Creating new chunk edition`, params);
+    window.open(urlGen.siteChunkEditionNew(params.workId, params.chunkNumber, params.language));
+    setShowEditionCreationDialog(false);
+  };
+
+  const handleHide = () => {
+    setShowEditionCreationDialog(false);
+  };
 
 
   const getListItems = (worksByAuthor: WorksByAuthor[], type: ListType) => {
@@ -69,50 +91,57 @@ export default function CtListForUser(props: CtListForUserProps) {
       return (<div><em>None</em></div>);
     }
 
+
     return worksByAuthor.map((worksByAuthorItem: WorksByAuthor) => {
       return worksByAuthorItem.works.map((ctTablesByWorkItem: CtTablesByWork) => {
 
-        const cTables = ctTablesByWorkItem.cTables.filter(  ctableInfo => ctableInfo.type === type);
+        const cTables = ctTablesByWorkItem.cTables.filter(ctableInfo => ctableInfo.type === type);
 
         if (cTables.length === 0) {
           return null;
         }
-        const tableElems = cTables.sort(
-          (a,b) => {return parseInt(a.chunk) - parseInt(b.chunk)}
-        ).map((ctableInfo: TableInfo) => {
+        const tableElems = cTables.sort((a, b) => {
+          return parseInt(a.chunk) - parseInt(b.chunk);
+        }).map((ctableInfo: TableInfo) => {
           const url = type === 'edition' ? RouteUrls.singleChunkEdition(ctableInfo.id) : RouteUrls.collationTable(ctableInfo.id);
           const entityType = type === 'edition' ? 'singleChunkEdition' : 'collationTable';
-          return (
-            <p key={ctableInfo.id} className="dashboard-list-item-2">
-              <a href={urlGen.siteChunkPage(ctableInfo.work, parseInt(ctableInfo.chunk))}>{ctableInfo.chunk}</a> :
-              <EntityLink id={ctableInfo.id} type={entityType} name={ctableInfo.title} active={true} openInNewTab={true}/>
-            </p>
-          )
-        })
+          return (<p key={ctableInfo.id} className="dashboard-list-item-2">
+            <a href={urlGen.siteChunkPage(ctableInfo.work, parseInt(ctableInfo.chunk))}>{ctableInfo.chunk}</a> :
+            <EntityLink id={ctableInfo.id} type={entityType} name={ctableInfo.title} active={true}
+                        openInNewTab={true}/>
+          </p>);
+        });
 
-        return(
-          <div key={type + ctTablesByWorkItem.workId} style={{marginBottom: '1em'}}>
-            <p className="dashboard-list-item">
-              <PersonLink personId={worksByAuthorItem.authorId}/>,&nbsp;
-              <EntityLink id={ctTablesByWorkItem.entityId} type="work"/>
-            </p>
-            <div>
-              {tableElems}
-            </div>
-
+        return (<div key={type + ctTablesByWorkItem.workId} style={{marginBottom: '1em'}}>
+          <p className="dashboard-list-item">
+            <PersonLink personId={worksByAuthorItem.authorId}/>,&nbsp;
+            <EntityLink id={ctTablesByWorkItem.entityId} type="work"/>
+          </p>
+          <div>
+            {tableElems}
           </div>
-        )
-      })
+        </div>);
+      });
     });
   };
 
 
   const worksByAuthor = getWorksByAuthorFromApiData(data);
 
-  return (
-    <div>
+  return (<div>
       {getListItems(worksByAuthor, type)}
+      {type === "edition" && <div>
+        <a
+          style={{marginTop: '1em', cursor: 'pointer'}}
+          className={'dashboard-list-item'}
+          onClick={() => setShowEditionCreationDialog(true)}>
+          <FilePlus/> Create new chunk edition
+
+        </a>
+        <NewChunkEditionDialog show={showEditionCreationDialog} onClickCreate={handleCreate} onHide={handleHide}/>
+      </div>}
     </div>
-    );
+
+  );
 
 }

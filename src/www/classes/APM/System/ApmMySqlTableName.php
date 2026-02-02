@@ -44,6 +44,9 @@ class ApmMySqlTableName
     const TABLE_EDITION_SOURCES = 'edition_sources';
     const TABLE_SESSIONS_REGISTER = 'sessions_register';
     const TABLE_SESSIONS_LOG = 'sessions_log';
+    const TABLE_SCOPES = 'scopes';
+    const TABLE_SCOPE_USERS = 'scope_users';
+    const TABLE_SCOPE_DOCUMENTS = 'scope_documents';
 
     // Entity system tables:
 

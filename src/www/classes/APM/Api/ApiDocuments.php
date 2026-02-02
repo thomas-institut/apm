@@ -45,7 +45,7 @@ class ApiDocuments extends ApiController
 
 
     /**
-     * Returns data for all the documents in the system
+     * Returns data for documents visible to the current user
      *
      * TODO: move the actual data fetching out of the SiteDocuments controller into the system manager
      * @param Request $request
@@ -55,7 +55,7 @@ class ApiDocuments extends ApiController
     public function allDocumentsData(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-        return $this->responseWithJson($response,  SiteDocuments::getAllDocumentsData($this->systemManager));
+        return $this->responseWithJson($response,  SiteDocuments::getAllDocumentsData($this->systemManager, $this->apiUserId));
     }
 
     /**

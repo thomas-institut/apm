@@ -60,6 +60,7 @@ use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Lemmatizer\UdPipeLemmatizer;
 use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
+use APM\System\Scope\ScopeManager;
 use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
 use APM\System\Search\SearchManagerInterface;
@@ -116,7 +117,7 @@ class ApmSystemManager extends SystemManager {
     const int ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
 
     // Database version
-    const int DB_VERSION = 37;
+    const int DB_VERSION = 38;
 
     // Entity system Data ID: key for entity system caches
     const string ES_DATA_ID = '0010'; // 2026 Jan 9
@@ -172,6 +173,7 @@ class ApmSystemManager extends SystemManager {
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?ApmUserManager $userManager = null;
     private ?PersonManagerInterface $personManager = null;
+    private ?ScopeManager $scopeManager = null;
     private ?ApmJobQueueManager $jobManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
     private ?WorkManager $workManager = null;
@@ -309,6 +311,9 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::ES_Merges,
             ApmMySqlTableName::TABLE_SESSIONS_REGISTER,
             ApmMySqlTableName::TABLE_SESSIONS_LOG,
+            ApmMySqlTableName::TABLE_SCOPES,
+            ApmMySqlTableName::TABLE_SCOPE_USERS,
+            ApmMySqlTableName::TABLE_SCOPE_DOCUMENTS,
         ];
         
         $tables = [];
@@ -829,6 +834,15 @@ class ApmSystemManager extends SystemManager {
             $this->personManager = new EntitySystemPersonManager($this->getEntitySystem(), $this->getUserManager());
         }
         return $this->personManager;
+    }
+
+    public function getScopeManager(): ScopeManager
+    {
+        if ($this->scopeManager === null) {
+            $this->scopeManager = new ScopeManager($this->getDbConnection(), $this->tableNames,
+                $this->getLogger()->withName('ScopeManager'));
+        }
+        return $this->scopeManager;
     }
 
     public function getWorkManager(): WorkManager

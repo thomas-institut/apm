@@ -32,6 +32,7 @@ use APM\System\Document\DocumentManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Person\PersonManagerInterface;
+use APM\System\Scope\ScopeManager;
 use APM\System\Preset\PresetManager;
 use APM\System\Search\SearchManagerInterface;
 use APM\System\Transcription\ApmTranscriptionWitness;
@@ -161,6 +162,7 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getJobManager() : JobQueueManager;
     abstract public function getUserManager() : UserManagerInterface;
     abstract public function getPersonManager() : PersonManagerInterface;
+    abstract public function getScopeManager() : ScopeManager;
     abstract public function getWorkManager() : WorkManager;
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
     abstract public function getDocumentManager() : DocumentManager;

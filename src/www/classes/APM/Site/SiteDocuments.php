@@ -75,7 +75,7 @@ class SiteDocuments extends SiteController
 //        }
 //        $docs = $data['docs'];
 
-        $docs = self::getAllDocumentsData($this->systemManager);
+        $docs = self::getAllDocumentsData($this->systemManager, $this->userId);
 
         $canManageDocuments = false;
         $userManager = $this->systemManager->getUserManager();
@@ -105,7 +105,7 @@ class SiteDocuments extends SiteController
         );
     }
 
-    public static function getAllDocumentsData(SystemManager $systemManager): array {
+    public static function getAllDocumentsData(SystemManager $systemManager, int $userId): array {
         $cache = $systemManager->getSystemDataCache();
         try {
             $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
@@ -115,7 +115,12 @@ class SiteDocuments extends SiteController
             $data = self::buildDocumentData($systemManager);
             $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
         }
-        return $data['docs'];
+        $docs = $data['docs'];
+        $visibleDocIds = self::getVisibleDocumentIdsForUser($systemManager, $userId);
+        if ($visibleDocIds === null) {
+            return $docs;
+        }
+        return self::filterDocumentDataByIds($docs, $visibleDocIds);
     }
 
     /**
@@ -133,6 +138,31 @@ class SiteDocuments extends SiteController
         $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
         $doc['id'] = $docId;
         return $doc;
+    }
+
+    private static function getVisibleDocumentIdsForUser(SystemManager $systemManager, int $userId): ?array
+    {
+        $userManager = $systemManager->getUserManager();
+        try {
+            if ($userManager->isRoot($userId) || $userManager->hasTag($userId, UserTag::MANAGE_USERS)) {
+                return null;
+            }
+        } catch (UserNotFoundException) {
+            return [];
+        }
+        return $systemManager->getScopeManager()->getDocumentIdsForUser($userId);
+    }
+
+    private static function filterDocumentDataByIds(array $docs, array $docIds): array
+    {
+        if (count($docIds) === 0) {
+            return [];
+        }
+        $allowed = array_fill_keys(array_map('strval', $docIds), true);
+        $filtered = array_filter($docs, function (array $doc) use ($allowed) {
+            return isset($allowed[(string) $doc['id']]);
+        });
+        return array_values($filtered);
     }
 
     static public function buildDocumentData(SystemManager $systemManager): array

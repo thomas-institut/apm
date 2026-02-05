@@ -17,7 +17,7 @@ class SiteMultiChunkEdition extends SiteController
             '',
             'MCE Edition',
             'MceComposer',
-            'js/MceComposer/MceComposer.js',
+            'js/MceComposer/MceComposer.ts',
             [
                 'editionId' => -1
             ],
@@ -34,7 +34,7 @@ class SiteMultiChunkEdition extends SiteController
             '',
             'MCE Edition',
             'MceComposer',
-            'js/MceComposer/MceComposer.js',
+            'js/MceComposer/MceComposer.ts',
             [
                 'editionId' => intval($request->getAttribute('editionId'))
             ],

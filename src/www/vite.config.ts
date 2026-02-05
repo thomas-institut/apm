@@ -50,7 +50,7 @@ export default defineConfig({
         DevelopmentEntityDataEditor: resolve(__dirname, 'js/pages/DevelopmentEntityDataEditor.js'),
         SearchPage: resolve(__dirname, 'js/pages/SearchPage.js'),
         EditionComposer: resolve(__dirname, 'js/EditionComposer/EditionComposer.ts'),
-        MceComposer: resolve(__dirname, 'js/MceComposer/MceComposer.js'),
+        MceComposer: resolve(__dirname, 'js/MceComposer/MceComposer.ts'),
         AutomaticCollationTable: resolve(__dirname, 'js/pages/AutomaticCollationTable/AutomaticCollationTable.ts'),
         PageViewer: resolve(__dirname, 'js/pages/PageViewer/PageViewer.js'),
         React_Main: resolve(__dirname, 'js/reactAPM/index.tsx'),

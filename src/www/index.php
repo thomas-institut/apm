@@ -262,7 +262,7 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
                 return (new SiteCollationTable($container))->newChunkEdition($request, $response);
             })->setName('chunk-edition.new');
 
-        $group->get('/chunk-edition/{tableId}[/{type}]',
+        $group->get('/chunk-edition/{tableId}[/{versionId}]',
             function (Request $request, Response $response) use ($container) {
                 return (new SiteCollationTable($container))->editCollationTable($request, $response);
             })->setName('chunk-edition.edit');

@@ -1213,7 +1213,12 @@ export class MainTextPanel extends PanelWithToolbar {
         if (!arraysAreEqual(a.fmtText, b.fmtText, (x, y) => {
           let fmtTokensAreEqual = true;
           attributesToCompare.forEach((attribute) => {
-            if (x[attribute] !== y[attribute]) {
+            // an empty string is the same as undefined for the attribute's we're comparing
+            const xAttr = x[attribute] === undefined ? '' : x[attribute];
+            const yAttr = y[attribute] === undefined ? '' : x[attribute];
+            // const xAttr = x[attribute];
+            // const yAttr = y[attribute];
+            if (xAttr !== yAttr) {
               fmtTokensAreEqual = false;
             }
           });

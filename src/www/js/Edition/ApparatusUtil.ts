@@ -85,7 +85,11 @@ export class ApparatusUtil {
     let wDataArray = wData.filter((w) => {
       return !w.omitSiglum;
     }).map((w) => {
-      w.siglum = sigla[w.witnessIndex].toString();
+      if (sigla[w.witnessIndex] === undefined) {
+        console.warn(`Sigla for witness ${w.witnessIndex} is undefined`);
+      } else {
+        w.siglum = sigla[w.witnessIndex].toString();
+      }
       return w;
     });
 

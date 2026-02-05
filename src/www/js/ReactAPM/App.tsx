@@ -14,6 +14,7 @@ import {RouteUrls} from './Router/RouteUrls';
 import {deleteToken, retrieveToken, storeToken} from "@/ReactAPM/ToolBox/AuthenticationUtilities";
 import {trimCharacters} from "@/toolbox/Util";
 import NotFound from "@/ReactAPM/NotFound";
+import {Tid} from "@/Tid/Tid";
 
 
 // @ts-ignore
@@ -29,9 +30,9 @@ const Docs = lazy(() => import('@/ReactAPM/Pages/Docs/Docs.js'));
 // @ts-ignore
 const MultiChunkEdition = lazy(() => import('./Pages/MultiChunkEdition.js'));
 // @ts-ignore
-const Work = lazy(() => import('./Pages/Work.js'));
+const Work = lazy(() => import('./Pages/Work/Work.js'));
 // @ts-ignore
-const Chunk = lazy(() => import('./Pages/Chunk.js'));
+const Chunk = lazy(() => import('./Pages/Chunk/Chunk.js'));
 // @ts-ignore
 const Person = lazy(() => import('./Pages/Person/Person.js'));
 // @ts-ignore
@@ -48,8 +49,11 @@ const DefaultSiteLanguage = 'en';
 
 
 export interface AppContextProps {
+  devMode: boolean;
   userId: number;
   userName: string;
+  userIsAdmin: boolean;
+  userCanManageUsers: boolean;
   baseUrl: string;
   apiBaseUrl: string;
   reactAppBaseUrl: string,
@@ -68,8 +72,11 @@ interface AppSettings {
 }
 
 const DefaultAppContext: AppContextProps = {
+  devMode: false,
   userId: -1,
   userName: 'Guest',
+  userIsAdmin: false,
+  userCanManageUsers: false,
   baseUrl: '',
   apiBaseUrl: '',
   reactAppBaseUrl: ReactAppBaseUrlSuffix,
@@ -175,8 +182,11 @@ function RealApp() {
 
         async (token: string, ttl: number) => storeToken(localCache, ApmTokenKey, token, ttl, ApmTokenCookie));
       appContext.current = {
+        devMode: data.devMode ?? false,
         userId: -1,
         userName: 'Guest',
+        userIsAdmin: false,
+        userCanManageUsers: false,
         baseUrl: baseUrl,
         apiBaseUrl: apiBaseUrl,
         reactAppBaseUrl: reactAppBaseUrl,
@@ -214,6 +224,13 @@ function RealApp() {
       } else {
         appContext.current.userId = userData.id;
         appContext.current.userName = userData.name;
+        appContext.current.userIsAdmin = userData.isRoot ?? false;
+        appContext.current.userCanManageUsers = userData.manageUsers ?? false;
+        if (appContext.current.devMode) {
+          console.log(` - User '${appContext.current.userName}' (${appContext.current.userId} = ${Tid.toCanonicalString(appContext.current.userId)})`);
+          console.log(` - User is admin: ${appContext.current.userIsAdmin}`);
+          console.log(` - User can manage users: ${appContext.current.userCanManageUsers}`);
+        }
         setStatus(StatusReady);
       }
     } catch (error) {

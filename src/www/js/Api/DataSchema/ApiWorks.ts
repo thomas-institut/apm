@@ -27,3 +27,8 @@ export interface WorkData {
   title: string;
   workId: string;
 }
+
+export interface ApiChunksWithTranscription {
+  workId: string;
+  chunks: number[];
+}

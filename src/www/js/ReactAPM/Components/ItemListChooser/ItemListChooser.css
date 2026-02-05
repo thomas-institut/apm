@@ -1,0 +1,35 @@
+
+
+
+div.listContainer {
+    display: flex;
+    flex-direction: column;
+    border: 1px solid var(--very-light-gray);
+}
+
+div.interItem {
+    height: 0.5em;
+ }
+
+div.postList {
+    height: 3em;
+ }
+
+div.item {
+    padding: 0;
+    cursor: grab;
+}
+
+span.listLabel {
+    font-weight: bold;
+    font-size: 1.2em;
+}
+div.listLabelDiv {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+}
+
+div.pool, div.chosen {
+
+}

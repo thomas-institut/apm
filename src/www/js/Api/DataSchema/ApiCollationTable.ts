@@ -70,3 +70,14 @@ export interface ApiCollationTableVersionInfo {
   isLatestVersion: boolean;
   archived: boolean;
 }
+
+export interface ApiCollationTableInfo {
+  id: number;
+  title: string;
+  workId: string;
+  chunkId: string;
+  chunkNumber: number;
+  type: string;
+  lastChange: string;
+  lastVersion: any;
+}

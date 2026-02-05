@@ -81,11 +81,11 @@ export class RouteUrls {
 
 
   static patternWork() {
-    return baseUrl + betaPathInfix + '/work/:workId';
+    return baseUrl + '/work/:workId';
   }
 
   static work(id: number|string) {
-    return baseUrl + betaPathInfix + '/work/' + id;
+    return baseUrl + '/work/' + id;
   }
 
   static patternDocument() {
@@ -93,7 +93,7 @@ export class RouteUrls {
   }
 
   static document(id: number|string) {
-    return baseUrl + '/doc/' + id;
+    return baseUrl +  betaPathInfix + '/doc/' + id;
   }
 
   static docPage(id: number|string, page: number) {
@@ -101,17 +101,14 @@ export class RouteUrls {
   }
 
   static patternChunk() {
-    return baseUrl + '/work/:workId/chunk/:chunkId';
+    return baseUrl + betaPathInfix +  '/work/:workId/chunk/:chunkId';
   }
-
-
 
   static chunk(workId: number|string, chunkId: number) {
     if(typeof workId === 'number') {
       workId = Tid.toCanonicalString(workId);
     }
-
-    return baseUrl + '/work/' + workId + '/chunk/' + chunkId;
+    return baseUrl + betaPathInfix +'/work/' + workId + '/chunk/' + chunkId;
   }
 
 

@@ -209,11 +209,11 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 //            })
 //            ->setName('works');
 
-        $group->get('/work/{id}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteWorks($container))->workPage($request, $response);
-            })
-            ->setName('work');
+//        $group->get('/work/{id}',
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SiteWorks($container))->workPage($request, $response);
+//            })
+//            ->setName('work');
 
         $group->get('/work/{work}/chunk/{chunk}',
             function (Request $request, Response $response) use ($container) {
@@ -849,6 +849,10 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
             return (new ApiWorks($container))->getWorkData($request, $response);
         })
         ->setName('api.work.data');
+
+    $group->get("/work/{workId}/chunk/{chunkNumber}/witnesses", function (Request $request, Response $response) use ($container) {
+        return (new ApiWitness($container))->getWitnessesForChunk($request, $response);
+    })->setName("api.work.witnesses");
 
     $group->get("/work/{workId}/chunksWithTranscription",
         function (Request $request, Response $response) use ($container) {

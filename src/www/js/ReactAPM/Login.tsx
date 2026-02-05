@@ -1,4 +1,4 @@
-import {RefObject, useContext, useRef, useState, KeyboardEvent} from "react";
+import {KeyboardEvent, RefObject, useContext, useRef, useState} from "react";
 import {AppContext} from "./App";
 import {urlGen} from "@/pages/common/SiteUrlGen";
 import '../../css/login.css';
@@ -17,10 +17,12 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const userNameInput: RefObject<HTMLInputElement | null> = useRef(null);
   const passwordInput: RefObject<HTMLInputElement | null> = useRef(null);
+  const rememberMeCheckBox: RefObject<HTMLInputElement | null> = useRef(null);
 
   const handleFormChange = () => {
     const userName = userNameInput.current?.value.trim() ?? '';
     const password = passwordInput.current?.value.trim() ?? '';
+
     if (userName && password) {
       setButtonDisabled(false);
     } else {
@@ -29,29 +31,30 @@ export default function Login() {
   };
 
   const handleShowPassword = () => {
-    setShowPassword( prev => !prev );
-  }
+    setShowPassword(prev => !prev);
+  };
 
   const handleLogin = async () => {
     const userName = userNameInput.current?.value.trim() ?? '';
     const password = passwordInput.current?.value.trim() ?? '';
+    const rememberMe = rememberMeCheckBox.current?.checked ?? false;
     if (userName && password) {
       // let's roll
-      const success = await appContext.apiClient.apiLogin(userName, password, true);
+      const success = await appContext.apiClient.apiLogin(userName, password, rememberMe);
       if (success) {
         window.location.href = appContext.reactAppBaseUrl + '/';
       } else {
         setLoginError('Login failed');
       }
     }
-  }
+  };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
       console.log('Enter pressed');
       handleLogin().then();
     }
-  }
+  };
 
   return (<div className="login-div" onKeyDown={handleKeyDown}>
     <div className="mb-3" style={{display: "flex", justifyContent: "space-around", width: "100%"}}>
@@ -68,17 +71,17 @@ export default function Login() {
         <Form.Group className="mb-3" controlId="formBasicPassword">
           <Form.Label>Password</Form.Label>
           <InputGroup>
-            { showPassword ?
-              (<Form.Control ref={passwordInput} type="text" placeholder="Password" onChange={handleFormChange}/>) :
-              (<Form.Control ref={passwordInput} type="password" placeholder="Password" onChange={handleFormChange}/>)
-            }
-            <Button variant="outline-secondary"  onClick={handleShowPassword}>{showPassword ? (<EyeSlash/>) : (<Eye/>)}</Button>
+            {showPassword ? (
+              <Form.Control ref={passwordInput} type="text" placeholder="Password" onChange={handleFormChange}/>) : (
+              <Form.Control ref={passwordInput} type="password" placeholder="Password" onChange={handleFormChange}/>)}
+            <Button variant="outline-secondary" onClick={handleShowPassword}>{showPassword ? (<EyeSlash/>) : (
+              <Eye/>)}</Button>
 
           </InputGroup>
 
         </Form.Group>
         <Form.Group className="mb-3" controlId="formBasicCheckbox">
-          <Form.Check type="checkbox" label="Remember me"/>
+          <Form.Check ref={rememberMeCheckBox} type="checkbox" label="Remember me"/>
         </Form.Group>
         <Button variant="primary" disabled={buttonDisabled} onClick={handleLogin}>
           Login

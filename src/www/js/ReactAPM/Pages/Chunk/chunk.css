@@ -1,0 +1,32 @@
+
+
+div.chunkPageSection {
+    margin-top: 2em;
+}
+
+
+h1 {
+    font-size: 2.1em;
+}
+
+h2 {
+    font-size: 1.5em;
+}
+
+div.witness-card {
+    margin: 1em;
+}
+
+div.witness-card-header {
+    border: 1px solid #ccc;
+    font-size: 1.2em;
+    padding: 0.5em;
+    border-radius: 0.25em;
+}
+
+div.witness-card-body {
+    border-left: 1px solid #ccc;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    border-radius: 0.25em;
+}

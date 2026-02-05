@@ -51,7 +51,7 @@ export default function EntityLink(props: EntityLinkProps) {
     case 'work':
       // url = RouteUrls.work(Tid.toCanonicalString(id));
       url = urlGen.siteWorkPage(Tid.toCanonicalString(id));
-      isReactRoute = false;
+      isReactRoute = true;
       defaultEntityName = `W:${Tid.toCanonicalString(id)}`;
       break;
 

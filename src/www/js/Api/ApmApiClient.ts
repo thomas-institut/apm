@@ -29,6 +29,7 @@ import {
   ApiCollationTable_convertToEdition_input,
   ApiCollationTableAuto,
   ApiCollationTableConvertToEdition,
+  ApiCollationTableInfo,
   ApiCollationTableVersionInfo,
   AutomaticCollationSettings
 } from "@/Api/DataSchema/ApiCollationTable";
@@ -41,10 +42,11 @@ import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
 import {
   AllPeopleDataForPeoplePageItem, PersonEssentialData
 } from "@/Api/DataSchema/ApiPeople";
-import {ApiWorksAll, WorkData} from "@/Api/DataSchema/ApiWorks";
+import {ApiChunksWithTranscription, ApiWorksAll, WorkData} from "@/Api/DataSchema/ApiWorks";
 import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
 import {ApiSiglaPreset, ApiPresetsQuery, ApiAutomaticCollationTablePreset} from "@/Api/DataSchema/ApiPresets";
 import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
+import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -210,12 +212,25 @@ export class ApmApiClient {
     return data;
   }
 
-  async getWorkDataOld(workId: number): Promise<any> {
+  async getWorkDataOld(workId: string): Promise<any> {
     return await this.getApmEntityData('WorkOld', '', workId, 'local');
   }
 
   async getWorkData(workId: number | string): Promise<WorkData> {
     return await this.getApmEntityData('Work', '', workId, 'local');
+  }
+
+  async getWorkChunksWithTranscription(workId: string) : Promise<ApiChunksWithTranscription> {
+    return await this.get(urlGen.apiWorkGetChunksWithTranscription(workId), false, TtlOneMinute);
+  }
+
+  async getWitnessesForChunk(workId: string, chunkNumber: number): Promise<WitnessInfo[]> {
+    return await this.get(urlGen.apiWitnessGetWitnessesForChunk(workId, chunkNumber), false, 5* TtlOneMinute);
+  }
+
+
+  async getCollationTablesActiveForWork(workId: string): Promise<ApiCollationTableInfo[]> {
+    return await  this.get(urlGen.apiCollationTable_activeForWork(workId), false, TtlOneMinute);
   }
 
   async getLegacySystemLanguagesArray(): Promise<any> {
@@ -257,6 +272,7 @@ export class ApmApiClient {
       });
       if (resp.status === 200) {
         const data = await resp.json();
+        console.log(`Got login response`, data);
         if (data.status === 'OK') {
           await this.setBearerToken(data.token, data.ttl ?? 15 * 24 * 3600);
           return true;

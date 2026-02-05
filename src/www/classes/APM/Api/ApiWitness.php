@@ -55,6 +55,18 @@ class ApiWitness extends ApiController
 
     const int WITNESS_DATA_CACHE_TTL = 60 * 24 * 3600; // 30 days
 
+
+
+    public function getWitnessesForChunk(Request $request, Response $response): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $workId = $request->getAttribute('workId');
+        $chunkNumber = intval($request->getAttribute('chunkNumber'));
+
+        $witnessInfoArray = $this->systemManager->getTranscriptionManager()->getWitnessesForChunk($workId, $chunkNumber);
+        return $this->responseWithJson($response, $witnessInfoArray);
+    }
+
     public function getWitness(Request $request, Response $response): Response
     {
 

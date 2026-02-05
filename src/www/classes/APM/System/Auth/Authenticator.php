@@ -297,7 +297,7 @@ class Authenticator
                             'status' => 'OK',
                             'message' => 'Login successful',
                             'token' => $fullToken,
-                            'ttl' => $rememberMe === 'on' ? 24 * 3600 : 30 * 24 * 3600
+                            'ttl' => $rememberMe === 'on' ? 30 * 24 * 3600 : 24 * 3600
                         ];
                         return $this->responseWithJson($response, $data);
                     }

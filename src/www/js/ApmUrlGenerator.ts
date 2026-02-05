@@ -477,6 +477,10 @@ export class ApmUrlGenerator {
     return this.apiBase + '/witness/check/updates';
   }
 
+  apiWitnessGetWitnessesForChunk(workId: string, chunkNumber: number) {
+    return `${this.apiBase}/work/${workId}/chunk/${chunkNumber}/witnesses`;
+  }
+
   apiSearchKeyword() {
     return `${this.apiBase}/search/keyword`;
   }

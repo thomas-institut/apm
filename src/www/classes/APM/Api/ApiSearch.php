@@ -309,7 +309,7 @@ class ApiSearch extends ApiController
         ];
         
         if ($creator !== '') {
-            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:=$creator";
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:$creator*";
         }
 
         if ($title !== '') {

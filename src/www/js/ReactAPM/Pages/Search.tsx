@@ -9,7 +9,7 @@ const STATE_INIT = 0;
 const STATE_WAITING_FOR_SERVER = 1;
 
 export default function SearchPage() {
-  const appContext = useContext(AppContext);
+  // const appContext = useContext(AppContext);
 
   const [corpus, setCorpus] = useState('transcriptions');
   const [keywords, setKeywords] = useState('');
@@ -18,24 +18,23 @@ export default function SearchPage() {
   const [distance, setDistance] = useState(10);
   const [lemmatize, setLemmatize] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
-
   const [titleList, setTitleList] = useState<string[]>([]);
   const [creatorList, setCreatorList] = useState<string[]>([]);
-
   const [results, setResults] = useState<any[]>([]);
-  const [globalZoom, setGlobalZoom] = useState(11);
   const [searchStatus, setSearchStatus] = useState(STATE_INIT);
   const [isIdle, setIsIdle] = useState(true);
+  const [globalContext, setGlobalContext] = useState(11);
 
   const isInvalidSearch = keywords.includes('*') && lemmatize;
 
-  const s = useRef({
-    data_for_zooming: [] as any[],
-    zoom: [] as any[],
+  const storedData = useRef({
+    data_for_context: [] as any[],
+    context: [] as any[],
     numDisplayedPassages: 0,
     prevTitle: ''
   });
 
+  // add some css classes
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -59,7 +58,7 @@ export default function SearchPage() {
 }
 
 .knob-value-center {
-  /* Font-size entfernen wir hier und setzen sie dynamisch */
+  /* Font size is handled dynamically */
   font-weight: bold;
   z-index: 2;
   pointer-events: none;
@@ -70,7 +69,7 @@ export default function SearchPage() {
   height: 3px;
   background: #333;
   left: 50%;
-  top: 3px;           /* Weiter nach innen versetzt */
+  top: 3px;           /* Offset further inwards */
   border-radius: 50%;
   z-index: 3;
 }
@@ -79,24 +78,53 @@ export default function SearchPage() {
     return () => { document.head.removeChild(style); };
   }, []);
 
+  // track keyword distance
   useEffect(() => {
     const min = getMinDistance(keywords);
     if (distance < min) {
       setDistance(min);
-      setErrorMessage(''); // Nachricht löschen, da wir es automatisch korrigiert haben
+      setErrorMessage(''); // Clear message as we corrected it automatically
     }
   }, [keywords, distance]);
 
-  const GlobalZoomKnob = ({ value, onChange, showValueInside = false, max = 99 }: { value: number, onChange: (val: number) => void, showValueInside?: boolean, max?: number }) => {
+// global press-enter listener
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        // We look for the button only if it is NOT disabled
+        const searchBtn = document.querySelector('#search-submit-button:not([disabled])') as HTMLButtonElement;
+
+        if (searchBtn) {
+          e.preventDefault();
+          searchBtn.click(); // This triggers handleSearchTrigger with the freshest state
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleGlobalKeyDown);
+    };
+  }, [isInvalidSearch, searchStatus, keywords]);
+
+  // adjust page to corpus selection
+  useEffect(() => {
+    document.title = tr('Search');
+    fetchCreatorsAndTitles(corpus);
+    fetchCreatorsAndTitles(corpus === 'transcriptions' ? 'transcribers' : 'editors');
+  }, [corpus]);
+
+  // create knob
+  const GlobalContextKnob = ({ value, onChange, showValueInside = false, max = 99 }: { value: number, onChange: (val: number) => void, showValueInside?: boolean, max?: number }) => {
     const [isDragging, setIsDragging] = useState(false);
     const valueRef = useRef(value);
     useEffect(() => { valueRef.current = value; }, [value]);
 
-    // Keyword Distance Knob etwas kleiner (26px), Context Knobs bleiben bei 20px
+    // Keyword Distance Knob is slightly smaller (26px), Context Knobs stay at 20px
     const size = showValueInside ? '26px' : '20px';
     const fontSize = showValueInside ? '11px' : '9px';
 
-    // Drehpunkt für den Pointer (nur für Context Knobs relevant)
+    // Rotation origin for the pointer (only relevant for Context Knobs)
     const pointerOrigin = '7px'; // 10px Radius - 2px Top
 
     const handleMouseDown = (e: React.MouseEvent) => {
@@ -142,7 +170,7 @@ export default function SearchPage() {
               border: isDragging ? '1.5px solid #007bff' : '1.5px solid #333'
             }}
         >
-          {/* Pointer nur anzeigen, wenn KEINE Zahl drin steht */}
+          {/* Only show pointer if NO number is inside */}
           {!showValueInside && (
               <div
                   className="knob-mini-pointer"
@@ -168,16 +196,8 @@ export default function SearchPage() {
         </div>
     );
   };
-  useEffect(() => {
-    setTitleInput('');
-    setCreatorInput('');
-    setResults([]);
-    setIsIdle(true);
-    document.title = tr('Search');
-    fetchCreatorsAndTitles(corpus);
-    fetchCreatorsAndTitles(corpus === 'transcriptions' ? 'transcribers' : 'editors');
-  }, [corpus]);
 
+  // function to fetch creators and titles for the selector lists
   const fetchCreatorsAndTitles = async (category: string) => {
     let apiUrl = '';
     if (category === 'transcriptions') apiUrl = urlGen.apiSearchTranscriptionTitles();
@@ -189,9 +209,7 @@ export default function SearchPage() {
       const response = await fetch(apiUrl);
       const res = await response.json();
 
-      // --- Logging hinzufügen ---
       console.log(`API Response for category [${category}]:`, res);
-      // ---------------------------
 
       if (res.status === 'OK') {
         if (category === 'transcriptions' || category === 'editions') {
@@ -207,21 +225,23 @@ export default function SearchPage() {
     }
   };
 
+  // function to trigger the search
   const handleSearchTrigger = () => {
     if (searchStatus !== STATE_INIT || keywords.trim() === "") return;
-    const initialZoomValue = distance + 1;
+    const initialContextValue = distance + 1;
     setIsIdle(false);
     setErrorMessage('');
     setResults([]);
-    setGlobalZoom(initialZoomValue);
-    s.current.data_for_zooming = [];
-    s.current.numDisplayedPassages = 0;
-    s.current.prevTitle = '';
-    s.current.zoom = [initialZoomValue];
+    setGlobalContext(initialContextValue);
+    storedData.current.data_for_context = [];
+    storedData.current.numDisplayedPassages = 0;
+    storedData.current.prevTitle = '';
+    storedData.current.context = [initialContextValue];
     setSearchStatus(STATE_WAITING_FOR_SERVER);
     startSearch();
   };
 
+  // async search function
   const startSearch = async (page = 1) => {
     const ld = new LanguageDetector('la');
     const detectedLang = ld.detectLang(keywords);
@@ -235,11 +255,12 @@ export default function SearchPage() {
       const res = await response.json();
       if (res.status !== 'OK') { setSearchStatus(STATE_INIT); return; }
       handleApiResponse(res, inputs);
-      if (!res.queryFinished && s.current.numDisplayedPassages < 1000) startSearch(Number(res.queryPage) + 1);
+      if (!res.queryFinished && storedData.current.numDisplayedPassages < 1000) startSearch(Number(res.queryPage) + 1);
       else setSearchStatus(STATE_INIT);
-    } catch (e) { setSearchStatus(STATE_INIT); }
+    } catch (e) { setSearchStatus(STATE_INIT); setErrorMessage("Sorry, the search is currently not available.") }
   };
 
+  // process data from typesense response
   const handleApiResponse = (res: any, inputs: any) => {
     let tokensForQuery = [...res.tokensForQuery];
     if (tokensForQuery[0] === '*') tokensForQuery.shift();
@@ -250,32 +271,36 @@ export default function SearchPage() {
 
     const newEntries: any[] = [];
     rawData.forEach((match: any) => {
+      console.log(match)
       const link = corpus === 'transcriptions' ? urlGen.sitePageView(match.docID, match.seq, match.column) : urlGen.siteCollationTableEdit(match.table_id);
       match.passage_tokenized.forEach((p: any, j: number) => {
-        s.current.numDisplayedPassages++;
-        s.current.zoom[s.current.numDisplayedPassages] = Number(inputs.keywordDistance);
-        s.current.data_for_zooming.push({ text_tokenized: match.text_tokenized, tokens_matched: match.tokens_matched, position: Number(match.positions[j]) });
-        const displayTitle = match.title !== s.current.prevTitle ? match.title : "";
-        s.current.prevTitle = match.title;
-        newEntries.push({ id: s.current.numDisplayedPassages, passageHtml: cutOutPassageWithHighlights(match.text_tokenized, match.tokens_matched, match.positions[j], kwDist, Number(inputs.keywordDistance)), title: displayTitle, fullTitle: match.title, identifier: corpus === 'transcriptions' ? match.foliation : match.chunk, user: match.creator, link, lang: res.lang });
+        storedData.current.numDisplayedPassages++;
+        storedData.current.context[storedData.current.numDisplayedPassages] = Number(inputs.keywordDistance);
+        storedData.current.data_for_context.push({ text_tokenized: match.text_tokenized, tokens_matched: match.tokens_matched, position: Number(match.positions[j]) });
+        const displayTitle = match.title !== storedData.current.prevTitle ? match.title : "";
+        storedData.current.prevTitle = match.title;
+        const entry = { id: storedData.current.numDisplayedPassages, passageHtml: cutOutPassageWithHighlights(match.text_tokenized, match.tokens_matched, match.positions[j], kwDist, Number(inputs.keywordDistance)), title: displayTitle, fullTitle: match.title, identifier: corpus === 'transcriptions' ? match.foliation : match.chunk, user: match.creator, link, lang: res.lang };
+        newEntries.push(entry);
       });
     });
     setResults(prev => [...prev, ...newEntries]);
   };
 
-  const handleLocalZoomChange = (index: number, newVal: number) => {
-    s.current.zoom[index] = newVal;
-    const itemData = s.current.data_for_zooming[index - 1];
+  // function to change the context size of a passage
+  const handleLocalContextChange = (index: number, newVal: number) => {
+    storedData.current.context[index] = newVal;
+    const itemData = storedData.current.data_for_context[index - 1];
     const currentKwDist = Number(distance) + 1;
     setResults(prev => prev.map(item => item.id === index ? { ...item, passageHtml: cutOutPassageWithHighlights(itemData.text_tokenized, itemData.tokens_matched, itemData.position, currentKwDist, newVal) } : item));
   };
 
-  const handleGlobalZoomChange = (newVal: number) => {
-    setGlobalZoom(newVal);
+  // function to change the context size of all passages
+  const handleGlobalContextChange = (newVal: number) => {
+    setGlobalContext(newVal);
     const currentKwDist = Number(distance) + 1;
     setResults(results.map(item => {
-      s.current.zoom[item.id] = newVal;
-      const itemData = s.current.data_for_zooming[item.id - 1];
+      storedData.current.context[item.id] = newVal;
+      const itemData = storedData.current.data_for_context[item.id - 1];
       return { ...item, passageHtml: cutOutPassageWithHighlights(itemData.text_tokenized, itemData.tokens_matched, itemData.position, currentKwDist, newVal) };
     }));
   };
@@ -284,7 +309,7 @@ export default function SearchPage() {
 
   const SEARCH_COLUMNS = (
       <colgroup>
-        <col width="6%" /><col width="14%" /><col width="5%" /><col width="7%" /><col width="14%" /><col width="14%" /><col width="7%" />
+        <col width="6%" /><col width="14%" /><col width="6%" /><col width="7%" /><col width="14%" /><col width="14%" /><col width="7%" />
       </colgroup>
   );
 
@@ -303,19 +328,97 @@ export default function SearchPage() {
           <h1 style={{ marginBottom: '10px' }}>Search</h1>
           <table className="docTable dataTable" style={{ width: '100%', tableLayout: 'fixed' }}>
             {SEARCH_COLUMNS}
-            <thead style={{ borderTop: '2px solid black' }}>
+            <thead style={{ borderTop: '1px solid black' }}>
             <tr style={{ backgroundColor: '#f4f4f4' }}>
-              <th><div style={{ display: 'flex', paddingLeft: '8px', paddingTop:'10px', gap: '8px', fontSize: '0.9em', justifyContent: 'left', textAlign: 'center' }}><span title="Choose transcriptions or editions as the target corpus of your search.">Corpus</span></div></th>
-              <th><div style={{ display: 'flex', paddingTop:'10px', gap: '8px', fontSize: '0.9em' }}><span title="Enter keywords to search. You can use the wildcard operator '*' to search for word parts, like 'philosoph*', '*losophus' or '*losoph*'. Wildcards represent optional characters, i. e. 'philosophi*' will also match 'philosophi'.">Keywords</span></div></th>
-              <th className="text-center"><div style={{ display: 'flex', paddingTop:'10px', gap: '8px', fontSize: '0.9em', justifyContent: 'center' }}><span title="Number of tokens, i. e. words or punctuation marks, that are allowed to occur between your longest given keyword and each of the others. With two keywords given a value of 0 means that only the occurrence of directly consecutive words counts as a match. With three keywords given a value of 0 means that only the occurrence of your longest keyword in the middle of the other two counts as a match.">Keyword Distance</span></div></th>
-              <th><div style={{ display: 'flex', paddingTop:'10px', gap: '8px', fontSize: '0.9em', justifyContent: 'center' }}><span title="If checked, conjugated or declined forms of your keywords will count as matches. Be aware, that automatic lemmatization is not an error-free process and therefore lemmatized search can return false positives and especially can miss some matches. In some scenarios it is recommended to make some checks with unlemmatized search for declined or conjugated forms of your keyword.">Lemmatization</span></div></th>
-              <th><div style={{ display: 'flex', paddingTop:'10px', gap: '8px', fontSize: '0.9em' }}>{corpus === 'transcriptions' ? 'Document' : 'Edition'}</div></th>
-              <th><div style={{ display: 'flex', paddingTop:'10px', gap: '8px', fontSize: '0.9em' }}>{corpus === 'transcriptions' ? 'Transcriber' : 'Editor'}</div></th>
+              {/* Corpus */}
+              <th>
+                <div style={{ paddingLeft: '8px', paddingTop: '10px', paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left' }}>
+      <span style={{ position: 'relative', display: 'inline-block' }}>
+        Corpus
+        <i
+            className="fas fa-info-circle"
+            title="Choose the target corpus of your search."
+            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+        ></i>
+      </span>
+                </div>
+              </th>
+
+              {/* Keywords */}
+              <th>
+                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left' }}>
+      <span style={{ position: 'relative', display: 'inline-block' }}>
+        Keywords
+        <i
+            className="fas fa-info-circle"
+            title="Enter keywords to search.&#10;• The search is case-insensitive.&#10;• You can use the wildcard operator '*' to search for prefixes, suffixes and infixes, like 'philosoph*', '*losophus' or '*losoph*'.&#10;• Wildcards represent optional characters, i. e. 'philosophi*' will also match 'philosophi'."
+            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+        ></i>
+      </span>
+                </div>
+              </th>
+
+              {/* Keyword Distance */}
+              <th className="text-center">
+                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'center' }}>
+      <span style={{ position: 'relative', display: 'inline-block' }}>
+        Keyword Distance
+        <i
+            className="fas fa-info-circle"
+            title="The keyword distance is the number of tokens, i. e. words or punctuation marks, that are allowed to occur between your longest given keyword and each of the others.&#10;Examples:&#10;• With two keywords given a value of 0 means that only the occurrence of directly consecutive words counts as a match.&#10;• With three keywords given a value of 0 means that only the occurrence of your longest keyword in the middle of the other two counts as a match.&#10;In some scenarios it is recommended to double check your search results with a slightly higher keyword distance."
+            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+        ></i>
+      </span>
+                </div>
+              </th>
+
+              {/* Lemmatization */}
+              <th className="text-center">
+                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'center' }}>
+      <span style={{ position: 'relative', display: 'inline-block' }}>
+        Lemmatization
+        <i
+            className="fas fa-info-circle"
+            title="If checked, conjugated or declined forms of your keywords will count as matches. Be aware, that automatic lemmatization is not an error-free process and therefore lemmatized search can return false positives and especially can miss some matches. In some scenarios it is recommended to make some checks with unlemmatized search for declined or conjugated forms of your keyword."
+            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+        ></i>
+      </span>
+                </div>
+              </th>
+
+              {/* Document / Edition */}
+              <th>
+                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left' }}>
+      <span style={{ position: 'relative', display: 'inline-block' }}>
+        {corpus === 'transcriptions' ? 'Document' : 'Edition'}
+        <i
+            className="fas fa-info-circle"
+            title="Filters search results by title. Enter the exact full name (case-sensitive) of the target of your search."
+            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+        ></i>
+      </span>
+                </div>
+              </th>
+
+              {/* Transcriber / Editor */}
+              <th>
+                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left' }}>
+      <span style={{ position: 'relative', display: 'inline-block' }}>
+        {corpus === 'transcriptions' ? 'Transcriber' : 'Editor'}
+        <i
+            className="fas fa-info-circle"
+            title="Filters search results by person name. Enter the full name, first name, last name or only the beginning of the first or last name of a person."
+            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+        ></i>
+      </span>
+                </div>
+              </th>
+
               <th className="text-center"></th>
             </tr>
             </thead>
             <tbody>
-            <tr><td style={{paddingTop:'8px'}}></td></tr>
+            <tr><td style={{paddingTop:'0px',  paddingBottom: '6px',}}></td></tr>
             <tr>
               <td>
                 <select value={corpus} onChange={(e) => setCorpus(e.target.value)} style={corpusSelectorStyle}>
@@ -329,20 +432,11 @@ export default function SearchPage() {
                     value={keywords}
                     onChange={(e) => setKeywords(e.target.value)}
                     style={inputStyle}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        // Die gleiche Logik wie beim 'disabled' Attribut des Buttons
-                        const canSearch = !isInvalidSearch && searchStatus === STATE_INIT && keywords.trim() !== "";
-                        if (canSearch) {
-                          handleSearchTrigger();
-                        }
-                      }
-                    }}
                 />
               </td>
               <td style={{ textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <GlobalZoomKnob
+                  <GlobalContextKnob
                       value={distance}
                       onChange={(val) => {
                         const min = getMinDistance(keywords);
@@ -382,6 +476,7 @@ export default function SearchPage() {
               </td>
               <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'center' }}>
                 <button
+                    id="search-submit-button"
                     onClick={handleSearchTrigger}
                     className="btn btn-primary"
                     disabled={isInvalidSearch || searchStatus !== STATE_INIT || keywords.trim() === ""}
@@ -391,12 +486,12 @@ export default function SearchPage() {
                       display: 'flex',
                       justifyContent: 'center',
                       alignItems: 'center',
-                      backgroundColor: isInvalidSearch ? "#ccc" : "black", // Grau wenn ungültig
+                      backgroundColor: isInvalidSearch ? "#ccc" : "black", // Grey if invalid
                       borderColor: isInvalidSearch ? "#ccc" : "black",
                       cursor: isInvalidSearch ? "not-allowed" : "pointer"
                     }}
                 >
-                  <i className="fas fa-search"></i>
+                  <i className="fas fa-search" style={{ color: 'white' }}></i>
                 </button>
               </td>
             </tr>
@@ -419,7 +514,7 @@ export default function SearchPage() {
               <div style={{ marginTop: '25px' }}>
                 <table className="docTable dataTable no-footer" style={{ width: '100%', tableLayout: 'fixed' }}>
                   {RESULTS_COLUMNS}
-                  <thead style={{ borderTop: '2px solid black' }}>
+                  <thead style={{ borderTop: '1px solid black' }}>
                   <tr style={{ backgroundColor: '#f4f4f4' }}>
                     <th style={{ padding: '10px', paddingLeft: '8px' }}>Matched Passage ({results.length})</th>
                     <th style={{ padding: '10px', textAlign: 'center' }}>Context</th>
@@ -434,7 +529,7 @@ export default function SearchPage() {
                       <tr key={res.id} className="fade-in-element" style={{ fontSize: '0.95em', borderBottom: '1px solid #eee' }}>
                         <td className={`text-${res.lang}`} style={{ padding: '8px', textAlign: 'justify' }} dangerouslySetInnerHTML={{ __html: res.passageHtml }} />
                         <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 0' }}>
-                          <GlobalZoomKnob value={s.current.zoom[res.id]} onChange={(val) => handleLocalZoomChange(res.id, val)} />
+                          <GlobalContextKnob value={storedData.current.context[res.id]} onChange={(val) => handleLocalContextChange(res.id, val)} />
                         </td>
                         <td className="text-center">{res.title}</td>
                         <td className="text-center">{res.identifier}</td>
@@ -486,10 +581,24 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
       });
 
       data.push({
-        title: doc.title, creator: doc.creator, text_tokenized: textTokenized, text_lemmatized: textLemmatized,
-        positions: posAll, tokens_matched: [], passage_tokenized: passageTokenized, passage_lemmatized: passageLemmatized,
-        passage_coordinates: passageCoordinates, matched_token_positions: Array.from({ length: passageTokenized.length }, () => []),
-        docID: doc.docID, seq: doc.seq, column: doc.column, foliation: doc.foliation, table_id: doc.table_id, chunk: doc.chunk
+        column: doc.column,
+        corpus: corpus,
+        creator: doc.creator,
+        docID: doc.docID,
+        foliation: doc.foliation,
+        keywordDistance: keywordDistance,
+        lemmata: lemmata,
+        lemmatize: lemmatize,
+        matched_token_positions: Array.from({ length: passageTokenized.length }, () => []),
+        passage_coordinates: passageCoordinates,
+        passage_lemmatized: passageLemmatized,
+        passage_tokenized: passageTokenized,
+        positions: posAll,
+        text_lemmatized: textLemmatized,
+        text_tokenized: textTokenized,
+        title: doc.title,
+        tokensForQuery: tokensForQuery,
+        tokens_matched: []
       });
     }
   }
@@ -497,8 +606,15 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
 }
 
 function filterData(data: any[], tokenPlain: string, lemma: string, lemmatize: boolean, kwDist: number) {
+  // If lemmatization is active but the lemma is only 1 character long (or empty),
+  // skip filtering to prevent "over-filtering".
+  if (lemmatize && (!lemma || lemma.length <= 1)) {
+    return data;
+  }
+
   const filter = getFilterType(tokenPlain);
   const tokenClean = tokenPlain.replace(/\*/g, "");
+
   data.forEach((match: any) => {
     match.passage_tokenized.forEach((passage: any, j: number) => {
       if (!passage) return;
@@ -515,20 +631,29 @@ function filterData(data: any[], tokenPlain: string, lemma: string, lemmatize: b
           matchedInThisPassage = true;
         }
       });
+
       if (!matchedInThisPassage) {
-        delete match.passage_tokenized[j]; delete match.matched_token_positions[j]; delete match.positions[j];
+        delete match.passage_tokenized[j];
+        delete match.matched_token_positions[j];
+        delete match.positions[j];
       }
     });
     match.tokens_matched = [...new Set(match.tokens_matched)];
   });
-  return removeOverlappingPassagesOrDuplicates(data);
+
+  return data;
 }
 
 function getFilterType(t: string) { if (!t || !t.includes('*')) return 'match_full'; if (t.startsWith('*') && t.endsWith('*')) return 'match_body'; return t.startsWith('*') ? 'match_suffix' : 'match_prefix'; }
 function getPositions(text: any[], token: string, filter: string) { const res: number[] = []; if (!text || !token || token.length === 0) return res; text.forEach((t, i) => { if (t && (filter === 'lemma' ? isLemmaOfWord(token, t) : isMatching(t, token, filter))) res.push(i); }); return res; }
 function getPassage(text: any[], pos: number, kwDist: number) { const start = Math.max(0, pos - kwDist); const end = Math.min(text.length, pos + kwDist + 1); return { passage: text.slice(start, end), start, end }; }
-function isMatching(token: string, needle: string, filter: string): boolean { if (!needle || !token) return false; if (filter === 'match_full') return token === needle || token === capitalizeFirstLetter(needle); if (filter === 'match_prefix') return token.startsWith(needle) || token.startsWith(capitalizeFirstLetter(needle)); if (filter === 'match_suffix') return token.endsWith(needle); if (filter === 'match_body') return token.includes(needle); return false; }
-function isLemmaOfWord(l: string, t: string) { return t && (t.toLowerCase().includes(` ${l.toLowerCase()} `) || t.toLowerCase() === l.toLowerCase()); }
+function isMatching(token: string, needle: string, filter: string): boolean { if (!needle || !token) return false; if (filter === 'match_full') return token === needle || token === capitalizeFirstLetter(needle); if (filter === 'match_prefix') return token.startsWith(needle) || token.startsWith(capitalizeFirstLetter(needle)); if (filter === 'match_suffix') return token.endsWith(needle) || token.endsWith(capitalizeFirstLetter(needle)); if (filter === 'match_body') return token.includes(needle); return false; }
+function isLemmaOfWord(lemma: string, token: string): boolean {
+  // Old code did NOT use toLowerCase() and
+  // compared exactly in this way with spaces:
+  if (!token || !lemma) return false;
+  return token.includes(" " + lemma + " ") || token === lemma;
+}
 function capitalizeFirstLetter(string: string) { return string ? string.charAt(0).toUpperCase() + string.slice(1) : ""; }
 function removeBlanks(s: string) { return s.replace(/\s([.,:;?\])])/g, '$1').replace(/([(\[])\s/g, '$1').trim(); }
 
@@ -560,9 +685,9 @@ function getMinDistance(keywordString: string): number {
   return n % 2 === 0 ? n - (Math.floor(n / 2) + 1) : n - (Math.floor(n / 2) + 2);
 }
 
-function cutOutPassageWithHighlights(text: any[], matched: string[], pos: number, kwDist: number, zoomVal: number) {
-  const start = Math.max(0, pos - zoomVal);
-  const end = Math.min(text.length, pos + zoomVal + 1);
+function cutOutPassageWithHighlights(text: any[], matched: string[], pos: number, kwDist: number, contextVal: number) {
+  const start = Math.max(0, pos - contextVal);
+  const end = Math.min(text.length, pos + contextVal + 1);
   const matchedLower = matched.map(m => m.toLowerCase());
 
   const words = text.slice(start, end);
@@ -575,15 +700,15 @@ function cutOutPassageWithHighlights(text: any[], matched: string[], pos: number
     const isNew = distanceToAnchor > kwDist;
     const className = isNew ? 'class="new-word-fade"' : '';
 
-    // LOGIK FÜR LEERZEICHEN:
+    // LOGIC FOR SPACES:
     const isPunctuation = /^[\.,:;!\?\]\)]/.test(t);
-    // Prüfen, ob das VORHERIGE Wort eine öffnende Klammer war
+    // Check if the PREVIOUS word was an opening bracket
     const prevWasOpeningBracket = i > 0 && /^[\(\[]/.test(words[i - 1]);
 
-    // Leerzeichen nur wenn:
-    // 1. Nicht das erste Wort
-    // 2. Aktuelles Wort ist kein Satzzeichen (Punkt, Komma, etc.)
-    // 3. Vorheriges Wort war keine öffnende Klammer
+    // Space only if:
+    // 1. Not the first word
+    // 2. Current word is not punctuation (dot, comma, etc.)
+    // 3. Previous word was not an opening bracket
     if (i > 0 && !isPunctuation && !prevWasOpeningBracket) {
       passage += " ";
     }

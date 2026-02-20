@@ -48,6 +48,8 @@ export class WitnessUpdateDialog {
     this.icons = options.icons;
     this.debug = options.debug ?? false;
 
+    console.log(`Options`, this.options);
+
   }
 
   go() {
@@ -97,7 +99,8 @@ export class WitnessUpdateDialog {
       loadP.removeClass('status-waiting');
       loadP.addClass('status-running');
       // 1.2. actually load the new version
-      this.options.getWitnessData(newWitnessInfo.id)
+      console.log(`Loading witness`);
+      this.options.getWitnessData(newWitnessInfo.updatedWitnessId)
       .then((newWitnessData) => {
         // Load new version success
         // 2. Calculate changes

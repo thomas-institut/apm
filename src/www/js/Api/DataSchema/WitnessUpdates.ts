@@ -13,4 +13,5 @@ export interface WitnessUpdateInfo {
   upToDate: boolean,
   justUpdated: boolean,
   lastUpdate: string,
+  updatedWitnessId: string,
 }

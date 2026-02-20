@@ -32,3 +32,13 @@ export interface ApiChunksWithTranscription {
   workId: string;
   chunks: number[];
 }
+
+export interface ChunkCollationTableInfo {
+  workId: string;
+  chunkNumber: number;
+  tableId: number;
+  authorId: number;
+  lastSave: string;
+  title: string;
+  type: 'edition' | 'ctable';
+}

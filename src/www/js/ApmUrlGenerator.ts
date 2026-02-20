@@ -441,6 +441,10 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/docs/all`;
   }
 
+  apiDocumentsGetPageInfo(pageId: number) {
+     return `${this.apiBase}/page/${pageId}/info`;
+  }
+
   apiAutomaticEdition() {
     return this.apiBase + '/edition/auto';
   }
@@ -479,6 +483,10 @@ export class ApmUrlGenerator {
 
   apiWitnessGetWitnessesForChunk(workId: string, chunkNumber: number) {
     return `${this.apiBase}/work/${workId}/chunk/${chunkNumber}/witnesses`;
+  }
+
+  apiWitnessGetCollationTablesForChunk(workId: string, chunkNumber: number) {
+    return `${this.apiBase}/work/${workId}/chunk/${chunkNumber}/ctables`;
   }
 
   apiSearchKeyword() {

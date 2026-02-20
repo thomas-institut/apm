@@ -495,6 +495,22 @@ class ApiDocuments extends ApiController
         return $this->responseWithJson($response, $numColumns);
    }
 
+   public function getPageInfo(Request $request, Response $response) : Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $pageId = $request->getAttribute('pageId');
+
+       try {
+           $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+       } catch (PageNotFoundException $e) {
+           $this->logger->error("Page not found", ['pageId' => $pageId]);
+           return $this->responseWithJson($response,
+               ['error' => ApiController::API_ERROR_WRONG_PAGE_ID,
+                   'msg' => "Page $pageId not found "
+               ], HttpStatus::BAD_REQUEST);
+       }
+       return $this->responseWithJson($response, get_object_vars($pageInfo));
+   }
+
     /**
      * Returns page information for a list of pages identified by page id
      *
@@ -502,7 +518,7 @@ class ApiDocuments extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function getPageInfo(Request $request, Response $response) : Response {
+    public function getPageInfoBulk(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $inputData = $this->checkAndGetInputData($request, $response, ['pages']);

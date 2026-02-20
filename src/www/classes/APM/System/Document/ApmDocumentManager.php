@@ -288,7 +288,14 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
         if ($row === null) {
             throw new PageNotFoundException("Page $pageId not found");
         }
-        return PageInfo::createFromDatabaseRow($row);
+        $info = PageInfo::createFromDatabaseRow($row);
+        try {
+            $info->docId = $this->getEntityDocId($info->docId);
+        } catch (DocumentNotFoundException $e) {
+            // should never happen
+            throw new RuntimeException("Document $info->docId not found for page $pageId: " . $e->getMessage(), 0, $e);
+        }
+        return $info;
     }
 
     private function getLegacyPageInfoFromDbRow(array $row): array {
@@ -434,27 +441,34 @@ class ApmDocumentManager implements DocumentManager, LoggerAwareInterface
     }
 
     /**
+     * @throws DocumentNotFoundException
+     */
+    private function getEntityDocId(int $docId) : int {
+        if ($docId >= 2000) {
+            return $docId;
+        }
+        // for sure this is a legacy doc id
+        // use the mem cache, in case we need to get this info many times
+        try {
+            return intval($this->cache->get("entity-id-$docId"));
+        } catch (ItemNotInCacheException) {
+            $statements = $this->getEntitySystem()->getStatements(null, Entity::pLegacyApmDatabaseId, strval($docId));
+            if (count($statements) === 0) {
+                throw new DocumentNotFoundException("Document with legacy docId $docId not found");
+            }
+            $entityId = $statements[0]->subject;
+            // this never changes, so it's OK not to expire it in the cache
+            $this->cache->set("entity-id-$docId", $entityId);
+            return $entityId;
+        }
+    }
+
+    /**
      * @inheritDoc
      */
     public function getDocumentEntityData(int $docId): EntityData
     {
-        $entityId = $docId;
-        if ($docId < 2000) {
-            // for sure this is a legacy doc id
-            // use the mem cache, in case we need to get this info many times
-            try {
-                $entityId = $this->cache->get("entity-id-$docId");
-            } catch (ItemNotInCacheException) {
-                $statements = $this->getEntitySystem()->getStatements(null, Entity::pLegacyApmDatabaseId, strval($docId));
-                if (count($statements) === 0) {
-                    throw new DocumentNotFoundException("Document with legacy docId $docId not found");
-                }
-                $entityId = $statements[0]->subject;
-                // this never changes, so it's OK not to expire it in the cache
-                $this->cache->set("entity-id-$docId", $entityId);
-            }
-        }
-
+        $entityId = $this->getEntityDocId($docId);
         try {
             return unserialize($this->cache->get("doc-data-$docId"));
         } catch (ItemNotInCacheException) {

@@ -55,8 +55,8 @@ export interface VersionInfo {
 }
 
 export interface SegmentInfo {
-  from: SegmentBoundaryInfo;
-  to: SegmentBoundaryInfo;
+  start: SegmentBoundaryInfo;
+  end: SegmentBoundaryInfo;
 }
 
 export interface SegmentBoundaryInfo {

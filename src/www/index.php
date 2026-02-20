@@ -617,10 +617,14 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
         })
         ->setName('api.newcolumn');
 
+    $group->get('/page/{pageId}/info', function (Request $request, Response $response) use ($container) {
+        return (new ApiDocuments($container))->getPageInfo($request, $response);
+    });
+
     // API -> getPageInfo
     $group->post('/pages/info',
         function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->getPageInfo($request, $response);
+            return (new ApiDocuments($container))->getPageInfoBulk($request, $response);
         })
         ->setName('api.getPageInfo');
 }
@@ -853,6 +857,11 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
     $group->get("/work/{workId}/chunk/{chunkNumber}/witnesses", function (Request $request, Response $response) use ($container) {
         return (new ApiWitness($container))->getWitnessesForChunk($request, $response);
     })->setName("api.work.witnesses");
+    $group->get("/work/{workId}/chunk/{chunkNumber}/ctables", function (Request $request, Response $response) use ($container) {
+        return (new ApiWitness($container))->getCollationTablesForChunk($request, $response);
+    })->setName("api.work.ctables");
+
+
 
     $group->get("/work/{workId}/chunksWithTranscription",
         function (Request $request, Response $response) use ($container) {

@@ -51,30 +51,7 @@ export default function Work() {
     if (workDataQueryResult.status !== 'success' || workDataQueryResult.data === null) {
       return [];
     }
-    const chunksWithTranscriptionResponse = await context.apiClient.getWorkChunksWithTranscription(workDataQueryResult.data.workId);
-    console.log('Chunks with transcription', chunksWithTranscriptionResponse);
-    const activeCollationTables = await context.apiClient.getCollationTablesActiveForWork(workDataQueryResult.data.workId);
-    console.log('Active collation tables', activeCollationTables);
-    const info: ChunkInfo[] = chunksWithTranscriptionResponse.chunks.map(n => {
-      return {
-        chunkNumber: n, hasCollationTables: false, hasEditions: false
-      };
-    });
-
-    activeCollationTables.forEach((ctInfo) => {
-      const chunkIndex = info.findIndex((chunkInfo) => chunkInfo.chunkNumber === ctInfo.chunkNumber);
-      if (chunkIndex >= 0) {
-        if (ctInfo.type === 'edition') info[chunkIndex].hasEditions = true; else if (ctInfo.type === 'ctable') info[chunkIndex].hasCollationTables = true;
-      } else {
-        info.push({
-          chunkNumber: ctInfo.chunkNumber,
-          hasCollationTables: ctInfo.type === 'ctable',
-          hasEditions: ctInfo.type === 'edition'
-        });
-      }
-    });
-
-    return info.sort((a, b) => a.chunkNumber - b.chunkNumber);
+    return context.apiClient.getChunksInWorkInfo(workDataQueryResult.data.workId);
   }
 
   const chunksDataQueryResult = useQuery({

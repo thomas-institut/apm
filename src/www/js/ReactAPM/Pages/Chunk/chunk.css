@@ -30,3 +30,16 @@ div.witness-card-body {
     border-bottom: 1px solid #ccc;
     border-radius: 0.25em;
 }
+
+div.ctable-list {
+    margin-left: 2em;
+    margin-top: 0.5em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+div.chunk-nav-arrow {
+    font-size: 1.5em;
+    font-weight: bold;
+}

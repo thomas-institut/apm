@@ -38,11 +38,11 @@ import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
-import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
+import {DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
 import {
   AllPeopleDataForPeoplePageItem, PersonEssentialData
 } from "@/Api/DataSchema/ApiPeople";
-import {ApiChunksWithTranscription, ApiWorksAll, WorkData} from "@/Api/DataSchema/ApiWorks";
+import {ApiChunksWithTranscription, ApiWorksAll, ChunkCollationTableInfo, WorkData} from "@/Api/DataSchema/ApiWorks";
 import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
 import {ApiSiglaPreset, ApiPresetsQuery, ApiAutomaticCollationTablePreset} from "@/Api/DataSchema/ApiPresets";
 import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
@@ -69,6 +69,14 @@ export interface ApmApiClientError {
   httpStatus: number;
   message: string;
   data?: any;
+}
+
+export interface ChunkInWorkInfo {
+  workId: string,
+  chunkNumber: number;
+  hasTranscriptions: boolean;
+  hasCollationTables: boolean;
+  hasEditions: boolean;
 }
 
 
@@ -220,12 +228,52 @@ export class ApmApiClient {
     return await this.getApmEntityData('Work', '', workId, 'local');
   }
 
+  async getPageInfo(pageId: number): Promise<PageInfo> {
+    return this.get(urlGen.apiDocumentsGetPageInfo(pageId), false, TtlOneHour);
+  }
+
   async getWorkChunksWithTranscription(workId: string) : Promise<ApiChunksWithTranscription> {
     return await this.get(urlGen.apiWorkGetChunksWithTranscription(workId), false, TtlOneMinute);
   }
 
   async getWitnessesForChunk(workId: string, chunkNumber: number): Promise<WitnessInfo[]> {
     return await this.get(urlGen.apiWitnessGetWitnessesForChunk(workId, chunkNumber), false, 5* TtlOneMinute);
+  }
+
+  async getChunksInWorkInfo(workId: string): Promise<ChunkInWorkInfo[]> {
+    const chunksWithTranscriptionResponse = await this.getWorkChunksWithTranscription(workId);
+    console.log('Chunks with transcription', chunksWithTranscriptionResponse);
+    const activeCollationTables = await this.getCollationTablesActiveForWork(workId);
+    console.log('Active collation tables', activeCollationTables);
+    const info: ChunkInWorkInfo[] = chunksWithTranscriptionResponse.chunks.map(n => {
+      return {
+        workId: workId,
+        chunkNumber: n,
+        hasTranscriptions: true,
+        hasCollationTables: false,
+        hasEditions: false
+      };
+    });
+    activeCollationTables.forEach((ctInfo) => {
+      const chunkIndex = info.findIndex((chunkInfo) => chunkInfo.chunkNumber === ctInfo.chunkNumber);
+      if (chunkIndex >= 0) {
+        if (ctInfo.type === 'edition') info[chunkIndex].hasEditions = true; else if (ctInfo.type === 'ctable') info[chunkIndex].hasCollationTables = true;
+      } else {
+        info.push({
+          workId: workId,
+          chunkNumber: ctInfo.chunkNumber,
+          hasTranscriptions: false,
+          hasCollationTables: ctInfo.type === 'ctable',
+          hasEditions: ctInfo.type === 'edition'
+        });
+      }
+    });
+
+    return info.sort((a, b) => a.chunkNumber - b.chunkNumber);
+  }
+
+  async getCollationTablesForChunk(workId: string, chunkNumber: number): Promise<ChunkCollationTableInfo[]> {
+    return await this.get(urlGen.apiWitnessGetCollationTablesForChunk(workId, chunkNumber), false, TtlOneMinute);
   }
 
 

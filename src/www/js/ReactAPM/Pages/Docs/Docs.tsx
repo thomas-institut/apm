@@ -2,7 +2,7 @@ import NormalPageContainer from "../../NormalPageContainer";
 import {useContext, useEffect} from "react";
 import {AppContext} from "@/ReactAPM/App";
 import {useQuery} from "@tanstack/react-query";
-import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
+import {DocumentData} from "@/Api/DataSchema/ApiDocuments";
 import {
   createColumnHelper,
   getCoreRowModel,

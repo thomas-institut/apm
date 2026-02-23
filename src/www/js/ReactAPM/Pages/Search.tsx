@@ -34,7 +34,7 @@ export default function SearchPage() {
     prevTitle: ''
   });
 
-  // add some css classes
+  // add some CSS classes
   useEffect(() => {
     const style = document.createElement('style');
     style.innerHTML = `
@@ -83,7 +83,7 @@ export default function SearchPage() {
     const min = getMinDistance(keywords);
     if (distance < min) {
       setDistance(min);
-      setErrorMessage(''); // Clear message as we corrected it automatically
+      setErrorMessage('');
     }
   }, [keywords, distance]);
 
@@ -114,8 +114,15 @@ export default function SearchPage() {
     fetchCreatorsAndTitles(corpus === 'transcriptions' ? 'transcribers' : 'editors');
   }, [corpus]);
 
-  // create knob
-  const GlobalContextKnob = ({ value, onChange, showValueInside = false, max = 99 }: { value: number, onChange: (val: number) => void, showValueInside?: boolean, max?: number }) => {
+  /**
+   * Context Knob
+   * @param value
+   * @param onChange
+   * @param showValueInside
+   * @param max
+   * @constructor
+   */
+  const ContextKnob = ({ value, onChange, showValueInside = false, max = 99 }: { value: number, onChange: (val: number) => void, showValueInside?: boolean, max?: number }) => {
     const [isDragging, setIsDragging] = useState(false);
     const valueRef = useRef(value);
     useEffect(() => { valueRef.current = value; }, [value]);
@@ -197,7 +204,11 @@ export default function SearchPage() {
     );
   };
 
-  // function to fetch creators and titles for the selector lists
+
+  /**
+   * makes an api call to fetch creators and titles for the selector lists
+   * @param category
+   */
   const fetchCreatorsAndTitles = async (category: string) => {
     let apiUrl = '';
     if (category === 'transcriptions') apiUrl = urlGen.apiSearchTranscriptionTitles();
@@ -225,7 +236,9 @@ export default function SearchPage() {
     }
   };
 
-  // function to trigger the search
+  /**
+   *  search event
+   */
   const handleSearchTrigger = () => {
     if (searchStatus !== STATE_INIT || keywords.trim() === "") return;
     const initialContextValue = distance + 1;
@@ -241,7 +254,10 @@ export default function SearchPage() {
     startSearch();
   };
 
-  // async search function
+  /**
+   * starts the search
+   * @param page
+   */
   const startSearch = async (page = 1) => {
     const ld = new LanguageDetector('la');
     const detectedLang = ld.detectLang(keywords);
@@ -260,7 +276,11 @@ export default function SearchPage() {
     } catch (e) { setSearchStatus(STATE_INIT); setErrorMessage("Sorry, the search is currently not available.") }
   };
 
-  // process data from typesense response
+  /**
+   *  processes the data from typesense
+   * @param res
+   * @param inputs
+   */
   const handleApiResponse = (res: any, inputs: any) => {
     let tokensForQuery = [...res.tokensForQuery];
     if (tokensForQuery[0] === '*') tokensForQuery.shift();
@@ -286,7 +306,11 @@ export default function SearchPage() {
     setResults(prev => [...prev, ...newEntries]);
   };
 
-  // function to change the context size of a passage
+  /**
+   * changes the context size of a passage
+   * @param index
+   * @param newVal
+   */
   const handleLocalContextChange = (index: number, newVal: number) => {
     storedData.current.context[index] = newVal;
     const itemData = storedData.current.data_for_context[index - 1];
@@ -294,7 +318,10 @@ export default function SearchPage() {
     setResults(prev => prev.map(item => item.id === index ? { ...item, passageHtml: cutOutPassageWithHighlights(itemData.text_tokenized, itemData.tokens_matched, itemData.position, currentKwDist, newVal) } : item));
   };
 
-  // function to change the context size of all passages
+  /**
+   * changes the context size of all passages
+   * @param newVal
+   */
   const handleGlobalContextChange = (newVal: number) => {
     setGlobalContext(newVal);
     const currentKwDist = Number(distance) + 1;
@@ -305,8 +332,13 @@ export default function SearchPage() {
     }));
   };
 
+  /**
+   * gets number of titles with matched passages
+   * @param resultsList
+   */
   const getUniqueTitleCount = (resultsList: any[]) => new Set(resultsList.map(res => res.fullTitle)).size;
 
+  // define columns widths
   const SEARCH_COLUMNS = (
       <colgroup>
         <col width="6%" /><col width="14%" /><col width="6%" /><col width="7%" /><col width="14%" /><col width="14%" /><col width="7%" />
@@ -319,9 +351,11 @@ export default function SearchPage() {
       </colgroup>
   );
 
+  // style
   const corpusSelectorStyle: React.CSSProperties = {  paddingLeft: '8px', flex: '0.33', textAlign: 'left', textAlignLast: 'left', appearance: 'none', WebkitAppearance: 'none', width:'100%', height: '100%', border: 'none', outline:'none', borderRadius: '6px', backgroundColor: '#fff', cursor: 'pointer'};
   const inputStyle: React.CSSProperties = { height: '32px', border: '1px solid #ccc', borderRadius: '6px', padding: '4px 8px', width:'90%' };
 
+  // return HTML page structure
   return (
       <NormalPageContainer>
         <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '15px' }}>
@@ -436,7 +470,7 @@ export default function SearchPage() {
               </td>
               <td style={{ textAlign: 'center' }}>
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <GlobalContextKnob
+                  <ContextKnob
                       value={distance}
                       onChange={(val) => {
                         const min = getMinDistance(keywords);
@@ -529,9 +563,9 @@ export default function SearchPage() {
                       <tr key={res.id} className="fade-in-element" style={{ fontSize: '0.95em', borderBottom: '1px solid #eee' }}>
                         <td className={`text-${res.lang}`} style={{ padding: '8px', textAlign: 'justify' }} dangerouslySetInnerHTML={{ __html: res.passageHtml }} />
                         <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 0' }}>
-                          <GlobalContextKnob value={storedData.current.context[res.id]} onChange={(val) => handleLocalContextChange(res.id, val)} />
+                          <ContextKnob value={storedData.current.context[res.id]} onChange={(val) => handleLocalContextChange(res.id, val)} />
                         </td>
-                        <td className="text-center">{res.title}</td>
+                        <td className="text-center" >{res.title}</td>
                         <td className="text-center">{res.identifier}</td>
                         <td className="text-center">{res.user}</td>
                         <td className="text-center">
@@ -555,6 +589,17 @@ export default function SearchPage() {
 }
 
 // LOGIC FUNCTIONS
+
+/**
+ * collects and structures the data from typesense
+ * @param query
+ * @param token
+ * @param tokensForQuery
+ * @param lemmata
+ * @param keywordDistance
+ * @param lemmatize
+ * @param corpus
+ */
 function collectData(query: any[], token: string, tokensForQuery: string[], lemmata: string[], keywordDistance: number, lemmatize: boolean, corpus: string) {
   const filter = getFilterType(token);
   const tokenClean = token.replace(/\*/g, "");
@@ -566,7 +611,7 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
       let textLemmatized = corpus === 'transcriptions' ? doc.transcription_lemmata : doc.edition_lemmata;
 
       let posLower = lemmatize ? getPositions(textLemmatized, lemmata[0], 'lemma') : getPositions(textTokenized, tokenClean, filter);
-      let posUpper = lemmatize ? getPositions(textLemmatized, capitalizeFirstLetter(lemmata[0]), 'lemma') : getPositions(textTokenized, capitalizeFirstLetter(tokenClean), filter);
+      let posUpper = lemmatize ? getPositions(textLemmatized, capitalizeFirstCharacter(lemmata[0]), 'lemma') : getPositions(textTokenized, capitalizeFirstCharacter(tokenClean), filter);
 
       const posAll = [...new Set([...posLower, ...posUpper])].sort((a, b) => a - b);
       let passageTokenized: string[][] = [];
@@ -605,6 +650,14 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
   return data;
 }
 
+/**
+ * filters the collected data from typsense, especially important if there is more than one keyword
+ * @param data
+ * @param tokenPlain
+ * @param lemma
+ * @param lemmatize
+ * @param kwDist
+ */
 function filterData(data: any[], tokenPlain: string, lemma: string, lemmatize: boolean, kwDist: number) {
   // If lemmatization is active but the lemma is only 1 character long (or empty),
   // skip filtering to prevent "over-filtering".
@@ -644,20 +697,82 @@ function filterData(data: any[], tokenPlain: string, lemma: string, lemmatize: b
   return data;
 }
 
-function getFilterType(t: string) { if (!t || !t.includes('*')) return 'match_full'; if (t.startsWith('*') && t.endsWith('*')) return 'match_body'; return t.startsWith('*') ? 'match_suffix' : 'match_prefix'; }
-function getPositions(text: any[], token: string, filter: string) { const res: number[] = []; if (!text || !token || token.length === 0) return res; text.forEach((t, i) => { if (t && (filter === 'lemma' ? isLemmaOfWord(token, t) : isMatching(t, token, filter))) res.push(i); }); return res; }
-function getPassage(text: any[], pos: number, kwDist: number) { const start = Math.max(0, pos - kwDist); const end = Math.min(text.length, pos + kwDist + 1); return { passage: text.slice(start, end), start, end }; }
-function isMatching(token: string, needle: string, filter: string): boolean { if (!needle || !token) return false; if (filter === 'match_full') return token === needle || token === capitalizeFirstLetter(needle); if (filter === 'match_prefix') return token.startsWith(needle) || token.startsWith(capitalizeFirstLetter(needle)); if (filter === 'match_suffix') return token.endsWith(needle) || token.endsWith(capitalizeFirstLetter(needle)); if (filter === 'match_body') return token.includes(needle); return false; }
+/**
+ * gets desired filter type for a given keyword
+ * @param t
+ */
+function getFilterType(t: string) {
+  if (!t || !t.includes('*')) return 'match_full';
+  if (t.startsWith('*') && t.endsWith('*')) return 'match_body';
+  return t.startsWith('*') ? 'match_suffix' : 'match_prefix';
+}
+
+/**
+ * gets the positions of matched tokens or lemmata in the document array
+ * @param text
+ * @param token
+ * @param filter
+ */
+function getPositions(text: any[], token: string, filter: string) {
+  const res: number[] = [];
+  if (!text || !token || token.length === 0) return res;
+  text.forEach((t, i) => { if (t && (filter === 'lemma' ? isLemmaOfWord(token, t) : isMatching(t, token, filter))) res.push(i); });
+  return res;
+}
+
+/**
+ * gets passage surrounding a matched token
+ * @param text
+ * @param pos
+ * @param kwDist
+ */
+function getPassage(text: any[], pos: number, kwDist: number) {
+  const start = Math.max(0, pos - kwDist);
+  const end = Math.min(text.length, pos + kwDist + 1);
+  return { passage: text.slice(start, end), start, end };
+}
+
+/**
+ * checks if an unlemmatized keyword with a given filter matches a token
+ * @param token
+ * @param needle
+ * @param filter
+ */
+function isMatching(token: string, needle: string, filter: string): boolean {
+  if (!needle || !token) return false;
+  if (filter === 'match_full') return token === needle || token === capitalizeFirstCharacter(needle);
+  if (filter === 'match_prefix') return token.startsWith(needle) || token.startsWith(capitalizeFirstCharacter(needle));
+  if (filter === 'match_suffix') return token.endsWith(needle) || token.endsWith(capitalizeFirstCharacter(needle));
+  if (filter === 'match_body') return token.includes(needle); return false;
+}
+
+/**
+ * checks if a word is the lemma of a token
+ * @param lemma
+ * @param token
+ */
 function isLemmaOfWord(lemma: string, token: string): boolean {
-  // Old code did NOT use toLowerCase() and
-  // compared exactly in this way with spaces:
   if (!token || !lemma) return false;
   return token.includes(" " + lemma + " ") || token === lemma;
 }
-function capitalizeFirstLetter(string: string) { return string ? string.charAt(0).toUpperCase() + string.slice(1) : ""; }
+
+/**
+ * capitalizes the first character of a string
+ * @param string
+ */
+function capitalizeFirstCharacter(string: string) { return string ? string.charAt(0).toUpperCase() + string.slice(1) : ""; }
+
+/**
+ * removes blanks from a string
+ * @param s
+ */
 function removeBlanks(s: string) { return s.replace(/\s([.,:;?\])])/g, '$1').replace(/([(\[])\s/g, '$1').trim(); }
 
-function removeDuplicatesAndSubsets(array: number[][]): number[] {
+/**
+ * cleans the matched_token_positions array of a document by removing duplicates and subsets
+ * @param array
+ */
+function cleanMatchedTokenPositionsArray(array: number[][]): number[] {
   const cleanMatchedTokenPositions = new Set<number>(array.keys());
   array.forEach((item, index) => {
     array.forEach((existingItem, existingIndex) => {
@@ -669,9 +784,13 @@ function removeDuplicatesAndSubsets(array: number[][]): number[] {
   return Array.from(cleanMatchedTokenPositions);
 }
 
+/**
+ * removes overlapping passages and duplicates from the match data
+ * @param array
+ */
 function removeOverlappingPassagesOrDuplicates(data: any[]): any[] {
   return data.map(match => {
-    const cleanIndices = removeDuplicatesAndSubsets(match.matched_token_positions);
+    const cleanIndices = cleanMatchedTokenPositionsArray(match.matched_token_positions);
     match.matched_token_positions = match.matched_token_positions.filter((_: any, i: number) => cleanIndices.includes(i));
     match.passage_tokenized = match.passage_tokenized.filter((_: any, i: number) => cleanIndices.includes(i));
     match.positions = match.positions.filter((_: any, i: number) => cleanIndices.includes(i));
@@ -679,12 +798,24 @@ function removeOverlappingPassagesOrDuplicates(data: any[]): any[] {
   }).filter(match => match.passage_tokenized.length > 0);
 }
 
+/**
+ * gets minimum keyword distance depending on the given keywords
+ * @param keywordString
+ */
 function getMinDistance(keywordString: string): number {
   const n = keywordString.trim().split(/\s+/).filter(Boolean).length;
   if (n <= 1) return 0;
   return n % 2 === 0 ? n - (Math.floor(n / 2) + 1) : n - (Math.floor(n / 2) + 2);
 }
 
+/**
+ * cuts out the passage with highlighted keywords
+ * @param text
+ * @param matched
+ * @param pos
+ * @param kwDist
+ * @param contextVal
+ */
 function cutOutPassageWithHighlights(text: any[], matched: string[], pos: number, kwDist: number, contextVal: number) {
   const start = Math.max(0, pos - contextVal);
   const end = Math.min(text.length, pos + contextVal + 1);
@@ -702,13 +833,8 @@ function cutOutPassageWithHighlights(text: any[], matched: string[], pos: number
 
     // LOGIC FOR SPACES:
     const isPunctuation = /^[\.,:;!\?\]\)]/.test(t);
-    // Check if the PREVIOUS word was an opening bracket
     const prevWasOpeningBracket = i > 0 && /^[\(\[]/.test(words[i - 1]);
-
-    // Space only if:
-    // 1. Not the first word
-    // 2. Current word is not punctuation (dot, comma, etc.)
-    // 3. Previous word was not an opening bracket
+    
     if (i > 0 && !isPunctuation && !prevWasOpeningBracket) {
       passage += " ";
     }

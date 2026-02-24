@@ -27,7 +27,7 @@ import Superscript from './QuillBlots/Superscript';
 import Sigla from './QuillBlots/Sigla';
 import {QuillDeltaRenderer} from './QuillDelta/QuillDeltaRenderer';
 import {QuillDelta, QuillRange} from "@/lib/types/Quill";
-import {CompactFmtText, FmtText, fromCompactFmtText, fromString, getPlainText} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, FmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
 import {CustomApparatusQuillDeltaConverter} from "@/EditionComposer/QuillDelta/CustomApparatusQuillDeltaConverter";
 
 
@@ -138,19 +138,17 @@ export class ApparatusEntryTextEditor {
     return this.quillEditor.getText();
   }
 
-  getQuillDelta() : QuillDelta {
+  getQuillDelta(): QuillDelta {
     return this.quillEditor.getContents();
   }
 
   getFmtText(): FmtText {
-    let fmtText = CustomApparatusQuillDeltaConverter.toFmtText(this.getQuillDelta())
-    if (removeWhiteSpace(getPlainText(fmtText)) === '' ) {
+    let fmtText = CustomApparatusQuillDeltaConverter.toFmtText(this.getQuillDelta());
+    if (removeWhiteSpace(getPlainText(fmtText)) === '') {
       // only white space, report no text
-      return []
+      return [];
     }
-    return fmtText
-
-    // return fromString(this.getText());
+    return fmtText;
   }
 
   setText(newText: CompactFmtText, silent = false) {

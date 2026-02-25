@@ -18,7 +18,7 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 
-import {isRtl} from '@/toolbox/Util';
+import {isRtl, removeWhiteSpace} from '@/toolbox/Util';
 
 import {toolbarCharactersDefinition} from './ToolbarCharactersDefinition';
 import Quill from '../QuillLoader';
@@ -26,8 +26,9 @@ import Small from './QuillBlots/Small';
 import Superscript from './QuillBlots/Superscript';
 import Sigla from './QuillBlots/Sigla';
 import {QuillDeltaRenderer} from './QuillDelta/QuillDeltaRenderer';
-import {QuillRange} from "@/lib/types/Quill";
-import {CompactFmtText, FmtText, fromCompactFmtText, fromString} from "@/lib/FmtText/FmtText";
+import {QuillDelta, QuillRange} from "@/lib/types/Quill";
+import {CompactFmtText, FmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {CustomApparatusQuillDeltaConverter} from "@/EditionComposer/QuillDelta/CustomApparatusQuillDeltaConverter";
 
 
 const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>';
@@ -137,9 +138,17 @@ export class ApparatusEntryTextEditor {
     return this.quillEditor.getText();
   }
 
+  getQuillDelta(): QuillDelta {
+    return this.quillEditor.getContents();
+  }
+
   getFmtText(): FmtText {
-    // TODO: need to see whether this is the right thing here.
-    return fromString(this.getText());
+    let fmtText = CustomApparatusQuillDeltaConverter.toFmtText(this.getQuillDelta());
+    if (removeWhiteSpace(getPlainText(fmtText)) === '') {
+      // only white space, report no text
+      return [];
+    }
+    return fmtText;
   }
 
   setText(newText: CompactFmtText, silent = false) {

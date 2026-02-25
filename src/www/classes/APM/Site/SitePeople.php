@@ -16,30 +16,6 @@ class SitePeople extends SiteController
 {
 
     /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-
-    public function peoplePage(Request $request, Response $response): Response
-    {
-        SystemProfiler::setName("Site:" . __FUNCTION__);
-        return $this->renderStandardPage(
-            $response,
-            '',
-            'People',
-            'PeoplePage',
-            'js/pages/PeoplePage.ts',
-            null,
-            [],
-            [
-                '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css',
-                'people_page.css'
-            ]
-        );
-    }
-
-    /**
      */
     public function personPage(Request $request, Response $response): Response
     {

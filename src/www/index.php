@@ -158,13 +158,6 @@ function createBetaSiteRoutes(App $app, ContainerInterface $container): void
 function createSiteRoutes(App $app, ContainerInterface $container): void
 {
     $app->group('', function (RouteCollectorProxy $group) use ($container) {
-        // HOME
-//        $group->get('/',
-//            function (Request $request, Response $response) use ($container) {
-//                return (new SiteHomePage($container))->homePage($response);
-//            })
-//            ->setName('home');
-
 
         // Search Page
         $group->get('/search',
@@ -172,14 +165,6 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
                 return (new SiteSearch($container))->searchPage($request, $response);
             })
             ->setName('search');
-
-        // People and Person Pages
-
-//        $group->get('/people',
-//            function (Request $request, Response $response) use ($container) {
-//                return (new SitePeople($container))->peoplePage($request, $response);
-//            })
-//            ->setName('people');
 
         $group->get('/person/{id}',
             function (Request $request, Response $response) use ($container) {
@@ -193,27 +178,6 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
                 return (new SiteEntity($container))->adminEntityPage($request, $response);
             })
             ->setName('entity');
-
-        // DASHBOARD
-//        $group->get('/dashboard',
-//            function (Request $request, Response $response) use ($container) {
-//                return (new SiteDashboard($container))->DashboardPage($request, $response);
-//            })
-//            ->setName('dashboard');
-
-        // WORKS
-
-//        $group->get('/works',
-//            function (Request $request, Response $response) use ($container) {
-//                return (new SiteWorks($container))->worksPage($request, $response);
-//            })
-//            ->setName('works');
-
-//        $group->get('/work/{id}',
-//            function (Request $request, Response $response) use ($container) {
-//                return (new SiteWorks($container))->workPage($request, $response);
-//            })
-//            ->setName('work');
 
         $group->get('/work/{work}/chunk/{chunk}',
             function (Request $request, Response $response) use ($container) {
@@ -274,14 +238,6 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
                 return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response);
             }
         )->setName('mce.edit');
-
-        // DOCS
-
-//        $group->get('/documents',
-//            function (Request $request, Response $response) use ($container) {
-//                return (new SiteDocuments($container))->documentsPage($request, $response);
-//            })
-//            ->setName('docs');
 
 
         // will be deprecated soon
@@ -893,18 +849,11 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterfa
 function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container): void
 {
     $app->any('/login',
-
+        // handled by React
         function (Request $request, Response $response) use ($container) {
             return (new SiteReact($container))->ReactMain($request, $response);
-//            return (new Authenticator($container))->login($request, $response);
         })
         ->setName('login');
-//
-//    $app->any('/logout',
-//        function (Request $request, Response $response) use ($container) {
-//            return (new Authenticator($container))->logout($request, $response);
-//        })
-//        ->setName('logout');
 
     $app->get('/app-settings', function (Request $request, Response $response) use ($container) {
         return (new SiteSettings($container))->getSiteSettings($request, $response);

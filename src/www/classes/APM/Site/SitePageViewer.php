@@ -43,7 +43,7 @@ use ThomasInstitut\EntitySystem\Tid;
 class SitePageViewer extends SiteController
 {
 
-    const PAGE_VIEWER_TWIG = 'page-viewer.twig';
+    const string PAGE_VIEWER_TWIG = 'page-viewer.twig';
 
 
     /**

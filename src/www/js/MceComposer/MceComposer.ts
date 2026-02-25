@@ -886,12 +886,13 @@ export class MceComposer extends ApmPage {
         let singleChunkApparatus = singleChunkEdition.apparatuses[appIndex];
         let currentApparatus;
         if (this.edition.apparatuses[appIndex] === undefined) {
+          console.log(`At chunk index ${chunkIndex}, apparatus ${appIndex} is empty, creating empty apparatus`);
           currentApparatus = ApparatusTools.createEmpty();
           currentApparatus.type = singleChunkApparatus.type;
           this.edition.apparatuses.push((new Apparatus()).setFromInterface(currentApparatus));
-        } else {
-          currentApparatus = this.edition.apparatuses[appIndex];
         }
+        currentApparatus = this.edition.apparatuses[appIndex];
+
         let apparatusEntriesToAdd = singleChunkApparatus.entries.map((entry) => {
           let newEntry = new ApparatusEntry();
           newEntry.from = entry.from + currentMainTextIndexShift;

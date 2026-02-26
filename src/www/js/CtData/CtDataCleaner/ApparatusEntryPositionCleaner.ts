@@ -1,6 +1,7 @@
 import {CtDataCleaner} from './CtDataCleaner';
 import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface";
 
+
 export class ApparatusEntryPositionCleaner extends CtDataCleaner {
 
   /**
@@ -14,6 +15,7 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
       // not apparatuses to fix!
       return ctData;
     }
+    const EntryToBeDeleted = -1234; // assigning this value to the 'from' index signals that the entry should be deleted
     this.verbose && console.log(`Checking consistency in entry positions`);
     let errorsFound = false;
     let errorsNotFixed = false;
@@ -31,7 +33,8 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
 
         if (fromToken === undefined) {
           errorsFound = true;
-          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to undefined token`);
+          entry.from = EntryToBeDeleted;
+          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to undefined token, entry will be deleted`);
         } else {
           if (fromToken.tokenType !== 'word' && fromToken.tokenType !== 'punctuation') {
             errorsFound = true;
@@ -39,8 +42,9 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
             console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to non-printable token (${fromToken.tokenType})`);
             let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, true);
             if (newIndex === -1) {
-              console.warn(`Could not fix the problem`);
+              console.warn(`Could not fix the problem, entry will be deleted`);
               errorsNotFixed = true;
+              entry.from = EntryToBeDeleted;
             } else {
               console.log(`Problem fixed, new 'from' index is ${newIndex}`);
               entry.from = newIndex;
@@ -49,7 +53,8 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
         }
         if (toToken === undefined) {
           errorsFound = true;
-          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to undefined token`);
+          entry.from = EntryToBeDeleted;
+          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to undefined token, entry will be deleted`);
         } else {
           if (toToken.tokenType !== 'word' && toToken.tokenType !== 'punctuation') {
             errorsFound = true;
@@ -66,7 +71,7 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
           }
         }
         return entry;
-      });
+      }).filter(entry => entry.from !== EntryToBeDeleted);
       return app;
     });
     if (errorsFound) {

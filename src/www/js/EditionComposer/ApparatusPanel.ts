@@ -46,7 +46,7 @@ import {
 } from "@/CtData/CtDataInterface";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
-import {fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
 
 const doubleVerticalLine = String.fromCodePoint(0x2016);
 const verticalLine = String.fromCodePoint(0x007c);
@@ -964,7 +964,7 @@ export class ApparatusPanel extends PanelWithToolbar {
         postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
       }
 
-      let separator;
+      let separator: CompactFmtText;
 
       switch (apparatusEntry.separator) {
         case '':
@@ -986,6 +986,7 @@ export class ApparatusPanel extends PanelWithToolbar {
         default:
           separator = apparatusEntry.separator;
       }
+      separator = getPlainText(fromCompactFmtText(separator));
 
       html += `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `;
       apparatusEntry.subEntries.forEach((subEntry, subEntryIndex) => {
@@ -1421,10 +1422,11 @@ export class ApparatusPanel extends PanelWithToolbar {
 
   private loadLemmaGroupVariableInForm(variable: string, appEntry: ApparatusEntry, toggle: MultiToggle, textInput: JQuery<HTMLElement>) {
     const entry = appEntry as { [key: string]: any };
-    let option = this.getLemmaGroupVariableToggleOption(entry[variable]);
+    let option = this.getLemmaGroupVariableToggleOption(entry[variable], toggle);
     toggle.setOptionByName(option);
     if (option === 'custom') {
-      textInput.removeClass('hidden').val(entry[variable]);
+      const stringVal = getPlainText(fromCompactFmtText(entry[variable]));
+      textInput.removeClass('hidden').val(stringVal);
     } else {
       textInput.addClass('hidden').val('');
     }
@@ -1451,8 +1453,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       }
       // @ts-expect-error using editedEntry as { [key: string]: any }
       this.editedEntry[variable] = this.getLemmaGroupVariableFromToggle(toggle, textInput);
-      // @ts-expect-error using editedEntry as { [key: string]: any }
-      if (Array.isArray(this.editedEntry[variable])) {
+      if (toggle.getOption() === 'custom') {
         textInput.removeClass('hidden');
       } else {
         textInput.addClass('hidden');
@@ -1461,14 +1462,15 @@ export class ApparatusPanel extends PanelWithToolbar {
     };
   }
 
-  private getLemmaGroupVariableToggleOption(variableValue: any) {
+  private getLemmaGroupVariableToggleOption(variableValue: CompactFmtText, toggle: MultiToggle) {
     if (variableValue === '') {
       return 'auto';
     }
-    if (Array.isArray(variableValue)) {
-      return 'custom';
+    const stringVal = getPlainText(fromCompactFmtText(variableValue));
+    if (toggle.getOptionNames().includes(stringVal)) {
+      return stringVal;
     }
-    return variableValue;
+    return 'custom';
   }
 
   private generateApparatusEntryFormHtml() {

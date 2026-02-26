@@ -57,7 +57,7 @@ export interface CustomApparatusEntryInterface {
   lemma: CompactFmtText;
   postLemma: CompactFmtText;
   preLemma: CompactFmtText;
-  separator: string;
+  separator: CompactFmtText;
   subEntries: CustomApparatusSubEntryInterface[];
   tags: string[];
 }

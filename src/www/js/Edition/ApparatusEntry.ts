@@ -16,7 +16,7 @@ export class ApparatusEntry implements ApparatusEntryInterface {
   lemma: CompactFmtText;
   postLemma: CompactFmtText;
   lemmaText: string;
-  separator: string;
+  separator: CompactFmtText;
   tags: string[];
   subEntries: ApparatusSubEntry[];
   metadata: MetadataInterface;

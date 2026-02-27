@@ -296,8 +296,8 @@ export class EditionComposer extends ApmPage {
       onCtDataChange: this.genOnCtDataChange('collationTablePanel'),
       contentAreaId: 'ct-panel-content',
       peopleInfo: this.options.peopleInfo,
-      editApparatusEntry: (apparatusIndex: number, ctIndexFrom: number, ctIndexTo: number) => {
-        this.editApparatusEntryFromCollationTable(apparatusIndex, ctIndexFrom, ctIndexTo);
+      editApparatusEntry: (ctDataAppIndex: number, ctIndexFrom: number, ctIndexTo: number) => {
+        this.editApparatusEntryFromCollationTable(getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex, this.ctData, this.edition), ctIndexFrom, ctIndexTo);
       },
       verbose: true
     });
@@ -327,8 +327,8 @@ export class EditionComposer extends ApmPage {
             this._setError(`${msg} (Apparatus ${appIndex})`);
           },
           verbose: true,
-          editApparatusEntry: (apparatusIndex: number, mainTextFrom: number, mainTextTo: number) => {
-            this.editApparatusEntry(apparatusIndex, mainTextFrom, mainTextTo);
+          editApparatusEntry: (appIndex: number, mainTextFrom: number, mainTextTo: number) => {
+            this.editApparatusEntry(appIndex, mainTextFrom, mainTextTo);
           }
         });
       });
@@ -1295,6 +1295,11 @@ export class EditionComposer extends ApmPage {
   private getTitleForApparatusType(type: string): string {
     return 'App ' + capitalizeFirstLetter(type);
   }
+}
+
+function getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex: number, ctData: CtDataInterface, edition: Edition):number {
+  const appType = ctData.customApparatuses[ctDataAppIndex].type;
+  return edition.apparatuses.findIndex(app => app.type === appType);
 }
 
 // Load as global variable so that it can be referenced in the Twig template

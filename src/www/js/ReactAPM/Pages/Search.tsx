@@ -1,9 +1,8 @@
-import React, { useEffect, useContext, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
-import { AppContext } from "@/ReactAPM/App";
-import { LanguageDetector } from '@/toolbox/LanguageDetector';
-import { urlGen } from '@/pages/common/SiteUrlGen';
-import { tr } from '@/pages/common/SiteLang';
+import {LanguageDetector} from '@/toolbox/LanguageDetector';
+import {urlGen} from '@/pages/common/SiteUrlGen';
+import {tr} from '@/pages/common/SiteLang';
 
 const STATE_INIT = 0;
 const STATE_WAITING_FOR_SERVER = 1;
@@ -28,10 +27,7 @@ export default function SearchPage() {
   const isInvalidSearch = keywords.includes('*') && lemmatize;
 
   const storedData = useRef({
-    data_for_context: [] as any[],
-    context: [] as any[],
-    numDisplayedPassages: 0,
-    prevTitle: ''
+    data_for_context: [] as any[], context: [] as any[], numDisplayedPassages: 0, prevTitle: ''
   });
 
   // add some CSS classes
@@ -75,7 +71,9 @@ export default function SearchPage() {
 }
     `;
     document.head.appendChild(style);
-    return () => { document.head.removeChild(style); };
+    return () => {
+      document.head.removeChild(style);
+    };
   }, []);
 
   // track keyword distance
@@ -122,10 +120,17 @@ export default function SearchPage() {
    * @param max
    * @constructor
    */
-  const ContextKnob = ({ value, onChange, showValueInside = false, max = 99 }: { value: number, onChange: (val: number) => void, showValueInside?: boolean, max?: number }) => {
+  const ContextKnob = ({value, onChange, showValueInside = false, max = 99}: {
+    value: number,
+    onChange: (val: number) => void,
+    showValueInside?: boolean,
+    max?: number
+  }) => {
     const [isDragging, setIsDragging] = useState(false);
     const valueRef = useRef(value);
-    useEffect(() => { valueRef.current = value; }, [value]);
+    useEffect(() => {
+      valueRef.current = value;
+    }, [value]);
 
     // Keyword Distance Knob is slightly smaller (26px), Context Knobs stay at 20px
     const size = showValueInside ? '26px' : '20px';
@@ -164,44 +169,37 @@ export default function SearchPage() {
 
     const rotation = (value / max) * 280 - 140;
 
-    return (
-        <div
-            className="knob-mini"
-            onMouseDown={handleMouseDown}
-            onWheel={handleWheel}
+    return (<div
+        className="knob-mini"
+        onMouseDown={handleMouseDown}
+        onWheel={handleWheel}
+        style={{
+          userSelect: 'none',
+          touchAction: 'none',
+          width: size,
+          height: size,
+          border: isDragging ? '1.5px solid #007bff' : '1.5px solid #333'
+        }}
+      >
+        {/* Only show pointer if NO number is inside */}
+        {!showValueInside && (<div
+            className="knob-mini-pointer"
             style={{
-              userSelect: 'none',
-              touchAction: 'none',
-              width: size,
-              height: size,
-              border: isDragging ? '1.5px solid #007bff' : '1.5px solid #333'
+              transform: `translateX(-50%) rotate(${rotation}deg)`,
+              background: isDragging ? '#007bff' : '#333',
+              transformOrigin: `50% ${pointerOrigin}`
             }}
-        >
-          {/* Only show pointer if NO number is inside */}
-          {!showValueInside && (
-              <div
-                  className="knob-mini-pointer"
-                  style={{
-                    transform: `translateX(-50%) rotate(${rotation}deg)`,
-                    background: isDragging ? '#007bff' : '#333',
-                    transformOrigin: `50% ${pointerOrigin}`
-                  }}
-              />
-          )}
+          />)}
 
-          {showValueInside && (
-              <span
-                  className="knob-value-center"
-                  style={{
-                    color: isDragging ? '#007bff' : '#333',
-                    fontSize: fontSize
-                  }}
-              >
+        {showValueInside && (<span
+            className="knob-value-center"
+            style={{
+              color: isDragging ? '#007bff' : '#333', fontSize: fontSize
+            }}
+          >
           {value}
-        </span>
-          )}
-        </div>
-    );
+        </span>)}
+      </div>);
   };
 
 
@@ -211,10 +209,7 @@ export default function SearchPage() {
    */
   const fetchCreatorsAndTitles = async (category: string) => {
     let apiUrl = '';
-    if (category === 'transcriptions') apiUrl = urlGen.apiSearchTranscriptionTitles();
-    else if (category === 'transcribers') apiUrl = urlGen.apiSearchTranscribers();
-    else if (category === 'editors') apiUrl = urlGen.apiSearchEditors();
-    else if (category === 'editions') apiUrl = urlGen.apiSearchEditionTitles();
+    if (category === 'transcriptions') apiUrl = urlGen.apiSearchTranscriptionTitles(); else if (category === 'transcribers') apiUrl = urlGen.apiSearchTranscribers(); else if (category === 'editors') apiUrl = urlGen.apiSearchEditors(); else if (category === 'editions') apiUrl = urlGen.apiSearchEditionTitles();
 
     try {
       const response = await fetch(apiUrl);
@@ -261,19 +256,33 @@ export default function SearchPage() {
   const startSearch = async (page = 1) => {
     const ld = new LanguageDetector('la');
     const detectedLang = ld.detectLang(keywords);
-    const inputs = { corpus, searched_phrase: keywords, lang: detectedLang, title: titleInput, creator: creatorInput, keywordDistance: Number(distance) + 1, lemmatize, queryPage: Number(page) };
+    const inputs = {
+      corpus,
+      searched_phrase: keywords,
+      lang: detectedLang,
+      title: titleInput,
+      creator: creatorInput,
+      keywordDistance: Number(distance) + 1,
+      lemmatize,
+      queryPage: Number(page)
+    };
     try {
       const response = await fetch(urlGen.apiSearchKeyword(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: new URLSearchParams(inputs as any)
       });
       const res = await response.json();
-      if (res.status !== 'OK') { setSearchStatus(STATE_INIT); return; }
+      if (res.status !== 'OK') {
+        setSearchStatus(STATE_INIT);
+        return;
+      }
       handleApiResponse(res, inputs);
-      if (!res.queryFinished && storedData.current.numDisplayedPassages < 1000) startSearch(Number(res.queryPage) + 1);
-      else setSearchStatus(STATE_INIT);
-    } catch (e) { setSearchStatus(STATE_INIT); setErrorMessage("Sorry, the search is currently not available.") }
+      if (!res.queryFinished && storedData.current.numDisplayedPassages < 1000) startSearch(Number(res.queryPage) + 1); else setSearchStatus(STATE_INIT);
+    } catch (e) {
+      setSearchStatus(STATE_INIT);
+      setErrorMessage("Sorry, the search is currently not available.");
+    }
   };
 
   /**
@@ -291,15 +300,28 @@ export default function SearchPage() {
 
     const newEntries: any[] = [];
     rawData.forEach((match: any) => {
-      console.log(match)
+      console.log(match);
       const link = corpus === 'transcriptions' ? urlGen.sitePageView(match.docID, match.seq, match.column) : urlGen.siteCollationTableEdit(match.table_id);
       match.passage_tokenized.forEach((p: any, j: number) => {
         storedData.current.numDisplayedPassages++;
         storedData.current.context[storedData.current.numDisplayedPassages] = Number(inputs.keywordDistance);
-        storedData.current.data_for_context.push({ text_tokenized: match.text_tokenized, tokens_matched: match.tokens_matched, position: Number(match.positions[j]) });
+        storedData.current.data_for_context.push({
+          text_tokenized: match.text_tokenized,
+          tokens_matched: match.tokens_matched,
+          position: Number(match.positions[j])
+        });
         const displayTitle = match.title !== storedData.current.prevTitle ? match.title : "";
         storedData.current.prevTitle = match.title;
-        const entry = { id: storedData.current.numDisplayedPassages, passageHtml: cutOutPassageWithHighlights(match.text_tokenized, match.tokens_matched, match.positions[j], kwDist, Number(inputs.keywordDistance)), title: displayTitle, fullTitle: match.title, identifier: corpus === 'transcriptions' ? match.foliation : match.chunk, user: match.creator, link, lang: res.lang };
+        const entry = {
+          id: storedData.current.numDisplayedPassages,
+          passageHtml: cutOutPassageWithHighlights(match.text_tokenized, match.tokens_matched, match.positions[j], kwDist, Number(inputs.keywordDistance)),
+          title: displayTitle,
+          fullTitle: match.title,
+          identifier: corpus === 'transcriptions' ? match.foliation : match.chunk,
+          user: match.creator,
+          link,
+          lang: res.lang
+        };
         newEntries.push(entry);
       });
     });
@@ -315,7 +337,10 @@ export default function SearchPage() {
     storedData.current.context[index] = newVal;
     const itemData = storedData.current.data_for_context[index - 1];
     const currentKwDist = Number(distance) + 1;
-    setResults(prev => prev.map(item => item.id === index ? { ...item, passageHtml: cutOutPassageWithHighlights(itemData.text_tokenized, itemData.tokens_matched, itemData.position, currentKwDist, newVal) } : item));
+    setResults(prev => prev.map(item => item.id === index ? {
+      ...item,
+      passageHtml: cutOutPassageWithHighlights(itemData.text_tokenized, itemData.tokens_matched, itemData.position, currentKwDist, newVal)
+    } : item));
   };
 
   /**
@@ -328,7 +353,10 @@ export default function SearchPage() {
     setResults(results.map(item => {
       storedData.current.context[item.id] = newVal;
       const itemData = storedData.current.data_for_context[item.id - 1];
-      return { ...item, passageHtml: cutOutPassageWithHighlights(itemData.text_tokenized, itemData.tokens_matched, itemData.position, currentKwDist, newVal) };
+      return {
+        ...item,
+        passageHtml: cutOutPassageWithHighlights(itemData.text_tokenized, itemData.tokens_matched, itemData.position, currentKwDist, newVal)
+      };
     }));
   };
 
@@ -339,253 +367,281 @@ export default function SearchPage() {
   const getUniqueTitleCount = (resultsList: any[]) => new Set(resultsList.map(res => res.fullTitle)).size;
 
   // define columns widths
-  const SEARCH_COLUMNS = (
-      <colgroup>
-        <col width="6%" /><col width="14%" /><col width="6%" /><col width="7%" /><col width="14%" /><col width="14%" /><col width="7%" />
-      </colgroup>
-  );
+  const SEARCH_COLUMNS = (<colgroup>
+      <col width="6%"/>
+      <col width="14%"/>
+      <col width="6%"/>
+      <col width="7%"/>
+      <col width="14%"/>
+      <col width="14%"/>
+      <col width="7%"/>
+    </colgroup>);
 
-  const RESULTS_COLUMNS = (
-      <colgroup>
-        <col width="45%" /><col width="5%" /><col width="20%" /><col width="10%" /><col width="15%" /><col width="5%" />
-      </colgroup>
-  );
+  const RESULTS_COLUMNS = (<colgroup>
+      <col width="45%"/>
+      <col width="5%"/>
+      <col width="20%"/>
+      <col width="10%"/>
+      <col width="15%"/>
+      <col width="5%"/>
+    </colgroup>);
 
   // style
-  const corpusSelectorStyle: React.CSSProperties = {  paddingLeft: '8px', flex: '0.33', textAlign: 'left', textAlignLast: 'left', appearance: 'none', WebkitAppearance: 'none', width:'100%', height: '100%', border: 'none', outline:'none', borderRadius: '6px', backgroundColor: '#fff', cursor: 'pointer'};
-  const inputStyle: React.CSSProperties = { height: '32px', border: '1px solid #ccc', borderRadius: '6px', padding: '4px 8px', width:'90%' };
+  const corpusSelectorStyle: React.CSSProperties = {
+    paddingLeft: '8px',
+    flex: '0.33',
+    textAlign: 'left',
+    textAlignLast: 'left',
+    appearance: 'none',
+    WebkitAppearance: 'none',
+    width: '100%',
+    height: '100%',
+    border: 'none',
+    outline: 'none',
+    borderRadius: '6px',
+    backgroundColor: '#fff',
+    cursor: 'pointer'
+  };
+  const inputStyle: React.CSSProperties = {
+    height: '32px',
+    border: '1px solid #ccc',
+    borderRadius: '6px',
+    padding: '4px 8px',
+    width: '90%'
+  };
 
   // return HTML page structure
-  return (
-      <NormalPageContainer>
-        <div style={{ display: 'flex', flexDirection: 'column', width: '100%', gap: '15px' }}>
-          <h1 style={{ marginBottom: '10px' }}>Search</h1>
-          <table className="docTable dataTable" style={{ width: '100%', tableLayout: 'fixed' }}>
-            {SEARCH_COLUMNS}
-            <thead style={{ borderTop: '1px solid black' }}>
-            <tr style={{ backgroundColor: '#f4f4f4' }}>
-              {/* Corpus */}
-              <th>
-                <div style={{ paddingLeft: '8px', paddingTop: '10px', paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left' }}>
-      <span style={{ position: 'relative', display: 'inline-block' }}>
+  return (<NormalPageContainer>
+      <div style={{display: 'flex', flexDirection: 'column', width: '100%', gap: '15px'}}>
+        <h1 style={{marginBottom: '10px'}}>Search</h1>
+        <table className="docTable dataTable" style={{width: '100%', tableLayout: 'fixed'}}>
+          {SEARCH_COLUMNS}
+          <thead style={{borderTop: '1px solid black'}}>
+          <tr style={{backgroundColor: '#f4f4f4'}}>
+            {/* Corpus */}
+            <th>
+              <div style={{
+                paddingLeft: '8px',
+                paddingTop: '10px',
+                paddingBottom: '6px',
+                fontSize: '0.9em',
+                textAlign: 'left'
+              }}>
+      <span style={{position: 'relative', display: 'inline-block'}}>
         Corpus
         <i
-            className="fas fa-info-circle"
-            title="Choose the target corpus of your search."
-            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+          className="fas fa-info-circle"
+          title="Choose the target corpus of your search."
+          style={{position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666'}}
         ></i>
       </span>
-                </div>
-              </th>
+              </div>
+            </th>
 
-              {/* Keywords */}
-              <th>
-                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left' }}>
-      <span style={{ position: 'relative', display: 'inline-block' }}>
+            {/* Keywords */}
+            <th>
+              <div style={{paddingTop: '10px', paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left'}}>
+      <span style={{position: 'relative', display: 'inline-block'}}>
         Keywords
         <i
-            className="fas fa-info-circle"
-            title="Enter keywords to search.&#10;• The search is case-insensitive.&#10;• You can use the wildcard operator '*' to search for prefixes, suffixes and infixes, like 'philosoph*', '*losophus' or '*losoph*'.&#10;• Wildcards represent optional characters, i. e. 'philosophi*' will also match 'philosophi'."
-            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+          className="fas fa-info-circle"
+          title="Enter keywords to search.&#10;• The search is case-insensitive.&#10;• You can use the wildcard operator '*' to search for prefixes, suffixes and infixes, like 'philosoph*', '*losophus' or '*losoph*'.&#10;• Wildcards represent optional characters, i. e. 'philosophi*' will also match 'philosophi'."
+          style={{position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666'}}
         ></i>
       </span>
-                </div>
-              </th>
+              </div>
+            </th>
 
-              {/* Keyword Distance */}
-              <th className="text-center">
-                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'center' }}>
-      <span style={{ position: 'relative', display: 'inline-block' }}>
+            {/* Keyword Distance */}
+            <th className="text-center">
+              <div style={{paddingTop: '10px', paddingBottom: '6px', fontSize: '0.9em', textAlign: 'center'}}>
+      <span style={{position: 'relative', display: 'inline-block'}}>
         Keyword Distance
         <i
-            className="fas fa-info-circle"
-            title="The keyword distance is the number of tokens, i. e. words or punctuation marks, that are allowed to occur between your longest given keyword and each of the others.&#10;Examples:&#10;• With two keywords given a value of 0 means that only the occurrence of directly consecutive words counts as a match.&#10;• With three keywords given a value of 0 means that only the occurrence of your longest keyword in the middle of the other two counts as a match.&#10;In some scenarios it is recommended to double check your search results with a slightly higher keyword distance."
-            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+          className="fas fa-info-circle"
+          title="The keyword distance is the number of tokens, i. e. words or punctuation marks, that are allowed to occur between your longest given keyword and each of the others.&#10;Examples:&#10;• With two keywords given a value of 0 means that only the occurrence of directly consecutive words counts as a match.&#10;• With three keywords given a value of 0 means that only the occurrence of your longest keyword in the middle of the other two counts as a match.&#10;In some scenarios it is recommended to double check your search results with a slightly higher keyword distance."
+          style={{position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666'}}
         ></i>
       </span>
-                </div>
-              </th>
+              </div>
+            </th>
 
-              {/* Lemmatization */}
-              <th className="text-center">
-                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'center' }}>
-      <span style={{ position: 'relative', display: 'inline-block' }}>
+            {/* Lemmatization */}
+            <th className="text-center">
+              <div style={{paddingTop: '10px', paddingBottom: '6px', fontSize: '0.9em', textAlign: 'center'}}>
+      <span style={{position: 'relative', display: 'inline-block'}}>
         Lemmatization
         <i
-            className="fas fa-info-circle"
-            title="If checked, conjugated or declined forms of your keywords will count as matches. Be aware, that automatic lemmatization is not an error-free process and therefore lemmatized search can return false positives and especially can miss some matches. In some scenarios it is recommended to make some checks with unlemmatized search for declined or conjugated forms of your keyword."
-            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+          className="fas fa-info-circle"
+          title="If checked, conjugated or declined forms of your keywords will count as matches. Be aware, that automatic lemmatization is not an error-free process and therefore lemmatized search can return false positives and especially can miss some matches. In some scenarios it is recommended to make some checks with unlemmatized search for declined or conjugated forms of your keyword."
+          style={{position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666'}}
         ></i>
       </span>
-                </div>
-              </th>
+              </div>
+            </th>
 
-              {/* Document / Edition */}
-              <th>
-                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left' }}>
-      <span style={{ position: 'relative', display: 'inline-block' }}>
+            {/* Document / Edition */}
+            <th>
+              <div style={{paddingTop: '10px', paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left'}}>
+      <span style={{position: 'relative', display: 'inline-block'}}>
         {corpus === 'transcriptions' ? 'Document' : 'Edition'}
         <i
-            className="fas fa-info-circle"
-            title="Filters search results by title. Enter the exact full name (case-sensitive) of the target of your search."
-            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+          className="fas fa-info-circle"
+          title="Filters search results by title. Enter the exact full name (case-sensitive) of the target of your search."
+          style={{position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666'}}
         ></i>
       </span>
-                </div>
-              </th>
+              </div>
+            </th>
 
-              {/* Transcriber / Editor */}
-              <th>
-                <div style={{ paddingTop: '10px',  paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left' }}>
-      <span style={{ position: 'relative', display: 'inline-block' }}>
+            {/* Transcriber / Editor */}
+            <th>
+              <div style={{paddingTop: '10px', paddingBottom: '6px', fontSize: '0.9em', textAlign: 'left'}}>
+      <span style={{position: 'relative', display: 'inline-block'}}>
         {corpus === 'transcriptions' ? 'Transcriber' : 'Editor'}
         <i
-            className="fas fa-info-circle"
-            title="Filters search results by person name. Enter the full name, first name, last name or only the beginning of the first or last name of a person."
-            style={{ position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666' }}
+          className="fas fa-info-circle"
+          title="Filters search results by person name. Enter the full name, first name, last name or only the beginning of the first or last name of a person."
+          style={{position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666'}}
         ></i>
       </span>
-                </div>
-              </th>
+              </div>
+            </th>
 
-              <th className="text-center"></th>
-            </tr>
-            </thead>
-            <tbody>
-            <tr><td style={{paddingTop:'0px',  paddingBottom: '6px',}}></td></tr>
-            <tr>
-              <td>
-                <select value={corpus} onChange={(e) => setCorpus(e.target.value)} style={corpusSelectorStyle}>
-                  <option value="transcriptions">Transcriptions</option>
-                  <option value="editions">Editions</option>
-                </select>
-              </td>
-              <td>
-                <input
-                    type="text"
-                    value={keywords}
-                    onChange={(e) => setKeywords(e.target.value)}
-                    style={inputStyle}
+            <th className="text-center"></th>
+          </tr>
+          </thead>
+          <tbody>
+          <tr>
+            <td style={{paddingTop: '0px', paddingBottom: '6px',}}></td>
+          </tr>
+          <tr>
+            <td>
+              <select value={corpus} onChange={(e) => setCorpus(e.target.value)} style={corpusSelectorStyle}>
+                <option value="transcriptions">Transcriptions</option>
+                <option value="editions">Editions</option>
+              </select>
+            </td>
+            <td>
+              <input
+                type="text"
+                value={keywords}
+                onChange={(e) => setKeywords(e.target.value)}
+                style={inputStyle}
+              />
+            </td>
+            <td style={{textAlign: 'center'}}>
+              <div style={{display: 'flex', justifyContent: 'center'}}>
+                <ContextKnob
+                  value={distance}
+                  onChange={(val) => {
+                    const min = getMinDistance(keywords);
+                    if (val < min) {
+                      setDistance(min);
+                      setErrorMessage(`The minimum keyword distance for ${keywords.split(/\s+/).length} keywords is ${min}.`);
+                    } else {
+                      setDistance(val);
+                      setErrorMessage('');
+                    }
+                  }}
+                  showValueInside={true}
                 />
-              </td>
-              <td style={{ textAlign: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <ContextKnob
-                      value={distance}
-                      onChange={(val) => {
-                        const min = getMinDistance(keywords);
-                        if (val < min) {
-                          setDistance(min);
-                          setErrorMessage(`The minimum keyword distance for ${keywords.split(/\s+/).length} keywords is ${min}.`);
-                        } else {
-                          setDistance(val);
-                          setErrorMessage('');
-                        }
-                      }}
-                      showValueInside={true}
-                  />
-                </div>
-              </td>
-              <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end' }}>
-                <input
-                    type="checkbox"
-                    checked={lemmatize}
-                    onChange={(e) => setLemmatize(e.target.checked)}
-                    style={{
-                      width: '15px',
-                      height: '15px',
-                      cursor: 'pointer',
-                      margin: 0,
-                      accentColor: 'black'
-                    }}
-                />
-              </td>
-              <td>
-                <input list="titleList" value={titleInput} onChange={(e) => setTitleInput(e.target.value)} style={inputStyle} />
-                <datalist id="titleList">{titleList.map(t => <option key={t} value={t} />)}</datalist>
-              </td>
-              <td>
-                <input list="creatorList" value={creatorInput} onChange={(e) => setCreatorInput(e.target.value)} style={inputStyle} />
-                <datalist id="creatorList">{creatorList.map(c => <option key={c} value={c} />)}</datalist>
-              </td>
-              <td style={{ textAlign: 'right', display: 'flex', justifyContent: 'center' }}>
-                <button
-                    id="search-submit-button"
-                    onClick={handleSearchTrigger}
-                    className="btn btn-primary"
-                    disabled={isInvalidSearch || searchStatus !== STATE_INIT || keywords.trim() === ""}
-                    style={{
-                      width: '80%',
-                      height: '32px',
-                      display: 'flex',
-                      justifyContent: 'center',
-                      alignItems: 'center',
-                      backgroundColor: isInvalidSearch ? "#ccc" : "black", // Grey if invalid
-                      borderColor: isInvalidSearch ? "#ccc" : "black",
-                      cursor: isInvalidSearch ? "not-allowed" : "pointer"
-                    }}
-                >
-                  <i className="fas fa-search" style={{ color: 'white' }}></i>
-                </button>
-              </td>
-            </tr>
-            </tbody>
-          </table>
-
-          {isInvalidSearch && (
-              <div className="fade-in-element" style={{ textAlign: 'center', marginTop: '2em', fontWeight: 'bold' }}>
-                Wildcards (*) and lemmatization cannot be combined.
               </div>
-          )}
+            </td>
+            <td style={{display: 'flex', justifyContent: 'center', alignItems: 'flex-end'}}>
+              <input
+                type="checkbox"
+                checked={lemmatize}
+                onChange={(e) => setLemmatize(e.target.checked)}
+                style={{
+                  width: '15px', height: '15px', cursor: 'pointer', margin: 0, accentColor: 'black'
+                }}
+              />
+            </td>
+            <td>
+              <input list="titleList" value={titleInput} onChange={(e) => setTitleInput(e.target.value)}
+                     style={inputStyle}/>
+              <datalist id="titleList">{titleList.map(t => <option key={t} value={t}/>)}</datalist>
+            </td>
+            <td>
+              <input list="creatorList" value={creatorInput} onChange={(e) => setCreatorInput(e.target.value)}
+                     style={inputStyle}/>
+              <datalist id="creatorList">{creatorList.map(c => <option key={c} value={c}/>)}</datalist>
+            </td>
+            <td style={{textAlign: 'right', display: 'flex', justifyContent: 'center'}}>
+              <button
+                id="search-submit-button"
+                onClick={handleSearchTrigger}
+                className="btn btn-primary"
+                disabled={isInvalidSearch || searchStatus !== STATE_INIT || keywords.trim() === ""}
+                style={{
+                  width: '80%',
+                  height: '32px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  backgroundColor: isInvalidSearch ? "#ccc" : "black", // Grey if invalid
+                  borderColor: isInvalidSearch ? "#ccc" : "black",
+                  cursor: isInvalidSearch ? "not-allowed" : "pointer"
+                }}
+              >
+                <i className="fas fa-search" style={{color: 'white'}}></i>
+              </button>
+            </td>
+          </tr>
+          </tbody>
+        </table>
 
-          {errorMessage && (
-              <div className="fade-in-element" style={{ textAlign: 'center', marginTop: '2em', fontWeight: 'bold' }}>
-                {errorMessage}
-              </div>
-          )}
+        {isInvalidSearch && (
+          <div className="fade-in-element" style={{textAlign: 'center', marginTop: '2em', fontWeight: 'bold'}}>
+            Wildcards (*) and lemmatization cannot be combined.
+          </div>)}
 
-          {results.length > 0 && (
-              <div style={{ marginTop: '25px' }}>
-                <table className="docTable dataTable no-footer" style={{ width: '100%', tableLayout: 'fixed' }}>
-                  {RESULTS_COLUMNS}
-                  <thead style={{ borderTop: '1px solid black' }}>
-                  <tr style={{ backgroundColor: '#f4f4f4' }}>
-                    <th style={{ padding: '10px', paddingLeft: '8px' }}>Matched Passage ({results.length})</th>
-                    <th style={{ padding: '10px', textAlign: 'center' }}>Context</th>
-                    <th className="text-center">Title ({getUniqueTitleCount(results)})</th>
-                    <th className="text-center">{corpus === 'transcriptions' ? 'Foliation' : 'Chunk'}</th>
-                    <th className="text-center">{corpus === 'transcriptions' ? 'Transcriber' : 'Editor'}</th>
-                    <th className="text-center">Link</th>
-                  </tr>
-                  </thead>
-                  <tbody>
-                  {results.map((res, index) => (
-                      <tr key={res.id} className="fade-in-element" style={{ fontSize: '0.95em', borderBottom: '1px solid #eee' }}>
-                        <td className={`text-${res.lang}`} style={{ padding: '8px', textAlign: 'justify' }} dangerouslySetInnerHTML={{ __html: res.passageHtml }} />
-                        <td style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 0' }}>
-                          <ContextKnob value={storedData.current.context[res.id]} onChange={(val) => handleLocalContextChange(res.id, val)} />
-                        </td>
-                        <td className="text-center" >{res.title}</td>
-                        <td className="text-center">{res.identifier}</td>
-                        <td className="text-center">{res.user}</td>
-                        <td className="text-center">
-                          <a className="fas fa-external-link-alt" target="_blank" href={res.link} rel="noreferrer" style={{ color: '#007bff' }}></a>
-                        </td>
-                      </tr>
-                  ))}
-                  </tbody>
-                </table>
-              </div>
-          )}
+        {errorMessage && (
+          <div className="fade-in-element" style={{textAlign: 'center', marginTop: '2em', fontWeight: 'bold'}}>
+            {errorMessage}
+          </div>)}
 
-          {!isIdle && searchStatus === STATE_INIT && results.length === 0 && !errorMessage && (
-              <div className="fade-in-element" style={{ textAlign: 'center', marginTop: '2em', fontWeight: 'bold' }}>
-                Nothing found.
-              </div>
-          )}
-        </div>
-      </NormalPageContainer>
-  );
+        {results.length > 0 && (<div style={{marginTop: '25px'}}>
+            <table className="docTable dataTable no-footer" style={{width: '100%', tableLayout: 'fixed'}}>
+              {RESULTS_COLUMNS}
+              <thead style={{borderTop: '1px solid black'}}>
+              <tr style={{backgroundColor: '#f4f4f4'}}>
+                <th style={{padding: '10px', paddingLeft: '8px'}}>Matched Passage ({results.length})</th>
+                <th style={{padding: '10px', textAlign: 'center'}}>Context</th>
+                <th className="text-center">Title ({getUniqueTitleCount(results)})</th>
+                <th className="text-center">{corpus === 'transcriptions' ? 'Foliation' : 'Chunk'}</th>
+                <th className="text-center">{corpus === 'transcriptions' ? 'Transcriber' : 'Editor'}</th>
+                <th className="text-center">Link</th>
+              </tr>
+              </thead>
+              <tbody>
+              {results.map((res, index) => (<tr key={res.id} className="fade-in-element"
+                                                style={{fontSize: '0.95em', borderBottom: '1px solid #eee'}}>
+                  <td className={`text-${res.lang}`} style={{padding: '8px', textAlign: 'justify'}}
+                      dangerouslySetInnerHTML={{__html: res.passageHtml}}/>
+                  <td style={{display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '8px 0'}}>
+                    <ContextKnob value={storedData.current.context[res.id]}
+                                 onChange={(val) => handleLocalContextChange(res.id, val)}/>
+                  </td>
+                  <td className="text-center">{res.title}</td>
+                  <td className="text-center">{res.identifier}</td>
+                  <td className="text-center">{res.user}</td>
+                  <td className="text-center">
+                    <a className="fas fa-external-link-alt" target="_blank" href={res.link} rel="noreferrer"
+                       style={{color: '#007bff'}}></a>
+                  </td>
+                </tr>))}
+              </tbody>
+            </table>
+          </div>)}
+
+        {!isIdle && searchStatus === STATE_INIT && results.length === 0 && !errorMessage && (
+          <div className="fade-in-element" style={{textAlign: 'center', marginTop: '2em', fontWeight: 'bold'}}>
+            Nothing found.
+          </div>)}
+      </div>
+    </NormalPageContainer>);
 }
 
 // LOGIC FUNCTIONS
@@ -634,7 +690,7 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
         keywordDistance: keywordDistance,
         lemmata: lemmata,
         lemmatize: lemmatize,
-        matched_token_positions: Array.from({ length: passageTokenized.length }, () => []),
+        matched_token_positions: Array.from({length: passageTokenized.length}, () => []),
         passage_coordinates: passageCoordinates,
         passage_lemmatized: passageLemmatized,
         passage_tokenized: passageTokenized,
@@ -651,7 +707,7 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
 }
 
 /**
- * filters the collected data from typsense, especially important if there is more than one keyword
+ * filters the collected data from typesense, especially important if there is more than one keyword
  * @param data
  * @param tokenPlain
  * @param lemma
@@ -716,7 +772,9 @@ function getFilterType(t: string) {
 function getPositions(text: any[], token: string, filter: string) {
   const res: number[] = [];
   if (!text || !token || token.length === 0) return res;
-  text.forEach((t, i) => { if (t && (filter === 'lemma' ? isLemmaOfWord(token, t) : isMatching(t, token, filter))) res.push(i); });
+  text.forEach((t, i) => {
+    if (t && (filter === 'lemma' ? isLemmaOfWord(token, t) : isMatching(t, token, filter))) res.push(i);
+  });
   return res;
 }
 
@@ -729,7 +787,7 @@ function getPositions(text: any[], token: string, filter: string) {
 function getPassage(text: any[], pos: number, kwDist: number) {
   const start = Math.max(0, pos - kwDist);
   const end = Math.min(text.length, pos + kwDist + 1);
-  return { passage: text.slice(start, end), start, end };
+  return {passage: text.slice(start, end), start, end};
 }
 
 /**
@@ -743,7 +801,8 @@ function isMatching(token: string, needle: string, filter: string): boolean {
   if (filter === 'match_full') return token === needle || token === capitalizeFirstCharacter(needle);
   if (filter === 'match_prefix') return token.startsWith(needle) || token.startsWith(capitalizeFirstCharacter(needle));
   if (filter === 'match_suffix') return token.endsWith(needle) || token.endsWith(capitalizeFirstCharacter(needle));
-  if (filter === 'match_body') return token.includes(needle); return false;
+  if (filter === 'match_body') return token.includes(needle);
+  return false;
 }
 
 /**
@@ -760,13 +819,17 @@ function isLemmaOfWord(lemma: string, token: string): boolean {
  * capitalizes the first character of a string
  * @param string
  */
-function capitalizeFirstCharacter(string: string) { return string ? string.charAt(0).toUpperCase() + string.slice(1) : ""; }
+function capitalizeFirstCharacter(string: string) {
+  return string ? string.charAt(0).toUpperCase() + string.slice(1) : "";
+}
 
 /**
  * removes blanks from a string
  * @param s
  */
-function removeBlanks(s: string) { return s.replace(/\s([.,:;?\])])/g, '$1').replace(/([(\[])\s/g, '$1').trim(); }
+function removeBlanks(s: string) {
+  return s.replace(/\s([.,:;?\])])/g, '$1').replace(/([(\[])\s/g, '$1').trim();
+}
 
 /**
  * cleans the matched_token_positions array of a document by removing duplicates and subsets
@@ -834,7 +897,7 @@ function cutOutPassageWithHighlights(text: any[], matched: string[], pos: number
     // LOGIC FOR SPACES:
     const isPunctuation = /^[\.,:;!\?\]\)]/.test(t);
     const prevWasOpeningBracket = i > 0 && /^[\(\[]/.test(words[i - 1]);
-    
+
     if (i > 0 && !isPunctuation && !prevWasOpeningBracket) {
       passage += " ";
     }

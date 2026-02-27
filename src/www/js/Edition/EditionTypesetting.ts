@@ -53,7 +53,7 @@ import {ApparatusInterface} from "./EditionInterface.js";
 import {Dimension} from "../lib/Typesetter2/Dimension.js";
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
-import {fromString, fromCompactFmtText, getPlainText} from "../lib/FmtText/FmtText.js";
+import {fromCompactFmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
@@ -1207,7 +1207,10 @@ export class EditionTypesetting {
 
         default:
           // custom separator
-          items.push(...await this.getTsItemsForString(removeExtraWhiteSpace(entry.separator), 'apparatus', this.textDirection));
+          console.log(`Custom separator in entry`, entry.separator);
+          let separator = getPlainText(fromCompactFmtText(entry.separator));
+          separator = removeExtraWhiteSpace(separator);
+          items.push(...await this.getTsItemsForString(separator, 'apparatus', this.textDirection));
           break;
       }
       items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection));

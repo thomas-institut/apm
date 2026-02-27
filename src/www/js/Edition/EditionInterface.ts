@@ -77,7 +77,7 @@ export interface ApparatusEntryInterface {
   lemma: CompactFmtText;
   postLemma: CompactFmtText;
   lemmaText: string;
-  separator: string;
+  separator: CompactFmtText;
   tags: string[];
   subEntries: ApparatusSubEntryInterface[];
   metadata: MetadataInterface;

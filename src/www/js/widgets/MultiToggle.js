@@ -23,7 +23,7 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import { OptionsChecker } from '@thomas-inst/optionschecker'
 
 export const optionChange = 'toggle'
 
@@ -38,16 +38,16 @@ export class MultiToggle {
   constructor (options) {
 
     let optionsDefinition = {
-      containerSelector : { type: 'string', required: true},
-      title: { type: 'string', required: false, default: ''},
-      onClass: { type: 'string', required: false, default: defaultOnClass},
-      buttonClass: {type: 'string', required: false, default: defaultButtonClass},
-      hoverClass: {type: 'string', required: false, default: defaultHoverClass},
-      buttonDef: { type: 'Array', required: true},
-      wrapButtonsInDiv: { type: 'boolean', required: false, default: false},
-      buttonsDivClass: {type: 'string', required: false, default: defaultButtonDiv},
-      initialOption: { type: 'string', required:false, default: ''},
-      onToggle : {
+      containerSelector: { type: 'string', required: true },
+      title: { type: 'string', required: false, default: '' },
+      onClass: { type: 'string', required: false, default: defaultOnClass },
+      buttonClass: { type: 'string', required: false, default: defaultButtonClass },
+      hoverClass: { type: 'string', required: false, default: defaultHoverClass },
+      buttonDef: { type: 'Array', required: true },
+      wrapButtonsInDiv: { type: 'boolean', required: false, default: false },
+      buttonsDivClass: { type: 'string', required: false, default: defaultButtonDiv },
+      initialOption: { type: 'string', required: false, default: '' },
+      onToggle: {
         type: 'function',
         required: false,
         default: null
@@ -55,12 +55,12 @@ export class MultiToggle {
     }
 
     let buttonDefDefinition = {
-       label: { type: 'string', required:true},
-       name: { type: 'string', required: true},
-       helpText: { type: 'string', required: false, default: ''}
+      label: { type: 'string', required: true },
+      name: { type: 'string', required: true },
+      helpText: { type: 'string', required: false, default: '' }
     }
 
-    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context:  "MultiToggle"})
+    let oc = new OptionsChecker({ optionsDefinition: optionsDefinition, context: 'MultiToggle' })
     this.options = oc.getCleanOptions(options)
 
     // check button definitions
@@ -68,49 +68,55 @@ export class MultiToggle {
       console.error('Less than two buttons defined in multi toggle')
     }
 
-    this.buttonDef = this.options.buttonDef.map( (def, i) => {
-      let checker = new OptionsChecker({optionsDefinition: buttonDefDefinition, context: `MultiToggle Button Def ${i}`})
+    this.buttonDef = this.options.buttonDef.map((def, i) => {
+      let checker = new OptionsChecker({
+        optionsDefinition: buttonDefDefinition,
+        context: `MultiToggle Button Def ${i}`
+      })
       return checker.getCleanOptions(def)
     })
 
     if (this.options.initialOption === '') {
       this.currentOptionIndex = 0
     } else {
-      this.currentOptionIndex = this.buttonDef.findIndex( def => { return def.name === this.options.initialOption})
+      this.currentOptionIndex = this.buttonDef.findIndex(def => { return def.name === this.options.initialOption})
     }
 
     this.container = $(this.options.containerSelector)
     this.container.html(this.getWidgetHtml())
     // save button elements
-    this.buttonDef = this.buttonDef.map( (def, i) => {
+    this.buttonDef = this.buttonDef.map((def, i) => {
       def.element = $(this.getButtonSelectorWithIndex(i))
       return def
     })
     //console.log(this.buttonDef)
 
-    this.buttonDef.forEach( (def, i) => {
+    this.buttonDef.forEach((def, i) => {
       def.element.on('click', this.genOnClickButton(i))
     })
   }
 
+  getOptionNames () {
+    return this.buttonDef.map((def) => { return def.name})
+  }
 
-  getWidgetHtml() {
+  getWidgetHtml () {
 
     let html = ''
-    html += this.options.title !== '' ?  this._wrapInDiv(`<span class="${titleClass}">${this.options.title}</span>`) : ''
-    html += this.buttonDef.map( (def, i) => {
+    html += this.options.title !== '' ? this._wrapInDiv(`<span class="${titleClass}">${this.options.title}</span>`) : ''
+    html += this.buttonDef.map((def, i) => {
       let buttonClasses = []
       buttonClasses.push(this.options.buttonClass)
       buttonClasses.push(this.options.buttonClass + '-' + i)
-      if (i===this.currentOptionIndex) {
+      if (i === this.currentOptionIndex) {
         buttonClasses.push(this.options.onClass)
       }
-      return this._wrapInDiv(`<a href='#' class="${ buttonClasses.join(' ')}" title="${def.helpText}">${def.label}</a>`)
+      return this._wrapInDiv(`<a href='#' class="${buttonClasses.join(' ')}" title="${def.helpText}">${def.label}</a>`)
     }).join('')
     return html
   }
 
-  _wrapInDiv(html) {
+  _wrapInDiv (html) {
     if (this.options.wrapButtonsInDiv) {
       return `<div class="${this.options.buttonsDivClass}">${html}</div>`
     } else {
@@ -118,7 +124,7 @@ export class MultiToggle {
     }
   }
 
-  genOnClickButton(index) {
+  genOnClickButton (index) {
     return () => {
       if (this.currentOptionIndex === index) {
         // nothing to do
@@ -136,7 +142,7 @@ export class MultiToggle {
     }
   }
 
-  setOptionByIndex(newOptionIndex, dispatchOptionChangeEvent = false) {
+  setOptionByIndex (newOptionIndex, dispatchOptionChangeEvent = false) {
     let lastOption = this.currentOptionIndex
     this.buttonDef[this.currentOptionIndex].element.removeClass(this.options.onClass)
     this.currentOptionIndex = newOptionIndex
@@ -144,12 +150,13 @@ export class MultiToggle {
     if (dispatchOptionChangeEvent) {
       this.dispatchEvent(optionChange, {
         currentOption: this.getOption(),
-        previousOption: this.buttonDef[lastOption].name })
+        previousOption: this.buttonDef[lastOption].name
+      })
     }
   }
 
-  setOptionByName(newOption, dispatchOptionChangeEvent = false) {
-    let newOptionIndex = this.buttonDef.map( (button) => { return button.name}).indexOf(newOption)
+  setOptionByName (newOption, dispatchOptionChangeEvent = false) {
+    let newOptionIndex = this.buttonDef.map((button) => { return button.name}).indexOf(newOption)
     if (newOptionIndex === -1) {
       console.warn(`Attempt to set an non-existent option ${newOption}`)
       return
@@ -157,22 +164,20 @@ export class MultiToggle {
     this.setOptionByIndex(newOptionIndex, dispatchOptionChangeEvent)
   }
 
-
-  getOption() {
+  getOption () {
     return this.buttonDef[this.currentOptionIndex].name
   }
 
-  getButtonSelector() {
+  getButtonSelector () {
     return `${this.options.containerSelector} .${this.options.buttonClass}`
   }
 
-  getButtonSelectorWithIndex(i) {
+  getButtonSelectorWithIndex (i) {
     return `${this.options.containerSelector} .${this.options.buttonClass}-${i}`
   }
 
-
-  dispatchEvent(eventName, data = {}){
-    const event = new CustomEvent(eventName, {detail: data})
+  dispatchEvent (eventName, data = {}) {
+    const event = new CustomEvent(eventName, { detail: data })
     this.container.get()[0].dispatchEvent(event)
   }
 
@@ -182,7 +187,7 @@ export class MultiToggle {
    * @param {String} eventName
    * @param {function} f
    */
-  on(eventName, f)  {
+  on (eventName, f) {
     this.container.on(eventName, f)
   }
 

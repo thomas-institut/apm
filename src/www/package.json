@@ -6,7 +6,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "vitest run test/js",
+    "test": "vitest run test/js/",
     "test-watch": "vitest",
     "build-dev": "vite build --base=/dist",
     "build": "vite build",

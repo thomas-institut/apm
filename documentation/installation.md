@@ -1,4 +1,8 @@
-# APM Installation
+# APM Installation in Production
+
+You need:
+ * A fresh installation of an Ubuntu 22.04 server
+ * The latest APM distribution package (created with createdist.bash script)
 
 ### Install Ubuntu Packages
 
@@ -31,9 +35,9 @@
 * tk-dev 
 * libharfbuzz-gobject0
 
-## Secure the machine and the webserver (production only)
+## Secure the machine and the webserver
 
-When installing in production, the machine should be accessible only by SSH and the webserver must have proper
+The server should be accessible only by SSH and the webserver must have proper
 security certificates for HTTPS access. 
 
 A virtual host should be reserved and secured for APM. 
@@ -54,12 +58,9 @@ Apply the given privilege configuration:
 
 ``FLUSH PRIVILEGES;``
 
-## Install and configure Opensearch
+## Install and configure Typesense
 
-Download Opensearch 2.8 files (https://opensearch.org/) and set it up with as a single node
-running in 127.0.0.1. All default security parameters are fine 
-even for production since Opensearch will never respond to
-external queries.
+Download and install a Typesense server accessible only from the localhost.
 
 ## Install NodeJS and npm
 
@@ -72,9 +73,6 @@ at https://github.com/nodesource/distributions/blob/master/README.md).
 Do not install version 18.x since this version still does not 
 support NPM package node-gtk, which is used by the edition typesetter.
 
-## Install PHP composer (dev only)
-
-Follow the instructions at https://getcomposer.org
 
 ## Install and configure python3
 
@@ -82,39 +80,14 @@ Create a virtual environment for APM's python requirements
 
 ``python3 -m venv /path/to/venv``
 
-Install spacy:
-
-``/path/to/venv/bin/pip install -U spacy``
-
-## Install the Code
-
-### Development
-
-Get the code from github
-
-``git clone git@github.com:thomas-institut/apm.git``
-
-Install PHP dependencies:
-```
-cd apm/src/www
-composer install
-```
-Install Javascript dependencies
-``` 
-npm install
-cd js
-npm run build
-cd ../node
-npm install
-```
-### Production
-
-Install the installation pack previously created in development. 
-
-## Set up Python
 Install Python requirements
 
 ``/path/to/venv/bin/pip install -r /path/to/apm/src/python/requirements.txt``
+
+## Install the Code
+
+Install the installation pack previously created in development. 
+
 
 ## Create Temporary Folders
 
@@ -145,11 +118,6 @@ to be adjusted to the specific place in which the APM source code
 resides in your machine. 
 
 In production, the configuration file can be stored in /etc
-
-In development run the development webserver in the code’s root directory, all 
-file paths in what follows are given in relation to that directory:
-
-``./runphpwebserver``
 
 In production, visit the APM's website address.
 
@@ -197,7 +165,7 @@ It is normally easier, however, just to copy the latest backup of the production
 zcat filename.sql.gz | mysql apm
 ```
 
-## Setup services (production only)
+## Setup services 
 
 A service must be created from the APM daemon, and crontab entries for daily database backups.
 
@@ -206,5 +174,4 @@ The APM wiki and the Averroes Project website must be set up as well
 ## Useful Links
 
 * https://pygobject.gnome.org/index.html
-* https://spacy.io/
- 
+

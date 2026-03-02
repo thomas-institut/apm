@@ -687,6 +687,7 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
         creator: doc.creator,
         docID: doc.docID,
         foliation: doc.foliation,
+        seq: doc.seq,
         keywordDistance: keywordDistance,
         lemmata: lemmata,
         lemmatize: lemmatize,

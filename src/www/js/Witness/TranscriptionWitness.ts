@@ -72,10 +72,14 @@ export function getNonTokenItemIndices(tokens: WitnessTokenInterface[], items: F
     const maxTokenIndex = tokens.length - 1;
     const maxItemIndex = items.length - 1;
 
-    const lastTokenMaxItemIndex = Math.max(...getTokenSourceItemIndices(tokens[maxTokenIndex]));
-    if (maxItemIndex > lastTokenMaxItemIndex) {
-      for (let j = lastTokenMaxItemIndex + 1; j <= maxItemIndex; j++) {
-        returnArray[maxTokenIndex].post.push(j);
+    const lastTokenSourceItemIndices = getTokenSourceItemIndices(tokens[maxTokenIndex]);
+    if (lastTokenSourceItemIndices.length !== 0) {
+      const lastTokenMaxItemIndex = Math.max(...lastTokenSourceItemIndices);
+      console.log(`max item index in last token: ${lastTokenMaxItemIndex}`)
+      if (maxItemIndex > lastTokenMaxItemIndex) {
+        for (let j = lastTokenMaxItemIndex + 1; j <= maxItemIndex; j++) {
+          returnArray[maxTokenIndex].post.push(j);
+        }
       }
     }
   }

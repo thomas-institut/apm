@@ -8,8 +8,8 @@
 #
 # This will create the version tagline "version (versionDate) versionExtra"
 
-version: '0.74.5'
-versionDate: '2026-Feb-27'
+version: '0.74.6'
+versionDate: '2026-Mar-02'
 versionExtra: ''
 
 jsAppCacheDataId: '20260205_103425'

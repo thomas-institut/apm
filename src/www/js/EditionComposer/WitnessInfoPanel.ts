@@ -832,7 +832,7 @@ export class WitnessInfoPanel extends Panel {
     return {
       status: 'NotChecked', timeStamp: '', message: '', witnesses: this.ctData.witnesses.map(witness => {
         return {
-          id: witness.ApmWitnessId, upToDate: true, lastUpdate: '', justUpdated: false
+          id: witness.ApmWitnessId, upToDate: true, lastUpdate: '', justUpdated: false, updatedWitnessId: ''
         };
       })
     };

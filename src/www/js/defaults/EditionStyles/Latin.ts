@@ -198,4 +198,8 @@ export const defaultLatinEditionStyle: StyleSheetDefinition =  {
       fontStyle: 'italic',
     }
   },
+  latinInterSigla: {
+    parent: "apparatus",
+    glue: { width: "0.1 em", shrink: '0', stretch:'0'}
+  }
 }

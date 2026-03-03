@@ -78,12 +78,12 @@ interface LineRange {
 export class EditionTypesetting {
   private options: any;
   private readonly debug: boolean;
-  private edition: any;
+  private edition: Edition;
   private readonly sigla: string[];
   private readonly siglaGroups: SiglaGroup[];
   private readonly textDirection: string;
   private readonly textBoxMeasurer: TextBoxMeasurer;
-  private ss: any;
+  private ss: StyleSheet;
   private readonly editionStyle: any;
   private readonly fontConversionDefinitions: any;
   private tokenRenderer: Typesetter2StyleSheetTokenRenderer;
@@ -645,6 +645,21 @@ export class EditionTypesetting {
           //this.__detectAndSetTextBoxTextDirection(handItem)
           items.push(handItem);
         }
+        if (i < siglaData.length - 1) {
+          // add inter-siglum breaks or spaces if necessary
+          if (this.edition.lang === 'ar') {
+            items.push(this.createPenalty(INFINITE_PENALTY));
+            items.push(await this.createGlue('apparatus', 0));
+          }
+          if (this.edition.lang === 'la') {
+            if (siglumData.siglum.toLowerCase() !== siglumData.siglum && siglumData.siglum.toUpperCase() !== siglumData.siglum) {
+              // the siglum has at least one lowercase letter, so we need to add a very small space with the next
+              items.push(this.createPenalty(INFINITE_PENALTY));
+              items.push(await this.createGlue('latinInterSigla'));
+            }
+          }
+        }
+
       }
       resolve(items);
     });

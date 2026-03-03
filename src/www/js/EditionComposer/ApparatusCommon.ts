@@ -441,12 +441,16 @@ export class ApparatusCommon {
     }
   }
 
-  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], numberStyle: string) {
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], language: string, numberStyle: string|null = null) {
+    const actualNumberStyle = numberStyle ?? language;
     return witnessData.map((w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {
+        if (language === 'ar') {
+          return `${w.siglum}&ZeroWidthSpace;`;
+        }
         return w.siglum;
       }
-      return `${w.siglum}<sup>${this.getNumberString(w.hand + 1, numberStyle)}</sup>`;
+      return `${w.siglum}<sup>${this.getNumberString(w.hand + 1, actualNumberStyle)}</sup>`;
     }).join('');
   }
 

@@ -26,9 +26,12 @@ export default function SearchPage() {
 
   const isInvalidSearch = keywords.includes('*') && lemmatize;
 
+  // reference data
   const storedData = useRef({
     data_for_context: [] as any[], context: [] as any[], numDisplayedPassages: 0, prevTitle: ''
   });
+
+  const searchAbortController = useRef<AbortController | null>(null);
 
   // add some CSS classes
   useEffect(() => {
@@ -235,7 +238,14 @@ export default function SearchPage() {
    *  search event
    */
   const handleSearchTrigger = () => {
-    if (searchStatus !== STATE_INIT || keywords.trim() === "") return;
+    if (keywords.trim() === "") return;
+
+    // abort already running search
+    if (searchAbortController.current) {
+      searchAbortController.current?.abort();
+    }
+    searchAbortController.current = new AbortController();
+
     const initialContextValue = distance + 1;
     setIsIdle(false);
     setErrorMessage('');
@@ -266,20 +276,36 @@ export default function SearchPage() {
       lemmatize,
       queryPage: Number(page)
     };
+
     try {
       const response = await fetch(urlGen.apiSearchKeyword(), {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: new URLSearchParams(inputs as any)
+        body: new URLSearchParams(inputs as any),
+        signal: searchAbortController.current?.signal
       });
       const res = await response.json();
       if (res.status !== 'OK') {
         setSearchStatus(STATE_INIT);
         return;
       }
+
       handleApiResponse(res, inputs);
-      if (!res.queryFinished && storedData.current.numDisplayedPassages < 1000) startSearch(Number(res.queryPage) + 1); else setSearchStatus(STATE_INIT);
-    } catch (e) {
+
+      if (!res.queryFinished && storedData.current.numDisplayedPassages < 1000) {
+        startSearch(Number(res.queryPage) + 1);
+      }
+      else {
+        setSearchStatus(STATE_INIT);
+      }
+
+    } catch (e: unknown) {
+
+      if (e instanceof Error && e.name === 'AbortError') {
+        console.log("Stopped running search.");
+        return;
+      }
+
       setSearchStatus(STATE_INIT);
       setErrorMessage("Sorry, the search is currently not available.");
     }
@@ -573,7 +599,7 @@ export default function SearchPage() {
                 id="search-submit-button"
                 onClick={handleSearchTrigger}
                 className="btn btn-primary"
-                disabled={isInvalidSearch || searchStatus !== STATE_INIT || keywords.trim() === ""}
+                disabled={isInvalidSearch || keywords.trim() === ""}
                 style={{
                   width: '80%',
                   height: '32px',

@@ -30,8 +30,7 @@ import {CompactFmtText, fromCompactFmtText} from "@/lib/FmtText/FmtText";
 import {QuillRange} from "@/lib/types/Quill";
 
 
-const simpleFormats = ['bold', 'italic', 'numberingLabel'
-  // 'small',
+const simpleFormats = ['bold', 'italic', 'numberingLabel', 'small'
   // 'superscript'
 ];
 
@@ -45,8 +44,8 @@ const headingDepth = 3;
 const formatButtons: { [key: string]: { icon: string, title: string } } = {
   bold: {icon: '<i class="bi bi-type-bold"></i>', title: 'Bold'},
   italic: {icon: '<i class="bi bi-type-italic"></i>', title: 'Italic'},
-  numberingLabel: {icon: '<small class="fte-icon">x.y</small>', title: 'Numbering Label'}
-  // small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
+  numberingLabel: {icon: '<small class="fte-icon">x.y</small>', title: 'Numbering Label'},
+  small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
   // superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 };
 

@@ -727,8 +727,8 @@ export class MainTextPanel extends PanelWithToolbar {
       // this.debug && console.log(currentWitnessTokens)
 
       let newFmtText = this.freeTextEditor.getFmtText();
-      // this.debug && console.log(`fmtText from editor`)
-      // this.debug && console.log(newFmtText)
+      this.debug && console.log(`fmtText from editor`)
+      this.debug && console.log(newFmtText)
 
       let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText);
       this.debug && console.log(`Current witness tokens`, currentWitnessTokens)
@@ -1836,7 +1836,7 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
   }
 
   private __fmtTextToEditionWitnessTokens(fmtText: FmtText): WitnessToken[] {
-    const attributesToCopy = ['fontWeight', 'fontStyle'];
+    const attributesToCopy = ['fontWeight', 'fontStyle', 'fontSize'];
     let witnessTokens: WitnessToken[] = [];
     console.log(`Processing fmtText`);
     console.log(fmtText);

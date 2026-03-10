@@ -22,7 +22,7 @@ import * as ApparatusSubEntryType from '../Edition/SubEntryType';
 import {NumeralStyles} from '@/toolbox/NumeralStyles';
 import {TypesetterTokenRenderer} from '@/lib/FmtText/Renderer/TypesetterTokenRenderer';
 import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
-import {escapeHtml} from '@/toolbox/Util';
+import {escapeHtml, trimWhiteSpace} from '@/toolbox/Util';
 import {ApparatusUtil} from '@/Edition/ApparatusUtil';
 import * as MainTextTokenType from '@/Edition/MainTextTokenType';
 import {StringCounter} from '@/toolbox/StringCounter';
@@ -638,9 +638,21 @@ export class ApparatusCommon {
 
     let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText);
 
+    let lemmaText = trimWhiteSpace(lemmaComponents.text);
+
+    if (lemmaText === '') {
+      console.warn(`Lemma text is empty for lemma ${apparatusEntry.lemma}`);
+      lemmaText = '???_ReportBug'
+    }
+
+    if (lemmaText === '|') {
+      // marker
+      lemmaText = '&nbsp;|&nbsp;';
+    }
+
     switch (lemmaComponents.type) {
       case 'custom':
-        return lemmaComponents.text;
+        return lemmaText;
 
       case 'full':
         let lemmaNumberString = '';
@@ -651,7 +663,7 @@ export class ApparatusCommon {
             lemmaNumberString = `<sup>${this.getNumberString(occurrenceInLine, lang)}</sup>`;
           }
         }
-        return `${lemmaComponents.text}${lemmaNumberString}`;
+        return `${lemmaText}${lemmaNumberString}`;
 
       case 'shortened':
         let lemmaNumberStringFrom = '';

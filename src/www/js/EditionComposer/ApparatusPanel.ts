@@ -914,6 +914,11 @@ export class ApparatusPanel extends PanelWithToolbar {
     // console.log(`Generating Apparatus html`)
     // console.log(mainTextTokensWithTypesettingInfo)
     // console.log(mainTextTokensWithTypesettingInfo.tokens.filter( (t) => { return t.type === 'text' && t.occurrenceInLine > 1}))
+
+    let debug = false;
+    if (this.apparatus.type === 'marginalia') {
+      debug = true;
+    }
     let html = '';
 
     let lastLine = '';
@@ -921,6 +926,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;';
 
     this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
+      debug && console.log(`Generating apparatus entry ${aeIndex}`);
       html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`;
       let currentLine = "__UNDEFINED__";
       try {
@@ -956,6 +962,8 @@ export class ApparatusPanel extends PanelWithToolbar {
 
 
       let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, mainTextTypesettingInfo, this.edition.lang)}</span>`;
+
+      debug && console.log(`Lemma html: ${lemmaSpan}`);
 
       let postLemmaSpan = '';
       const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));

@@ -86,7 +86,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             if (token.fontWeight === FontWeight.BOLD) {
               textBox.setFontWeight('bold');
             }
-            if ((token.fontSize ?? 1) < 1 && token.verticalAlign === VerticalAlign.BASELINE) {
+            if ((token.fontSize ?? 1) < 1 && (token.verticalAlign === undefined || token.verticalAlign === VerticalAlign.BASELINE)) {
               // console.log(`Setting font size ${token.fontSize}`)
               textBox.setFontSize(textBox.getFontSize() * (token.fontSize ?? 1));
               // console.log(textBox)

@@ -89,7 +89,7 @@ export class HtmlRenderer extends FmtTextRenderer {
           if (t.verticalAlign === VerticalAlign.SUBSCRIPT) {
             textWrappers.push('sub');
           }
-          if (t.fontSize === FontSize.SMALL && t.verticalAlign === VerticalAlign.BASELINE) {
+          if (t.fontSize === FontSize.SMALL && (t.verticalAlign === undefined || t.verticalAlign === VerticalAlign.BASELINE)) {
             textWrappers.push('small');
           }
           let startWrappers = '';

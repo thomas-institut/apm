@@ -98,13 +98,13 @@ export class ApmUrlGenerator {
     return `${this.base}/work/${this.getFormattedId(workId)}`;
   }
 
-  /**
-   *
-   * @param {string}docId
-   * @returns {string}
-   */
-  siteDocPage(docId: string|number): string {
-    return `${this.base}/doc/${this.getFormattedId(docId)}`;
+
+  siteDocPage(docId: string|number, pageNumber: number|null = null): string {
+    if (pageNumber === null) {
+      return `${this.base}/doc/${this.getFormattedId(docId)}`;
+    }
+    return `${this.base}/doc/${this.getFormattedId(docId)}/page/${pageNumber}`;
+
   }
 
   siteDocDefinePages(docId: string) {

@@ -85,10 +85,7 @@ export default function EntityLink(props: EntityLinkProps) {
 
     case 'docPage':
       //url = RouteUrls.docPage(Tid.toCanonicalString(id), secondaryId ?? 1);
-      url = urlGen.siteDocPage(id);
-      if (secondaryId !== undefined) {
-        url += `/${secondaryId}`;
-      }
+      url = urlGen.siteDocPage(id, secondaryId ?? null);
       isReactRoute = false;
       defaultEntityName = `DocPage ${id}:${secondaryId ?? 1}`;
   }

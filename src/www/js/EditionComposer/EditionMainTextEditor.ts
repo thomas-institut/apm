@@ -31,7 +31,6 @@ import {QuillRange} from "@/lib/types/Quill";
 
 
 const simpleFormats = ['bold', 'italic', 'numberingLabel', 'small'
-  // 'small',
   // 'superscript'
 ];
 

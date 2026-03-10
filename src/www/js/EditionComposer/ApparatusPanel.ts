@@ -46,7 +46,7 @@ import {
 } from "@/CtData/CtDataInterface";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
-import {fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
 
 const doubleVerticalLine = String.fromCodePoint(0x2016);
 const verticalLine = String.fromCodePoint(0x007c);
@@ -914,6 +914,11 @@ export class ApparatusPanel extends PanelWithToolbar {
     // console.log(`Generating Apparatus html`)
     // console.log(mainTextTokensWithTypesettingInfo)
     // console.log(mainTextTokensWithTypesettingInfo.tokens.filter( (t) => { return t.type === 'text' && t.occurrenceInLine > 1}))
+
+    let debug = false;
+    if (this.apparatus.type === 'marginalia') {
+      debug = true;
+    }
     let html = '';
 
     let lastLine = '';
@@ -921,6 +926,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;';
 
     this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
+      debug && console.log(`Generating apparatus entry ${aeIndex}`);
       html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`;
       let currentLine = "__UNDEFINED__";
       try {
@@ -957,6 +963,8 @@ export class ApparatusPanel extends PanelWithToolbar {
 
       let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, mainTextTypesettingInfo, this.edition.lang)}</span>`;
 
+      debug && console.log(`Lemma html: ${lemmaSpan}`);
+
       let postLemmaSpan = '';
       const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));
       if (postLemmaText !== '') {
@@ -964,7 +972,7 @@ export class ApparatusPanel extends PanelWithToolbar {
         postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
       }
 
-      let separator;
+      let separator: CompactFmtText;
 
       switch (apparatusEntry.separator) {
         case '':
@@ -986,6 +994,7 @@ export class ApparatusPanel extends PanelWithToolbar {
         default:
           separator = apparatusEntry.separator;
       }
+      separator = getPlainText(fromCompactFmtText(separator));
 
       html += `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `;
       apparatusEntry.subEntries.forEach((subEntry, subEntryIndex) => {
@@ -1421,10 +1430,11 @@ export class ApparatusPanel extends PanelWithToolbar {
 
   private loadLemmaGroupVariableInForm(variable: string, appEntry: ApparatusEntry, toggle: MultiToggle, textInput: JQuery<HTMLElement>) {
     const entry = appEntry as { [key: string]: any };
-    let option = this.getLemmaGroupVariableToggleOption(entry[variable]);
+    let option = this.getLemmaGroupVariableToggleOption(entry[variable], toggle);
     toggle.setOptionByName(option);
     if (option === 'custom') {
-      textInput.removeClass('hidden').val(entry[variable]);
+      const stringVal = getPlainText(fromCompactFmtText(entry[variable]));
+      textInput.removeClass('hidden').val(stringVal);
     } else {
       textInput.addClass('hidden').val('');
     }
@@ -1451,8 +1461,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       }
       // @ts-expect-error using editedEntry as { [key: string]: any }
       this.editedEntry[variable] = this.getLemmaGroupVariableFromToggle(toggle, textInput);
-      // @ts-expect-error using editedEntry as { [key: string]: any }
-      if (Array.isArray(this.editedEntry[variable])) {
+      if (toggle.getOption() === 'custom') {
         textInput.removeClass('hidden');
       } else {
         textInput.addClass('hidden');
@@ -1461,14 +1470,15 @@ export class ApparatusPanel extends PanelWithToolbar {
     };
   }
 
-  private getLemmaGroupVariableToggleOption(variableValue: any) {
+  private getLemmaGroupVariableToggleOption(variableValue: CompactFmtText, toggle: MultiToggle) {
     if (variableValue === '') {
       return 'auto';
     }
-    if (Array.isArray(variableValue)) {
-      return 'custom';
+    const stringVal = getPlainText(fromCompactFmtText(variableValue));
+    if (toggle.getOptionNames().includes(stringVal)) {
+      return stringVal;
     }
-    return variableValue;
+    return 'custom';
   }
 
   private generateApparatusEntryFormHtml() {

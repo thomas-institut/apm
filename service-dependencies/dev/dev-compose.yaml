@@ -1,8 +1,13 @@
 #
 # Docker compose file with all services necessary to run APM
-# locally
+# locally for development.
 #
-#  Rafael Nájera, 17 Jun 2025
+# All containers have ../../dev-tmp mapped to /var/apm and ../../../src mapped to /opt/apm.
+#
+#  Rafael Nájera
+#
+# Created:  17 Jun 2025
+# Modified: 27 Feb 2026
 #
 name: apm-development
 
@@ -13,9 +18,10 @@ services:
     ports:
       - "8888:80"
     volumes:
-      - ../src:/opt/apm
+      - ../../src:/opt/apm
       - ./nginx-dev.conf:/etc/nginx/conf.d/default.conf:ro
-      - ../dev-tmp/logs/nginx:/var/log/nginx
+      - ../../dev-tmp/logs/nginx:/var/log/nginx
+      - ../../dev-tmp:/var/apm
     depends_on:
       - php
 
@@ -28,8 +34,12 @@ services:
         MYSQL_ALLOW_EMPTY_PASSWORD: yes
         MYSQL_ROOT_PASSWORD:
     volumes:
-      - ../dev-tmp/mysql-data:/var/lib/mysql
-      - ../dev-tmp/share:/home/share
+      - ../../dev-tmp/mysql-data:/var/lib/mysql
+      - ../../dev-tmp:/var/apm
+
+  # Normally, on the first run, the database should be initialized with a working db backup.
+  # Copy the backup file to ../../dev-tmp/share and source it in the container.
+  # It is also possible, of course, to create an empty database and initialize with the SQL scripts in src/db
 
   php:
     container_name: php
@@ -37,15 +47,10 @@ services:
       context: .
       dockerfile: dev-php.Dockerfile
     volumes:
-      - ../src:/opt/apm
-      - ../dev-tmp:/var/apm
+      - ../../src:/opt/apm
+      - ../../dev-tmp:/var/apm
     depends_on:
       - mysql
-
- #
- # In the development machine, copy apm/composer.phar to apm/dev-tmp/share/composer.phar
- # Run the PHP container and execute: php /var/apm/composer.phar install
-#
 
   typesetting:
     container_name: typesetting
@@ -55,8 +60,8 @@ services:
     ports:
       - "4711:4711"
     volumes:
-      - ../src:/opt/apm
-      - ../dev-tmp:/var/apm
+      - ../../src:/opt/apm
+      - ../../dev-tmp:/var/apm
 
   #
   # The configuration should be finished manually the first time the container is started:
@@ -68,12 +73,11 @@ services:
   #
   # Install node dependencies
   #
-  #   cd /opt/apm/node
+  #   cd /opt/apm/typesetting-service
   #   npm install
   #
   # Install python dependencies
-  #
-  #  cd /opt/apm/python
+
   #  pip3 install -r requirements.txt --break-system-packages
   #
   # Install APM fonts:
@@ -83,25 +87,24 @@ services:
   #
   #    cd /usr/share/fonts; ln -s /var/apm/apm-fonts .
   #
-  # Restart the container
 
 
   collatex:
     container_name: collatex
-    build: ./collatex-http
+    build: ../collatex-http
 
   valkey:
     container_name: valkey
     image: valkey/valkey:8.1-alpine
     volumes:
-      - ../dev-tmp/valkey-data:/data
+      - ../../dev-tmp/valkey-data:/data
     command: valkey-server --save 60 1 --loglevel warning --dir /data
 
   typesense:
     container_name: typesense
     image: typesense/typesense:28.0
     volumes:
-      - ../dev-tmp/typesense-data:/data
+      - ../../dev-tmp/typesense-data:/data
     command: >
       typesense-server
       --data-dir /data
@@ -109,3 +112,11 @@ services:
       --listen-port=8108
       --enable-cors
 
+ # In order for the search engine to work, the data must be indexed in typesense.
+ # Run the following commands in the PHP container to build it from sc
+ #     php /opt/apm/www/utilities/indexmanager editions build
+ #     php /opt/apm/www/utilities/indexmanager transcriptions build
+ # This will take a long time the first time!
+ #
+ #  Use 'check' instead of 'build' in the commands above to check if the index is up to date
+ #  (in case some typesense data was in ../../../dev-tmp/typesense-data)

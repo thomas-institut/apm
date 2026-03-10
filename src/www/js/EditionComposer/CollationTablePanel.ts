@@ -171,7 +171,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   generateToolbarHtml(_tabId: string, _mode: string, _visible: boolean) {
 
-    let apparatusLinks = this.ctData['customApparatuses'].map((app, index) => {
+    let apparatusLinks = this.ctData.customApparatuses.map((app, index) => {
       return `<a class="dropdown-item add-entry-apparatus-${index}" href="">${capitalizeFirstLetter(app.type)}</a>`;
     }).join('');
 
@@ -391,7 +391,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       ev.preventDefault();
       ev.stopPropagation();
 
-      this.verbose && console.log(`Click on add entry button for apparatus ${appIndex}, currently selected columns`);
+      this.verbose && console.log(`Click on add entry button for apparatus ${appIndex}, currently selected columns, type is ${this.ctData.customApparatuses[appIndex]['type']}`);
       if (this.selectedColumnsFrom === -1 || this.selectedColumnsTo === -1) {
         this.verbose && console.log(`No columns selected, nothing to do`);
         return;

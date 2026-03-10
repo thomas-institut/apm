@@ -63,6 +63,9 @@ export class ApparatusTools {
         return '';
       }
       if (Punctuation.stringIsAllPunctuation(t.text, lang)) {
+        if (t.text === '|') {
+          return '|'
+        }
         return '';
       }
       if (normalized) {

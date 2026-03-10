@@ -22,7 +22,7 @@ import * as ApparatusSubEntryType from '../Edition/SubEntryType';
 import {NumeralStyles} from '@/toolbox/NumeralStyles';
 import {TypesetterTokenRenderer} from '@/lib/FmtText/Renderer/TypesetterTokenRenderer';
 import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
-import {escapeHtml} from '@/toolbox/Util';
+import {escapeHtml, trimWhiteSpace} from '@/toolbox/Util';
 import {ApparatusUtil} from '@/Edition/ApparatusUtil';
 import * as MainTextTokenType from '@/Edition/MainTextTokenType';
 import {StringCounter} from '@/toolbox/StringCounter';
@@ -441,12 +441,16 @@ export class ApparatusCommon {
     }
   }
 
-  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], numberStyle: string) {
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], language: string, numberStyle: string|null = null) {
+    const actualNumberStyle = numberStyle ?? language;
     return witnessData.map((w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {
+        if (language === 'ar') {
+          return `${w.siglum}&ZeroWidthSpace;`;
+        }
         return w.siglum;
       }
-      return `${w.siglum}<sup>${this.getNumberString(w.hand + 1, numberStyle)}</sup>`;
+      return `${w.siglum}<sup>${this.getNumberString(w.hand + 1, actualNumberStyle)}</sup>`;
     }).join('');
   }
 
@@ -634,9 +638,21 @@ export class ApparatusCommon {
 
     let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText);
 
+    let lemmaText = trimWhiteSpace(lemmaComponents.text);
+
+    if (lemmaText === '') {
+      console.warn(`Lemma text is empty for lemma ${apparatusEntry.lemma}`);
+      lemmaText = '???_ReportBug'
+    }
+
+    if (lemmaText === '|') {
+      // marker
+      lemmaText = '&nbsp;|&nbsp;';
+    }
+
     switch (lemmaComponents.type) {
       case 'custom':
-        return lemmaComponents.text;
+        return lemmaText;
 
       case 'full':
         let lemmaNumberString = '';
@@ -647,7 +663,7 @@ export class ApparatusCommon {
             lemmaNumberString = `<sup>${this.getNumberString(occurrenceInLine, lang)}</sup>`;
           }
         }
-        return `${lemmaComponents.text}${lemmaNumberString}`;
+        return `${lemmaText}${lemmaNumberString}`;
 
       case 'shortened':
         let lemmaNumberStringFrom = '';

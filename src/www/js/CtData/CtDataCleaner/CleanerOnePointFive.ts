@@ -40,7 +40,6 @@ export class CleanerOnePointFive extends CtDataCleaner {
       cleanData.sigla[cleanData['editionWitnessIndex']] = '-';
     }
 
-
     // Check non item indices
 
     console.log(`Checking consistency in nonTokenItemIndices...`);
@@ -59,8 +58,8 @@ export class CleanerOnePointFive extends CtDataCleaner {
       }
       const inCtData = witness.nonTokenItemIndexes;
       const calculated = getNonTokenItemIndices(witness.tokens, witness.items);
-      const clean: {[key: number]: NonTokenItemIndex} = {};
-      for (let i=0; i < calculated.length; i++) {
+      const clean: { [key: number]: NonTokenItemIndex } = {};
+      for (let i = 0; i < calculated.length; i++) {
         if (calculated[i].pre.length === 0 && calculated[i].post.length === 0) {
           continue;
         }
@@ -69,8 +68,12 @@ export class CleanerOnePointFive extends CtDataCleaner {
 
       let consistent = true;
 
-      const inCtDataSlots = Object.keys(inCtData).map((key) => {return parseInt(key)});
-      const cleanSlots = Object.keys(clean).map((key) => {return parseInt(key)});
+      const inCtDataSlots = Object.keys(inCtData).map((key) => {
+        return parseInt(key);
+      });
+      const cleanSlots = Object.keys(clean).map((key) => {
+        return parseInt(key);
+      });
       if (!arraysAreEqual(inCtDataSlots, cleanSlots)) {
         consistent = false;
       } else {

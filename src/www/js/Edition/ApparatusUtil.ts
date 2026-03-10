@@ -42,6 +42,9 @@ export class ApparatusUtil {
     let separator = '';
     let custom = false;
     const theLemma = getPlainText(fromCompactFmtText(apparatusEntryLemma));
+    if (lemmaText === '') {
+      console.warn(`Lemma text is empty for lemma '${theLemma}'`, apparatusEntryLemma);
+    }
 
     switch (theLemma) {
       case '':
@@ -58,9 +61,6 @@ export class ApparatusUtil {
     }
     if (custom) {
       return {type: 'custom', text: getPlainText(fromCompactFmtText(apparatusEntryLemma))};
-    }
-    if (lemmaText === '') {
-      lemmaText = 'pre';
     }
     let lemmaTextWords = lemmaText.split(' ');
     // if lemmaText is short,

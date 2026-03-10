@@ -731,8 +731,8 @@ export class MainTextPanel extends PanelWithToolbar {
       // this.debug && console.log(newFmtText)
 
       let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText);
-      this.debug && console.log(`Current witness tokens`, currentWitnessTokens)
-      this.debug && console.log(`Witness tokens from editor`, witnessTokens);
+      // this.debug && console.log(`Current witness tokens`, currentWitnessTokens)
+      // this.debug && console.log(`Witness tokens from editor`, witnessTokens);
 
       this.betaEditorInfoDiv.html(`Calculating changes... <span class="spinner-border spinner-border-sm" role="status"></span>`);
       this.changesInfoDivConstructed = false;
@@ -1836,7 +1836,7 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
   }
 
   private __fmtTextToEditionWitnessTokens(fmtText: FmtText): WitnessToken[] {
-    const attributesToCopy = ['fontWeight', 'fontStyle'];
+    const attributesToCopy = ['fontWeight', 'fontStyle', 'fontSize'];
     let witnessTokens: WitnessToken[] = [];
     console.log(`Processing fmtText`);
     console.log(fmtText);

@@ -1,6 +1,7 @@
 import {CtDataCleaner} from './CtDataCleaner';
 import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface";
 
+
 export class ApparatusEntryPositionCleaner extends CtDataCleaner {
 
   /**
@@ -14,6 +15,7 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
       // not apparatuses to fix!
       return ctData;
     }
+    const EntryToBeDeleted = -1234; // assigning this value to the 'from' index signals that the entry should be deleted
     this.verbose && console.log(`Checking consistency in entry positions`);
     let errorsFound = false;
     let errorsNotFixed = false;
@@ -21,52 +23,64 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
     let editionWitnessTokens = ctData.witnesses[editionWitnessIndex].tokens;
     ctData.customApparatuses = ctData.customApparatuses.map((app) => {
       app.entries = app.entries.map((entry, entryIndex) => {
+        let singleColumnEntry = false;
         if (entry.from === entry.to) {
-          // nothing to do with entries to a single column
-          return entry;
+          singleColumnEntry = true;
         }
-        // just report for now
         let fromToken = editionWitnessTokens[entry.from];
         let toToken = editionWitnessTokens[entry.to];
-
         if (fromToken === undefined) {
           errorsFound = true;
-          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to undefined token`);
+          entry.from = EntryToBeDeleted;
+          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to undefined token, entry will be deleted`);
         } else {
           if (fromToken.tokenType !== 'word' && fromToken.tokenType !== 'punctuation') {
             errorsFound = true;
             // fix it by looking at the closest word or punctuation token before the toToken
             console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'from' index ${entry.from} refers to non-printable token (${fromToken.tokenType})`);
-            let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, true);
+            let newIndex =-1;
+            if (singleColumnEntry) {
+              // can't really solve this issue, so just delete the entry
+              entry.from = EntryToBeDeleted;
+            } else {
+              newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, true);
+            }
             if (newIndex === -1) {
-              console.warn(`Could not fix the problem`);
+              console.warn(`Could not fix the problem, entry will be deleted`);
               errorsNotFixed = true;
+              entry.from = EntryToBeDeleted;
             } else {
               console.log(`Problem fixed, new 'from' index is ${newIndex}`);
               entry.from = newIndex;
             }
           }
         }
-        if (toToken === undefined) {
-          errorsFound = true;
-          console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to undefined token`);
+        if (singleColumnEntry) {
+          // no need to repeat the check for the 'to' token
+          entry.to = entry.from;
         } else {
-          if (toToken.tokenType !== 'word' && toToken.tokenType !== 'punctuation') {
+          if (toToken === undefined) {
             errorsFound = true;
-            // fix it by looking at the closest word or punctuation token before the toToken
-            console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to non-printable token (${toToken.tokenType})`);
-            let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, false);
-            if (newIndex === -1) {
-              errorsNotFixed = true;
-              console.warn(`Could not fix the problem`);
-            } else {
-              console.log(`Problem fixed, new 'to' index is ${newIndex}`);
-              entry.to = newIndex;
+            entry.from = EntryToBeDeleted;
+            console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to undefined token, entry will be deleted`);
+          } else {
+            if (toToken.tokenType !== 'word' && toToken.tokenType !== 'punctuation') {
+              errorsFound = true;
+              // fix it by looking at the closest word or punctuation token before the toToken
+              console.warn(`Apparatus ${app.type}: entry ${entryIndex} with 'to' index ${entry.to} refers to non-printable token (${toToken.tokenType})`);
+              let newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from, entry.to, false);
+              if (newIndex === -1) {
+                errorsNotFixed = true;
+                console.warn(`Could not fix the problem`);
+              } else {
+                console.log(`Problem fixed, new 'to' index is ${newIndex}`);
+                entry.to = newIndex;
+              }
             }
           }
         }
         return entry;
-      });
+      }).filter(entry => entry.from !== EntryToBeDeleted);
       return app;
     });
     if (errorsFound) {

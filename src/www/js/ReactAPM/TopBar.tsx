@@ -77,7 +77,7 @@ export default function TopBar(props: TopBarProps): ReactNode {
         <MyNav route={RouteUrls.docs()} title={tr('Documents')}/>
         <MyNav route={RouteUrls.works()} title={tr('Works')}/>
         <MyNav route={RouteUrls.people()} title={tr('People')}/>
-        <Nav.Item title={tr('Search')}><a href={urlGen.siteSearch()}>{tr('Search')}</a></Nav.Item>
+        <MyNav route={RouteUrls.search()} title={tr('Search')}/>
         <Nav.Item>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</Nav.Item>
         <NavDropdown id="useful-links-dropdown" title={tr('Useful Links')}>
 

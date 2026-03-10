@@ -28,7 +28,7 @@ export class RouteUrls {
   }
 
   static search() {
-    return baseUrl + betaPathInfix + '/search';
+    return baseUrl + '/search';
   }
 
   static works() {

@@ -44,7 +44,6 @@ use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePageViewer;
 use APM\Site\SitePeople;
 use APM\Site\SiteReact;
-use APM\Site\SiteSearch;
 use APM\Site\SiteSettings;
 use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
@@ -156,12 +155,6 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 {
     $app->group('', function (RouteCollectorProxy $group) use ($container) {
 
-        // Search Page
-        $group->get('/search',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteSearch($container))->searchPage($request, $response);
-            })
-            ->setName('search');
 
         $group->get('/person/{id}',
             function (Request $request, Response $response) use ($container) {

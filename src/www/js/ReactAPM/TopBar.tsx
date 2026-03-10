@@ -1,10 +1,10 @@
 import {tr} from "@/pages/common/SiteLang";
 import {CSSProperties, ReactNode, useContext} from "react";
-import {Container, Nav, Navbar, NavDropdown} from "react-bootstrap";
+import {Container, Nav, Navbar, NavDropdown, NavItem} from "react-bootstrap";
 
 import {NavLink, useLocation, useNavigate} from "react-router";
 import {AppContext} from "./App";
-import {PersonCircle} from "react-bootstrap-icons";
+import {InfoCircle, PersonCircle, Question} from "react-bootstrap-icons";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Tid} from "@/Tid/Tid";
 import {ApmUrlGenerator} from "@/ApmUrlGenerator";
@@ -33,8 +33,10 @@ export default function TopBar(props: TopBarProps): ReactNode {
   const userId = appContext.userId;
   const userName = appContext.userName;
   const baseUrl = appContext.reactAppBaseUrl;
+  const versionTag = appContext.versionTag;
   const urlGen = new ApmUrlGenerator(baseUrl);
   const navigate = useNavigate();
+
 
   interface RoutedNavLinkProps {
     route: string;
@@ -98,10 +100,6 @@ export default function TopBar(props: TopBarProps): ReactNode {
           <NavDropdown.Item className="dd-menu-item" onClick={props.onLogout}>Logout</NavDropdown.Item>
         </NavDropdown>
       </Navbar.Collapse>
-
-
     </Container>
-
-
   </Navbar>);
 }

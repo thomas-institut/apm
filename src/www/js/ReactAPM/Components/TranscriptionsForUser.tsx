@@ -9,8 +9,6 @@ export default function TranscriptionsForUser(props: TranscriptionsForUserProps)
   const data = props.data;
 
   const docData = getDocData(data);
-  console.log(`TranscriptionsForUser`, data);
-  console.log(`DocData`, docData);
   return docData.map((doc) => {
     return (<div key={doc.id} style={{marginBottom: '1em'}}>
         <p className="dashboard-list-item"><EntityLink type="document" id={doc.id} name={doc.title}/></p>

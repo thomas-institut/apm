@@ -59,6 +59,7 @@ export interface AppContextProps {
   reactAppBaseUrl: string,
   localCache: WebStorageKeyCache;
   apiClient: ApmApiClient;
+  versionTag: string;
 }
 
 interface AppSettings {
@@ -82,6 +83,7 @@ const DefaultAppContext: AppContextProps = {
   reactAppBaseUrl: ReactAppBaseUrlSuffix,
   localCache: new WebStorageKeyCache('local', ''),
   apiClient: new ApmApiClient('', []),
+  versionTag: '',
 };
 export const AppContext: Context<AppContextProps> = createContext(DefaultAppContext);
 
@@ -192,6 +194,7 @@ function RealApp() {
         reactAppBaseUrl: reactAppBaseUrl,
         localCache: localCache,
         apiClient: apmDataProxy,
+        versionTag: `APM ${data.appVersion} (${data.versionDate}${data.versionExtra !== '' ? ', ' + data.versionExtra : ''})`
       };
       RouteUrls.setBaseUrl(reactAppBaseUrl);
       setStatus(StatusInitializationReady);

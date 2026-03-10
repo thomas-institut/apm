@@ -496,7 +496,7 @@ export class MceComposer extends ApmPage {
         return;
       }
       console.log(`Deleting chunk ${chunkIndex}`);
-      // let removedChunk = this.mceData.chunks.splice(chunkIndex, 1)
+      this.mceData.chunks.splice(chunkIndex, 1);
       this.singleChunkEditions.splice(chunkIndex, 1);
       this.chunksToUpdateStatuses.splice(chunkIndex, 1);
       if (this.mceData.chunkOrder === undefined) {
@@ -980,6 +980,7 @@ export class MceComposer extends ApmPage {
    * @private
    */
   async addChunkToMceData(tableId: number, ctData: CtDataInterface, chunkTimeString: string): Promise<boolean> {
+    console.log(`Adding chunk ${ctData.chunkId} to MceData`);
     // first, see if the exact chunk edition is already in
     for (let chunkIndex = 0; chunkIndex < this.mceData.chunks.length; chunkIndex++) {
       let chunk = this.mceData.chunks[chunkIndex];
@@ -1015,7 +1016,6 @@ export class MceComposer extends ApmPage {
     if (this.mceData.chunkOrder === undefined) {
       this.mceData.chunkOrder = MceData.getDefaultChunkOrder(this.mceData);
     }
-    this.mceData.chunkOrder.push(this.mceData.chunks.length - 1);
     this.mceData.chunkOrder.push(this.mceData.chunks.length - 1);
 
     // add new witnesses and sigla
@@ -1086,6 +1086,7 @@ export class MceComposer extends ApmPage {
     }
     console.log(`MceData updated`);
     console.log(this.mceData);
+    this.chunkSearchPanel.updateData(this.mceData).then();
 
     // assume this is the last version
     this.chunksToUpdateStatuses.push(false);

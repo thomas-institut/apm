@@ -4,7 +4,7 @@ import {Container, Nav, Navbar, NavDropdown, NavItem} from "react-bootstrap";
 
 import {NavLink, useLocation, useNavigate} from "react-router";
 import {AppContext} from "./App";
-import {InfoCircle, PersonCircle, Question} from "react-bootstrap-icons";
+import {PersonCircle, QuestionCircle} from "react-bootstrap-icons";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Tid} from "@/Tid/Tid";
 import {ApmUrlGenerator} from "@/ApmUrlGenerator";
@@ -33,6 +33,7 @@ export default function TopBar(props: TopBarProps): ReactNode {
   const userId = appContext.userId;
   const userName = appContext.userName;
   const baseUrl = appContext.reactAppBaseUrl;
+  const isAdmin = appContext.userIsAdmin;
   const versionTag = appContext.versionTag;
   const urlGen = new ApmUrlGenerator(baseUrl);
   const navigate = useNavigate();
@@ -92,12 +93,13 @@ export default function TopBar(props: TopBarProps): ReactNode {
         </NavDropdown>
       </Navbar.Collapse>
       <Navbar.Collapse className="justify-content-end">
-        <NavDropdown id="user-dropdown" title={(<UserIcon name={userName}/>)}>
+        <NavDropdown id="user-dropdown" align={'end'} title={(<UserIcon name={userName}/>)}>
           <NavDropdown.Item className="dd-menu-item"  href={urlGen.sitePerson(Tid.toCanonicalString(userId))}>
             {tr('My Profile')}
           </NavDropdown.Item>
           <NavDropdown.Divider/>
           <NavDropdown.Item className="dd-menu-item" onClick={props.onLogout}>Logout</NavDropdown.Item>
+          { isAdmin && <><NavDropdown.Divider/><NavDropdown.Item disabled={true}><small>{versionTag}</small></NavDropdown.Item></>}
         </NavDropdown>
       </Navbar.Collapse>
     </Container>

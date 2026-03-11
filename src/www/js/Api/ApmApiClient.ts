@@ -38,7 +38,7 @@ import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
-import {DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
+import {DocInfo, DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
 import {
   AllPeopleDataForPeoplePageItem, PersonEssentialData
 } from "@/Api/DataSchema/ApiPeople";
@@ -230,6 +230,10 @@ export class ApmApiClient {
 
   async getPageInfo(pageId: number): Promise<PageInfo> {
     return this.get(urlGen.apiDocumentsGetPageInfo(pageId), false, TtlOneHour);
+  }
+
+  async getDocumentInfo(docId: number, withPageIds: boolean = false, withFullPageInfo: boolean = false): Promise<DocInfo> {
+    return this.get(urlGen.apiDocGetInfo(docId, withPageIds, withFullPageInfo), false, TtlOneHour);
   }
 
   async getWorkChunksWithTranscription(workId: string) : Promise<ApiChunksWithTranscription> {

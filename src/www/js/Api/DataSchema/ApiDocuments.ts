@@ -1,3 +1,4 @@
+
 export interface DocumentData {
   docInfo: {
     id: number; title: string; doc_type: number; lang: number;
@@ -18,4 +19,15 @@ export interface PageInfo {
   foliation: string;
   pageId: number;
   foliationIsSet: boolean;
+}
+
+export interface DocInfo {
+  id: number;
+  title: string;
+  imageSource: number;
+  imageSourceData: string;
+  pageIds: number[];
+  pageInfoArray?: PageInfo[];
+  language: number;
+  type: number;
 }

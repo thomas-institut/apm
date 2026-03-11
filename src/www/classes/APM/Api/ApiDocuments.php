@@ -32,6 +32,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\EntitySystem\Tid;
 
 
 /**
@@ -248,6 +249,41 @@ class ApiDocuments extends ApiController
 
         $this->systemManager->onDocumentUpdated($this->apiUserId, $docId);
         return $this->responseWithStatus($response, 200);
+    }
+
+    public function getDocumentInfo(Request $request, Response $response): Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $docId = $request->getAttribute('docId');
+        $pageInfoToInclude = $request->getAttribute('pageInfoToInclude', 'none') ;
+        if (intval($docId) !== 0) {
+            $docId = intval($docId);
+        } else {
+            $docId = Tid::fromString($docId);
+        }
+
+        $this->logger->debug("getDocumentInfo: docId $docId, pageInfoToInclude $pageInfoToInclude");
+        $withPages = $pageInfoToInclude !== 'none';
+        try {
+            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($docId, $withPages);
+        } catch (DocumentNotFoundException $e) {
+            $this->logger->error("Document not found getting info: " . $e->getMessage());
+            return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
+        }
+        $dataToReturn = get_object_vars($docInfo);
+        if ($pageInfoToInclude === 'withFullPageInfo') {
+            $dataToReturn['pageInfoArray'] = [];
+            foreach($docInfo->pageIds as $pageId) {
+                try {
+                    $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+                } catch (PageNotFoundException $e) {
+                    // should never happen
+                    $this->logger->error("Page not found getting info: " . $e->getMessage());
+                    return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
+                }
+                $dataToReturn['pageInfoArray'][] = get_object_vars($pageInfo);
+            }
+        }
+        return $this->responseWithJson($response, $dataToReturn);
     }
 
 

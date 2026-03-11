@@ -267,6 +267,20 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/doc/getId/${docId}`;
   }
 
+  apiDocGetInfo(docId: number, withPageIds: boolean = false, withFullPageInfo: boolean=false) {
+    if (withFullPageInfo) {
+      withPageIds = true;
+    }
+    let suffix = '';
+    if (withPageIds) {
+      suffix = '/withPageIds';
+    }
+    if (withFullPageInfo) {
+      suffix = '/withFullPageInfo';
+    }
+    return `${this.apiBase}/doc/${docId}/info${suffix}`;
+  }
+
   apiAddColumn(docId: any, pageNumber: number) {
     return this.apiBase + '/' + docId + '/' + pageNumber + '/newcolumn';
   }

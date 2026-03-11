@@ -36,19 +36,16 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: {
-        // DashboardPage: resolve(__dirname, 'js/pages/DashboardPage.ts'),
-        // WorkPage: resolve(__dirname, 'js/pages/WorkPage.js'),
-        // WorksPage: resolve(__dirname, 'js/pages/WorksPage.ts'),
-        DocPage: resolve(__dirname, 'js/pages/DocPage.js'),
-        DocDefPages: resolve(__dirname, 'js/pages/DocDefPages.js'),
-        // PeoplePage: resolve(__dirname, 'js/pages/PeoplePage.ts'),
+        // Main pages
         PersonPage: resolve(__dirname, 'js/pages/PersonPage.ts'),
         ErrorPage: resolve(__dirname, 'js/pages/ErrorPage.ts'),
-        // DocumentsPage: resolve(__dirname, 'js/pages/DocumentsPage.ts'),
         ChunkPage: resolve(__dirname, 'js/pages/ChunkPage.ts'),
         AdminEntityPage: resolve(__dirname, 'js/pages/AdminEntityPage/AdminEntityPage.js'),
-        DevelopmentEntityDataEditor: resolve(__dirname, 'js/pages/DevelopmentEntityDataEditor.js'),
-        // SearchPage: resolve(__dirname, 'js/pages/SearchPage.js'),
+
+        // Ancillary pages that should disappear
+        DocPage: resolve(__dirname, 'js/pages/DocPage.js'),
+        DocDefPages: resolve(__dirname, 'js/pages/DocDefPages.js'),
+
         EditionComposer: resolve(__dirname, 'js/EditionComposer/EditionComposer.ts'),
         MceComposer: resolve(__dirname, 'js/MceComposer/MceComposer.ts'),
         AutomaticCollationTable: resolve(__dirname, 'js/pages/AutomaticCollationTable/AutomaticCollationTable.ts'),

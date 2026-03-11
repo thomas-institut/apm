@@ -4,19 +4,14 @@ import {AppContext} from "@/ReactAPM/App";
 import {useQuery} from "@tanstack/react-query";
 import {DocumentData} from "@/Api/DataSchema/ApiDocuments";
 import {
-  createColumnHelper,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable
+  createColumnHelper, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable
 } from "@tanstack/react-table";
 import './docs.css';
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import {TablePaginationControls} from "@/ReactAPM/Components/TablePaginationControls";
 import TableStateSummary from "@/ReactAPM/Components/TableStateSummary";
 import GridTable from "@/ReactAPM/Components/GridTable";
-import {Form} from "react-bootstrap";
+import {Col, Form, Row} from "react-bootstrap";
 import {EntityNameTuple} from "@/Api/ApmApiClient";
 import {varsAreEqual} from "@/toolbox/ObjectUtil";
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
@@ -79,7 +74,7 @@ export default function Docs() {
     queryKey: ['docs'], queryFn: () => getDocData(),
   });
 
-  useEffect( () => {
+  useEffect(() => {
     if (queryResult.status === 'success') {
 
       if (varsAreEqual(data, queryResult.data)) {
@@ -97,15 +92,15 @@ export default function Docs() {
     columnHelper.accessor('title', {
       cell: info => {
         return (<EntityLink id={info.row.original.id} type="document" name={info.getValue()}/>);
-      }, header: 'Title',
+      }, header: 'Title', filterFn: "includesString"
     }),
 
     columnHelper.accessor('lang', {
-      cell: info => info.getValue(), header: 'Language', enableSorting: false
+      cell: info => info.getValue(), header: 'Language', enableSorting: false, filterFn: "equalsString"
     }),
 
     columnHelper.accessor('type', {
-      cell: info => info.getValue(), header: 'Type', enableSorting: false
+      cell: info => info.getValue(), header: 'Type', enableSorting: false, filterFn: "equalsString"
     }),
 
     columnHelper.accessor('numPages', {
@@ -131,8 +126,7 @@ export default function Docs() {
           {linksWithSeparator}
         </>);
       }, header: 'Transcribers', enableSorting: false, enableGlobalFilter: true,
-    })
-  ];
+    })];
 
   const table = useReactTable({
     data: data,
@@ -156,10 +150,38 @@ export default function Docs() {
 
   if (data.length > 0) {
     header = (<div className="tableNavigationDiv"
-                   style={{display: 'flex', justifyContent: 'space-between', alignItems: "center",}}>
-      <div key="summary"><TableStateSummary table={table} rowNounPlural="documents"/></div>
-      <div key="search"><Form.Control type="text" className="mb-3" placeholder="Filter title..."
-                                      onChange={e => table.setGlobalFilter(e.target.value.trim())}/></div>
+                   style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: "center"}}>
+      <div key="summary" style={{width: '30em'}}>
+        <TableStateSummary table={table} rowNounPlural="documents"/>
+      </div>
+      <div key="searchTitle" style={{width: '50em'}}>
+        <Form>
+          <Row>
+            <Col xl={6}>
+              <Form.Control type="text" className="formControlNormalText" placeholder="Filter title..."
+                            onChange={e => table.getColumn('title')?.setFilterValue(e.target.value.trim())}/>
+            </Col>
+            <Col>
+              <Form.Select className="formControlNormalText" aria-label="Select Type"
+                           onChange={e => table.getColumn('lang')?.setFilterValue(e.target.value)}>
+                <option value="">Any Language</option>
+                <option value="Arabic">Arabic</option>
+                <option value="Hebrew">Hebrew</option>
+                <option value="Latin">Latin</option>
+                <option value="Judeo Arabic">Judeo Arabic</option>
+              </Form.Select>
+            </Col>
+            <Col>
+              <Form.Select className="formControlNormalText" aria-label="Select Type"
+                           onChange={e => table.getColumn('type')?.setFilterValue(e.target.value)}>
+                <option value="">Any Type</option>
+                <option value="Manuscript">Manuscripts</option>
+                <option value="Print">Prints</option>
+              </Form.Select>
+            </Col>
+          </Row>
+        </Form>
+      </div>
       <TablePaginationControls className="tableNavigationDiv" table={table} key="pagination"/>
     </div>);
     content = <GridTable table={table} tableId="docsTable" key="table"

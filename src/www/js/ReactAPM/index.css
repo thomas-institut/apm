@@ -219,3 +219,9 @@ div.anchor-list-item.active {
         opacity: 1;
     }
 }
+
+
+/* Classes for Bootstrap forms */
+.formControlNormalText {
+    font-size: 1em;
+}

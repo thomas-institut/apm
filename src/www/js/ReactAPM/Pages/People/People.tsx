@@ -83,11 +83,11 @@ export default function People() {
     }),
 
     columnHelper.accessor('dateOfBirth', {
-      cell: info => info.getValue(), header: 'Date of Birth', enableSorting: true
+      cell: info => info.getValue(), header: 'Date of Birth', enableSorting: true, enableGlobalFilter: false
     }),
 
     columnHelper.accessor('dateOfDeath', {
-      cell: info => info.getValue(), header: 'Date of Death', enableSorting: true
+      cell: info => info.getValue(), header: 'Date of Death', enableSorting: true, enableGlobalFilter: false
     }),
 
     columnHelper.accessor('tags', {
@@ -117,7 +117,7 @@ export default function People() {
     header = (<div className="tableNavigationDiv"
                    style={{display: 'flex', justifyContent: 'space-between', alignItems: "center",}}>
       <div key="summary"><TableStateSummary table={table} rowNounPlural="persons"/></div>
-      <div key="search"><Form.Control type="text" className="mb-3" placeholder="Filter name..."
+      <div key="search"><Form.Control type="text" className="mb-3 formControlNormalText" placeholder="Filter name..."
                                       onChange={e => table.setGlobalFilter(e.target.value.trim())}/></div>
       <TablePaginationControls className="tableNavigationDiv" table={table} key="pagination"/>
     </div>);

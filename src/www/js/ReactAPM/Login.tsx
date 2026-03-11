@@ -37,7 +37,8 @@ export default function Login() {
   const handleLogin = async () => {
     const userName = userNameInput.current?.value.trim() ?? '';
     const password = passwordInput.current?.value.trim() ?? '';
-    const rememberMe = rememberMeCheckBox.current?.checked ?? false;
+    // const rememberMe = rememberMeCheckBox.current?.checked ?? false;
+    const rememberMe = true;
     if (userName && password) {
       // let's roll
       const success = await appContext.apiClient.apiLogin(userName, password, rememberMe);
@@ -80,9 +81,9 @@ export default function Login() {
           </InputGroup>
 
         </Form.Group>
-        <Form.Group className="mb-3" controlId="formBasicCheckbox">
-          <Form.Check ref={rememberMeCheckBox} type="checkbox" label="Remember me"/>
-        </Form.Group>
+        {/*<Form.Group className="mb-3" controlId="formBasicCheckbox">*/}
+        {/*  <Form.Check ref={rememberMeCheckBox} type="checkbox" label="Remember me"/>*/}
+        {/*</Form.Group>*/}
         <Button variant="primary" disabled={buttonDisabled} onClick={handleLogin}>
           Login
         </Button>

@@ -8,9 +8,14 @@ import {AppContext} from "@/ReactAPM/App";
 import {Breadcrumb} from "react-bootstrap";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
-import {PageInfo} from "@/Api/DataSchema/ApiDocuments";
-import BatchQuery from "@/Components/BatchQuery";
+import {DocInfo, PageInfo} from "@/Api/DataSchema/ApiDocuments";
+import {EntityData} from "@/EntityData/EntityData";
 
+
+interface DocInfoData {
+  docInfo: DocInfo;
+  entityData: EntityData;
+}
 
 export default function Document() {
 
@@ -22,8 +27,11 @@ export default function Document() {
   }
 
   const docInfoQueryResult = useQuery({
-    queryKey: ['docInfo', id], queryFn: () => {
-      return context.apiClient.getDocumentInfo(Tid.fromCanonicalString(id), true, true);
+    queryKey: ['docInfo', id], queryFn: async () : Promise<DocInfoData> => {
+      return {
+        docInfo: await  context.apiClient.getDocumentInfo(Tid.fromCanonicalString(id), true, true),
+        entityData: await context.apiClient.getEntityData(Tid.fromCanonicalString(id))
+      };
     }
   });
 
@@ -44,8 +52,9 @@ export default function Document() {
     </NormalPageContainer>;
   }
 
-  const docInfo = docInfoQueryResult.data;
-  console.log('Document Info', docInfo);
+  const docInfoData = docInfoQueryResult.data;
+  console.log('Document Info Data', docInfoData);
+  const docInfo = docInfoData.docInfo;
 
   return (<NormalPageContainer>
       <Breadcrumb>

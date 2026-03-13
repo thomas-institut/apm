@@ -19,6 +19,10 @@ export interface PageInfo {
   foliation: string;
   pageId: number;
   foliationIsSet: boolean;
+
+  isTranscribed: boolean; // Wichtig für die CSS-Klasse 'without-transcription'
+  thumbnailUrl: string;   // Für die Anzeige in der Liste
+  jpgUrl: string;         // Als Fallback oder für den großen Viewer
 }
 
 export interface DocInfo {

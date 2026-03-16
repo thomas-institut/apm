@@ -510,6 +510,9 @@ export class DocPage extends NormalPage {
 
   loadThumbnails() {
     const parallelRequests = 5;
+
+    console.log(this.pageArray)
+
     return new Promise( async (outerResolve) => {
       for (let i = 0; i < this.pageArray.length; i+=parallelRequests) {
         let promises = [];

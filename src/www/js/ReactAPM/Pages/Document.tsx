@@ -1,6 +1,5 @@
 import {Link, useParams} from "react-router";
 
-
 import {Tid} from "@/Tid/Tid";
 import {useQuery} from "@tanstack/react-query";
 import {useContext} from "react";
@@ -22,6 +21,7 @@ export default function Document() {
 
   const {id} = useParams();
   const context = useContext(AppContext);
+  const [selectedSeq, setSelectedSeq] = useState<number | null>(null); // State für den Rahmen
 
   if (id === undefined) {
     return <div>Error: id is undefined</div>;
@@ -32,6 +32,7 @@ export default function Document() {
       return {
         docInfo: await  context.apiClient.getDocumentInfo(Tid.fromCanonicalString(id), true, true),
         entityData: await context.apiClient.getEntityData(Tid.fromCanonicalString(id))
+
       };
     }
   });
@@ -57,13 +58,18 @@ export default function Document() {
   console.log('Document Info Data', docInfoData);
   const docInfo = docInfoData.docInfo;
 
+  const handleImageOpen = (url: string, seq: number) => {
+    setSelectedSeq(seq); // Setzt die ID für den schwarzen Rahmen
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   return (<NormalPageContainer>
       <Breadcrumb>
         <Breadcrumb.Item linkAs={Link} linkProps={{to: RouteUrls.docs()}}>Documents</Breadcrumb.Item>
         <Breadcrumb.Item active>{docInfo.title}</Breadcrumb.Item>
       </Breadcrumb>
 
-      <PageList pageInfoArray={docInfo.pageInfoArray ?? []}/>
+      <PageList pageInfoArray={docInfo.pageInfoArray ?? []} onPageClick={handleImageOpen} selectedPageSeq={selectedSeq}/>
 
     </NormalPageContainer>
   );
@@ -77,8 +83,8 @@ export default function Document() {
 interface PageListProps {
   pageInfoArray: PageInfo[];
   numCols?: number;
-  onPageSelect?: (sequence: number) => void;
-  selectedPageSeq?: number;
+  onPageClick?: (url: string, seq: number) => void;
+  selectedPageSeq?: number | null;
 }
 
 /*function PageList(props: PageListProps) {
@@ -90,7 +96,7 @@ interface PageListProps {
 
 }*/
 
-function PageList({ pageInfoArray, onPageSelect, selectedPageSeq }: PageListProps) {
+function PageList({ pageInfoArray, onPageClick, selectedPageSeq }: PageListProps) {
   // State für die Thumbnail-Größe (entspricht deiner MultiToggle-Logik)
   const [thumbnailSize, setThumbnailSize] = useState<number>(0); // 0 = None
 
@@ -102,31 +108,43 @@ function PageList({ pageInfoArray, onPageSelect, selectedPageSeq }: PageListProp
     { label: 'Large', size: 400 },
   ];
 
+  const columnWidth = thumbnailSize > 0 ? `${thumbnailSize + 20}px` : "50px";
+
   return (
       <div className="page-list-panel">
         {/* Toolbar für Thumbnail-Steuerung */}
-        <div className="panel-toolbar mb-3">
-          <span className="me-2">Thumbnails:</span>
-          <div className="btn-group btn-group-sm">
+        <div className="panel-toolbar mb-2 d-flex align-items-center border-bottom pb-2"
+             style={{ letterSpacing: '0.03em', fontSize: '0.85rem' }}>
+
+          <span className="text-uppercase text-muted small fw-bold me-3">Thumbnails:</span>
+
+          <div className="d-flex gap-3">
             {sizeOptions.map(opt => (
-                <button
+                <span
                     key={opt.label}
-                    className={`btn btn-outline-secondary ${thumbnailSize === opt.size ? 'active' : ''}`}
                     onClick={() => setThumbnailSize(opt.size)}
-                >
-                  {opt.label}
-                </button>
+                    style={{
+                      cursor: 'pointer',
+                      color: thumbnailSize === opt.size ? '#000' : '#adb5bd',
+                      fontWeight: thumbnailSize === opt.size ? 600 : 400,
+                      transition: 'all 0.2s ease'
+                    }}
+                    className="text-uppercase small"                >
+        {opt.label}
+      </span>
             ))}
           </div>
         </div>
 
         {/* Die eigentliche Liste */}
         <div className="page-list-contents" style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '10px',
-          maxHeight: '600px',
-          overflowY: 'auto'
+          display: 'grid',
+          gridTemplateColumns: `repeat(auto-fill, minmax(${columnWidth}, 1fr))`,
+          gap: '0px',
+          maxHeight: '800px',
+          overflowY: 'auto',
+          padding: '10px',
+          alignItems: 'start' // Richtet Items am oberen Rand der Grid-Zelle aus
         }}>
           {pageInfoArray.map((page) => (
               <PageItem
@@ -134,7 +152,7 @@ function PageList({ pageInfoArray, onPageSelect, selectedPageSeq }: PageListProp
                   page={page}
                   size={thumbnailSize}
                   isSelected={selectedPageSeq === page.sequence}
-                  onClick={() => onPageSelect?.(page.sequence)}
+                  onClick={() => onPageClick?.(page.jpgUrl || page.thumbnailUrl || '', page.sequence)}
               />
           ))}
         </div>
@@ -148,29 +166,52 @@ function PageItem({ page, size, isSelected, onClick }: {
   isSelected: boolean,
   onClick: () => void
 }) {
-  // Logik aus dem alten Code: Klassen basierend auf Status
+  // Klassen basierend auf Status (für Kompatibilität mit bestehendem CSS)
   const classes = ["page-div"];
   if (page.foliationIsSet) classes.push("foliation-set");
   if (!page.isTranscribed) classes.push("without-transcription");
   if (isSelected) classes.push("page-selected");
 
+  // Dynamisches Styling für den Text (Foliierung/Sequenz)
+  const textStyle: React.CSSProperties = {
+    fontSize: '0.8rem',
+    padding: '2px',
+    color: page.isTranscribed ? 'black' : '#aaa',
+    fontWeight: page.isTranscribed ? 'bold' : 'normal',
+    transition: 'color 0.2s ease-in-out'
+  };
+
   return (
       <div
           className={`page-big-div ${isSelected ? 'border border-primary' : ''}`}
           onClick={onClick}
-          style={{ cursor: 'pointer', textAlign: 'center' }}
+          style={{
+            cursor: 'pointer',
+            textAlign: 'center',
+            padding: '5px',
+            borderRadius: '4px',
+            borderRight: '1px solid #eee',
+            borderBottom: '1px solid #eee',
+            borderLeft: '1px solid #eee',
+            borderTop: '1px solid #eee',
+            backgroundColor: isSelected ? '#f0f8ff' : 'transparent'
+          }}
       >
-        {size > 0 && (
-            <div className="thumbnail-div mb-1">
+            <div className="thumbnail-div mb-1" style={{ height: `${size}px`, display: 'flex', justifyContent: 'center' }}>
               <img
                   src={page.thumbnailUrl || page.jpgUrl}
                   alt={`Page ${page.sequence}`}
-                  style={{ height: `${size}px`, objectFit: 'contain', display: 'block' }}
-                  loading="lazy" // React-native Ersatz für das manuelle Batch-Loading
+                  onClick={onClick}
+                  style={{
+                    height: size > 0 ? `${size}px` : '0px',
+                    objectFit: 'contain',
+                    display: 'block',
+                    // Optional: Auch das Vorschaubild etwas ausbleichen, wenn keine Transkription da ist
+                    filter: page.isTranscribed ? 'none' : 'grayscale(30%) opacity(0.7)'
+                  }}
               />
             </div>
-        )}
-        <div className={classes.join(' ')} style={{ fontSize: '0.8rem', padding: '2px' }}>
+        <div className={classes.join(' ')} style={textStyle} onClick={onClick}>
           {page.foliation || page.sequence}
         </div>
       </div>

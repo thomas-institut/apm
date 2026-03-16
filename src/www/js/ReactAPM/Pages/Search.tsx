@@ -688,7 +688,7 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
   let data: any[] = [];
   if (query && query.length !== 0) {
     for (let i = 0; i < query.length; i++) {
-      const doc = query[i].document;
+      const doc = query[i].documentBeta;
       let textTokenized = corpus === 'transcriptions' ? doc.transcription_tokens : doc.edition_tokens;
       let textLemmatized = corpus === 'transcriptions' ? doc.transcription_lemmata : doc.edition_lemmata;
 

@@ -405,7 +405,7 @@ class Gutter {
 
     // Set the cursor at multiple levels
     this.grid.style.cursor = this.cursor;
-    this.window.document.body.style.cursor = this.cursor;
+    this.window.documentBeta.body.style.cursor = this.cursor;
 
     this.onDragStart(this.direction, this.track);
   }
@@ -544,7 +544,7 @@ class Gutter {
       this.grid.style.cursor = '';
     }
 
-    this.window.document.body.style.cursor = '';
+    this.window.documentBeta.body.style.cursor = '';
   };
 
   destroy (immediate, cb) {

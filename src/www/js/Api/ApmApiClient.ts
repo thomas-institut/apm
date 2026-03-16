@@ -437,17 +437,8 @@ export class ApmApiClient {
     }, true);
   }
 
-  /**
-   * Calls the createDocument API on APM
-   * @param {string}name
-   * @param type
-   * @param lang
-   * @param imageSource
-   * @param imageSourceData
-   * @returns {Promise<{}>}
-   */
-  async createDocument(name: string, type: string | null = null, lang: string | null = null, imageSource: string | null = null, imageSourceData: string | null = null): Promise<any> {
-    return this.post(urlGen.apiDocumentCreate(), {
+  async createDocument(name: string, type: number, lang: number, imageSource: number, imageSourceData: string): Promise<number> {
+    return await this.post(urlGen.apiDocumentCreate(), {
       name: name, type: type, lang: lang, imageSource: imageSource, imageSourceData: imageSourceData
     }, true);
   }

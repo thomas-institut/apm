@@ -261,7 +261,7 @@ function RealApp() {
 
     RouteUrls.works(), RouteUrls.people(), RouteUrls.search(),
 
-    RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocument(),
+    RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocumentBeta(),
 
   ];
 
@@ -306,7 +306,7 @@ function RealApp() {
               <Route id="chunk" path={RouteUrls.patternChunk()} element={<Chunk/>}/>
               <Route id="work" path={RouteUrls.patternWork()} element={<Work/>}/>
               <Route id="person" path={RouteUrls.patternPerson()} element={<Person/>}/>
-              <Route id="doc" path={RouteUrls.patternDocument()} element={<Document/>}/>
+              <Route id="doc" path={RouteUrls.patternDocumentBeta()} element={<Document/>}/>
               <Route id="login" path={RouteUrls.login()} element={<Login/>}/>
               <Route id="logout" path={RouteUrls.logout()} element={<Logout/>}/>
               <Route id="catchall" path="*" element={<NotFound/>}></Route>

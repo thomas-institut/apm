@@ -88,12 +88,16 @@ export class RouteUrls {
     return baseUrl + '/work/' + id;
   }
 
-  static patternDocument() {
+  static patternDocumentBeta() {
     return baseUrl + betaPathInfix +  '/doc/:id/*';
   }
 
-  static document(id: number|string) {
+  static documentBeta(id: number|string) {
     return baseUrl +  betaPathInfix + '/doc/' + id;
+  }
+
+  static document(id: number|string) {
+    return baseUrl +  '/doc/' + id;
   }
 
   static docPage(id: number|string, page: number) {

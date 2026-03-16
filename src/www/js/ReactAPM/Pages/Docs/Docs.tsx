@@ -1,5 +1,5 @@
 import NormalPageContainer from "../../NormalPageContainer";
-import {useContext, useEffect} from "react";
+import {useContext, useEffect, useState} from "react";
 import {AppContext} from "@/ReactAPM/App";
 import {useQuery} from "@tanstack/react-query";
 import {DocumentData} from "@/Api/DataSchema/ApiDocuments";
@@ -11,10 +11,13 @@ import EntityLink from "@/ReactAPM/Components/EntityLink";
 import {TablePaginationControls} from "@/ReactAPM/Components/TablePaginationControls";
 import TableStateSummary from "@/ReactAPM/Components/TableStateSummary";
 import GridTable from "@/ReactAPM/Components/GridTable";
-import {Col, Form, Row} from "react-bootstrap";
+import {Button, Col, Form, Row} from "react-bootstrap";
 import {EntityNameTuple} from "@/Api/ApmApiClient";
 import {varsAreEqual} from "@/toolbox/ObjectUtil";
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
+import {NewDocumentDialog} from "@/ReactAPM/Pages/Docs/NewDocumentDialog";
+import {Tid} from "@/Tid/Tid";
+import {urlGen} from "@/pages/common/SiteUrlGen";
 
 
 export interface DocsTableItem {
@@ -36,6 +39,9 @@ export default function Docs() {
   const setSorting = useDataStore((state) => state.setDocsTableSortingState);
   const pagination = useDataStore((state) => state.docsTablePaginationState);
   const setPagination = useDataStore((state) => state.setDocsTablePaginationState);
+  const [showNewDocumentDialog, setShowNewDocumentDialog] = useState(false);
+
+  const userCanCreateDocuments = appContext.userIsAdmin;
 
   const getDataForTable = (data: DocumentData[], docTypes: EntityNameTuple[], languages: EntityNameTuple[]): DocsTableItem[] => {
     const dataTableEntries: DocsTableItem[] = [];
@@ -150,7 +156,9 @@ export default function Docs() {
 
   if (data.length > 0) {
     header = (<div className="tableNavigationDiv"
-                   style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: "center"}}>
+                   style={{
+                     display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: "center"
+                   }}>
       <div key="summary" style={{width: '30em'}}>
         <TableStateSummary table={table} rowNounPlural="documents"/>
       </div>
@@ -203,12 +211,23 @@ export default function Docs() {
       break;
   }
 
+  const handleOnCreateDocSuccess = async (newDocId: number) => {
+    console.log(`New doc id is ${Tid.toBase36String(newDocId)} (${newDocId})`);
+    document.location.href = urlGen.siteDocPage(Tid.toBase36String(newDocId));
+  };
+
 
   return (<NormalPageContainer>
     <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
       <div style={{flexGrow: 0}} key="header">
         <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
-          <h1>Documents</h1>
+          <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
+            <h1>Documents</h1>
+            {userCanCreateDocuments &&
+              <Button variant="primary" style={{margin: '0.5em'}} onClick={() => setShowNewDocumentDialog(true)}>Create
+                New</Button>}
+          </div>
+
           {queryStatusDiv}
         </div>
         {header}
@@ -216,6 +235,8 @@ export default function Docs() {
       {content}
 
     </div>
+    <NewDocumentDialog show={showNewDocumentDialog} onCreateSuccess={handleOnCreateDocSuccess}
+                       onClickHide={() => setShowNewDocumentDialog(false)}/>
   </NormalPageContainer>);
 }
 

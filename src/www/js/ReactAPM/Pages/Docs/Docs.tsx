@@ -220,15 +220,11 @@ export default function Docs() {
   return (<NormalPageContainer>
     <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
       <div style={{flexGrow: 0}} key="header">
-        <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
-          <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
+        <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
             <h1>Documents</h1>
-            {userCanCreateDocuments &&
-              <Button variant="primary" style={{margin: '0.5em'}} onClick={() => setShowNewDocumentDialog(true)}>Create
-                New</Button>}
-          </div>
-
           {queryStatusDiv}
+            {userCanCreateDocuments &&
+              <Button variant="primary" className={'btn-sm'} style={{ margin: '0.5em'}} onClick={() => setShowNewDocumentDialog(true)}>Create New Document</Button>}
         </div>
         {header}
       </div>

@@ -431,7 +431,7 @@ export class ApmApiClient {
     }, true);
   }
 
-  async personCreate(name: string, sortName: string): Promise<any> {
+  async personCreate(name: string, sortName: string): Promise<number> {
     return this.post(urlGen.apiPersonCreate(), {
       name: name, sortName: sortName
     }, true);

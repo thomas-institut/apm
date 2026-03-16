@@ -254,15 +254,14 @@ class ApiPeople extends ApiController
         $pm = $this->systemManager->getPersonManager();
 
         try {
-            $tid = $pm->createPerson($name, $sortName, $this->apiUserId);
+            $newPersonId = $pm->createPerson($name, $sortName, $this->apiUserId);
         } catch (InvalidPersonNameException $e) {
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);
         }
-        $this->systemManager->onEntityDataChange($tid, $this->apiUserId);
+        $this->systemManager->onEntityDataChange($newPersonId, $this->apiUserId);
         // the person has been created
-        return $this->responseWithJson($response, [ 'tid' => $tid ], HttpStatus::SUCCESS);
-
+        return $this->responseWithJson($response, $newPersonId, HttpStatus::SUCCESS);
     }
 
 }

@@ -25,21 +25,28 @@ import {wait} from '@/toolbox/wait';
 import * as Entity from '../constants/Entity';
 import {WitnessUpdateData} from "@/Api/DataSchema/WitnessUpdates";
 import {IndexedDbKeyCache} from "@/toolbox/KeyCache/IndexedDbKeyCache";
-import {ApiCollationTableVersionInfo} from "@/Api/DataSchema/ApiCollationTableVersionInfo";
-import {ApiCollationTableAuto} from "@/Api/DataSchema/ApiCollationTableAuto";
 import {
-  ApiCollationTable_convertToEdition_input, ApiCollationTableConvertToEdition
-} from "@/Api/DataSchema/ApiCollationTableConvertToEdition";
+  ApiCollationTable_convertToEdition_input,
+  ApiCollationTableAuto,
+  ApiCollationTableConvertToEdition,
+  ApiCollationTableInfo,
+  ApiCollationTableVersionInfo,
+  AutomaticCollationSettings
+} from "@/Api/DataSchema/ApiCollationTable";
 import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
-import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
-import {ApiPeopleAllPeopleDataForPeoplePageItem} from "@/Api/DataSchema/ApiPeopleAllPeopleDataForPeoplePage";
-import {ApiWorksAll} from "@/Api/DataSchema/ApiWorksAll";
+import {DocInfo, DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
+import {
+  AllPeopleDataForPeoplePageItem, PersonEssentialData
+} from "@/Api/DataSchema/ApiPeople";
+import {ApiChunksWithTranscription, ApiWorksAll, ChunkCollationTableInfo, WorkData} from "@/Api/DataSchema/ApiWorks";
 import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
-import {ApiPreset} from "@/Api/DataSchema/ApiPreset";
+import {ApiSiglaPreset, ApiPresetsQuery, ApiAutomaticCollationTablePreset} from "@/Api/DataSchema/ApiPresets";
+import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
+import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -62,6 +69,14 @@ export interface ApmApiClientError {
   httpStatus: number;
   message: string;
   data?: any;
+}
+
+export interface ChunkInWorkInfo {
+  workId: string,
+  chunkNumber: number;
+  hasTranscriptions: boolean;
+  hasCollationTables: boolean;
+  hasEditions: boolean;
 }
 
 
@@ -127,20 +142,19 @@ export class ApmApiClient {
     return this;
   }
 
-  async getPersonEssentialData(personId: number): Promise<any> {
+  async getPersonEssentialData(personId: number): Promise<PersonEssentialData> {
     if (personId === 0) {
       console.warn(`getPersonEssentialData called with personId 0`);
       console.trace();
       return {
+        extraAttributes: [],
+        isUser: false,
+        tid: 0,
+        userEmailAddress: "",
+        userName: "",
+        userTags: [],
         name: '',
-        sortName: '',
-        birthDate: '',
-        deathDate: '',
-        birthPlace: '',
-        deathPlace: '',
-        biography: '',
-        image: '',
-        imageData: '',
+        sortName: ''
       };
     }
     return await this.getApmEntityData('Person', 'essential', personId, 'local');
@@ -166,7 +180,7 @@ export class ApmApiClient {
     }
   }
 
-  async collationTableAuto(apiCallOptions: any): Promise<ApiCollationTableAuto> {
+  async collationTableAuto(apiCallOptions: AutomaticCollationSettings): Promise<ApiCollationTableAuto> {
     return await this.post(urlGen.apiCollationTable_auto(), apiCallOptions, true);
   }
 
@@ -189,11 +203,11 @@ export class ApmApiClient {
     }
   }
 
-  async getAllPeopleData(): Promise<ApiPeopleAllPeopleDataForPeoplePageItem[]> {
+  async getAllPeopleData(): Promise<AllPeopleDataForPeoplePageItem[]> {
     return await this.get(urlGen.apiPersonGetDataForPeoplePage());
   }
 
-  async getAllWorksData() : Promise<ApiWorksAll> {
+  async getAllWorksData(): Promise<ApiWorksAll> {
     return await this.get(urlGen.apiWorksAll());
   }
 
@@ -206,20 +220,77 @@ export class ApmApiClient {
     return data;
   }
 
-  async getWorkDataOld(workId: number): Promise<any> {
+  async getWorkDataOld(workId: string): Promise<any> {
     return await this.getApmEntityData('WorkOld', '', workId, 'local');
   }
 
-  async getWorkData(workId: number): Promise<any> {
+  async getWorkData(workId: number | string): Promise<WorkData> {
     return await this.getApmEntityData('Work', '', workId, 'local');
+  }
+
+  async getPageInfo(pageId: number): Promise<PageInfo> {
+    return this.get(urlGen.apiDocumentsGetPageInfo(pageId), false, TtlOneHour);
+  }
+
+  async getDocumentInfo(docId: number, withPageIds: boolean = false, withFullPageInfo: boolean = false): Promise<DocInfo> {
+    return this.get(urlGen.apiDocGetInfo(docId, withPageIds, withFullPageInfo), false, TtlOneHour);
+  }
+
+  async getWorkChunksWithTranscription(workId: string) : Promise<ApiChunksWithTranscription> {
+    return await this.get(urlGen.apiWorkGetChunksWithTranscription(workId), false, TtlOneMinute);
+  }
+
+  async getWitnessesForChunk(workId: string, chunkNumber: number): Promise<WitnessInfo[]> {
+    return await this.get(urlGen.apiWitnessGetWitnessesForChunk(workId, chunkNumber), false, 5* TtlOneMinute);
+  }
+
+  async getChunksInWorkInfo(workId: string): Promise<ChunkInWorkInfo[]> {
+    const chunksWithTranscriptionResponse = await this.getWorkChunksWithTranscription(workId);
+    console.log('Chunks with transcription', chunksWithTranscriptionResponse);
+    const activeCollationTables = await this.getCollationTablesActiveForWork(workId);
+    console.log('Active collation tables', activeCollationTables);
+    const info: ChunkInWorkInfo[] = chunksWithTranscriptionResponse.chunks.map(n => {
+      return {
+        workId: workId,
+        chunkNumber: n,
+        hasTranscriptions: true,
+        hasCollationTables: false,
+        hasEditions: false
+      };
+    });
+    activeCollationTables.forEach((ctInfo) => {
+      const chunkIndex = info.findIndex((chunkInfo) => chunkInfo.chunkNumber === ctInfo.chunkNumber);
+      if (chunkIndex >= 0) {
+        if (ctInfo.type === 'edition') info[chunkIndex].hasEditions = true; else if (ctInfo.type === 'ctable') info[chunkIndex].hasCollationTables = true;
+      } else {
+        info.push({
+          workId: workId,
+          chunkNumber: ctInfo.chunkNumber,
+          hasTranscriptions: false,
+          hasCollationTables: ctInfo.type === 'ctable',
+          hasEditions: ctInfo.type === 'edition'
+        });
+      }
+    });
+
+    return info.sort((a, b) => a.chunkNumber - b.chunkNumber);
+  }
+
+  async getCollationTablesForChunk(workId: string, chunkNumber: number): Promise<ChunkCollationTableInfo[]> {
+    return await this.get(urlGen.apiWitnessGetCollationTablesForChunk(workId, chunkNumber), false, TtlOneMinute);
+  }
+
+
+  async getCollationTablesActiveForWork(workId: string): Promise<ApiCollationTableInfo[]> {
+    return await  this.get(urlGen.apiCollationTable_activeForWork(workId), false, TtlOneMinute);
   }
 
   async getLegacySystemLanguagesArray(): Promise<any> {
     return await this.getAlmostStaticData('SystemLanguages', urlGen.apiSystemGetLanguages());
   }
 
-  async getAuthors(): Promise<any> {
-    return this.get(urlGen.apiWorksGetAuthors(), false, TtlOneMinute);
+  async getAuthors(): Promise<number[]> {
+    return this.get(urlGen.apiWorksGetAuthors(), false, TtlOneHour);
   }
 
   /**
@@ -253,6 +324,7 @@ export class ApmApiClient {
       });
       if (resp.status === 200) {
         const data = await resp.json();
+        console.log(`Got login response`, data);
         if (data.status === 'OK') {
           await this.setBearerToken(data.token, data.ttl ?? 15 * 24 * 3600);
           return true;
@@ -331,8 +403,13 @@ export class ApmApiClient {
     }
   }
 
-  async getSiglaPresets(lang: string, witnessIds: string[]) : Promise<ApiPreset[]> {
+  async getSiglaPresets(lang: string, witnessIds: string[]): Promise<ApiSiglaPreset[]> {
     const resp = await this.post(urlGen.apiGetSiglaPresets(), {lang: lang, witnesses: witnessIds}, true);
+    return resp['presets'];
+  }
+
+  async getAutomaticCollationPresets(options: ApiPresetsQuery): Promise<ApiAutomaticCollationTablePreset[]> {
+    const resp = await this.post(urlGen.apiGetAutomaticCollationPresets(), options, true);
     return resp['presets'];
   }
 
@@ -354,23 +431,14 @@ export class ApmApiClient {
     }, true);
   }
 
-  async personCreate(name: string, sortName: string): Promise<any> {
+  async personCreate(name: string, sortName: string): Promise<number> {
     return this.post(urlGen.apiPersonCreate(), {
       name: name, sortName: sortName
     }, true);
   }
 
-  /**
-   * Calls the createDocument API on APM
-   * @param {string}name
-   * @param type
-   * @param lang
-   * @param imageSource
-   * @param imageSourceData
-   * @returns {Promise<{}>}
-   */
-  async createDocument(name: string, type: string | null = null, lang: string | null = null, imageSource: string | null = null, imageSourceData: string | null = null): Promise<any> {
-    return this.post(urlGen.apiDocumentCreate(), {
+  async createDocument(name: string, type: number, lang: number, imageSource: number, imageSourceData: string): Promise<number> {
+    return await this.post(urlGen.apiDocumentCreate(), {
       name: name, type: type, lang: lang, imageSource: imageSource, imageSourceData: imageSourceData
     }, true);
   }
@@ -380,8 +448,8 @@ export class ApmApiClient {
     return this.get(urlGen.apiDocumentsAllDocumentsData());
   }
 
-  async getPersonWorks(personTid: number): Promise<any> {
-    return this.get(urlGen.apiPersonGetWorks(personTid), false, TtlOneMinute);
+  async getPersonWorks(personTid: number): Promise<ApiPersonWorksResponse> {
+    return this.get(urlGen.apiPersonGetWorks(personTid), false, TtlOneHour);
   }
 
   /**
@@ -444,7 +512,7 @@ export class ApmApiClient {
       debug && console.log(`Entity name ${id} not found in cache, getting it from entity data`);
       const name = (await this.getEntityData(id))['name'];
       this.caches.local.store(cacheKey, name, this.getTtlWithVariability(TtlOneDay));
-      debug && console.log(`Releasing lock ${lockName} after caching entity name.`)
+      debug && console.log(`Releasing lock ${lockName} after caching entity name.`);
       return name;
     });
   }
@@ -500,7 +568,7 @@ export class ApmApiClient {
 
   }
 
-  getPredicateDefinitionsForType(type: number) : Promise<PredicateDefinitionsForType> {
+  getPredicateDefinitionsForType(type: number): Promise<PredicateDefinitionsForType> {
     return this.fetch(urlGen.apiEntityGetPredicateDefinitionsForType(type), 'GET', {}, false, false, TtlOneHour);
   }
 
@@ -517,7 +585,7 @@ export class ApmApiClient {
    * @return {Promise<any>}
    * @private
    */
-  getApmEntityData(entityType: string, dataType: string, entityId: number, cacheName: CacheNames = 'local'): Promise<any> {
+  getApmEntityData(entityType: string, dataType: string, entityId: number | string, cacheName: CacheNames = 'local'): Promise<any> {
 
     // @ts-ignore
     return new Promise(async (resolve, reject) => {
@@ -527,6 +595,10 @@ export class ApmApiClient {
         case 'Person':
           if (dataType === 'essential') {
             ttl = TtlOneDay * 8;
+            if (typeof entityId === 'string') {
+              reject(`Invalid entityId type for Person data: ${typeof entityId}`);
+              return;
+            }
             getUrl = urlGen.apiPersonGetEssentialData(entityId);
           } else {
             reject(`Invalid data type for Person data: ${dataType}`);
@@ -534,6 +606,10 @@ export class ApmApiClient {
           break;
 
         case 'WorkOld':
+          if (typeof entityId === 'number') {
+            reject(`Invalid entityId type for Person data: ${typeof entityId}`);
+            return;
+          }
           getUrl = urlGen.apiWorkGetInfoOld(entityId);
           break;
 
@@ -786,7 +862,7 @@ export class ApmApiClient {
    * @return {string}
    * @private
    */
-  private getCacheKey(entityType: string, dataType: string, entityId: number, attribute: string = ''): string {
+  private getCacheKey(entityType: string, dataType: string, entityId: number | string, attribute: string = ''): string {
     if (dataType === '') {
       dataType = 'default';
     }

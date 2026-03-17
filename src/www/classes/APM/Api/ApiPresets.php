@@ -28,6 +28,7 @@ use APM\System\Preset\PresetManager;
 use APM\System\SystemManager;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -160,18 +161,25 @@ class ApiPresets extends ApiController
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        
-        $inputData = $this->checkAndGetInputData($request, $response, ['userId', 'lang', 'witnesses']);
+
+        $inputData = json_decode($request->getBody()->getContents(), true);
         if (!is_array($inputData)) {
-            return $inputData;
+            $this->logger->error("Input data is not an array", ['apiUserId' => $this->apiUserId, 'data' => $inputData]);
+            return $this->responseWithJson($response, ['error' => self::API_ERROR_BAD_REQUEST], HttpStatus::BAD_REQUEST);
         }
-        
+
+        foreach (['userId', 'lang', 'witnesses'] as $var){
+            if (!isset($inputData[$var])) {
+                $this->logger->error("Required field '$var' not present");
+                return $this->responseWithJson($response, ['error' => self::API_ERROR_BAD_REQUEST], HttpStatus::BAD_REQUEST);
+            }
+        }
         $tool = SystemManager::TOOL_AUTOMATIC_COLLATION;
         
         $userId = intval($inputData['userId']);
         $lang = $inputData['lang'];
         $requestedWitnesses = $inputData['witnesses'];
-        //$this->codeDebug("Getting presets for $lang", [ 'witnesses' => $requestedWitnesses]);
+
 
 
         

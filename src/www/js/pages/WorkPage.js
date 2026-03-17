@@ -3,8 +3,8 @@ import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
 import { ApmPage } from './ApmPage'
-import { Tid } from '../Tid/Tid'
-import { numericSort } from '../lib/ToolBox/ArrayUtil.ts'
+import { Tid } from '@/Tid/Tid'
+import { numericSort } from '@/lib/ToolBox/ArrayUtil'
 
 export class WorkPage extends NormalPage {
 

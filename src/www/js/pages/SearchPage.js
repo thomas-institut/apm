@@ -488,12 +488,12 @@ function collectData(query, token, tokensForQuery, lemmata, keywordDistance, lem
 
       // get data from query
       if (corpus === 'transcriptions') {
-        ({ page, seq, foliation, column, docID, pageID, id: typesenseID, transcription_tokens: textTokenized, transcription_lemmata: textLemmatized } = query[i].document);
+        ({ page, seq, foliation, column, docID, pageID, id: typesenseID, transcription_tokens: textTokenized, transcription_lemmata: textLemmatized } = query[i].documentBeta);
       } else if (corpus === 'editions') {
-        ({ table_id: tableId, chunk, id: typesenseID, edition_tokens: textTokenized, edition_lemmata: textLemmatized } = query[i].document);
+        ({ table_id: tableId, chunk, id: typesenseID, edition_tokens: textTokenized, edition_lemmata: textLemmatized } = query[i].documentBeta);
       }
 
-      const { title, creator } = query[i].document;
+      const { title, creator } = query[i].documentBeta;
 
       // get positions of the matched words
       let posLower, posUpper;

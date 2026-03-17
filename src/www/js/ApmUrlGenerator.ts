@@ -98,13 +98,13 @@ export class ApmUrlGenerator {
     return `${this.base}/work/${this.getFormattedId(workId)}`;
   }
 
-  /**
-   *
-   * @param {string}docId
-   * @returns {string}
-   */
-  siteDocPage(docId: string|number): string {
-    return `${this.base}/doc/${this.getFormattedId(docId)}`;
+
+  siteDocPage(docId: string|number, pageNumber: number|null = null): string {
+    if (pageNumber === null) {
+      return `${this.base}/doc/${this.getFormattedId(docId)}`;
+    }
+    return `${this.base}/doc/${this.getFormattedId(docId)}/page/${pageNumber}`;
+
   }
 
   siteDocDefinePages(docId: string) {
@@ -267,6 +267,20 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/doc/getId/${docId}`;
   }
 
+  apiDocGetInfo(docId: number, withPageIds: boolean = false, withFullPageInfo: boolean=false) {
+    if (withFullPageInfo) {
+      withPageIds = true;
+    }
+    let suffix = '';
+    if (withPageIds) {
+      suffix = '/withPageIds';
+    }
+    if (withFullPageInfo) {
+      suffix = '/withFullPageInfo';
+    }
+    return `${this.apiBase}/doc/${docId}/info${suffix}`;
+  }
+
   apiAddColumn(docId: any, pageNumber: number) {
     return this.apiBase + '/' + docId + '/' + pageNumber + '/newcolumn';
   }
@@ -406,11 +420,11 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/witness/${witnessId}/to/edition`;
   }
 
-  apiWorkGetInfoOld(workId: any) {
+  apiWorkGetInfoOld(workId: string) {
     return `${this.apiBase}/work/${workId}/old-info`;
   }
 
-  apiWorkGetData(workId: any) {
+  apiWorkGetData(workId: number|string) {
     return `${this.apiBase}/work/${workId}/data`;
   }
 
@@ -439,6 +453,10 @@ export class ApmUrlGenerator {
 
   apiDocumentsAllDocumentsData() {
     return `${this.apiBase}/docs/all`;
+  }
+
+  apiDocumentsGetPageInfo(pageId: number) {
+     return `${this.apiBase}/page/${pageId}/info`;
   }
 
   apiAutomaticEdition() {
@@ -475,6 +493,14 @@ export class ApmUrlGenerator {
 
   apiWitnessCheckUpdates() {
     return this.apiBase + '/witness/check/updates';
+  }
+
+  apiWitnessGetWitnessesForChunk(workId: string, chunkNumber: number) {
+    return `${this.apiBase}/work/${workId}/chunk/${chunkNumber}/witnesses`;
+  }
+
+  apiWitnessGetCollationTablesForChunk(workId: string, chunkNumber: number) {
+    return `${this.apiBase}/work/${workId}/chunk/${chunkNumber}/ctables`;
   }
 
   apiSearchKeyword() {

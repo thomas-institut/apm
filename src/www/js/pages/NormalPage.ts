@@ -18,7 +18,7 @@
 
 import { setSiteLanguage, tr } from './common/SiteLang'
 import { urlGen } from './common/SiteUrlGen'
-import { ApmPage } from './ApmPage'
+import {ApmPage, ApmPageOptions} from './ApmPage';
 import { ApmFormats } from './common/ApmFormats'
 import { Tid } from '@/Tid/Tid'
 
@@ -29,6 +29,9 @@ export interface BreadCrumb {
   active?: boolean
 }
 
+export interface NormalPageOptions extends ApmPageOptions {
+
+}
 
 /**
  * Base class for all 'normal' web pages in the APM.
@@ -39,11 +42,11 @@ export interface BreadCrumb {
  *
  */
 export class NormalPage extends ApmPage {
-  private pageContentsDiv: JQuery = $();
-  private topBarDiv: JQuery = $();
-  private footerDiv: JQuery = $();
+  private pageContentsDiv!: JQuery <HTMLElement>;
+  private topBarDiv!: JQuery <HTMLElement>;
+  private footerDiv!: JQuery <HTMLElement>;
 
-  constructor(options : any = null) {
+  constructor(options : NormalPageOptions|null = null) {
     super(options)
   }
 
@@ -139,24 +142,24 @@ export class NormalPage extends ApmPage {
 
   async genTopNavBarHtml() : Promise<string> {
     let languageSelectorHtml = ''
-    if (this.showLanguageSelector) {
-      languageSelectorHtml = `<ul class="navbar-nav">
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
-                    ${this.siteLanguage.toUpperCase()}</a>
-                    <ul class="dropdown-menu dropdown-menu-right">
-                        <li><a class="nav-link dd-menu-item" href="#" id="change-lang-en">EN - English</a></li>
-                        <li><a class="nav-link dd-menu-item" href="#" id="change-lang-es">ES - Español</a></li>
-                    </ul>
-                </li>
-            </ul>`
-    }
+    // if (this.showLanguageSelector) {
+    //   languageSelectorHtml = `<ul class="navbar-nav">
+    //             <li class="nav-item dropdown">
+    //                 <a class="nav-link dropdown-toggle" href="#"  data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">
+    //                 ${this.siteLanguage.toUpperCase()}</a>
+    //                 <ul class="dropdown-menu dropdown-menu-right">
+    //                     <li><a class="nav-link dd-menu-item" href="#" id="change-lang-en">EN - English</a></li>
+    //                     <li><a class="nav-link dd-menu-item" href="#" id="change-lang-es">ES - Español</a></li>
+    //                 </ul>
+    //             </li>
+    //         </ul>`
+    // }
     return `
 <nav class="navbar navbar-expand-lg navbar-light">
-<a class="navbar-brand" style="padding:0;" href="${urlGen.siteHome()}"><img src="${urlGen.images()}/apm-logo-plain.svg" alt="APM" height="40" ></a>
+<a class="navbar-brand" href="${urlGen.siteHome()}"><img src="${urlGen.images()}/apm-logo-plain.svg" alt="APM" height="30" ></a>
         <div id="navbar" class="collapse navbar-collapse">
             <ul class="navbar-nav mr-auto">
-                <li class="nav-item"><a class="nav-link" href="${urlGen.siteDashboard()}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteHome()}" title="${tr('Dashboard')}">${tr('Dashboard')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteDocs()}" title="${tr('Documents')}">${tr('Documents')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteChunks()}" title="${tr('Works')}">${tr('Works')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.sitePeople()}" title="${tr('People')}">${tr('People')}</a></li>

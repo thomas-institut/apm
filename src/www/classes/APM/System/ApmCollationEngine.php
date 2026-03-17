@@ -22,7 +22,7 @@ namespace APM\System;
 
 class ApmCollationEngine
 {
-    const COLLATEX = 'Collatex';
-    const DO_NOTHING = 'DoNothing';
-    const COLLATEX_HTTP = 'CollatexHttp';
+    const string COLLATEX = 'Collatex';
+    const string DO_NOTHING = 'DoNothing';
+    const string COLLATEX_HTTP = 'CollatexHttp';
 }

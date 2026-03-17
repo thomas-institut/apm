@@ -1,25 +1,24 @@
 import NormalPageContainer from "../../NormalPageContainer";
-import {useContext, useEffect} from "react";
+import {useContext, useEffect, useState} from "react";
 import {AppContext} from "@/ReactAPM/App";
 import {useQuery} from "@tanstack/react-query";
-import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
+import {DocumentData} from "@/Api/DataSchema/ApiDocuments";
 import {
-  createColumnHelper,
-  getCoreRowModel,
-  getFilteredRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable
+  createColumnHelper, getCoreRowModel, getFilteredRowModel, getPaginationRowModel, getSortedRowModel, useReactTable
 } from "@tanstack/react-table";
 import './docs.css';
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import {TablePaginationControls} from "@/ReactAPM/Components/TablePaginationControls";
 import TableStateSummary from "@/ReactAPM/Components/TableStateSummary";
 import GridTable from "@/ReactAPM/Components/GridTable";
-import {Form} from "react-bootstrap";
+import {Button, Col, Form, Row} from "react-bootstrap";
 import {EntityNameTuple} from "@/Api/ApmApiClient";
 import {varsAreEqual} from "@/toolbox/ObjectUtil";
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
+import {Tid} from "@/Tid/Tid";
+import {urlGen} from "@/pages/common/SiteUrlGen";
+import EntityCreationDialog, {ParameterValue} from "@/ReactAPM/Components/EntityCreationDialog";
+import {ArrayUniqueValues} from "@/lib/ToolBox/ArrayUtil";
 
 
 export interface DocsTableItem {
@@ -33,7 +32,7 @@ export interface DocsTableItem {
 }
 
 export default function Docs() {
-  document.title = 'Documents (beta)';
+  document.title = 'Documents';
   const appContext = useContext(AppContext);
   const data = useDataStore((state) => state.docsTableData);
   const setData = useDataStore((state) => state.setDocsTableData);
@@ -41,6 +40,9 @@ export default function Docs() {
   const setSorting = useDataStore((state) => state.setDocsTableSortingState);
   const pagination = useDataStore((state) => state.docsTablePaginationState);
   const setPagination = useDataStore((state) => state.setDocsTablePaginationState);
+  const [showNewDocumentDialog, setShowNewDocumentDialog] = useState(false);
+
+  const userCanCreateDocuments = appContext.userIsAdmin;
 
   const getDataForTable = (data: DocumentData[], docTypes: EntityNameTuple[], languages: EntityNameTuple[]): DocsTableItem[] => {
     const dataTableEntries: DocsTableItem[] = [];
@@ -79,7 +81,7 @@ export default function Docs() {
     queryKey: ['docs'], queryFn: () => getDocData(),
   });
 
-  useEffect( () => {
+  useEffect(() => {
     if (queryResult.status === 'success') {
 
       if (varsAreEqual(data, queryResult.data)) {
@@ -97,15 +99,15 @@ export default function Docs() {
     columnHelper.accessor('title', {
       cell: info => {
         return (<EntityLink id={info.row.original.id} type="document" name={info.getValue()}/>);
-      }, header: 'Title',
+      }, header: 'Title', filterFn: "includesString"
     }),
 
     columnHelper.accessor('lang', {
-      cell: info => info.getValue(), header: 'Language', enableSorting: false
+      cell: info => info.getValue(), header: 'Language', enableSorting: false, filterFn: "equalsString"
     }),
 
     columnHelper.accessor('type', {
-      cell: info => info.getValue(), header: 'Type', enableSorting: false
+      cell: info => info.getValue(), header: 'Type', enableSorting: false, filterFn: "equalsString"
     }),
 
     columnHelper.accessor('numPages', {
@@ -131,8 +133,7 @@ export default function Docs() {
           {linksWithSeparator}
         </>);
       }, header: 'Transcribers', enableSorting: false, enableGlobalFilter: true,
-    })
-  ];
+    })];
 
   const table = useReactTable({
     data: data,
@@ -154,12 +155,44 @@ export default function Docs() {
   let header = null;
   let queryStatusDiv = (<div></div>);
 
+
   if (data.length > 0) {
+    const uniqueLanguages = ArrayUniqueValues(data.map(r => r.lang)).sort();
+    const uniqueTypes = ArrayUniqueValues(data.map(r => r.type)).sort();
+    const langFilterOptions = [['Any Language', ''], ...uniqueLanguages.map(l => [l, l])];
+    const typeFilterOptions = [['Any Type', ''], ...uniqueTypes.map(t => [t, t])];
+
     header = (<div className="tableNavigationDiv"
-                   style={{display: 'flex', justifyContent: 'space-between', alignItems: "center",}}>
-      <div key="summary"><TableStateSummary table={table} rowNounPlural="documents"/></div>
-      <div key="search"><Form.Control type="text" className="mb-3" placeholder="Filter title..."
-                                      onChange={e => table.setGlobalFilter(e.target.value.trim())}/></div>
+                   style={{
+                     display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: "center"
+                   }}>
+      <div key="summary" style={{width: '30em'}}>
+        <TableStateSummary table={table} rowNounPlural="documents"/>
+      </div>
+      <div key="searchTitle" style={{width: '50em'}}>
+        <Form>
+          <Row>
+            <Col xl={6}>
+              <Form.Control type="text" className="formControlNormalText" placeholder="Filter title..."
+                            onChange={e => table.getColumn('title')?.setFilterValue(e.target.value.trim())}/>
+            </Col>
+            <Col>
+              <Form.Select className="formControlNormalText" aria-label="Select Type"
+                           onChange={e => table.getColumn('lang')?.setFilterValue(e.target.value)}>
+                {langFilterOptions.map((optionTuple, i) => <option key={i}
+                                                                   value={optionTuple[1]}>{optionTuple[0]}</option>)}
+              </Form.Select>
+            </Col>
+            <Col>
+              <Form.Select className="formControlNormalText" aria-label="Select Type"
+                           onChange={e => table.getColumn('type')?.setFilterValue(e.target.value)}>
+                {typeFilterOptions.map((optionTuple, i) => <option key={i}
+                                                                   value={optionTuple[1]}>{optionTuple[0]}</option>)}
+              </Form.Select>
+            </Col>
+          </Row>
+        </Form>
+      </div>
       <TablePaginationControls className="tableNavigationDiv" table={table} key="pagination"/>
     </div>);
     content = <GridTable table={table} tableId="docsTable" key="table"
@@ -181,19 +214,61 @@ export default function Docs() {
       break;
   }
 
+  const createNewDocument = async (values: Record<string, ParameterValue>): Promise<number> => {
+    const title = values.title.value as string;
+    const docType = values.docType.value as number;
+    const lang = values.lang.value as number;
+    const imageSource = values.imageSource.value as number;
+    const imageSourceData = values.imageSourceData.value as string;
+    return appContext.apiClient.createDocument(title, docType, lang, imageSource, imageSourceData);
+  };
+
+  const handleOnCreateDocSuccess = async (newDocId: number) => {
+    console.log(`New doc id is ${Tid.toBase36String(newDocId)} (${newDocId})`);
+    document.location.href = urlGen.siteDocPage(Tid.toBase36String(newDocId));
+  };
+
+  const docCreationDialog = <EntityCreationDialog
+    entityName={'document'}
+    title={"New Document"}
+    creationParameters={{
+      title: {label: 'Title', type: 'string', validationFunction: 'RequireNonEmptyString'}, lang: {
+        label: 'Language',
+        type: 'entity',
+        entityOptionsFetchFunction: () => appContext.apiClient.getAvailableLanguages()
+      }, docType: {
+        label: 'Type',
+        type: 'entity',
+        entityOptionsFetchFunction: () => appContext.apiClient.getAvailableDocumentTypes()
+      }, imageSource: {
+        label: 'Image Source',
+        type: 'entity',
+        entityOptionsFetchFunction: () => appContext.apiClient.getAvailableImagesSources()
+      }, imageSourceData: {label: 'Image Source Data', type: 'string', validationFunction: 'RequireNonEmptyString'},
+    }}
+    show={showNewDocumentDialog}
+    onCancel={() => setShowNewDocumentDialog(false)}
+    creationSuccessMessage={'Loading...'}
+    onCreationSuccess={handleOnCreateDocSuccess}
+    entityCreationFunction={createNewDocument}
+  />;
+
 
   return (<NormalPageContainer>
     <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
       <div style={{flexGrow: 0}} key="header">
-        <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
+        <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
           <h1>Documents</h1>
           {queryStatusDiv}
+          {userCanCreateDocuments && <Button variant="primary" className={'btn-sm'} style={{margin: '0.5em'}}
+                                             onClick={() => setShowNewDocumentDialog(true)}>Create New
+            Document</Button>}
         </div>
         {header}
       </div>
       {content}
-
     </div>
+    {docCreationDialog}
   </NormalPageContainer>);
 }
 

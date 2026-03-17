@@ -135,7 +135,7 @@ export class GridContainer extends ParentContainer {
     let gutterOptions = this.splitTracks.map( (splitTrackInfo) => {
       return {
         track: splitTrackInfo.track,
-        element: this.getParentWindow().document.querySelector(`.${splitTrackInfo.dividerIdClass}`)
+        element: this.getParentWindow().documentBeta.querySelector(`.${splitTrackInfo.dividerIdClass}`)
       }
     })
 

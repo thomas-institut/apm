@@ -32,12 +32,15 @@ abstract class Engine implements LoggerAwareInterface
     protected float $endMicroTime;
     protected string $engineName;
 
+    protected string $version;
 
-    public function __construct(string $engineName) {
+
+    public function __construct(string $engineName, string $version = '') {
         if ($engineName === '') {
             $engineName = self::DEFAULT_ENGINE_NAME; // @codeCoverageIgnore
         }
         $this->engineName = $engineName;
+        $this->version = $version;
         $this->resetError();
         $this->resetChronometer();
         $this->logger = new NullLogger();
@@ -87,6 +90,7 @@ abstract class Engine implements LoggerAwareInterface
     public function getRunDetails() : EngineRunDetails {
         $details = new EngineRunDetails();
         $details->engineName = $this->getName();
+        $details->engineVersion = $this->getVersion();
         $details->errorCode = $this->getErrorCode();
         $details->errorContext = $this->getErrorContext();
         $details->runDateTime = $this->getRunDateTimeString();
@@ -96,6 +100,10 @@ abstract class Engine implements LoggerAwareInterface
 
     public function getName() : string {
         return $this->engineName;
+    }
+
+    public function getVersion() : string {
+        return $this->version;
     }
 
     //

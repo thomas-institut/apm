@@ -1,13 +1,13 @@
 import {tr} from "@/pages/common/SiteLang";
-import {urlGen} from "@/pages/common/SiteUrlGen";
 import {CSSProperties, ReactNode, useContext} from "react";
-import {Container, Nav, Navbar, NavDropdown} from "react-bootstrap";
+import {Container, Nav, Navbar, NavDropdown, NavItem} from "react-bootstrap";
 
 import {NavLink, useLocation, useNavigate} from "react-router";
 import {AppContext} from "./App";
-import {PersonCircle} from "react-bootstrap-icons";
+import {PersonCircle, QuestionCircle} from "react-bootstrap-icons";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Tid} from "@/Tid/Tid";
+import {ApmUrlGenerator} from "@/ApmUrlGenerator";
 
 interface TopBarProps {
   style?: CSSProperties;
@@ -33,7 +33,11 @@ export default function TopBar(props: TopBarProps): ReactNode {
   const userId = appContext.userId;
   const userName = appContext.userName;
   const baseUrl = appContext.reactAppBaseUrl;
+  const isAdmin = appContext.userIsAdmin;
+  const versionTag = appContext.versionTag;
+  const urlGen = new ApmUrlGenerator(baseUrl);
   const navigate = useNavigate();
+
 
   interface RoutedNavLinkProps {
     route: string;
@@ -68,11 +72,11 @@ export default function TopBar(props: TopBarProps): ReactNode {
 
   return (<Navbar variant="light" expand="lg" style={props.style ?? {}} className="justify-content-between">
     <Container>
-      <Navbar.Brand href={baseUrl} title="Click to go to the Dashboard" onClick={() => navigate(RouteUrls.home())}><img
+      <Navbar.Brand style={{cursor: 'pointer'}} onClick={() => navigate(RouteUrls.dashboard())}><img
         src={logoUrl} alt="APM" height="30"/></Navbar.Brand>
       <Navbar.Toggle aria-controls="basic-navbar-nav"/>
       <Navbar.Collapse id="basic-navbar-nav">
-        <MyNav route={RouteUrls.home()} title={tr('Dashboard')}/>
+        <MyNav route={RouteUrls.dashboard()} title={tr('Dashboard')}/>
         <MyNav route={RouteUrls.docs()} title={tr('Documents')}/>
         <MyNav route={RouteUrls.works()} title={tr('Works')}/>
         <MyNav route={RouteUrls.people()} title={tr('People')}/>
@@ -89,18 +93,15 @@ export default function TopBar(props: TopBarProps): ReactNode {
         </NavDropdown>
       </Navbar.Collapse>
       <Navbar.Collapse className="justify-content-end">
-        <NavDropdown id="user-dropdown" title={(<UserIcon name={userName}/>)}>
-          <NavDropdown.Item className="dd-menu-item" onClick={() => navigate(RouteUrls.person(Tid.toCanonicalString(userId)))}>
+        <NavDropdown id="user-dropdown" align={'end'} title={(<UserIcon name={userName}/>)}>
+          <NavDropdown.Item className="dd-menu-item"  href={urlGen.sitePerson(Tid.toCanonicalString(userId))}>
             {tr('My Profile')}
           </NavDropdown.Item>
           <NavDropdown.Divider/>
           <NavDropdown.Item className="dd-menu-item" onClick={props.onLogout}>Logout</NavDropdown.Item>
+          { isAdmin && <><NavDropdown.Divider/><NavDropdown.Item disabled={true}><small>{versionTag}</small></NavDropdown.Item></>}
         </NavDropdown>
       </Navbar.Collapse>
-
-
     </Container>
-
-
   </Navbar>);
 }

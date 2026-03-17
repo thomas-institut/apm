@@ -51,7 +51,7 @@ export function TablePaginationControls<DataType>(props: TablePaginationControls
       >
         {icons.prevPage}
       </Button>
-      <span>Page {pagination.pageIndex+1} of {realPageCount}</span>
+      <div style={{width: '6em', textAlign: 'center'}}>Page {pagination.pageIndex+1} of {realPageCount}</div>
       <Button {...commonButtonProps}
               disabled={isLastPage ? true : undefined}
               title="Go to next page"

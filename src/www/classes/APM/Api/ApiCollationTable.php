@@ -110,7 +110,7 @@ class ApiCollationTable extends ApiController
 
     public function versionInfo(Request $request, Response $response): Response {
         $tableId = intval($request->getAttribute('tableId'));
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$tableId");;
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$tableId");
         $ctManager = $this->systemManager->getCollationTableManager();
         $compactEncodedTimeStamp =  $request->getAttribute('timestamp', '');
         if ($compactEncodedTimeStamp !== '') {
@@ -231,6 +231,8 @@ class ApiCollationTable extends ApiController
 
         $inputDataObject = json_decode($request->getBody()->getContents(), true);
 
+        $this->logger->debug("Automatic collation request", $inputDataObject);
+
         $transcriptionManager = $this->systemManager->getTranscriptionManager();
         $requiredFields = [ 'work', 'chunk', 'lang', 'witnesses'];
 
@@ -250,6 +252,11 @@ class ApiCollationTable extends ApiController
         $requestedWitnesses = $inputDataObject['witnesses'];
         $ignorePunctuation = $inputDataObject['ignorePunctuation'] ?? false;
         $useCache = $request->getAttribute('useCache') ?? false;
+        $collationEngineSystemId = $inputDataObject['collationEngine'] ?? '';
+
+        if ($collationEngineSystemId !== '') {
+            $this->logger->info("Using collation engine $collationEngineSystemId");
+        }
 
 
         // Check that language is valid
@@ -411,7 +418,7 @@ class ApiCollationTable extends ApiController
         // useCache is false, cache miss, mismatch in cache keys, or bad cache data
 
         $collatexInput = $collationTable->getCollationEngineInput();
-        $collationEngine = $this->getCollationEngine();
+        $collationEngine = $this->getCollationEngine($collationEngineSystemId);
         
         // Run collation engine
         $collatexOutput = $collationEngine->collate($collatexInput);

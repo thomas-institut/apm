@@ -49,7 +49,7 @@
     <table width="100%">
         <tr>
             <td width="280px">
-                <a href="{{url_for('home')}}" title="Back to main page"><img src="{{baseUrl}}/images/apm-logo-plain.svg" height="50" alt="APM Logo"></a>
+                <a href="{{baseUrl}}" title="Back to main page"><img src="{{baseUrl}}/images/apm-logo-plain.svg" height="50" alt="APM Logo"></a>
             </td>
             <td>
                 <span class="textonly"><a href="{{url_for('doc.show', {'id' : docIdString })}}">{{ docInfo.title}}</a></span>
@@ -113,7 +113,7 @@
             <td style="text-align: right;">
                 
                 <button title="Exit Viewer" class="textonly headerbuttonright"
-                                onclick="window.location='{{url_for('home')}}';">
+                                onclick="window.location='{{baseUrl}}';">
                     <i class="fas fa-power-off"></i>
                 </button>
             </td>

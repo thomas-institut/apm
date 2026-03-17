@@ -54,57 +54,6 @@ class SiteDocuments extends SiteController
     const string DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
     const int DOCUMENT_DATA_TTL = 8 * 24 * 3600;
 
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function documentsPage(Request $request, Response $response): Response
-    {
-        SystemProfiler::setName("Site:" . __FUNCTION__);
-        
-
-//        $cache = $this->systemManager->getSystemDataCache();
-//        try {
-//            $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
-//        } catch (ItemNotInCacheException) {
-//            // not in cache
-//            $this->logger->debug("Cache miss for SiteDocuments document data");
-//            $data = self::buildDocumentData($this->systemManager);
-//            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
-//        }
-//        $docs = $data['docs'];
-
-        $docs = self::getAllDocumentsData($this->systemManager);
-
-        $canManageDocuments = false;
-        $userManager = $this->systemManager->getUserManager();
-        try {
-            if ($userManager->hasTag($this->userId, UserTag::CREATE_DOCUMENTS) || $userManager->isRoot($this->userId)) {
-                $canManageDocuments = true;
-            }
-        } catch (UserNotFoundException) {
-            // should never happen though
-        }
-
-        return $this->renderStandardPage(
-            $response,
-            '',
-            'Documents',
-            'DocumentsPage',
-            'js/pages/DocumentsPage.ts',
-            [
-                'docs' => $docs,
-                'canManageDocuments' => $canManageDocuments
-            ],
-            [],
-            [
-                '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css',
-                'documents_page.css'
-            ]
-        );
-    }
-
     public static function getAllDocumentsData(SystemManager $systemManager): array {
         $cache = $systemManager->getSystemDataCache();
         try {

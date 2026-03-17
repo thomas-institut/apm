@@ -16,8 +16,10 @@
  *
  */
 
+// @ts-ignore
 import { Matrix } from '@thomas-inst/matrix'
-import * as ArrayUtil from '../../lib/ToolBox/ArrayUtil.ts'
+import * as ArrayUtil from '../../lib/ToolBox/ArrayUtil'
+import {WitnessInterface} from "@/CtData/CtDataInterface";
 
 /**
  * Generates a matrix with all the textual variants in all columns ranked
@@ -25,9 +27,8 @@ import * as ArrayUtil from '../../lib/ToolBox/ArrayUtil.ts'
  * @param witnesses array of witnesses
  * @param witnessOrder  array that maps the row indexes in refMatrix to the indexes in the witnesses array;  order[refMatrixRow] = witnessIndex
  * @param refWitness if other than -1, the variant for this witness will have the highest rank
- * @returns {Matrix}
  */
-export function genVariantsMatrix(refMatrix, witnesses, witnessOrder, refWitness = -1) {
+export function genVariantsMatrix(refMatrix: Matrix, witnesses: WitnessInterface[], witnessOrder: number[], refWitness = -1): Matrix {
   let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)
 
   for (let col=0; col < refMatrix.nCols; col++) {
@@ -62,10 +63,6 @@ export function genVariantsMatrix(refMatrix, witnesses, witnessOrder, refWitness
     }
 
     let debug = false
-    // if (col === 792 || col === 793) {
-    //   console.log(`Col ${col} `)
-    //   debug = true
-    // }
 
     let ranks = rankVariants(textCol, referenceString, debug)
     for(let row=0; row < refMatrix.nRows; row++) {
@@ -82,24 +79,16 @@ export function genVariantsMatrix(refMatrix, witnesses, witnessOrder, refWitness
  * @param matrix1
  * @param matrix2
  */
-export function collationMatricesAreEqual(matrix1, matrix2) {
+export function collationMatricesAreEqual(matrix1: Matrix, matrix2: Matrix) {
   return ArrayUtil.arraysAreEqual(matrix1, matrix2, function(a,b){return a===b}, 2)
 }
 
-/**
- *
- * @param stringArray
- * @param referenceString
- * @param debug
- * @return {*[]}
- */
-function rankVariants(stringArray, referenceString, debug = false) {
-
+function rankVariants(stringArray: string[], referenceString: string, debug = false) {
   debug && console.log(`Ranking Variants `)
   debug && console.log(stringArray)
   debug && console.log(`Reference string: '${referenceString}'`)
   const someVeryLargeNumber = 999888777
-  let countsByString = []
+  let countsByString: { [key: string]: number} = {}
   for(const text of stringArray) {
     if (text === '') {
       continue
@@ -120,7 +109,7 @@ function rankVariants(stringArray, referenceString, debug = false) {
   debug && console.log(`Count array:`)
   debug && console.log(countArray)
 
-  let rankObject = {}
+  let rankObject: { [key: string]: number} = {}
   countArray.forEach( (countObject, i) => { rankObject[countObject.text] = i })
 
   let ranks = []

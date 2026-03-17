@@ -2,6 +2,10 @@ import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEditio
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Link} from "react-router";
 import {FilePlus} from "react-bootstrap-icons";
+import EntityLink from "@/ReactAPM/Components/EntityLink";
+import {ApmUrlGenerator} from "@/ApmUrlGenerator";
+import {useContext} from "react";
+import {AppContext} from "@/ReactAPM/App";
 
 interface MceListForUserProps {
   itemClassName?: string;
@@ -13,12 +17,13 @@ export default function MceListForUser(props: MceListForUserProps) {
 
   const data = props.data;
   const showMceLink = props.showNewMceLink ?? true;
+  const context = useContext(AppContext);
+  const urlGen = new ApmUrlGenerator(context.baseUrl);
 
 
 
   const newMce = (
-    <div style={{marginTop: '1em'}} className={props.itemClassName}><Link to={RouteUrls.multiChunkEdition('new')}
-                                                                          discover="none"><FilePlus/> Create new edition</Link>
+    <div style={{marginTop: '1em'}} className={props.itemClassName}><a href={urlGen.siteMultiChunkEditionNew()} target='_blank'><FilePlus/> Create new edition</a>
     </div>);
 
   if (data === undefined) {
@@ -28,7 +33,7 @@ export default function MceListForUser(props: MceListForUserProps) {
     return a.title.localeCompare(b.title);
   }).map((item: any) => {
     return <p key={item.id} className={props.itemClassName}>
-      <Link to={RouteUrls.multiChunkEdition(item.id)}>{item.title}</Link>
+      <EntityLink id={item.id} name={item.title} type="multiChunkEdition" active={true} openInNewTab={true}/>
     </p>;
   });
   return <>

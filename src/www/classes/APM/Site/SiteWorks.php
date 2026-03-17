@@ -28,17 +28,11 @@ namespace APM\Site;
 
 use APM\System\SystemManager;
 use APM\System\Work\WorkNotFoundException;
-use APM\SystemProfiler;
-use APM\ToolBox\HttpStatus;
 use Exception;
 use Fiber;
-use Psr\Http\Message\ResponseInterface as Response;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
-use ThomasInstitut\EntitySystem\Tid;
 use Throwable;
 
 
@@ -51,77 +45,6 @@ class SiteWorks extends SiteController
 
     const string WORK_DATA_CACHE_KEY = 'SiteWorks-WorkData';
     const int WORK_DATA_TTL = 8 * 24 * 3600;
-
-    public function workPage(Request $request, Response $response): Response {
-
-        $id = $request->getAttribute('id');
-        SystemProfiler::setName(implode(':', [ 'Site', __FUNCTION__, $id]));
-
-        $workManager = $this->systemManager->getWorkManager();
-
-        try {
-            $workData = $workManager->getWorkDataByDareId($id);
-            return $this->renderStandardPage(
-                $response,
-                '',
-                "Work $id",
-                "WorkPage",
-                'js/pages/WorkPage.js',
-                [ 'workData' => $workData ],
-                [],
-                [ 'work_page.css']
-            );
-        } catch ( WorkNotFoundException) {
-            try {
-                $tid = Tid::fromString($id);
-                if ($tid === -1) {
-                    return $this->getErrorPage($response, 'Error', "Invalid work id", HttpStatus::BAD_REQUEST);
-                }
-                $workData = $workManager->getWorkData($tid);
-                return $this->renderStandardPage(
-                    $response,
-                    '',
-                    "Work $workData->workId",
-                    "WorkPage",
-                    'js/pages/WorkPage.js',
-                    [ 'workData' => $workData ],
-                    [],
-                    [ 'work_page.css']
-                );
-            } catch (WorkNotFoundException) {
-                return $this->getErrorPage($response, 'Error', "Work $id not found", HttpStatus::NOT_FOUND);
-            }
-        }
-    }
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function worksPage(Request $request, Response $response): Response
-    {
-        SystemProfiler::setName("Site:" . __FUNCTION__);
-        $works = self::getAllWorksData($this->systemManager);
-//        $cache = $this->systemManager->getSystemDataCache();
-//        try {
-//            $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
-//        } catch (ItemNotInCacheException) {
-//            // not in cache
-//            $works = self::buildWorkData($this->systemManager, $this->logger);
-//            $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
-//        }
-
-        return $this->renderStandardPage(
-            $response,
-            '',
-            "Works",
-            "WorksPage",
-            'js/pages/WorksPage.ts',
-            [ 'works' => $works ],
-            [],
-            [ 'works_page.css']
-        );
-    }
 
 
     public static function getAllWorksData(SystemManager $systemManager) : array {

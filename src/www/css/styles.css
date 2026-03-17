@@ -324,7 +324,7 @@ ol.breadcrumb {
 /* NORMAL PAGE */
 
 :root {
-    --container-side-padding: 5px;
+    --container-side-padding: 0.75em;
 }
 
 body.normal-page {
@@ -338,14 +338,14 @@ body.normal-page {
 .normal-page div.page-top-bar {
     padding-left: var(--container-side-padding);
     padding-right: var(--container-side-padding);
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.7rem;
 }
 
 .normal-page .navbar {
     margin: 0;
     display: flex;
     align-items: center;
-    border-bottom: 1px solid var(--very-light-gray);
+    /*border-bottom: 1px solid var(--very-light-gray);*/
 }
 
 .normal-page div.page-content {

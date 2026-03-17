@@ -26,6 +26,7 @@
 
 namespace APM\Site;
 
+use APM\CollationEngine\CollationEngine;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\System\Document\DocInfo;
@@ -629,7 +630,8 @@ class SiteCollationTable extends SiteController
             'chunk' => $chunkNumber,
             'lang' => $language,
             'ignorePunctuation' => $collationPageOptions['ignorePunctuation'],
-            'witnesses' => $collationPageOptions['witnesses']
+            'witnesses' => $collationPageOptions['witnesses'],
+            'collationEngine' => $collationPageOptions['collationEngine'] ?? 'DoNothing',
         ];
 
         if (isset($collationPageOptions['normalizers'])) {

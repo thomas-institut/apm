@@ -6,7 +6,7 @@ import {urlGen} from './common/SiteUrlGen';
 import {ApmPage} from './ApmPage';
 import {DocumentCreationDialog} from './common/DocumentCreationDialog';
 import DataTable from 'datatables.net-dt';
-import {DocumentData} from "@/Api/DataSchema/ApiDocumentsAllDocumentsData";
+import {DocumentData} from "@/Api/DataSchema/ApiDocuments";
 
 interface DataTableEntry {
   title: string;

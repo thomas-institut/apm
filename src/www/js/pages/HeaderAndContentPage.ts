@@ -1,10 +1,12 @@
-import { NormalPage } from './NormalPage'
+import {NormalPage, NormalPageOptions} from './NormalPage';
 
+
+export interface HeaderAndContentPageOptions extends NormalPageOptions {}
 export class HeaderAndContentPage extends NormalPage {
-  protected headerDiv!: JQuery;
+  protected headerDiv!: JQuery<HTMLElement>;
 
 
-  constructor (options:any) {
+  constructor (options:HeaderAndContentPageOptions| null = null) {
     super(options)
   }
 

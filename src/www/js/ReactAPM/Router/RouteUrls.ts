@@ -1,11 +1,15 @@
 import {Tid} from "@/Tid/Tid";
 
-let baseUrl = '/';
+let baseUrl = '';
+let betaPathInfix = 'beta';
 
 export class RouteUrls {
 
   static setBaseUrl(url: string) {
     baseUrl = url;
+    if (baseUrl === '') {
+      betaPathInfix = '/' + betaPathInfix;
+    }
   }
 
   static home() {
@@ -15,8 +19,12 @@ export class RouteUrls {
     return baseUrl + '/';
   }
 
+  static dashboard() {
+    return baseUrl + '/dashboard';
+  }
+
   static docs() {
-    return baseUrl + '/docs';
+    return baseUrl + '/documents';
   }
 
   static search() {
@@ -35,36 +43,40 @@ export class RouteUrls {
     return baseUrl + '/login';
   }
 
+  static logout() {
+    return baseUrl + '/logout';
+  }
+
   static patternPerson() {
-    return baseUrl + '/person/:id';
+    return baseUrl + betaPathInfix + '/person/:id';
   }
 
   static person(id: number|string) {
-    return baseUrl + '/person/' + id;
+    return baseUrl + betaPathInfix + '/person/' + id;
   }
 
   static patternCollationTable() {
-     return baseUrl + '/collationTable/:id';
+     return baseUrl + betaPathInfix + '/collationTable/:id';
   }
 
   static collationTable(id: number) {
-    return baseUrl + '/collationTable/' + id;
+    return baseUrl + betaPathInfix + '/collationTable/' + id;
   }
 
   static patternSingleChunkEdition() {
-    return baseUrl + '/edition/:id';
+    return baseUrl + betaPathInfix + '/edition/:id';
   }
 
   static singleChunkEdition(id: number|string) {
-    return baseUrl + '/edition/' + id;
+    return baseUrl + betaPathInfix + '/edition/' + id;
   }
 
   static patternMultiChunkEdition() {
-    return baseUrl + '/multiChunkEdition/:id';
+    return baseUrl + betaPathInfix + '/multiChunkEdition/:id';
   }
 
   static multiChunkEdition(id: number | 'new') {
-    return baseUrl + '/multiChunkEdition/' + id;
+    return baseUrl + betaPathInfix +  '/multiChunkEdition/' + id;
   }
 
 
@@ -76,12 +88,16 @@ export class RouteUrls {
     return baseUrl + '/work/' + id;
   }
 
-  static patternDocument() {
-    return baseUrl + '/doc/:id/*';
+  static patternDocumentBeta() {
+    return baseUrl + betaPathInfix +  '/doc/:id/*';
+  }
+
+  static documentBeta(id: number|string) {
+    return baseUrl +  betaPathInfix + '/doc/' + id;
   }
 
   static document(id: number|string) {
-    return baseUrl + '/doc/' + id;
+    return baseUrl +  '/doc/' + id;
   }
 
   static docPage(id: number|string, page: number) {
@@ -89,17 +105,14 @@ export class RouteUrls {
   }
 
   static patternChunk() {
-    return baseUrl + '/work/:workId/chunk/:chunkId';
+    return baseUrl + betaPathInfix +  '/work/:workId/chunk/:chunkId';
   }
-
-
 
   static chunk(workId: number|string, chunkId: number) {
     if(typeof workId === 'number') {
       workId = Tid.toCanonicalString(workId);
     }
-
-    return baseUrl + '/work/' + workId + '/chunk/' + chunkId;
+    return baseUrl + betaPathInfix +'/work/' + workId + '/chunk/' + chunkId;
   }
 
 

@@ -1,5 +1,5 @@
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
-import {useContext, useEffect} from "react";
+import {useContext, useEffect, useState} from "react";
 import {AppContext} from "@/ReactAPM/App";
 import {useQuery} from "@tanstack/react-query";
 import {varsAreEqual} from "@/toolbox/ObjectUtil";
@@ -8,11 +8,14 @@ import {
 } from "@tanstack/react-table";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import TableStateSummary from "@/ReactAPM/Components/TableStateSummary";
-import {Form} from "react-bootstrap";
+import {Button, Form} from "react-bootstrap";
 import {TablePaginationControls} from "@/ReactAPM/Components/TablePaginationControls";
 import GridTable from "@/ReactAPM/Components/GridTable";
 import './people.css';
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
+import EntityCreationDialog, {ParameterValue} from "@/ReactAPM/Components/EntityCreationDialog";
+import {Tid} from "@/Tid/Tid";
+import {urlGen} from "@/pages/common/SiteUrlGen";
 
 export interface PeopleTableItem {
   name: string;
@@ -25,7 +28,7 @@ export interface PeopleTableItem {
 
 
 export default function People() {
-  document.title = 'People (beta)';
+  document.title = 'People';
   const appContext = useContext(AppContext);
   const data = useDataStore((state) => state.peopleTableData);
   const setData = useDataStore((state) => state.setPeopleTableData);
@@ -33,6 +36,8 @@ export default function People() {
   const setSorting = useDataStore((state) => state.setPeopleTableSortingState);
   const pagination = useDataStore((state) => state.peopleTablePaginationState);
   const setPagination = useDataStore((state) => state.setPeopleTablePaginationState);
+  const userCanCreatePeople = appContext.userIsAdmin;
+  const [showPersonCreationDialog, setShowPersonCreationDialog] = useState(false);
 
   const getPeopleData = async () => {
     const serverData = await appContext.apiClient.getAllPeopleData();
@@ -54,7 +59,7 @@ export default function People() {
   };
 
   const queryResult = useQuery<PeopleTableItem[]>({
-    queryKey: ['docs'], queryFn: () => getPeopleData(),
+    queryKey: ['people'], queryFn: () => getPeopleData(),
   });
 
   useEffect(() => {
@@ -83,11 +88,11 @@ export default function People() {
     }),
 
     columnHelper.accessor('dateOfBirth', {
-      cell: info => info.getValue(), header: 'Date of Birth', enableSorting: true
+      cell: info => info.getValue(), header: 'Date of Birth', enableSorting: true, enableGlobalFilter: false
     }),
 
     columnHelper.accessor('dateOfDeath', {
-      cell: info => info.getValue(), header: 'Date of Death', enableSorting: true
+      cell: info => info.getValue(), header: 'Date of Death', enableSorting: true, enableGlobalFilter: false
     }),
 
     columnHelper.accessor('tags', {
@@ -117,7 +122,7 @@ export default function People() {
     header = (<div className="tableNavigationDiv"
                    style={{display: 'flex', justifyContent: 'space-between', alignItems: "center",}}>
       <div key="summary"><TableStateSummary table={table} rowNounPlural="persons"/></div>
-      <div key="search"><Form.Control type="text" className="mb-3" placeholder="Filter name..."
+      <div key="search"><Form.Control type="text" className="mb-3 formControlNormalText" placeholder="Filter name..."
                                       onChange={e => table.setGlobalFilter(e.target.value.trim())}/></div>
       <TablePaginationControls className="tableNavigationDiv" table={table} key="pagination"/>
     </div>);
@@ -140,18 +145,43 @@ export default function People() {
       break;
   }
 
+  const createNewPerson = async (values: Record<string, ParameterValue>) => {
+    const name = values.name.value as string;
+    const sortName = values.sortName.value as string;
+    return appContext.apiClient.personCreate(name, sortName);
+  };
+
+  const newPersonCreationDialog = <EntityCreationDialog
+    entityName={'person'}
+    title={'Create New Person'}
+    creationParameters={{
+      name: {label: 'Name:', type: 'string', validationFunction: 'RequireNonEmptyString'},
+      sortName: {label: 'Sort Name:', type: 'string', validationFunction: 'RequireNonEmptyString'}
+    }}
+    show={showPersonCreationDialog}
+    onCancel={() => setShowPersonCreationDialog(false)}
+    creationSuccessMessage={'Loading...'}
+    onCreationSuccess={(newId: number) => {
+      document.location.href = urlGen.sitePerson(Tid.toBase36String(newId));
+    }}
+    entityCreationFunction={createNewPerson}
+  />;
+
 
   return (<NormalPageContainer>
     <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
       <div style={{flexGrow: 0}} key="header">
-        <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between'}}>
+        <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
           <h1>People</h1>
           {queryStatusDiv}
+          {userCanCreatePeople && <Button variant="primary" className={'btn-sm'} style={{margin: '0.5em'}}
+                                          onClick={() => setShowPersonCreationDialog(true)}>Create New Person</Button>}
         </div>
         {header}
       </div>
       {content}
 
     </div>
+    {newPersonCreationDialog}
   </NormalPageContainer>);
 }

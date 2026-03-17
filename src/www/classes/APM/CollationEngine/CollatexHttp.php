@@ -20,7 +20,7 @@ class CollatexHttp extends CollationEngine
 
     public function __construct(string $host='127.0.0.1', int $port=7369)
     {
-        parent::__construct('Collatex 1.7.1 (http)');
+        parent::__construct('Collatex', '1.7.1');
         $this->host = $host;
         $this->port = $port;
         $this->guzzleClient = new Client();

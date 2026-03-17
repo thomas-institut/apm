@@ -123,10 +123,11 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     }
 
     /**
+     * @param string $engineSystemId
      * @return CollationEngine
      */
-    protected function getCollationEngine() : CollationEngine {
-        return $this->systemManager->getCollationEngine();
+    protected function getCollationEngine(string $engineSystemId) : CollationEngine {
+        return $this->systemManager->getCollationEngine($engineSystemId);
     }
 
 

@@ -197,6 +197,10 @@ div.anchor-list-item.active {
     color: black;
 }
 
+.hidden {
+    display: none;
+}
+
 /* Some animations */
 
 
@@ -214,4 +218,10 @@ div.anchor-list-item.active {
     to {
         opacity: 1;
     }
+}
+
+
+/* Classes for Bootstrap forms */
+.formControlNormalText {
+    font-size: 1em;
 }

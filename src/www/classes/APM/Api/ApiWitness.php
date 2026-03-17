@@ -55,6 +55,50 @@ class ApiWitness extends ApiController
 
     const int WITNESS_DATA_CACHE_TTL = 60 * 24 * 3600; // 30 days
 
+
+
+    public function getWitnessesForChunk(Request $request, Response $response): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $workId = $request->getAttribute('workId');
+        $chunkNumber = intval($request->getAttribute('chunkNumber'));
+
+        $witnessInfoArray = $this->systemManager->getTranscriptionManager()->getWitnessesForChunk($workId, $chunkNumber);
+        return $this->responseWithJson($response, $witnessInfoArray);
+    }
+
+    public function getCollationTablesForChunk(Request $request, Response $response): Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $workId = $request->getAttribute('workId');
+        $chunkNumber = intval($request->getAttribute('chunkNumber'));
+        $chunkId = sprintf("%s-%02d", $workId, $chunkNumber);
+        $ctManager = $this->systemManager->getCollationTableManager();
+        $time = TimeString::now();
+        $ids = $ctManager->getCollationTableIdsForChunk($chunkId, $time);
+        $data = [];
+
+        foreach ($ids as $id) {
+            $tableVersions = $ctManager->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1);
+            if (count($tableVersions) !== 0 ){
+                $ctInfo = $ctManager->getCollationTableInfo($id, $time);
+                if ($ctInfo->archived) {
+                    continue;
+                }
+                $data[] = [
+                    'workId' => $workId,
+                    'chunkNumber' => $chunkNumber,
+                    'tableId' => $id,
+                    'authorId' => $tableVersions[0]->authorTid,
+                    'lastSave' => $tableVersions[0]->timeFrom,
+                    'title' => $ctInfo->title,
+                    'type' => $ctInfo->type
+                ];
+            }
+        }
+        return $this->responseWithJson($response, $data);
+    }
+
     public function getWitness(Request $request, Response $response): Response
     {
 

@@ -13,7 +13,7 @@ import {TablePaginationControls} from "@/ReactAPM/Components/TablePaginationCont
 import GridTable from "@/ReactAPM/Components/GridTable";
 import './people.css';
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
-import EntityCreationDialog, {CreationParameterValue} from "@/ReactAPM/Components/EntityCreationDialog";
+import EntityCreationDialog, {ParameterValue} from "@/ReactAPM/Components/EntityCreationDialog";
 import {Tid} from "@/Tid/Tid";
 import {urlGen} from "@/pages/common/SiteUrlGen";
 
@@ -59,7 +59,7 @@ export default function People() {
   };
 
   const queryResult = useQuery<PeopleTableItem[]>({
-    queryKey: ['docs'], queryFn: () => getPeopleData(),
+    queryKey: ['people'], queryFn: () => getPeopleData(),
   });
 
   useEffect(() => {
@@ -145,28 +145,27 @@ export default function People() {
       break;
   }
 
-  const createNewPerson = async (params: CreationParameterValue[]) => {
-    console.log(`Creating person`, params);
-    const name = params.find(p => p.id === 'name')?.value;
-    const sortName = params.find(p => p.id === 'sortName')?.value;
-    if (typeof name !== 'string' || typeof sortName !== 'string') {
-      console.error('Invalid parameters creating person, this should NEVER happen', params);
-      return 'Invalid parameters, please report this error';
-    }
+  const createNewPerson = async (values: Record<string, ParameterValue>) => {
+    const name = values.name.value as string;
+    const sortName = values.sortName.value as string;
     return appContext.apiClient.personCreate(name, sortName);
   };
 
   const newPersonCreationDialog = <EntityCreationDialog
+    entityName={'person'}
     title={'Create New Person'}
-    creationParameters={[{
-      id: 'name', label: 'Name:', type: 'string', validationFunction: 'RequireNonEmptyString'
-    }, {id: 'sortName', label: 'Sort Name:', type: 'string', validationFunction: 'RequireNonEmptyString'}]}
+    creationParameters={{
+      name: {label: 'Name:', type: 'string', validationFunction: 'RequireNonEmptyString'},
+      sortName: {label: 'Sort Name:', type: 'string', validationFunction: 'RequireNonEmptyString'}
+    }}
     show={showPersonCreationDialog}
     onCancel={() => setShowPersonCreationDialog(false)}
+    creationSuccessMessage={'Loading...'}
     onCreationSuccess={(newId: number) => {
-      console.log(`New person id is ${Tid.toBase36String(newId)} (${newId})`);
-      document.location.href = urlGen.sitePerson(Tid.toBase36String(newId));}}
-    entityCreationFunction={createNewPerson}/>;
+      document.location.href = urlGen.sitePerson(Tid.toBase36String(newId));
+    }}
+    entityCreationFunction={createNewPerson}
+  />;
 
 
   return (<NormalPageContainer>

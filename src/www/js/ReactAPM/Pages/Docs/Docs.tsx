@@ -15,9 +15,9 @@ import {Button, Col, Form, Row} from "react-bootstrap";
 import {EntityNameTuple} from "@/Api/ApmApiClient";
 import {varsAreEqual} from "@/toolbox/ObjectUtil";
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
-import {NewDocumentDialog} from "@/ReactAPM/Pages/Docs/NewDocumentDialog";
 import {Tid} from "@/Tid/Tid";
 import {urlGen} from "@/pages/common/SiteUrlGen";
+import EntityCreationDialog, {ParameterValue} from "@/ReactAPM/Components/EntityCreationDialog";
 
 
 export interface DocsTableItem {
@@ -211,28 +211,61 @@ export default function Docs() {
       break;
   }
 
+  const createNewDocument = async (values: Record<string, ParameterValue>): Promise<number> => {
+    const title = values.title.value as string;
+    const docType = values.docType.value as number;
+    const lang = values.lang.value as number;
+    const imageSource = values.imageSource.value as number;
+    const imageSourceData = values.imageSourceData.value as string;
+    return appContext.apiClient.createDocument(title, docType, lang, imageSource, imageSourceData);
+  };
+
   const handleOnCreateDocSuccess = async (newDocId: number) => {
     console.log(`New doc id is ${Tid.toBase36String(newDocId)} (${newDocId})`);
     document.location.href = urlGen.siteDocPage(Tid.toBase36String(newDocId));
   };
+
+  const docCreationDialog = <EntityCreationDialog
+    entityName={'document'}
+    title={"New Document"}
+    creationParameters={{
+      title: {label: 'Title', type: 'string', validationFunction: 'RequireNonEmptyString'}, lang: {
+        label: 'Language',
+        type: 'entity',
+        entityOptionsFetchFunction: () => appContext.apiClient.getAvailableLanguages()
+      }, docType: {
+        label: 'Type',
+        type: 'entity',
+        entityOptionsFetchFunction: () => appContext.apiClient.getAvailableDocumentTypes()
+      }, imageSource: {
+        label: 'Image Source',
+        type: 'entity',
+        entityOptionsFetchFunction: () => appContext.apiClient.getAvailableImagesSources()
+      }, imageSourceData: {label: 'Image Source Data', type: 'string', validationFunction: 'RequireNonEmptyString'},
+    }}
+    show={showNewDocumentDialog}
+    onCancel={() => setShowNewDocumentDialog(false)}
+    creationSuccessMessage={'Loading...'}
+    onCreationSuccess={handleOnCreateDocSuccess}
+    entityCreationFunction={createNewDocument}
+  />;
 
 
   return (<NormalPageContainer>
     <div style={{display: 'flex', flexDirection: 'column', height: '100%'}}>
       <div style={{flexGrow: 0}} key="header">
         <div style={{display: 'flex', flexDirection: 'row', justifyContent: 'space-between', width: '100%'}}>
-            <h1>Documents</h1>
+          <h1>Documents</h1>
           {queryStatusDiv}
-            {userCanCreateDocuments &&
-              <Button variant="primary" className={'btn-sm'} style={{ margin: '0.5em'}} onClick={() => setShowNewDocumentDialog(true)}>Create New Document</Button>}
+          {userCanCreateDocuments && <Button variant="primary" className={'btn-sm'} style={{margin: '0.5em'}}
+                                             onClick={() => setShowNewDocumentDialog(true)}>Create New
+            Document</Button>}
         </div>
         {header}
       </div>
       {content}
-
     </div>
-    <NewDocumentDialog show={showNewDocumentDialog} onCreateSuccess={handleOnCreateDocSuccess}
-                       onClickHide={() => setShowNewDocumentDialog(false)}/>
+    {docCreationDialog}
   </NormalPageContainer>);
 }
 

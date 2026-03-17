@@ -46,7 +46,7 @@ const ReactAppBaseUrlSuffix = '';
 const ApmTokenKey = 'apm-token';
 const ApmTokenCookie = 'rme2';
 const DefaultSiteLanguage = 'en';
-
+const ProductionSubDirs = ['apm'];
 
 export interface AppContextProps {
   devMode: boolean;
@@ -100,10 +100,10 @@ const StatusReady = 'ready';
 
 function App() {
   return (<StrictMode>
-      <BrowserRouter>
-        <RealApp/>
-      </BrowserRouter>
-    </StrictMode>);
+    <BrowserRouter>
+      <RealApp/>
+    </BrowserRouter>
+  </StrictMode>);
 }
 
 export default App;
@@ -122,20 +122,40 @@ function RealApp() {
   }
 
   const appSettingsLoader: () => Promise<AppSettings> = async () => {
+    const debug = false;
+
     const basePathName = trimCharacters(window.location.pathname, ['/']);
+    debug && console.log(`Base path name is '${basePathName}'`);
     let subDirs = basePathName.split('/');
-    subDirs = ['', ...subDirs];
-    const appSettingsPossibleUrls = subDirs.map(dir => dir + '/' + AppSettingsUrl);
+    debug && console.log(`Sub directories are`, subDirs);
+
+    if (subDirs.length > 0 && ProductionSubDirs.includes(subDirs[0])) {
+      debug && console.log(`It seems that we're running in a production sub directory, namely '${subDirs[0]}'`);
+    } else {
+      debug && console.log(`Production sub directory not detected, will try from the root of the domain`);
+      subDirs = ['', ...subDirs];
+      debug && console.log(`New sub directories are`, subDirs);
+    }
+
+    const appSettingsPossibleUrls: string[] = [];
+    let currentPath = '';
+    subDirs.forEach(dir => {
+      const newPath = dir === '' ? '' : `${currentPath}/${dir}`;
+      appSettingsPossibleUrls.push(newPath + '/' + AppSettingsUrl);
+      currentPath = newPath;
+    });
+
+    debug && console.log(`Possible app settings paths`, appSettingsPossibleUrls);
 
     for (let i = 0; i < appSettingsPossibleUrls.length; i++) {
       const appSettingsPath = appSettingsPossibleUrls[i];
-      // console.log(`Trying app settings path '${appSettingsPath}'`);
+      debug && console.log(`Trying app settings path '${appSettingsPath}'`);
       const response = await fetch(appSettingsPath);
       if (response.ok) {
         try {
           const data = await response.json();
           if (data.devMode) {
-            //console.log(`Loaded app settings from '${appSettingsPath}'`);
+            console.log(`Loaded app settings from '${appSettingsPath}'`);
           }
           return data;
         } catch (error) {
@@ -143,9 +163,7 @@ function RealApp() {
         }
       }
     }
-
     throw new Error(`Could not find app settings file '${AppSettingsUrl}' in any of the subdirectories of '${basePathName}'`);
-
   };
 
   const appContext = useRef<AppContextProps>(DefaultAppContext);
@@ -254,7 +272,6 @@ function RealApp() {
     deleteToken(appContext.current.localCache, ApmTokenKey, ApmTokenCookie);
     navigate(RouteUrls.login());
   };
-
 
 
   const routesWithTopBar = [RouteUrls.home(), RouteUrls.dashboard(), RouteUrls.docs(),

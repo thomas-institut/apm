@@ -58,8 +58,9 @@ import {SimpleConfirmDialog} from '@/pages/common/SimpleConfirmDialog';
 import {CtDataInterface, FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 // @ts-expect-error No TS definitions for matrix yet
 import {Matrix} from "@thomas-inst/matrix";
-import {FmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {FmtText, fromString, getPlainText} from "@/lib/FmtText/FmtText";
 import * as FmtTextTokenType from "@/lib/FmtText/FmtTextTokenType";
+import {deepCopy} from "@/toolbox/Util";
 
 
 interface ViewSettings {
@@ -942,42 +943,44 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnCellConfirmEditFunction() {
+    const debug = true;
     return (tableRow: number, col: number, newText: string) => {
-      let witnessIndex = this.ctData['witnessOrder'][tableRow];
-      let ref = this.ctData['collationMatrix'][witnessIndex][col];
-      if (ref === -1) {
+      let witnessIndex = this.ctData.witnessOrder[tableRow];
+      let witnessTokenIndex = this.ctData.collationMatrix[witnessIndex][col];
+      if (witnessTokenIndex === -1) {
         // TODO: deal with null refs in edition witness
         console.warn(`Trying to edit a -1 ref at witness ${witnessIndex}, row ${tableRow}, col ${col}`);
-        return {valueChange: false, value: ref};  // forces TableEditor to keep current value
+        return {valueChange: false, value: witnessTokenIndex};  // forces TableEditor to keep current value
       }
-
-      let currentText = this.ctData.witnesses[witnessIndex]['tokens'][ref]['text'];
+      const currentToken = deepCopy(this.ctData.witnesses[witnessIndex].tokens[witnessTokenIndex]);
+      let currentText = currentToken.text;
+      newText = Util.trimWhiteSpace(newText);
+      debug && console.log(`Confirming edit of witness ${witnessIndex}, row ${tableRow}, col ${col} from '${currentText}' to '${newText}'`, currentToken);
       if (currentText === newText) {
         // no change!
-        return {valueChange: false, value: ref}; // forces TableEditor to keep current value
+        debug && console.log(`No change in witness ${witnessIndex}, row ${tableRow}, col ${col}`);
+        return {valueChange: false, value: witnessTokenIndex}; // forces TableEditor to keep current value
       }
-      newText = Util.trimWhiteSpace(newText);
       if (newText === '') {
         // empty token
-        this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, ref);
+        debug && console.log(`New text is empty ${witnessIndex}, row ${tableRow}, col ${col}`);
+        this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, witnessTokenIndex);
       } else {
         let tokenType = Punctuation.stringIsAllPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD;
-        if (this.ctData.witnesses[witnessIndex].tokens[ref].fmtText === undefined) {
+        if (this.ctData.witnesses[witnessIndex].tokens[witnessTokenIndex].fmtText === undefined) {
           // no formatting, just copy the text
-          this.ctData.witnesses[witnessIndex].tokens[ref].text = newText;
+          this.ctData.witnesses[witnessIndex].tokens[witnessTokenIndex].text = newText;
         } else {
           //there is some formatting
-          console.log(`Replacing edition witness token that contains formatting`);
-          console.log(`newText: ${newText}`);
-          console.log(`current fmtText: `);
-          console.log(this.ctData.witnesses[witnessIndex].tokens[ref].fmtText);
-          let newFmtText = fmtTextChangePlainText(this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText'], newText);
-          this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText'] = newFmtText;
-          this.ctData.witnesses[witnessIndex]['tokens'][ref]['text'] = getPlainText(newFmtText);
+          debug && console.log(`Replacing edition witness token that contains formatting, new text '${newText}', current fmtText`, currentToken.fmtText);
+          let newFmtText = fmtTextChangePlainText(this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['fmtText'], newText);
+          debug && console.log(`New fmtText`, newFmtText);
+          this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['fmtText'] = newFmtText;
+          this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['text'] = getPlainText(newFmtText);
           console.log(`new fmtText: `);
-          console.log(this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText']);
+          console.log(this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['fmtText']);
         }
-        this.ctData.witnesses[witnessIndex]['tokens'][ref]['tokenType'] = tokenType;
+        this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['tokenType'] = tokenType;
         if (tokenType === TranscriptionTokenType.WORD) {
           let norm;
           let normSource;
@@ -996,20 +999,20 @@ export class CollationTablePanel extends PanelWithToolbar {
           }
           if (newText !== norm) {
             this.verbose && console.log(`New text normalized:  ${newText} => ${norm}`);
-            this.ctData.witnesses[witnessIndex]['tokens'][ref]['normalizedText'] = norm;
-            this.ctData.witnesses[witnessIndex]['tokens'][ref]['normalizationSource'] = normSource;
+            this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['normalizedText'] = norm;
+            this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['normalizationSource'] = normSource;
           }
         }
       }
 
-      this.invalidateTokenDataCacheForToken(witnessIndex, ref);
+      this.invalidateTokenDataCacheForToken(witnessIndex, witnessTokenIndex);
       this.recalculateVariants();
       this.options.onCtDataChange(this.ctData);
 
       //  this.verbose && console.log('Edition Witness updated')
       //  this.verbose && console.log(this.ctData.witnesses[witnessIndex]['tokens'])
       // ref stays the same
-      return {valueChange: true, value: ref};
+      return {valueChange: true, value: witnessTokenIndex};
     };
   }
 
@@ -1379,7 +1382,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
 function fmtTextChangePlainText(fmtText: FmtText, newPlainText: string): FmtText {
   if (fmtText.length === 0) {
-    return [];
+    return fromString(newPlainText);
   }
   let textTokens = fmtText.filter((token) => {
     return token.type === FmtTextTokenType.TEXT;

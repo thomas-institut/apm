@@ -640,10 +640,7 @@ export class ApparatusCommon {
 
     let lemmaText = trimWhiteSpace(lemmaComponents.text);
 
-    if (lemmaText === '') {
-      console.warn(`Lemma text is empty for lemma ${apparatusEntry.lemma}`);
-      lemmaText = '???_ReportBug'
-    }
+
 
     if (lemmaText === '|') {
       // marker
@@ -652,9 +649,17 @@ export class ApparatusCommon {
 
     switch (lemmaComponents.type) {
       case 'custom':
+        if (lemmaText === '') {
+          console.warn(`Lemma text is empty for custom lemma`, apparatusEntry, lemmaComponents);
+          lemmaText = `<span class="text-danger">???_ReportBug_654</span>`;
+        }
         return lemmaText;
 
       case 'full':
+        if (lemmaText === '') {
+          console.warn(`Lemma text is empty for full lemma`, apparatusEntry, lemmaComponents);
+          lemmaText = `<span class="text-danger">???_ReportBug_661</span>`;
+        }
         let lemmaNumberString = '';
         if (lemmaComponents.numWords === 1) {
           let occurrenceInLine = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);

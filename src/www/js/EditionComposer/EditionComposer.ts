@@ -923,7 +923,6 @@ export class EditionComposer extends ApmPage {
             await this.cache.store(`PageInfo-${pageInfo.id}`, pageInfo);
           }
           pageInfoInCache.push(...pageInfoArrayFromServer);
-          console.log(`Page Info`, pageInfoInCache);
           resolve(pageInfoInCache);
         })
         .fail(function (resp) {

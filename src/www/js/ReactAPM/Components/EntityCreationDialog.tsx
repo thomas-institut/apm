@@ -3,7 +3,7 @@ import {ChangeEvent, Fragment, JSX, useState} from "react";
 import {EntityNameTuple} from "@/Api/ApmApiClient";
 import {useQuery} from "@tanstack/react-query";
 import EntitySelect from "@/ReactAPM/Components/EntitySelect";
-import {mapRecord} from "@/toolbox/mapRecordUtils";
+import {mapRecord} from "@/toolbox/MapRecordUtils";
 import {InfoDiv, InfoDivType} from "@/ReactAPM/Components/InfoDiv";
 import {Tid} from "@/Tid/Tid";
 

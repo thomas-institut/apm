@@ -18,6 +18,7 @@ import {useDataStore} from "@/ReactAPM/Stores/DataStore";
 import {Tid} from "@/Tid/Tid";
 import {urlGen} from "@/pages/common/SiteUrlGen";
 import EntityCreationDialog, {ParameterValue} from "@/ReactAPM/Components/EntityCreationDialog";
+import {ArrayUniqueValues} from "@/lib/ToolBox/ArrayUtil";
 
 
 export interface DocsTableItem {
@@ -154,7 +155,13 @@ export default function Docs() {
   let header = null;
   let queryStatusDiv = (<div></div>);
 
+
   if (data.length > 0) {
+    const uniqueLanguages = ArrayUniqueValues(data.map(r => r.lang)).sort();
+    const uniqueTypes = ArrayUniqueValues(data.map(r => r.type)).sort();
+    const langFilterOptions = [['Any Language', ''], ...uniqueLanguages.map(l => [l, l])];
+    const typeFilterOptions = [['Any Type', ''], ...uniqueTypes.map(t => [t, t])];
+
     header = (<div className="tableNavigationDiv"
                    style={{
                      display: 'flex', flexDirection: 'row', justifyContent: 'space-between', alignItems: "center"
@@ -172,19 +179,15 @@ export default function Docs() {
             <Col>
               <Form.Select className="formControlNormalText" aria-label="Select Type"
                            onChange={e => table.getColumn('lang')?.setFilterValue(e.target.value)}>
-                <option value="">Any Language</option>
-                <option value="Arabic">Arabic</option>
-                <option value="Hebrew">Hebrew</option>
-                <option value="Latin">Latin</option>
-                <option value="Judeo Arabic">Judeo Arabic</option>
+                {langFilterOptions.map((optionTuple, i) => <option key={i}
+                                                                   value={optionTuple[1]}>{optionTuple[0]}</option>)}
               </Form.Select>
             </Col>
             <Col>
               <Form.Select className="formControlNormalText" aria-label="Select Type"
                            onChange={e => table.getColumn('type')?.setFilterValue(e.target.value)}>
-                <option value="">Any Type</option>
-                <option value="Manuscript">Manuscripts</option>
-                <option value="Print">Prints</option>
+                {typeFilterOptions.map((optionTuple, i) => <option key={i}
+                                                                   value={optionTuple[1]}>{optionTuple[0]}</option>)}
               </Form.Select>
             </Col>
           </Row>

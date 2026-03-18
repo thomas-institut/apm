@@ -62,7 +62,6 @@ export class Penalty extends TypesetterItem {
     /**
      * Item to insert if a break is inserted at this penalty
      * e.g., a hyphen
-     * TODO: allow any box or list of boxes as an item to insert
      * @type {TextBox|null}
      */
     this.itemToInsert = null;

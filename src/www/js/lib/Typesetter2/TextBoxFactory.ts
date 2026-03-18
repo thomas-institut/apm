@@ -66,5 +66,18 @@ export class TextBoxFactory {
     return item;
   }
 
+  static clone(textBox: TextBox): TextBox {
+    let item = new TextBox();
+    item.setText(textBox.getText());
+    item.setFontFamily(textBox.getFontFamily());
+    item.setFontSize(textBox.getFontSize());
+    item.setFontWeight(textBox.getFontWeight());
+    item.setFontStyle(textBox.getFontStyle());
+    item.setTextDirection(textBox.getTextDirection());
+    return item;
+  }
+
+
+
 }
 

@@ -54,6 +54,7 @@ import {Dimension} from "../lib/Typesetter2/Dimension.js";
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
 import {fromCompactFmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
+import {hyphenate, HyphenationLanguage} from "../lib/Hyphenator/Hyphenator";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
@@ -284,6 +285,18 @@ export class EditionTypesetting {
                   }
                   return item;
                 });
+                if (this.edition.lang === 'la') {
+                  // apply hyphenation
+                  const hyphenatedItems: TypesetterItem[] = [];
+                  textItems.forEach((item) => {
+                    if (item instanceof TextBox) {
+                      hyphenatedItems.push(...this.hyphenateTextBox(item, 'la'));
+                    } else {
+                      hyphenatedItems.push(item);
+                    }
+                  });
+                  textItems = hyphenatedItems;
+                }
                 paragraphToTypeset.pushItemArray(textItems);
               }
               // if (firstActualTextTokenIndex > 0) {
@@ -1113,6 +1126,10 @@ export class EditionTypesetting {
     return (new Penalty()).setPenalty(value);
   }
 
+  createHyphenationPenalty() : Penalty {
+    return (new Penalty()).setPenalty(GOOD_POINT_FOR_A_BREAK).setItemToInsert(TextBoxFactory.simpleText('-').setTextDirection(this.textDirection));
+  }
+
   /**
    * Creates a glue item with the given style and
    * scales with by the given factor
@@ -1257,5 +1274,27 @@ export class EditionTypesetting {
       items = this.setTextDirection(items, textDirection);
       resolve(items);
     });
+  }
+
+  private hyphenateTextBox(textBox: TextBox, lang: HyphenationLanguage): TypesetterItem[] {
+    const text = textBox.getText();
+    if (text === '') {
+      return [textBox];
+    }
+    const syllables = hyphenate(text, lang);
+    if (syllables.length < 2) {
+      return [textBox];
+    }
+    const outputItems: (TextBox|Penalty)[] = [];
+    for (let i = 0; i < syllables.length; i++) {
+      const syllableText = syllables[i];
+      const syllableTextBox = TextBoxFactory.clone(textBox);
+      syllableTextBox.setText(syllableText);
+      outputItems.push(syllableTextBox);
+      if (i < syllables.length - 1) {
+        outputItems.push(this.createHyphenationPenalty());
+      }
+    }
+    return outputItems;
   }
 }

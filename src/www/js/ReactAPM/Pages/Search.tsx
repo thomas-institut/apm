@@ -304,6 +304,8 @@ export default function SearchPage() {
       if (e instanceof Error && e.name === 'AbortError') {
         console.log("Stopped running search.");
         return;
+      } else {
+        console.error("Error during search:", e);
       }
 
       setSearchStatus(STATE_INIT);
@@ -326,7 +328,7 @@ export default function SearchPage() {
 
     const newEntries: any[] = [];
     rawData.forEach((match: any) => {
-      console.log(match);
+      // console.log(match);
       const link = corpus === 'transcriptions' ? urlGen.sitePageView(match.docID, match.seq, match.column) : urlGen.siteCollationTableEdit(match.table_id);
       match.passage_tokenized.forEach((p: any, j: number) => {
         storedData.current.numDisplayedPassages++;
@@ -688,7 +690,7 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
   let data: any[] = [];
   if (query && query.length !== 0) {
     for (let i = 0; i < query.length; i++) {
-      const doc = query[i].documentBeta;
+      const doc = query[i].document;
       let textTokenized = corpus === 'transcriptions' ? doc.transcription_tokens : doc.edition_tokens;
       let textLemmatized = corpus === 'transcriptions' ? doc.transcription_lemmata : doc.edition_lemmata;
 

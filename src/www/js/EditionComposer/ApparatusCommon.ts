@@ -17,10 +17,8 @@
  */
 
 
-import {TypesetterTokenFactory} from '@/Typesetter/TypesetterTokenFactory';
 import * as ApparatusSubEntryType from '../Edition/SubEntryType';
 import {NumeralStyles} from '@/toolbox/NumeralStyles';
-import {TypesetterTokenRenderer} from '@/lib/FmtText/Renderer/TypesetterTokenRenderer';
 import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
 import {escapeHtml, trimWhiteSpace} from '@/toolbox/Util';
 import {ApparatusUtil} from '@/Edition/ApparatusUtil';
@@ -28,12 +26,10 @@ import * as MainTextTokenType from '@/Edition/MainTextTokenType';
 import {StringCounter} from '@/toolbox/StringCounter';
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
-import {TypesetterToken} from "@/Typesetter/TypesetterToken";
-import {CompactFmtText, fromString, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText.js";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
-import {ITALIC} from "@/lib/FmtText/FontStyle";
+
 
 
 export interface MainTextTypesettingInfo {
@@ -98,49 +94,6 @@ export class ApparatusCommon {
     }
   }
 
-  static typesetSubEntryHebrew(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
-    // TODO: use witnessData instead of witnessIndices, like in the html version
-
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
-    let theTokens: TypesetterToken[] = [];
-
-    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'he').map((t) => {
-      return t.setBold();
-    });
-    // console.log(`Sigla tokens: `)
-    // console.log(siglaTokens)
-
-    switch (subEntryType) {
-      case ApparatusSubEntryType.VARIANT:
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTextTokens.push(...siglaTokens);
-        return theTokens;
-
-      case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission, 'he').setFontSize(hebrewStyle.smallFontFactor));
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTextTokens.push(...siglaTokens);
-        return theTokens;
-
-      case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.addition, 'he').setFontSize(hebrewStyle.smallFontFactor));
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTextTokens.push(...siglaTokens);
-        return theTokens;
-
-
-      case ApparatusSubEntryType.FULL_CUSTOM:
-        return theTextTokens;
-
-      default:
-        console.warn(`Unsupported apparatus entry type: ${subEntryType}`);
-        return [];
-    }
-  }
-
   static getKeywordString(keyword: string, lang: string): string {
     let stringsObject = {};
     switch (lang) {
@@ -163,53 +116,6 @@ export class ApparatusCommon {
       return stringsObject[keyword];
     }
     return keyword;
-  }
-
-  /**
-   * Returns an array of typesetter tokens for the given keyword.
-   *
-   * Accepts also a FmtText array which will be converted to plain text before processing
-   *
-   * @param {FmtText} keyword
-   * @param {string}lang
-   * @return {TypesetterToken}
-   */
-  static getKeywordTypesetterTokens(keyword: CompactFmtText, lang: string): TypesetterToken[] {
-    keyword = getPlainText(fromCompactFmtText(keyword));
-    let keywordString = this.getKeywordString(keyword, lang);
-    let fmtText = fromString(keywordString);
-    switch (lang) {
-      case 'he':
-        fmtText = fmtText.map((token) => {
-          if (token.type !== 'text') {
-            return token;
-          }
-          token.fontSize = hebrewStyle.smallFontFactor;
-          return token;
-        });
-        break;
-
-      case 'ar':
-
-        fmtText = fmtText.map((token) => {
-          if (token.type !== 'text') {
-            return token;
-          }
-          token.fontSize = arabicStyle.smallFontFactor;
-          return token;
-        });
-        break;
-
-      default:
-        fmtText = fmtText.map((token) => {
-          if (token.type !== 'text') {
-            return token;
-          }
-          token.fontStyle = ITALIC;
-          return token;
-        });
-    }
-    return (new TypesetterTokenRenderer()).render(fmtText);
   }
 
   static getKeywordHtml(keyword: string, lang: string) {
@@ -273,42 +179,6 @@ export class ApparatusCommon {
     }
   }
 
-  static typesetSubEntryArabic(entryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
-    // TODO: use witnessData instead of witnessIndices, like in the html version
-
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
-    let theTokens: TypesetterToken[] = [];
-    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'ar');
-    switch (entryType) {
-      case ApparatusSubEntryType.VARIANT:
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...siglaTokens);
-        return theTokens;
-
-      case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.omission, 'ar').setFontSize(arabicStyle.smallFontFactor));
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...siglaTokens);
-        return theTokens;
-
-      case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.addition, 'ar').setFontSize(arabicStyle.smallFontFactor));
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...siglaTokens);
-        return theTokens;
-
-      case ApparatusSubEntryType.FULL_CUSTOM:
-        return theTextTokens;
-
-      default:
-        console.warn(`Unsupported apparatus entry type: ${entryType}`);
-        return [];
-    }
-  }
-
   /**
    *
    * @param subEntry
@@ -351,59 +221,6 @@ export class ApparatusCommon {
       default:
         console.warn(`Unsupported apparatus entry type: ${entryType}`);
         return '???';
-    }
-  }
-
-  static _getSiglaTypesetterTokens(witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[], lang: string): TypesetterToken[] {
-    // TODO: use witnessData instead of witnessIndices, like in the html version
-    let witnessData = witnessIndices.map((i) => {
-      return new WitnessDataItem().setWitnessIndex(i).setHand(0);
-    });
-    let filledUpWitnessData = ApparatusUtil.getSiglaData(witnessData, sigla, siglaGroups);
-
-    // TODO: support hands:
-    let siglaString = filledUpWitnessData.map((w) => {
-      return w.siglum;
-    }).join('');
-    return [TypesetterTokenFactory.simpleText(siglaString, lang)];
-  }
-
-
-  static typesetSubEntryLatin(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
-    // TODO: use witnessData instead of witnessIndices, like in the html version
-    // let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
-    // convert the text tokens to proper typesetter tokens
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
-
-    let theTokens: TypesetterToken[] = [];
-    switch (subEntryType) {
-      case ApparatusSubEntryType.VARIANT:
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
-        return theTokens;
-
-      case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.omission).setItalic());
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
-        return theTokens;
-
-      case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.addition).setItalic());
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
-        return theTokens;
-
-
-      case ApparatusSubEntryType.FULL_CUSTOM:
-        return theTextTokens;
-
-      default:
-        console.warn(`Unsupported apparatus entry type: ${subEntryType}`);
-        return [];
     }
   }
 

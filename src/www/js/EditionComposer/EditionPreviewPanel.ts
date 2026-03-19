@@ -20,7 +20,7 @@ import {PanelWithToolbar} from '@/MultiPanelUI/PanelWithToolbar';
 import {Edition} from '@/Edition/Edition';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {ZoomController} from '@/toolbox/ZoomController';
-import {EditionViewerCanvas} from '@/Edition/EditionViewerCanvas';
+import {EditionViewerCanvas, EditionViewerCanvasOptions} from '@/Edition/EditionViewerCanvas';
 import {wait} from '@/toolbox/wait';
 import {BasicProfiler} from '@/toolbox/BasicProfiler';
 import {Dimension} from '@/lib/Typesetter2/Dimension';
@@ -125,7 +125,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     this.zoomController = new ZoomController({
       containerSelector: `${this.containerSelector} div.zoom-controller`, onZoom: this.genOnZoom(), debug: false
     });
-    this.zoomController.setZoomStepFromScale(viewerOptions.scale, false);
+    this.zoomController.setZoomStepFromScale(viewerOptions.scale ?? 1, false);
     this.setupStyleSelector();
     if (this.options.automaticUpdate) {
       this.updatePreview();
@@ -201,7 +201,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     </select>`;
   }
 
-  private getViewerOptions(initialScale = 1) {
+  private getViewerOptions(initialScale = 1): EditionViewerCanvasOptions {
     // for now, just use the first stylesheet
     let strings = this.currentStyleSheet.getStrings();
     let defaultStyleDef = this.currentStyleSheet.getStyleDef('default');
@@ -222,11 +222,15 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     // this.debug && console.log(`Main text font size: ${defaultFontSize}; apparatus font size: ${apparatusFontSize}`)
     // console.log('Default Style def')
     // console.log(defaultStyleDef)
+    const canvasElement = document.getElementById(`${canvasId}`) as HTMLCanvasElement;
+    if (canvasElement === null) {
+      throw new Error(`Could not find canvas element with id '${canvasId}'`);
+    }
     return {
       edition: this.edition,
       editionStyleSheet: this.currentStyleSheet,
-      canvasElement: document.getElementById(`${canvasId}`),
-      fontFamily: defaultStyleDef.text?.fontFamily,
+      canvasElement: canvasElement,
+      fontFamily: defaultStyleDef.text?.fontFamily ?? 'serif',
       scale: initialScale,
       entrySeparator: strings['entrySeparator'],
       apparatusLineSeparator: strings['lineRangeSeparator'],
@@ -255,7 +259,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   private genOnClickDownloadPdfButton(): () => Promise<void> {
     return async () => {
       let typesettingParameters = this.viewer.getTypesettingParameters();
-      if (typesettingParameters === undefined) {
+      if (typesettingParameters === null) {
         console.log(`Edition typesetting not ready yet`);
         return;
       }
@@ -263,15 +267,10 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       // be set by the server-side process
 
       // A little hack here... terrible
-      // @ts-ignore
       typesettingParameters.typesetterOptions.textBoxMeasurer = undefined;
-      // @ts-ignore
       typesettingParameters.typesetterOptions.getApparatusListToTypeset = undefined;
-      // @ts-ignore
       typesettingParameters.typesetterOptions.preTypesetApparatuses = undefined;
-      // @ts-ignore
       typesettingParameters.helperOptions.textBoxMeasurer = undefined;
-      // @ts-ignore
       typesettingParameters.helperOptions.styleId = this.currentStyleSheetId;
 
       let data = {
@@ -304,7 +303,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       let profiler = new BasicProfiler('Update preview');
       profiler.start();
       // adjust the current scale to the device's  pixel ratio
-      let currentScale = this.viewer.currentScale * window.devicePixelRatio;
+      let currentScale = this.viewer.getCurrentScale() * window.devicePixelRatio;
       this.viewer = new EditionViewerCanvas(this.getViewerOptions(currentScale));
       this.viewer.render().then(() => {
         profiler.stop();

@@ -13,7 +13,7 @@ import {Typesetter2} from '../Typesetter2.js';
 import {NumeralStyles} from '../../../toolbox/NumeralStyles.js';
 import {deepCopy} from '../../../toolbox/Util.js';
 import {TypesetterPage} from "../TypesetterPage.js";
-import {LineNumberData} from "../MainTextLineData.js";
+import {LineNumberData, MainTextLineData} from "../MainTextLineData.js";
 
 export class AddLineNumbers extends PageProcessor {
   private readonly options: any;
@@ -64,7 +64,7 @@ export class AddLineNumbers extends PageProcessor {
       }
 
       /** @var {MainTextLineData}mainTextLineData */
-      let mainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA);
+      let mainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA) as MainTextLineData;
       let mainTextIndex = mainTextLineData.mainTextListIndex;
       if (mainTextIndex === -1) {
         // no main text block, nothing to do

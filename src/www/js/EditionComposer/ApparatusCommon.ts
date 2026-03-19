@@ -28,7 +28,7 @@ import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
-import {WitnessDataItem} from "@/Edition/WitnessDataItem";
+import {WitnessDataItemInterface} from "@/CtData/CtDataInterface";
 
 
 
@@ -258,7 +258,7 @@ export class ApparatusCommon {
     }
   }
 
-  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], language: string, numberStyle: string|null = null) {
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItemInterface[], language: string, numberStyle: string|null = null) {
     const actualNumberStyle = numberStyle ?? language;
     return witnessData.map((w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {

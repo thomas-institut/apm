@@ -18,6 +18,7 @@
 
 import {Box} from './Box.js';
 import * as TypesetterItemDirection from './TypesetterItemDirection.js';
+import {HyphenationLanguage} from "./Hyphenator/Hyphenator.js";
 
 const defaultFontFamily = 'FreeSerif';
 const defaultFontSize = 16;
@@ -32,6 +33,8 @@ export class TextBox extends Box {
   private fontSize: number;
   private fontStyle: string;
   private fontWeight: string;
+  private hyphenation: HyphenationLanguage | null;
+
 
   constructor() {
     super(TypesetterItemDirection.HORIZONTAL);
@@ -64,6 +67,11 @@ export class TextBox extends Box {
      */
     this.fontWeight = '';
 
+    /**
+     * The language to use for hyphenation.
+     * If null, no hyphenation will be performed.
+     */
+    this.hyphenation = null;
 
     /**
      * Width and height start as undefined.
@@ -142,6 +150,15 @@ export class TextBox extends Box {
   setFontSize(fontSize: number): this {
     this.fontSize = fontSize;
     this.resetMeasurements();
+    return this;
+  }
+
+  getHyphenation(): HyphenationLanguage|null {
+    return this.hyphenation;
+  }
+
+  setHyphenation(hyphenation: HyphenationLanguage|null): this {
+    this.hyphenation = hyphenation;
     return this;
   }
 

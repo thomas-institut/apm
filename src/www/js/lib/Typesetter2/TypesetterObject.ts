@@ -17,6 +17,9 @@
  */
 
 
+export type MetadataType = string | number | boolean | null | Record<string, any> | Array<MetadataType> | undefined;
+
+
 export class TypesetterObject {
 
   /**
@@ -55,12 +58,12 @@ export class TypesetterObject {
     return this;
   }
 
-  addMetadata(key: string, someThing: any) {
+  addMetadata(key: string, someThing: MetadataType) {
     this.metadata[key] = someThing;
     return this;
   }
 
-  getMetadata(key: string): any {
+  getMetadata(key: string): MetadataType {
     return this.metadata[key];
   }
 

@@ -1,5 +1,5 @@
 import {describe, expect, it} from "vitest";
-import {HyphenationLanguage, hyphenate} from "@/lib/Hyphenator/Hyphenator";
+import {HyphenationLanguage, hyphenate} from "@/lib/Typesetter2/Hyphenator/Hyphenator";
 
 
 interface HyphenationTestCaseData {

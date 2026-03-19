@@ -72,7 +72,7 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     return entry;
   }
 
-  static allSubEntriesInEntryObjectAreOmissions(entry: ApparatusEntry): boolean {
+  static allSubEntriesInEntryObjectAreOmissions(entry: ApparatusEntryInterface): boolean {
     for (let i = 0; i < entry.subEntries.length; i++) {
       if (entry.subEntries[i].type !== SubEntryType.OMISSION) {
         return false;

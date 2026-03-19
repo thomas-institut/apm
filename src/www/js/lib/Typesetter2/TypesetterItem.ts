@@ -24,7 +24,7 @@ import {TypesetterObject} from './TypesetterObject.js';
  * The base class for all typesetter items.
  *
  * All typesetting work can be done with 3 types of typesetter items:
- *   Box, Glue and Penalty.
+ *   Box, Glue, and Penalty.
  *
  * Of these, Box is the one that could have different types of descendents,
  * the most common one being TextBox
@@ -32,7 +32,7 @@ import {TypesetterObject} from './TypesetterObject.js';
  */
 export class TypesetterItem extends TypesetterObject {
   /**
-   * The item's direction: HORIZONTAL, VERTICAL or UNDEFINED
+   * The item's direction: HORIZONTAL, VERTICAL, or UNDEFINED
    */
   direction: number;
 

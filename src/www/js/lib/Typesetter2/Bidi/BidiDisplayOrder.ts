@@ -93,7 +93,13 @@ export class BidiDisplayOrder {
     let currentTextDirection = defaultTextDirection;
 
     items.forEach((item, index) => {
-      let bidiOrderInfo = new BidiOrderInfo();
+      let bidiOrderInfo: BidiOrderInfo = {
+        inputIndex: -1,
+        displayOrder: -1,
+        intrinsicTextDirection: '',
+        textDirection: '',
+        embeddingLevel: -1
+      };
       bidiOrderInfo.inputIndex = index;
       bidiOrderInfo.intrinsicTextDirection = getItemIntrinsicTextDirection(item);
       if (bidiOrderInfo.intrinsicTextDirection === 'rtl' && currentTextDirection === 'ltr') {

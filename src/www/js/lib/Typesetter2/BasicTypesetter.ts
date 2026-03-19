@@ -32,7 +32,7 @@ import * as ListType from './ListType.js';
 import * as LineType from './LineType.js';
 import * as GlueType from './GlueType.js';
 import {toFixedPrecision} from '../../toolbox/Util.js';
-import {FirstFitLineBreaker} from './LineBreaker/FirstFitLineBreaker.js';
+import {FirstFitLineBreaker, ItemArrayWithBidiOrderInfo} from './LineBreaker/FirstFitLineBreaker.js';
 import {AddPageNumbers} from './PageProcessor/AddPageNumbers.js';
 import {AddLineNumbers} from './PageProcessor/AddLineNumbers.js';
 import {StringCounter} from '../../toolbox/StringCounter.js';
@@ -41,12 +41,15 @@ import {MAX_LINE_COUNT} from '../../Edition/EditionTypesetting.js';
 import {LanguageDetector} from '../../toolbox/LanguageDetector.js';
 import {BidiDisplayOrder, IntrinsicTextDirection} from './Bidi/BidiDisplayOrder.js';
 import {AdjustmentRatio} from './AdjustmentRatio.js';
-import {MINUS_INFINITE_PENALTY, Penalty} from './Penalty.js';
+import {GOOD_POINT_FOR_A_BREAK, MINUS_INFINITE_PENALTY, Penalty} from './Penalty.js';
 import {AddMainTextLinePositionMetadata} from './PageProcessor/AddMainTextLinePositionMetadata.js';
 import {AddMarginalia} from './PageProcessor/AddMarginalia.js';
 import {TypesetterItem} from "./TypesetterItem.js";
 import {PageProcessor} from "./PageProcessor/PageProcessor.js";
 import {BidiOrderInfo} from "./Bidi/BidiOrderInfo.js";
+import {hyphenate, HyphenationLanguage} from "./Hyphenator/Hyphenator.js";
+import {TextBoxFactory} from "./TextBoxFactory.js";
+import {ApparatusInterface} from "../../Edition/EditionInterface.js";
 
 const signature = 'BasicTypesetter 1.0';
 
@@ -79,6 +82,47 @@ interface LineRangeData {
   penalty: number;
 }
 
+export interface Marginalia {
+  lineNumber: number;
+  marginalSubEntries: TypesetterItem[][];
+}
+
+export interface BasicTypesetterOptions {
+  pageWidth: number;
+  pageHeight: number;
+  marginTop?: number;
+  marginBottom?: number;
+  marginLeft?: number;
+  marginRight?: number;
+  lineSkip?: number;
+  apparatusLineSkip?: number;
+  minLineSkip?: number;
+  defaultFontFamily?: string;
+  defaultFontSize?: number;
+  showPageNumbers?: boolean;
+  pageNumbersOptions?: any;
+  showLineNumbers?: boolean;
+  lineNumbersOptions?: any;
+  marginaliaOptions?: any;
+  apparatusesAtEndOfDocument?: boolean;
+  textBoxMeasurer?: TextBoxMeasurer;
+  /**
+   * A function to typeset an apparatus for the given line range must return a Promise
+   * for a horizontal ItemList that will then be typeset and added to the document/page
+   */
+  getApparatusListToTypeset?: (mainTextVerticalList: ItemList, apparatus: ApparatusInterface, lineFrom:number, lineTo:number, resetFirstLine:boolean) => Promise<ItemList>;
+  getMarginaliaForLineRange?: (lineFrom: number, lineTo: number) => Marginalia[];
+  preTypesetApparatuses?: (apparatuses: any) => Promise<boolean>;
+  textToApparatusGlue?: {
+    height: number, shrink: number, stretch: number
+  };
+  interApparatusGlue?: {
+    height: number, shrink: number, stretch: number
+  };
+  justify?: boolean;
+  debug?: boolean;
+}
+
 export class BasicTypesetter extends Typesetter2 {
   private options: any;
   private readonly lineWidth: number;
@@ -88,69 +132,92 @@ export class BasicTypesetter extends Typesetter2 {
   private readonly debug: boolean;
   private pageOutputProcessors: PageProcessor[] = [];
 
-  constructor(options: any) {
+  constructor(options: BasicTypesetterOptions) {
     super();
-    let oc = new OptionsChecker({
-      context: signature, optionsDefinition: {
-        pageWidth: {type: 'number', required: true},
-        pageHeight: {type: 'number', required: true},
-        marginTop: {type: 'number', default: 50},
-        marginBottom: {type: 'number', default: 50},
-        marginLeft: {type: 'number', default: 50},
-        marginRight: {type: 'number', default: 50},
-        lineSkip: {type: 'number', default: 24},
-        apparatusLineSkip: {type: 'number', default: 20},
-        minLineSkip: {type: 'number', default: 0},
-        defaultFontFamily: {type: 'string', default: DEFAULT_FONT_FAMILY},
-        defaultFontSize: {type: 'number', default: DEFAULT_FONT_SIZE},
-        showPageNumbers: {type: 'boolean', default: true},
-        pageNumbersOptions: {type: 'object', default: {}},
-        showLineNumbers: {type: 'boolean', default: true},
-        lineNumbersOptions: {type: 'object', default: {}},
-        marginaliaOptions: {type: 'object', default: {}},
-        apparatusesAtEndOfDocument: {type: 'boolean', default: false},
-        textBoxMeasurer: {
-          type: 'object', objectClass: TextBoxMeasurer
-        }, // A function to typeset an apparatus for the given line range must return a Promise
-        // for a horizontal ItemList that will then be typeset and added to the document/page
-        getApparatusListToTypeset: {
-          type: 'function', default: () => {
-            console.log(`Default typeset apparatus called `);
-            return Promise.resolve(new ItemList());
-          }
-        }, // A function that will be called when ejecting a page to get the marginalia for the page's line range
-        // it must return an array of
-        //   { lineNumber: number, itemsToTypeset:  array of TypesetterItem[] arrays }
-        getMarginaliaForLineRange: {
-          type: 'function', default: (lineFrom: number, lineTo: number) => {
-            console.log(`Default getMarginaliaForLineRange called for range (${lineFrom}, ${lineTo})`);
-            return [];
-          }
-        }, // A function that will be called before typesetting the apparatuses.
-        // This gives the apparatus typesetting engine an opportunity to reset or initialize
-        // its state if needed. The function should return a promise to a boolean indicating
-        // with true that the process can continue.
-        preTypesetApparatuses: {
-          type: 'function', default: (apparatuses: any) => {
-            console.log(`Default preTypesetApparatuses on ${apparatuses.length} apparatus(es)`);
-            return Promise.resolve(true);
-          }
-        },
-        textToApparatusGlue: {
-          type: 'object', default: {
-            height: DEFAULT_FONT_SIZE, shrink: DEFAULT_FONT_SIZE * 0.1, stretch: Typesetter2.cm2px(50)  // basically infinite stretch!
-          }
-        },
-        interApparatusGlue: {
-          type: 'object', default: {
-            height: DEFAULT_FONT_SIZE, shrink: 0, stretch: DEFAULT_FONT_SIZE * 0.25
-          }
-        },
-        justify: {type: 'boolean', default: true},
-        debug: {type: 'boolean', default: false}
-      }
-    });
-    this.options = oc.getCleanOptions(options);
+    // let oc = new OptionsChecker({
+    //   context: signature, optionsDefinition: {
+    //     pageWidth: {type: 'number', required: true},
+    //     pageHeight: {type: 'number', required: true},
+    //     marginTop: {type: 'number', default: 50},
+    //     marginBottom: {type: 'number', default: 50},
+    //     marginLeft: {type: 'number', default: 50},
+    //     marginRight: {type: 'number', default: 50},
+    //     lineSkip: {type: 'number', default: 24},
+    //     apparatusLineSkip: {type: 'number', default: 20},
+    //     minLineSkip: {type: 'number', default: 0},
+    //     defaultFontFamily: {type: 'string', default: DEFAULT_FONT_FAMILY},
+    //     defaultFontSize: {type: 'number', default: DEFAULT_FONT_SIZE},
+    //     showPageNumbers: {type: 'boolean', default: true},
+    //     pageNumbersOptions: {type: 'object', default: {}},
+    //     showLineNumbers: {type: 'boolean', default: true},
+    //     lineNumbersOptions: {type: 'object', default: {}},
+    //     marginaliaOptions: {type: 'object', default: {}},
+    //     apparatusesAtEndOfDocument: {type: 'boolean', default: false},
+    //     textBoxMeasurer: {
+    //       type: 'object', objectClass: TextBoxMeasurer
+    //     }, // A function to typeset an apparatus for the given line range must return a Promise
+    //     // for a horizontal ItemList that will then be typeset and added to the document/page
+    //     getApparatusListToTypeset: {
+    //       type: 'function', default: () => {
+    //         console.log(`Default typeset apparatus called `);
+    //         return Promise.resolve(new ItemList());
+    //       }
+    //     }, // A function that will be called when ejecting a page to get the marginalia for the page's line range
+    //     // it must return an array of
+    //     //   { lineNumber: number, itemsToTypeset:  array of TypesetterItem[] arrays }
+    //     getMarginaliaForLineRange: {
+    //       type: 'function', default: (lineFrom: number, lineTo: number) => {
+    //         console.log(`Default getMarginaliaForLineRange called for range (${lineFrom}, ${lineTo})`);
+    //         return [];
+    //       }
+    //     }, // A function that will be called before typesetting the apparatuses.
+    //     // This gives the apparatus typesetting engine an opportunity to reset or initialize
+    //     // its state if needed. The function should return a promise to a boolean indicating
+    //     // with true that the process can continue.
+    //     preTypesetApparatuses: {
+    //       type: 'function', default: (apparatuses: any) => {
+    //         console.log(`Default preTypesetApparatuses on ${apparatuses.length} apparatus(es)`);
+    //         return Promise.resolve(true);
+    //       }
+    //     },
+    //     textToApparatusGlue: {
+    //       type: 'object', default: {
+    //         height: DEFAULT_FONT_SIZE, shrink: DEFAULT_FONT_SIZE * 0.1, stretch: Typesetter2.cm2px(50)  // basically infinite stretch!
+    //       }
+    //     },
+    //     interApparatusGlue: {
+    //       type: 'object', default: {
+    //         height: DEFAULT_FONT_SIZE, shrink: 0, stretch: DEFAULT_FONT_SIZE * 0.25
+    //       }
+    //     },
+    //     justify: {type: 'boolean', default: true},
+    //     debug: {type: 'boolean', default: false}
+    //   }
+    // });
+    this.options = options;
+    this.options.marginTop = this.options.marginTop ??  50;
+    this.options.marginBottom = this.options.marginBottom ?? 50;
+    this.options.marginLeft = this.options.marginLeft ?? 50;
+    this.options.marginRight = this.options.marginRight ?? 50;
+    this.options.lineSkip = this.options.lineSkip ?? 24;
+    this.options.apparatusLineSkip = this.options.apparatusLineSkip ?? 20;
+    this.options.minLineSkip = this.options.minLineSkip ?? 0;
+    this.options.defaultFontFamily = this.options.defaultFontFamily ?? DEFAULT_FONT_FAMILY;
+    this.options.defaultFontSize = this.options.defaultFontSize ?? DEFAULT_FONT_SIZE;
+    this.options.showPageNumbers = this.options.showPageNumbers ?? true;
+    this.options.pageNumbersOptions = this.options.pageNumbersOptions ?? {};
+    this.options.showLineNumbers = this.options.showLineNumbers ?? true;
+    this.options.lineNumbersOptions = this.options.lineNumbersOptions ?? {};
+    this.options.marginaliaOptions = this.options.marginaliaOptions ?? {};
+    this.options.apparatusesAtEndOfDocument = this.options.apparatusesAtEndOfDocument ?? false;
+    this.options.getApparatusListToTypeset = this.options.getApparatusListToTypeset ?? ( async () => {return new ItemList();});
+    this.options.getMarginaliaForLineRange = this.options.getMarginaliaForLineRange ?? ( (_lineFrom: number, _lineTo: number) => {return [];});
+    this.options.preTypesetApparatuses = this.options.preTypesetApparatuses ?? ( async (_apparatuses: any) => {return true;});
+    this.options.textToApparatusGlue = this.options.textToApparatusGlue ?? {height: DEFAULT_FONT_SIZE, shrink: DEFAULT_FONT_SIZE * 0.1, stretch: Typesetter2.cm2px(50)  }
+    this.options.interApparatusGlue = this.options.interApparatusGlue ?? {height: DEFAULT_FONT_SIZE, shrink: 0, stretch: DEFAULT_FONT_SIZE * 0.25}
+    this.options.justify = this.options.justify ?? true;
+    this.options.debug = this.options.debug ?? false;
+    // this.options = oc.getCleanOptions(options);
 
     this.lineWidth = this.options.pageWidth - this.options.marginLeft - this.options.marginRight;
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom;
@@ -253,28 +320,31 @@ export class BasicTypesetter extends Typesetter2 {
         return;
       }
 
-
       // Determine the bidirectional text item order for the whole list; this will be the basis for
       // potentially reordering items for each line
-      let displayOrderArray = BidiDisplayOrder.getDisplayOrder(itemArray, inputList.getTextDirection(), (item: TypesetterItem) => {
+      let bidiOrderInfoArray = BidiDisplayOrder.getDisplayOrder(itemArray, inputList.getTextDirection(), (item: TypesetterItem) => {
         return this.getItemIntrinsicTextDirection(item);
       });
 
-      // compact the whole paragraph
-      let compactItemArrayResult = FirstFitLineBreaker.compactItemArray(itemArray, displayOrderArray);
+      const itemArrayWithBidiOrderInfo: ItemArrayWithBidiOrderInfo = { itemArray: itemArray, bidiOrderInfoArray: bidiOrderInfoArray };
+
+      // Apply hyphenation to the whole paragraph
+
+      // compact the item array taking into account bidirectional text order
+      let compacted = FirstFitLineBreaker.compactItemArray(itemArrayWithBidiOrderInfo);
 
       let originalIndexToOrderMap: number[] = [];
-      compactItemArrayResult.bidiOrderInfoArray.forEach((orderInfo: BidiOrderInfo) => {
+      compacted.bidiOrderInfoArray.forEach((orderInfo: BidiOrderInfo) => {
         originalIndexToOrderMap[orderInfo.inputIndex] = orderInfo.displayOrder;
       });
       let originalIndexToTextDirectionMap: any[] = [];
-      compactItemArrayResult.bidiOrderInfoArray.forEach((orderInfo) => {
+      compacted.bidiOrderInfoArray.forEach((orderInfo) => {
         originalIndexToTextDirectionMap[orderInfo.inputIndex] = orderInfo.textDirection;
       });
 
       // Run the First Fit algorithm on the input list
 
-      let lines = await FirstFitLineBreaker.breakIntoLines(compactItemArrayResult.itemArray, this.lineWidth, this.options.textBoxMeasurer, compactItemArrayResult.bidiOrderInfoArray);
+      let lines = await FirstFitLineBreaker.breakIntoLines(compacted.itemArray, this.lineWidth, this.options.textBoxMeasurer, compacted.bidiOrderInfoArray);
 
       // Post-process lines
       let lineNumberInParagraph = 1;
@@ -469,7 +539,7 @@ export class BasicTypesetter extends Typesetter2 {
                 typesetItem.addMetadata(MetadataKey.LINE_TYPE, LineType.MAIN_TEXT_LINE);
 
                 // Count text token occurrences within the line
-                this.__addOccurrenceInLineMetadata(typesetItem);
+                this.addOccurrenceInLineMetadata(typesetItem);
 
               }
               verticalListToTypeset.pushItem(typesetItem);
@@ -957,7 +1027,7 @@ export class BasicTypesetter extends Typesetter2 {
     let maxLine = -1;
     mainTextVerticalList.getList().forEach((item) => {
       if (item instanceof ItemList && item.hasMetadata(MetadataKey.LIST_TYPE) && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
-        let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER);
+        let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER) as number;
         minLine = Math.min(minLine, lineNumber);
         maxLine = Math.max(maxLine, lineNumber);
       }
@@ -988,7 +1058,7 @@ export class BasicTypesetter extends Typesetter2 {
       let item = itemList[index];
       if (item instanceof ItemList && item.hasMetadata(MetadataKey.LIST_TYPE) && item.getMetadata(MetadataKey.LIST_TYPE) === ListType.LINE) {
         if (item.hasMetadata(MetadataKey.LINE_NUMBER)) {
-          let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER);
+          let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER) as number;
           if (!addingItems && lineNumber >= lineFrom) {
             // // this.debug && console.log(`Line number is greater or equal than first line to include (line ${lineFrom}, starting add items`)
             // let firstLineLineNumberInParagraph = item.getMetadata(MetadataKey.LINE_NUMBER_IN_PARAGRAPH)
@@ -999,8 +1069,8 @@ export class BasicTypesetter extends Typesetter2 {
             addingItems = true;
           }
           if (lineNumber === lineTo) {
-            let lastParagraphLineCount = item.getMetadata(MetadataKey.PARAGRAPH_LINE_COUNT);
-            let lastLineLineNumberInParagraph = item.getMetadata(MetadataKey.LINE_NUMBER_IN_PARAGRAPH);
+            let lastParagraphLineCount = item.getMetadata(MetadataKey.PARAGRAPH_LINE_COUNT) as number;
+            let lastLineLineNumberInParagraph = item.getMetadata(MetadataKey.LINE_NUMBER_IN_PARAGRAPH) as number;
             if (lastLineLineNumberInParagraph !== lastParagraphLineCount) {
               // there are orphans in this page and widows in the next
               orphans = lastLineLineNumberInParagraph;
@@ -1066,7 +1136,7 @@ export class BasicTypesetter extends Typesetter2 {
    * @return {ItemList}
    * @private
    */
-  private __addOccurrenceInLineMetadata(line: ItemList): ItemList {
+  private addOccurrenceInLineMetadata(line: ItemList): ItemList {
     // TODO: check, may still be counting merged items incorrectly
     if (line.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
       // not a horizontal list, i.e., not a line => do nothing
@@ -1076,7 +1146,7 @@ export class BasicTypesetter extends Typesetter2 {
     let originalOrderItems = line.getList();
     if (line.hasMetadata(MetadataKey.HAS_REORDERED_ITEMS) && line.getMetadata(MetadataKey.HAS_REORDERED_ITEMS) === true) {
       if (line.hasMetadata(MetadataKey.ORIGINAL_ITEM_ORDER)) {
-        let originalOrder: number[] = line.getMetadata(MetadataKey.ORIGINAL_ITEM_ORDER);
+        let originalOrder: number[] = line.getMetadata(MetadataKey.ORIGINAL_ITEM_ORDER) as number[];
         originalOrderItems = [];
         let items = line.getList();
         originalOrder.forEach((index) => {
@@ -1101,7 +1171,7 @@ export class BasicTypesetter extends Typesetter2 {
       if (item instanceof TextBox) {
         let token = item.getText();
         if (item.hasMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES)) {
-          token = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES);
+          token = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES) as string;
         }
         item.addMetadata(MetadataKey.TOKEN_TOTAL_OCCURRENCES_IN_LINE, occurrencesCounter.getCount(token));
       }
@@ -1123,7 +1193,7 @@ export class BasicTypesetter extends Typesetter2 {
   private arrangeItemsInDisplayOrderNew(line: ItemList, originalIndexToOrderMap: number[], originalIndexToTextDirectionMap: string[]): ItemList {
     let originalLineItems = line.getList();
     let originalIndexes = originalLineItems.map((item) => {
-      return item.getMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX);
+      return item.getMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX) as number;
     });
     let displayOrder = originalIndexes.map((originalIndex) => {
       return originalIndexToOrderMap[originalIndex];
@@ -1194,5 +1264,32 @@ export class BasicTypesetter extends Typesetter2 {
     options.listTypeToNumber = ListType.MAIN_TEXT_BLOCK;
     options.lineTypeToNumber = LineType.MAIN_TEXT_LINE;
     return new AddLineNumbers(options);
+  }
+
+
+  private hyphenateTextBox(textBox: TextBox, lang: HyphenationLanguage): TypesetterItem[] {
+    const text = textBox.getText();
+    if (text === '') {
+      return [textBox];
+    }
+    const syllables = hyphenate(text, lang);
+    if (syllables.length < 2) {
+      return [textBox];
+    }
+    const outputItems: (TextBox|Penalty)[] = [];
+    for (let i = 0; i < syllables.length; i++) {
+      const syllableText = syllables[i];
+      const syllableTextBox = TextBoxFactory.clone(textBox);
+      syllableTextBox.setText(syllableText);
+      outputItems.push(syllableTextBox);
+      if (i < syllables.length - 1) {
+        outputItems.push(this.createHyphenationPenalty());
+      }
+    }
+    return outputItems;
+  }
+
+  private createHyphenationPenalty() : Penalty  {
+    return (new Penalty()).setPenalty(GOOD_POINT_FOR_A_BREAK).setItemToInsert(TextBoxFactory.simpleText('-'));
   }
 }

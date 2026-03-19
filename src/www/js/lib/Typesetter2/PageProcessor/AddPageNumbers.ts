@@ -42,14 +42,14 @@ export class AddPageNumbers extends PageProcessor {
   process(page: TypesetterPage): Promise<TypesetterPage> {
     let thePage = super.process(page);
     return new Promise(async (resolve) => {
-      let pageNumber = page.getMetadata(MetadataKey.PAGE_NUMBER);
+      let pageNumber = page.getMetadata(MetadataKey.PAGE_NUMBER) as number;
       if (pageNumber === undefined) {
         // no page number, can't do anything
         resolve(thePage);
       }
 
       this.debug && console.log(`Adding page numbers to page ${pageNumber}`);
-      let foliation = page.getMetadata(MetadataKey.PAGE_FOLIATION);
+      let foliation = page.getMetadata(MetadataKey.PAGE_FOLIATION) as string;
       if (foliation === undefined) {
         foliation = `${this._getPageNumberString(pageNumber)}`;
       }

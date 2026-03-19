@@ -19,7 +19,6 @@
  */
 
 import {MainText} from './MainText.js';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {TextBoxMeasurer} from '../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
 import {Box} from '../lib/Typesetter2/Box.js';
 import {ItemList} from '../lib/Typesetter2/ItemList.js';
@@ -41,43 +40,46 @@ import {ApparatusUtil} from './ApparatusUtil.js';
 import {NumeralStyles} from '../toolbox/NumeralStyles.js';
 import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';
 import {SiglaGroup} from './SiglaGroup.js';
-import {ParagraphStyleDef, StyleSheet} from '../lib/Typesetter2/Style/StyleSheet.js';
-import {FontConversions} from '../lib/Typesetter2/FontConversions.js';
+import {ParagraphStyleDef, StyleSheet, StyleSheetDefinition} from '../lib/Typesetter2/Style/StyleSheet.js';
+import {FontConversionDefinition, FontConversions} from '../lib/Typesetter2/FontConversions.js';
 import {ItemLineInfo} from './ItemLineInfo.js';
 import {TypesetterItem} from '../lib/Typesetter2/TypesetterItem.js';
 import {MARGINALIA} from '../constants/ApparatusType.js';
 import {AUTO_FOLIATION} from './SubEntryType.js';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.js";
 import {ApparatusEntry} from './ApparatusEntry.js';
-import {ApparatusInterface} from "./EditionInterface.js";
+import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface} from "./EditionInterface.js";
 import {Dimension} from "../lib/Typesetter2/Dimension.js";
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
 import {fromCompactFmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
-import {hyphenate, HyphenationLanguage} from "../lib/Hyphenator/Hyphenator";
+import {Marginalia} from "../lib/Typesetter2/BasicTypesetter.js";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
 
-const marginaliaApparatusType = 'marginalia';
-
-interface Marginalia {
-  lineNumber: number;
-  marginalSubEntries: any[];
-}
+const MarginaliaApparatusType = 'marginalia';
 
 interface LineRange {
   key: string,
   lineFrom: number,
   lineTo: number,
-  entries: ApparatusEntry[],
+  entries: ApparatusEntryInterface[],
   marginalSubEntries?: TypesetterItem[][];
-  itemsToTypeset?: any[],
-  tsItemsExportObjects?: any[]
+  itemsToTypeset?: TypesetterItem[],
+  tsItemsExportObjects?: Record<string, any>[],
+}
+
+export interface EditionTypesettingOptions {
+  edition: Edition;
+  editionStyleName?: string;
+  editionStyleSheet: StyleSheet;
+  textBoxMeasurer: TextBoxMeasurer;
+  debug?: boolean;
 }
 
 export class EditionTypesetting {
-  private options: any;
+  private options: Required<EditionTypesettingOptions>;
   private readonly debug: boolean;
   private edition: Edition;
   private readonly sigla: string[];
@@ -85,27 +87,23 @@ export class EditionTypesetting {
   private readonly textDirection: string;
   private readonly textBoxMeasurer: TextBoxMeasurer;
   private ss: StyleSheet;
-  private readonly editionStyle: any;
-  private readonly fontConversionDefinitions: any;
+  private readonly editionStyle: StyleSheetDefinition;
+  private readonly fontConversionDefinitions: FontConversionDefinition[];
   private tokenRenderer: Typesetter2StyleSheetTokenRenderer;
   private isSetup: boolean;
   private languageDetector: LanguageDetector;
   private lineRanges: { [app: string]: { [key: string]: LineRange } } = {};
   private consolidatedMarginalia: Marginalia[] | null = null;
-  private extractedItemLineInfoArray!: undefined | any[];
-  private mainTextIndices!: any[];
-  private appEntries: { [app: string]: ApparatusEntry[] } = {};
+  private extractedItemLineInfoArray: ItemLineInfo[] | null = null;
+  private mainTextIndices: number[] | null = null;
+  private appEntries: Record<string, ApparatusEntryInterface[]> = {};
 
-  constructor(options: any) {
-    let oc = new OptionsChecker({
-      context: 'EditionTypesetting', optionsDefinition: {
-        edition: {type: 'object', objectClass: Edition},
-        editionStyleSheet: {type: 'object', objectClass: StyleSheet},
-        textBoxMeasurer: {type: 'object', objectClass: TextBoxMeasurer},
-        debug: {type: 'boolean', default: false}
-      }
-    });
-    this.options = oc.getCleanOptions(options);
+  constructor(options: EditionTypesettingOptions) {
+    this.options = {
+      ...options,
+      debug: options.debug ?? false,
+      editionStyleName: options.editionStyleName ?? ''
+    };
     this.debug = this.options.debug;
 
     this.edition = this.options.edition;
@@ -148,7 +146,7 @@ export class EditionTypesetting {
     if (this.lineRanges === undefined) {
       return [];
     }
-    if (this.lineRanges[marginaliaApparatusType] === undefined) {
+    if (this.lineRanges[MarginaliaApparatusType] === undefined) {
       return [];
     }
 
@@ -159,14 +157,14 @@ export class EditionTypesetting {
 
   getConsolidatedMarginalia(): Marginalia[] {
     if (this.consolidatedMarginalia === null) {
-      if (this.lineRanges[marginaliaApparatusType] === undefined) {
+      if (this.lineRanges[MarginaliaApparatusType] === undefined) {
         this.consolidatedMarginalia = [];
         return [];
       }
-      let lineRangeKeys = Object.keys(this.lineRanges[marginaliaApparatusType]);
+      let lineRangeKeys = Object.keys(this.lineRanges[MarginaliaApparatusType]);
       let marginalia: Marginalia[] = [];
       lineRangeKeys.forEach((lineRangeKey) => {
-        let lineRange = this.lineRanges[marginaliaApparatusType][lineRangeKey];
+        let lineRange = this.lineRanges[MarginaliaApparatusType][lineRangeKey];
         marginalia.push({
           lineNumber: lineRange.lineFrom, marginalSubEntries: lineRange.marginalSubEntries ?? []
         });
@@ -285,18 +283,18 @@ export class EditionTypesetting {
                   }
                   return item;
                 });
-                if (this.edition.lang === 'la') {
-                  // apply hyphenation
-                  const hyphenatedItems: TypesetterItem[] = [];
-                  textItems.forEach((item) => {
-                    if (item instanceof TextBox) {
-                      hyphenatedItems.push(...this.hyphenateTextBox(item, 'la'));
-                    } else {
-                      hyphenatedItems.push(item);
-                    }
-                  });
-                  textItems = hyphenatedItems;
-                }
+                // if (this.edition.lang === 'la') {
+                //   // apply hyphenation
+                //   const hyphenatedItems: TypesetterItem[] = [];
+                //   textItems.forEach((item) => {
+                //     if (item instanceof TextBox) {
+                //       hyphenatedItems.push(...this.hyphenateTextBox(item, 'la'));
+                //     } else {
+                //       hyphenatedItems.push(item);
+                //     }
+                //   });
+                //   textItems = hyphenatedItems;
+                // }
                 paragraphToTypeset.pushItemArray(textItems);
               }
               // if (firstActualTextTokenIndex > 0) {
@@ -323,7 +321,7 @@ export class EditionTypesetting {
 
 
   resetExtractedMetadataInfo() {
-    this.extractedItemLineInfoArray = undefined;
+    this.extractedItemLineInfoArray = null;
   }
 
 
@@ -375,7 +373,7 @@ export class EditionTypesetting {
    * @param {boolean}resetFirstLineNumber if true, line numbers will be shown as starting from 1
    * @return {Promise<ItemList>}
    */
-  generateApparatusVerticalListToTypeset(typesetMainTextVerticalList: ItemList, apparatus: Apparatus, firstLine: number = 1, lastLine: number = MAX_LINE_COUNT, resetFirstLineNumber: boolean = false): Promise<ItemList> {
+  generateApparatusVerticalListToTypeset(typesetMainTextVerticalList: ItemList, apparatus: ApparatusInterface, firstLine: number = 1, lastLine: number = MAX_LINE_COUNT, resetFirstLineNumber: boolean = false): Promise<ItemList> {
     return new Promise(async (resolve) => {
       //console.log(`generateApparatusVerticalListToTypeset: ${apparatus.type}, from ${firstLine} to ${lastLine}, reset = ${resetFirstLineNumber}`)
       let textDirection = getTextDirectionForLang(this.edition.lang);
@@ -387,7 +385,7 @@ export class EditionTypesetting {
         return;
       }
 
-      if (this.extractedItemLineInfoArray === undefined) {
+      if (this.extractedItemLineInfoArray === null) {
         // Generate apparatus information for this and future apparatus typesetting requests
         this.extractedItemLineInfoArray = this.extractLineInfoFromMetadata(typesetMainTextVerticalList);
         this.mainTextIndices = this.extractedItemLineInfoArray.map((info) => {
@@ -454,7 +452,7 @@ export class EditionTypesetting {
 
         let lineRangesKeys = Object.keys(this.lineRanges[apparatus.type]);
 
-        if (apparatus.type === marginaliaApparatusType) {
+        if (apparatus.type === MarginaliaApparatusType) {
           // for every line range, typeset and save each sub-entry
           for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeys.length; lineRangeKeyIndex++) {
             let lineRange = this.lineRanges[apparatus.type][lineRangesKeys[lineRangeKeyIndex]];
@@ -526,7 +524,7 @@ export class EditionTypesetting {
       // At this point all the line ranges in the apparatus should be completely built, we just need
       // to assemble them for the desired line range and resetLineNumbers flag
       // ... but not for marginalia
-      if (apparatus.type === marginaliaApparatusType) {
+      if (apparatus.type === MarginaliaApparatusType) {
         resolve(outputList);
         return;
       }
@@ -569,7 +567,7 @@ export class EditionTypesetting {
    * @return {Promise<TypesetterItem[]>}
    * @private
    */
-  getTsItemsForPostLemma(entry: ApparatusEntry): Promise<TypesetterItem[]> {
+  getTsItemsForPostLemma(entry: ApparatusEntryInterface): Promise<TypesetterItem[]> {
     return new Promise(async (resolve) => {
       let items = [];
       switch (entry.postLemma) {
@@ -604,7 +602,7 @@ export class EditionTypesetting {
    * @return {Promise<TypesetterItem[]>}
    * @private
    */
-  getTsItemsForPreLemma(entry: ApparatusEntry): Promise<TypesetterItem[]> {
+  getTsItemsForPreLemma(entry: ApparatusEntryInterface): Promise<TypesetterItem[]> {
     return new Promise(async (resolve) => {
       let items = [];
       switch (entry.preLemma) {
@@ -641,7 +639,7 @@ export class EditionTypesetting {
    * @return {Promise<TypesetterItem[]>}
    * @private
    */
-  getTsItemsForSigla(subEntry: ApparatusSubEntry): Promise<TypesetterItem[]> {
+  getTsItemsForSigla(subEntry: ApparatusSubEntryInterface): Promise<TypesetterItem[]> {
     return new Promise(async (resolve) => {
       let items = [];
       let siglaData = ApparatusUtil.getSiglaData(subEntry.witnessData, this.sigla, this.siglaGroups);
@@ -684,7 +682,7 @@ export class EditionTypesetting {
    * @return {Promise<TypesetterItem[]>}
    * @private
    */
-  getTsItemsForLemma(entry: ApparatusEntry): Promise<TypesetterItem[]> {
+  getTsItemsForLemma(entry: ApparatusEntryInterface): Promise<TypesetterItem[]> {
     return new Promise(async (resolve) => {
       let tsItems = [];
       let lemmaComponents = ApparatusUtil.getLemmaComponents(entry.lemma, entry.lemmaText);
@@ -794,7 +792,7 @@ export class EditionTypesetting {
    * @return {Promise<TypesetterItem[]>}
    * @private
    */
-  getSubEntryTsItems(subEntry: ApparatusSubEntry, apparatusStyle: string = 'apparatus', keywordStyle: string = 'apparatus apparatusKeyword'): Promise<TypesetterItem[]> {
+  getSubEntryTsItems(subEntry: ApparatusSubEntryInterface, apparatusStyle: string = 'apparatus', keywordStyle: string = 'apparatus apparatusKeyword'): Promise<TypesetterItem[]> {
     return new Promise(async (resolve) => {
       let items = [];
       switch (subEntry.type) {
@@ -902,7 +900,7 @@ export class EditionTypesetting {
    * @private
    */
   getLineNumberForMainTextIndex(mainTextIndex: number) {
-    if (this.extractedItemLineInfoArray === undefined) {
+    if (this.extractedItemLineInfoArray === null || this.mainTextIndices === null) {
       return -1;
     }
     let infoIndex = this.mainTextIndices.indexOf(mainTextIndex);
@@ -953,7 +951,7 @@ export class EditionTypesetting {
         this.debug && console.log(`Found line without line number info`);
         return;
       }
-      let lineNumber = horizontalList.getMetadata(MetadataKey.LINE_NUMBER);
+      let lineNumber = horizontalList.getMetadata(MetadataKey.LINE_NUMBER) as number;
       if (horizontalList instanceof ItemList) {
         horizontalList.getList().forEach((item) => {
           let itemInfoArray = this.getLineInfoArrayFromItem(item, lineNumber);
@@ -1015,7 +1013,8 @@ export class EditionTypesetting {
     }
     let outputInfoArray: ItemLineInfo[] = [];
     // get the data from each item
-    item.getMetadata(MetadataKey.SOURCE_ITEMS).forEach((sourceItemExport: any) => {
+    const sourceItemExportObjects = item.getMetadata(MetadataKey.SOURCE_ITEMS) as object[];
+    sourceItemExportObjects.forEach((sourceItemExport: any) => {
       let sourceItem = ObjectFactory.fromObject(sourceItemExport) as unknown as TypesetterItem;
       let itemInfoArray = this.getLineInfoArrayFromItem(sourceItem, lineNumber);
       outputInfoArray.push(...itemInfoArray);
@@ -1048,24 +1047,24 @@ export class EditionTypesetting {
     info.occurrenceInLine = 1;
     info.totalOccurrencesInLine = 1;
     info.text = '';
-    info.mainTextIndex = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX);
+    info.mainTextIndex = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX) as number;
 
     if (!isMerged && item instanceof TextBox) {
       info.text = item.getText();
     }
 
     if (isMerged) {
-      info.text = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES);
+      info.text = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES) as string;
       info.isMerged = true;
       info.mergedMainTextIndices = this.getMainTextIndicesFromItem(item);
     }
 
     if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
-      info.occurrenceInLine = item.getMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE);
+      info.occurrenceInLine = item.getMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE) as number;
     }
 
     if (item.hasMetadata(MetadataKey.TOKEN_TOTAL_OCCURRENCES_IN_LINE)) {
-      info.totalOccurrencesInLine = item.getMetadata(MetadataKey.TOKEN_TOTAL_OCCURRENCES_IN_LINE);
+      info.totalOccurrencesInLine = item.getMetadata(MetadataKey.TOKEN_TOTAL_OCCURRENCES_IN_LINE) as number;
     }
     // some sanity checks
     if (info.occurrenceInLine > info.totalOccurrencesInLine) {
@@ -1124,10 +1123,6 @@ export class EditionTypesetting {
    */
   createPenalty(value: number): Penalty {
     return (new Penalty()).setPenalty(value);
-  }
-
-  createHyphenationPenalty() : Penalty {
-    return (new Penalty()).setPenalty(GOOD_POINT_FOR_A_BREAK).setItemToInsert(TextBoxFactory.simpleText('-').setTextDirection(this.textDirection));
   }
 
   /**
@@ -1217,7 +1212,7 @@ export class EditionTypesetting {
     });
   }
 
-  private getTsItemsForSeparator(entry: ApparatusEntry): Promise<TypesetterItem[]> {
+  private getTsItemsForSeparator(entry: ApparatusEntryInterface): Promise<TypesetterItem[]> {
     let defaultLemmaSeparator = this.ss.getStrings()['defaultLemmaSeparator'];
     return new Promise(async (resolve) => {
       let items = [];
@@ -1250,8 +1245,8 @@ export class EditionTypesetting {
     });
   }
 
-  private getOccurrenceInLineInfo(mainTextIndex: number): number[] {
-    if (this.extractedItemLineInfoArray === undefined) {
+  private getOccurrenceInLineInfo(mainTextIndex: number): [ number, number ] {
+    if (this.extractedItemLineInfoArray === null || this.mainTextIndices === null) {
       console.warn(`Attempting to get occurrence in line values before extracting info from typeset metadata`);
       return [1, 1];
     }
@@ -1274,27 +1269,5 @@ export class EditionTypesetting {
       items = this.setTextDirection(items, textDirection);
       resolve(items);
     });
-  }
-
-  private hyphenateTextBox(textBox: TextBox, lang: HyphenationLanguage): TypesetterItem[] {
-    const text = textBox.getText();
-    if (text === '') {
-      return [textBox];
-    }
-    const syllables = hyphenate(text, lang);
-    if (syllables.length < 2) {
-      return [textBox];
-    }
-    const outputItems: (TextBox|Penalty)[] = [];
-    for (let i = 0; i < syllables.length; i++) {
-      const syllableText = syllables[i];
-      const syllableTextBox = TextBoxFactory.clone(textBox);
-      syllableTextBox.setText(syllableText);
-      outputItems.push(syllableTextBox);
-      if (i < syllables.length - 1) {
-        outputItems.push(this.createHyphenationPenalty());
-      }
-    }
-    return outputItems;
   }
 }

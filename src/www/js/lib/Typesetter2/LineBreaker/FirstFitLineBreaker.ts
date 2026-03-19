@@ -21,13 +21,12 @@ const FLAG_PENALTY = 3000;
 
 const debug = false;
 
-export interface CompactItemArrayResult {
+export interface ItemArrayWithBidiOrderInfo {
   itemArray: TypesetterItem[];
   bidiOrderInfoArray: BidiOrderInfo[];
 }
 
 export class FirstFitLineBreaker extends LineBreaker {
-
 
   /**
    *
@@ -50,6 +49,9 @@ export class FirstFitLineBreaker extends LineBreaker {
         item.addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, index);
         return item;
       });
+
+      // hyphenate the text boxes
+
 
       let lineBreaks = await this.getBreakPoints(itemArray, lineWidth, textBoxMeasurer, bidiOrderInfoArray);
       // add a break at the end if there isn't one
@@ -288,14 +290,10 @@ export class FirstFitLineBreaker extends LineBreaker {
   /**
    * Compacts an item array and its corresponding bidiDisplayOrderArray by performing all possible merges between
    * consecutive items with the same text direction
-   * @param {TypesetterItem[]}itemArray
-   * @param {BidiOrderInfo[]}bidiOrderInfoArray
    */
-  static compactItemArray(itemArray: TypesetterItem[], bidiOrderInfoArray: BidiOrderInfo[]): CompactItemArrayResult {
+  static compactItemArray(itemArrayWithBidiOrderInfo: ItemArrayWithBidiOrderInfo): ItemArrayWithBidiOrderInfo {
     let spotDebug = false;
-    // if (itemArray.length === 145) {
-    //   spotDebug = true
-    // }
+    let {itemArray, bidiOrderInfoArray} = itemArrayWithBidiOrderInfo;
     if (itemArray.length === 0) {
       return {itemArray: [], bidiOrderInfoArray: []};
     }
@@ -326,7 +324,13 @@ export class FirstFitLineBreaker extends LineBreaker {
       let newLevelEndIndex = lastIndex + compactedLevelRun.length;
 
       for (let i = 0; i < compactedLevelRun.length; i++) {
-        let newBidiOrderInfo = new BidiOrderInfo();
+        let newBidiOrderInfo:BidiOrderInfo = {
+          inputIndex: -1,
+          displayOrder: -1,
+          intrinsicTextDirection: '',
+          textDirection: '',
+          embeddingLevel: -1
+        };
         newBidiOrderInfo.textDirection = levelInfo.textDirection;
         newBidiOrderInfo.inputIndex = newLevelStartIndex + i;
         newBidiOrderInfo.embeddingLevel = levelInfo.level;
@@ -351,7 +355,7 @@ export class FirstFitLineBreaker extends LineBreaker {
    * @param {TypesetterItem[]}itemArray
    * @return {*}
    */
-  static compactLevelItemArray(itemArray: TypesetterItem[]): any {
+  static compactLevelItemArray(itemArray: TypesetterItem[]): TypesetterItem[] {
     return itemArray.reduce((currentArray: TypesetterItem[], item: TypesetterItem) => {
       if (currentArray.length === 0) {
         return [item];

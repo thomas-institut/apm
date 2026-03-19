@@ -114,7 +114,7 @@ export class AddMainTextLinePositionMetadata extends PageProcessor {
 
         let data: LinePositionData[] = [];
         linesWithNumberIndices.forEach((index) => {
-          let lineNumber = mainTextListItems[index].getMetadata(MetadataKey.LINE_NUMBER);
+          let lineNumber = mainTextListItems[index].getMetadata(MetadataKey.LINE_NUMBER) as number;
           data.push({
             listIndex: index, lineNumber: lineNumber, y: yPositions[index]
           });

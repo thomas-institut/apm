@@ -1,5 +1,5 @@
-import {LatinHyphenationPatterns} from "@/lib/Hyphenator/patterns/la";
-import {EnglishHyphenationPatterns} from "@/lib/Hyphenator/patterns/en-us";
+import {LatinHyphenationPatterns} from "./patterns/la.js";
+import {EnglishHyphenationPatterns} from "./patterns/en-us.js";
 
 
 export type HyphenationLanguage = 'la' | 'en';

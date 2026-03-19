@@ -1,27 +1,28 @@
 import {IntrinsicTextDirection} from "./BidiDisplayOrder.js";
 
-export class BidiOrderInfo {
+
+export interface BidiOrderInfo {
   /**
    * The index of the item in the original item array
    */
-  inputIndex: number = -1;
+  inputIndex: number;
   /**
    * The display position of the item.
-   * Position 0 is the first position in the paragrpah
+   * Position 0 is the first position in the paragraph.
    */
-  displayOrder: number = -1;
+  displayOrder: number;
   /**
    *  The item's intrinsic text direction. One of:
-   *   'en' : European numbers  (also for numerical strings such as '1.9' or '1,923,234.25')
-   *   'rtl' :  right to left text
-   *   'ltr' :  left to right text
-   *   '' : neutral text (e.g., whitespace and punctuation)
+   *   - 'en' : European numbers  (also for numerical strings such as '1.9' or '1,923,234.25')
+   *   - 'rtl' :  right to left text
+   *   - 'ltr' :  left to right text
+   *   - '' : neutral text (e.g., whitespace and punctuation)
    */
-  intrinsicTextDirection: IntrinsicTextDirection = '';
+  intrinsicTextDirection: IntrinsicTextDirection;
   /**
    * The item's actual text direction that should be used for display: 'ltr' or 'rtl'
    */
-  textDirection: string = '';
+  textDirection: string;
   /**
    * The item's embedding level according to the standard bidi algorithm:
    *
@@ -35,5 +36,6 @@ export class BidiOrderInfo {
    * Text usually only has at most levels 0 and 1. Deeper levels are only necessary when explicit embedding characters
    * are used.
    */
-  embeddingLevel: number = -1;
+  embeddingLevel: number;
 }
+

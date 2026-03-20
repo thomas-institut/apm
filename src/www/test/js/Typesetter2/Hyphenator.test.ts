@@ -10,9 +10,14 @@ interface HyphenationTestCaseData {
 
 describe('Hyphenator', () => {
 
+  const manualEntries = ['Ná-je-ra', 'Car-va-jal'];
+  const exceptions = [ 'Mr.', 'institute']
+
   const TestCases: HyphenationTestCaseData[] = [
 
     {word: 'Dominus', lang: 'la', hyphenation: ['Do', 'mi', 'nus']},
+
+    {word: 'DOMINUS', lang: 'la', hyphenation: ['DO', 'MI', 'NUS']},
 
     {word: 'gloria', lang: 'la', hyphenation: ['glo', 'ria']},
 
@@ -24,11 +29,15 @@ describe('Hyphenator', () => {
 
     {word: 'political', lang: 'en', hyphenation: ['po', 'lit', 'i', 'cal']},
 
+    {word: 'Nájera', lang: 'custom', hyphenation: ['Ná', 'je', 'ra']},
+
+    {word: 'institute', lang: 'en', hyphenation: ['institute']},
+
   ];
 
   TestCases.forEach(tc => {
     it(`should hyphenate ${tc.word} (${tc.lang})`, () => {
-      expect(hyphenate(tc.word, tc.lang)).toEqual(tc.hyphenation);
+      expect(hyphenate(tc.word, tc.lang, manualEntries, exceptions)).toEqual(tc.hyphenation);
     });
   });
 });

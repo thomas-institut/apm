@@ -2,14 +2,19 @@ import {LatinHyphenationPatterns} from "./patterns/la.js";
 import {EnglishHyphenationPatterns} from "./patterns/en-us.js";
 
 
-export type HyphenationLanguage = 'la' | 'en';
+export type HyphenationLanguage = 'la' | 'en' | 'custom';
 
 
 const RawPatterns: Record<HyphenationLanguage, string> = {
   la: LatinHyphenationPatterns,
-  en: EnglishHyphenationPatterns
+  en: EnglishHyphenationPatterns,
+  custom: ''
 };
 
+interface ParsedManualEntry {
+  word: string;
+  hyphenation: string[];
+}
 
 
 // ---------- Internal types ----------
@@ -83,6 +88,7 @@ function parseAllPatterns(raw: string): ParsedPattern[] {
 const PreParsedPatterns: Record<HyphenationLanguage, ParsedPattern[]|null>  = {
   la: null,
   en: null,
+  custom: [],
 }
 
 // ---------- Pattern matching ----------
@@ -115,13 +121,26 @@ function patternMatchesAt(
  * ```
  *
  * @param inputWord  A single word (no spaces / punctuation).
- * @param lang
+ * @param lang Hyphenation language.
+ * @param manualEntries An array of manual hyphenation entries, as words with hyphens, ['ex-cep-tion']
+ * @param exceptions List of words that should not be hyphenated
  * @returns An array of syllable strings whose concatenation equals `inputWord`.
  */
-export function hyphenate(inputWord: string, lang: HyphenationLanguage): string[] {
+export function hyphenate(inputWord: string, lang: HyphenationLanguage, manualEntries: string[] = [], exceptions: string[] = []): string[] {
   if (inputWord.length === 0) {
     return [];
   }
+  if (exceptions.includes(inputWord)) {
+    return [inputWord];
+  }
+
+  const parsedManualEntries = manualEntries.map(parseManualEntry);
+
+  const manualEntry = parsedManualEntries.find(entry => entry.word === inputWord);
+  if (manualEntry) {
+    return manualEntry.hyphenation;
+  }
+
 
   // Wrap in '.' sentinels (standard TeX convention)
   const word = `.${inputWord.toLowerCase()}.`;
@@ -191,4 +210,10 @@ export function hyphenate(inputWord: string, lang: HyphenationLanguage): string[
   }
 
   return syllables;
+}
+
+function parseManualEntry(entry: string): ParsedManualEntry {
+  const hyphenation = entry.split('-');
+  const word = hyphenation.join('');
+  return { word, hyphenation };
 }

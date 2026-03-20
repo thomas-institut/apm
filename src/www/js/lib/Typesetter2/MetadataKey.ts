@@ -50,3 +50,9 @@ export const PageMarginalia = 'pageMarginalia';
 export const TokenForCountingPurposes = 'textTokenForCountingPurposes';
 export const TokenOccurrenceInLine = 'textTokenOccurrenceInLine';
 export const TokenTotalOccurrencesInLine = 'textTokenTotalOccurrencesInLine';
+
+export const SplitInSyllablesItem = 'splitInSyllablesItem';
+export const ItemIndexBeforeHyphenation = 'itemIndexBeforeHyphenation';
+export const SyllableIndex = 'syllableIndex';
+export const SyllableCount = 'syllableCount';
+export const OriginalText = 'originalText';

@@ -41,15 +41,15 @@ import {MAX_LINE_COUNT} from '../../Edition/EditionTypesetting.js';
 import {LanguageDetector} from '../../toolbox/LanguageDetector.js';
 import {BidiDisplayOrder, IntrinsicTextDirection} from './Bidi/BidiDisplayOrder.js';
 import {AdjustmentRatio} from './AdjustmentRatio.js';
-import {GoodPointForBreak, MinusInfinitePenalty, Penalty} from './Penalty.js';
+import {MinusInfinitePenalty, Penalty} from './Penalty.js';
 import {AddMainTextLinePositionMetadata} from './PageProcessor/AddMainTextLinePositionMetadata.js';
 import {AddMarginalia, AddMarginaliaOptions} from './PageProcessor/AddMarginalia.js';
 import {TypesetterItem} from "./TypesetterItem.js";
 import {PageProcessor} from "./PageProcessor/PageProcessor.js";
 import {BidiOrderInfo} from "./Bidi/BidiOrderInfo.js";
-import {hyphenate, HyphenationLanguage} from "./Hyphenator/Hyphenator.js";
-import {TextBoxFactory} from "./TextBoxFactory.js";
 import {ApparatusInterface} from "../../Edition/EditionInterface.js";
+import {compactItemArray} from "./Compactor/CompactItemArray.js";
+import {hyphenateTextBoxes} from "./Hyphenator/HyphenateTextBoxes.js";
 
 const signature = 'BasicTypesetter 1.0';
 
@@ -273,16 +273,15 @@ export class BasicTypesetter extends Typesetter2 {
         bidiOrderInfoArray: bidiOrderInfoArray
       };
 
-      // Apply hyphenation to the whole paragraph
-
-      // compact the item array taking into account bidirectional text order
-      let compacted = FirstFitLineBreaker.compactItemArray(itemArrayWithBidiOrderInfo);
+      // hyphenate compact the item array taking into account bidirectional text order
+      let hyphenated = hyphenateTextBoxes(itemArrayWithBidiOrderInfo);
+      let compacted = compactItemArray(hyphenated);
 
       let originalIndexToOrderMap: number[] = [];
       compacted.bidiOrderInfoArray.forEach((orderInfo: BidiOrderInfo) => {
         originalIndexToOrderMap[orderInfo.inputIndex] = orderInfo.displayOrder;
       });
-      let originalIndexToTextDirectionMap: any[] = [];
+      let originalIndexToTextDirectionMap: string[] = [];
       compacted.bidiOrderInfoArray.forEach((orderInfo) => {
         originalIndexToTextDirectionMap[orderInfo.inputIndex] = orderInfo.textDirection;
       });
@@ -482,10 +481,8 @@ export class BasicTypesetter extends Typesetter2 {
                 // add paragraph number info to each line in the paragraph
                 typesetItem.addMetadata(MetadataKey.ParagraphNumber, paragraphNumber);
                 typesetItem.addMetadata(MetadataKey.LineType, LineType.MainTextLine);
-
                 // Count text token occurrences within the line
                 this.addOccurrenceInLineMetadata(typesetItem);
-
               }
               verticalListToTypeset.pushItem(typesetItem);
             });
@@ -1214,30 +1211,4 @@ export class BasicTypesetter extends Typesetter2 {
     return new AddLineNumbers(options);
   }
 
-
-  private hyphenateTextBox(textBox: TextBox, lang: HyphenationLanguage): TypesetterItem[] {
-    const text = textBox.getText();
-    if (text === '') {
-      return [textBox];
-    }
-    const syllables = hyphenate(text, lang);
-    if (syllables.length < 2) {
-      return [textBox];
-    }
-    const outputItems: (TextBox | Penalty)[] = [];
-    for (let i = 0; i < syllables.length; i++) {
-      const syllableText = syllables[i];
-      const syllableTextBox = TextBoxFactory.clone(textBox);
-      syllableTextBox.setText(syllableText);
-      outputItems.push(syllableTextBox);
-      if (i < syllables.length - 1) {
-        outputItems.push(this.createHyphenationPenalty());
-      }
-    }
-    return outputItems;
-  }
-
-  private createHyphenationPenalty(): Penalty {
-    return (new Penalty()).setPenalty(GoodPointForBreak).setItemToInsert(TextBoxFactory.simpleText('-'));
-  }
 }

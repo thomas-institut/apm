@@ -4,7 +4,7 @@ import {ItemArrayWithBidiOrderInfo} from "../LineBreaker/FirstFitLineBreaker.js"
 import {TypesetterItem} from "../TypesetterItem.js";
 import {BidiOrderInfo} from "../Bidi/BidiOrderInfo.js";
 import {TextBox} from "../TextBox.js";
-import {hyphenate} from "../Hyphenator/Hyphenator.js";
+import {hyphenate, HyphenationLanguage} from "../Hyphenator/Hyphenator.js";
 import {TextBoxFactory} from "../TextBoxFactory.js";
 import {deepCopy} from "../../../toolbox/Util.js";
 import * as MetadataKey from '../MetadataKey.js';
@@ -18,22 +18,43 @@ interface HyphenationNode {
   hyphenatedItems: TypesetterItem[];
 }
 
-export function hyphenateTextBoxes(itemArrayWithBidiInfo: ItemArrayWithBidiOrderInfo, manualEntries: string[] = [], exceptions: string[] = []): ItemArrayWithBidiOrderInfo {
-  const debug = true;
-  const {itemArray, bidiOrderInfoArray} = itemArrayWithBidiInfo;
+interface HyphenateTextBoxesOptions {
+  /**
+   * Item array with the original items and the bidi order info array.
+   */
+  itemArrayWithBidiInfo: ItemArrayWithBidiOrderInfo,
+  /**
+   * Hyphenation languages
+   *
+   * Only items with these languages will be hyphenated. If empty, no hyphenation will be done.
+   *
+   * The mixing of hyphenation languages with different text directions is not supported and may
+   * produce unexpected results.
+   */
+  hyphenationLanguages: HyphenationLanguage[],
+  manualEntries?: string[],
+  exceptions?: string[],
+}
+
+export function hyphenateTextBoxes(options: HyphenateTextBoxesOptions): ItemArrayWithBidiOrderInfo {
+  const debug = false;
+  const {itemArray, bidiOrderInfoArray} = options.itemArrayWithBidiInfo;
+  const hyphenationLanguages = options.hyphenationLanguages;
+  const manualEntries = options.manualEntries ?? [];
+  const exceptions = options.exceptions ?? [];
 
   //  check if there is anything to hyphenate before doing anything
   let hyphenationNeeded = false;
-  for(let i = 0; i < itemArray.length; i++) {
+  for (let i = 0; i < itemArray.length; i++) {
     const item = itemArray[i];
-    if (item instanceof TextBox && item.getHyphenation() !== null) {
+    if (item instanceof TextBox && item.getHyphenation() !== null && hyphenationLanguages.includes(item.getHyphenation() as HyphenationLanguage)) {
       hyphenationNeeded = true;
       break;
     }
   }
   if (!hyphenationNeeded) {
-    // debug && console.log('No hyphenation needed');
-    return itemArrayWithBidiInfo;
+    debug && console.log('No hyphenation needed');
+    return options.itemArrayWithBidiInfo;
   }
 
   let hyphenationActuallyDone = false;
@@ -53,7 +74,7 @@ export function hyphenateTextBoxes(itemArrayWithBidiInfo: ItemArrayWithBidiOrder
       return defaultNode;
     }
     const itemHyphenation = item.getHyphenation();
-    if (itemHyphenation === null) {
+    if (itemHyphenation === null || !hyphenationLanguages.includes(itemHyphenation as HyphenationLanguage)) {
       return defaultNode;
     }
 
@@ -93,9 +114,11 @@ export function hyphenateTextBoxes(itemArrayWithBidiInfo: ItemArrayWithBidiOrder
 
   // if no hyphenation was actually done, return the original item array
   if (!hyphenationActuallyDone) {
-    // debug && console.log('No hyphenation actually done');
-    return itemArrayWithBidiInfo;
+    debug && console.log('No hyphenation actually done');
+    return options.itemArrayWithBidiInfo;
   }
+
+  // debug && console.log('Hyphenation actually done', hyphenationTree);
 
   // then, create the item array by traversing the tree in the order of the original array
   // capture the new start index of the hyphenated items
@@ -103,6 +126,7 @@ export function hyphenateTextBoxes(itemArrayWithBidiInfo: ItemArrayWithBidiOrder
   const newIndices: number[] = [];
   let currentIndex = 0;
   hyphenationTree.forEach((node) => {
+    // debug && console.log(`New index for item ${index} is ${currentIndex}`);
     newIndices.push(currentIndex);
     node.hyphenatedItems.forEach((item) => {
       newItemArray.push(item);
@@ -110,19 +134,25 @@ export function hyphenateTextBoxes(itemArrayWithBidiInfo: ItemArrayWithBidiOrder
     });
   });
 
+  debug && console.log(`New indices`, newIndices);
   // finally, create the bidi order info array by traversing the tree in the bidi order
   let currentDisplayOrder = 0;
   const hyphenatedBidiOrderInfoArray: BidiOrderInfo[] = [];
-  const displayOrder = bidiOrderInfoArray.map( info => info.displayOrder);
-  displayOrder.forEach((_displayOrder, nodeIndex) => {
-    const node = hyphenationTree[nodeIndex];
+  const displayOrder = bidiOrderInfoArray
+  .sort((a, b) => a.inputIndex - b.inputIndex)
+  .map(info => info.displayOrder);
+  debug && console.log('Display order', displayOrder);
+  displayOrder.forEach((displayOrder) => {
+    debug && console.log(`Processing node ${displayOrder}  and new index ${newIndices[displayOrder]}`)
+    const node = hyphenationTree[displayOrder];
     node.hyphenatedItems.forEach((_nodeItem, nodeItemIndex) => {
       const newBidiOrderInfo = deepCopy(node.originalBidiOrderInfo);
       newBidiOrderInfo.displayOrder = currentDisplayOrder;
-      newBidiOrderInfo.inputIndex = newIndices[nodeIndex] + nodeItemIndex;
+      newBidiOrderInfo.inputIndex = newIndices[displayOrder] + nodeItemIndex;
+      debug && console.log(` - Item ${nodeItemIndex}: input Index ${newBidiOrderInfo.inputIndex}, display order ${newBidiOrderInfo.displayOrder}`);
       hyphenatedBidiOrderInfoArray.push(newBidiOrderInfo);
       currentDisplayOrder++;
-    })
+    });
   });
   const orderedBidiOrderInfoArray = hyphenatedBidiOrderInfoArray.sort((a, b) => a.inputIndex - b.inputIndex);
 

@@ -1,42 +1,46 @@
 // noinspection ES6PreferShortImport
 
 import {PageProcessor} from './PageProcessor.js';
-
 import * as MetadataKey from '../MetadataKey.js';
 import {TextBoxFactory} from '../TextBoxFactory.js';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {TextBoxMeasurer} from '../TextBoxMeasurer/TextBoxMeasurer.js';
-import {NumeralStyles} from '../../../toolbox/NumeralStyles.js';
+import {NumeralSystem, NumeralSystems} from '../../../toolbox/NumeralSystems.js';
 import {TypesetterPage} from "../TypesetterPage.js";
 
+
+export interface AddPageNumbersOptions {
+  fontFamily: string,
+  fontSize: number,
+  fontStyle?: string,
+  numeralSystem?: NumeralSystem,
+  textBoxMeasurer: TextBoxMeasurer,
+  marginTop?: number,
+  marginLeft?: number,
+  lineWidth?: number,
+  align?: string,
+  debug?: boolean,
+}
 export class AddPageNumbers extends PageProcessor {
-  private readonly options: any;
+  private readonly options: Required<AddPageNumbersOptions>;
   private readonly debug: boolean;
 
 
-  constructor(options: any) {
+  constructor(options: AddPageNumbersOptions) {
     super();
-
-    let oc = new OptionsChecker({
-      context: 'AddPageNumbers Page Processor', optionsDefinition: {
-        fontFamily: {type: 'string', required: true},
-        fontSize: {type: 'number', required: true},
-        fontStyle: {type: 'string', default: ''},
-        numberStyle: {type: 'string', default: ''},
-        textBoxMeasurer: {type: 'object', objectClass: TextBoxMeasurer},
-        marginTop: {type: 'number', default: 20},
-        marginLeft: {type: 'number', default: 20},
-        lineWidth: {type: 'number', default: 100},
-        align: {type: 'string', default: 'center'},
-        debug: {type: 'boolean', default: false}
-      }
-    });
-    this.options = oc.getCleanOptions(options);
+    const defaults = {
+      fontStyle: '',
+      numeralSystem: 'WesternArabic' as NumeralSystem,
+      textBoxMeasurer: new TextBoxMeasurer(),
+      marginTop: 20,
+      marginLeft: 20,
+      lineWidth: 100,
+      align: 'center',
+      debug: false,
+    }
+    this.options = {...defaults, ...options};
     this.debug = this.options.debug;
-
     this.debug && console.log(`AddPageNumbers options`);
     this.debug && console.log(this.options);
-
   }
 
   process(page: TypesetterPage): Promise<TypesetterPage> {
@@ -88,11 +92,9 @@ export class AddPageNumbers extends PageProcessor {
    * @private
    */
   _getPageNumberString(pageNumber: number): string {
-    switch (this.options.numberStyle) {
-      case 'arabic':
-      case 'ara':
-      case 'ar':
-        return NumeralStyles.toDecimalArabic(pageNumber);
+    switch (this.options.numeralSystem) {
+      case 'EasternArabic':
+        return NumeralSystems.toEasternArabic(pageNumber);
 
       default:
         return `${pageNumber}`;

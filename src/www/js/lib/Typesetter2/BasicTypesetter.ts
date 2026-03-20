@@ -33,8 +33,8 @@ import * as LineType from './LineType.js';
 import * as GlueType from './GlueType.js';
 import {toFixedPrecision} from '../../toolbox/Util.js';
 import {FirstFitLineBreaker, ItemArrayWithBidiOrderInfo} from './LineBreaker/FirstFitLineBreaker.js';
-import {AddPageNumbers} from './PageProcessor/AddPageNumbers.js';
-import {AddLineNumbers} from './PageProcessor/AddLineNumbers.js';
+import {AddPageNumbers, AddPageNumbersOptions} from './PageProcessor/AddPageNumbers.js';
+import {AddLineNumbers, AddLineNumbersOptions} from './PageProcessor/AddLineNumbers.js';
 import {StringCounter} from '../../toolbox/StringCounter.js';
 import {trimPunctuation} from '../../defaults/Punctuation.js';
 import {MAX_LINE_COUNT} from '../../Edition/EditionTypesetting.js';
@@ -43,7 +43,7 @@ import {BidiDisplayOrder, IntrinsicTextDirection} from './Bidi/BidiDisplayOrder.
 import {AdjustmentRatio} from './AdjustmentRatio.js';
 import {GOOD_POINT_FOR_A_BREAK, MINUS_INFINITE_PENALTY, Penalty} from './Penalty.js';
 import {AddMainTextLinePositionMetadata} from './PageProcessor/AddMainTextLinePositionMetadata.js';
-import {AddMarginalia} from './PageProcessor/AddMarginalia.js';
+import {AddMarginalia, AddMarginaliaOptions} from './PageProcessor/AddMarginalia.js';
 import {TypesetterItem} from "./TypesetterItem.js";
 import {PageProcessor} from "./PageProcessor/PageProcessor.js";
 import {BidiOrderInfo} from "./Bidi/BidiOrderInfo.js";
@@ -100,17 +100,17 @@ export interface BasicTypesetterOptions {
   defaultFontFamily?: string;
   defaultFontSize?: number;
   showPageNumbers?: boolean;
-  pageNumbersOptions?: any;
+  pageNumbersOptions?: AddPageNumbersOptions;
   showLineNumbers?: boolean;
-  lineNumbersOptions?: any;
-  marginaliaOptions?: any;
+  lineNumbersOptions?: AddLineNumbersOptions;
+  marginaliaOptions?: AddMarginaliaOptions;
   apparatusesAtEndOfDocument?: boolean;
-  textBoxMeasurer?: TextBoxMeasurer;
+  textBoxMeasurer: TextBoxMeasurer;
   /**
    * A function to typeset an apparatus for the given line range must return a Promise
    * for a horizontal ItemList that will then be typeset and added to the document/page
    */
-  getApparatusListToTypeset?: (mainTextVerticalList: ItemList, apparatus: ApparatusInterface, lineFrom:number, lineTo:number, resetFirstLine:boolean) => Promise<ItemList>;
+  getApparatusListToTypeset?: (mainTextVerticalList: ItemList, apparatus: ApparatusInterface, lineFrom: number, lineTo: number, resetFirstLine: boolean) => Promise<ItemList>;
   getMarginaliaForLineRange?: (lineFrom: number, lineTo: number) => Marginalia[];
   preTypesetApparatuses?: (apparatuses: any) => Promise<boolean>;
   textToApparatusGlue?: {
@@ -124,7 +124,7 @@ export interface BasicTypesetterOptions {
 }
 
 export class BasicTypesetter extends Typesetter2 {
-  private options: any;
+  private options: Required<BasicTypesetterOptions>;
   private readonly lineWidth: number;
   private readonly textAreaHeight: number;
   private lineSkip: number;
@@ -134,90 +134,44 @@ export class BasicTypesetter extends Typesetter2 {
 
   constructor(options: BasicTypesetterOptions) {
     super();
-    // let oc = new OptionsChecker({
-    //   context: signature, optionsDefinition: {
-    //     pageWidth: {type: 'number', required: true},
-    //     pageHeight: {type: 'number', required: true},
-    //     marginTop: {type: 'number', default: 50},
-    //     marginBottom: {type: 'number', default: 50},
-    //     marginLeft: {type: 'number', default: 50},
-    //     marginRight: {type: 'number', default: 50},
-    //     lineSkip: {type: 'number', default: 24},
-    //     apparatusLineSkip: {type: 'number', default: 20},
-    //     minLineSkip: {type: 'number', default: 0},
-    //     defaultFontFamily: {type: 'string', default: DEFAULT_FONT_FAMILY},
-    //     defaultFontSize: {type: 'number', default: DEFAULT_FONT_SIZE},
-    //     showPageNumbers: {type: 'boolean', default: true},
-    //     pageNumbersOptions: {type: 'object', default: {}},
-    //     showLineNumbers: {type: 'boolean', default: true},
-    //     lineNumbersOptions: {type: 'object', default: {}},
-    //     marginaliaOptions: {type: 'object', default: {}},
-    //     apparatusesAtEndOfDocument: {type: 'boolean', default: false},
-    //     textBoxMeasurer: {
-    //       type: 'object', objectClass: TextBoxMeasurer
-    //     }, // A function to typeset an apparatus for the given line range must return a Promise
-    //     // for a horizontal ItemList that will then be typeset and added to the document/page
-    //     getApparatusListToTypeset: {
-    //       type: 'function', default: () => {
-    //         console.log(`Default typeset apparatus called `);
-    //         return Promise.resolve(new ItemList());
-    //       }
-    //     }, // A function that will be called when ejecting a page to get the marginalia for the page's line range
-    //     // it must return an array of
-    //     //   { lineNumber: number, itemsToTypeset:  array of TypesetterItem[] arrays }
-    //     getMarginaliaForLineRange: {
-    //       type: 'function', default: (lineFrom: number, lineTo: number) => {
-    //         console.log(`Default getMarginaliaForLineRange called for range (${lineFrom}, ${lineTo})`);
-    //         return [];
-    //       }
-    //     }, // A function that will be called before typesetting the apparatuses.
-    //     // This gives the apparatus typesetting engine an opportunity to reset or initialize
-    //     // its state if needed. The function should return a promise to a boolean indicating
-    //     // with true that the process can continue.
-    //     preTypesetApparatuses: {
-    //       type: 'function', default: (apparatuses: any) => {
-    //         console.log(`Default preTypesetApparatuses on ${apparatuses.length} apparatus(es)`);
-    //         return Promise.resolve(true);
-    //       }
-    //     },
-    //     textToApparatusGlue: {
-    //       type: 'object', default: {
-    //         height: DEFAULT_FONT_SIZE, shrink: DEFAULT_FONT_SIZE * 0.1, stretch: Typesetter2.cm2px(50)  // basically infinite stretch!
-    //       }
-    //     },
-    //     interApparatusGlue: {
-    //       type: 'object', default: {
-    //         height: DEFAULT_FONT_SIZE, shrink: 0, stretch: DEFAULT_FONT_SIZE * 0.25
-    //       }
-    //     },
-    //     justify: {type: 'boolean', default: true},
-    //     debug: {type: 'boolean', default: false}
-    //   }
-    // });
-    this.options = options;
-    this.options.marginTop = this.options.marginTop ??  50;
-    this.options.marginBottom = this.options.marginBottom ?? 50;
-    this.options.marginLeft = this.options.marginLeft ?? 50;
-    this.options.marginRight = this.options.marginRight ?? 50;
-    this.options.lineSkip = this.options.lineSkip ?? 24;
-    this.options.apparatusLineSkip = this.options.apparatusLineSkip ?? 20;
-    this.options.minLineSkip = this.options.minLineSkip ?? 0;
-    this.options.defaultFontFamily = this.options.defaultFontFamily ?? DEFAULT_FONT_FAMILY;
-    this.options.defaultFontSize = this.options.defaultFontSize ?? DEFAULT_FONT_SIZE;
-    this.options.showPageNumbers = this.options.showPageNumbers ?? true;
-    this.options.pageNumbersOptions = this.options.pageNumbersOptions ?? {};
-    this.options.showLineNumbers = this.options.showLineNumbers ?? true;
-    this.options.lineNumbersOptions = this.options.lineNumbersOptions ?? {};
-    this.options.marginaliaOptions = this.options.marginaliaOptions ?? {};
-    this.options.apparatusesAtEndOfDocument = this.options.apparatusesAtEndOfDocument ?? false;
-    this.options.getApparatusListToTypeset = this.options.getApparatusListToTypeset ?? ( async () => {return new ItemList();});
-    this.options.getMarginaliaForLineRange = this.options.getMarginaliaForLineRange ?? ( (_lineFrom: number, _lineTo: number) => {return [];});
-    this.options.preTypesetApparatuses = this.options.preTypesetApparatuses ?? ( async (_apparatuses: any) => {return true;});
-    this.options.textToApparatusGlue = this.options.textToApparatusGlue ?? {height: DEFAULT_FONT_SIZE, shrink: DEFAULT_FONT_SIZE * 0.1, stretch: Typesetter2.cm2px(50)  }
-    this.options.interApparatusGlue = this.options.interApparatusGlue ?? {height: DEFAULT_FONT_SIZE, shrink: 0, stretch: DEFAULT_FONT_SIZE * 0.25}
-    this.options.justify = this.options.justify ?? true;
-    this.options.debug = this.options.debug ?? false;
-    // this.options = oc.getCleanOptions(options);
+
+
+    const defaults = {
+      marginTop: 50,
+      marginBottom: 50,
+      marginLeft: 50,
+      marginRight: 50,
+      lineSkip: 24,
+      apparatusLineSkip: 20,
+      minLineSkip: 0,
+      defaultFontFamily: DEFAULT_FONT_FAMILY,
+      defaultFontSize: DEFAULT_FONT_SIZE,
+      showPageNumbers: true,
+      pageNumbersOptions: {
+        textBoxMeasurer: options.textBoxMeasurer,
+        fontFamily: DEFAULT_FONT_FAMILY,
+        fontSize: DEFAULT_FONT_SIZE
+      },
+      showLineNumbers: true,
+      lineNumbersOptions: { textBoxMeasurer: options.textBoxMeasurer},
+      marginaliaOptions: { textBoxMeasurer: options.textBoxMeasurer },
+      apparatusesAtEndOfDocument: false,
+      getApparatusListToTypeset: async () => {
+        return new ItemList();
+      },
+      getMarginaliaForLineRange: (_lineFrom: number, _lineTo: number): Marginalia[] => {
+        return [];
+      },
+      preTypesetApparatuses: async (_apparatuses: any) => {
+        return true;
+      },
+      textToApparatusGlue: {height: DEFAULT_FONT_SIZE, shrink: DEFAULT_FONT_SIZE * 0.1, stretch: Typesetter2.cm2px(50)},
+      interApparatusGlue: {height: DEFAULT_FONT_SIZE, shrink: 0, stretch: DEFAULT_FONT_SIZE * 0.25},
+      justify: true,
+      debug: false,
+    };
+
+    this.options = {...defaults, ...options};
 
     this.lineWidth = this.options.pageWidth - this.options.marginLeft - this.options.marginRight;
     this.textAreaHeight = this.options.pageHeight - this.options.marginTop - this.options.marginBottom;
@@ -268,23 +222,12 @@ export class BasicTypesetter extends Typesetter2 {
     }
 
     // Marginalia processor
-    let mOc = new OptionsChecker({
-      context: `${signature} - Marginalia options`, optionsDefinition: {
-        xPosition: {type: 'number', default: this.options.marginRight + Typesetter2.cm2px(0.5)},
-        defaultTextDirection: {type: 'string', default: 'ltr'},
-        align: {type: 'string', default: 'left'}
-      }
-    });
-
-    this.options.marginaliaOptions = mOc.getCleanOptions(this.options.marginaliaOptions);
-
-    this.addPageOutputProcessor(new AddMarginalia({
+    const AddMarginaliaDefaults: AddMarginaliaOptions = {
+      xPosition: this.options.marginRight + Typesetter2.cm2px(0.5), defaultTextDirection: 'ltr', align: 'left',
       textBoxMeasurer: this.options.textBoxMeasurer,
-      xPosition: this.options.marginaliaOptions.xPosition,
-      align: this.options.marginaliaOptions.align,
-      defaultTextDirection: this.options.marginaliaOptions.defaultTextDirection,
-    }));
-
+    };
+    this.options.marginaliaOptions = {...AddMarginaliaDefaults, ...this.options.marginaliaOptions};
+    this.addPageOutputProcessor(new AddMarginalia(this.options.marginaliaOptions));
 
   }
 
@@ -326,7 +269,10 @@ export class BasicTypesetter extends Typesetter2 {
         return this.getItemIntrinsicTextDirection(item);
       });
 
-      const itemArrayWithBidiOrderInfo: ItemArrayWithBidiOrderInfo = { itemArray: itemArray, bidiOrderInfoArray: bidiOrderInfoArray };
+      const itemArrayWithBidiOrderInfo: ItemArrayWithBidiOrderInfo = {
+        itemArray: itemArray,
+        bidiOrderInfoArray: bidiOrderInfoArray
+      };
 
       // Apply hyphenation to the whole paragraph
 
@@ -562,6 +508,9 @@ export class BasicTypesetter extends Typesetter2 {
       let doc = new TypesetterDocument();
       doc.addMetadata('typesetter', signature);
       let resetLineNumbersEachPage = this.options.lineNumbersOptions.resetEachPage;
+      if (resetLineNumbersEachPage === undefined) {
+        throw new Error(`Cannot determine whether to reset line numbers each page. Please set the 'resetEachPage' option.`);
+      }
       if (extraData.apparatuses === undefined) {
         extraData.apparatuses = [];
       }
@@ -1250,7 +1199,7 @@ export class BasicTypesetter extends Typesetter2 {
     return new AddPageNumbers({
       fontFamily: options.fontFamily,
       fontSize: options.fontSize,
-      numberStyle: options.numberStyle,
+      numeralSystem: options.numeralSystem,
       marginTop: pageNumbersMarginTop,
       marginLeft: pageNumbersMarginLeft,
       lineWidth: lineWidth,
@@ -1276,7 +1225,7 @@ export class BasicTypesetter extends Typesetter2 {
     if (syllables.length < 2) {
       return [textBox];
     }
-    const outputItems: (TextBox|Penalty)[] = [];
+    const outputItems: (TextBox | Penalty)[] = [];
     for (let i = 0; i < syllables.length; i++) {
       const syllableText = syllables[i];
       const syllableTextBox = TextBoxFactory.clone(textBox);
@@ -1289,7 +1238,7 @@ export class BasicTypesetter extends Typesetter2 {
     return outputItems;
   }
 
-  private createHyphenationPenalty() : Penalty  {
+  private createHyphenationPenalty(): Penalty {
     return (new Penalty()).setPenalty(GOOD_POINT_FOR_A_BREAK).setItemToInsert(TextBoxFactory.simpleText('-'));
   }
 }

@@ -18,7 +18,7 @@
 
 
 import * as ApparatusSubEntryType from '../Edition/SubEntryType';
-import {NumeralStyles} from '@/toolbox/NumeralStyles';
+import {NumeralSystems} from '@/toolbox/NumeralSystems';
 import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
 import {escapeHtml, trimWhiteSpace} from '@/toolbox/Util';
 import {ApparatusUtil} from '@/Edition/ApparatusUtil';
@@ -312,9 +312,9 @@ export class ApparatusCommon {
       return '???';
     }
     if (style === 'ar') {
-      return NumeralStyles.toDecimalArabic(n);
+      return NumeralSystems.toEasternArabic(n);
     }
-    return NumeralStyles.toDecimalWestern(n);
+    return NumeralSystems.toWesternArabic(n);
   }
 
 

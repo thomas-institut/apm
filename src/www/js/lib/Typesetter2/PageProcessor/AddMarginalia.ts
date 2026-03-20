@@ -21,7 +21,6 @@ import * as MetadataKey from '../MetadataKey.js';
 import {ItemList} from '../ItemList.js';
 import * as TypesetterItemDirection from '../TypesetterItemDirection.js';
 import * as ListType from '../ListType.js';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {TextBoxMeasurer} from '../TextBoxMeasurer/TextBoxMeasurer.js';
 import {Glue} from '../Glue.js';
 import {ItemArray} from '../ItemArray.js';
@@ -30,26 +29,34 @@ import {PageMarginalia} from "../PageMarginalia";
 import {MainTextLineData} from "../MainTextLineData";
 import {TypesetterItem} from "../TypesetterItem.js";
 
+
+export type MarginaliaAlignDirection = 'right' | 'left';
+export type MarginaliaTextDirection = 'rtl' | 'ltr';
+
+export interface AddMarginaliaOptions {
+  xPosition?: number,
+  align?: MarginaliaAlignDirection,
+  defaultTextDirection?: MarginaliaTextDirection,
+  textBoxMeasurer: TextBoxMeasurer,
+  glueWidth?: number,
+  debug?: boolean
+}
+
 export class AddMarginalia extends PageProcessor {
-  private readonly options: any;
+  private readonly options: Required<AddMarginaliaOptions>;
   private debug: boolean;
 
-  constructor(options: any) {
+  constructor(options: AddMarginaliaOptions) {
     super();
-    let oc = new OptionsChecker({
-      context: "AddMarginalia Page Processor", optionsDefinition: {
-        xPosition: {type: 'number', default: 20},
-        align: {type: 'string', default: 'right'},
-        defaultTextDirection: {type: 'string', default: 'ltr'},
-        textBoxMeasurer: {
-          type: 'object', objectClass: TextBoxMeasurer
-        }, //TODO: add this to actual constructors using value from stylesheet
-        glueWidth: {type: 'number', default: 5},
-        debug: {type: 'boolean', default: false},
-      }
-    });
-    this.options = oc.getCleanOptions(options);
+    const defaults = {
+      xPosition: 20,
+      align: 'right' as MarginaliaAlignDirection,
+      defaultTextDirection: 'ltr' as MarginaliaTextDirection,
+      glueWidth: 5,
+      debug: false,
+    }
 
+    this.options = { ...defaults, ...options };
     this.debug = this.options.debug;
 
     this.debug && console.log(`AddMarginalia options`);

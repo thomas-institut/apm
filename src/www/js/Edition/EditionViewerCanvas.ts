@@ -16,7 +16,6 @@
  *
  */
 import {Edition} from './Edition';
-// import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {CanvasTextBoxMeasurer} from '@/lib/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer';
 import {CanvasRenderer} from '@/lib/Typesetter2/Renderer/CanvasRenderer';
 import {BrowserUtilities} from '@/toolbox/BrowserUtilities';
@@ -29,6 +28,7 @@ import {Dimension} from '@/lib/Typesetter2/Dimension';
 import {StyleSheet} from '@/lib/Typesetter2/Style/StyleSheet';
 import {TypesetterDocument} from "@/lib/Typesetter2/TypesetterDocument";
 import {ItemList} from "@/lib/Typesetter2/ItemList";
+import {MarginaliaAlignDirection} from "@/lib/Typesetter2/PageProcessor/AddMarginalia";
 
 const pageMarginInCanvas = 20;
 
@@ -86,7 +86,7 @@ export interface EditionViewerCanvasOptions {
 interface TypesettingParameters {
   mainTextVerticalListToTypeset: ItemList;
   typesetterOptions: BasicTypesetterOptions;
-  helperOptions: any;
+  helperOptions: EditionTypesettingOptions;
   extraData: { [p: string]: any;}
 }
 
@@ -106,63 +106,6 @@ export class EditionViewerCanvas {
   private typesettingParameters: TypesettingParameters | null = null;
 
   constructor(options: EditionViewerCanvasOptions) {
-
-    // let oc = new OptionsChecker({
-    //   context: 'EditionViewerCanvas', optionsDefinition: {
-    //     edition: {type: 'object', objectClass: Edition, required: true},
-    //     editionStyleSheet: {type: 'object', objectClass: StyleSheet},
-    //     canvasElement: {type: 'object', required: true},
-    //     fontFamily: {type: 'NonEmptyString', required: true},
-    //     scale: {type: 'number', default: 1},
-    //     entrySeparator: {type: 'string', default: verticalLine},
-    //     apparatusLineSeparator: {type: 'string', default: doubleVerticalLine},
-    //     pageWidthInCm: {type: 'NumberGreaterThanZero', default: 21},
-    //     pageHeightInCm: {type: 'NumberGreaterThanZero', default: 29.7},
-    //     marginInCm: {
-    //       type: 'object', default: {
-    //         top: 2, left: 3, bottom: 2, right: 3
-    //       }
-    //     },
-    //     mainTextFontSizeInPts: {type: 'NumberGreaterThanZero', default: 12},
-    //     lineNumbersFontSizeInPts: {type: 'Number', default: 10},
-    //     resetLineNumbersEachPage: {type: 'boolean', default: false},
-    //     apparatusFontSizeInPts: {type: 'NumberGreaterThanZero', default: 10},
-    //     mainTextLineHeightInPts: {type: 'NumberGreaterThanZero', default: 15},
-    //     apparatusLineHeightInPts: {type: 'NumberGreaterThanZero', default: 12},
-    //     normalSpaceWidthInEms: {type: 'NumberGreaterThanZero', default: 0.33},
-    //     textToLineNumbersInCm: {type: 'NumberGreaterThanZero', default: 0.5},
-    //     textToMarginaliaInCm: {type: 'NumberGreaterThanZero', default: 0.3},
-    //     textToApparatusInCm: {type: 'NumberGreaterThanZero', default: 1.5},
-    //     interApparatusInCm: {type: 'NumberGreaterThanZero', default: 0.5},
-    //     debug: {type: 'boolean', default: false}
-    //   }
-    // });
-    // this.options = oc.getCleanOptions(options);
-    //
-    // this.options.scale = this.options.scale ?? 1;
-    // this.options.entrySeparator = this.options.entrySeparator ?? verticalLine;
-    // this.options.apparatusLineSeparator = this.options.apparatusLineSeparator ?? doubleVerticalLine;
-    // this.options.pageWidthInCm = this.options.pageWidthInCm ?? 21;
-    // this.options.pageHeightInCm = this.options.pageHeightInCm ?? 29.7;
-    // this.options.marginInCm = this.options.marginInCm ?? {
-    //   top: 2,
-    //   left: 3,
-    //   bottom: 2,
-    //   right: 3
-    // };
-    // this.options.mainTextFontSizeInPts = this.options.mainTextFontSizeInPts ?? 12;
-    // this.options.lineNumbersFontSizeInPts = this.options.lineNumbersFontSizeInPts ?? 10;
-    // this.options.resetLineNumbersEachPage = this.options.resetLineNumbersEachPage ?? false;
-    // this.options.apparatusFontSizeInPts = this.options.apparatusFontSizeInPts ?? 10;
-    // this.options.mainTextLineHeightInPts = this.options.mainTextLineHeightInPts ?? 15;
-    // this.options.apparatusLineHeightInPts = this.options.apparatusLineHeightInPts ?? 12;
-    // this.options.normalSpaceWidthInEms = this.options.normalSpaceWidthInEms ?? 0.33;
-    // this.options.textToLineNumbersInCm = this.options.textToLineNumbersInCm ?? 0.5;
-    // this.options.textToMarginaliaInCm = this.options.textToMarginaliaInCm ?? 0.3;
-    // this.options.textToApparatusInCm = this.options.textToApparatusInCm ?? 1.5;
-    // this.options.interApparatusInCm = this.options.interApparatusInCm ?? 0.5;
-    // this.options.debug = this.options.debug ?? false;
-
 
     const defaults = {
       scale: 1,
@@ -236,24 +179,6 @@ export class EditionViewerCanvas {
     return this.typesettingParameters;
   }
 
-  // render() {
-  //   return new Promise((resolve) => {
-  //     if (this.editionDoc === null) {
-  //       // need to typeset the edition
-  //       this.__typesetEdition().then((doc) => {
-  //         this.editionDoc = doc;
-  //         // this.debug && console.log(`Edition typeset`)
-  //         // this.debug && console.log(doc)
-  //         this.renderCanvas(doc);
-  //         resolve();
-  //       });
-  //     } else {
-  //       this.renderCanvas(this.editionDoc);
-  //       resolve();
-  //     }
-  //   });
-  // }
-
   async render(): Promise<void> {
     if (this.editionDoc === null) {
       // need to typeset the edition
@@ -272,7 +197,6 @@ export class EditionViewerCanvas {
 
   async setScale(newScale: number): Promise<number> {
     this.canvasRenderer.setScale(newScale);
-    // this.debug && console.log(`Scale set to ${newScale}`)
     try {
       await this.render();
       this.currentScale = newScale;
@@ -283,19 +207,6 @@ export class EditionViewerCanvas {
       throw err;
     }
   }
-  // setScale(newScale: number) {
-  //   return new Promise((resolve) => {
-  //     this.canvasRenderer.setScale(newScale);
-  //     // this.debug && console.log(`Scale set to ${newScale}`)
-  //     this.render().then(() => {
-  //       this.currentScale = newScale;
-  //       resolve(newScale);
-  //     }).catch((err) => {
-  //       console.error(`Error rendering canvas`);
-  //       console.log(err);
-  //     });
-  //   });
-  // }
 
   getCurrentScale() {
     return this.currentScale;
@@ -303,7 +214,6 @@ export class EditionViewerCanvas {
 
   private renderCanvas(doc: TypesetterDocument) {
     let [canvasWidth, canvasHeight] = this.canvasRenderer.getCanvasDimensionsForDoc(doc);
-
     BrowserUtilities.setCanvasHiPDI(this.canvas, canvasWidth, canvasHeight);
     let ctx = this.canvas.getContext('2d');
     ctx?.clearRect(0, 0, this.canvas.width, this.canvas.height);
@@ -352,7 +262,7 @@ export class EditionViewerCanvas {
         let lineNumbersAlign = 'right';
         let lineNumbersX = this.geometry.margin.left - this.geometry.textToLineNumbers;
         let marginaliaX = this.geometry.pageWidth - this.geometry.margin.right + this.geometry.textToMarginalia;
-        let marginaliaAlign = 'left';
+        let marginaliaAlign: MarginaliaAlignDirection = 'left';
         if (isRtl(this.edition.lang)) {
           lineNumbersAlign = 'left';
           lineNumbersX = this.geometry.pageWidth - this.geometry.margin.right + this.geometry.textToLineNumbers;
@@ -385,22 +295,25 @@ export class EditionViewerCanvas {
             pageNumbersOptions: {
               fontFamily: this.options.fontFamily,
               fontSize: this.geometry.mainTextFontSize,
-              numberStyle: this.edition.lang
+              numeralSystem: this.edition.lang === 'ar' ? 'EasternArabic' : 'WesternArabic',
+              textBoxMeasurer: this.canvasMeasurer
             },
             showLineNumbers: true,
             lineNumbersOptions: {
               fontFamily: this.options.fontFamily,
               fontSize: Typesetter2.pt2px(this.options.lineNumbersFontSizeInPts),
               frequency: 5,
-              numberStyle: this.edition.lang,
+              numeralSystem: this.edition.lang === 'ar' ? 'EasternArabic' : 'WesternArabic',
               align: lineNumbersAlign,
               resetEachPage: this.options.resetLineNumbersEachPage,
-              xPosition: lineNumbersX
+              xPosition: lineNumbersX,
+              textBoxMeasurer: this.canvasMeasurer,
             },
             marginaliaOptions: {
               xPosition: marginaliaX,
               defaultTextDirection: isRtl(this.edition.lang) ? 'rtl' : 'ltr',
-              align: marginaliaAlign
+              align: marginaliaAlign,
+              textBoxMeasurer: this.canvasMeasurer,
             },
             textBoxMeasurer: this.canvasMeasurer,
             getApparatusListToTypeset: (mainTextVerticalList: ItemList, apparatus, lineFrom:number, lineTo:number, resetFirstLine:boolean) => {

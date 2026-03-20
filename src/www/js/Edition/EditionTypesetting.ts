@@ -37,7 +37,7 @@ import {ObjectFactory} from '../lib/Typesetter2/ObjectFactory.js';
 import {uniq} from '../lib/ToolBox/ArrayUtil.js';
 import {Typesetter2StyleSheetTokenRenderer} from '../lib/FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.js';
-import {NumeralStyles} from '../toolbox/NumeralStyles.js';
+import {NumeralSystems} from '../toolbox/NumeralSystems.js';
 import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';
 import {SiglaGroup} from './SiglaGroup.js';
 import {ParagraphStyleDef, StyleSheet, StyleSheetDefinition} from '../lib/Typesetter2/Style/StyleSheet.js';
@@ -74,6 +74,7 @@ export interface EditionTypesettingOptions {
   edition: Edition;
   editionStyleName?: string;
   editionStyleSheet: StyleSheet;
+  styleId?: string;
   textBoxMeasurer: TextBoxMeasurer;
   debug?: boolean;
 }
@@ -99,11 +100,15 @@ export class EditionTypesetting {
   private appEntries: Record<string, ApparatusEntryInterface[]> = {};
 
   constructor(options: EditionTypesettingOptions) {
+    const defaults = {
+      debug: false,
+      editionStyleName: '',
+      styleId: '',
+    }
+
     this.options = {
-      ...options,
-      debug: options.debug ?? false,
-      editionStyleName: options.editionStyleName ?? ''
-    };
+      ...options, ...defaults
+    }
     this.debug = this.options.debug;
 
     this.edition = this.options.edition;
@@ -779,9 +784,9 @@ export class EditionTypesetting {
    */
   getNumberString(n: number, lang: string): string {
     if (lang === 'ar') {
-      return NumeralStyles.toDecimalArabic(n);
+      return NumeralSystems.toEasternArabic(n);
     }
-    return NumeralStyles.toDecimalWestern(n);
+    return NumeralSystems.toWesternArabic(n);
   }
 
   /**

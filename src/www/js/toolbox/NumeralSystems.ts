@@ -18,35 +18,38 @@
 
 const arabicZeroCodePoint = 0x660;
 
-export class NumeralStyles {
 
-  static toDecimalWestern(n: number): string {
-    return n.toString();
+export type NumeralSystem = 'WesternArabic' | 'EasternArabic';
+
+export class NumeralSystems {
+
+  static toWesternArabic(n: number): string {
+    return n.toString(10);
   }
 
-  static toDecimalArabic(n: number): string {
+  static toEasternArabic(n: number): string {
     if (n === -1) {
       return '?';
     }
-    let decimalWestern = this.toDecimalWestern(n);
-    let decimalArabic = '';
-    for (let i = 0; i < decimalWestern.length; i++) {
-      let digit = parseInt(decimalWestern.charAt(i));
+    let westernArabic = this.toWesternArabic(n);
+    let easternArabic = '';
+    for (let i = 0; i < westernArabic.length; i++) {
+      let digit = parseInt(westernArabic.charAt(i));
       if (isNaN(digit)) {
-        console.log(`Found non-number in ${n}, character '${decimalWestern.charAt(i)}'`);
+        console.log(`Found non-number in ${n}, character '${westernArabic.charAt(i)}'`);
       } else {
-        decimalArabic += String.fromCodePoint(arabicZeroCodePoint + digit);
+        easternArabic += String.fromCodePoint(arabicZeroCodePoint + digit);
       }
     }
-    return decimalArabic;
+    return easternArabic;
   }
 
-  static isArabicNumber(str: string): boolean {
+  static isEasternArabicNumber(str: string): boolean {
     return /^[\u0660-\u0669]+$/.test(str);
   }
 
 
-  static isWesternNumber(str: string): boolean {
+  static isWesternArabicNumber(str: string): boolean {
     return /^[0-9]$/.test(str);
   }
 

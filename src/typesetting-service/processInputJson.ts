@@ -1,9 +1,9 @@
 import {ObjectFactory} from '../www/js/lib/Typesetter2/ObjectFactory.js';
 import {PangoMeasurerNodeGTK} from './PangoMeasurerNodeGTK.js';
 import {SystemStyleSheet} from '../www/js/defaults/EditionStyles/SystemStyleSheet.js';
-import {BasicTypesetter} from '../www/js/lib/Typesetter2/BasicTypesetter.js';
+import {BasicTypesetter, BasicTypesetterOptions} from '../www/js/lib/Typesetter2/BasicTypesetter.js';
 import {hrtime} from 'node:process';
-import {EditionTypesetting} from '../www/js/Edition/EditionTypesetting.js';
+import {EditionTypesetting, EditionTypesettingOptions} from '../www/js/Edition/EditionTypesetting.js';
 import {ItemList} from "../www/js/lib/Typesetter2/ItemList.js";
 import {Edition} from "../www/js/Edition/Edition.js";
 
@@ -30,7 +30,14 @@ export interface Stats {
   processingTime?: number;
 }
 
-export async function processInputJson(data: any): Promise<OutputData> {
+interface InputData {
+  mainTextList: any;
+  options: BasicTypesetterOptions;
+  helperOptions?: EditionTypesettingOptions;
+  extraData?: any;
+}
+
+export async function processInputJson(data: InputData): Promise<OutputData> {
   let outputData: OutputData = {
     error: false, errorMsg: '', output: {}, stats: {}
   };
@@ -49,6 +56,12 @@ export async function processInputJson(data: any): Promise<OutputData> {
     return outputData;
   }
 
+  if (data.helperOptions === undefined) {
+    outputData.errorMsg = `No helper options found in input`;
+    outputData.error = true;
+    return outputData;
+  }
+
   let mainTextList: ItemList;
 
   try {
@@ -59,8 +72,25 @@ export async function processInputJson(data: any): Promise<OutputData> {
     return outputData;
   }
 
+  if (data.helperOptions.styleId === undefined) {
+    outputData.errorMsg = `No styleId found in input`;
+    outputData.error = true;
+    return outputData;
+  }
 
-  data.options.textBoxMeasurer = new PangoMeasurerNodeGTK();
+  const textMeasurer = new PangoMeasurerNodeGTK();
+
+  data.options.textBoxMeasurer = textMeasurer;
+  if (data.options.lineNumbersOptions !== undefined) {
+    data.options.lineNumbersOptions.textBoxMeasurer = textMeasurer;
+  }
+  if (data.options.pageNumbersOptions !== undefined) {
+    data.options.pageNumbersOptions.textBoxMeasurer = textMeasurer;
+  }
+  if (data.options.marginaliaOptions !== undefined) {
+    data.options.marginaliaOptions.textBoxMeasurer = textMeasurer;
+  }
+
 
   if (data.helperOptions !== undefined) {
     debug && console.log(`Helper options given, so this is an edition!`);

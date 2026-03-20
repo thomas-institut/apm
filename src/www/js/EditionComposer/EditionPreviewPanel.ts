@@ -263,15 +263,20 @@ export class EditionPreviewPanel extends PanelWithToolbar {
         console.log(`Edition typesetting not ready yet`);
         return;
       }
-      // delete browser specific options, these will
-      // be set by the server-side process
-
-      // A little hack here... terrible
+      // delete browser specific options, these will be set by the server-side process
+      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
       typesettingParameters.typesetterOptions.textBoxMeasurer = undefined;
       typesettingParameters.typesetterOptions.getApparatusListToTypeset = undefined;
       typesettingParameters.typesetterOptions.preTypesetApparatuses = undefined;
+      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
       typesettingParameters.helperOptions.textBoxMeasurer = undefined;
       typesettingParameters.helperOptions.styleId = this.currentStyleSheetId;
+      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
+      typesettingParameters.typesetterOptions.pageNumbersOptions.textBoxMeasurer = undefined;
+      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
+      typesettingParameters.typesetterOptions.marginaliaOptions.textBoxMeasurer  = undefined;
+      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
+      typesettingParameters.typesetterOptions.lineNumbersOptions.textBoxMeasurer = undefined;
 
       let data = {
         options: typesettingParameters.typesetterOptions,

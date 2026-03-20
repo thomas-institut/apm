@@ -25,7 +25,7 @@ export class TypesetterObject {
   /**
    * Data associated with the object.
    */
-  metadata: any = {};
+  metadata: Record<string, MetadataType> = {};
 
   /**
    *

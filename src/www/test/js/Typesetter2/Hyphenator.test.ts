@@ -31,7 +31,13 @@ describe('Hyphenator', () => {
 
     {word: 'Nájera', lang: 'custom', hyphenation: ['Ná', 'je', 'ra']},
 
+    {word: 'NÁjeRA', lang: 'custom', hyphenation: ['NÁ', 'je', 'RA']},
+
+    {word: 'CARVAJAL', lang: 'custom', hyphenation: ['CAR', 'VA', 'JAL']},
+
     {word: 'institute', lang: 'en', hyphenation: ['institute']},
+
+    {word: 'Institute', lang: 'en', hyphenation: ['Institute']},
 
   ];
 

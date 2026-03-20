@@ -51,13 +51,13 @@ describe('HyphenateTextBoxes', () => {
     const result = hyphenateTextBoxes({itemArray, bidiOrderInfoArray}, manualEntries);
     expect(result.itemArray.length).toEqual(itemArray.length + 2);
     expect(result.bidiOrderInfoArray.length).toEqual(bidiOrderInfoArray.length + 2);
-    const displayOrder = result.bidiOrderInfoArray.map(info => info.displayOrder);
-    const itemOrder = result.bidiOrderInfoArray.map(info => info.inputIndex);
-    expect(displayOrder).toEqual(itemOrder);
+    result.bidiOrderInfoArray.forEach((info, i) => {
+      expect(info.displayOrder).toEqual(info.inputIndex);
+    });
   });
 
   it('should not mess up text direction RTL text', () => {
-    const TestString = 'THIS very simple TEXT simple TEXT';
+    const TestString = 'THIS IS VERY SIMPLE RTL TEXT';
     const manualEntries = ['sim-ple', 've-ry'];
     const itemArray = createItemArrayFromString(TestString).map(item => {
       if (item instanceof TextBox) {
@@ -66,14 +66,12 @@ describe('HyphenateTextBoxes', () => {
       return item;
     });
     const bidiOrderInfoArray = getBidiOrderInfoForItemArray(itemArray, 'rtl');
-    console.log(`Original bidiOrderInfoArray`, bidiOrderInfoArray);
     const result = hyphenateTextBoxes({itemArray, bidiOrderInfoArray}, manualEntries);
-    expect(result.itemArray.length).toEqual(itemArray.length + 6);
-    expect(result.bidiOrderInfoArray.length).toEqual(bidiOrderInfoArray.length + 6);
-    const displayOrder = result.bidiOrderInfoArray.map(info => info.displayOrder);
-    console.log(`Result bidiOrderInfoArray`, result.bidiOrderInfoArray);
-    const itemOrder = result.bidiOrderInfoArray.map(info => info.inputIndex);
-    expect(displayOrder).toEqual(itemOrder);
+    expect(result.itemArray.length).toEqual(itemArray.length + 4);
+    expect(result.bidiOrderInfoArray.length).toEqual(bidiOrderInfoArray.length + 4);
+    result.bidiOrderInfoArray.forEach((info, i) => {
+      expect(info.displayOrder).toEqual(info.inputIndex);
+    });
   });
 
 });

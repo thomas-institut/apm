@@ -13,7 +13,13 @@ const RawPatterns: Record<HyphenationLanguage, string> = {
 
 interface ParsedManualEntry {
   word: string;
-  hyphenation: string[];
+  syllables: Syllable[];
+}
+
+interface Syllable {
+  syllable: string;
+  startIndex: number;
+  endIndex: number;
 }
 
 
@@ -115,6 +121,10 @@ function patternMatchesAt(
 /**
  * Decomposes a  word into syllables using TeX hyphenation patterns.
  *
+ * If a manual hyphenation entry is provided, it will be used instead of the patterns.
+ *
+ * If the word is listed in the exceptions list, it will be returned as is.
+ *
  * ```ts
  * hyphenize("Dominus", 'la')  // → ["Do", "mi", "nus"]
  * hyphenizeLatin("gloria", 'la')   // → ["glo", "ria"]
@@ -130,15 +140,17 @@ export function hyphenate(inputWord: string, lang: HyphenationLanguage, manualEn
   if (inputWord.length === 0) {
     return [];
   }
-  if (exceptions.includes(inputWord)) {
+
+  const parsedExceptions = exceptions.map(e => e.toLowerCase());
+  if (parsedExceptions.includes(inputWord.toLowerCase())) {
     return [inputWord];
   }
 
   const parsedManualEntries = manualEntries.map(parseManualEntry);
 
-  const manualEntry = parsedManualEntries.find(entry => entry.word === inputWord);
+  const manualEntry = parsedManualEntries.find(entry => entry.word === inputWord.toLowerCase());
   if (manualEntry) {
-    return manualEntry.hyphenation;
+    return manualEntry.syllables.map((s) => inputWord.substring(s.startIndex, s.endIndex));
   }
 
 
@@ -213,7 +225,13 @@ export function hyphenate(inputWord: string, lang: HyphenationLanguage, manualEn
 }
 
 function parseManualEntry(entry: string): ParsedManualEntry {
-  const hyphenation = entry.split('-');
+  const hyphenation = entry.toLowerCase().split('-');
   const word = hyphenation.join('');
-  return { word, hyphenation };
+  const syllables: Syllable[] = [];
+  let currentSyllableIndex = 0;
+  for (let i = 0; i < hyphenation.length; i++) {
+    syllables.push({syllable: hyphenation[i], startIndex: currentSyllableIndex, endIndex: currentSyllableIndex + hyphenation[i].length});
+    currentSyllableIndex += hyphenation[i].length;
+  }
+  return { word, syllables };
 }

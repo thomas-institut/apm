@@ -85,7 +85,7 @@ export class TypesetterItem extends TypesetterObject {
    */
   shiftY: number = 0;
 
-  constructor(direction = TypesetterItemDirection.UNDEFINED) {
+  constructor(direction = TypesetterItemDirection.UndefinedItemDirection) {
     super();
     if (this.constructor === TypesetterItem) {
       throw new Error("Abstract classes cannot be instantiated");
@@ -173,7 +173,7 @@ export class TypesetterItem extends TypesetterObject {
     if (this.shiftY !== 0) {
       obj.shiftY = this.shiftY;
     }
-    if (this.direction !== TypesetterItemDirection.UNDEFINED) {
+    if (this.direction !== TypesetterItemDirection.UndefinedItemDirection) {
       obj.direction = this.direction;
     }
     if (this.textDirection !== '') {
@@ -185,7 +185,7 @@ export class TypesetterItem extends TypesetterObject {
   setFromObject(object: any, mergeValues: boolean): this {
     super.setFromObject(object, mergeValues);
     const template = {
-      width: -1, height: -1, shiftX: 0, shiftY: 0, direction: TypesetterItemDirection.UNDEFINED, textDirection: ''
+      width: -1, height: -1, shiftX: 0, shiftY: 0, direction: TypesetterItemDirection.UndefinedItemDirection, textDirection: ''
     };
     this.copyValues(template, object, mergeValues);
     return this;

@@ -46,14 +46,14 @@ export class AddPageNumbers extends PageProcessor {
   process(page: TypesetterPage): Promise<TypesetterPage> {
     let thePage = super.process(page);
     return new Promise(async (resolve) => {
-      let pageNumber = page.getMetadata(MetadataKey.PAGE_NUMBER) as number;
+      let pageNumber = page.getMetadata(MetadataKey.PageNumber) as number;
       if (pageNumber === undefined) {
         // no page number, can't do anything
         resolve(thePage);
       }
 
       this.debug && console.log(`Adding page numbers to page ${pageNumber}`);
-      let foliation = page.getMetadata(MetadataKey.PAGE_FOLIATION) as string;
+      let foliation = page.getMetadata(MetadataKey.PageFoliation) as string;
       if (foliation === undefined) {
         foliation = `${this._getPageNumberString(pageNumber)}`;
       }
@@ -63,7 +63,7 @@ export class AddPageNumbers extends PageProcessor {
       let textHeight = await this.options.textBoxMeasurer.getBoxHeight(pageNumberTextBox);
       pageNumberTextBox.setShiftY(this.options.marginTop)
       .setHeight(textHeight)
-      .addMetadata(MetadataKey.ITEM_TYPE, 'PageNumber');
+      .addMetadata(MetadataKey.ItemType, 'PageNumber');
 
       switch (this.options.align) {
         case 'center':

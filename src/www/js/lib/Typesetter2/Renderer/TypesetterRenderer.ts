@@ -161,11 +161,11 @@ export class TypesetterRenderer {
    */
   renderList(listItem: ItemList, x: number, y: number) {
     switch (listItem.getDirection()) {
-      case TypesetterItemDirection.HORIZONTAL:
+      case TypesetterItemDirection.HorizontalItemDirection:
         this.renderHorizontalList(listItem, x, y);
         break;
 
-      case TypesetterItemDirection.VERTICAL:
+      case TypesetterItemDirection.VerticalItemDirection:
         this.renderVerticalList(listItem, x, y);
         break;
     }

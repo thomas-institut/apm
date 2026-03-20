@@ -37,7 +37,7 @@ export class TextBox extends Box {
 
 
   constructor() {
-    super(TypesetterItemDirection.HORIZONTAL);
+    super(TypesetterItemDirection.HorizontalItemDirection);
     /**
      * A string of printable text
      * @type {string}

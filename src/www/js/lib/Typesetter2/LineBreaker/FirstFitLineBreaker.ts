@@ -2,7 +2,7 @@
 
 import {LineBreaker} from './LineBreaker.js';
 import {TextBox} from '../TextBox.js';
-import {INFINITE_PENALTY, MINUS_INFINITE_PENALTY, Penalty} from '../Penalty.js';
+import {InfinitePenalty, MinusInfinitePenalty, Penalty} from '../Penalty.js';
 import {Box} from '../Box.js';
 import {ItemList} from '../ItemList.js';
 import * as TypesetterItemDirection from '../TypesetterItemDirection.js';
@@ -16,8 +16,8 @@ import {TypesetterItem} from "../TypesetterItem.js";
 import {TextBoxMeasurer} from "../TextBoxMeasurer/TextBoxMeasurer.js";
 import {BidiOrderInfo} from "../Bidi/BidiOrderInfo.js";
 
-const INFINITE_BADNESS = 100000000;
-const FLAG_PENALTY = 3000;
+const InfiniteBadness = 100000000;
+const FlagPenalty = 3000;
 
 const debug = false;
 
@@ -46,7 +46,7 @@ export class FirstFitLineBreaker extends LineBreaker {
 
       // save the original array indexes into the items
       itemArray = itemArray.map((item, index) => {
-        item.addMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX, index);
+        item.addMetadata(MetadataKey.OriginalArrayIndex, index);
         return item;
       });
 
@@ -87,7 +87,7 @@ export class FirstFitLineBreaker extends LineBreaker {
     return new Promise(async (resolve) => {
       debug && console.log(`Getting break points of a paragraph with ${itemArray.length} items`);
       let breaks = [];
-      let currentBadness = INFINITE_BADNESS;
+      let currentBadness = InfiniteBadness;
       let currentLine: TypesetterItem[] = [];
       let currentBestBreakPoint = -1;
       let flagsInARow = 0;
@@ -102,14 +102,14 @@ export class FirstFitLineBreaker extends LineBreaker {
         if (item instanceof Penalty) {
           // item is a PENALTY
           let penaltyValue = item.getPenalty();
-          if (penaltyValue === MINUS_INFINITE_PENALTY) {
+          if (penaltyValue === MinusInfinitePenalty) {
             // minus infinite penalty, add a break
             breaks.push(i);
             flagsInARow = 0;
             currentLine = [];
             continue;
           }
-          if (currentLine.length !== 0 && penaltyValue < INFINITE_PENALTY) {
+          if (currentLine.length !== 0 && penaltyValue < InfinitePenalty) {
             // tentative breaking point
             let breakBadness = await this.calculateHorizontalBadness(currentLine, lineWidth, textBoxMeasurer, item, flagsInARow);
             debug && console.log(`Badness breaking at ${i} is ${breakBadness}`);
@@ -119,7 +119,7 @@ export class FirstFitLineBreaker extends LineBreaker {
               breaks.push(currentBestBreakPoint);
               flagsInARow = this.getUpdatedFlagsInARow(itemArray[currentBestBreakPoint], flagsInARow);
               currentLine = this.initializeLine(currentBestBreakPoint, i, itemArray);
-              currentBadness = INFINITE_BADNESS;
+              currentBadness = InfiniteBadness;
               currentBestBreakPoint = -1;
             } else {
               currentBestBreakPoint = i;
@@ -138,7 +138,7 @@ export class FirstFitLineBreaker extends LineBreaker {
               breaks.push(currentBestBreakPoint);
               flagsInARow = this.getUpdatedFlagsInARow(itemArray[currentBestBreakPoint], flagsInARow);
               currentLine = this.initializeLine(currentBestBreakPoint, i, itemArray);
-              currentBadness = INFINITE_BADNESS;
+              currentBadness = InfiniteBadness;
               currentBestBreakPoint = -1;
             } else {
               // debug && console.log(`...which is less or equal than current badness (${currentBadness}), so ${i} is the current best break point `)
@@ -229,7 +229,7 @@ export class FirstFitLineBreaker extends LineBreaker {
           lineItemArray.push(itemToInsert);
         }
         if (penalty.isFlagged()) {
-          penaltyValue += (flagsInARow + 1) * FLAG_PENALTY;
+          penaltyValue += (flagsInARow + 1) * FlagPenalty;
         }
       }
       // lineItemArray = this.compactItemArray(lineItemArray)
@@ -237,15 +237,15 @@ export class FirstFitLineBreaker extends LineBreaker {
       let adjRatio = AdjustmentRatio.calculateHorizontalAdjustmentRatio(lineItemArray, lineWidth);
       if (adjRatio === null) {
         // no glue available to adjust the line. Terrible.
-        resolve(INFINITE_BADNESS);
+        resolve(InfiniteBadness);
         return;
       }
       if (adjRatio < -1) {
         // No shrinking past the maximum, so any adjustment ratio of -1 or less is infinitely bad
-        resolve(INFINITE_BADNESS);
+        resolve(InfiniteBadness);
       }
       let badness = 100 * Math.pow(Math.abs(adjRatio), 3);
-      resolve(badness > INFINITE_BADNESS ? INFINITE_BADNESS : badness + penaltyValue);
+      resolve(badness > InfiniteBadness ? InfiniteBadness : badness + penaltyValue);
     });
   }
 
@@ -262,7 +262,7 @@ export class FirstFitLineBreaker extends LineBreaker {
     let lines: ItemList[] = [];
     let lineStartIndex = 0;
     breakpoints.forEach((breakIndex) => {
-      let newLine = new ItemList(TypesetterItemDirection.HORIZONTAL);
+      let newLine = new ItemList(TypesetterItemDirection.HorizontalItemDirection);
       while (!(itemArray[lineStartIndex] instanceof Box) && lineStartIndex < breakIndex) {
         lineStartIndex++;
       }
@@ -415,7 +415,7 @@ export class FirstFitLineBreaker extends LineBreaker {
       // creating a new object so that the original object is not changed
       let newItem = ObjectFactory.fromObject(item.getExportObject()) as TextBox;
 
-      newItem.addMetadata(MetadataKey.MERGED_ITEM, true);
+      newItem.addMetadata(MetadataKey.MergedItem, true);
       newItem.setTextDirection(item.getTextDirection());
       newItem.setText(item.getText() + nextItem.getText());
       // Save source items in metadata:
@@ -424,7 +424,7 @@ export class FirstFitLineBreaker extends LineBreaker {
       // is merged with merged item, the resulting MetadataKey.SOURCE_ITEMS_EXPORT metadata
       // will still be an array of two objects, the first one will
       // in turn have an array of two objects in its MetadataKey.SOURCE_ITEMS_EXPORT metadata
-      newItem.addMetadata(MetadataKey.SOURCE_ITEMS, [item.getExportObject(), nextItem.getExportObject()]);
+      newItem.addMetadata(MetadataKey.SourceItems, [item.getExportObject(), nextItem.getExportObject()]);
       // }
       // console.log(`New merged item`)
       // console.log(newItem)

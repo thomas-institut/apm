@@ -22,7 +22,7 @@ import * as TypesetterItemDirection from './TypesetterItemDirection.js';
 import * as MetadataKey from './MetadataKey.js';
 import * as GlueType from './GlueType.js';
 
-export const INFINITE_STRETCH = 100000;
+export const InfiniteStretch = 100000;
 
 /**
  * A Glue item with certain width and height that can
@@ -52,7 +52,7 @@ export class Glue extends TypesetterItem {
    */
   shrink: number;
 
-  constructor(direction = TypesetterItemDirection.HORIZONTAL) {
+  constructor(direction = TypesetterItemDirection.HorizontalItemDirection) {
     super(direction);
     this.stretch = 0;
     this.shrink = 0;
@@ -63,7 +63,7 @@ export class Glue extends TypesetterItem {
   }
 
   static createLineFillerGlue() {
-    return (new Glue()).setWidth(0).setStretch(INFINITE_STRETCH).addMetadata(MetadataKey.GLUE_TYPE, GlueType.LINE_FILLER);
+    return (new Glue()).setWidth(0).setStretch(InfiniteStretch).addMetadata(MetadataKey.GlueType, GlueType.LineFillerGlue);
   }
 
   getStretch() {

@@ -29,7 +29,7 @@ import {Glue} from '../lib/Typesetter2/Glue.js';
 import * as MainTextTokenType from './MainTextTokenType.js';
 import {TextBox} from '../lib/Typesetter2/TextBox.js';
 import {
-  GOOD_POINT_FOR_A_BREAK, INFINITE_PENALTY, Penalty, REALLY_GOOD_POINT_FOR_A_BREAK
+  GoodPointForBreak, InfinitePenalty, Penalty, ReallyGoodPointForBreak
 } from '../lib/Typesetter2/Penalty.js';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
 import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.js';
@@ -214,7 +214,7 @@ export class EditionTypesetting {
       let mainTextParagraphs = MainText.getParagraphs(edition.mainText);
       for (let mainTextParagraphIndex = 0; mainTextParagraphIndex < mainTextParagraphs.length; mainTextParagraphIndex++) {
         let mainTextParagraph = mainTextParagraphs[mainTextParagraphIndex];
-        let paragraphToTypeset = new ItemList(TypesetterItemDirection.HORIZONTAL);
+        let paragraphToTypeset = new ItemList(TypesetterItemDirection.HorizontalItemDirection);
         paragraphToTypeset.setTextDirection(textDirection);
         let paragraphStyle: string = mainTextParagraph.type;
         // this.debug && console.log(`Main text paragraph style: '${paragraphStyle}'`)
@@ -227,7 +227,7 @@ export class EditionTypesetting {
         // this.debug && console.log(paragraphStyleDef)
         const spaceBefore = Dimension.getPixelValue(paragraphStyleDef.spaceBefore, 12);
         if (spaceBefore != 0) {
-          verticalItems.push((new Glue(TypesetterItemDirection.VERTICAL)).setHeight(spaceBefore));
+          verticalItems.push((new Glue(TypesetterItemDirection.VerticalItemDirection)).setHeight(spaceBefore));
         }
         const indent = Dimension.getPixelValue(paragraphStyleDef.indent, 12);
         if (indent !== 0) {
@@ -244,10 +244,10 @@ export class EditionTypesetting {
             case MainTextTokenType.GLUE:
               if (paragraphStyle === 'normal' && tokenIndex > mainTextParagraph.tokens.length - 4) {
                 // do not leave words hanging!
-                paragraphToTypeset.pushItem(this.createPenalty(INFINITE_PENALTY));
+                paragraphToTypeset.pushItem(this.createPenalty(InfinitePenalty));
               }
               let glue = await this.createGlue(paragraphStyle);
-              glue.addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex);
+              glue.addMetadata(MetadataKey.MainTextOriginalIndex, mainTextToken.originalIndex);
               paragraphToTypeset.pushItem(glue);
               break;
 
@@ -270,7 +270,7 @@ export class EditionTypesetting {
               let witnessIndices = this.getWitnessIndicesWithFoliationChanges(mainTextToken.originalIndex);
               if (witnessIndices.length > 0) {
                 textItems.push(...await this.tokenRenderer.renderWithStyle(fromString('|'), paragraphStyle));
-                textItems.push(this.createPenalty(INFINITE_PENALTY));
+                textItems.push(this.createPenalty(InfinitePenalty));
                 textItems.push(await this.createGlue(paragraphStyle));
 
               }
@@ -280,7 +280,7 @@ export class EditionTypesetting {
               textItems.push(...await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle));
               if (textItems.length > 0) {
                 // tag the first item with the original index
-                textItems[firstActualTextTokenIndex].addMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX, mainTextToken.originalIndex);
+                textItems[firstActualTextTokenIndex].addMetadata(MetadataKey.MainTextOriginalIndex, mainTextToken.originalIndex);
                 // detect text direction for text boxes
                 textItems = textItems.map((item) => {
                   if (item instanceof TextBox) {
@@ -315,10 +315,10 @@ export class EditionTypesetting {
         verticalItems.push(paragraphToTypeset);
         const spaceAfter = Dimension.getPixelValue(paragraphStyleDef.spaceAfter, 12);
         if (spaceAfter !== 0) {
-          verticalItems.push((new Glue(TypesetterItemDirection.VERTICAL)).setHeight(spaceAfter));
+          verticalItems.push((new Glue(TypesetterItemDirection.VerticalItemDirection)).setHeight(spaceAfter));
         }
       }
-      let verticalListToTypeset = new ItemList(TypesetterItemDirection.VERTICAL);
+      let verticalListToTypeset = new ItemList(TypesetterItemDirection.VerticalItemDirection);
       verticalListToTypeset.setList(verticalItems);
       resolve(FontConversions.applyFontConversions(verticalListToTypeset, this.fontConversionDefinitions, this.edition.lang));
     });
@@ -382,7 +382,7 @@ export class EditionTypesetting {
     return new Promise(async (resolve) => {
       //console.log(`generateApparatusVerticalListToTypeset: ${apparatus.type}, from ${firstLine} to ${lastLine}, reset = ${resetFirstLineNumber}`)
       let textDirection = getTextDirectionForLang(this.edition.lang);
-      let outputList = new ItemList(TypesetterItemDirection.HORIZONTAL);
+      let outputList = new ItemList(TypesetterItemDirection.HorizontalItemDirection);
       outputList.setTextDirection(textDirection);
 
       if (apparatus.entries.length === 0) {
@@ -501,15 +501,15 @@ export class EditionTypesetting {
                 }
                 typesetterItems.push(...await this.getSubEntryTsItems(subEntry));
                 if (subEntryIndex < entry.subEntries.length - 1) {
-                  typesetterItems.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK));
+                  typesetterItems.push(this.createPenalty(GoodPointForBreak));
                   typesetterItems.push((await this.createGlue('apparatus emGlue')).setTextDirection(textDirection));
                 }
               }
               if (entryIndex < lineRange.entries.length - 1) {
-                typesetterItems.push(this.createPenalty(INFINITE_PENALTY));  // do not break just before the entry separator
+                typesetterItems.push(this.createPenalty(InfinitePenalty));  // do not break just before the entry separator
                 typesetterItems.push((await this.createGlue('apparatus preEntrySeparator')).setTextDirection(textDirection));
                 typesetterItems.push(...await this.getTsItemsForString(entrySeparatorCharacter, 'apparatus entrySeparator', textDirection));
-                typesetterItems.push(this.createPenalty(GOOD_POINT_FOR_A_BREAK));
+                typesetterItems.push(this.createPenalty(GoodPointForBreak));
                 typesetterItems.push((await this.createGlue('apparatus postEntrySeparator')).setTextDirection(textDirection));
               }
             }
@@ -542,17 +542,17 @@ export class EditionTypesetting {
         let lineNumberItems: TypesetterItem[] = [];
         // line number items
         lineNumberItems.push(...await this.getTsItemsForString(this.getLineStringFromRange(lineRange.lineFrom, lineRange.lineTo, resetFirstLineNumber, firstLine, lastLine), 'apparatus apparatusLineNumbers', textDirection));
-        lineNumberItems.push(this.createPenalty(INFINITE_PENALTY));
+        lineNumberItems.push(this.createPenalty(InfinitePenalty));
         lineNumberItems.push(await this.createGlue('apparatus'));
         outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(this.getItemExportObjectsArray(lineNumberItems)));
         outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(lineRange.tsItemsExportObjects ?? []));
         if (lineRangeKeyIndex !== lineRangesKeysToTypeset.length - 1) {
           let separatorItems = [];
           // add line range separator to all but the last line range
-          separatorItems.push(this.createPenalty(INFINITE_PENALTY));  // do not break just before the lineRange separator
+          separatorItems.push(this.createPenalty(InfinitePenalty));  // do not break just before the lineRange separator
           separatorItems.push((await this.createGlue('apparatus')).setTextDirection(textDirection));
           separatorItems.push(...await this.getTsItemsForString(lineRangeSeparatorCharacter, 'apparatus lineRangeSeparator', textDirection));
-          separatorItems.push(this.createPenalty(REALLY_GOOD_POINT_FOR_A_BREAK));
+          separatorItems.push(this.createPenalty(ReallyGoodPointForBreak));
           separatorItems.push((await this.createGlue('apparatus postLineRangeSeparator')).setTextDirection(textDirection));
           outputList.pushItemArray(this.getTsItemsFromExportObjectsArray(this.getItemExportObjectsArray(separatorItems)));
         }
@@ -664,13 +664,13 @@ export class EditionTypesetting {
         if (i < siglaData.length - 1) {
           // add inter-siglum breaks or spaces if necessary
           if (this.edition.lang === 'ar') {
-            items.push(this.createPenalty(INFINITE_PENALTY));
+            items.push(this.createPenalty(InfinitePenalty));
             items.push(await this.createGlue('apparatus', 0));
           }
           if (this.edition.lang === 'la') {
             if (siglumData.siglum.toLowerCase() !== siglumData.siglum && siglumData.siglum.toUpperCase() !== siglumData.siglum) {
               // the siglum has at least one lowercase letter, so we need to add a very small space with the next
-              items.push(this.createPenalty(INFINITE_PENALTY));
+              items.push(this.createPenalty(InfinitePenalty));
               items.push(await this.createGlue('latinInterSigla'));
             }
           }
@@ -803,7 +803,7 @@ export class EditionTypesetting {
       switch (subEntry.type) {
         case 'variant':
           items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
-          items.push(this.createPenalty(INFINITE_PENALTY));
+          items.push(this.createPenalty(InfinitePenalty));
           items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
           items.push(...await this.getTsItemsForSigla(subEntry));
           break;
@@ -814,12 +814,12 @@ export class EditionTypesetting {
           let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), keywordStyle);
           items.push(keywordTextBox);
           if (subEntry.type === 'omission') {
-            items.push(this.createPenalty(INFINITE_PENALTY));
+            items.push(this.createPenalty(InfinitePenalty));
           }
           items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
           if (subEntry.type === 'addition') {
             items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
-            items.push(this.createPenalty(INFINITE_PENALTY));
+            items.push(this.createPenalty(InfinitePenalty));
             items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
           }
           items.push(...await this.getTsItemsForSigla(subEntry));
@@ -842,7 +842,7 @@ export class EditionTypesetting {
             items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
           }
           if (subEntry.type !== 'autoFoliation' && subEntry.witnessData.length !== 0) {
-            items.push(this.createPenalty(INFINITE_PENALTY));
+            items.push(this.createPenalty(InfinitePenalty));
             items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
             items.push(...await this.getTsItemsForSigla(subEntry));
           }
@@ -946,17 +946,17 @@ export class EditionTypesetting {
     // this.debug && console.log(`Extracting line info from metadata in typeset vertical list`)
     // this.debug && console.log(typesetMainTextVerticalList)
     typesetMainTextVerticalList.getList().forEach((horizontalList) => {
-      if (!horizontalList.hasMetadata(MetadataKey.LIST_TYPE)) {
+      if (!horizontalList.hasMetadata(MetadataKey.ListType)) {
         return;
       }
-      if (horizontalList.getMetadata(MetadataKey.LIST_TYPE) !== ListType.LINE) {
+      if (horizontalList.getMetadata(MetadataKey.ListType) !== ListType.LineList) {
         return;
       }
-      if (!horizontalList.hasMetadata(MetadataKey.LINE_NUMBER)) {
+      if (!horizontalList.hasMetadata(MetadataKey.LineNumber)) {
         this.debug && console.log(`Found line without line number info`);
         return;
       }
-      let lineNumber = horizontalList.getMetadata(MetadataKey.LINE_NUMBER) as number;
+      let lineNumber = horizontalList.getMetadata(MetadataKey.LineNumber) as number;
       if (horizontalList instanceof ItemList) {
         horizontalList.getList().forEach((item) => {
           let itemInfoArray = this.getLineInfoArrayFromItem(item, lineNumber);
@@ -989,7 +989,7 @@ export class EditionTypesetting {
    * @private
    */
   getLineInfoArrayFromItem(item: TypesetterItem, lineNumber: number): ItemLineInfo[] {
-    if (!item.hasMetadata(MetadataKey.MERGED_ITEM || item.getMetadata(MetadataKey.MERGED_ITEM) === false)) {
+    if (!item.hasMetadata(MetadataKey.MergedItem || item.getMetadata(MetadataKey.MergedItem) === false)) {
       // normal, single item, just get the info if it exists and return
       let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, false);
       if (infoObject === undefined) {
@@ -999,7 +999,7 @@ export class EditionTypesetting {
     }
 
     // merged item
-    if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
+    if (item.hasMetadata(MetadataKey.TokenOccurrenceInLine)) {
       // no need to go down the tree, all info is right here!
       this.debug && console.log(`Item is merged but has info in it`, item.metadata);
       let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, true);
@@ -1010,7 +1010,7 @@ export class EditionTypesetting {
     }
 
 
-    if (!item.hasMetadata(MetadataKey.SOURCE_ITEMS)) {
+    if (!item.hasMetadata(MetadataKey.SourceItems)) {
       // no data from source items, warn and return an empty array
       console.warn(`Found merged item without source items info`);
       console.warn(item);
@@ -1018,7 +1018,7 @@ export class EditionTypesetting {
     }
     let outputInfoArray: ItemLineInfo[] = [];
     // get the data from each item
-    const sourceItemExportObjects = item.getMetadata(MetadataKey.SOURCE_ITEMS) as object[];
+    const sourceItemExportObjects = item.getMetadata(MetadataKey.SourceItems) as object[];
     sourceItemExportObjects.forEach((sourceItemExport: any) => {
       let sourceItem = ObjectFactory.fromObject(sourceItemExport) as unknown as TypesetterItem;
       let itemInfoArray = this.getLineInfoArrayFromItem(sourceItem, lineNumber);
@@ -1043,7 +1043,7 @@ export class EditionTypesetting {
    * @private
    */
   constructLineInfoObjectFromItem(item: TypesetterItem, lineNumber: number, isMerged = false): ItemLineInfo | undefined {
-    if (!item.hasMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX)) {
+    if (!item.hasMetadata(MetadataKey.MainTextOriginalIndex)) {
       // the item does not correspond to a main text token
       return undefined;
     }
@@ -1052,24 +1052,24 @@ export class EditionTypesetting {
     info.occurrenceInLine = 1;
     info.totalOccurrencesInLine = 1;
     info.text = '';
-    info.mainTextIndex = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX) as number;
+    info.mainTextIndex = item.getMetadata(MetadataKey.MainTextOriginalIndex) as number;
 
     if (!isMerged && item instanceof TextBox) {
       info.text = item.getText();
     }
 
     if (isMerged) {
-      info.text = item.getMetadata(MetadataKey.TOKEN_FOR_COUNTING_PURPOSES) as string;
+      info.text = item.getMetadata(MetadataKey.TokenForCountingPurposes) as string;
       info.isMerged = true;
       info.mergedMainTextIndices = this.getMainTextIndicesFromItem(item);
     }
 
-    if (item.hasMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE)) {
-      info.occurrenceInLine = item.getMetadata(MetadataKey.TOKEN_OCCURRENCE_IN_LINE) as number;
+    if (item.hasMetadata(MetadataKey.TokenOccurrenceInLine)) {
+      info.occurrenceInLine = item.getMetadata(MetadataKey.TokenOccurrenceInLine) as number;
     }
 
-    if (item.hasMetadata(MetadataKey.TOKEN_TOTAL_OCCURRENCES_IN_LINE)) {
-      info.totalOccurrencesInLine = item.getMetadata(MetadataKey.TOKEN_TOTAL_OCCURRENCES_IN_LINE) as number;
+    if (item.hasMetadata(MetadataKey.TokenTotalOccurrencesInLine)) {
+      info.totalOccurrencesInLine = item.getMetadata(MetadataKey.TokenTotalOccurrencesInLine) as number;
     }
     // some sanity checks
     if (info.occurrenceInLine > info.totalOccurrencesInLine) {
@@ -1091,8 +1091,8 @@ export class EditionTypesetting {
     }
 
 
-    const isMerged = item.getMetadata(MetadataKey.MERGED_ITEM) ?? false;
-    const index = item.getMetadata(MetadataKey.MAIN_TEXT_ORIGINAL_INDEX) ?? null;
+    const isMerged = item.getMetadata(MetadataKey.MergedItem) ?? false;
+    const index = item.getMetadata(MetadataKey.MainTextOriginalIndex) ?? null;
     if (index === null) {
       return [];
     }
@@ -1103,7 +1103,7 @@ export class EditionTypesetting {
 
     let indices: number[] = [];
 
-    item.getMetadata(MetadataKey.SOURCE_ITEMS).forEach((mergedItem: any) => {
+    item.getMetadata(MetadataKey.SourceItems).forEach((mergedItem: any) => {
       indices.push(...this.getMainTextIndicesFromItem(mergedItem));
     });
 

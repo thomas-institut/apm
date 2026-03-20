@@ -37,7 +37,7 @@ export class AddLineNumbers extends PageProcessor {
   constructor(options: any) {
     super();
     const defaults = {
-      listTypeToNumber: ListType.MAIN_TEXT_BLOCK,
+      listTypeToNumber: ListType.MainTextBlockList,
       lineTypeToNumber: '',
       numberStyle: 'WesternArabic',
       showLineOne: true,
@@ -69,13 +69,13 @@ export class AddLineNumbers extends PageProcessor {
    */
   process(page: TypesetterPage): Promise<TypesetterPage> {
     return new Promise(async (resolve) => {
-      if (!page.hasMetadata(MetadataKey.MAIN_TEXT_LINE_DATA)) {
+      if (!page.hasMetadata(MetadataKey.MainTextLineData)) {
         console.warn(`No main text line data available, line numbers not added`);
         resolve(page);
       }
 
       /** @var {MainTextLineData}mainTextLineData */
-      let mainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA) as MainTextLineData;
+      let mainTextLineData = page.getMetadata(MetadataKey.MainTextLineData) as MainTextLineData;
       let mainTextIndex = mainTextLineData.mainTextListIndex;
       if (mainTextIndex === -1) {
         // no main text block, nothing to do
@@ -116,11 +116,11 @@ export class AddLineNumbers extends PageProcessor {
         throw new Error(`Main text block at index ${mainTextIndex} is not an ItemList`);
       }
       let mainTextListItems = mainTextList.getList();
-      let lineNumberList = new ItemList(TypesetterItemDirection.VERTICAL);
+      let lineNumberList = new ItemList(TypesetterItemDirection.VerticalItemDirection);
       lineNumberList
       .setShiftX(this.options.xPosition)
       .setShiftY(mainTextList.getShiftY())
-      .addMetadata(MetadataKey.LIST_TYPE, ListType.LINE_NUMBERS);
+      .addMetadata(MetadataKey.ListType, ListType.LineNumbersList);
       let previousShiftYAdjustment = 0;
       let previousLineHeight = 0;
       let previousY = 0;
@@ -130,7 +130,7 @@ export class AddLineNumbers extends PageProcessor {
         // add inter number glue
         let glueHeight = dataItem.y - previousY - previousLineHeight + previousShiftYAdjustment;
         if (glueHeight !== 0) {
-          let glue = new Glue(TypesetterItemDirection.VERTICAL);
+          let glue = new Glue(TypesetterItemDirection.VerticalItemDirection);
           glue.setHeight(glueHeight);
           lineNumberList.pushItem(glue);
         }

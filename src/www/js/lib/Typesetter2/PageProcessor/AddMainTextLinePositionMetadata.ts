@@ -42,7 +42,7 @@ export class AddMainTextLinePositionMetadata extends PageProcessor {
     super();
     let oc = new OptionsChecker({
       context: "AddLineNumbers Page Processor", optionsDefinition: {
-        listTypeToNumber: {type: 'string', default: ListType.MAIN_TEXT_BLOCK},
+        listTypeToNumber: {type: 'string', default: ListType.MainTextBlockList},
         lineTypeToNumber: {type: 'string', default: ''},
         debug: {type: 'boolean', default: false}
       }
@@ -65,16 +65,16 @@ export class AddMainTextLinePositionMetadata extends PageProcessor {
     return new Promise(async (resolve) => {
       let pageItems = page.getItems();
       let mainTextIndex = pageItems.map((item) => {
-        return item.hasMetadata(MetadataKey.LIST_TYPE) ? item.getMetadata(MetadataKey.LIST_TYPE) : 'undefined';
-      }).indexOf(ListType.MAIN_TEXT_BLOCK);
+        return item.hasMetadata(MetadataKey.ListType) ? item.getMetadata(MetadataKey.ListType) : 'undefined';
+      }).indexOf(ListType.MainTextBlockList);
       if (mainTextIndex === -1) {
         // no main text block, nothing to do
-        page.addMetadata(MetadataKey.MAIN_TEXT_LINE_DATA, {mainTextListIndex: -1, lineData: {}});
+        page.addMetadata(MetadataKey.MainTextLineData, {mainTextListIndex: -1, lineData: {}});
         resolve(page);
         return;
       }
 
-      this.debug && console.log(`Adding line position metadata for page ${page.getMetadata(MetadataKey.PAGE_NUMBER)}`);
+      this.debug && console.log(`Adding line position metadata for page ${page.getMetadata(MetadataKey.PageNumber)}`);
       this.debug && console.log(`MainTextBlock at index ${mainTextIndex}`);
 
       let mainTextList = pageItems[mainTextIndex];
@@ -83,24 +83,24 @@ export class AddMainTextLinePositionMetadata extends PageProcessor {
         let linesWithNumberIndices: number[] = [];
         let mainTextListItems = mainTextList.getList();
         mainTextListItems.forEach((item, itemIndex) => {
-          if (!item.hasMetadata(MetadataKey.LIST_TYPE)) {
+          if (!item.hasMetadata(MetadataKey.ListType)) {
             this.debug && console.log(`Main text item ${itemIndex} not a list`);
             // no list type =>  do nothing
             return;
           }
-          if (item.getMetadata(MetadataKey.LIST_TYPE) !== ListType.LINE) {
+          if (item.getMetadata(MetadataKey.ListType) !== ListType.LineList) {
             // not a line => do nothing
-            this.debug && console.log(`Main text item ${itemIndex} is list but not a line: ${item.getMetadata(MetadataKey.LIST_TYPE)}`);
+            this.debug && console.log(`Main text item ${itemIndex} is list but not a line: ${item.getMetadata(MetadataKey.ListType)}`);
             return;
           }
 
-          if (this.options.lineTypeToNumber !== '' && item.getMetadata(MetadataKey.LINE_TYPE) !== this.options.lineTypeToNumber) {
+          if (this.options.lineTypeToNumber !== '' && item.getMetadata(MetadataKey.LineType) !== this.options.lineTypeToNumber) {
             // not the right line type => do nothing
-            this.debug && console.log(`Main text item ${itemIndex} is a line but of the right type: ${item.getMetadata(MetadataKey.LIST_TYPE)}`);
+            this.debug && console.log(`Main text item ${itemIndex} is a line but of the right type: ${item.getMetadata(MetadataKey.ListType)}`);
             return;
           }
           // a line of the right type
-          let lineNumber = item.getMetadata(MetadataKey.LINE_NUMBER);
+          let lineNumber = item.getMetadata(MetadataKey.LineNumber);
           this.debug && console.log(`MAIN TEXT item ${itemIndex} is line ${lineNumber}`);
           if (lineNumber !== undefined) {
             linesWithNumberIndices.push(itemIndex);
@@ -114,12 +114,12 @@ export class AddMainTextLinePositionMetadata extends PageProcessor {
 
         let data: LinePositionData[] = [];
         linesWithNumberIndices.forEach((index) => {
-          let lineNumber = mainTextListItems[index].getMetadata(MetadataKey.LINE_NUMBER) as number;
+          let lineNumber = mainTextListItems[index].getMetadata(MetadataKey.LineNumber) as number;
           data.push({
             listIndex: index, lineNumber: lineNumber, y: yPositions[index]
           });
         });
-        page.addMetadata(MetadataKey.MAIN_TEXT_LINE_DATA, {mainTextListIndex: mainTextIndex, lineData: data});
+        page.addMetadata(MetadataKey.MainTextLineData, {mainTextListIndex: mainTextIndex, lineData: data});
       }
       resolve(page);
     });

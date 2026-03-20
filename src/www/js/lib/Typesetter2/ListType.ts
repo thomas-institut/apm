@@ -21,10 +21,8 @@
  */
 
 
-export const MAIN_TEXT_BLOCK = 'MainTextBlock';
-export const LINE_NUMBERS = 'LineNumbers';
-export const LINE = 'line';
-
-
-export const MARGINALIA = 'Marginalia';
+export const MainTextBlockList = 'MainTextBlock';
+export const LineNumbersList = 'LineNumbers';
+export const LineList = 'line';
+export const MarginaliaList = 'Marginalia';
 

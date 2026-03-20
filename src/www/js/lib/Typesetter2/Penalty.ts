@@ -21,14 +21,14 @@ import {TypesetterItem} from './TypesetterItem.js';
 import {ObjectFactory} from './ObjectFactory.js';
 import {TextBox} from "./TextBox.js";
 
-export const INFINITE_PENALTY = 1000;
-export const BAD_POINT_FOR_A_BREAK = 20;
-export const REALLY_BAD_POINT_FOR_A_BREAK = 200;
+export const InfinitePenalty = 1000;
+export const BadPointForBreak = 20;
+export const ReallyBadPointForBreak = 200;
 
-export const MINUS_INFINITE_PENALTY = -1000;
+export const MinusInfinitePenalty = -1000;
 
-export const GOOD_POINT_FOR_A_BREAK = -20;
-export const REALLY_GOOD_POINT_FOR_A_BREAK = -60;
+export const GoodPointForBreak = -20;
+export const ReallyGoodPointForBreak = -60;
 
 /**
  * A penalty value that helps typesetters decide whether the
@@ -75,7 +75,7 @@ export class Penalty extends TypesetterItem {
 
   // Factory Methods
   static createForcedBreakPenalty() {
-    return (new Penalty()).setPenalty(MINUS_INFINITE_PENALTY);
+    return (new Penalty()).setPenalty(MinusInfinitePenalty);
   }
 
   isFlagged() {
@@ -92,11 +92,11 @@ export class Penalty extends TypesetterItem {
   }
 
   setPenalty(penalty: number): this {
-    if (penalty > INFINITE_PENALTY) {
-      penalty = INFINITE_PENALTY;
+    if (penalty > InfinitePenalty) {
+      penalty = InfinitePenalty;
     }
-    if (penalty < MINUS_INFINITE_PENALTY) {
-      penalty = MINUS_INFINITE_PENALTY;
+    if (penalty < MinusInfinitePenalty) {
+      penalty = MinusInfinitePenalty;
     }
     this.penalty = penalty;
     return this;

@@ -61,7 +61,7 @@ export class Typesetter2 {
   typesetHorizontalList(list: ItemList): Promise<ItemList> {
     // performs type checks and returns the input list if there's no problem
     // the actual typesetting work should be done by a child of this class
-    if (list.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
+    if (list.getDirection() !== TypesetterItemDirection.HorizontalItemDirection) {
       throw new Error('typesetHorizontalList called with a vertical list');
     }
     return Promise.resolve(list);
@@ -79,7 +79,7 @@ export class Typesetter2 {
   typesetVerticalList(list: ItemList): Promise<ItemList> {
     // performs type checks and returns the input list if there's no problem
     // the actual typesetting work should be done by a child of this class
-    if (list.getDirection() !== TypesetterItemDirection.VERTICAL) {
+    if (list.getDirection() !== TypesetterItemDirection.VerticalItemDirection) {
       throw new Error('typesetVerticalList called with a horizontal list');
     }
     return Promise.resolve(list);

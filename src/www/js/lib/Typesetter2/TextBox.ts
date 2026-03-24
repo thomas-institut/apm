@@ -182,6 +182,9 @@ export class TextBox extends Box {
     if (this.fontWeight !== '') {
       obj.fontWeight = this.fontWeight;
     }
+    if (this.hyphenation !== null) {
+      obj.hyphenation = this.hyphenation;
+    }
 
     return obj;
   }
@@ -189,7 +192,7 @@ export class TextBox extends Box {
   setFromObject(object: any, mergeValues: boolean): this {
     super.setFromObject(object, mergeValues);
     const template = {
-      text: '', fontFamily: defaultFontFamily, fontSize: defaultFontSize, fontStyle: '', fontWeight: '',
+      text: '', fontFamily: defaultFontFamily, fontSize: defaultFontSize, fontStyle: '', fontWeight: '', hyphenation: null,
 
     };
     this.copyValues(template, object, mergeValues);

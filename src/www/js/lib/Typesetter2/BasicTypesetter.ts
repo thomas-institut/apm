@@ -28,16 +28,17 @@ import {TypesetterPage} from './TypesetterPage.js';
 import {TextBoxMeasurer} from './TextBoxMeasurer/TextBoxMeasurer.js';
 import {TypesetterDocument} from './TypesetterDocument.js';
 import * as MetadataKey from './MetadataKey.js';
+import {OriginalText, SplitInSyllablesItem} from './MetadataKey.js';
 import * as ListType from './ListType.js';
 import * as LineType from './LineType.js';
 import * as GlueType from './GlueType.js';
-import {toFixedPrecision} from '../../toolbox/Util.js';
+import {deepCopy, toFixedPrecision} from '../../toolbox/Util.js';
 import {FirstFitLineBreaker, ItemArrayWithBidiOrderInfo} from './LineBreaker/FirstFitLineBreaker.js';
 import {AddPageNumbers, AddPageNumbersOptions} from './PageProcessor/AddPageNumbers.js';
 import {AddLineNumbers, AddLineNumbersOptions} from './PageProcessor/AddLineNumbers.js';
 import {StringCounter} from '../../toolbox/StringCounter.js';
 import {trimPunctuation} from '../../defaults/Punctuation.js';
-import {MAX_LINE_COUNT} from '../../Edition/EditionTypesetting.js';
+import {MAX_LINE_COUNT} from '../../Edition/EditionTypesettingHelper.js';
 import {LanguageDetector} from '../../toolbox/LanguageDetector.js';
 import {BidiDisplayOrder, IntrinsicTextDirection} from './Bidi/BidiDisplayOrder.js';
 import {AdjustmentRatio} from './AdjustmentRatio.js';
@@ -50,6 +51,7 @@ import {BidiOrderInfo} from "./Bidi/BidiOrderInfo.js";
 import {ApparatusInterface} from "../../Edition/EditionInterface.js";
 import {compactItemArray} from "./Compactor/CompactItemArray.js";
 import {hyphenateTextBoxes} from "./Hyphenator/HyphenateTextBoxes.js";
+import {HyphenationLanguage} from "./Hyphenator/Hyphenator.js";
 
 const signature = 'BasicTypesetter 1.0';
 
@@ -81,6 +83,10 @@ interface LineRangeData {
   penalty: number;
 }
 
+interface BasicTypesetterExtraData {
+  apparatuses?: ApparatusInterface[];
+}
+
 export interface Marginalia {
   lineNumber: number;
   marginalSubEntries: TypesetterItem[][];
@@ -104,14 +110,15 @@ export interface BasicTypesetterOptions {
   lineNumbersOptions?: AddLineNumbersOptions;
   marginaliaOptions?: AddMarginaliaOptions;
   apparatusesAtEndOfDocument?: boolean;
+  hyphenationLanguages?: HyphenationLanguage [];
   textBoxMeasurer: TextBoxMeasurer;
   /**
-   * A function to typeset an apparatus for the given line range must return a Promise
-   * for a horizontal ItemList that will then be typeset and added to the document/page
+   * A function to typeset an apparatus for the given line range.
+   * It must return a Promise to a horizontal ItemList that to typeset and add at the end of the page
    */
   getApparatusListToTypeset?: (mainTextVerticalList: ItemList, apparatus: ApparatusInterface, lineFrom: number, lineTo: number, resetFirstLine: boolean) => Promise<ItemList>;
   getMarginaliaForLineRange?: (lineFrom: number, lineTo: number) => Marginalia[];
-  preTypesetApparatuses?: (apparatuses: any) => Promise<boolean>;
+  preTypesetApparatuses?: (apparatuses: ApparatusInterface[]) => Promise<boolean>;
   textToApparatusGlue?: {
     height: number, shrink: number, stretch: number
   };
@@ -147,13 +154,11 @@ export class BasicTypesetter extends Typesetter2 {
       defaultFontSize: DefaultFontSize,
       showPageNumbers: true,
       pageNumbersOptions: {
-        textBoxMeasurer: options.textBoxMeasurer,
-        fontFamily: DefaultFontFamily,
-        fontSize: DefaultFontSize
+        textBoxMeasurer: options.textBoxMeasurer, fontFamily: DefaultFontFamily, fontSize: DefaultFontSize
       },
       showLineNumbers: true,
-      lineNumbersOptions: { textBoxMeasurer: options.textBoxMeasurer},
-      marginaliaOptions: { textBoxMeasurer: options.textBoxMeasurer },
+      lineNumbersOptions: {textBoxMeasurer: options.textBoxMeasurer},
+      marginaliaOptions: {textBoxMeasurer: options.textBoxMeasurer},
       apparatusesAtEndOfDocument: false,
       getApparatusListToTypeset: async () => {
         return new ItemList();
@@ -168,6 +173,7 @@ export class BasicTypesetter extends Typesetter2 {
       interApparatusGlue: {height: DefaultFontSize, shrink: 0, stretch: DefaultFontSize * 0.25},
       justify: true,
       debug: false,
+      hyphenationLanguages: [],
     };
 
     this.options = {...defaults, ...options};
@@ -222,7 +228,9 @@ export class BasicTypesetter extends Typesetter2 {
 
     // Marginalia processor
     const AddMarginaliaDefaults: AddMarginaliaOptions = {
-      xPosition: this.options.marginRight + Typesetter2.cm2px(0.5), defaultTextDirection: 'ltr', align: 'left',
+      xPosition: this.options.marginRight + Typesetter2.cm2px(0.5),
+      defaultTextDirection: 'ltr',
+      align: 'left',
       textBoxMeasurer: this.options.textBoxMeasurer,
     };
     this.options.marginaliaOptions = {...AddMarginaliaDefaults, ...this.options.marginaliaOptions};
@@ -269,13 +277,19 @@ export class BasicTypesetter extends Typesetter2 {
       });
 
       const itemArrayWithBidiOrderInfo: ItemArrayWithBidiOrderInfo = {
-        itemArray: itemArray,
-        bidiOrderInfoArray: bidiOrderInfoArray
+        itemArray: itemArray, bidiOrderInfoArray: bidiOrderInfoArray
       };
 
+      // console.log(`Horizontal list to typeset`, itemArrayWithBidiOrderInfo);
       // hyphenate compact the item array taking into account bidirectional text order
-      let hyphenated = hyphenateTextBoxes(itemArrayWithBidiOrderInfo);
+      let hyphenated = hyphenateTextBoxes({
+        itemArrayWithBidiInfo: itemArrayWithBidiOrderInfo,
+        hyphenationLanguages: this.options.hyphenationLanguages
+      });
+      // console.log(`Hyphenated`, hyphenated);
+
       let compacted = compactItemArray(hyphenated);
+      // console.log(`Compacted`, compacted);
 
       let originalIndexToOrderMap: number[] = [];
       compacted.bidiOrderInfoArray.forEach((orderInfo: BidiOrderInfo) => {
@@ -289,6 +303,7 @@ export class BasicTypesetter extends Typesetter2 {
       // Run the First Fit algorithm on the input list
 
       let lines = await FirstFitLineBreaker.breakIntoLines(compacted.itemArray, this.lineWidth, this.options.textBoxMeasurer, compacted.bidiOrderInfoArray);
+      // console.log(`Lines`, deepCopy(lines));
 
       // Post-process lines
       let lineNumberInParagraph = 1;
@@ -336,11 +351,13 @@ export class BasicTypesetter extends Typesetter2 {
           }));
         }
         line.addMetadata(MetadataKey.LineRatio, toFixedPrecision(line.getWidth() / unadjustedLineWidth, 3));
+        // console.log(`Line ${lineNumberInParagraph - 1} has ratio ${toFixedPrecision(line.getWidth() / unadjustedLineWidth, 3)}`, deepCopy(line.getList()));
 
         // At this point the line contains a list of items in textual order, independently of their text direction
         // Renderers, however, need to the items in display order, so they can simply iterate on the list, display
         // an item, move the current position to the right (or left for RTL text) and process the next.
         line = this.arrangeItemsInDisplayOrderNew(line, originalIndexToOrderMap, originalIndexToTextDirectionMap);
+        // console.log(`Arranged line ${lineNumberInParagraph - 1}`, deepCopy(line.getList()));
         return line;
       });
 
@@ -449,33 +466,34 @@ export class BasicTypesetter extends Typesetter2 {
    * @param extraData
    * @return {Promise<TypesetterDocument>}
    */
-  typeset(mainTextList: ItemList, extraData: any = {}): Promise<TypesetterDocument> {
+  typeset(mainTextList: ItemList, extraData: BasicTypesetterExtraData = {}): Promise<TypesetterDocument> {
     if (mainTextList.getDirection() !== TypesetterItemDirection.VerticalItemDirection) {
       throw new Error(`Cannot typeset a non-vertical list`);
     }
+    // console.log(`Hyphenation languages: ${this.options.hyphenationLanguages.join(`, `)}`);
+    // console.log(`Typesetting main text`, mainTextList);
     return new Promise(async (resolve) => {
       // 1. Create a vertical list to be typeset
-      let verticalListToTypeset = new ItemList(TypesetterItemDirection.VerticalItemDirection);
+      let mainTextVerticalList = new ItemList(TypesetterItemDirection.VerticalItemDirection);
       //
       // 2. Typeset the main text
       //
       let paragraphNumber = 0;
-      for (const verticalItem of mainTextList.getList()) {
-        if (verticalItem instanceof Glue) {
-          if (verticalItem.getDirection() === TypesetterItemDirection.VerticalItemDirection) {
+      for (const mainTextListItem of mainTextList.getList()) {
+        if (mainTextListItem instanceof Glue) {
+          if (mainTextListItem.getDirection() === TypesetterItemDirection.VerticalItemDirection) {
             // VERTICAL GLUE, just add it to the list to typeset
-            verticalListToTypeset.pushItem(verticalItem);
+            mainTextVerticalList.pushItem(mainTextListItem);
           } else {
             console.warn(`${signature}: ignoring horizontal glue while building main text vertical list`);
           }
           continue;
         }
-        if (verticalItem instanceof ItemList) {
-          if (verticalItem.getDirection() === TypesetterItemDirection.HorizontalItemDirection) {
+        if (mainTextListItem instanceof ItemList) {
+          if (mainTextListItem.getDirection() === TypesetterItemDirection.HorizontalItemDirection) {
             // HORIZONTAL LIST, i.e., a paragraph
-            // this.debug && console.log(`Processing horizontal list, i.e., a paragraph`)
             paragraphNumber++;
-            let typesetParagraph = await this.typesetHorizontalList(verticalItem);
+            let typesetParagraph = await this.typesetHorizontalList(mainTextListItem);
             typesetParagraph.getList().forEach((typesetItem) => {
               if (typesetItem instanceof ItemList) {
                 // add paragraph number info to each line in the paragraph
@@ -484,17 +502,19 @@ export class BasicTypesetter extends Typesetter2 {
                 // Count text token occurrences within the line
                 this.addOccurrenceInLineMetadata(typesetItem);
               }
-              verticalListToTypeset.pushItem(typesetItem);
+              mainTextVerticalList.pushItem(typesetItem);
             });
           }
+          continue;
         }
         // any other item type is ignored
+        this.debug && console.log(`Ignoring non-glue non-list item while building main text vertical list`, mainTextListItem);
       }
       // set any inter line glue that still unset, normally, inter line glue between paragraphs
-      verticalListToTypeset = this.setUnsetInterLineGlue(verticalListToTypeset);
+      mainTextVerticalList = this.setUnsetInterLineGlue(mainTextVerticalList);
       // add absolute line numbers metadata to text lines
-      verticalListToTypeset = this.addAbsoluteLineNumberMetadata(verticalListToTypeset);
-      verticalListToTypeset.addMetadata(MetadataKey.ListType, ListType.MainTextBlockList);
+      mainTextVerticalList = this.addAbsoluteLineNumberMetadata(mainTextVerticalList);
+      mainTextVerticalList.addMetadata(MetadataKey.ListType, ListType.MainTextBlockList);
 
 
       //
@@ -516,20 +536,20 @@ export class BasicTypesetter extends Typesetter2 {
       if (extraData.apparatuses.length === 0 || this.options.apparatusesAtEndOfDocument) {
         // No apparatuses or apparatuses should go at the end of the document, just append
         // the apparatuses and typeset a normal document
-        let apparatuses = await this.typesetApparatuses(verticalListToTypeset, extraData.apparatuses);
+        let apparatuses = await this.typesetApparatuses(mainTextVerticalList, extraData.apparatuses);
         this.debug && console.log(`Typeset apparatuses`);
         this.debug && console.log(apparatuses);
         if (apparatuses.length > 0) {
-          verticalListToTypeset.pushItem((new Glue(TypesetterItemDirection.VerticalItemDirection))
+          mainTextVerticalList.pushItem((new Glue(TypesetterItemDirection.VerticalItemDirection))
           .setHeight(this.options.textToApparatusGlue.height)
           .setStretch(this.options.textToApparatusGlue.stretch)
           .setShrink(this.options.textToApparatusGlue.shrink)
           .addMetadata(MetadataKey.GlueType, GlueType.TextToApparatusVerticalGlue));
 
           for (let i = 0; i < apparatuses.length; i++) {
-            verticalListToTypeset.pushItemArray(apparatuses[i].getList());
+            mainTextVerticalList.pushItemArray(apparatuses[i].getList());
             if (i !== apparatuses.length - 1) {
-              verticalListToTypeset.pushItem((new Glue(TypesetterItemDirection.VerticalItemDirection))
+              mainTextVerticalList.pushItem((new Glue(TypesetterItemDirection.VerticalItemDirection))
               .setHeight(this.options.interApparatusGlue.height)
               .setStretch(this.options.interApparatusGlue.stretch)
               .setShrink(this.options.interApparatusGlue.shrink)
@@ -538,7 +558,7 @@ export class BasicTypesetter extends Typesetter2 {
           }
         }
         // simple page breaks
-        let pageList = await this.typesetVerticalList(verticalListToTypeset);
+        let pageList = await this.typesetVerticalList(mainTextVerticalList);
         thePages = pageList.getList().map((pageItemList) => {
           pageItemList.setShiftX(this.options.marginLeft).setShiftY(this.options.marginTop);
           return new TypesetterPage(this.options.pageWidth, this.options.pageHeight, [pageItemList]);
@@ -552,11 +572,11 @@ export class BasicTypesetter extends Typesetter2 {
       } else {
         // apparatuses should go at the foot of each page
         // go over the typeset text list determining the line ranges that fill up a page
-        let [firstLine, lastLine] = this.getTotalLineNumberRange(verticalListToTypeset);
+        let [firstLine, lastLine] = this.getTotalLineNumberRange(mainTextVerticalList);
         this.debug && console.log(`Main text lines go from ${firstLine} to ${lastLine}`);
 
         // typeset the apparatus for the whole line range to fill up and cache apparatus data.
-        await this.typesetApparatuses(verticalListToTypeset, extraData.apparatuses);
+        await this.typesetApparatuses(mainTextVerticalList, extraData.apparatuses);
 
         // Break lines into pages
 
@@ -573,9 +593,9 @@ export class BasicTypesetter extends Typesetter2 {
         for (let currentLine = firstLine; currentLine <= lastLine; currentLine++) {
           this.debug && console.log(`Current line is ${currentLine}`);
           this.debug && console.log(`Testing line range ${currentPage.firstLine} to ${currentLine}`);
-          let lineRangeData = this.getItemsAndInfoForLineRange(verticalListToTypeset, currentPage.firstLine, currentLine);
+          let lineRangeData = this.getItemsAndInfoForLineRange(mainTextVerticalList, currentPage.firstLine, currentLine);
           this.debug && console.log(`   - Widows: ${lineRangeData.widows}, orphans: ${lineRangeData.orphans}, penalty: ${lineRangeData.penalty}`);
-          let verticalListToTest = await this.prepareVerticalListToTest(verticalListToTypeset, lineRangeData.items, extraData.apparatuses, currentPage.firstLine, currentLine, resetLineNumbersEachPage);
+          let verticalListToTest = await this.prepareVerticalListToTest(mainTextVerticalList, lineRangeData.items, extraData.apparatuses, currentPage.firstLine, currentLine, resetLineNumbersEachPage);
 
           let badness = this.calculateVerticalListBadness(verticalListToTest, this.textAreaHeight, lineRangeData.widows, lineRangeData.orphans, lineRangeData.penalty);
           // assess the tested page
@@ -673,8 +693,8 @@ export class BasicTypesetter extends Typesetter2 {
         }
         if (lastLookedAheadList !== null) {
           // There are hanging lines!
-          let lineRangeData = this.getItemsAndInfoForLineRange(verticalListToTypeset, bestPage.lastLine + 1, lastLine);
-          let verticalListWithLastHangingLines = await this.prepareVerticalListToTest(verticalListToTypeset, lineRangeData.items, extraData.apparatuses, bestPage.lastLine + 1, lastLine, resetLineNumbersEachPage);
+          let lineRangeData = this.getItemsAndInfoForLineRange(mainTextVerticalList, bestPage.lastLine + 1, lastLine);
+          let verticalListWithLastHangingLines = await this.prepareVerticalListToTest(mainTextVerticalList, lineRangeData.items, extraData.apparatuses, bestPage.lastLine + 1, lastLine, resetLineNumbersEachPage);
           this.debug && console.log(`EJECTING page ${currentPage.pageNumber}, hanging lines ${bestPage.lastLine + 1} to ${lastLine}`);
           this.debug && console.log(`===================`);
           thePages.push(...this.ejectPage(verticalListWithLastHangingLines, currentPage.pageNumber, bestPage.lastLine + 1, lastLine));
@@ -824,7 +844,7 @@ export class BasicTypesetter extends Typesetter2 {
     return badness > InfiniteVerticalBadness ? InfiniteVerticalBadness : badness + penaltyValue;
   }
 
-  __getTextTokenForCountingPurposes(text: string): string {
+  getTextTokenForCountingPurposes(text: string): string {
     return trimPunctuation(text.toLowerCase());
   }
 
@@ -870,7 +890,7 @@ export class BasicTypesetter extends Typesetter2 {
    * @return ItemList
    * @private
    */
-  setUnsetInterLineGlue(verticalList: ItemList): ItemList {
+  private setUnsetInterLineGlue(verticalList: ItemList): ItemList {
     let outputList = new ItemList(TypesetterItemDirection.VerticalItemDirection);
     let state = 0;
     let currentInterLineGlue: TypesetterItem | null = null;
@@ -918,12 +938,10 @@ export class BasicTypesetter extends Typesetter2 {
   }
 
   /**
-   *
-   * @param {number}nextLineHeight
-   * @return {number}
-   * @private
+   * Returns the height of the inter line glue so the space between lines
+   * is always this.lineSkip
    */
-  calcInterLineGlueHeight(nextLineHeight: number): number {
+  private calcInterLineGlueHeight(nextLineHeight: number): number {
     return Math.max(this.minLineSkip, this.lineSkip - nextLineHeight);
   }
 
@@ -1082,7 +1100,6 @@ export class BasicTypesetter extends Typesetter2 {
    * @private
    */
   private addOccurrenceInLineMetadata(line: ItemList): ItemList {
-    // TODO: check, may still be counting merged items incorrectly
     if (line.getDirection() !== TypesetterItemDirection.HorizontalItemDirection) {
       // not a horizontal list, i.e., not a line => do nothing
       return line;
@@ -1102,13 +1119,28 @@ export class BasicTypesetter extends Typesetter2 {
     let occurrencesCounter = new StringCounter();
     originalOrderItems.forEach((item) => {
       if (item instanceof TextBox) {
-        let text = item.getText();
-        let token = this.__getTextTokenForCountingPurposes(text);
-        if (text !== token) {
-          item.addMetadata(MetadataKey.TokenForCountingPurposes, token);
+        let text: string | null = null;
+        const splitInSyllables = item.getMetadata(SplitInSyllablesItem) as boolean ?? false;
+        if (splitInSyllables) {
+          const syllableIndex = item.getMetadata(SplitInSyllablesItem) as number;
+          if (syllableIndex === 0) {
+            if (!item.hasMetadata(OriginalText)) {
+              throw new Error(`Original text not set for item ${syllableIndex} in line ${line.getMetadata(MetadataKey.LineNumber)}`);
+            }
+            // just get info for the first syllable
+            text = item.getMetadata(OriginalText) as string;
+          }
+        } else {
+          text = item.getText();
         }
-        occurrencesCounter.addString(token);
-        item.addMetadata(MetadataKey.TokenOccurrenceInLine, occurrencesCounter.getCount(token));
+        if (text !== null) {
+          let token = this.getTextTokenForCountingPurposes(text);
+          if (text !== token || splitInSyllables) {
+            item.addMetadata(MetadataKey.TokenForCountingPurposes, token);
+          }
+          occurrencesCounter.addString(token);
+          item.addMetadata(MetadataKey.TokenOccurrenceInLine, occurrencesCounter.getCount(token));
+        }
       }
     });
     // tag total occurrences
@@ -1118,7 +1150,15 @@ export class BasicTypesetter extends Typesetter2 {
         if (item.hasMetadata(MetadataKey.TokenForCountingPurposes)) {
           token = item.getMetadata(MetadataKey.TokenForCountingPurposes) as string;
         }
-        item.addMetadata(MetadataKey.TokenTotalOccurrencesInLine, occurrencesCounter.getCount(token));
+        const splitInSyllables = item.getMetadata(SplitInSyllablesItem) as boolean ?? false;
+        if (splitInSyllables) {
+          const syllableIndex = item.getMetadata(SplitInSyllablesItem) as number;
+          if (syllableIndex === 0) {
+            item.addMetadata(MetadataKey.TokenOccurrenceInLine, occurrencesCounter.getCount(token));
+          }
+        } else {
+          item.addMetadata(MetadataKey.TokenTotalOccurrencesInLine, occurrencesCounter.getCount(token));
+        }
       }
     });
 

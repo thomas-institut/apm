@@ -1,12 +1,12 @@
 // noinspection ES6PreferShortImport
 
-import {BidiOrderInfoArray} from "@/lib/Typesetter2/Bidi/BidiOrderInfoArray";
-import {TypesetterItem} from "@/lib/Typesetter2/TypesetterItem";
-import {BidiOrderInfo} from "@/lib/Typesetter2/Bidi/BidiOrderInfo";
-import {TextBox} from "@/lib/Typesetter2/TextBox";
-import {ObjectFactory} from "@/lib/Typesetter2/ObjectFactory";
-import * as MetadataKey from "@/lib/Typesetter2/MetadataKey";
-import {ItemArrayWithBidiOrderInfo} from "@/lib/Typesetter2/LineBreaker/FirstFitLineBreaker";
+import {BidiOrderInfoArray} from "../Bidi/BidiOrderInfoArray.js";
+import {TypesetterItem} from "../TypesetterItem.js";
+import {BidiOrderInfo} from "../Bidi/BidiOrderInfo.js";
+import {TextBox} from "../TextBox.js";
+import {ObjectFactory} from "../ObjectFactory.js";
+import * as MetadataKey from "../MetadataKey.js";
+import {ItemArrayWithBidiOrderInfo} from "../LineBreaker/FirstFitLineBreaker.js";
 
 
 const debug = false;
@@ -138,16 +138,23 @@ function mergeItemWithNext(item: TypesetterItem, nextItem: TypesetterItem): Type
     newItem.addMetadata(MetadataKey.MergedItem, true);
     newItem.setTextDirection(item.getTextDirection());
     newItem.setText(item.getText() + nextItem.getText());
+
     // Save source items in metadata:
-    // Note that this will create a deep tree of source items when more
-    // than two items end up being merged. When a source, unmerged item
-    // is merged with merged item, the resulting MetadataKey.SOURCE_ITEMS_EXPORT metadata
-    // will still be an array of two objects, the first one will
-    // in turn have an array of two objects in its MetadataKey.SOURCE_ITEMS_EXPORT metadata
-    newItem.addMetadata(MetadataKey.SourceItems, [item.getExportObject(), nextItem.getExportObject()]);
-    // }
-    // console.log(`New merged item`)
-    // console.log(newItem)
+    const sourceItems: object[] = [];
+    if (item.getMetadata(MetadataKey.SourceItems) !== undefined) {
+      const itemSourceItems = item.getMetadata(MetadataKey.SourceItems) as object[];
+      sourceItems.push(...itemSourceItems);
+    } else {
+      sourceItems.push(item.getExportObject());
+    }
+    if (nextItem.getMetadata(MetadataKey.SourceItems) !== undefined) {
+      const nextItemSourceItems = nextItem.getMetadata(MetadataKey.SourceItems) as object[];
+      sourceItems.push(...nextItemSourceItems);
+    } else {
+      sourceItems.push(nextItem.getExportObject());
+    }
+    newItem.addMetadata(MetadataKey.SourceItems, sourceItems);
+
     return [newItem];
   }
   // other than text boxes

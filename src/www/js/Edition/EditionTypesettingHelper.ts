@@ -54,6 +54,7 @@ import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
 import {fromCompactFmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
 import {Marginalia} from "../lib/Typesetter2/BasicTypesetter.js";
+import {HyphenationLanguage} from "../lib/Typesetter2/Hyphenator/Hyphenator";
 
 export const MAX_LINE_COUNT = 10000;
 const enDash = '\u2013';
@@ -70,7 +71,7 @@ interface LineRange {
   tsItemsExportObjects?: Record<string, any>[],
 }
 
-export interface EditionTypesettingOptions {
+export interface EditionTypesettingHelperOptions {
   edition: Edition;
   editionStyleName?: string;
   editionStyleSheet: StyleSheet;
@@ -79,8 +80,8 @@ export interface EditionTypesettingOptions {
   debug?: boolean;
 }
 
-export class EditionTypesetting {
-  private options: Required<EditionTypesettingOptions>;
+export class EditionTypesettingHelper {
+  private options: Required<EditionTypesettingHelperOptions>;
   private readonly debug: boolean;
   private edition: Edition;
   private readonly sigla: string[];
@@ -99,7 +100,7 @@ export class EditionTypesetting {
   private mainTextIndices: number[] | null = null;
   private appEntries: Record<string, ApparatusEntryInterface[]> = {};
 
-  constructor(options: EditionTypesettingOptions) {
+  constructor(options: EditionTypesettingHelperOptions) {
     const defaults = {
       debug: false,
       editionStyleName: '',
@@ -197,6 +198,10 @@ export class EditionTypesetting {
     return this.consolidatedMarginalia;
   }
 
+  getHyphenationLanguages() : HyphenationLanguage[] {
+    return this.edition.lang === 'la' ? ['la'] : [];
+  }
+
   /**
    *
    * @return {Promise<ItemList>}
@@ -216,7 +221,7 @@ export class EditionTypesetting {
         let mainTextParagraph = mainTextParagraphs[mainTextParagraphIndex];
         let paragraphToTypeset = new ItemList(TypesetterItemDirection.HorizontalItemDirection);
         paragraphToTypeset.setTextDirection(textDirection);
-        let paragraphStyle: string = mainTextParagraph.type;
+        let paragraphStyle = mainTextParagraph.type;
         // this.debug && console.log(`Main text paragraph style: '${paragraphStyle}'`)
         if (!this.ss.styleExists(paragraphStyle)) {
           this.debug && console.log(`Paragraph style is not defined, defaulting to 'normal'`);
@@ -279,7 +284,8 @@ export class EditionTypesetting {
               // Add the text
               textItems.push(...await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle));
               if (textItems.length > 0) {
-                // tag the first item with the original index
+                // tag the first item with the original index, this will be used to associate main text tokens
+                // with their line numbers in order to construct the apparatuses.
                 textItems[firstActualTextTokenIndex].addMetadata(MetadataKey.MainTextOriginalIndex, mainTextToken.originalIndex);
                 // detect text direction for text boxes
                 textItems = textItems.map((item) => {
@@ -288,18 +294,14 @@ export class EditionTypesetting {
                   }
                   return item;
                 });
-                // if (this.edition.lang === 'la') {
-                //   // apply hyphenation
-                //   const hyphenatedItems: TypesetterItem[] = [];
-                //   textItems.forEach((item) => {
-                //     if (item instanceof TextBox) {
-                //       hyphenatedItems.push(...this.hyphenateTextBox(item, 'la'));
-                //     } else {
-                //       hyphenatedItems.push(item);
-                //     }
-                //   });
-                //   textItems = hyphenatedItems;
-                // }
+                if (this.edition.lang === 'la') {
+                  textItems = textItems.map((item) => {
+                    if (item instanceof TextBox && item.textDirection === 'ltr') {
+                      item.setHyphenation('la');
+                    }
+                    return item;
+                  })
+                }
                 paragraphToTypeset.pushItemArray(textItems);
               }
               // if (firstActualTextTokenIndex > 0) {
@@ -308,7 +310,7 @@ export class EditionTypesetting {
               break;
 
           }
-        }
+        } // for all tokens in the paragraph
 
         paragraphToTypeset.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection));
         paragraphToTypeset.pushItem(Penalty.createForcedBreakPenalty());
@@ -396,6 +398,7 @@ export class EditionTypesetting {
         this.mainTextIndices = this.extractedItemLineInfoArray.map((info) => {
           return info.mainTextIndex;
         });
+        // console.log(`Extracted line info for ${this.mainTextIndices.length} main text tokens`, this.extractedItemLineInfoArray);
         // reset apparatus data
         this.appEntries = {};
       }
@@ -969,13 +972,6 @@ export class EditionTypesetting {
       return a.mainTextIndex - b.mainTextIndex;
     });
 
-    // for debugging purposes, show the main text indices in merged Items
-    // lineInfoArray.forEach( (lineInfo) => {
-    //   if (lineInfo.isMerged) {
-    //     console.log(`Item ${lineInfo.mainTextIndex} is merged: ${lineInfo.mergedMainTextIndices.join(', ')}`)
-    //   }
-    // })
-
     return lineInfoArray;
   }
 
@@ -992,7 +988,7 @@ export class EditionTypesetting {
     if (!item.hasMetadata(MetadataKey.MergedItem || item.getMetadata(MetadataKey.MergedItem) === false)) {
       // normal, single item, just get the info if it exists and return
       let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, false);
-      if (infoObject === undefined) {
+      if (infoObject === null) {
         return [];
       }
       return [infoObject];
@@ -1003,7 +999,7 @@ export class EditionTypesetting {
       // no need to go down the tree, all info is right here!
       this.debug && console.log(`Item is merged but has info in it`, item.metadata);
       let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, true);
-      if (infoObject === undefined) {
+      if (infoObject === null) {
         return [];
       }
       return [infoObject];
@@ -1042,11 +1038,21 @@ export class EditionTypesetting {
    * @return {ItemLineInfo}
    * @private
    */
-  constructLineInfoObjectFromItem(item: TypesetterItem, lineNumber: number, isMerged = false): ItemLineInfo | undefined {
+  constructLineInfoObjectFromItem(item: TypesetterItem, lineNumber: number, isMerged = false): ItemLineInfo | null {
     if (!item.hasMetadata(MetadataKey.MainTextOriginalIndex)) {
       // the item does not correspond to a main text token
-      return undefined;
+      return null;
     }
+
+    const isSplitInSyllables = item.getMetadata(MetadataKey.SplitInSyllablesItem) as boolean ?? false;
+
+    if (isSplitInSyllables) {
+      const syllableIndex = item.getMetadata(MetadataKey.SyllableIndex) as number ?? 0;
+      if (syllableIndex !== 0) {
+        return null;
+      }
+    }
+
     let info = new ItemLineInfo();
     info.lineNumber = lineNumber;
     info.occurrenceInLine = 1;
@@ -1055,7 +1061,11 @@ export class EditionTypesetting {
     info.mainTextIndex = item.getMetadata(MetadataKey.MainTextOriginalIndex) as number;
 
     if (!isMerged && item instanceof TextBox) {
-      info.text = item.getText();
+      if (isSplitInSyllables) {
+        info.text = item.getMetadata(MetadataKey.OriginalText) as string;
+      } else {
+        info.text = item.getText();
+      }
     }
 
     if (isMerged) {
@@ -1075,7 +1085,7 @@ export class EditionTypesetting {
     if (info.occurrenceInLine > info.totalOccurrencesInLine) {
       console.warn(`Inconsistent information found in metadata`);
       console.warn(info);
-      return undefined;
+      return null;
     }
     return info;
   }
@@ -1272,6 +1282,14 @@ export class EditionTypesetting {
       let fmtText = fromString(someString);
       let items = await this.tokenRenderer.renderWithStyle(fmtText, style);
       items = this.setTextDirection(items, textDirection);
+      if (this.edition.lang === 'la') {
+        items = items.map( (item) => {
+          if (item instanceof TextBox) {
+            item.setHyphenation('la');
+          }
+          return item;
+        })
+      }
       resolve(items);
     });
   }

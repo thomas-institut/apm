@@ -1,9 +1,7 @@
 import {describe, expect, it} from "vitest";
 import {hyphenateTextBoxes} from "@/lib/Typesetter2/Hyphenator/HyphenateTextBoxes";
 import {createItemArrayFromString} from "@/lib/Typesetter2/ItemArrayFromString";
-import {BidiDisplayOrder} from "@/lib/Typesetter2/Bidi/BidiDisplayOrder";
-import {getFakeStringTextDirection} from "./FakeStringTextDirection";
-import {TypesetterItem} from "@/lib/Typesetter2/TypesetterItem";
+import {getFakeBidiOrder, getFakeItemArrayWithBidiInfoFromString} from "./FakeStringTextDirection";
 import {TextBox} from "@/lib/Typesetter2/TextBox";
 import {ItemArrayWithBidiOrderInfo} from "@/lib/Typesetter2/LineBreaker/FirstFitLineBreaker";
 import {Glue} from "@/lib/Typesetter2/Glue";
@@ -23,11 +21,10 @@ describe('HyphenateTextBoxes', () => {
 
   it('should be transparent when no hyphenation is needed', () => {
     const TestString = 'This is a test string that should not be hyphenated.';
-    const itemArray = createItemArrayFromString(TestString);
-    const bidiOrderInfoArray = getBidiOrderInfoForItemArray(itemArray, 'ltr');
+    const info = getFakeItemArrayWithBidiInfoFromString(TestString);
     expect(hyphenateTextBoxes({
-      itemArrayWithBidiInfo: {itemArray: itemArray, bidiOrderInfoArray: bidiOrderInfoArray}, hyphenationLanguages: []
-    })).toEqual({itemArray: itemArray, bidiOrderInfoArray: bidiOrderInfoArray});
+      itemArrayWithBidiInfo: info, hyphenationLanguages: []
+    })).toEqual({itemArray: info.itemArray, bidiOrderInfoArray: info.bidiOrderInfoArray});
   });
 
   it('should be transparent when no hyphenation is actually done', () => {
@@ -39,7 +36,7 @@ describe('HyphenateTextBoxes', () => {
       }
       return item;
     });
-    const bidiOrderInfoArray = getBidiOrderInfoForItemArray(itemArray, 'ltr');
+    const bidiOrderInfoArray = getFakeBidiOrder(itemArray, 'ltr');
     expect(hyphenateTextBoxes({
       itemArrayWithBidiInfo: {itemArray: itemArray, bidiOrderInfoArray: bidiOrderInfoArray},
       hyphenationLanguages: ['en'],
@@ -56,7 +53,7 @@ describe('HyphenateTextBoxes', () => {
       }
       return item;
     });
-    const bidiOrderInfoArray = getBidiOrderInfoForItemArray(itemArray, 'ltr');
+    const bidiOrderInfoArray = getFakeBidiOrder(itemArray, 'ltr');
     const result = hyphenateTextBoxes({
       itemArrayWithBidiInfo: {itemArray, bidiOrderInfoArray},
       hyphenationLanguages: ['custom'],
@@ -64,7 +61,7 @@ describe('HyphenateTextBoxes', () => {
     });
     expect(result.itemArray.length).toEqual(itemArray.length + 2);
     expect(result.bidiOrderInfoArray.length).toEqual(bidiOrderInfoArray.length + 2);
-    result.bidiOrderInfoArray.forEach((info, i) => {
+    result.bidiOrderInfoArray.forEach((info) => {
       expect(info.displayOrder).toEqual(info.inputIndex);
     });
     expect(itemArrayWithBidiOrderInfoToString(result)).toEqual('This is sim-ple ltr text');
@@ -79,7 +76,7 @@ describe('HyphenateTextBoxes', () => {
       }
       return item;
     });
-    const bidiOrderInfoArray = getBidiOrderInfoForItemArray(itemArray, 'rtl');
+    const bidiOrderInfoArray = getFakeBidiOrder(itemArray, 'rtl');
     const result = hyphenateTextBoxes({
       itemArrayWithBidiInfo: {itemArray, bidiOrderInfoArray},
       hyphenationLanguages: ['custom'],
@@ -87,30 +84,39 @@ describe('HyphenateTextBoxes', () => {
     });
     expect(result.itemArray.length).toEqual(itemArray.length + 4);
     expect(result.bidiOrderInfoArray.length).toEqual(bidiOrderInfoArray.length + 4);
-    result.bidiOrderInfoArray.forEach((info, i) => {
+    result.bidiOrderInfoArray.forEach((info) => {
       expect(info.displayOrder).toEqual(info.inputIndex);
     });
     expect(itemArrayWithBidiOrderInfoToString(result)).toEqual('THIS IS VE-RY SIM-PLE RTL TEXT');
   });
 
   it('should not mess up text direction in mixed text', () => {
-    const TestString = 'one TWO THREE';
-    const manualEntries = ['o-ne'];
+    const TestCases= [
+      { testString: 'one TWO THREE', manualEntries: ['o-ne'], expected: 'o-ne THREE TWO' },
+      { testString: 'one TWO THREE FOUR one two ONE TWO', manualEntries: ['o-ne'], expected: 'o-ne FOUR THREE TWO o-ne two TWO ONE' },
+    ]
 
-    const itemArray = createItemArrayFromString(TestString).map(item => {
-      if (item instanceof TextBox && !isAllUpperCase(item.getText())) {
-        item.setHyphenation('custom');
-      }
-      return item;
-    });
-    const bidiOrderInfoArray = getBidiOrderInfoForItemArray(itemArray, 'ltr');
-    expect(itemArrayWithBidiOrderInfoToString({itemArray, bidiOrderInfoArray})).toEqual('one THREE TWO');
-    const result = hyphenateTextBoxes({
-      itemArrayWithBidiInfo: {itemArray, bidiOrderInfoArray},
-      hyphenationLanguages: ['custom'],
-      manualEntries: manualEntries
-    });
-    expect(itemArrayWithBidiOrderInfoToString(result)).toEqual('o-ne THREE TWO');
+    TestCases.forEach(testCase => {
+      const testString = testCase.testString;
+      const manualEntries = testCase.manualEntries;
+      const expected = testCase.expected;
+      const itemArray = createItemArrayFromString(testString).map(item => {
+        if (item instanceof TextBox && !isAllUpperCase(item.getText())) {
+          item.setHyphenation('custom');
+        }
+        return item;
+      });
+      const bidiOrderInfoArray = getFakeBidiOrder(itemArray, 'ltr');
+      const result = hyphenateTextBoxes({
+        itemArrayWithBidiInfo: {itemArray, bidiOrderInfoArray},
+        hyphenationLanguages: ['custom'],
+        manualEntries: manualEntries
+      });
+      expect(itemArrayWithBidiOrderInfoToString(result)).toEqual(expected);
+
+    })
+
+
   });
 
   it('should support multiple hyphenation languages', () => {
@@ -126,7 +132,7 @@ describe('HyphenateTextBoxes', () => {
       }
       return item;
     });
-    const bidiOrderInfoArray = getBidiOrderInfoForItemArray(itemArray, 'ltr');
+    const bidiOrderInfoArray = getFakeBidiOrder(itemArray, 'ltr');
     expect(itemArrayWithBidiOrderInfoToString({itemArray, bidiOrderInfoArray}))
     .toEqual('Latin and English mixed Dominus THREE TWO ONE and res without Gloria');
     const result = hyphenateTextBoxes({
@@ -135,7 +141,6 @@ describe('HyphenateTextBoxes', () => {
     });
     expect(itemArrayWithBidiOrderInfoToString(result))
     .toEqual('Latin and Eng-lish mixed Do-mi-nus THREE TWO ONE and res with-out Glo-ria');
-
   })
 
 });
@@ -161,11 +166,3 @@ function itemArrayWithBidiOrderInfoToString(itemArrayWithBidiOrderInfo: ItemArra
   }).join('');
 }
 
-function getBidiOrderInfoForItemArray(itemArray: TypesetterItem[], defaultTextDirection: string) {
-  return BidiDisplayOrder.getDisplayOrder<TypesetterItem>(itemArray, defaultTextDirection, (item) => {
-    if (!(item instanceof TextBox)) {
-      return '';
-    }
-    return getFakeStringTextDirection(item.getText());
-  });
-}

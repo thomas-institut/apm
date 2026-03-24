@@ -9,7 +9,7 @@ import {TextBoxFactory} from "../TextBoxFactory.js";
 import {deepCopy} from "../../../toolbox/Util.js";
 import * as MetadataKey from '../MetadataKey.js';
 import {GoodPointForBreak, Penalty} from "../Penalty.js";
-import {ObjectFactory} from "@/lib/Typesetter2/ObjectFactory";
+import {ObjectFactory} from "../ObjectFactory.js";
 
 interface HyphenationNode {
   itemIndex: number;
@@ -17,6 +17,8 @@ interface HyphenationNode {
   originalBidiOrderInfo: BidiOrderInfo;
   hyphenatedItems: TypesetterItem[];
 }
+
+export const Hyphen = String.fromCodePoint(0x2010);
 
 interface HyphenateTextBoxesOptions {
   /**
@@ -86,6 +88,7 @@ export function hyphenateTextBoxes(options: HyphenateTextBoxesOptions): ItemArra
       return defaultNode;
     }
     if (numSyllables === 1) {
+      // hyphenation did not actually do anything, so just return the original item
       return defaultNode;
     }
     // debug && console.log(`Hyphenating text box '${item.getText()}' with ${numSyllables} syllables`, syllables);
@@ -96,7 +99,7 @@ export function hyphenateTextBoxes(options: HyphenateTextBoxesOptions): ItemArra
       newTextBox.addMetadata(MetadataKey.SplitInSyllablesItem, true);
       newTextBox.addMetadata(MetadataKey.SyllableIndex, syllableIndex);
       newTextBox.addMetadata(MetadataKey.SyllableCount, numSyllables);
-      newTextBox.addMetadata(MetadataKey.OriginalText, syllables[syllableIndex]);
+      newTextBox.addMetadata(MetadataKey.OriginalText, item.getText());
       newTextBox.addMetadata(MetadataKey.ItemIndexBeforeHyphenation, itemIndex);
       newTextBox.setText(syllables[syllableIndex]);
       newItems.push(newTextBox);
@@ -160,5 +163,5 @@ export function hyphenateTextBoxes(options: HyphenateTextBoxesOptions): ItemArra
 }
 
 function createHyphenPenalty(): Penalty {
-  return (new Penalty()).setPenalty(GoodPointForBreak).setItemToInsert(TextBoxFactory.simpleText('-'));
+  return (new Penalty()).setPenalty(GoodPointForBreak).setItemToInsert(TextBoxFactory.simpleText(Hyphen).setTextDirection('ltr'));
 }

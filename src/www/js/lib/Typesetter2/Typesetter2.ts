@@ -73,8 +73,6 @@ export class Typesetter2 {
    *
    * In essence, splits a vertical list into pages
    *
-   * @param {ItemList}list
-   * @return {Promise<ItemList>}
    */
   typesetVerticalList(list: ItemList): Promise<ItemList> {
     // performs type checks and returns the input list if there's no problem

@@ -20,7 +20,7 @@ import {CanvasTextBoxMeasurer} from '@/lib/Typesetter2/TextBoxMeasurer/CanvasTex
 import {CanvasRenderer} from '@/lib/Typesetter2/Renderer/CanvasRenderer';
 import {BrowserUtilities} from '@/toolbox/BrowserUtilities';
 import {Typesetter2} from '@/lib/Typesetter2/Typesetter2';
-import {EditionTypesetting, EditionTypesettingOptions} from './EditionTypesetting.js';
+import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from './EditionTypesettingHelper.js';
 import {BasicTypesetter, BasicTypesetterOptions} from '@/lib/Typesetter2/BasicTypesetter';
 import {isRtl} from '@/toolbox/Util';
 import {BasicProfiler} from '@/toolbox/BasicProfiler';
@@ -86,7 +86,7 @@ export interface EditionViewerCanvasOptions {
 interface TypesettingParameters {
   mainTextVerticalListToTypeset: ItemList;
   typesetterOptions: BasicTypesetterOptions;
-  helperOptions: EditionTypesettingOptions;
+  helperOptions: EditionTypesettingHelperOptions;
   extraData: { [p: string]: any;}
 }
 
@@ -234,7 +234,7 @@ export class EditionViewerCanvas {
     return new Promise(async (resolve) => {
       // reset typesetting data
       this.typesettingParameters = null;
-      let helperOptions: EditionTypesettingOptions = {
+      let helperOptions: EditionTypesettingHelperOptions = {
         edition: this.edition,
         editionStyleSheet: this.options.editionStyleSheet,
         // defaultFontFamily: this.options.fontFamily,
@@ -253,7 +253,7 @@ export class EditionViewerCanvas {
         await document.fonts.load(fontsToLoad[i]);
         console.log(` Loaded ${fontsToLoad[i]} `);
       }
-      let editionTypesettingHelper = new EditionTypesetting(helperOptions);
+      let editionTypesettingHelper = new EditionTypesettingHelper(helperOptions);
       editionTypesettingHelper.setup().then(async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText();
         this.rawMainTextVerticalListToTypeset = verticalListToTypeset.getExportObject();
@@ -315,6 +315,7 @@ export class EditionViewerCanvas {
               align: marginaliaAlign,
               textBoxMeasurer: this.canvasMeasurer,
             },
+            hyphenationLanguages: editionTypesettingHelper.getHyphenationLanguages(),
             textBoxMeasurer: this.canvasMeasurer,
             getApparatusListToTypeset: (mainTextVerticalList: ItemList, apparatus, lineFrom:number, lineTo:number, resetFirstLine:boolean) => {
               return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine);

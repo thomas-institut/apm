@@ -228,7 +228,6 @@ export class FirstFitLineBreaker extends LineBreaker {
           penaltyValue += (flagsInARow + 1) * FlagPenalty;
         }
       }
-      // lineItemArray = this.compactItemArray(lineItemArray)
       await ItemArray.measureTextBoxes(lineItemArray, textBoxMeasurer);
       let adjRatio = AdjustmentRatio.calculateHorizontalAdjustmentRatio(lineItemArray, lineWidth);
       if (adjRatio === null) {

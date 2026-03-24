@@ -3,7 +3,7 @@ import {PangoMeasurerNodeGTK} from './PangoMeasurerNodeGTK.js';
 import {SystemStyleSheet} from '../www/js/defaults/EditionStyles/SystemStyleSheet.js';
 import {BasicTypesetter, BasicTypesetterOptions} from '../www/js/lib/Typesetter2/BasicTypesetter.js';
 import {hrtime} from 'node:process';
-import {EditionTypesetting, EditionTypesettingOptions} from '../www/js/Edition/EditionTypesetting.js';
+import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from '../www/js/Edition/EditionTypesettingHelper.js';
 import {ItemList} from "../www/js/lib/Typesetter2/ItemList.js";
 import {Edition} from "../www/js/Edition/Edition.js";
 
@@ -33,7 +33,7 @@ export interface Stats {
 interface InputData {
   mainTextList: any;
   options: BasicTypesetterOptions;
-  helperOptions?: EditionTypesettingOptions;
+  helperOptions?: EditionTypesettingHelperOptions;
   extraData?: any;
 }
 
@@ -100,7 +100,7 @@ export async function processInputJson(data: InputData): Promise<OutputData> {
     // make the data an Edition object
     data.helperOptions.edition = new Edition().setFromInterface(data.helperOptions.edition);
     data.helperOptions.editionStyleSheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId);
-    let editionTypesettingHelper = new EditionTypesetting(data.helperOptions);
+    let editionTypesettingHelper = new EditionTypesettingHelper(data.helperOptions);
     data.options.getApparatusListToTypeset = (mainTextVerticalList: any, apparatus: any, lineFrom: number, lineTo: number, resetFirstLine: boolean) => {
       return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine);
     };

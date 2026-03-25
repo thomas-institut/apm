@@ -1,7 +1,7 @@
 {
 
     "name": "thomas-institut/apm",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "Averroes Project Manager",
     "type": "application",
     "keywords": ["mss"],

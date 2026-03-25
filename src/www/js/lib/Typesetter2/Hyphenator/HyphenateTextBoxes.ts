@@ -163,5 +163,5 @@ export function hyphenateTextBoxes(options: HyphenateTextBoxesOptions): ItemArra
 }
 
 function createHyphenPenalty(): Penalty {
-  return (new Penalty()).setPenalty(GoodPointForBreak).setItemToInsert(TextBoxFactory.simpleText(Hyphen).setTextDirection('ltr'));
+  return (new Penalty()).setPenalty(GoodPointForBreak).setItemToInsert(TextBoxFactory.simpleText(Hyphen).setTextDirection('ltr')).setFlag(true);
 }

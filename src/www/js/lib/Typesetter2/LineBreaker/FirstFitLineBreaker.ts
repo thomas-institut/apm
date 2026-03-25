@@ -14,7 +14,7 @@ import {TextBoxMeasurer} from "../TextBoxMeasurer/TextBoxMeasurer.js";
 import {BidiOrderInfo} from "../Bidi/BidiOrderInfo.js";
 
 const InfiniteBadness = 100000000;
-const FlagPenalty = 3000;
+const FlagPenalty = 500;
 
 const debug = false;
 

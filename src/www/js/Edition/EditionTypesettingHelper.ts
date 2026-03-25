@@ -50,7 +50,7 @@ import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface}
 import {Dimension} from "../lib/Typesetter2/Dimension.js";
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
-import {fromCompactFmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
+import {FmtText, fromCompactFmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
 import {Marginalia} from "../lib/Typesetter2/BasicTypesetter.js";
 import {HyphenationLanguage} from "../lib/Typesetter2/Hyphenator/Hyphenator.js";
 import {ItemArray} from "../lib/Typesetter2/ItemArray.js";
@@ -280,9 +280,9 @@ export class EditionTypesettingHelper {
                 }
                 return item;
               });
-              if (this.edition.lang === 'la') {
+              if (this.edition.lang === 'la' && paragraphStyleDef.align !== 'center') {
                 textItems = textItems.map((item) => {
-                  if (item instanceof TextBox && item.textDirection === 'ltr') {
+                  if (item instanceof TextBox) {
                     item.setHyphenation('la');
                   }
                   return item;
@@ -712,6 +712,19 @@ export class EditionTypesettingHelper {
     return NumeralSystems.toWesternArabic(n);
   }
 
+  async getTsItemsForFmtText(fmtText: FmtText, style: string, textDirection: string, hyphenation: 'auto' | 'off' = 'auto'): Promise<TypesetterItem[]> {
+    const items = this.setTextDirection(await this.tokenRenderer.renderWithStyle(fmtText, style), textDirection);
+    if (hyphenation === 'auto' && this.edition.lang === 'la') {
+      return items.map((item) => {
+        if (item instanceof TextBox) {
+          item.setHyphenation('la');
+        }
+        return item;
+      });
+    }
+    return items;
+  }
+
   /**
    * Returns the typesetter items for the given apparatus subEntry
    *
@@ -724,7 +737,8 @@ export class EditionTypesettingHelper {
     let items = [];
     switch (subEntry.type) {
       case 'variant':
-        items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
+        items.push(...await this.getTsItemsForFmtText(subEntry.fmtText, apparatusStyle, 'detect'));
+        // items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
         items.push(this.createPenalty(InfinitePenalty));
         items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
         items.push(...await this.getTsItemsForSigla(subEntry));
@@ -740,7 +754,8 @@ export class EditionTypesettingHelper {
         }
         items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
         if (subEntry.type === 'addition') {
-          items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
+          items.push(...await this.getTsItemsForFmtText(subEntry.fmtText, apparatusStyle, 'detect'));
+          // items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
           items.push(this.createPenalty(InfinitePenalty));
           items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
         }
@@ -760,7 +775,18 @@ export class EditionTypesettingHelper {
           }
         }
         if (keyword !== 'omission') {
-          items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
+          items.push(...await this.getTsItemsForFmtText(subEntry.fmtText, apparatusStyle, 'detect'));
+          // let customTextItems = this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect');
+          // if (this.edition.lang === 'la') {
+          //   // add hyphenation to text boxes
+          //   customTextItems = customTextItems.map((item) => {
+          //     if (item instanceof TextBox) {
+          //       item.setHyphenation('la');
+          //     }
+          //     return item;
+          //   });
+          // }
+          // items.push(...customTextItems);
         }
         if (subEntry.type !== 'autoFoliation' && subEntry.witnessData.length !== 0) {
           items.push(this.createPenalty(InfinitePenalty));

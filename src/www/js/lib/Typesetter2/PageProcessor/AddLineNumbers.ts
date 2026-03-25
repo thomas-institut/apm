@@ -34,7 +34,7 @@ export class AddLineNumbers extends PageProcessor {
   private readonly options: Required<AddLineNumbersOptions>;
   private readonly debug: boolean;
 
-  constructor(options: any) {
+  constructor(options: AddLineNumbersOptions) {
     super();
     const defaults = {
       listTypeToNumber: ListType.MainTextBlockList,
@@ -48,6 +48,7 @@ export class AddLineNumbers extends PageProcessor {
       align: 'right',
       fontFamily: 'FreeSerif',
       fontSize: Typesetter2.pt2px(10),
+      numeralSystem: 'WesternArabic' as NumeralSystem,
       debug: false,
     };
     this.options = {...defaults, ...options};

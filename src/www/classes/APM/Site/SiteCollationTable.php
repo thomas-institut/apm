@@ -29,6 +29,7 @@ namespace APM\Site;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
+use APM\System\ApmCollationEngine;
 use APM\System\Document\DocInfo;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
@@ -403,13 +404,6 @@ class SiteCollationTable extends SiteController
                         $msg = 'Non-supported witness type given: ' . $witnessType;
                         $this->logger->error($msg, [ 'args' => $args]);
                         return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                            'work' => $workId,
-//                            'chunk' => $chunkNumber,
-//                            'lang' => $language,
-//                            'error' => true,
-//                            'errorMessage' => $msg
-//                        ]);
                     }
                     // for now, only full transcriptions are implemented, so the second field in
                     // the witness spec must be a number
@@ -417,13 +411,6 @@ class SiteCollationTable extends SiteController
                         $msg = 'Invalid doc id given: ' . $specs[1];
                         $this->logger->error($msg, [ 'args' => $args]);
                         return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                            'work' => $workId,
-//                            'chunk' => $chunkNumber,
-//                            'lang' => $language,
-//                            'error' => true,
-//                            'errorMessage' => $msg
-//                        ]);
                     }
                     $docId = intval($specs[1]);
                     $lwid = 'A';
@@ -443,13 +430,6 @@ class SiteCollationTable extends SiteController
                 $msg = 'Unrecognized option : ' . $argWitnessSpec;
                 $this->logger->error($msg, [ 'args' => $args]);
                 return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                    'work' => $workId,
-//                    'chunk' => $chunkNumber,
-//                    'lang' => $language,
-//                    'error' => true,
-//                    'errorMessage' => $msg
-//                ]);
             }
             $collationPageOptions['partialCollation'] = true;
         }
@@ -477,13 +457,6 @@ class SiteCollationTable extends SiteController
             $this->logger->error($msg,
                     [ 'presetId' => $presetId]);
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                'work' => $workId,
-//                'chunk' => $chunkNumber,
-//                'lang' => '??',
-//                'error' => true,
-//                'errorMessage' => $msg
-//            ]);
         }
 
         $preset = $presetManager->getPresetById($presetId);
@@ -567,26 +540,12 @@ class SiteCollationTable extends SiteController
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no data';
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                'work' => '??',
-//                'chunk' => '??',
-//                'lang' => '??',
-//                'error' => true,
-//                'errorMessage' => $msg
-//            ]);
         }
         if (!isset($inputData['options'])) {
             $this->logger->error('Automatic Collation Table:  no options in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no options';
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                'work' => '??',
-//                'chunk' => '??',
-//                'lang' => '??',
-//                'error' => true,
-//                'errorMessage' => $msg
-//            ]);
         }
         
         $collationPageOptions = $inputData['options'];
@@ -596,13 +555,6 @@ class SiteCollationTable extends SiteController
             if (!isset($collationPageOptions[$requiredField])) {
                 $msg = 'Bad request: missing required option ' . $requiredField ;
                 return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                    'work' => '??',
-//                    'chunk' => '??',
-//                    'lang' => '??',
-//                    'error' => true,
-//                    'errorMessage' => $msg
-//                ]);
             }
         }
         $collationPageOptions['isPreset'] = false;
@@ -616,14 +568,10 @@ class SiteCollationTable extends SiteController
      */
     private function getCollationTablePage(array $collationPageOptions, Response $response): Response
     {
-//        $this->codeDebug("Getting collation table page", $collationPageOptions);
-
         $workId = $collationPageOptions['work'];
         $chunkNumber = intval($collationPageOptions['chunk']);
         $language = $collationPageOptions['lang'];
         $partialCollation = $collationPageOptions['partialCollation'];
-
-
 
         $apiCallOptions = [
             'work' => $workId,
@@ -631,7 +579,7 @@ class SiteCollationTable extends SiteController
             'lang' => $language,
             'ignorePunctuation' => $collationPageOptions['ignorePunctuation'],
             'witnesses' => $collationPageOptions['witnesses'],
-            'collationEngine' => $collationPageOptions['collationEngine'] ?? 'DoNothing',
+            'collationEngine' => $collationPageOptions['collationEngine'] ?? '',
         ];
 
         if (isset($collationPageOptions['normalizers'])) {
@@ -659,13 +607,6 @@ class SiteCollationTable extends SiteController
         if (is_null($langInfo)) {
             $msg = 'Invalid language <b>' . $language . '</b>';
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                'work' => $workId,
-//                'chunk' => $chunkNumber,
-//                'lang' => $language,
-//                'error' => true,
-//                'errorMessage' => $msg
-//            ]);
         }
         
         // get work info
@@ -713,13 +654,6 @@ class SiteCollationTable extends SiteController
                 if (!$found) {
                     $msg = 'Requested witness not valid ' . $systemId;
                     return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                    return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                        'work' => $workId,
-//                        'chunk' => $chunkNumber,
-//                        'lang' => $language,
-//                        'error' => true,
-//                        'errorMessage' => $msg
-//                    ]);
                 }
             }
         }
@@ -754,12 +688,7 @@ class SiteCollationTable extends SiteController
             $data,
             [],
             ['collationtable.css', 'act-settingsform.css'],
-//            ['js/SimpleProfiler.js']
         );
-
-
-        
-//        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, $data);
     }
     
 

@@ -20,6 +20,7 @@ import {TextBox} from './TextBox.js';
 import {Penalty} from './Penalty.js';
 import {TypesetterItem} from "./TypesetterItem.js";
 import {TextBoxMeasurer} from "./TextBoxMeasurer/TextBoxMeasurer.js";
+import {ObjectFactory} from "./ObjectFactory.js";
 
 /**
  * Utility functions operating TypesetterItem arrays
@@ -59,5 +60,13 @@ export class ItemArray {
         }
       }
     }
+  }
+
+  static createFromExportObjectsArray(exportObjects: object[]): TypesetterItem[] {
+    return exportObjects.map(exportObject => ObjectFactory.fromObject(exportObject) as TypesetterItem);
+  }
+
+  static getExportObjectsArray(itemArray: TypesetterItem[]): object[] {
+    return itemArray.map(item => item.getExportObject());
   }
 }

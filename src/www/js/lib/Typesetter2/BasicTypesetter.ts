@@ -38,7 +38,7 @@ import {AddPageNumbers, AddPageNumbersOptions} from './PageProcessor/AddPageNumb
 import {AddLineNumbers, AddLineNumbersOptions} from './PageProcessor/AddLineNumbers.js';
 import {StringCounter} from '../../toolbox/StringCounter.js';
 import {trimPunctuation} from '../../defaults/Punctuation.js';
-import {MAX_LINE_COUNT} from '../../Edition/EditionTypesettingHelper.js';
+import {MaxLineCount} from '../../Edition/EditionTypesettingHelper.js';
 import {LanguageDetector} from '../../toolbox/LanguageDetector.js';
 import {BidiDisplayOrder, IntrinsicTextDirection} from './Bidi/BidiDisplayOrder.js';
 import {AdjustmentRatio} from './AdjustmentRatio.js';
@@ -986,7 +986,7 @@ export class BasicTypesetter extends Typesetter2 {
    * metadata attached to horizontal lists.
    */
   private getTotalLineNumberRange(mainTextVerticalList: ItemList): number[] {
-    let minLine = MAX_LINE_COUNT;
+    let minLine = MaxLineCount;
     let maxLine = -1;
     mainTextVerticalList.getList().forEach((item) => {
       if (item instanceof ItemList && item.hasMetadata(MetadataKey.ListType) && item.getMetadata(MetadataKey.ListType) === ListType.LineList) {
@@ -1074,7 +1074,7 @@ export class BasicTypesetter extends Typesetter2 {
    * actual items for each apparatus.
    *
    */
-  private typesetApparatuses(typesetMainTextVerticalList: ItemList, apparatuses: any[], lineFrom = 1, lineTo = MAX_LINE_COUNT, resetLineNumbersEachPage = false): Promise<any[]> {
+  private typesetApparatuses(typesetMainTextVerticalList: ItemList, apparatuses: any[], lineFrom = 1, lineTo = MaxLineCount, resetLineNumbersEachPage = false): Promise<any[]> {
     return new Promise(async (resolve) => {
       // console.log(`Typesetting apparatuses lines ${lineFrom}-${lineTo}`)
       let outputArray = [];

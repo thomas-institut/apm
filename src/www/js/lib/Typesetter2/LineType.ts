@@ -21,6 +21,6 @@
  */
 
 
-export const MAIN_TEXT_LINE = 'MainTextLine';
-export const APPARATUS = 'ApparatusLine';
+export const MainTextLine = 'MainTextLine';
+export const ApparatusLine = 'ApparatusLine';
 

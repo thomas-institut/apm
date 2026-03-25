@@ -21,7 +21,6 @@ import * as MetadataKey from '../MetadataKey.js';
 import {ItemList} from '../ItemList.js';
 import * as TypesetterItemDirection from '../TypesetterItemDirection.js';
 import * as ListType from '../ListType.js';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {TextBoxMeasurer} from '../TextBoxMeasurer/TextBoxMeasurer.js';
 import {Glue} from '../Glue.js';
 import {ItemArray} from '../ItemArray.js';
@@ -30,26 +29,34 @@ import {PageMarginalia} from "../PageMarginalia";
 import {MainTextLineData} from "../MainTextLineData";
 import {TypesetterItem} from "../TypesetterItem.js";
 
+
+export type MarginaliaAlignDirection = 'right' | 'left';
+export type MarginaliaTextDirection = 'rtl' | 'ltr';
+
+export interface AddMarginaliaOptions {
+  xPosition?: number,
+  align?: MarginaliaAlignDirection,
+  defaultTextDirection?: MarginaliaTextDirection,
+  textBoxMeasurer: TextBoxMeasurer,
+  glueWidth?: number,
+  debug?: boolean
+}
+
 export class AddMarginalia extends PageProcessor {
-  private readonly options: any;
+  private readonly options: Required<AddMarginaliaOptions>;
   private debug: boolean;
 
-  constructor(options: any) {
+  constructor(options: AddMarginaliaOptions) {
     super();
-    let oc = new OptionsChecker({
-      context: "AddMarginalia Page Processor", optionsDefinition: {
-        xPosition: {type: 'number', default: 20},
-        align: {type: 'string', default: 'right'},
-        defaultTextDirection: {type: 'string', default: 'ltr'},
-        textBoxMeasurer: {
-          type: 'object', objectClass: TextBoxMeasurer
-        }, //TODO: add this to actual constructors using value from stylesheet
-        glueWidth: {type: 'number', default: 5},
-        debug: {type: 'boolean', default: false},
-      }
-    });
-    this.options = oc.getCleanOptions(options);
+    const defaults = {
+      xPosition: 20,
+      align: 'right' as MarginaliaAlignDirection,
+      defaultTextDirection: 'ltr' as MarginaliaTextDirection,
+      glueWidth: 5,
+      debug: false,
+    }
 
+    this.options = { ...defaults, ...options };
     this.debug = this.options.debug;
 
     this.debug && console.log(`AddMarginalia options`);
@@ -60,23 +67,24 @@ export class AddMarginalia extends PageProcessor {
     return new Promise(async (resolve) => {
 
       this.debug = false;
-      if (!page.hasMetadata(MetadataKey.PAGE_MARGINALIA)) {
+      if (!page.hasMetadata(MetadataKey.PageMarginalia)) {
         resolve(page);
         return;
       }
-      let pageMarginalia: PageMarginalia[] = page.getMetadata(MetadataKey.PAGE_MARGINALIA);
+      let pageMarginalia: PageMarginalia[] = page.getMetadata(MetadataKey.PageMarginalia) as PageMarginalia[];
+      console.log(`Page marginalia`, pageMarginalia);
       if (pageMarginalia.length === 0) {
         resolve(page);
         return;
       }
       this.debug && console.log(`Page marginalia`, pageMarginalia);
-      if (!page.hasMetadata(MetadataKey.MAIN_TEXT_LINE_DATA)) {
+      if (!page.hasMetadata(MetadataKey.MainTextLineData)) {
         console.warn(`No main text line data available, marginalia not added`);
         resolve(page);
         return;
       }
-      this.debug && console.log(`Processing marginalia for page ${page.getMetadata(MetadataKey.PAGE_NUMBER)}`);
-      let mainTextLineData: MainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA);
+      this.debug && console.log(`Processing marginalia for page ${page.getMetadata(MetadataKey.PageNumber)}`);
+      let mainTextLineData: MainTextLineData = page.getMetadata(MetadataKey.MainTextLineData) as MainTextLineData;
       let mainTextIndex = mainTextLineData.mainTextListIndex;
       if (mainTextIndex === -1) {
         // no main text block, nothing to do
@@ -93,11 +101,11 @@ export class AddMarginalia extends PageProcessor {
         marginaliaEntry.lineData = mainTextLineData.lineData[lineDataIndex];
         return marginaliaEntry;
       });
-      let marginaliaList = new ItemList(TypesetterItemDirection.VERTICAL);
+      let marginaliaList = new ItemList(TypesetterItemDirection.VerticalItemDirection);
       marginaliaList
       .setShiftX(this.options.xPosition)
       .setShiftY(mainTextList.getShiftY())
-      .addMetadata(MetadataKey.LIST_TYPE, ListType.MARGINALIA);
+      .addMetadata(MetadataKey.ListType, ListType.MarginaliaList);
       let previousShiftYAdjustment = 0;
       let previousLineHeight = 0;
       let previousY = 0;
@@ -110,7 +118,7 @@ export class AddMarginalia extends PageProcessor {
         // add inter marginalia glue
         let glueHeight = lineNumberData.y - previousY - previousLineHeight + previousShiftYAdjustment;
         if (glueHeight !== 0) {
-          let glue = new Glue(TypesetterItemDirection.VERTICAL);
+          let glue = new Glue(TypesetterItemDirection.VerticalItemDirection);
           glue.setHeight(glueHeight);
           marginaliaList.pushItem(glue);
           this.debug && console.log(`Adding inter marginalia glue ${glueHeight}`);
@@ -133,7 +141,7 @@ export class AddMarginalia extends PageProcessor {
         });
 
         await ItemArray.measureTextBoxes(marginalItemArray, this.options.textBoxMeasurer);
-        let entryList = new ItemList(TypesetterItemDirection.HORIZONTAL);
+        let entryList = new ItemList(TypesetterItemDirection.HorizontalItemDirection);
         entryList.setList(marginalItemArray)
         .setTextDirection(this.options.defaultTextDirection);
         if (this.options.align === 'right') {

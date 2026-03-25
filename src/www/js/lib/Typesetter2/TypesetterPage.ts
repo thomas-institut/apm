@@ -31,8 +31,8 @@ import {TypesetterItem} from './TypesetterItem.js';
  * is essentially just a list of items with width and height
  */
 export class TypesetterPage extends TypesetterObject {
-  private width: number;
-  private height: number;
+  private readonly width: number;
+  private readonly height: number;
   private items: TypesetterItem[];
 
   constructor(pageWidth: number = 0, pageHeight: number = 0, items: TypesetterItem[] = []) {

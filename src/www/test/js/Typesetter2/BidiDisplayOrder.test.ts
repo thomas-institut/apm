@@ -1,7 +1,7 @@
 import {BidiDisplayOrder, IntrinsicTextDirection} from '@/lib/Typesetter2/Bidi/BidiDisplayOrder'
-import { isAllUpperCase, isWhiteSpace } from '@/toolbox/Util'
 import { describe, test, expect } from 'vitest'
 import {BidiOrderInfo} from "@/lib/Typesetter2/Bidi/BidiOrderInfo";
+import {getFakeStringTextDirection} from "./FakeStringTextDirection";
 
 
 interface TestCase {
@@ -30,7 +30,7 @@ describe('Bidi Display Order', () => {
       }
     ]
 
-    doTestCases(testCases, getStringTextDirectionCapsFake )
+    doTestCases(testCases, getFakeStringTextDirection )
   })
 
   test('Bidirectional Strings', () => {
@@ -58,7 +58,7 @@ describe('Bidi Display Order', () => {
         expectedDirections: [ 'rtl', 'rtl','rtl','rtl','rtl','rtl','rtl','rtl','rtl','rtl','ltr','ltr','ltr','ltr','ltr','rtl','rtl','rtl','rtl', 'rtl']
       }
     ]
-    doTestCases(testCases, getStringTextDirectionCapsFake)
+    doTestCases(testCases, getFakeStringTextDirection)
   })
 
   test('Strings with punctuation', () => {
@@ -78,7 +78,7 @@ describe('Bidi Display Order', () => {
         expectedDirections: [ 'ltr', 'ltr', 'ltr', 'rtl',      'rtl', 'rtl',    'rtl',  'rtl',  'ltr', 'ltr', 'ltr', 'ltr', 'ltr']
       }
     ]
-    doTestCases(testCases, getStringTextDirectionCapsFake)
+    doTestCases(testCases, getFakeStringTextDirection)
   })
 
   test('Strings with brackets', () => {
@@ -112,7 +112,7 @@ describe('Bidi Display Order', () => {
         expectedDirections: [ 'rtl', 'rtl', 'rtl', 'rtl', 'rtl', 'rtl', 'ltr', 'ltr', 'ltr', 'rtl', 'rtl', 'rtl', 'rtl', 'rtl']
       },
     ]
-    doTestCases(testCases, getStringTextDirectionCapsFake)
+    doTestCases(testCases, getFakeStringTextDirection)
   })
 })
 
@@ -135,24 +135,3 @@ function expectResults(context: string, result: BidiOrderInfo[], expectedOrder: 
 
 }
 
-/**
- * Helper function: all caps text is RTL, anything that starts with number is European Number
- * @param someString
- */
-function getStringTextDirectionCapsFake( someString: string) : IntrinsicTextDirection {
-  if (isWhiteSpace(someString)) {
-    return ''
-  }
-  if (/[0-9]/.test(someString.charAt(0))) {
-    return 'en'
-  }
-  if (/^[A-Za-z]/.test(someString)) {
-    if (isAllUpperCase(someString)) {
-      return 'rtl'
-    } else {
-      return 'ltr'
-    }
-  }
-  // anything else, e.g. punctuation
-  return ''
-}

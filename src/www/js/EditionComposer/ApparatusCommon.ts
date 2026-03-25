@@ -18,7 +18,7 @@
 
 
 import * as ApparatusSubEntryType from '../Edition/SubEntryType';
-import {NumeralStyles} from '@/toolbox/NumeralStyles';
+import {NumeralSystems} from '@/toolbox/NumeralSystems';
 import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
 import {escapeHtml, trimWhiteSpace} from '@/toolbox/Util';
 import {ApparatusUtil} from '@/Edition/ApparatusUtil';
@@ -28,7 +28,7 @@ import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
-import {WitnessDataItem} from "@/Edition/WitnessDataItem";
+import {WitnessDataItemInterface} from "@/CtData/CtDataInterface";
 
 
 
@@ -258,7 +258,7 @@ export class ApparatusCommon {
     }
   }
 
-  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], language: string, numberStyle: string|null = null) {
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItemInterface[], language: string, numberStyle: string|null = null) {
     const actualNumberStyle = numberStyle ?? language;
     return witnessData.map((w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {
@@ -312,9 +312,9 @@ export class ApparatusCommon {
       return '???';
     }
     if (style === 'ar') {
-      return NumeralStyles.toDecimalArabic(n);
+      return NumeralSystems.toEasternArabic(n);
     }
-    return NumeralStyles.toDecimalWestern(n);
+    return NumeralSystems.toWesternArabic(n);
   }
 
 

@@ -3,7 +3,7 @@ import {ApparatusSubEntry} from '../ApparatusSubEntry';
 import * as SubEntryType from '../SubEntryType';
 import * as SubEntrySource from '../SubEntrySource';
 import {ApparatusEntry} from '../ApparatusEntry';
-import {NumeralStyles} from '@/toolbox/NumeralStyles';
+import {NumeralSystems} from '@/toolbox/NumeralSystems';
 import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
 import {MainTextToken} from "../MainTextToken";
@@ -174,7 +174,7 @@ export class MarginalFoliationGenerator {
       } else {
         let [, folioNumber, folioSuffix] = foliationParts;
         folioSuffix = folioSuffix ?? '';
-        fmtText.push(...fromString(NumeralStyles.toDecimalArabic(parseInt(folioNumber))));
+        fmtText.push(...fromString(NumeralSystems.toEasternArabic(parseInt(folioNumber))));
         if (folioSuffix === 'r') {
           folioSuffix = 'ظ';
         }

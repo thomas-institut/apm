@@ -62,7 +62,7 @@ def print_horizontal_list(context, x, y, horizontal_list):
     for some_item in horizontal_list['list']:
         item_width = px2pt(some_item['width'])
         item_text_direction = get_value(some_item, 'textDirection', '')
-        if item_text_direction == text_direction:
+        if item_text_direction == text_direction or item_text_direction == '':
             print_item(context, tmp_x, tmp_y, some_item)
         else:
             # a reverse item

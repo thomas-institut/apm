@@ -20,9 +20,9 @@
 
 
 import {deepCopy} from '../toolbox/Util.js';
-import {WitnessDataItem} from "./WitnessDataItem.js";
 import {SiglaGroup} from "./SiglaGroup.js";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "../lib/FmtText/FmtText.js";
+import {WitnessDataItemInterface} from "./../CtData/CtDataInterface.js";
 
 const enDash = String.fromCodePoint(0x2013);
 
@@ -78,9 +78,9 @@ export class ApparatusUtil {
     };
   }
 
-  static getSiglaData(witnessData: WitnessDataItem[], sigla: string[], siglaGroups: SiglaGroup[]) {
+  static getSiglaData(witnessData: WitnessDataItemInterface[], sigla: string[], siglaGroups: SiglaGroup[]) {
 
-    let wData: WitnessDataItem[] = deepCopy(witnessData);
+    let wData: WitnessDataItemInterface[] = deepCopy(witnessData);
     let wDataArray = wData.filter((w) => {
       return !w.omitSiglum;
     }).map((w) => {

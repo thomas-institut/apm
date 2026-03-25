@@ -18,7 +18,7 @@
 
 import { Punctuation} from '@/defaults/Punctuation'
 import { WitnessToken } from '@/Witness/WitnessToken'
-import { NumeralStyles } from './NumeralStyles'
+import { NumeralSystems } from './NumeralSystems'
 import { EditionWitnessToken } from '@/Witness/EditionWitnessToken'
 import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
 
@@ -297,7 +297,7 @@ export class EditionWitnessTokenStringParser {
     // if the first field is a number, assume that the rest are also numbers or
     // appropriate numbering labels. This allows for complex numbering schemes
     // TODO: actually check for such schemes by allowing specific numbering sequences: latin/greek letter, roman numerals
-    return NumeralStyles.isArabicNumber(firstField) || NumeralStyles.isWesternNumber(firstField);
+    return NumeralSystems.isEasternArabicNumber(firstField) || NumeralSystems.isWesternArabicNumber(firstField);
   }
 
   /**

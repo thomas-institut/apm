@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *
@@ -17,6 +19,7 @@
  */
 
 import {TextBox} from './TextBox.js';
+import {deepCopy} from "../../toolbox/Util.js";
 
 
 export interface FontDefinition {
@@ -65,6 +68,20 @@ export class TextBoxFactory {
     }
     return item;
   }
+
+  static clone(textBox: TextBox): TextBox {
+    let item = new TextBox();
+    item.setText(textBox.getText());
+    item.setFontFamily(textBox.getFontFamily());
+    item.setFontSize(textBox.getFontSize());
+    item.setFontWeight(textBox.getFontWeight());
+    item.setFontStyle(textBox.getFontStyle());
+    item.setTextDirection(textBox.getTextDirection());
+    item.metadata = deepCopy(textBox.metadata);
+    return item;
+  }
+
+
 
 }
 

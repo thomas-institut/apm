@@ -1,5 +1,5 @@
 import {WitnessDataItem} from '@/Edition/WitnessDataItem';
-import {NumeralStyles} from '@/toolbox/NumeralStyles';
+import {NumeralSystems} from '@/toolbox/NumeralSystems';
 import {getStringVal} from "@/toolbox/UiToolBox";
 
 const forceHandOneDisplaySelectValue = 'forceZero';
@@ -159,8 +159,8 @@ export class WitnessDataEditor {
 
   getNumberString(n: number) {
     if (this.lang === 'ar') {
-      return NumeralStyles.toDecimalArabic(n);
+      return NumeralSystems.toEasternArabic(n);
     }
-    return NumeralStyles.toDecimalWestern(n);
+    return NumeralSystems.toWesternArabic(n);
   }
 }

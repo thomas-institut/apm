@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "vitest run test/js/",
+    "test-run": "vitest run",
     "test-watch": "vitest",
     "build-dev": "vite build --base=/dist",
     "build": "vite build",

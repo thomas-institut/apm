@@ -1,7 +1,6 @@
 // noinspection ES6PreferShortImport
 
 import {PageProcessor} from './PageProcessor.js';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as MetadataKey from '../MetadataKey.js';
 import * as ListType from '../ListType.js';
 import {ItemList} from '../ItemList.js';
@@ -10,36 +9,49 @@ import {TextBoxFactory} from '../TextBoxFactory.js';
 import {Glue} from '../Glue.js';
 import {TextBoxMeasurer} from '../TextBoxMeasurer/TextBoxMeasurer.js';
 import {Typesetter2} from '../Typesetter2.js';
-import {NumeralStyles} from '../../../toolbox/NumeralStyles.js';
 import {deepCopy} from '../../../toolbox/Util.js';
 import {TypesetterPage} from "../TypesetterPage.js";
-import {LineNumberData} from "../MainTextLineData.js";
+import {LineNumberData, MainTextLineData} from "../MainTextLineData.js";
+import {NumeralSystem, NumeralSystems} from "../../../toolbox/NumeralSystems.js";
+
+export interface AddLineNumbersOptions {
+  listTypeToNumber?: string,
+  lineTypeToNumber?: string,
+  numeralSystem?: NumeralSystem,
+  showLineOne?: boolean,
+  lineNumberShift?: number,
+  resetEachPage?: boolean,
+  frequency?: number,
+  xPosition?: number,
+  align?: string,
+  fontFamily?: string,
+  fontSize?: number,
+  textBoxMeasurer: TextBoxMeasurer,
+  debug?: boolean
+}
 
 export class AddLineNumbers extends PageProcessor {
-  private readonly options: any;
+  private readonly options: Required<AddLineNumbersOptions>;
   private readonly debug: boolean;
 
-  constructor(options: any) {
+  constructor(options: AddLineNumbersOptions) {
     super();
-    let oc = new OptionsChecker({
-      context: "AddLineNumbers Page Processor", optionsDefinition: {
-        listTypeToNumber: {type: 'string', default: ListType.MAIN_TEXT_BLOCK},
-        lineTypeToNumber: {type: 'string', default: ''},
-        numberStyle: {type: 'string', default: ''},
-        showLineOne: {type: 'boolean', default: true},
-        lineNumberShift: {type: 'number', default: 0},
-        resetEachPage: {type: 'boolean', default: true},
-        frequency: {type: 'number', default: 5},
-        xPosition: {type: 'number', default: 20},
-        align: {type: 'string', default: 'right'},
-        fontFamily: {type: 'string', default: 'FreeSerif'},
-        fontSize: {type: 'number', default: Typesetter2.pt2px(10)},
-        textBoxMeasurer: {type: 'object', objectClass: TextBoxMeasurer},
-        debug: {type: 'boolean', default: false}
-      }
-    });
-    this.options = oc.getCleanOptions(options);
-
+    const defaults = {
+      listTypeToNumber: ListType.MainTextBlockList,
+      lineTypeToNumber: '',
+      numberStyle: 'WesternArabic',
+      showLineOne: true,
+      lineNumberShift: 0,
+      resetEachPage: true,
+      frequency: 5,
+      xPosition: 20,
+      align: 'right',
+      fontFamily: 'FreeSerif',
+      fontSize: Typesetter2.pt2px(10),
+      numeralSystem: 'WesternArabic' as NumeralSystem,
+      debug: false,
+    };
+    this.options = {...defaults, ...options};
     this.debug = this.options.debug;
 
     this.debug && console.log(`AddPageNumbers options`);
@@ -58,13 +70,13 @@ export class AddLineNumbers extends PageProcessor {
    */
   process(page: TypesetterPage): Promise<TypesetterPage> {
     return new Promise(async (resolve) => {
-      if (!page.hasMetadata(MetadataKey.MAIN_TEXT_LINE_DATA)) {
+      if (!page.hasMetadata(MetadataKey.MainTextLineData)) {
         console.warn(`No main text line data available, line numbers not added`);
         resolve(page);
       }
 
       /** @var {MainTextLineData}mainTextLineData */
-      let mainTextLineData = page.getMetadata(MetadataKey.MAIN_TEXT_LINE_DATA);
+      let mainTextLineData = page.getMetadata(MetadataKey.MainTextLineData) as MainTextLineData;
       let mainTextIndex = mainTextLineData.mainTextListIndex;
       if (mainTextIndex === -1) {
         // no main text block, nothing to do
@@ -105,11 +117,11 @@ export class AddLineNumbers extends PageProcessor {
         throw new Error(`Main text block at index ${mainTextIndex} is not an ItemList`);
       }
       let mainTextListItems = mainTextList.getList();
-      let lineNumberList = new ItemList(TypesetterItemDirection.VERTICAL);
+      let lineNumberList = new ItemList(TypesetterItemDirection.VerticalItemDirection);
       lineNumberList
       .setShiftX(this.options.xPosition)
       .setShiftY(mainTextList.getShiftY())
-      .addMetadata(MetadataKey.LIST_TYPE, ListType.LINE_NUMBERS);
+      .addMetadata(MetadataKey.ListType, ListType.LineNumbersList);
       let previousShiftYAdjustment = 0;
       let previousLineHeight = 0;
       let previousY = 0;
@@ -119,12 +131,12 @@ export class AddLineNumbers extends PageProcessor {
         // add inter number glue
         let glueHeight = dataItem.y - previousY - previousLineHeight + previousShiftYAdjustment;
         if (glueHeight !== 0) {
-          let glue = new Glue(TypesetterItemDirection.VERTICAL);
+          let glue = new Glue(TypesetterItemDirection.VerticalItemDirection);
           glue.setHeight(glueHeight);
           lineNumberList.pushItem(glue);
         }
 
-        let lineNumberTextBox = TextBoxFactory.simpleText(this._getLineNumberString(dataItem.lineNumberToShow), {
+        let lineNumberTextBox = TextBoxFactory.simpleText(this.getLineNumberString(dataItem.lineNumberToShow), {
           fontFamily: this.options.fontFamily, fontSize: this.options.fontSize
         });
         // the number may be RTL, but alignments are calculated assuming LTR box placement
@@ -152,18 +164,11 @@ export class AddLineNumbers extends PageProcessor {
     });
   }
 
-  /**
-   *
-   * @param {number}lineNumber
-   * @return {string}
-   * @private
-   */
-  _getLineNumberString(lineNumber: number): string {
-    switch (this.options.numberStyle) {
-      case 'arabic':
-      case 'ara':
-      case 'ar':
-        return NumeralStyles.toDecimalArabic(lineNumber);
+
+  private getLineNumberString(lineNumber: number): string {
+    switch (this.options.numeralSystem) {
+      case 'EasternArabic':
+        return NumeralSystems.toEasternArabic(lineNumber);
 
       default:
         return `${lineNumber}`;

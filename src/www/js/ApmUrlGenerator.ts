@@ -127,6 +127,10 @@ export class ApmUrlGenerator {
     return this.base + '/search';
   }
 
+  siteHelp() {
+    return this.base + '/help';
+  }
+
   siteSearchNew() {
     return this.base + '/searchnew';
   }

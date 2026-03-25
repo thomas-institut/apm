@@ -15,6 +15,7 @@ import {deleteToken, retrieveToken, storeToken} from "@/ReactAPM/ToolBox/Authent
 import {trimCharacters} from "@/toolbox/Util";
 import NotFound from "@/ReactAPM/NotFound";
 import {Tid} from "@/Tid/Tid";
+import Help from "@/ReactAPM/Pages/Help";
 
 
 // @ts-ignore
@@ -212,7 +213,7 @@ function RealApp() {
         reactAppBaseUrl: reactAppBaseUrl,
         localCache: localCache,
         apiClient: apmDataProxy,
-        versionTag: `APM ${data.appVersion} (${data.versionDate}${data.versionExtra !== '' ? ', ' + data.versionExtra : ''})`
+        versionTag: `${data.appVersion} (${data.versionDate}${data.versionExtra !== '' ? ', ' + data.versionExtra : ''})`
       };
       RouteUrls.setBaseUrl(reactAppBaseUrl);
       setStatus(StatusInitializationReady);
@@ -276,7 +277,7 @@ function RealApp() {
 
   const routesWithTopBar = [RouteUrls.home(), RouteUrls.dashboard(), RouteUrls.docs(),
 
-    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(),
+    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.help(),
 
     RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocumentBeta(),
 
@@ -324,6 +325,7 @@ function RealApp() {
               <Route id="work" path={RouteUrls.patternWork()} element={<Work/>}/>
               <Route id="person" path={RouteUrls.patternPerson()} element={<Person/>}/>
               <Route id="doc" path={RouteUrls.patternDocumentBeta()} element={<Document/>}/>
+              <Route id="help" path={RouteUrls.help()} element={<Help/>}/>
               <Route id="login" path={RouteUrls.login()} element={<Login/>}/>
               <Route id="logout" path={RouteUrls.logout()} element={<Logout/>}/>
               <Route id="catchall" path="*" element={<NotFound/>}></Route>

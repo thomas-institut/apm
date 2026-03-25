@@ -399,12 +399,12 @@ body.h-and-c-page {
     font-size: 0.8em;
 }
 
-.h-and-c-page .navbar {
-    margin: 0;
-    display: flex;
-    align-items: center;
-    border-bottom: 1px solid var(--very-light-gray);
-}
+/*.h-and-c-page .navbar {*/
+/*    margin: 0;*/
+/*    display: flex;*/
+/*    align-items: center;*/
+/*    !*border-bottom: 1px solid var(--very-light-gray);*!*/
+/*}*/
 
 
 /* Metadata editor defaults */

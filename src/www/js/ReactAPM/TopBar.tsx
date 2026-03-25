@@ -81,16 +81,9 @@ export default function TopBar(props: TopBarProps): ReactNode {
         <MyNav route={RouteUrls.works()} title={tr('Works')}/>
         <MyNav route={RouteUrls.people()} title={tr('People')}/>
         <MyNav route={RouteUrls.search()} title={tr('Search')}/>
-        <Nav.Item>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</Nav.Item>
-        <NavDropdown id="useful-links-dropdown" title={tr('Useful Links')}>
 
-          <NavDropdown.Item className="dd-menu-item"
-                            href="https://averroes.uni-koeln.de/apm/wiki">Wiki</NavDropdown.Item>
-          <NavDropdown.Item className="dd-menu-item" href="https://averroes.uni-koeln.de/legacy/">Legacy Files (e.g.,
-            old XML)</NavDropdown.Item>
-          <NavDropdown.Item className="dd-menu-item" href="https://averroes.uni-koeln.de/">Public
-            Website</NavDropdown.Item>
-        </NavDropdown>
+        <Nav.Item>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</Nav.Item>
+        <MyNav route={RouteUrls.help()} title={'About/Help'}/>
       </Navbar.Collapse>
       <Navbar.Collapse className="justify-content-end">
         <NavDropdown id="user-dropdown" align={'end'} title={(<UserIcon name={userName}/>)}>

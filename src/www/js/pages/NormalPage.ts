@@ -165,15 +165,7 @@ export class NormalPage extends ApmPage {
                 <li class="nav-item"><a class="nav-link" href="${urlGen.sitePeople()}" title="${tr('People')}">${tr('People')}</a></li>
                 <li class="nav-item"><a class="nav-link" href="${urlGen.siteSearch()}" title="${tr('Search')}">${tr('Search')}</a></li>
                 <li class="nav-item">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</li>
-                <li class="nav-item dropdown">
-                <li class="nav-item dropdown">
-                   <a href="/" class="nav-link dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false">${tr('Useful Links')}</a>
-                   <ul class="dropdown-menu">
-                       <li><a class="nav-link dd-menu-item" href="https://averroes.uni-koeln.de/apm/wiki">Wiki <i class="fas fa-external-link-alt"></i></a></li>
-                       <li><a class="nav-link dd-menu-item" href="https://averroes.uni-koeln.de/legacy/">Legacy Files (e.g., old XML) &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
-                       <li><a class="nav-link dd-menu-item" href="https://averroes.uni-koeln.de/">Public Website &nbsp;<i class="fas fa-external-link-alt"></i></a></li>
-                    </ul>
-                </li>
+                <li class="nav-item"><a class="nav-link" href="${urlGen.siteHelp()}" title="About/Help">About/Help</a></li>
             </ul>
                 
             <ul class="navbar-nav">

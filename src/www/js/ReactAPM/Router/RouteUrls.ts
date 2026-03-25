@@ -23,6 +23,10 @@ export class RouteUrls {
     return baseUrl + '/dashboard';
   }
 
+  static help() {
+    return baseUrl + '/help';
+  }
+
   static docs() {
     return baseUrl + '/documents';
   }

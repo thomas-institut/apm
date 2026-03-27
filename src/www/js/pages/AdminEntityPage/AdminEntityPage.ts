@@ -83,7 +83,7 @@ export class AdminEntityPage extends NormalPage {
           this.cancelDialog.acceptButton.prop('disabled', true);
           this.cancelDialog.setAcceptButtonLabel("Cancelling statement...");
 
-          let commands = [{command: 'cancel', statementId: statementId, editorialNote: cancellationNote}];
+          let commands = [{command: 'cancel', statementId: statementId, cancellationNote: cancellationNote}];
           $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands)).then((response) => {
             console.log("Success", response);
             if (response.success === true) {
@@ -204,7 +204,7 @@ export class AdminEntityPage extends NormalPage {
       if (asSubject) {
         console.log(`New statement as subject, predicate ${predicate}`);
         new GenericStatementEditor({
-          statementId: -1,
+          statementId: null,
           editableParts: [false, false, true],
           subject: this.entityId,
           predicate: predicate,

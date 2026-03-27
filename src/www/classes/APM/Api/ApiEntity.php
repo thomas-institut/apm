@@ -167,7 +167,7 @@ class ApiEntity extends ApiController
                         ];
                         break;
                     }
-                    $note = $command['editorialNote'] ?? '';
+                    $note = $command['cancellationNote'] ?? '';
                     try {
                         $cancellationId = $es->cancelStatement(intval($command['statementId']), $this->apiUserId, $timestamp, $note);
                         $commandResults[] = [

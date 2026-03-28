@@ -40,7 +40,6 @@ export default defineConfig({
         PersonPage: resolve(__dirname, 'js/pages/PersonPage.ts'),
         ErrorPage: resolve(__dirname, 'js/pages/ErrorPage.ts'),
         ChunkPage: resolve(__dirname, 'js/pages/ChunkPage.ts'),
-        AdminEntityPage: resolve(__dirname, 'js/pages/AdminEntityPage/AdminEntityPage.js'),
 
         // Ancillary pages that should disappear
         DocPage: resolve(__dirname, 'js/pages/DocPage.js'),

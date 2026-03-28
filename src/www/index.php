@@ -163,11 +163,11 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
             ->setName('person');
 
         // Entity admin page
-        $group->get('/entity/{tid}/admin',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteEntity($container))->adminEntityPage($request, $response);
-            })
-            ->setName('entity');
+//        $group->get('/entity/{tid}/admin',
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SiteEntity($container))->adminEntityPage($request, $response);
+//            })
+//            ->setName('entity');
 
         $group->get('/work/{work}/chunk/{chunk}',
             function (Request $request, Response $response) use ($container) {

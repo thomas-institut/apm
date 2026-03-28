@@ -191,12 +191,12 @@ export default function AdminEntity() {
         });
 
         const predicateDef = predicateDefs[statement.predicate];
-        const isSystem = predicateDef?.flags?.includes(5);
+        const isSystem = predicateDef?.flags?.includes(5) || statement.id === -1;
         const isEditable = !isCancelled && !isSystem;
         const isCancellable = predicateDef?.canBeCancelled && !isSystem;
 
         return (<tr key={statement.id} className={isCancelled ? 'cancelled-row' : ''}>
-          <td>{statement.id}</td>
+          <td>{statement.id === -1 ? 'System Statement' : statement.id}</td>
           <td><EntityLink id={statement.subject} type="admin"/></td>
           <td><EntityLink id={statement.predicate} type="admin"/></td>
           <td>{renderObject(statement.object, getObjectValueType(statement.predicate))}</td>
@@ -273,7 +273,7 @@ export default function AdminEntity() {
         break;
     }
     if (linkType === null) return null;
-    return <EntityLink id={entityId} type={linkType} urlAsName={true}/>;
+    return <EntityLink id={entityId} type={linkType} useUrlAsLabel={true}/>;
   }
 
   const apmUrl = getNonAdminEntityLink(data.type, entityId);

@@ -93,11 +93,11 @@ export class RouteUrls {
   }
 
   static patternAdminEntity() {
-    return baseUrl + '/beta/entity/:id/admin';
+    return baseUrl + '/entity/:id/admin';
   }
 
   static adminEntity(id: number|string) {
-    return baseUrl + '/beta/entity/' + id + '/admin';
+    return baseUrl + '/entity/' + id + '/admin';
   }
 
   static patternDocumentBeta() {

@@ -5,18 +5,19 @@ import {AppContext} from "@/ReactAPM/App";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import {Tid} from "@/Tid/Tid";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
-import {StatementDataInterface} from "@/Api/DataSchema/ApiEntity";
+import {StatementDataInterface, StatementEditCommand} from "@/Api/DataSchema/ApiEntity";
 import * as Entity from "@/constants/Entity";
 import GenericStatementEditor from "./GenericStatementEditor";
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
-import {Badge, Button, Form, Table} from "react-bootstrap";
+import {Button, Form, Table} from "react-bootstrap";
 import {capitalizeFirstLetter} from "@/toolbox/Util";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {ApmUrlGenerator} from "@/ApmUrlGenerator";
+import './AdminEntity.css';
 
-const TimestampPredicates = [2004, 3002, 5002];
-const UrlPredicates = [2009];
-const MetadataPredicates = [3001, 3002, 3003];
+const TimestampPredicates = [Entity.pEntityCreationTimestamp, Entity.pStatementTimestamp, Entity.pCancellationTimestamp];
+const UrlPredicates = [Entity.pUrl];
+const MetadataPredicates = [Entity.pStatementAuthor, Entity.pStatementTimestamp, Entity.pStatementEditorialNote];
 
 export default function AdminEntity() {
   const {id} = useParams();
@@ -108,7 +109,7 @@ export default function AdminEntity() {
     if (!cancelDialogProps?.statement) return;
     setCancelling(true);
     setCancelError('');
-    const commands = [{
+    const commands: StatementEditCommand[] = [{
       command: 'cancel', statementId: cancelDialogProps.statement.id, cancellationNote: cancellationNote.trim()
     }];
     try {
@@ -154,73 +155,72 @@ export default function AdminEntity() {
 
     const sortedStatements = [...statements].sort((a, b) => a.predicate - b.predicate);
 
-    return (<Table striped bordered hover responsive className="statements mt-2">
-        <thead>
-        <tr>
-          <th>Statement Id</th>
-          <th>Subject</th>
-          <th>Predicate</th>
-          <th>Object</th>
-          <th>Qualifications</th>
-          <th>Statement Metadata</th>
-        </tr>
-        </thead>
-        <tbody>
-        {sortedStatements.map(statement => {
-          const isCancelled = statement.cancellationId !== -1;
-          const metadataItems: ReactNode[] = [];
-          const qualificationItems: ReactNode[] = [];
-          const cancellationItems: ReactNode[] = [];
+    return (<Table bordered className="statements">
+      <thead>
+      <tr>
+        <th>Statement Id</th>
+        <th>Subject</th>
+        <th>Predicate</th>
+        <th>Object</th>
+        <th>Qualifications</th>
+        <th>Statement Metadata</th>
+        <th>Actions</th>
+      </tr>
+      </thead>
+      <tbody>
+      {sortedStatements.map(statement => {
+        const isCancelled = statement.cancellationId !== -1;
+        const metadataItems: ReactNode[] = [];
+        const qualificationItems: ReactNode[] = [];
+        const cancellationItems: ReactNode[] = [];
 
-          statement.statementMetadata.forEach(([predicate, obj], idx) => {
-            const item = (<div key={`${statement.id}-${predicate}-${idx}`}>
-                <EntityLink id={predicate} type="admin"/>: {renderObject(obj, getObjectValueType(predicate))}
-              </div>);
-            if (MetadataPredicates.includes(predicate)) {
-              metadataItems.push(item);
-            } else {
-              qualificationItems.push(item);
-            }
-          });
+        statement.statementMetadata.forEach(([predicate, obj], idx) => {
+          const item = (<div key={`${statement.id}-${predicate}-${idx}`}>
+            <EntityLink id={predicate} type="admin"/>: {renderObject(obj, getObjectValueType(predicate))}
+          </div>);
+          if (MetadataPredicates.includes(predicate)) {
+            metadataItems.push(item);
+          } else {
+            qualificationItems.push(item);
+          }
+        });
 
-          statement.cancellationMetadata.forEach(([predicate, obj], idx) => {
-            cancellationItems.push(<div key={`cancel-${statement.id}-${predicate}-${idx}`}>
-              <EntityLink id={predicate} type="admin"/>: {renderObject(obj, getObjectValueType(predicate))}
-            </div>);
-          });
+        statement.cancellationMetadata.forEach(([predicate, obj], idx) => {
+          cancellationItems.push(<div key={`cancel-${statement.id}-${predicate}-${idx}`}>
+            <EntityLink id={predicate} type="admin"/>: {renderObject(obj, getObjectValueType(predicate))}
+          </div>);
+        });
 
-          const predicateDef = predicateDefs[statement.predicate];
+        const predicateDef = predicateDefs[statement.predicate];
+        const isSystem = predicateDef?.flags?.includes(5);
+        const isEditable = !isCancelled && !isSystem;
+        const isCancellable = predicateDef?.canBeCancelled && !isSystem;
 
-          return (<tr key={statement.id} className={isCancelled ? 'table-secondary text-muted' : ''}>
-              <td className={isCancelled ? 'text-decoration-line-through' : ''}>{statement.id}</td>
-              <td className={isCancelled ? 'text-decoration-line-through' : ''}><EntityLink id={statement.subject}
-                                                                                            type="admin"/></td>
-              <td className={isCancelled ? 'text-decoration-line-through' : ''}><EntityLink id={statement.predicate}
-                                                                                            type="admin"/></td>
-              <td
-                className={isCancelled ? 'text-decoration-line-through' : ''}>{renderObject(statement.object, getObjectValueType(statement.predicate))}</td>
-              <td className={isCancelled ? 'text-decoration-line-through' : ''}>{qualificationItems}</td>
-              <td>
-                <div className={isCancelled ? 'text-decoration-line-through' : ''}>
-                  {metadataItems}
-                </div>
-                {!isCancelled && (<div className="mt-2">
-                    <Badge bg="success" className="me-1">Active</Badge>
-                    {predicateDef?.flags?.includes(5) ? (
-                      <span className="text-muted small">System data, editing disabled</span>) : (
-                      <div className="mt-1 d-flex gap-1">
-                        {predicateDef?.canBeCancelled && (<Button variant="outline-danger" size="sm"
-                                                                  onClick={() => handleCancelStatement(statement)}>Cancel</Button>)}
-                        <Button variant="outline-primary" size="sm"
-                                onClick={() => handleEditStatement(statement)}>Edit</Button>
-                      </div>)}
-                  </div>)}
-                {isCancelled && <div className="mt-2 text-danger small">Cancelled:<br/>{cancellationItems}</div>}
-              </td>
-            </tr>);
-        })}
-        </tbody>
-      </Table>);
+        return (<tr key={statement.id} className={isCancelled ? 'cancelled-row' : ''}>
+          <td>{statement.id}</td>
+          <td><EntityLink id={statement.subject} type="admin"/></td>
+          <td><EntityLink id={statement.predicate} type="admin"/></td>
+          <td>{renderObject(statement.object, getObjectValueType(statement.predicate))}</td>
+          <td>{qualificationItems}</td>
+          <td>{metadataItems} </td>
+          <td>
+            <div className={'actions-div'}>
+              {/*{isCancelled ? <div><Badge bg="secondary" className="me-1">Cancelled</Badge></div> :*/}
+              {/*  <div><Badge bg="success" className="me-1">Active</Badge></div>}*/}
+              {isSystem && <div className="system-data-label">System data, editing disabled</div>}
+              {!isSystem && (<div className={'action-buttons-div'}>
+                {isEditable && <Button variant="outline-secondary" size="sm"
+                                       onClick={() => handleEditStatement(statement)}>Edit</Button>}
+                {isCancellable && !isCancelled && (<Button variant="outline-secondary" size="sm"
+                                           onClick={() => handleCancelStatement(statement)}>Cancel</Button>)}
+              </div>)}
+              {isCancelled && <div>{cancellationItems}</div>}
+            </div>
+          </td>
+        </tr>);
+      })}
+      </tbody>
+    </Table>);
   };
 
   const getAvailablePredicates = (asSubject: boolean) => {
@@ -238,103 +238,97 @@ export default function AdminEntity() {
     if (available.length === 0) return null;
 
     return (<div className="available-predicates mt-3">
-        <h6>Predicates Available for {asSubject ? 'Subject' : 'Object'}</h6>
-        <Table size="sm" className="w-auto">
-          <tbody>
-          {available.map(p => (<tr key={p}>
-              <td><EntityLink id={p} type="admin"/></td>
-              <td>
-                <Button
-                  variant="outline-secondary"
-                  size="sm"
-                  onClick={() => handleNewStatement(p, asSubject)}
-                  title={`Click to create a new statement with the entity as ${asSubject ? 'subject' : 'object'}`}
-                >
-                  New Statement
-                </Button>
-              </td>
-            </tr>))}
-          </tbody>
-        </Table>
-      </div>);
+      <h6>Predicates Available for {asSubject ? 'Subject' : 'Object'}</h6>
+      <Table size="sm" className="w-auto">
+        <tbody>
+        {available.map(p => (<tr key={p}>
+          <td><EntityLink id={p} type="admin"/></td>
+          <td>
+            <Button
+              variant="outline-secondary"
+              size="sm"
+              onClick={() => handleNewStatement(p, asSubject)}
+              title={`Click to create a new statement with the entity as ${asSubject ? 'subject' : 'object'}`}
+            >
+              New Statement
+            </Button>
+          </td>
+        </tr>))}
+        </tbody>
+      </Table>
+    </div>);
   };
 
   const urlGen = new ApmUrlGenerator(context.baseUrl);
   const apmUrl = urlGen.siteEntityPage(data.type, entityId);
 
   return (<NormalPageContainer>
-      <h1>Entity {entityId} <small className="text-muted"> = {Tid.toBase36String(entityId)}</small></h1>
-      <p className="mb-4">
-        Apm Url: {apmUrl ? <a href={apmUrl}>{apmUrl}</a> : <i>None</i>}
-      </p>
+    <h1>Entity {Tid.toBase36String(entityId)}</h1>
+    <div className={'basic-data'}>
+      <div key={'id'}><b>Numerical Id</b>: {entityId}</div>
+      <div key={'url'}><b>Apm Url</b>: {apmUrl ? <a href={apmUrl}>{apmUrl}</a> : <i>None</i>}</div>
+      {Object.entries(data).map(([key, val]) => {
+        if (['statements', 'statementsAsObject', 'id'].includes(key)) return null;
+        let valContent;
+        if (val === null) valContent = 'null'; else if (typeof val === 'number') valContent =
+          <EntityLink id={val} type="admin"/>; else valContent = `'${val}'`;
 
-      <h2 className="mt-4">Basic Data</h2>
-      <div className="basic-data border p-3 rounded bg-light mb-4">
-        {Object.entries(data).map(([key, val]) => {
-          if (['statements', 'statementsAsObject', 'id'].includes(key)) return null;
-          let valContent;
-          if (val === null) valContent = 'null'; else if (typeof val === 'number') valContent =
-            <EntityLink id={val} type="admin"/>; else valContent = `'${val}'`;
+        return (<div key={key}>
+          <strong>{capitalizeFirstLetter(key)}</strong>: {valContent}
+        </div>);
+      })}
+    </div>
+    <p>
 
-          return (<p key={key} className="mb-1">
-              <strong>{capitalizeFirstLetter(key)}</strong>: {valContent}
-            </p>);
-        })}
-      </div>
+    </p>
 
-      <h3 className="mt-4">Statements as Subject</h3>
-      {renderStatementsTable(data.statements)}
-      {renderAvailablePredicates(true)}
 
-      <h3 className="mt-4">Statements as Object</h3>
-      {renderStatementsTable(data.statementsAsObject)}
-      {renderAvailablePredicates(false)}
+    <h3>Statements as Subject</h3>
+    {renderStatementsTable(data.statements)}
+    {renderAvailablePredicates(true)}
 
-      <div className="entity-data-dump mt-5 border-top pt-4">
-        <h3>Json</h3>
-        <pre className="bg-light p-3 border rounded small overflow-auto" style={{maxHeight: '400px'}}>
-            {JSON.stringify(data, null, 3)}
-        </pre>
-      </div>
+    <h3>Statements as Object</h3>
+    {renderStatementsTable(data.statementsAsObject)}
+    {renderAvailablePredicates(false)}
 
-      {editorProps && (<GenericStatementEditor
-          {...editorProps}
-          onHide={() => setEditorProps(null)}
-        />)}
+    {editorProps && (<GenericStatementEditor
+      {...editorProps}
+      onHide={() => setEditorProps(null)}
+    />)}
 
-      {cancelDialogProps && (<ConfirmDialog
-          show={cancelDialogProps.show}
-          onHide={() => {
-            setCancelDialogProps(null);
-            setCancellationNote('');
-            setCancelError('');
-          }}
-          title="Cancel statement"
-          body={<div>
-            <p>Do you want to cancel statement {cancelDialogProps.statement.id}?</p>
-            <p className="border p-2 bg-light rounded">
-              <b>Subject</b>: <EntityLink id={cancelDialogProps.statement.subject} type="admin"/><br/>
-              <b>Predicate</b>: <EntityLink id={cancelDialogProps.statement.predicate} type="admin"/><br/>
-              <b>Object</b>: {typeof cancelDialogProps.statement.object === 'number' ?
-              <EntityLink id={cancelDialogProps.statement.object}
-                          type="admin"/> : `'${cancelDialogProps.statement.object}'`}
-            </p>
-            <Form.Group className="mt-3">
-              <Form.Label>Cancellation Note</Form.Label>
-              <Form.Control
-                as="textarea"
-                rows={3}
-                value={cancellationNote}
-                onChange={(e) => setCancellationNote(e.target.value)}
-                placeholder="Enter a reason for cancellation..."
-                disabled={cancelling}
-              />
-            </Form.Group>
-            {cancelError && <div className="text-danger mt-2">{cancelError}</div>}
-          </div>}
-          onAccept={handleAcceptCancel}
-          acceptButtonLabel={cancelling ? "Cancelling..." : "Yes, do it"}
-          cancelButtonLabel="No"
-        />)}
-    </NormalPageContainer>);
+    {cancelDialogProps && (<ConfirmDialog
+      show={cancelDialogProps.show}
+      onHide={() => {
+        setCancelDialogProps(null);
+        setCancellationNote('');
+        setCancelError('');
+      }}
+      title="Cancel statement"
+      body={<div>
+        <p>Do you want to cancel statement {cancelDialogProps.statement.id}?</p>
+        <p className="border p-2 bg-light rounded">
+          <b>Subject</b>: <EntityLink id={cancelDialogProps.statement.subject} type="admin"/><br/>
+          <b>Predicate</b>: <EntityLink id={cancelDialogProps.statement.predicate} type="admin"/><br/>
+          <b>Object</b>: {typeof cancelDialogProps.statement.object === 'number' ?
+          <EntityLink id={cancelDialogProps.statement.object}
+                      type="admin"/> : `'${cancelDialogProps.statement.object}'`}
+        </p>
+        <Form.Group className="mt-3">
+          <Form.Label>Cancellation Note</Form.Label>
+          <Form.Control
+            as="textarea"
+            rows={3}
+            value={cancellationNote}
+            onChange={(e) => setCancellationNote(e.target.value)}
+            placeholder="Enter a reason for cancellation..."
+            disabled={cancelling}
+          />
+        </Form.Group>
+        {cancelError && <div className="text-danger mt-2">{cancelError}</div>}
+      </div>}
+      onAccept={handleAcceptCancel}
+      acceptButtonLabel={cancelling ? "Cancelling..." : "Yes, do it"}
+      cancelButtonLabel="No"
+    />)}
+  </NormalPageContainer>);
 }

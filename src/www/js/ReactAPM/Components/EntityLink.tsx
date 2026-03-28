@@ -116,7 +116,7 @@ export default function EntityLink(props: EntityLinkProps) {
   const linkFromDef = (def: LinkDef) => {
     let name = def.name ?? defaultEntityName;
     if (type === 'admin') {
-      name = `${id} [${name}]`;
+      name =  id < 10000 ? `${id} [${name}]` : `${Tid.toCanonicalString(id)} [${name}]`;
     }
     if (isActive) {
       if (def.isReactRoute) {

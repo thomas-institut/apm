@@ -1,4 +1,4 @@
-import {Modal, Button} from "react-bootstrap";
+import {Button, Modal} from "react-bootstrap";
 import {ReactNode} from "react";
 
 interface ConfirmDialogProps {
@@ -41,8 +41,7 @@ export default function ConfirmDialog(props: ConfirmDialogProps) {
     onHide();
   };
 
-  return (
-    <Modal show={show} onHide={handleCancel} size={size}>
+  return (<Modal show={show} onHide={handleCancel} size={size}>
       <Modal.Header closeButton>
         <Modal.Title>{title}</Modal.Title>
       </Modal.Header>
@@ -57,6 +56,5 @@ export default function ConfirmDialog(props: ConfirmDialogProps) {
           {cancelButtonLabel}
         </Button>
       </Modal.Footer>
-    </Modal>
-  );
+    </Modal>);
 }

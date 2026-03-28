@@ -1,5 +1,5 @@
 import {Link} from "react-router";
-import {useContext, useEffect, useState} from "react";
+import {useContext} from "react";
 import {AppContext} from "@/ReactAPM/App";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Tid} from "@/Tid/Tid";
@@ -10,17 +10,18 @@ import {ApmUrlGenerator} from "@/ApmUrlGenerator";
 interface EntityLinkProps {
   id: number;
   secondaryId?: number;
-  type?: 'person' | 'work' | 'singleChunkEdition' | 'multiChunkEdition' | 'collationTable' | 'document' | 'docPage' | 'admin'
+  type?: 'person' | 'work' | 'singleChunkEdition' | 'multiChunkEdition' | 'collationTable' | 'document' | 'docPage' | 'admin';
   name?: string;
   active?: boolean;
   openInNewTab?: boolean;
 }
 
 interface LinkDef {
-  name: string|null;
+  name: string | null;
   isReactRoute: boolean;
   openInNewTab?: boolean;
 }
+
 /**
  *
  * Displays a link to an entity's page
@@ -97,17 +98,17 @@ export default function EntityLink(props: EntityLinkProps) {
       defaultEntityName = `DocPage ${id}:${secondaryId ?? 1}`;
   }
 
-  const syncGetter: () => LinkDef|null = () => {
+  const syncGetter: () => LinkDef | null = () => {
     if (name !== undefined) {
-      return  {name:name, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
+      return {name: name, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
     }
     const cachedName = dataProxy.getEntityNameFromCache(id);
     if (cachedName === null) {
       return null;
     }
-    return {name: cachedName, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false}
+    return {name: cachedName, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
   };
-  const asyncGetter: ()=>Promise<LinkDef> = async () => {
+  const asyncGetter: () => Promise<LinkDef> = async () => {
     const name = await dataProxy.getEntityName(id);
     return {name: name, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
   };
@@ -119,18 +120,18 @@ export default function EntityLink(props: EntityLinkProps) {
     }
     if (isActive) {
       if (def.isReactRoute) {
-        return (<Link to={url}>{name}</Link>)
+        return (<Link to={url}>{name}</Link>);
       }
-      return def.openInNewTab ? <a href={url} target={'_blank'}>{name}</a> :  <a href={url}>{name}</a>
+      return def.openInNewTab ? <a href={url} target={'_blank'}>{name}</a> : <a href={url}>{name}</a>;
     } else {
       return (<>{name}</>);
     }
-  }
+  };
 
-  return(<SmartDeferredDataComponent<LinkDef>
+  return (<SmartDeferredDataComponent<LinkDef>
     asyncGetter={asyncGetter}
     syncGetter={syncGetter}
     placeholder={<Skeleton as="span" style={{width: '10em'}}>{defaultEntityName}</Skeleton>}
     onData={linkFromDef}
-  />)
+  />);
 }

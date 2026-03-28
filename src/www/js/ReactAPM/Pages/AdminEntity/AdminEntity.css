@@ -1,0 +1,42 @@
+
+.cancelled-row td {
+    background-color: #fafafa;
+}
+
+.with-margin-left {
+    margin-left: 2rem;
+}
+
+.system-data-label {
+    color: #b9bcbf;
+}
+
+.basic-data {
+    margin-left: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+}
+
+h3 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+
+.actions-div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+.action-buttons-div {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+}
+
+.action-buttons-div button {
+    font-size: 0.8em;
+}
+

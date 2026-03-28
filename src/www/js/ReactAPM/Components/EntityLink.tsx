@@ -12,6 +12,7 @@ interface EntityLinkProps {
   secondaryId?: number;
   type?: 'person' | 'work' | 'singleChunkEdition' | 'multiChunkEdition' | 'collationTable' | 'document' | 'docPage' | 'admin';
   name?: string;
+  urlAsName?: boolean;
   active?: boolean;
   openInNewTab?: boolean;
 }
@@ -29,7 +30,7 @@ interface LinkDef {
  */
 export default function EntityLink(props: EntityLinkProps) {
 
-  const {id, name, type, secondaryId, openInNewTab} = props;
+  const {id, name, urlAsName, type, secondaryId, openInNewTab} = props;
   const appContext = useContext(AppContext);
   const dataProxy = appContext.apiClient;
 
@@ -99,6 +100,9 @@ export default function EntityLink(props: EntityLinkProps) {
   }
 
   const syncGetter: () => LinkDef | null = () => {
+    if (urlAsName === true) {
+      return {name: url, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
+    }
     if (name !== undefined) {
       return {name: name, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
     }
@@ -115,8 +119,8 @@ export default function EntityLink(props: EntityLinkProps) {
 
   const linkFromDef = (def: LinkDef) => {
     let name = def.name ?? defaultEntityName;
-    if (type === 'admin') {
-      name =  id < 10000 ? `${id} [${name}]` : `${Tid.toCanonicalString(id)} [${name}]`;
+    if (urlAsName !== true && type === 'admin') {
+      name = id < 100000 ? `${id} [${name}]` : `${Tid.toCanonicalString(id)} [${name}]`;
     }
     if (isActive) {
       if (def.isReactRoute) {

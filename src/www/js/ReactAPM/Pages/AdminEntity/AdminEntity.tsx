@@ -12,7 +12,6 @@ import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 import {Button, Form, Table} from "react-bootstrap";
 import {capitalizeFirstLetter} from "@/toolbox/Util";
 import {ApmFormats} from "@/pages/common/ApmFormats";
-import {ApmUrlGenerator} from "@/ApmUrlGenerator";
 import './AdminEntity.css';
 
 const TimestampPredicates = [Entity.pEntityCreationTimestamp, Entity.pStatementTimestamp, Entity.pCancellationTimestamp];
@@ -212,7 +211,7 @@ export default function AdminEntity() {
                 {isEditable && <Button variant="outline-secondary" size="sm"
                                        onClick={() => handleEditStatement(statement)}>Edit</Button>}
                 {isCancellable && !isCancelled && (<Button variant="outline-secondary" size="sm"
-                                           onClick={() => handleCancelStatement(statement)}>Cancel</Button>)}
+                                                           onClick={() => handleCancelStatement(statement)}>Cancel</Button>)}
               </div>)}
               {isCancelled && <div>{cancellationItems}</div>}
             </div>
@@ -259,29 +258,41 @@ export default function AdminEntity() {
     </div>);
   };
 
-  const urlGen = new ApmUrlGenerator(context.baseUrl);
-  const apmUrl = urlGen.siteEntityPage(data.type, entityId);
+  function getNonAdminEntityLink(type: number, entityId: number) {
+    let linkType: 'document' | 'work' | 'person' | null = null;
+
+    switch (type) {
+      case Entity.tDocument:
+        linkType = 'document';
+        break;
+      case Entity.tWork:
+        linkType = 'work';
+        break;
+      case Entity.tPerson:
+        linkType = 'person';
+        break;
+    }
+    if (linkType === null) return null;
+    return <EntityLink id={entityId} type={linkType} urlAsName={true}/>;
+  }
+
+  const apmUrl = getNonAdminEntityLink(data.type, entityId);
 
   return (<NormalPageContainer>
     <h1>Entity {Tid.toBase36String(entityId)}</h1>
     <div className={'basic-data'}>
       <div key={'id'}><b>Numerical Id</b>: {entityId}</div>
-      <div key={'url'}><b>Apm Url</b>: {apmUrl ? <a href={apmUrl}>{apmUrl}</a> : <i>None</i>}</div>
+      <div key={'url'}><b>Apm Url</b>: {apmUrl ?? 'None'}</div>
       {Object.entries(data).map(([key, val]) => {
         if (['statements', 'statementsAsObject', 'id'].includes(key)) return null;
         let valContent;
         if (val === null) valContent = 'null'; else if (typeof val === 'number') valContent =
           <EntityLink id={val} type="admin"/>; else valContent = `'${val}'`;
-
         return (<div key={key}>
           <strong>{capitalizeFirstLetter(key)}</strong>: {valContent}
         </div>);
       })}
     </div>
-    <p>
-
-    </p>
-
 
     <h3>Statements as Subject</h3>
     {renderStatementsTable(data.statements)}

@@ -42,19 +42,19 @@ export default function ConfirmDialog(props: ConfirmDialogProps) {
   };
 
   return (<Modal show={show} onHide={handleCancel} size={size}>
-      <Modal.Header closeButton>
-        <Modal.Title>{title}</Modal.Title>
-      </Modal.Header>
-      <Modal.Body>
-        {body}
-      </Modal.Body>
-      <Modal.Footer>
-        <Button variant="danger" onClick={handleAccept} className="accept-btn">
-          {acceptButtonLabel}
-        </Button>
-        <Button variant="primary" onClick={handleCancel} className="cancel-btn">
-          {cancelButtonLabel}
-        </Button>
-      </Modal.Footer>
-    </Modal>);
+    <Modal.Header closeButton>
+      <Modal.Title>{title}</Modal.Title>
+    </Modal.Header>
+    <Modal.Body>
+      {body}
+    </Modal.Body>
+    <Modal.Footer>
+      <Button variant="danger" onClick={handleAccept} className="accept-btn">
+        {acceptButtonLabel}
+      </Button>
+      <Button variant="primary" onClick={handleCancel} className="cancel-btn">
+        {cancelButtonLabel}
+      </Button>
+    </Modal.Footer>
+  </Modal>);
 }

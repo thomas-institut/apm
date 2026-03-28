@@ -43,7 +43,12 @@ import {
   AllPeopleDataForPeoplePageItem, PersonEssentialData
 } from "@/Api/DataSchema/ApiPeople";
 import {ApiChunksWithTranscription, ApiWorksAll, ChunkCollationTableInfo, WorkData} from "@/Api/DataSchema/ApiWorks";
-import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
+import {
+  EntityDataInterface,
+  PredicateDefinitionsForType,
+  StatementEditCommand,
+  StatementEditResponse
+} from "@/Api/DataSchema/ApiEntity";
 import {ApiSiglaPreset, ApiPresetsQuery, ApiAutomaticCollationTablePreset} from "@/Api/DataSchema/ApiPresets";
 import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
 import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
@@ -517,9 +522,9 @@ export class ApmApiClient {
     });
   }
 
-  async apiEntityStatementsEdit(commands: any) {
-    return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
-
+  async apiEntityStatementsEdit(commands: StatementEditCommand[]): Promise<StatementEditResponse> {
+    return this.post(urlGen.apiEntityStatementsEdit(), commands, true);
+    // return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
   }
 
   /**

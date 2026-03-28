@@ -2,7 +2,7 @@ import {ConfirmDialog} from '../common/ConfirmDialog';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {urlGen} from '../common/SiteUrlGen';
 import * as Entity from "../../constants/Entity";
-import {PredicateDefinitionInterface, StatementMetadata} from "@/Api/DataSchema/ApiEntity";
+import {PredicateDefinitionInterface, StatementEditCommand, StatementMetadata} from "@/Api/DataSchema/ApiEntity";
 import {getStringVal} from "@/toolbox/UiToolBox";
 import {randomAlphaString} from "@/toolbox/ToolBox";
 
@@ -306,7 +306,7 @@ export class GenericStatementEditor {
       this.dialog.acceptButton.prop('disabled', true);
       console.log(`Saving new ${this.options.relation ? 'object' : 'value'} [${newObject}], note '${getStringVal(this.editorialNoteInput)}'`);
 
-      let commands = [];
+      let commands: StatementEditCommand[] = [];
       if (this.options.statementId !== null  && this.canBeCancelled) {
         commands.push({
           command: 'cancel',

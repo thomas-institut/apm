@@ -10,7 +10,7 @@ import {ApmUrlGenerator} from "@/ApmUrlGenerator";
 interface EntityLinkProps {
   id: number;
   secondaryId?: number;
-  type?: 'person' | 'work' | 'singleChunkEdition' | 'multiChunkEdition' | 'collationTable' | 'document' | 'docPage'
+  type?: 'person' | 'work' | 'singleChunkEdition' | 'multiChunkEdition' | 'collationTable' | 'document' | 'docPage' | 'admin'
   name?: string;
   active?: boolean;
   openInNewTab?: boolean;
@@ -41,6 +41,13 @@ export default function EntityLink(props: EntityLinkProps) {
   let defaultEntityName = `[${id}]`;
 
   switch (entityType) {
+
+    case 'admin':
+      url = RouteUrls.adminEntity(id);
+      isReactRoute = true;
+      defaultEntityName = `${id}`;
+      break;
+
     case 'person':
       // url = RouteUrls.person(Tid.toCanonicalString(id));
       url = urlGen.sitePerson(Tid.toCanonicalString(id));
@@ -106,7 +113,10 @@ export default function EntityLink(props: EntityLinkProps) {
   };
 
   const linkFromDef = (def: LinkDef) => {
-    const name = def.name ?? defaultEntityName;
+    let name = def.name ?? defaultEntityName;
+    if (type === 'admin') {
+      name = `${id} [${name}]`;
+    }
     if (isActive) {
       if (def.isReactRoute) {
         return (<Link to={url}>{name}</Link>)

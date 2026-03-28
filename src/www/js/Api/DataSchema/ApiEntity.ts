@@ -80,3 +80,40 @@ export interface PredicateDefinitionInterface extends EntityDefinitionInterface 
   isPrimaryRelation: boolean;
   canBeCancelled: boolean;
 }
+
+
+export type QualificationDuple = [number, number|string];
+
+export type StatementEditCommand = StatementCreateCommand | StatementCancelCommand;
+
+export interface StatementCancelCommand {
+  command: 'cancel';
+  statementId: number;
+  cancellationNote?: string;
+}
+
+export interface StatementCreateCommand {
+  command: 'create';
+  subject: number;
+  predicate: number;
+  object: number | string;
+  qualifications?: QualificationDuple[];
+  editorialNote?: string;
+  cancellationNote?: string;
+}
+
+
+export interface StatementEditResponse {
+  success: boolean;
+  errorCode?: number;
+  errorMessage?: string;
+  timestamp?: string;
+  commandResults?: StatementEditResult[];
+}
+
+export interface StatementEditResult {
+  success: boolean;
+  statementId: number;
+  errorCode?: number;
+  errorMessage?: string;
+}

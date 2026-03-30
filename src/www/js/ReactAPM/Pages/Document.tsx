@@ -9,8 +9,9 @@ import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import {DocInfo, PageInfo} from "@/Api/DataSchema/ApiDocuments";
 import {EntityData} from "@/EntityData/EntityData";
-import PageList from "@/ReactAPM/Components/DocumentPageList";
-import {forEach} from "react-bootstrap/ElementChildren";
+import PageList from "@/ReactAPM/Components/PageList";
+import Thumbnail from "@/ReactAPM/Components/PageList";
+
 
 
 interface DocInfoData {
@@ -57,7 +58,9 @@ export default function Document() {
   const docInfo = docInfoData.docInfo;
 
   const handleImageOpen = (seq: number) => {
-    const page = docInfo.pageInfoArray.find((p: any) => p.sequence === seq) ;
+
+    // @ts-ignore
+    const page = docInfo.pageInfoArray.find((p: any) => p.sequence === seq);
 
     if (page) {
       const url = page.thumbnailUrl || page.jpgUrl || '';
@@ -74,7 +77,12 @@ export default function Document() {
         <Breadcrumb.Item active>{docInfo.title}</Breadcrumb.Item>
       </Breadcrumb>
 
-      <PageList pageInfoArray={docInfo.pageInfoArray ?? []} withThumbnails={true} thumbnailsInitialSize={0} withThumbnailsPanel={true} thumbnailsSizeSmall={80} onClick={handleImageOpen}/>
+      <PageList
+          pageInfoArray={docInfo.pageInfoArray ?? []}
+          onPageClick={handleImageOpen}
+          thumbnails={{initSize: 0, sizeSmall: 80, panel: true}}
+          definer={true}
+      />
 
     </NormalPageContainer>
   );

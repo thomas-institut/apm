@@ -1,5 +1,4 @@
 import {JSX, useEffect, useState} from "react";
-import useFirstRender from "@/ReactAPM/Hooks/useFirstRender";
 
 interface SmartDeferredDataComponentProps<T> {
   /**
@@ -31,6 +30,11 @@ interface SmartDeferredDataComponentProps<T> {
    * Otherwise, if not set or if set to 0 or less and never changed, the data will only be queried once when the component is first rendered.
    */
   retry?: number;
+
+  /**
+   * When this value changes, the component resets its internal data/error state and queries again.
+   */
+  watchValue?: string | number;
 }
 
 /**
@@ -45,14 +49,14 @@ export default function SmartDeferredDataComponent<T>(props: SmartDeferredDataCo
 
   const [data, setData] = useState<T|null>(props.syncGetter());
   const [error, setError] = useState<any>(null);
-  const isFirstRender = useFirstRender();
   const retry = props.retry ?? 0;
+  const watchValue = props.watchValue;
 
-  if (!isFirstRender && retry > 0) {
+  // set data again if watchValue or retry changes
+  useEffect(() => {
     setData(props.syncGetter());
     setError(null);
-  }
-
+  }, [watchValue, retry]);
 
   useEffect(() => {
     // get the data asynchronously if it is not available yet

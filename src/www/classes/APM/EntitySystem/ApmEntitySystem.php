@@ -40,7 +40,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
      * Data id for internal kernel caches, needs to be changed every time there is a
      * change in the entity system schema or in the ApmEntitySystemKernel class
      */
-    const string dataId = '0052'; // 2026 Jan 09
+    const string dataId = '2026_03_30_b';
 
     const string kernelCacheKey = 'ApmEntitySystemKernel';
 
@@ -130,6 +130,7 @@ class ApmEntitySystem implements ApmEntitySystemInterface, LoggerAwareInterface
     private function getKernel() : ApmEntitySystemKernel {
         if ($this->kernel === null) {
             $kernelKey = $this->getCacheKeyKernel();
+//            $kernelKey = 'NotTheRealKey-12312312312311232132';
             try {
                 return unserialize($this->memCache->get($kernelKey));
             } catch (ItemNotInCacheException) {

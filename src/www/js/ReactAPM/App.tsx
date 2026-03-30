@@ -40,7 +40,8 @@ const Person = lazy(() => import('./Pages/Person/Person.js'));
 const EditionComposer = lazy(() => import('./Pages/EditionComposer.js'));
 // @ts-ignore
 const Document = lazy(() => import('./Pages/Document.js'));
-
+// @ts-ignore
+const AdminEntity = lazy( ()=> import('./Pages/AdminEntity/AdminEntity.js'));
 
 const AppSettingsUrl: string = "app-settings";
 const ReactAppBaseUrlSuffix = '';
@@ -277,7 +278,7 @@ function RealApp() {
 
   const routesWithTopBar = [RouteUrls.home(), RouteUrls.dashboard(), RouteUrls.docs(),
 
-    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.help(),
+    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.help(), RouteUrls.patternAdminEntity(),
 
     RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocumentBeta(),
 
@@ -325,6 +326,7 @@ function RealApp() {
               <Route id="work" path={RouteUrls.patternWork()} element={<Work/>}/>
               <Route id="person" path={RouteUrls.patternPerson()} element={<Person/>}/>
               <Route id="doc" path={RouteUrls.patternDocumentBeta()} element={<Document/>}/>
+              <Route id="admin-entity" path={RouteUrls.patternAdminEntity()} element={<AdminEntity/>}/>
               <Route id="help" path={RouteUrls.help()} element={<Help/>}/>
               <Route id="login" path={RouteUrls.login()} element={<Login/>}/>
               <Route id="logout" path={RouteUrls.logout()} element={<Logout/>}/>

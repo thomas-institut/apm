@@ -92,6 +92,14 @@ export class RouteUrls {
     return baseUrl + '/work/' + id;
   }
 
+  static patternAdminEntity() {
+    return baseUrl + '/entity/:id/admin';
+  }
+
+  static adminEntity(id: number|string) {
+    return baseUrl + '/entity/' + id + '/admin';
+  }
+
   static patternDocumentBeta() {
     return baseUrl + betaPathInfix +  '/doc/:id/*';
   }

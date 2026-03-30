@@ -39,12 +39,16 @@ import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 import {DocInfo, DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
-import {
-  AllPeopleDataForPeoplePageItem, PersonEssentialData
-} from "@/Api/DataSchema/ApiPeople";
+import {AllPeopleDataForPeoplePageItem, PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {ApiChunksWithTranscription, ApiWorksAll, ChunkCollationTableInfo, WorkData} from "@/Api/DataSchema/ApiWorks";
-import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
-import {ApiSiglaPreset, ApiPresetsQuery, ApiAutomaticCollationTablePreset} from "@/Api/DataSchema/ApiPresets";
+import {
+  EntityDataInterface,
+  PredicateDefinitionInterface,
+  PredicateDefinitionsForType,
+  StatementEditCommand,
+  StatementEditResponse
+} from "@/Api/DataSchema/ApiEntity";
+import {ApiAutomaticCollationTablePreset, ApiPresetsQuery, ApiSiglaPreset} from "@/Api/DataSchema/ApiPresets";
 import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
 import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
 
@@ -236,12 +240,12 @@ export class ApmApiClient {
     return this.get(urlGen.apiDocGetInfo(docId, withPageIds, withFullPageInfo), false, TtlOneHour);
   }
 
-  async getWorkChunksWithTranscription(workId: string) : Promise<ApiChunksWithTranscription> {
+  async getWorkChunksWithTranscription(workId: string): Promise<ApiChunksWithTranscription> {
     return await this.get(urlGen.apiWorkGetChunksWithTranscription(workId), false, TtlOneMinute);
   }
 
   async getWitnessesForChunk(workId: string, chunkNumber: number): Promise<WitnessInfo[]> {
-    return await this.get(urlGen.apiWitnessGetWitnessesForChunk(workId, chunkNumber), false, 5* TtlOneMinute);
+    return await this.get(urlGen.apiWitnessGetWitnessesForChunk(workId, chunkNumber), false, 5 * TtlOneMinute);
   }
 
   async getChunksInWorkInfo(workId: string): Promise<ChunkInWorkInfo[]> {
@@ -251,11 +255,7 @@ export class ApmApiClient {
     console.log('Active collation tables', activeCollationTables);
     const info: ChunkInWorkInfo[] = chunksWithTranscriptionResponse.chunks.map(n => {
       return {
-        workId: workId,
-        chunkNumber: n,
-        hasTranscriptions: true,
-        hasCollationTables: false,
-        hasEditions: false
+        workId: workId, chunkNumber: n, hasTranscriptions: true, hasCollationTables: false, hasEditions: false
       };
     });
     activeCollationTables.forEach((ctInfo) => {
@@ -282,7 +282,7 @@ export class ApmApiClient {
 
 
   async getCollationTablesActiveForWork(workId: string): Promise<ApiCollationTableInfo[]> {
-    return await  this.get(urlGen.apiCollationTable_activeForWork(workId), false, TtlOneMinute);
+    return await this.get(urlGen.apiCollationTable_activeForWork(workId), false, TtlOneMinute);
   }
 
   async getLegacySystemLanguagesArray(): Promise<any> {
@@ -517,9 +517,9 @@ export class ApmApiClient {
     });
   }
 
-  async apiEntityStatementsEdit(commands: any) {
-    return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
-
+  async apiEntityStatementsEdit(commands: StatementEditCommand[]): Promise<StatementEditResponse> {
+    return this.post(urlGen.apiEntityStatementsEdit(), commands, true);
+    // return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
   }
 
   /**
@@ -570,6 +570,10 @@ export class ApmApiClient {
 
   getPredicateDefinitionsForType(type: number): Promise<PredicateDefinitionsForType> {
     return this.fetch(urlGen.apiEntityGetPredicateDefinitionsForType(type), 'GET', {}, false, false, TtlOneHour);
+  }
+
+  getPredicateDefinition(predicate: number): Promise<PredicateDefinitionInterface> {
+    return this.fetch(urlGen.apiEntityGetPredicateDefinition(predicate), 'GET', {}, false, false, TtlOneHour);
   }
 
   getEntityListForType(typeTid: number): Promise<number[]> {
@@ -821,7 +825,6 @@ export class ApmApiClient {
   }
 
   private async getEntityDataRaw(tid: number): Promise<EntityDataInterface> {
-    let url = urlGen.apiEntityGetData(tid);
     return await this.get(urlGen.apiEntityGetData(tid));
   }
 

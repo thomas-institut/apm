@@ -114,7 +114,7 @@ const BasicEntityPredicateDefs = [
     [
         'id' => Entity::pMember,
         'type' => Entity::tRelation,
-        'name' => 'Member',
+        'name' => 'Has Member',
         'descr' => "A person or group that is a member of the entity",
         'allowedSubjectTypes' => [ Entity::tOrganization],
         'allowedObjectTypes'=> [ Entity::tOrganization, Entity::tPerson],
@@ -128,7 +128,7 @@ const BasicEntityPredicateDefs = [
     [
         'id' => Entity::pMemberOf,
         'type' => Entity::tRelation,
-        'name' => 'Member Of',
+        'name' => 'Is Member Of',
         'descr' => "An institution, or group the entity of which the entity is a member",
         'allowedSubjectTypes' => [ Entity::tOrganization, Entity::tPerson],
         'allowedObjectTypes'=> [ Entity::tOrganization],

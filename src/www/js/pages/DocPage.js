@@ -644,6 +644,9 @@ export class DocPage extends NormalPage {
                 <div class="tab-pane doc-metadata ${tabActiveClasses(TabId_DocDetails)}" id="tab-${TabId_DocDetails}">
                     <div class="metadata-editor">
                     </div>
+                    <div>
+                    <a href="${urlGen.siteAdminEntity(this.docId)}">[ Entity Admin ]</a>
+                    </div>
                    
                 </div>
                 <div class="tab-pane panel-with-toolbar page-list-panel ${tabActiveClasses(TabId_Pages)}" id="tab-${TabId_Pages}">

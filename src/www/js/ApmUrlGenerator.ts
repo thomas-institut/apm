@@ -356,7 +356,11 @@ export class ApmUrlGenerator {
   }
 
   apiEntityGetPredicateDefinitionsForType(type: number) {
-    return `${this.apiBase}/entity/${type}/predicateDefinitions`;
+    return `${this.apiBase}/entity/${type}/predicateDefinitionsForType`;
+  }
+
+  apiEntityGetPredicateDefinition(predicate: number) {
+    return `${this.apiBase}/entity/${predicate}/predicateDefinition`;
   }
 
   apiEntityGetStatementQualificationObjects(withData = true) {

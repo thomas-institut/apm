@@ -233,7 +233,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tBook,
-        'A book',
+        'Book',
         "A book, e. g. the critique of pure reason",
         [],
         [],
@@ -241,7 +241,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tBookSection,
-        'A book section',
+        'Book Section',
         "A book section, e. g. an article in an anthology",
         [],
         [],
@@ -249,7 +249,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tBookSeries,
-        'A book series',
+        'Book Series',
         "A book series, to which several books may belong",
         [],
         [],
@@ -257,7 +257,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tArticle,
-        'An article',
+        'Article',
         "An article, e.g. a paper in a journal",
         [],
         [],
@@ -265,7 +265,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tJournal,
-        'A  journal',
+        'Journal',
         "A journal, e.g. the Kant-Studien",
         [],
         [],
@@ -273,7 +273,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tOnlineCatalog,
-        'An online catalog',
+        'Online Catalog',
         "An online catalog (name taken from DARE)",
         [],
         [],
@@ -281,7 +281,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tOldCatalog,
-        'An old catalog',
+        'Old Catalog',
         "An old catalog (name taken from DARE)",
         [],
         [],
@@ -289,7 +289,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tRepresentation,
-        'A representation',
+        'Representation',
         "A representation of a work, e. g. a translation or edition.",
         [],
         [],
@@ -297,7 +297,7 @@ const EntityTypeDefinitions = [
     ],
     [
         Entity::tPublisher,
-        'A publisher',
+        'Publisher',
         "A publisher, e.g., Felix Meiner Verlag",
         [],
         [],

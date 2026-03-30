@@ -6,13 +6,14 @@ import {Tid} from "@/Tid/Tid";
 import Skeleton from "@/ReactAPM/Components/Skeleton";
 import SmartDeferredDataComponent from "@/ReactAPM/Components/SmartDeferredDataComponent";
 import {ApmUrlGenerator} from "@/ApmUrlGenerator";
+import {MaxSystemEntityId} from "@/constants/Entity";
 
 interface EntityLinkProps {
   id: number;
   secondaryId?: number;
   type?: 'person' | 'work' | 'singleChunkEdition' | 'multiChunkEdition' | 'collationTable' | 'document' | 'docPage' | 'admin';
   name?: string;
-  label?: string;
+  label?: string | null ;
   useUrlAsLabel?: boolean;
   active?: boolean;
   openInNewTab?: boolean;
@@ -50,7 +51,7 @@ export default function EntityLink(props: EntityLinkProps) {
     case 'admin':
       url = RouteUrls.adminEntity(id);
       isReactRoute = true;
-      defaultEntityName = `${id}`;
+      defaultEntityName = `${id < MaxSystemEntityId ? id : Tid.toCanonicalString(id)}`;
       title = `Entity ${id}`
       break;
 
@@ -114,7 +115,7 @@ export default function EntityLink(props: EntityLinkProps) {
     if (useUrlAsLabel === true) {
       return {label: url, title: title, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
     }
-    if (label !== undefined) {
+    if (label !== undefined && label !== null) {
       return {label: label, title: title, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false}
     }
     if (name !== undefined) {

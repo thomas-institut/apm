@@ -13,6 +13,7 @@ import {Button, Form, Table} from "react-bootstrap";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import './AdminEntity.css';
 import {PredicateData} from "@/ReactAPM/Pages/AdminEntity/PredicateData";
+import {TypeData} from "@/ReactAPM/Pages/AdminEntity/TypeData";
 
 const TimestampPredicates = [Entity.pEntityCreationTimestamp, Entity.pStatementTimestamp, Entity.pCancellationTimestamp];
 const UrlPredicates = [Entity.pUrl];
@@ -285,6 +286,7 @@ export default function AdminEntity() {
   const apmUrl = getNonAdminEntityLink(data.type, entityId);
   const isSystemEntity = data.id <= Entity.MaxSystemEntityId;
   const isPredicate = data.type === Entity.tRelation || data.type === Entity.tAttribute;
+  const isType = data.type === Entity.tEntityType;
 
   return (<NormalPageContainer>
     <h1>Entity {isSystemEntity ? entityId : Tid.toBase36String(entityId)} {isPredicate && '(Predicate)'}</h1>
@@ -308,7 +310,7 @@ export default function AdminEntity() {
       </>)
     }
     {isPredicate && <PredicateData id={data.id} def={predicateDefs[data.id]}/> }
-
+    {isType && <TypeData type={data.id}/>}
 
     {editorProps && (<GenericStatementEditor
       {...editorProps}

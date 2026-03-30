@@ -58,3 +58,16 @@ div.predicate-data {
     gap: 0.5em;
 }
 
+div.type-data {
+    margin-top: 1em;
+    margin-left: 1em;
+}
+
+div.type-entity-list {
+    margin-top: 1em;
+    margin-bottom: 2em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+}
+

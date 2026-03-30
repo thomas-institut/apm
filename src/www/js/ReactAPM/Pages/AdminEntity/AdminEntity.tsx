@@ -10,9 +10,9 @@ import * as Entity from "@/constants/Entity";
 import GenericStatementEditor from "./GenericStatementEditor";
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 import {Button, Form, Table} from "react-bootstrap";
-import {capitalizeFirstLetter} from "@/toolbox/Util";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import './AdminEntity.css';
+import {PredicateData} from "@/ReactAPM/Pages/AdminEntity/PredicateData";
 
 const TimestampPredicates = [Entity.pEntityCreationTimestamp, Entity.pStatementTimestamp, Entity.pCancellationTimestamp];
 const UrlPredicates = [Entity.pUrl];
@@ -86,10 +86,10 @@ export default function AdminEntity() {
     setEditorProps({
       show: true,
       statementId: null,
-      editableParts: [false, false, true],
+      editableParts: [!asSubject, false, asSubject],
       subject: asSubject ? entityId : null,
       predicate: predicate,
-      object: null,
+      object: asSubject ? null : entityId,
       relation: def.type === Entity.tRelation,
       statementMetadata: [],
       predicateDef: def,
@@ -277,30 +277,32 @@ export default function AdminEntity() {
   }
 
   const apmUrl = getNonAdminEntityLink(data.type, entityId);
+  const isSystemEntity = data.id <= Entity.MaxSystemEntityId;
+  const isPredicate = data.type === Entity.tRelation || data.type === Entity.tAttribute;
 
   return (<NormalPageContainer>
-    <h1>Entity {Tid.toBase36String(entityId)}</h1>
+    <h1>Entity {isSystemEntity ? entityId : Tid.toBase36String(entityId)} {isPredicate && '(Predicate)'}</h1>
     <div className={'basic-data'}>
-      <div key={'id'}><b>Numerical Id</b>: {entityId}</div>
-      <div key={'url'}><b>Apm Url</b>: {apmUrl ?? 'None'}</div>
-      {Object.entries(data).map(([key, val]) => {
-        if (['statements', 'statementsAsObject', 'id'].includes(key)) return null;
-        let valContent;
-        if (val === null) valContent = 'null'; else if (typeof val === 'number') valContent =
-          <EntityLink id={val} type="admin"/>; else valContent = `'${val}'`;
-        return (<div key={key}>
-          <strong>{capitalizeFirstLetter(key)}</strong>: {valContent}
-        </div>);
-      })}
+      {!isSystemEntity && <div key={'id'}><b>Numerical Id</b>: {entityId}</div>}
+      {!isSystemEntity && <div key={'url'}><b>Apm Url</b>: {apmUrl ?? 'None'}</div>}
+      <div key={'type'}><b>Type</b>: <EntityLink id={data.type} type="admin"/></div>
+      <div key={'name'}><b>Name</b>: <span className={'literal-value'}>{data.name}</span></div>
+      {!isSystemEntity && <div key={'mergedInto'}><b>Merged Into</b>: {data.mergedInto === null ? 'null' :
+        <EntityLink id={data.mergedInto} type={'admin'}/>}</div>}
     </div>
 
-    <h3>Statements as Subject</h3>
-    {renderStatementsTable(data.statements)}
-    {renderAvailablePredicates(true)}
+    {!isSystemEntity && (<>
+        <h3>Statements as Subject</h3>
+        {renderStatementsTable(data.statements)}
+        {renderAvailablePredicates(true)}
 
-    <h3>Statements as Object</h3>
-    {renderStatementsTable(data.statementsAsObject)}
-    {renderAvailablePredicates(false)}
+        <h3>Statements as Object</h3>
+        {renderStatementsTable(data.statementsAsObject)}
+        {renderAvailablePredicates(false)}
+      </>)
+    }
+    {isPredicate && <PredicateData id={data.id} def={predicateDefs[data.id]}/> }
+
 
     {editorProps && (<GenericStatementEditor
       {...editorProps}

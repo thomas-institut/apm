@@ -274,7 +274,7 @@ const BibPredicateDefs = [
     [
         'id' => Entity::pRepresentationLang,
         'type' => Entity::tRelation,
-        'name' => 'Language',
+        'name' => 'Representation Language',
         'descr' => 'The language of a representation, e. g. a translation.',
         'allowedSubjectTypes' => [Entity::tRepresentation],
         'allowedObjectTypes'=> [Entity::tLanguage],
@@ -334,7 +334,7 @@ const BibPredicateDefs = [
     [
         'id' => Entity::rAuthoredBy,
         'type' => Entity::tRelation,
-        'name' => 'Authored by',
+        'name' => 'Authored By',
         'descr' => 'The author of a bib object.',
         'reversePredicate' => Entity::rAuthorOf,
         'allowedSubjectTypes' => [Entity::tBook, Entity::tBookSection, Entity::tArticle],
@@ -347,7 +347,7 @@ const BibPredicateDefs = [
     [
         'id' => Entity::rTranslatedBy,
         'type' => Entity::tRelation,
-        'name' => 'Translated by',
+        'name' => 'Translated By',
         'descr' => 'The translator of a bib object or a representation.',
         'reversePredicate' => Entity::rTranslatorOf,
         'allowedSubjectTypes' => [Entity::tBook, Entity::tBookSection, Entity::tArticle, Entity::tRepresentation],
@@ -360,7 +360,7 @@ const BibPredicateDefs = [
     [
         'id' => Entity::rEditedBy,
         'type' => Entity::tRelation,
-        'name' => 'Edited by',
+        'name' => 'Edited By',
         'descr' => 'The editor of a bib object or a representation.',
         'reversePredicate' => Entity::rEditorOf,
         'allowedSubjectTypes' => [Entity::tBook, Entity::tJournal, Entity::tRepresentation],

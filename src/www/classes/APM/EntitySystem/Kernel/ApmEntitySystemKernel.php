@@ -45,9 +45,9 @@ use ThomasInstitut\EntitySystem\StatementData;
 class ApmEntitySystemKernel
 {
 
-    const MaxSystemTid = 10000000;
+    const int MaxSystemTid = 10000000;
 
-    const SystemCreationTimestamp = 1;
+    const int SystemCreationTimestamp = 1;
 
     /**
      * @var PredicateDefinition[]

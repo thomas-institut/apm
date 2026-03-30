@@ -42,7 +42,11 @@ import {DocInfo, DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
 import {AllPeopleDataForPeoplePageItem, PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {ApiChunksWithTranscription, ApiWorksAll, ChunkCollationTableInfo, WorkData} from "@/Api/DataSchema/ApiWorks";
 import {
-  EntityDataInterface, PredicateDefinitionsForType, StatementEditCommand, StatementEditResponse
+  EntityDataInterface,
+  PredicateDefinitionInterface,
+  PredicateDefinitionsForType,
+  StatementEditCommand,
+  StatementEditResponse
 } from "@/Api/DataSchema/ApiEntity";
 import {ApiAutomaticCollationTablePreset, ApiPresetsQuery, ApiSiglaPreset} from "@/Api/DataSchema/ApiPresets";
 import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
@@ -566,6 +570,10 @@ export class ApmApiClient {
 
   getPredicateDefinitionsForType(type: number): Promise<PredicateDefinitionsForType> {
     return this.fetch(urlGen.apiEntityGetPredicateDefinitionsForType(type), 'GET', {}, false, false, TtlOneHour);
+  }
+
+  getPredicateDefinition(predicate: number): Promise<PredicateDefinitionInterface> {
+    return this.fetch(urlGen.apiEntityGetPredicateDefinition(predicate), 'GET', {}, false, false, TtlOneHour);
   }
 
   getEntityListForType(typeTid: number): Promise<number[]> {

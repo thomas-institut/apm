@@ -31,10 +31,13 @@ export default function AdminEntity() {
 
   const entityId = id ? (isNaN(Number(id)) ? Tid.fromCanonicalString(id) : Number(id)) : null;
 
+  if (!id || !entityId) {
+    return <NormalPageContainer>Error: id is undefined</NormalPageContainer>;
+  }
+
   const entityQuery = useQuery({
     queryKey: ['adminEntity', entityId],
-    queryFn: () => entityId ? apiClient.getEntityData(entityId, true) : null,
-    enabled: !!entityId
+    queryFn: () => apiClient.getEntityData(entityId, true),
   });
 
   const predicateDefsQuery = useQuery({
@@ -43,9 +46,6 @@ export default function AdminEntity() {
     enabled: !!entityQuery.data
   });
 
-  if (!id || !entityId) {
-    return <NormalPageContainer>Error: id is undefined</NormalPageContainer>;
-  }
 
   if (entityQuery.isLoading || predicateDefsQuery.isLoading) {
     return <NormalPageContainer>Loading entity data...</NormalPageContainer>;
@@ -56,14 +56,20 @@ export default function AdminEntity() {
   }
 
   const data = entityQuery.data;
-  const predicateDefs = predicateDefsQuery.data?.predicateDefinitions || {};
-  const qualificationDefs = predicateDefsQuery.data?.qualificationDefinitions || {};
-  const predicatesAllowedAsSubject = predicateDefsQuery.data?.predicatesAllowedAsSubject || [];
-  const predicatesAllowedAsObject = predicateDefsQuery.data?.predicatesAllowedAsObject || [];
 
-  if (!data) {
+  if (data === undefined) {
     return <NormalPageContainer>Entity not found</NormalPageContainer>;
   }
+  if (predicateDefsQuery.data === undefined || predicateDefsQuery.data === null) {
+    return <NormalPageContainer>Error loading predicate definitions</NormalPageContainer>;
+  }
+
+  const predicateDefs = predicateDefsQuery.data.predicateDefinitions;
+  const qualificationDefs = predicateDefsQuery.data.qualificationDefinitions;
+  const predicatesAllowedAsSubject = predicateDefsQuery.data.predicatesAllowedAsSubject;
+  const predicatesAllowedAsObject = predicateDefsQuery.data.predicatesAllowedAsObject;
+
+
 
   const handleEditStatement = (statement: StatementDataInterface) => {
     setEditorProps({

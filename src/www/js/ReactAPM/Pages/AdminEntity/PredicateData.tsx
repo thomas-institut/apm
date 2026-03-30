@@ -13,20 +13,19 @@ interface PredicateDataProps {
 
 export function PredicateData(props: PredicateDataProps) {
 
-  const { id, def } = props;
+  const {id, def} = props;
 
   const context = useContext(AppContext);
 
   const getPredicateData = async () => {
-    if (def !== undefined){
+    if (def !== undefined) {
       return def;
     }
     return context.apiClient.getPredicateDefinition(id);
-  }
+  };
 
   const query = useQuery<PredicateDefinitionInterface>({
-    queryFn: getPredicateData,
-    queryKey: ['PredicateDefinition', id]
+    queryFn: getPredicateData, queryKey: ['PredicateDefinition', id]
   });
 
   if (query.status === 'pending') {
@@ -40,29 +39,30 @@ export function PredicateData(props: PredicateDataProps) {
   const predicateDef = query.data;
   const isAttribute = predicateDef.type === tAttribute;
 
+  function getEntityList(entityIds: number[], separator: string = ', ') {
+    return entityIds.map((id, index) => (
+      <Fragment key={id}>{index === 0 ? '' : separator}<EntityLink id={id} type={"admin"}/></Fragment>));
+  }
+
   return <div className={'predicate-data'}>
     {predicateDef.deprecated && <div><b>Deprecated</b>: {predicateDef.deprecationNotice}</div>}
     <div><b>Description</b>: {predicateDef.description}</div>
     <div><b>Single Property:</b> {predicateDef.singleProperty ? 'Yes' : 'No'}</div>
-    {isAttribute && predicateDef.allowedValues !== null && <div><b>Allowed Object Literal Values:</b> {predicateDef.allowedValues.join(', ')}</div>}
-    { predicateDef.flags !== null && predicateDef.flags.length > 0 && <div><b>Flags:</b> {predicateDef.flags.map( f => flagToString(f)).join(', ')}</div>}
-    { !isAttribute && predicateDef.allowedObjectTypes !== null &&
-      (
-        <div>
-          <b>Allowed Object Types</b>: { predicateDef.allowedObjectTypes.map( (type, index) =>
-          <Fragment key={type}>{index === 0 ? '' : ', '}<EntityLink key={type} id={type} type={'admin'}/></Fragment>)}
-        </div>
-      )
-    }
-    { !isAttribute && <div><b>Is Primary Relation:</b> {predicateDef.isPrimaryRelation ? 'Yes' : 'No'}</div>}
-    { !isAttribute && predicateDef.reversePredicate !== null && <div><b>Reverse Predicate</b>: <EntityLink id={predicateDef.reversePredicate} type={'admin'}/></div>}
-    { predicateDef.allowedQualifications !== null && predicateDef.allowedQualifications.length > 0 && (
-      <div>
-        <b>Allowed Qualifications</b>: { predicateDef.allowedQualifications.map( (qual) => <Fragment key={qual}><EntityLink id={qual} type={'admin'}/>&nbsp;</Fragment>)}
-      </div>
-    )}
+    {isAttribute && predicateDef.allowedValues !== null &&
+      <div><b>Allowed Object Literal Values:</b> {predicateDef.allowedValues.join(', ')}</div>}
+    {predicateDef.flags !== null && predicateDef.flags.length > 0 &&
+      <div><b>Flags:</b> {predicateDef.flags.map(f => flagToString(f)).join(', ')}</div>}
+    {!isAttribute && predicateDef.allowedObjectTypes !== null && (<div>
+        <b>Allowed Object Types</b>: {getEntityList(predicateDef.allowedObjectTypes)}
+      </div>)}
+    {!isAttribute && <div><b>Is Primary Relation:</b> {predicateDef.isPrimaryRelation ? 'Yes' : 'No'}</div>}
+    {!isAttribute && predicateDef.reversePredicate !== null &&
+      <div><b>Reverse Predicate</b>: <EntityLink id={predicateDef.reversePredicate} type={'admin'}/></div>}
+    {predicateDef.allowedQualifications !== null && predicateDef.allowedQualifications.length > 0 && (<div>
+        <b>Allowed Qualifications</b>: {getEntityList(predicateDef.allowedQualifications)}
+      </div>)}
     <div><b>Can be Cancelled</b>: {predicateDef.canBeCancelled ? 'Yes' : 'No'}</div>
 
-  </div>
+  </div>;
 
 }

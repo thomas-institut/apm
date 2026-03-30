@@ -34,7 +34,7 @@ export default function EntityLink(props: EntityLinkProps) {
 
   const {id, name, label, useUrlAsLabel, type, secondaryId, openInNewTab} = props;
   const appContext = useContext(AppContext);
-  const dataProxy = appContext.apiClient;
+  const apiClient = appContext.apiClient;
 
   const entityType = type ?? 'person';
   const isActive = props.active ?? true;
@@ -120,7 +120,8 @@ export default function EntityLink(props: EntityLinkProps) {
     if (name !== undefined) {
       return {label: name, title: title, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
     }
-    const cachedName = dataProxy.getEntityNameFromCache(id);
+    const cachedName = apiClient.getEntityNameFromCache(id);
+
     if (cachedName === null) {
       return null;
     }
@@ -128,7 +129,7 @@ export default function EntityLink(props: EntityLinkProps) {
   };
 
   const asyncGetter: () => Promise<LinkDef> = async () => {
-    const name = await dataProxy.getEntityName(id);
+    const name = await apiClient.getEntityName(id);
     return {label: name, title: title, isReactRoute: isReactRoute, openInNewTab: openInNewTab ?? false};
   };
 
@@ -144,9 +145,12 @@ export default function EntityLink(props: EntityLinkProps) {
     }
   };
 
+  const watchValue = `${entityType}:${id}:${secondaryId ?? ''}:${label ?? ''}:${name ?? ''}:${useUrlAsLabel === true ? 'url' : 'name'}`;
+
   return (<SmartDeferredDataComponent<LinkDef>
     asyncGetter={asyncGetter}
     syncGetter={syncGetter}
+    watchValue={watchValue}
     placeholder={<Skeleton as="span" style={{width: '10em'}}>{defaultEntityName}</Skeleton>}
     onData={linkFromDef}
   />);

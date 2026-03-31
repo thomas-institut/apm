@@ -1,5 +1,4 @@
 import {CtDataInterface} from "@/CtData/CtDataInterface";
-import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
 
 export interface ApiCollationTableAuto {
   type: string;
@@ -80,4 +79,39 @@ export interface ApiCollationTableInfo {
   type: string;
   lastChange: string;
   lastVersion: any;
+}
+
+export interface SingleChunkApiData {
+  authorTid: number;
+  ctData: CtDataInterface;
+  ctInfo: CtInfo[];
+  docInfo: DocInfoInSingleChunkApiData[];
+  isLatestVersion: boolean;
+  timeStamp: string;
+  versionId: number;
+  versions: CtVersionInfo[];
+}
+
+export interface CtInfo {
+  archived: boolean;
+  timeFrom: string;
+  timeUntil: string;
+  title: string;
+  type: string;
+}
+
+export interface DocInfoInSingleChunkApiData {
+  docId: number;
+  title: string;
+}
+
+export interface CtVersionInfo {
+  authorTid: number;
+  collationTableId: number;
+  description: string;
+  id: number;
+  isMinor: boolean;
+  isReview: boolean;
+  timeFrom: string;
+  timeUntil: string;
 }

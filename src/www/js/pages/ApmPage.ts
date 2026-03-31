@@ -141,19 +141,6 @@ export class ApmPage {
     return this.commonData.userInfo['isRoot'];
   }
 
-  /**
-   * Returns the object needed to properly set up a DataTables object using
-   * APM's language-aware strings
-   * @return {Object}
-   */
-  getDataTablesLanguageOption(): object {
-    return {
-      processing: tr('Processing'), search: tr('DataTables:Search'), emptyTable: tr('Empty Table'), paginate: {
-        first: tr('First'), previous: tr('Previous'), next: tr('Next'), last: tr('Last')
-      }, info: tr('Showing _START_ to _END_ of _TOTAL_ rows'), lengthMenu: tr('Show _MENU_ entries')
-    };
-  }
-
 
   saveLangInCache(lang: string) {
     this.localCache.store(langCacheKey, lang, 0, langCacheDataId);

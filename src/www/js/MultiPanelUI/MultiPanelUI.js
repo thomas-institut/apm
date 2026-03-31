@@ -255,7 +255,7 @@ export class MultiPanelUI {
 
   async start() {
     let body = $('body')
-    body.html(`Rendering....`)
+    body.html(`<div style="margin: 3em; color: gray">Rendering, please stand by...</div>`)
     let html = this.genHtmlTopBar()
     html += await this.genHtmlPanels()
     body.html(html)

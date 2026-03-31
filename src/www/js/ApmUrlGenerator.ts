@@ -167,9 +167,9 @@ export class ApmUrlGenerator {
     return `${this.base}/collation-table/${tableId}${postfix}`;
   }
 
-  siteChunkEdition(editionId: number, version = 0) {
+  siteChunkEdition(editionId: number, version: string = '') {
     let postfix = '';
-    if (version !== 0) {
+    if (version !== '') {
       postfix = `/${version}`;
     }
     return `${this.base}/chunk-edition/${editionId}${postfix}`;

@@ -191,7 +191,7 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
             ->setName('chunk.collation-table.custom');
 
         // edit collation table
-        $group->get('/collation-table/{tableId}[/{versionId}]',
+        $group->get('/collation-table/{tableId}[/{version}]',
             function (Request $request, Response $response) use ($container) {
                 return (new SiteCollationTable($container))->editCollationTable($request, $response);
             })
@@ -203,7 +203,7 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
                 return (new SiteCollationTable($container))->newChunkEdition($request, $response);
             })->setName('chunk-edition.new');
 
-        $group->get('/chunk-edition/{tableId}[/{versionId}]',
+        $group->get('/chunk-edition/{tableId}[/{version}]',
             function (Request $request, Response $response) use ($container) {
                 return (new SiteCollationTable($container))->editCollationTable($request, $response);
             })->setName('chunk-edition.edit');

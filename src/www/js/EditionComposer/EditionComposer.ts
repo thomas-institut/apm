@@ -71,6 +71,10 @@ import {urlGen} from '@/pages/common/SiteUrlGen';
 import {DataId_EC_ViewOptions} from '@/constants/WebStorageDataId';
 import {CtDataInterface, NonTokenItemIndex, WitnessInterface} from "@/CtData/CtDataInterface";
 import {getNonTokenItemIndices} from "@/Witness/TranscriptionWitness";
+import {FULL_TX} from "@/Witness/WitnessType";
+import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
+import {WorkData} from "@/Api/DataSchema/ApiWorks";
+import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -104,18 +108,12 @@ interface EditionComposerOptions extends  ApmPageOptions {
   isTechSupport?: boolean;
   lastVersion: string,
   collationTableData: CtDataInterface,
-  workId: string,
-  chunkNumber: number,
   tableId: number,
-  versionId: number,
+  version: string;
   langDef: Record<string, LanguageDefinition> ,
   availableWitnesses: {
     type: 'Array', default: []
   },
-  workInfo: Record<string, any>,
-  peopleInfo: any[],
-  docInfo: object,
-  versionInfo: object
 }
 
 export class EditionComposer extends ApmPage {
@@ -143,16 +141,16 @@ export class EditionComposer extends ApmPage {
   private errorDetail: string;
   private readonly apiSaveCollationUrl: string;
   private serverLogger: ServerLogger;
-  private ctData: CtDataInterface;
-  private readonly isNew: boolean;
-  private lang: string;
-  private readonly normalizerRegister: NormalizerRegister;
-  private lastSavedCtData: CtDataInterface;
-  private versionInfo: any;
-  private lastVersion: string;
-  private versionId: any;
+  private ctData!: CtDataInterface;
+  private isNew!: boolean;
+  private lang!: string;
+  private normalizerRegister!: NormalizerRegister;
+  private lastSavedCtData!: CtDataInterface;
+  private versionInfo!: CtVersionInfo[];
+  private isLastVersion!: string;
+  private version!: string;
   private cache: AsyncKeyCache;
-  private edition: Edition;
+  private edition!: Edition;
   private convertingToEdition: boolean;
   private saving: boolean;
   private witnessUpdates: any[];
@@ -176,6 +174,12 @@ export class EditionComposer extends ApmPage {
   private errorButtonPopoverTitle!: string;
   private saveErrors!: boolean;
 
+  private workId!: string;
+  private chunkNumber!: number;
+  private peopleInfo: PersonEssentialData[] = [];
+  private workInfo!: WorkData;
+
+
   constructor(options: EditionComposerOptions) {
     super(options);
     console.log(`Common Apm Page Data`);
@@ -187,8 +191,6 @@ export class EditionComposer extends ApmPage {
       langDef: defaultLanguageDefinition,
       availableWitnesses: [],
       workInfo: {},
-      peopleInfo: {},
-      docInfo: {},
       versionInfo: {}
     }
 
@@ -228,64 +230,77 @@ export class EditionComposer extends ApmPage {
       apiCallUrl: urlGen.apiAdminLog(), module: 'EditionComposer'
     });
 
-    this.ctData = CtData.getCleanAndUpdatedCtData(this.options['collationTableData']);
-    this.ctData.tableId = this.tableId;
-    this.ctData = this.addMissingDataForCollationTable(this.ctData);
-
-    console.log('Clean CT Data');
-
-    console.log(this.ctData);
-
-
-    this.isNew = this.ctData.tableId === -1;
-
-    this.lang = this.ctData.lang;
-
-    // Normalizers
-    this.normalizerRegister = new NormalizerRegister();
-    this.registerStandardNormalizers();
-    this.lastSavedCtData = Util.deepCopy(this.ctData);
-
-    // this.ctData['tableId'] = this.tableId
-    this.versionInfo = this.options.versionInfo;
-    this.lastVersion = this.options.lastVersion;
-    this.versionId = this.options.versionId;
-
-    if (!this.lastVersion) {
-      console.warn('Working on an older version of the Edition/CollationTable');
-    }
-
     this.cache = new AsyncKeyCache();
-
-    this.edition = new Edition();
-    this.reGenerateEdition();
-
-    document.title = `${this.ctData.title} (${this.ctData['chunkId']})`;
-
+    this.unsavedChanges = false;
     this.convertingToEdition = false;
+
     this.saving = false;
     this.witnessUpdates = [];
     this.editionSources = null;
-    this.unsavedChanges = false;
 
     $(window).on('beforeunload', () => {
       if (this.unsavedChanges || this.convertingToEdition) {
         return false; // make the browser ask if the user wants to leave
       }
     });
+
     this.initPage().then(() => {
       console.log(`EditionComposer ready`);
     });
-
   }
 
   async initPage() {
     await super.initPage();
+
+    const body = $('body');
+
+    body.html(`<div style="margin: 3em; color: gray;"><b>EditionComposer</b>: Getting data, please stand by...</div>`)
+
+    const apiCtDataResponse = await this.apiClient.getSingleChunkData(this.options.tableId, this.options.version);
+
+    this.ctData = apiCtDataResponse.ctData;
+    this.ctData.tableId = this.tableId;
+    this.ctData = this.addMissingDataForCollationTable(this.ctData);
+    console.log('Clean CT Data');
+    console.log(this.ctData);
+    this.isNew = this.ctData.tableId === -1;
+    this.lang = this.ctData.lang;
+    const [workId, chunkNumber] = this.ctData.chunkId.split('-');
+    this.workId = workId;
+    this.chunkNumber = Number(chunkNumber);
+
+    // Normalizers
+    this.normalizerRegister = new NormalizerRegister();
+    this.registerStandardNormalizers();
+    this.lastSavedCtData = Util.deepCopy(this.ctData);
+
+    this.versionInfo = apiCtDataResponse.versions;
+    this.isLastVersion = this.options.lastVersion;
+    this.version = this.options.version;
+
+    if (!this.isLastVersion) {
+      console.warn('Working on an older version of the Edition/CollationTable');
+    }
+
+    this.workInfo = await this.apiClient.getWorkData(this.workId);
+
+    this.peopleInfo = [];
+    const peopleMentioned: number[] = getPeopleMentionedInCtData(this.ctData);
+    peopleMentioned.push(this.workInfo.authorId);
+    for (let i = 0; i < peopleMentioned.length; i++) {
+      const personId = peopleMentioned[i];
+      this.peopleInfo[personId] = await this.apiClient.getPersonEssentialData(personId);
+    }
+
+    this.edition = new Edition();
+    this.reGenerateEdition();
+
+    document.title = `${this.ctData.title} (${this.ctData['chunkId']})`;
+
     this.viewOptions = await this.getViewOptions();
     console.log(`ViewOptions`, this.viewOptions);
 
     // Construct panels
-
 
     this.collationTablePanel = new CollationTablePanel({
       containerSelector: `#${collationTableTabId}`,
@@ -294,7 +309,7 @@ export class EditionComposer extends ApmPage {
       ctData: this.ctData,
       onCtDataChange: this.genOnCtDataChange('collationTablePanel'),
       contentAreaId: 'ct-panel-content',
-      peopleInfo: this.options.peopleInfo,
+      peopleInfo: this.peopleInfo,
       editApparatusEntry: (ctDataAppIndex: number, ctIndexFrom: number, ctIndexTo: number) => {
         this.editApparatusEntryFromCollationTable(getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex, this.ctData, this.edition), ctIndexFrom, ctIndexTo);
       },
@@ -383,7 +398,6 @@ export class EditionComposer extends ApmPage {
       verbose: false,
       containerSelector: `#${adminPanelTabId}`,
       versionInfo: this.versionInfo,
-      peopleInfo: this.options.peopleInfo,
       ctType: this.ctData.type,
       archived: this.ctData.archived,
       canArchive: true,
@@ -438,7 +452,7 @@ export class EditionComposer extends ApmPage {
       logo: `<a href="${urlGen.siteHome()}" title="Home">
 <img src="${urlGen.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`, topBarContent: () => {
         let warningSign = '';
-        if (!this.lastVersion) {
+        if (!this.isLastVersion) {
           warningSign = `<a href="" class="text-danger" title="WARNING: showing an older version of this edition">${this.icons.alert}</a>&nbsp;`;
         }
         return `<div class="top-bar-item top-bar-title" >${warningSign}<span id="${editionTitleId}">Multi-panel User Interface</span></div>${this.genCtInfoDiv()}`;
@@ -735,7 +749,7 @@ export class EditionComposer extends ApmPage {
         this.saveButtonPopoverTitle = '';
         this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassSaving);
         console.log('Saving table via API call to ' + this.apiSaveCollationUrl);
-        let description = this.lastVersion ? '' : `From version ${this.versionId}: `;
+        let description = this.isLastVersion ? '' : `From version ${this.version}: `;
         description += changes.join('. ');
         let apiCallOptions: any = {
           collationTable: this.ctData, descr: description, source: 'edit', baseSiglum: this.ctData['sigla'][0]
@@ -751,7 +765,7 @@ export class EditionComposer extends ApmPage {
             this.unsavedChanges = false;
             location.replace(urlGen.siteChunkEdition(apiResponse.tableId));
           }
-          if (!this.lastVersion) {
+          if (!this.isLastVersion) {
             // redirect to last version
             this.unsavedChanges = false;
             location.replace(urlGen.siteCollationTableEdit(this.tableId));
@@ -1230,10 +1244,10 @@ export class EditionComposer extends ApmPage {
   }
 
   genCtInfoDiv() {
-    let workTitle = this.options.workInfo['title'];
-    let workAuthorTid = this.options.workInfo['authorId'];
-    let workAuthorName = this.options.peopleInfo[workAuthorTid]['name'];
-    return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`;
+    let workTitle = this.workInfo['title'];
+    let workAuthorTid = this.workInfo['authorId'];
+    let workAuthorName = this.peopleInfo[workAuthorTid]['name'];
+    return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.workId}-${this.chunkNumber}</div>`;
   }
 
   /**
@@ -1246,10 +1260,11 @@ export class EditionComposer extends ApmPage {
     return `Click to show the Apparatus ${capitalizeFirstLetter(type)}`;
   }
 
+
   /**
-   *
-   * @param {CtDataInterface }ctData
-   * @return {CtDataInterface}
+   * Adds customApparatuses if not present in CtData
+   * @param ctData
+   * @private
    */
   private addMissingDataForCollationTable(ctData: CtDataInterface): CtDataInterface {
     ctData.customApparatuses = ctData.customApparatuses ?? [];
@@ -1298,6 +1313,23 @@ export class EditionComposer extends ApmPage {
 function getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex: number, ctData: CtDataInterface, edition: Edition):number {
   const appType = ctData.customApparatuses[ctDataAppIndex].type;
   return edition.apparatuses.findIndex(app => app.type === appType);
+}
+
+
+function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
+  const authors: number[] = [];
+  ctData.witnesses.forEach(witness => {
+    if (witness.witnessType === FULL_TX && witness.items !== undefined) {
+       witness.items.forEach( (item)=> {
+         if (item.notes !== undefined) {
+           item.notes.forEach( (note) => {
+             authors.push(note.authorTid)
+           })
+         }
+       })
+    }
+  });
+  return authors;
 }
 
 // Load as global variable so that it can be referenced in the Twig template

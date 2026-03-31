@@ -35,6 +35,7 @@ import {TimeString} from '@/toolbox/TimeString';
 import {urlGen} from '@/pages/common/SiteUrlGen';
 import {ApmApiClient} from "@/Api/ApmApiClient";
 import {ApmUrlGenerator} from "@/ApmUrlGenerator";
+import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
 
 const archiveButtonId = 'archive-table-btn';
 const versionHistoryDiv = 'version-history-div';
@@ -45,8 +46,7 @@ interface AdminPanelOptions extends PanelOptions {
   tableId: number,
   ctType: string,
   archived: boolean,
-  versionInfo: any[],
-  peopleInfo: any[],
+  versionInfo: CtVersionInfo[],
   onConfirmArchive: () => Promise<any>,
   canArchive: boolean,
   cannotArchiveReason: string,
@@ -55,7 +55,7 @@ interface AdminPanelOptions extends PanelOptions {
 export class AdminPanel extends Panel {
   private options: AdminPanelOptions;
   private rendered: boolean;
-  private versionInfo: any;
+  private versionInfo: CtVersionInfo[];
   private archiveButton!: JQuery<HTMLElement>;
 
   constructor(options: AdminPanelOptions) {
@@ -82,7 +82,7 @@ export class AdminPanel extends Panel {
     this.versionInfo = this.options.versionInfo;
   }
 
-  async updateVersionInfo(newVersionInfo: any) {
+  async updateVersionInfo(newVersionInfo: CtVersionInfo[]) {
     this.versionInfo = newVersionInfo;
     $(`#${versionHistoryDiv}`).html(await this._genVersionTableHtml());
   }
@@ -186,9 +186,12 @@ export class AdminPanel extends Panel {
       let version = this.versionInfo[i];
       let authorData = await this.options.apiClient.getPersonEssentialData(version['authorTid']);
       let authorName = authorData.name;
+      const editionUrl = i === this.versionInfo.length -1 ?
+        urlGen.siteChunkEdition(this.options.tableId):
+        urlGen.siteChunkEdition(this.options.tableId, TimeString.compactEncode(version['timeFrom']));
       html += '<tr>';
       html += '<td>' + (i + 1) + '</td>';
-      html += `<td><a href="${urlGen.siteChunkEdition(this.options.tableId, version['id'])}">${version['id']}</a></td>`;
+      html += `<td><a href="${editionUrl}">${version['id']}</a></td>`;
       html += '<td class="author">' + authorName + '</td>';
       html += '<td class="time">' + ApmFormats.time(TimeString.toDate(version['timeFrom'])) + '</td>';
       html += '<td>' + version['description'] + '</td>';

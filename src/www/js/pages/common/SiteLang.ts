@@ -17,7 +17,7 @@
  */
 
 
-import { Language } from '../../toolbox/Language'
+import { Language } from '@/toolbox/Language'
 
 export const defaultLanguage = 'en'
 

@@ -17,12 +17,11 @@
  */
 
 // defaults
-import {defaultLanguageDefinition} from '@/defaults/languages';
+import {defaultLanguageDefinition, LanguageDefinition} from '@/defaults/languages';
 
 // utilities
 import * as Util from '../toolbox/Util';
 import {capitalizeFirstLetter, deepCopy} from '@/toolbox/Util';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil';
 import {AsyncKeyCache} from '@/toolbox/KeyCache/AsyncKeyCache';
 import {ServerLogger} from '@/Server/ServerLogger';
@@ -66,7 +65,7 @@ import {CollationTableConsistencyCleaner} from '@/CtData/CtDataCleaner/Collation
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
 
 // import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
-import {ApmPage} from '@/pages/ApmPage';
+import {ApmPage, ApmPageOptions} from '@/pages/ApmPage';
 import {ApmFormats} from '@/pages/common/ApmFormats';
 import {urlGen} from '@/pages/common/SiteUrlGen';
 import {DataId_EC_ViewOptions} from '@/constants/WebStorageDataId';
@@ -101,8 +100,26 @@ interface SourceData {
   tid: number;
 }
 
+interface EditionComposerOptions extends  ApmPageOptions {
+  isTechSupport?: boolean;
+  lastVersion: string,
+  collationTableData: CtDataInterface,
+  workId: string,
+  chunkNumber: number,
+  tableId: number,
+  versionId: number,
+  langDef: Record<string, LanguageDefinition> ,
+  availableWitnesses: {
+    type: 'Array', default: []
+  },
+  workInfo: Record<string, any>,
+  peopleInfo: any[],
+  docInfo: object,
+  versionInfo: object
+}
+
 export class EditionComposer extends ApmPage {
-  private readonly options: any;
+  private readonly options: Required<EditionComposerOptions>;
   private readonly tableId: number;
   private readonly icons: {
     moveUp: string;
@@ -159,42 +176,24 @@ export class EditionComposer extends ApmPage {
   private errorButtonPopoverTitle!: string;
   private saveErrors!: boolean;
 
-  constructor(options: any) {
+  constructor(options: EditionComposerOptions) {
     super(options);
     console.log(`Common Apm Page Data`);
     console.log(this.commonData);
     console.log(`Initializing Edition Composer`);
 
-    // first load the fonts!
+    const defaults = {
+      isTechSupport: false,
+      langDef: defaultLanguageDefinition,
+      availableWitnesses: [],
+      workInfo: {},
+      peopleInfo: {},
+      docInfo: {},
+      versionInfo: {}
+    }
 
-    // let fontsToLoad = [  '14pt AdobeArabic', 'bold 14pt AdobeArabic', '1em Apm_FreeSerif', '1em Noto Sans']
-    //
-    // fontsToLoad.forEach( (fontName) => {
-    //   document.fonts.load(fontName).then( () => { console.log(`Font '${fontName}' loaded`)}).catch( (e) => {
-    //     console.log(`Error loading font '${fontName}'`)
-    //   })
-    // })
+    this.options = {...defaults, ...options}
 
-    let optionsDefinition = {
-      isTechSupport: {type: 'boolean', default: false},
-      lastVersion: {type: 'boolean', required: true},
-      collationTableData: {type: 'object', required: true},
-      workId: {type: 'string', required: true},
-      chunkNumber: {type: 'NonZeroNumber', required: true},
-      tableId: {type: 'NonZeroNumber', required: true},
-      versionId: {type: 'NonZeroNumber', required: true},
-      langDef: {type: 'object', default: defaultLanguageDefinition},
-      availableWitnesses: {
-        type: 'Array', default: []
-      }, // urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
-      workInfo: {type: 'object', default: {}},
-      peopleInfo: {type: 'object', default: {}},
-      docInfo: {type: 'object', default: {}},
-      versionInfo: {type: 'object', default: {}}
-    };
-
-    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'EditionComposer'});
-    this.options = oc.getCleanOptions(options);
     this.tableId = this.options.tableId;
 
     console.log(`EditionComposer Options`);

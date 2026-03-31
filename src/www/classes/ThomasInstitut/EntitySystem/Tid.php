@@ -204,8 +204,23 @@ class Tid
         return self::fromTimestamp(microtime(true));
     }
 
-    private static function createLockFile() : void {
-        touch(self::$lockFileName);
+    private static function createLockFile(): void
+    {
+        // using c+ so that the file gets created if it doesn't exist in one go
+        // thereby avoiding a potential race condition is merely using touch()
+        $lockFile = fopen(self::$lockFileName, 'c+');
+        if ($lockFile === false) {
+            throw new RuntimeException("Can't create lock file");
+        }
+
+        // setting a+rw mode so that even if the file is created by root (e.g. using apmctl),
+        // the www-data user from the httpd server can still read and write to it
+        if (!chmod(self::$lockFileName, 0666)) {
+            fclose($lockFile);
+            throw new RuntimeException("Can't set permissions on lock file");
+        }
+
+        fclose($lockFile);
     }
 
     private static function isAllNumbers(string $str) : bool {

@@ -300,14 +300,17 @@ export class ApmApiClient {
    *
    */
   async whoAmI(): Promise<any> {
+    let token: string|null = null;
     if (this.useBearerAuthentication) {
-      let token = await this.getBearerToken();
+      token = await this.getBearerToken();
       if (token === null) {
         return null;
       }
     }
     try {
-      return await this.get(urlGen.apiWhoAmI(), false, 30);
+      // this results in a long TTL is bearer authentication is used, and effectively no caching otherwise
+      const tokenFingerprint = ':' + await fingerprintToken(token ?? `Random${Math.floor(Math.random()*1000000)}`);
+      return await this.get(urlGen.apiWhoAmI(), false, TtlOneMinute * 15, true, tokenFingerprint);
     } catch (error: any) {
       console.log(`Error getting whoami`, error);
       if (error.httpStatus === 401) {
@@ -461,10 +464,11 @@ export class ApmApiClient {
    * @param {boolean} [forceGet=true] if true, the cache is not checked, and the GET request is actually made to the URL
    * @param {number} [ttl=-1] seconds to cache the results, or no caching if <=0
    * @param sessionCache
+   * @param cacheKeyPostfix
    * @return {Promise<{}>}
    */
-  get(url: string, forceGet: boolean = true, ttl: number = -1, sessionCache = true): Promise<any> {
-    return this.fetch(url, 'GET', null, forceGet, false, ttl, sessionCache);
+  get(url: string, forceGet: boolean = true, ttl: number = -1, sessionCache = true, cacheKeyPostfix: string = ''): Promise<any> {
+    return this.fetch(url, 'GET', null, forceGet, false, ttl, sessionCache, cacheKeyPostfix);
   }
 
   /**
@@ -696,11 +700,12 @@ export class ApmApiClient {
    * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated on an object { data: payload}
    * @param {number} ttl
    * @param sessionCache
+   * @param cacheKeyPostfix
    * @return {Promise<any>}
    * @throws {ApmApiClientError}
    */
-  private fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true): Promise<any> {
-    let key = encodeURI(url);
+  private fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true, cacheKeyPostfix: string = ''): Promise<any> {
+    let key = encodeURI(url) + cacheKeyPostfix;
     let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
     return fetcher.fetch(key, () => {
       return new Promise(async (resolve, reject: (e: ApmApiClientError) => void) => {
@@ -877,4 +882,12 @@ export class ApmApiClient {
   private setBearerToken: (t: string, ttl: number) => Promise<void> = () => Promise.resolve();
 
 
+}
+
+
+async function fingerprintToken(token: string): Promise<string> {
+  const data = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  const bytes = new Uint8Array(digest);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 }

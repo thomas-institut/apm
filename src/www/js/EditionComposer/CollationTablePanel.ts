@@ -33,13 +33,19 @@ import * as TranscriptionTokenType from '../Witness/WitnessTokenType';
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
 import {defaultLanguageDefinition} from '@/defaults/languages';
 import {
+  CellPostShiftEvent,
+  CellPreShiftEvent,
+  CellShiftContentChangedEvent,
   columnClearSelectionEvent,
   columnGroupEvent,
   columnSelectEvent,
   columnUngroupEvent,
-  editModeGroup,
-  editModeOff,
-  TableEditor
+  EditModeGroup,
+  EditModeOff,
+  PreTableDrawnEvent,
+  RowDefinition,
+  TableEditor,
+  ValueChangeReport
 } from '@/pages/common/TableEditor';
 import * as WitnessType from '../Witness/WitnessType';
 import * as TokenClass from '../Witness/WitnessTokenClass';
@@ -55,7 +61,13 @@ import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
 import {Punctuation} from '@/defaults/Punctuation';
 import {ToolbarCharacter, toolbarCharactersDefinition,} from '@/EditionComposer/ToolbarCharactersDefinition';
 import {SimpleConfirmDialog} from '@/pages/common/SimpleConfirmDialog';
-import {CtDataInterface, FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface} from "@/CtData/CtDataInterface";
+import {
+  CtDataInterface,
+  FullTxItemEditorialNote,
+  FullTxItemInterface,
+  NonTokenItemIndex,
+  WitnessTokenInterface
+} from "@/CtData/CtDataInterface";
 // @ts-expect-error No TS definitions for matrix yet
 import {Matrix} from "@thomas-inst/matrix";
 import {FmtText, fromString, getPlainText} from "@/lib/FmtText/FmtText";
@@ -83,7 +95,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   private readonly toolbarCharacters: ToolbarCharacter[];
   private viewSettings: ViewSettings;
   private popoversAreOn: boolean = true;
-  private tableEditor!: TableEditor;
+  private tableEditor!: TableEditor<number>;
   private tokenDataCache: any;
   private normalizationSettingsButton!: JQuery<HTMLElement>;
   private savedNormalizerSettings!: string[];
@@ -120,7 +132,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.debug = true;
     this.ctData = CtData.copyFromObject(this.options.ctData);
     this.lang = this.ctData.lang;
-    this.tableEditModeToRestore = editModeOff;
+    this.tableEditModeToRestore = EditModeOff;
     this.panelIsSetup = false;
     this.normalizerRegister = this.options.normalizerRegister;
     this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers();
@@ -359,7 +371,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   _genOnClickToolbar() {
     return (ev: any) => {
-      if (this.tableEditor.tableEditMode !== editModeGroup) {
+      if (this.tableEditor.tableEditMode !== EditModeGroup) {
         return;
       }
       let target = $(ev.target);
@@ -555,7 +567,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       }
 
       // @ts-ignore
-      let cellIndex = thisObject.tableEditor._getCellIndexFromElement($(this));
+      let cellIndex = thisObject.tableEditor.getCellIndexFromElement($(this));
       if (cellIndex === null) {
         console.error('Popover requested on a non-cell element!');
         return '';
@@ -608,7 +620,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   setupTableEditor() {
     let collationTable = this.ctData;
-    let rowDefinition = [];
+    let rowDefinition: RowDefinition<number>[] = [];
     let columnsPerRow;
     for (let i = 0; i < collationTable['witnessOrder'].length; i++) {
       let wIndex = collationTable['witnessOrder'][i];
@@ -640,7 +652,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     icons.confirmCellEdit = this.icons.confirmEdit;
     icons.cancelCellEdit = this.icons.cancelEdit;
 
-    this.tableEditor = new TableEditor({
+    this.tableEditor = new TableEditor<number>({
       id: this.contentAreaId,
       textDirection: this.textDirection,
       redrawOnCellShift: false,
@@ -672,27 +684,28 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.tableEditor.setOption('canDeleteColumn', this.genCanDeleteColumn());
 
     // hide popovers before moving cells
-    this.tableEditor.on('cell-pre-shift', (data: any) => {
+    this.tableEditor.on(CellPreShiftEvent, (data: any) => {
+      console.warn(`Cell pre shift event dispatched`);
       for (const selector of data.detail.selectors) {
         $(selector).popover('hide');
       }
     });
 
     // recalculate variants before redrawing the table
-    this.tableEditor.on('table-drawn-pre', () => {
+    this.tableEditor.on(PreTableDrawnEvent, () => {
       thisObject.recalculateVariants();
     });
     // handle cell shifts
-    this.tableEditor.on('cell-post-shift', this.genOnCellPostShift());
+    this.tableEditor.on(CellPostShiftEvent, this.genOnCellPostShift());
 
     this.tableEditor.editModeOn(false);
     this.tableEditor.redrawTable();
-    this.tableEditor.on('cell-shift content-changed', this.genOnCollationChanges());
+    this.tableEditor.on(CellShiftContentChangedEvent, this.genOnCollationChanges());
     this.tableEditor.on(columnGroupEvent, this.genOnGroupUngroupColumn(true));
     this.tableEditor.on(columnUngroupEvent, this.genOnGroupUngroupColumn(false));
     this.tableEditor.on(columnSelectEvent, this.genOnSelectColumns());
     this.tableEditor.on(columnClearSelectionEvent, this.genOnClearColumnSelection());
-    this.tableEditor.setEditMode(editModeOff);
+    this.tableEditor.setEditMode(EditModeOff);
   }
 
   genOnSelectColumns() {
@@ -944,7 +957,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   genOnCellConfirmEditFunction() {
     const debug = true;
-    return (tableRow: number, col: number, newText: string) => {
+    return (tableRow: number, col: number, newText: string): ValueChangeReport<number> => {
       let witnessIndex = this.ctData.witnessOrder[tableRow];
       let witnessTokenIndex = this.ctData.collationMatrix[witnessIndex][col];
       if (witnessTokenIndex === -1) {
@@ -1263,15 +1276,11 @@ export class CollationTablePanel extends PanelWithToolbar {
     // this.debug && console.log(`postItemIndexes`, postItemIndexes);
 
     let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items'] ?? [];
-    let notes = [];
+    let notes: FullTxItemEditorialNote[] = [];
     for (const itemIndex of postItemIndexes) {
       let theItem = itemWithAddressArray[itemIndex];
-      let itemNotes = [];
       if (theItem['notes'] !== undefined) {
-        itemNotes = theItem['notes'];
-      }
-      for (const note of itemNotes) {
-        notes.push(note);
+        notes.push(...theItem.notes)
       }
     }
     return notes;

@@ -482,7 +482,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         title: siglum, values: tokenArray, isEditable: false
       });
     }
-    this.tableEditor = new TableEditor({
+    this.tableEditor = new TableEditor<number>({
       id: this.collationTableNewDivId,
       showInMultipleRows: true,
       columnsPerRow: this.viewSettings.maxColumnsPerTable,
@@ -514,7 +514,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         return false;
       },
       onCellConfirmEdit: (row, col, newValue) => {
-        return {valueChange: false, value: newValue};
+        return {valueChange: false, value: parseInt(newValue)};
       },
       cellValidationFunction: (row, col, currentText) => {
         return {isValid: true, warnings: [], errors: []};

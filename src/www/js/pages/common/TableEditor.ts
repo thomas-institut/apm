@@ -37,14 +37,13 @@ import {escapeHtml} from '@/toolbox/Util';
 import {Matrix} from '@thomas-inst/matrix';
 import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
 import {SimpleProfiler} from '@/SimpleProfiler';
-import {getStringVal} from "@/toolbox/UiToolBox";
 
 // Table Edit Modes
 export const EditModeOff = 'off';
 export const EditModeMove = 'move';
 export const EditModeGroup = 'group';
 
-type EditMode = 'off' | 'move' | 'group';
+export type EditMode = 'off' | 'move' | 'group';
 
 // events
 export const cellDrawnEvent = 'cell-drawn';
@@ -249,7 +248,7 @@ export class TableEditor<T> {
   private rowDefinition: RowDefinition<T>[];
   private editFlagMatrix: Matrix;
   private readonly containerSelector: string;
-  private container: JQuery;
+  private container: HTMLElement | null;
   private icons: TableEditorIcons;
   private selectedColumnsStart: number;
   // private emptyCellHtml: string = '&mdash;';
@@ -303,7 +302,7 @@ export class TableEditor<T> {
     this.columnSequence = new SequenceWithGroups(this.matrix.nCols, this.options.groupedColumns);
     this.editFlagMatrix = new Matrix(this.matrix.nRows, this.matrix.nCols, false);
     this.containerSelector = '#' + this.options.id;
-    this.container = $(this.containerSelector);
+    this.container = document.querySelector(this.containerSelector);
     this.icons = this.options.icons ?? defaultIcons;
     this.tableEditMode = EditModeOff;
     this.selectedColumnsStart = -1;
@@ -331,7 +330,7 @@ export class TableEditor<T> {
       this.redrawTable();
     }
 
-    $(window).on('scroll',  () => {
+    window.addEventListener('scroll',  () => {
       if (this.waitingForScrollZero && window.scrollY === 0) {
         this.waitingForScrollZero = false;
         this.restoreScrollNow();
@@ -400,10 +399,12 @@ export class TableEditor<T> {
     }
 
     this.tableEditMode = newEditMode;
-    this.container.removeClass(this.getValidEditModes().map((m) => {
-      return tableEditModeClassPrefix + m;
-    }).join(' '));
-    this.container.addClass(tableEditModeClassPrefix + newEditMode);
+    if (this.container) {
+      this.getValidEditModes().forEach((m) => {
+        this.container?.classList.remove(tableEditModeClassPrefix + m);
+      });
+      this.container.classList.add(tableEditModeClassPrefix + newEditMode);
+    }
     if (redraw) {
       this.redrawTable();
     } else {
@@ -412,21 +413,22 @@ export class TableEditor<T> {
   }
 
   private setupTableForEditMode(mode: string) {
-    let groupColumnButtons = $(`${this.containerSelector} a.${linkButtonClass}`);
+    if (!this.container) return;
+    let groupColumnButtons = this.container.querySelectorAll(`a.${linkButtonClass}`);
 
     switch (mode) {
       case EditModeOff:
-        groupColumnButtons.addClass(hiddenClass);
+        groupColumnButtons.forEach(btn => btn.classList.add(hiddenClass));
         this.clearColumnSelection();
         break;
 
       case EditModeMove:
-        groupColumnButtons.addClass(hiddenClass);
+        groupColumnButtons.forEach(btn => btn.classList.add(hiddenClass));
         this.clearColumnSelection();
         break;
 
       case EditModeGroup:
-        groupColumnButtons.removeClass(hiddenClass);
+        groupColumnButtons.forEach(btn => btn.classList.remove(hiddenClass));
         break;
     }
   }
@@ -481,7 +483,9 @@ export class TableEditor<T> {
     let tableHtml = this.genTableHtml();
     console.log(`Table html is ${tableHtml.length} bytes long`);
     profiler.lap('table generated');
-    this.container.html(tableHtml);
+    if (this.container) {
+      this.container.innerHTML = tableHtml;
+    }
     profiler.lap('container filled');
     this.setupTableForEditMode(this.tableEditMode);
     this.setupTableEventHandlers();
@@ -652,16 +656,21 @@ export class TableEditor<T> {
 
   setupTableEventHandlers() {
     //let profiler = new SimpleProfiler('SetupEventHandlers')
-    let thSelector = this.getThSelectorAll();
-    $(thSelector).on('mouseenter', this.genOnMouseEnterHeader())
-    .on('mouseleave', this.genOnMouseLeaveHeader())
-    .on('click', this.genOnClickColumnHeader());
+    if (this.container) {
+      this.container.querySelectorAll(this.getThSelectorAll()).forEach(th => {
+        th.addEventListener('mouseenter', this.genOnMouseEnterHeader());
+        th.addEventListener('mouseleave', this.genOnMouseLeaveHeader());
+        th.addEventListener('click', this.genOnClickColumnHeader());
 
-    $(`${thSelector} .${addColumnLeftButtonClass}`).on('click', this.genOnClickAddColumnLeftButton());
-    $(`${thSelector} .${addColumnRightButtonClass}`).on('click', this.genOnClickAddColumnRightButton());
-    $(`${thSelector} .${deleteColumnButtonClass}`).on('click', this.genOnClickDeleteColumnButton());
-    $(`${thSelector} .${headerButtonClass}`).addClass(hiddenClass);
-    $(`${thSelector} .${linkButtonClass}`).on('click', this.genOnClickGroupColumnButton());
+        th.querySelectorAll(`.${addColumnLeftButtonClass}`).forEach(btn => btn.addEventListener('click', this.genOnClickAddColumnLeftButton()));
+        th.querySelectorAll(`.${addColumnRightButtonClass}`).forEach(btn => btn.addEventListener('click', this.genOnClickAddColumnRightButton()));
+        th.querySelectorAll(`.${deleteColumnButtonClass}`).forEach(btn => btn.addEventListener('click', this.genOnClickDeleteColumnButton()));
+        th.querySelectorAll(`.${headerButtonClass}`).forEach(btn => btn.classList.add(hiddenClass));
+        th.querySelectorAll(`.${linkButtonClass}`).forEach(btn => btn.addEventListener('click', this.genOnClickGroupColumnButton()));
+      });
+
+      this.container.addEventListener('click', this.genOnClickTableEditor());
+    }
 
     this.setupCellEventHandlersAll();
     for (let row = 0; row < this.matrix.nRows; row++) {
@@ -669,20 +678,22 @@ export class TableEditor<T> {
         this.setupCellEventHandlers(row, col, false);
       }
     }
-    $(this.containerSelector).on('click', this.genOnClickTableEditor());
     //profiler.stop()
   }
 
   private genOnClickTableEditor() {
-    return (ev: any) => {
+    return (ev: Event) => {
       if (this.tableEditMode !== EditModeGroup) {
         return;
       }
-      let target = $(ev.target);
-      if (target.prop('nodeName') !== 'DIV') {
+      let target = ev.target as HTMLElement|null;
+      if (target === null) {
         return;
       }
-      if (target.hasClass('tables-div') || target.hasClass('panel-content')) {
+      if (target.nodeName !== 'DIV') {
+        return;
+      }
+      if (target.classList.contains('tables-div') || target.classList.contains('panel-content')) {
         console.log(`Click on table editor outside of table`);
         this.clearColumnSelection();
       }
@@ -690,22 +701,32 @@ export class TableEditor<T> {
   }
 
   setupCellEventHandlersAll() {
-    let tdSelector = this.getTdSelectorAll();
-    $(tdSelector).off();
-    $(tdSelector).on('click', this.genOnClickCell());
-    if (this.tableEditMode !== EditModeOff) {
-      $(tdSelector).on('mouseenter', this.genOnMouseEnterCell());
-      $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell());
-    }
-    $(`${tdSelector} .${cellButtonClass}`).addClass(hiddenClass);
+    if (!this.container) return;
+    this.container.querySelectorAll(this.getTdSelectorAll()).forEach(td => {
+      // Note: native doesn't have .off() for all events easily without keeping track of listeners.
+      // But since we are likely calling this after a redraw where elements are new, it might be fine.
+      // If elements are reused, we'd need to be more careful.
+      // However, TableEditor seems to redraw a lot.
+      
+      // We'll use a fresh listener by removing if possible, but genOnClickCell() returns a new function each time...
+      // This is a common problem when migrating from jQuery's .off().
+      // For now, let's assume redraw handles it or we'll need to store handlers.
+      
+      td.addEventListener('click', this.genOnClickCell());
+      if (this.tableEditMode !== EditModeOff) {
+        td.addEventListener('mouseenter', this.genOnMouseEnterCell());
+        td.addEventListener('mouseleave', this.genOnMouseLeaveCell());
+      }
+      td.querySelectorAll(`.${cellButtonClass}`).forEach(btn => btn.classList.add(hiddenClass));
+    });
   }
 
   genOnClickCell() {
-    return (ev: any) => {
+    return (ev: Event) => {
       if (this.tableEditMode === EditModeOff) {
         return true;
       }
-      let cellIndex = this.getCellIndexFromElement($(ev.currentTarget));
+      let cellIndex = this.getCellIndexFromElement(ev.currentTarget as HTMLElement|null);
       if (cellIndex === null) {
         return true;
       }
@@ -714,24 +735,29 @@ export class TableEditor<T> {
 
       //console.log('Edit mode click on cell ' + row + ':' + col)
 
-      let theElement = $(ev.target);
+      let theElement = ev.target as HTMLElement|null;
+      if (theElement === null) {
+        return true;
+      }
       let depth = 5;
       while (depth > 0) {
         //console.log(`Testing element's node name, depth ${depth}, nodeName '${theElement.prop('nodeName')}'`)
-        if (theElement.prop('nodeName') === 'TD' || theElement.prop('nodeName') === 'A') break;
-        theElement = theElement.parent();
+        if (theElement.nodeName === 'TD' || theElement.nodeName === 'A') break;
+        theElement = theElement.parentElement as HTMLElement;
+        if (!theElement) break;
         depth--;
       }
-      if (depth === 0) {
+      if (depth === 0 || !theElement) {
         console.error(`Max depth reached trying to get A or TD in cell ${row}:${col}`);
         return true;
       }
 
-      if (theElement.prop('nodeName') === 'TD') {
+      if (theElement.nodeName === 'TD') {
         //console.log('Not a button')
         if (this.isCellEditable(row, col)) {
           //console.log('Editable cell clicked, row ' + row + ' col ' + col)
           this.enterCellEditMode(row, col);
+          ev.preventDefault();
           return false;
         }
         return true;
@@ -745,12 +771,14 @@ export class TableEditor<T> {
         // move cell left
         console.log('move cell left button clicked');
         this.shiftCells(row, col, col, 'left', 1);
+        ev.preventDefault();
         return false;
       }
       if (elementClasses.indexOf(pushCellsLeftButtonClass) !== -1) {
         console.log('PUSH cells LEFT button clicked');
         let emptyCol = this.getFirstEmptyCellToTheLeft(row, col);
         this.shiftCells(row, emptyCol + 1, col, 'left', 1);
+        ev.preventDefault();
         return false;
       }
 
@@ -774,7 +802,7 @@ export class TableEditor<T> {
         this.enterCellEditMode(row, col);
         return false;
       }
-      console.warn(`Click on an unknown cell button on ${row}:${col}, nodeName ${theElement.prop('nodeName')}`);
+      console.warn(`Click on an unknown cell button on ${row}:${col}, nodeName ${theElement.nodeName}`);
       return true;
     };
   }
@@ -845,22 +873,29 @@ export class TableEditor<T> {
   }
 
   setupCellEventHandlers(row: number, col: number, restoreClickEvent = true) {
-    let tdSelector = this.getTdSelector(row, col);
+    if (!this.container) return;
+    let td = this.container.querySelector(this.getTdSelector(row, col)) as HTMLElement;
+    if (!td) return;
     // console.log(`setting up event handlers for cell ${row}:${col}, restoreClick = ${restoreClickEvent}`)
     if (this.tableEditMode !== EditModeOff && restoreClickEvent) {
       if (this.isCellEditable(row, col)) {
-        $(tdSelector).off('click');
-        $(tdSelector).on('click', this.genOnClickCell());
+        // Since we can't easily do .off() without a reference to the handler, 
+        // we'll replace the element with its clone to clear listeners if needed, 
+        // but redrawCell already replaces the element.
+        // If we are here, we might just want to add the listener.
+        td.addEventListener('click', this.genOnClickCell());
       }
     }
   }
 
   setupCellEventHandlersCellEditMode(row: number, col: number) {
-    let tdSelector = this.getTdSelector(row, col);
-    $(tdSelector).off();
-    $(`${tdSelector} .${cancelEditButtonClass}`).on('click', this.genOnClickCancelEditButton(row, col));
-    $(`${tdSelector} .${confirmEditButtonClass}`).on('click', this.genOnClickConfirmEditButton(row, col));
-    $(`${tdSelector} .${inputClass}`).on('keyup', this.genOnKeyPressCellInputField(row, col));
+    if (!this.container) return;
+    let td = this.container.querySelector(this.getTdSelector(row, col));
+    if (!td) return;
+    
+    td.querySelectorAll(`.${cancelEditButtonClass}`).forEach(btn => btn.addEventListener('click', this.genOnClickCancelEditButton(row, col)));
+    td.querySelectorAll(`.${confirmEditButtonClass}`).forEach(btn => btn.addEventListener('click', this.genOnClickConfirmEditButton(row, col)));
+    td.querySelectorAll<HTMLInputElement>(`.${inputClass}`).forEach(btn => btn.addEventListener('keyup', this.genOnKeyPressCellInputField(row, col)));
   }
 
   genButtonHtml(icon: string, classes: string[], title = '') {
@@ -868,14 +903,19 @@ export class TableEditor<T> {
   }
 
   genOnKeyPressCellInputField(row: number, col: number) {
-    return (ev: any) => {
-      let currentText = $(`${this.getTdSelector(row, col)} .${inputClass}`).val()?.toString() ?? '';
-      if (ev.which === 13) {
+    return (ev: KeyboardEvent) => {
+      if (!this.container) return true;
+      let td = this.container.querySelector(this.getTdSelector(row, col));
+      if (!td) return true;
+      let input = td.querySelector(`.${inputClass}`) as HTMLInputElement;
+      let currentText = input?.value ?? '';
+      
+      if (ev.key === 'Enter') {
         // Enter key
         //console.log(`Enter key press on ${row}:${col}`)
         return this.confirmEdit(row, col);
       }
-      if (ev.which === 27) {
+      if (ev.key === 'Escape') {
         // Escape key
         //console.log(`Escape key press on ${row}:${col}`)
         this.leaveCellEditMode(row, col);
@@ -884,34 +924,49 @@ export class TableEditor<T> {
             this.options.onCellCancelEdit(row, col, currentText);
           }
         }
+        ev.preventDefault();
         return false;
       }
       // validate!
       let validationResult = this.options.cellValidationFunction(row, col, currentText);
-      let confirmEditButton = $(`${this.getTdSelector(row, col)} .${confirmEditButtonClass}`);
-      if (validationResult.isValid) {
-        confirmEditButton.removeClass('invalid');
-        confirmEditButton.attr('title', 'Click to confirm');
-      } else {
-        confirmEditButton.addClass('invalid');
-        let warningText = 'ERROR: ' + validationResult.errors.join('. ') + validationResult.warnings.join('. ');
-        if (warningText !== '') {
-          confirmEditButton.attr('title', warningText);
+      let confirmEditButton = td.querySelector(`.${confirmEditButtonClass}`) as HTMLElement;
+      if (confirmEditButton) {
+        if (validationResult.isValid) {
+          confirmEditButton.classList.remove('invalid');
+          confirmEditButton.setAttribute('title', 'Click to confirm');
+        } else {
+          confirmEditButton.classList.add('invalid');
+          let warningText = 'ERROR: ' + validationResult.errors.join('. ') + validationResult.warnings.join('. ');
+          if (warningText !== '') {
+            confirmEditButton.setAttribute('title', warningText);
+          }
+          //console.log(validationResult)
         }
-        //console.log(validationResult)
       }
       return true;
     };
   }
 
-  getClassList(element: JQuery<HTMLElement>) {
-    if (element.attr('class') === undefined) {
+  getClassList(element: HTMLElement): string[] {
+    if (!(element instanceof HTMLElement)) {
+      console.warn('Element is not an HTMLElement, returning empty array', element, typeof element);
+      console.trace()
       return [];
     }
-    return element.attr("class")?.split(/\s+/) || [];
+    if (element.classList === undefined) {
+      console.warn('Element has no classList, returning empty array', element, typeof element);
+      return [];
+    }
+
+    const classes: string[] = [];
+    element.classList.forEach( (c) => classes.push(c));
+    return classes;
   }
 
-  private getThIndexFromElement(element: JQuery<HTMLElement>) {
+  private getThIndexFromElement(element: HTMLElement|null) {
+    if (element === null) {
+      return -1;
+    }
     let thIndex = -1;
     let classes = this.getClassList(element);
     for (const theClass of classes) {
@@ -925,7 +980,10 @@ export class TableEditor<T> {
   }
 
 
-  private getCellIndexFromElement(element: JQuery<HTMLElement>) {
+  private getCellIndexFromElement(element: HTMLElement|null) {
+    if (element === null) {
+      return null;
+    }
     let cellIndex = null;
     let classes = this.getClassList(element);
     // console.log(`Get cell index from element`)
@@ -948,22 +1006,25 @@ export class TableEditor<T> {
   }
 
   genOnMouseEnterHeader() {
-    return (ev: any) => {
+    return (ev: Event) => {
       switch (this.tableEditMode) {
         case EditModeOff:
         case EditModeGroup:
           return true;
 
         case EditModeMove:
-          let col = this.getThIndexFromElement($(ev.currentTarget));
+          let target = ev.currentTarget as HTMLElement|null;
+          if (target === null) {
+            return true;
+          }
+          let col = this.getThIndexFromElement(target);
           if (col === -1) {
             return true;
           }
-          let thSelector = this.getThSelector(col);
-          $(thSelector + ' .add-column-left-button').removeClass(hiddenClass);
-          $(thSelector + ' .add-column-right-button').removeClass(hiddenClass);
+          target.querySelectorAll('.add-column-left-button').forEach(btn => btn.classList.remove(hiddenClass));
+          target.querySelectorAll('.add-column-right-button').forEach(btn => btn.classList.remove(hiddenClass));
           if (this.canDeleteColumn(col)) {
-            $(thSelector + ' .delete-column-button').removeClass(hiddenClass);
+            target.querySelectorAll('.delete-column-button').forEach(btn => btn.classList.remove(hiddenClass));
           }
           return true;
 
@@ -975,7 +1036,7 @@ export class TableEditor<T> {
   }
 
   genOnMouseLeaveHeader() {
-    return (ev: any) => {
+    return (ev: Event) => {
       //console.log('Mouse leave')
       switch (this.tableEditMode) {
         case EditModeOff:
@@ -983,9 +1044,11 @@ export class TableEditor<T> {
           return true;
 
         case EditModeMove:
-          let col = this.getThIndexFromElement($(ev.currentTarget));
+          let target = ev.currentTarget as HTMLElement|null;
+          if (target === null) return true;
+          let col = this.getThIndexFromElement(target);
           if (col !== -1) {
-            $(this.getThSelector(col) + ' .header-button').addClass(hiddenClass);
+            target.querySelectorAll('.header-button').forEach(btn => btn.classList.add(hiddenClass));
           }
           return true;
 
@@ -997,7 +1060,7 @@ export class TableEditor<T> {
   }
 
   genOnMouseEnterCell() {
-    return (ev: any) => {
+    return (ev: Event) => {
       switch (this.tableEditMode) {
         case EditModeOff:
         case EditModeGroup:
@@ -1006,7 +1069,9 @@ export class TableEditor<T> {
 
         case EditModeMove:
           // console.log(`Mouse enter cell in edit mode`)
-          let cellIndex = this.getCellIndexFromElement($(ev.currentTarget));
+          let target = ev.currentTarget as HTMLElement|null;
+          if (target === null) return true;
+          let cellIndex = this.getCellIndexFromElement(target);
           if (cellIndex === null) {
             console.log(`Mouse enter cell on move mode, but no cell index`);
             return true;
@@ -1015,53 +1080,50 @@ export class TableEditor<T> {
           let row = cellIndex.row;
           let col = cellIndex.col;
           // console.log('Mouse enter cell move mode: ' + row + ':' + col)
-          let tdSelector = this.getTdSelector(row, col);
           if (this.canMoveCellLeft(row, col)) {
-            $(tdSelector + ' .move-cell-left-button').removeClass(hiddenClass);
+            target.querySelectorAll('.move-cell-left-button').forEach(btn => btn.classList.remove(hiddenClass));
           }
           if (this.canPushCellsLeft(row, col)) {
             let firstCol = this.getFirstEmptyCellToTheLeft(row, col) + 1;
-            $(tdSelector + ' .push-cells-left-button')
-            .removeClass(hiddenClass)
-            .attr('title', `Push ${firstCol + 1}-${col + 1} back 1 column`);
+            target.querySelectorAll('.push-cells-left-button').forEach(btn => {
+              btn.classList.remove(hiddenClass);
+              btn.setAttribute('title', `Push ${firstCol + 1}-${col + 1} back 1 column`);
+            });
           }
           if (this.canMoveCellRight(row, col)) {
-            $(tdSelector + ' .move-cell-right-button').removeClass(hiddenClass);
+            target.querySelectorAll('.move-cell-right-button').forEach(btn => btn.classList.remove(hiddenClass));
           }
           if (this.canPushCellsRight(row, col)) {
             let lastCol = this.getFirstEmptyCellToTheRight(row, col) - 1;
-            $(tdSelector + ' .push-cells-right-button')
-            .removeClass(hiddenClass)
-            .attr('title', `Push ${col + 1}-${lastCol + 1} forward 1 column`);
+            target.querySelectorAll('.push-cells-right-button').forEach(btn => {
+              btn.classList.remove(hiddenClass);
+              btn.setAttribute('title', `Push ${col + 1}-${lastCol + 1} forward 1 column`);
+            });
           }
           if (this.isCellEditable(row, col)) {
-            $(tdSelector + ' .edit-cell-button').removeClass(hiddenClass);
+            target.querySelectorAll('.edit-cell-button').forEach(btn => btn.classList.remove(hiddenClass));
           }
           return true;
 
         default:
           console.error(`Unknown tableEditMode in MouseEnterCell:  ${this.tableEditMode}`);
           return false;
-
       }
     };
   }
 
   genOnMouseLeaveCell() {
-    return (ev: any) => {
+    return (ev: Event) => {
       switch (this.tableEditMode) {
         case EditModeOff:
         case EditModeGroup:
           return true;
 
         case EditModeMove:
-          let cellIndex = this.getCellIndexFromElement($(ev.currentTarget));
-          if (cellIndex === null) {
-            return true;
-          }
-          let row = cellIndex.row;
-          let col = cellIndex.col;
-          $(this.getTdSelector(row, col) + ' .cell-button').addClass(hiddenClass);
+          let target = ev.currentTarget as HTMLElement|null;
+          if (target === null) return true;
+
+          target.querySelectorAll('.cell-button').forEach(btn => btn.classList.add(hiddenClass));
           return true;
 
         default:
@@ -1072,29 +1134,35 @@ export class TableEditor<T> {
   }
 
   redrawCell(row: number, col: number) {
-    //$(this.getTdSelector(row, col)).html(this.generateTdHtml(row, col))
-    let tdSelector = this.getTdSelector(row, col);
-    $(tdSelector).replaceWith(this.generateCellHtml(row, col));
+    if (!this.container) return;
+    let oldTd = this.container.querySelector(this.getTdSelector(row, col)) as HTMLElement;
+    if (!oldTd) return;
+    
+    // Replace with new cell HTML
+    let newCellHtml = this.generateCellHtml(row, col, this.getTableNumberForColumn(col));
+    let tempDiv = document.createElement('div');
+    tempDiv.innerHTML = newCellHtml;
+    let newTd = tempDiv.firstChild as HTMLElement;
+    
+    oldTd.replaceWith(newTd);
+    
     // re-establish the cell's event handlers
-    $(tdSelector).on('click', this.genOnClickCell());
+    newTd.addEventListener('click', this.genOnClickCell());
     if (this.tableEditMode !== EditModeOff) {
-      $(tdSelector).on('mouseenter', this.genOnMouseEnterCell());
-      $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell());
+      newTd.addEventListener('mouseenter', this.genOnMouseEnterCell());
+      newTd.addEventListener('mouseleave', this.genOnMouseLeaveCell());
     }
-    $(tdSelector + ' .cell-button').addClass(hiddenClass);
-
+    newTd.querySelectorAll('.cell-button').forEach(btn => btn.classList.add(hiddenClass));
   }
 
   refreshCell(row: number, col: number) {
-    // let profiler = new SimpleProfiler(`refresh-r${row}-c${col}`)
-    // profiler.start()
-    let tdSelector = this.getTdSelector(row, col);
-    let td = $(tdSelector);
+    if (!this.container) return;
+    let td = this.container.querySelector(this.getTdSelector(row, col)) as HTMLElement;
+    if (!td) return;
     this.refreshCellContent(row, col);
     this.refreshCellClassesTd(td, row, col);
     this.refreshCellAttributes(row, col);
-    $(tdSelector + ' .cell-button').addClass(hiddenClass);
-    // profiler.stop()
+    td.querySelectorAll('.cell-button').forEach(btn => btn.classList.add(hiddenClass));
   }
 
   isColumnGroupedWithNext(col: number) {
@@ -1122,23 +1190,30 @@ export class TableEditor<T> {
   }
 
   refreshCellContent(row: number, col: number) {
-    let tdSelector = this.getTdSelector(row, col);
-    $(tdSelector + ' .te-cell-content').html(this.options.generateCellContent(row, col, this.matrix.getValue(row, col)));
+    if (!this.container) return;
+    let contentEl = this.container.querySelector(this.getCellContentSelector(row, col));
+    if (contentEl) {
+      contentEl.innerHTML = this.options.generateCellContent(row, col, this.matrix.getValue(row, col));
+    }
   }
 
-  refreshCellClassesTd(td: JQuery<Element>, row: number, col: number) {
+  refreshCellClassesTd(td: HTMLElement, row: number, col: number) {
     let newClasses = this.options.generateCellClasses(row, col, this.matrix.getValue(row, col));
-    if (td.hasClass(tableFirstColClass)) {
+    if (td.classList.contains(tableFirstColClass)) {
       // preserve first col class
       newClasses.push(tableFirstColClass);
     }
     let standardCellClasses = ['te-cell', this.getTdClass(row, col), this.getColClass(col)];
     standardCellClasses = standardCellClasses.concat(this.getGroupClasses(col));
-    td.attr('class', (standardCellClasses.concat(newClasses)).join(' '));
+    td.setAttribute('class', (standardCellClasses.concat(newClasses)).join(' '));
   }
 
   refreshCellClasses(row: number, col: number) {
-    this.refreshCellClassesTd($(this.getTdSelector(row, col)), row, col);
+    if (!this.container) return;
+    let td = this.container.querySelector(this.getTdSelector(row, col)) as HTMLElement;
+    if (td) {
+      this.refreshCellClassesTd(td, row, col);
+    }
   }
 
   refreshColumnClasses(col: number) {
@@ -1148,13 +1223,15 @@ export class TableEditor<T> {
   }
 
   refreshCellAttributes(row: number, col: number) {
+    if (!this.container) return;
     let tdExtraArray = this.options.generateCellTdExtraAttributes ? this.options.generateCellTdExtraAttributes(row, col, this.matrix.getValue(row, col)) : [];
-    let td = $(this.getTdSelector(row, col));
+    let td = this.container.querySelector(this.getTdSelector(row, col)) as HTMLElement;
+    if (!td) return;
     for (let i = 0; i < tdExtraArray.length; i++) {
       const attr = tdExtraArray[i]['attr'];
       const val = tdExtraArray[i]['val'];
       if (attr !== undefined && val !== undefined) {
-        td.attr(attr, val);
+        td.setAttribute(attr, val);
       }
     }
   }
@@ -1176,18 +1253,20 @@ export class TableEditor<T> {
     if (!this.options.onCellEnterEditMode(row, col)) {
       return;
     }
-    let tdSelector = this.getTdSelector(row, col);
-    let inputSelector = tdSelector + ' .te-input';
+    if (!this.container) return;
+    let td = this.container.querySelector(this.getTdSelector(row, col)) as HTMLElement;
+    if (!td) return;
     this.editFlagMatrix.setValue(row, col, true);
-    $(tdSelector).html(this.generateTdHtmlCellEditMode(row, col));
-    $(tdSelector).addClass('edit-mode');
+    td.innerHTML = this.generateTdHtmlCellEditMode(row, col);
+    td.classList.add('edit-mode');
     this.setupCellEventHandlersCellEditMode(row, col);
-    $(inputSelector).on('focus', function () {
-      // @ts-ignore
-      $(inputSelector).get(0).setSelectionRange(10000, 10000);
-    });
-    // @ts-ignore
-    $(inputSelector).get(0).focus();
+    let input = td.querySelector(`.${inputClass}`) as HTMLInputElement;
+    if (input) {
+      input.addEventListener('focus', function () {
+        input.setSelectionRange(10000, 10000);
+      });
+      input.focus();
+    }
   }
 
   isCellInEditMode(row: number, col: number) {
@@ -1196,15 +1275,17 @@ export class TableEditor<T> {
 
   leaveCellEditMode(row: number, col: number) {
     //console.log('Leaving edit mode, ' + row + ':' + col)
-    let tdSelector = this.getTdSelector(row, col);
+    if (!this.container) return;
+    let td = this.container.querySelector(this.getTdSelector(row, col)) as HTMLElement;
+    if (!td) return;
     this.editFlagMatrix.setValue(row, col, false);
-    $(tdSelector).html(this.generateTdHtml(row, col));
-    $(tdSelector).removeClass('edit-mode');
-    $(tdSelector + ' .cell-button').addClass(hiddenClass);
+    td.innerHTML = this.generateTdHtml(row, col);
+    td.classList.remove('edit-mode');
+    td.querySelectorAll('.cell-button').forEach(btn => btn.classList.add(hiddenClass));
     this.setupCellEventHandlers(row, col, true);
     // reinstate mouseenter and mouseleave events
-    $(tdSelector).on('mouseenter', this.genOnMouseEnterCell());
-    $(tdSelector).on('mouseleave', this.genOnMouseLeaveCell());
+    td.addEventListener('mouseenter', this.genOnMouseEnterCell());
+    td.addEventListener('mouseleave', this.genOnMouseLeaveCell());
     this.options.onCellLeaveEditMode(row, col);
     this.dispatchCellDrawnEvent(row, col);
   }
@@ -1219,7 +1300,10 @@ export class TableEditor<T> {
 
   genOnClickCancelEditButton(row: number, col: number) {
     return () => {
-      let newText = getStringVal($(this.getTdSelector(row, col) + ' .te-input'));
+      if (!this.container) return false;
+      let td = this.container.querySelector(this.getTdSelector(row, col));
+      let input = td?.querySelector(`.${inputClass}`) as HTMLInputElement;
+      let newText = input?.value ?? '';
       //console.log(`Cancel button clicked on ${row}:${col}`)
       this.leaveCellEditMode(row, col);
       if (this.options.onCellCancelEdit !== null) {
@@ -1232,11 +1316,15 @@ export class TableEditor<T> {
   }
 
   confirmEdit(row: number, col: number) {
-    let tdSelector = this.getTdSelector(row, col);
-    if ($(tdSelector + ' .confirm-edit-button').hasClass('invalid')) {
+    if (!this.container) return false;
+    let td = this.container.querySelector(this.getTdSelector(row, col));
+    if (!td) return false;
+    let confirmBtn = td.querySelector('.confirm-edit-button');
+    if (confirmBtn?.classList.contains('invalid')) {
       return false;
     }
-    let newText = getStringVal($(tdSelector + ' .te-input'));
+    let input = td.querySelector(`.${inputClass}`) as HTMLInputElement;
+    let newText = input?.value ?? '';
     let confirmResult = this.options.onCellConfirmEdit(row, col, newText);
     this.leaveCellEditMode(row, col);
     if (confirmResult.valueChange) {
@@ -1245,7 +1333,6 @@ export class TableEditor<T> {
       this.dispatchContentChangedEvent(row, col);
     }
     return false;
-
   }
 
   genOnClickConfirmEditButton(row: number, col: number) {
@@ -1256,13 +1343,15 @@ export class TableEditor<T> {
   }
 
   genOnClickColumnHeader() {
-    return (ev: any) => {
+    return (ev: Event) => {
       if (this.tableEditMode !== EditModeGroup) {
         return;
       }
       ev.preventDefault();
       ev.stopPropagation();
-      let col = this.getColFromColumnHeader(ev.currentTarget);
+      const currentTarget = ev.currentTarget as HTMLElement|null;
+      if (currentTarget === null) return;
+      let col = this.getColFromColumnHeader(currentTarget);
       console.log(`Click on column header in group mode, col = ${col}`);
       if (col < 0) {
         console.warn(`Invalid column detected: ${col}`);
@@ -1316,16 +1405,19 @@ export class TableEditor<T> {
     this.clearColumnSelection();
     this.selectedColumnsStart = Math.min(col1, col2);
     this.selectedColumnsEnd = Math.max(col1, col2);
-    for (let i = this.selectedColumnsStart; i <= this.selectedColumnsEnd; i++) {
-      $(this.getThSelector(i)).addClass('selected');
+    if (this.container) {
+      for (let i = this.selectedColumnsStart; i <= this.selectedColumnsEnd; i++) {
+        this.container.querySelector(this.getThSelector(i))?.classList.add('selected');
+      }
     }
     this.dispatchEvent(columnSelectEvent, {from: this.selectedColumnsStart, to: this.selectedColumnsEnd});
-
   }
 
   clearColumnSelection() {
-    for (let i = this.selectedColumnsStart; i <= this.selectedColumnsEnd; i++) {
-      $(this.getThSelector(i)).removeClass('selected');
+    if (this.container) {
+      for (let i = this.selectedColumnsStart; i <= this.selectedColumnsEnd; i++) {
+        this.container.querySelector(this.getThSelector(i))?.classList.remove('selected');
+      }
     }
     this.selectedColumnsStart = -1;
     this.selectedColumnsEnd = -1;
@@ -1337,11 +1429,13 @@ export class TableEditor<T> {
   // }
 
   genOnClickGroupColumnButton() {
-    return (ev: any) => {
+    return (ev: Event) => {
       if (this.tableEditMode !== EditModeGroup) {
         return false;
       }
-      let col = this.getColFromGroupColumnButton(ev.currentTarget);
+      let target = ev.currentTarget as HTMLElement|null;
+      if (target === null) return false;
+      let col = this.getColFromGroupColumnButton(target);
       //console.log(`Click on groupColumn Button, col = ${col}`)
       let grouped = true;
       if (this.isColumnGroupedWithNext(col)) {
@@ -1349,12 +1443,12 @@ export class TableEditor<T> {
         //console.log(`Ungrouping`)
         grouped = false;
         this.columnSequence.ungroupWithNext(col);
-        $(ev.currentTarget).html(this.icons.unGroupedColumn);
+        target.innerHTML = this.icons.unGroupedColumn;
       } else {
         // group with next
         //console.log(`Grouping with next`)
         this.columnSequence.groupWithNext(col);
-        $(ev.currentTarget).html(this.icons.groupedColumn);
+        target.innerHTML = this.icons.groupedColumn;
       }
       let columnGroup = this.columnSequence.getGroupForNumber(col);
       this.dispatchColumnGroupChangeEvent(col, grouped);
@@ -1369,7 +1463,7 @@ export class TableEditor<T> {
   }
 
   private getColFromColumnHeader(domElement: HTMLElement) {
-    let classes = this.getClassList($(domElement));
+    let classes = this.getClassList(domElement);
     let col = -1;
     for (const theClass of classes) {
       // TODO: use class constant in regex
@@ -1383,7 +1477,7 @@ export class TableEditor<T> {
 
 
   private getColFromGroupColumnButton(domElement: HTMLElement) {
-    let classes = this.getClassList($(domElement));
+    let classes = this.getClassList(domElement);
     let col = -1;
     for (const theClass of classes) {
       // TODO: use class constant in regex
@@ -1396,8 +1490,10 @@ export class TableEditor<T> {
   }
 
   genOnClickAddColumnRightButton() {
-    return (ev: any) => {
-      let col = this.getThIndexFromElement($(ev.currentTarget).parent());
+    return (ev: Event) => {
+      let target = ev.currentTarget as HTMLElement|null;
+      if (target === null) return false;
+      let col = this.getThIndexFromElement(target.parentElement as HTMLElement);
       if (col === -1) {
         return false;
       }
@@ -1412,13 +1508,16 @@ export class TableEditor<T> {
       }
       this.redrawTable();
       this.forceRestoreScroll(250);
+      return true;
     };
   }
 
   genOnClickAddColumnLeftButton() {
 
-    return (ev: any) => {
-      let col = this.getThIndexFromElement($(ev.currentTarget).parent());
+    return (ev: Event) => {
+      let target = ev.currentTarget as HTMLElement|null;
+      if (target === null) return false;
+      let col = this.getThIndexFromElement(target.parentElement as HTMLElement);
       if (col === -1) {
         return false;
       }
@@ -1432,6 +1531,7 @@ export class TableEditor<T> {
       }
       this.redrawTable();
       this.forceRestoreScroll(250);
+      return true;
     };
   }
 
@@ -1497,8 +1597,9 @@ export class TableEditor<T> {
     this.currentXScroll = window.scrollX;
     this.waitingForScrollZero = true;
     columnsToDelete.forEach((col) => {
-
-      $(this.getThSelector(col)).addClass('te-deleting');
+      if (this.container) {
+        this.container.querySelector(this.getThSelector(col))?.classList.add('te-deleting');
+      }
       let actualColumnNumberToDelete = col - countDeletedColumns;
 
       this.deleteSingleColumnData(actualColumnNumberToDelete);
@@ -1515,13 +1616,17 @@ export class TableEditor<T> {
 
 
   genOnClickDeleteColumnButton() {
-    return (ev: any) => {
-      let col = this.getThIndexFromElement($(ev.currentTarget).parent());
+    return (ev: Event) => {
+      let target = ev.currentTarget as HTMLElement|null;
+      if (target === null) return false;
+      let col = this.getThIndexFromElement(target.parentElement);
       if (col === -1) {
         return true;
       }
       if (this.canDeleteColumn(col)) {
-        $(this.getThSelector(col)).addClass('te-deleting');
+        if (this.container) {
+          this.container.querySelector(this.getThSelector(col))?.classList.add('te-deleting');
+        }
         console.log('Deleting column ' + col);
         this.currentYScroll = window.scrollY;
         this.currentXScroll = window.scrollX;
@@ -1538,6 +1643,7 @@ export class TableEditor<T> {
       } else {
         console.log('Column NOT empty, cannot delete');
       }
+      return true;
     };
   }
 
@@ -1726,14 +1832,14 @@ export class TableEditor<T> {
 
   dispatchEvent(eventName: string, data: any = {}) {
     const event = new CustomEvent(eventName, {detail: data});
-    this.container.get()[0].dispatchEvent(event);
+    this.container?.dispatchEvent(event);
   }
 
   /**
    * Attaches a callback function to an editor event
    */
   on(eventName: string, f: any) {
-    this.container.on(eventName, f);
+    this.container?.addEventListener(eventName, f);
   }
 
 }

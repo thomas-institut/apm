@@ -40,6 +40,7 @@ import {
   columnGroupEvent,
   columnSelectEvent,
   columnUngroupEvent,
+  EditMode,
   EditModeGroup,
   EditModeOff,
   PreTableDrawnEvent,
@@ -85,7 +86,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   private options: any;
   private ctData: CtDataInterface;
   private readonly lang: string;
-  private tableEditModeToRestore: string;
+  private tableEditModeToRestore: EditMode;
   private panelIsSetup: boolean;
   private readonly normalizerRegister: NormalizerRegister;
   private readonly availableNormalizers: string[];
@@ -565,9 +566,10 @@ export class CollationTablePanel extends PanelWithToolbar {
       if (!thisObject.popoversAreOn) {
         return '';
       }
-
-      // @ts-ignore
-      let cellIndex = thisObject.tableEditor.getCellIndexFromElement($(this));
+      // @ts-expect-error awful use of this, that's how popovers roll
+      const thisDomElement = $(this)[0];
+      // @ts-expect-error Calling a private method, awful!
+      let cellIndex = thisObject.tableEditor.getCellIndexFromElement(thisDomElement);
       if (cellIndex === null) {
         console.error('Popover requested on a non-cell element!');
         return '';

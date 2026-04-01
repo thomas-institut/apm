@@ -62,6 +62,7 @@ use APM\System\Transcription\TxText\Unclear;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\SystemProfiler;
 use APM\ToolBox\ArraySort;
 use APM\ToolBox\MyersDiff;
 use Exception;
@@ -566,7 +567,6 @@ class ApmTranscriptionManager extends TranscriptionManager
                 'doc_id' => "=$docId",
                 'chunk_number' => "=$chunkNumber",
                 'witness_local_id' => "='$localWitnessId'"
-
             ],
             $timeString);
 
@@ -656,8 +656,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         } else {
             $conditionsSqlString = '';
         }
-
-
 
         $query = "SELECT $tp.doc_id as 'doc_id', $tp.seq as 'page_seq', $tp.id as 'page_id'," .
             " $te.column_number," .
@@ -944,9 +942,13 @@ class ApmTranscriptionManager extends TranscriptionManager
             // not in the cache, we just keep going with the construction of the witness
         }
 
+        SystemProfiler::lap('getWitnessesForChunk');
         $chunkLocationMap = $this->getChunkLocationMapForChunk($workId, $chunkNumber, TimeString::now());
+        SystemProfiler::lap('getChunkLocationMapForChunk');
         $versionMap = $this->getVersionsForChunkLocationMap($chunkLocationMap);
+        SystemProfiler::lap('getVersionsForChunkLocationMap');
         $lastVersions = $this->getLastChunkVersionFromVersionMap($versionMap);
+        SystemProfiler::lap('getLastChunkVersionFromVersionMap');
 
         $docArray = $chunkLocationMap[$workId][$chunkNumber] ?? [];
         $docManager = $this->getDocumentManager();
@@ -992,6 +994,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 $witnessInfoArray[] = $witnessInfo;
             }
         }
+        SystemProfiler::lap('WitnessInfoArray');
 
         $this->localMemCache->set($localCacheKey, serialize($witnessInfoArray));
         return $witnessInfoArray;

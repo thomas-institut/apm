@@ -153,9 +153,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
           });
         }
       }
-
     }
-
     this.initPage().then(() => {
       console.log(`Automatic Collation Table initialized`);
     });
@@ -309,7 +307,6 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     if (this.options.loadNow) {
       this.fetchCollationTable();
     }
-
   }
 
   genOnClickSaveTableButton() {

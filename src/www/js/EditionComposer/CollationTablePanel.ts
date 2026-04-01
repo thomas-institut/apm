@@ -35,11 +35,12 @@ import {defaultLanguageDefinition} from '@/defaults/languages';
 import {
   CellPostShiftEvent,
   CellPreShiftEvent,
-  CellShiftContentChangedEvent,
-  columnClearSelectionEvent,
-  columnGroupEvent,
-  columnSelectEvent,
-  columnUngroupEvent,
+  CellShiftEvent,
+  ColumnClearSelectionEvent,
+  ColumnGroupEvent,
+  ColumnSelectEvent,
+  ColumnUngroupEvent,
+  ContentChangedEvent,
   EditMode,
   EditModeGroup,
   EditModeOff,
@@ -558,31 +559,28 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   _popoversGenContentFunction() {
-    // need to use thisObject because 'this' in the popover function is bound to the element for which the popover is shown
+    // need to use thisCtPanel because 'this' in the popover function is bound to the element for which the popover is shown
     // and that is needed to get the cell index
-    let thisObject = this;
-    return function () {
-
-      if (!thisObject.popoversAreOn) {
+    let thisCtPanel = this;
+    return function (): string {
+      if (!thisCtPanel.popoversAreOn) {
         return '';
       }
-      // @ts-expect-error awful use of this, that's how popovers roll
-      const thisDomElement = $(this)[0];
-      // @ts-expect-error Calling a private method, awful!
-      let cellIndex = thisObject.tableEditor.getCellIndexFromElement(thisDomElement);
+      // @ts-expect-error awful use of this, but that's how popovers roll
+      const popoverElement = $(this)[0];
+      let cellIndex = thisCtPanel.tableEditor.getCellIndexFromElement(popoverElement);
       if (cellIndex === null) {
         console.error('Popover requested on a non-cell element!');
         return '';
       }
-
-      if (thisObject.tableEditor.isCellInEditMode(cellIndex.row, cellIndex.col)) {
+      if (thisCtPanel.tableEditor.isCellInEditMode(cellIndex.row, cellIndex.col)) {
         //  this.verbose && console.log(`Cell ${cellIndex.row}:${cellIndex.col} in is cell edit mode`)
         return '';
       }
-      let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row];
-      let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col);
+      let witnessIndex = thisCtPanel.ctData['witnessOrder'][cellIndex.row];
+      let tokenIndex = thisCtPanel.tableEditor.getValue(cellIndex.row, cellIndex.col);
       //  this.verbose && console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
-      return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col);
+      return thisCtPanel.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col);
     };
   }
 
@@ -649,6 +647,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         title: title, values: tokenArray, isEditable: isEditable
       });
     }
+    console.log(`RowDefinition`, rowDefinition)
     let icons = TableEditor.genTextIconSet();
     icons.editCell = this.icons.editText;
     icons.confirmCellEdit = this.icons.confirmEdit;
@@ -687,7 +686,6 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     // hide popovers before moving cells
     this.tableEditor.on(CellPreShiftEvent, (data: any) => {
-      console.warn(`Cell pre shift event dispatched`);
       for (const selector of data.detail.selectors) {
         $(selector).popover('hide');
       }
@@ -702,11 +700,11 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     this.tableEditor.editModeOn(false);
     this.tableEditor.redrawTable();
-    this.tableEditor.on(CellShiftContentChangedEvent, this.genOnCollationChanges());
-    this.tableEditor.on(columnGroupEvent, this.genOnGroupUngroupColumn(true));
-    this.tableEditor.on(columnUngroupEvent, this.genOnGroupUngroupColumn(false));
-    this.tableEditor.on(columnSelectEvent, this.genOnSelectColumns());
-    this.tableEditor.on(columnClearSelectionEvent, this.genOnClearColumnSelection());
+    this.tableEditor.on([CellShiftEvent, ContentChangedEvent], this.genOnCollationChanges());
+    this.tableEditor.on(ColumnGroupEvent, this.genOnGroupUngroupColumn(true));
+    this.tableEditor.on(ColumnUngroupEvent, this.genOnGroupUngroupColumn(false));
+    this.tableEditor.on(ColumnSelectEvent, this.genOnSelectColumns());
+    this.tableEditor.on(ColumnClearSelectionEvent, this.genOnClearColumnSelection());
     this.tableEditor.setEditMode(EditModeOff);
   }
 
@@ -831,6 +829,8 @@ export class CollationTablePanel extends PanelWithToolbar {
         this.ctData.customApparatuses = CtData.fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(this.ctData, firstCol, lastCol, numCols, direction);
       }
 
+      console.log(`Cell post shift event dispatched`);
+
       this.recalculateVariants();
 
       let firstColToRedraw = direction === 'right' ? firstCol : firstCol - numCols;
@@ -844,7 +844,6 @@ export class CollationTablePanel extends PanelWithToolbar {
         // refresh the cells in the row being shifted
         for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
           this.tableEditor.refreshCell(theRow, col);
-          this.tableEditor.setupCellEventHandlers(theRow, col);
         }
       })
       .then(() => {
@@ -868,8 +867,6 @@ export class CollationTablePanel extends PanelWithToolbar {
       refWitness = this.ctData.editionWitnessIndex;
     }
     this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), this.ctData.witnesses, this.ctData.witnessOrder, refWitness);
-    // console.log(`Variants recalculated`)
-    // console.log(this.variantsMatrix)
   }
 
   genCanDeleteColumn() {

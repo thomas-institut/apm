@@ -254,10 +254,10 @@ export class EditionComposer extends ApmPage {
 
     const body = $('body');
 
-    body.html(`<div style="margin: 3em; color: gray;"><b>EditionComposer</b>: Getting data, please stand by...</div>`)
-
+    body.html(getPrenderMessage(`Getting data for table ${this.tableId}`, 0, 3));
     const apiCtDataResponse = await this.apiClient.getSingleChunkData(this.options.tableId, this.options.version);
 
+    body.html(getPrenderMessage(`Setting up data`, 1, 3));
     this.ctData = apiCtDataResponse.ctData;
     this.ctData.tableId = this.tableId;
     this.ctData = this.addMissingDataForCollationTable(this.ctData);
@@ -299,9 +299,9 @@ export class EditionComposer extends ApmPage {
 
     this.viewOptions = await this.getViewOptions();
     console.log(`ViewOptions`, this.viewOptions);
+    body.html(getPrenderMessage(`Setting up UI`, 2, 3));
 
     // Construct panels
-
     this.collationTablePanel = new CollationTablePanel({
       containerSelector: `#${collationTableTabId}`,
       normalizerRegister: this.normalizerRegister,
@@ -472,6 +472,7 @@ export class EditionComposer extends ApmPage {
         id: 'panel-two', type: 'tabs', tabs: panelTwoTabs
       }]
     });
+    $(body).html(getPrenderMessage('Ready', 3, 3));
 
     await this.multiPanelUI.start();
     //  Edition title
@@ -1331,6 +1332,11 @@ function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
   });
   return authors;
 }
+
+function getPrenderMessage(msg: string, step: number, numSteps: number) : string {
+  return `<div class="prerender-msg"><b>Edition Composer</b>: ${step} / ${numSteps}: ${msg}  <span class="prerender-spinner"></span></div>`;
+}
+
 
 // Load as global variable so that it can be referenced in the Twig template
 // @ts-ignore

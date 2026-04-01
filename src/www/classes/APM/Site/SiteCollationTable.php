@@ -130,6 +130,13 @@ class SiteCollationTable extends SiteController
     }
 
 
+    private function isValidCompactTimeString(string $compactTimeString): bool {
+        if (strlen($compactTimeString) !== 20) {
+            return false;
+        }
+        return ctype_digit($compactTimeString);
+    }
+
     /**
      * Serves the collation table editor.
      * The collation table editor handles both saved collation tables and chunk editions,
@@ -142,93 +149,36 @@ class SiteCollationTable extends SiteController
      */
     public function editCollationTable(Request $request, Response $response) : Response{
         $tableId = intval($request->getAttribute('tableId'));
-        $versionId = intval($request->getAttribute('versionId'));
+        $encodedTimeStamp = $request->getAttribute('version', 'latest');
 
-        
-        $this->logger->debug("Edit collation table id $tableId, version $versionId");
+        if ($encodedTimeStamp === 'latest') {
+            $version = '';
+        } else {
+            if (!$this->isValidCompactTimeString($encodedTimeStamp)) {
+                $this->logger->error("Invalid timestamp given: $encodedTimeStamp");
+                return $this->getBasicErrorPage($response, "Error", "Invalid timestamp given", HttpStatus::BAD_REQUEST);
+            }
+            $version = TimeString::compactDecode($encodedTimeStamp);
+        }
+
         $ctManager = $this->systemManager->getCollationTableManager();
-        $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
 
-
-        if (count($versionInfoArray) === 0) {
-            $this->logger->info("No version info found, table probably does not exist");
-            $versionId = 0;
-        }
-        $timeStamp = TimeString::now();
-        $isLastVersion = true;
-        if ($versionId !== 0) {
-            // find timestamp for given versionId
-            $found = false;
-            foreach ( $versionInfoArray as $versionInfo) {
-                if ($versionInfo->id == $versionId) {
-                    $timeStamp = $versionInfo->timeFrom;
-                    if ($versionInfo->timeUntil !== TimeString::END_OF_TIMES) {
-                        $isLastVersion = false;
-                    }
-                    $found = true;
-                    $this->logger->debug("Version timestamp: $timeStamp");
-                    break;
-                }
-            }
-            if (!$found) {
-                $this->logger->info("Version ID does exist or does not correspond to given table, defaulting to latest version");
-            }
-        }
-
-        if ($isLastVersion) {
-            // find version Id
-            foreach ( $versionInfoArray as $versionInfo) {
-                if ($versionInfo->timeUntil === TimeString::END_OF_TIMES) {
-                    $versionId = $versionInfo->id;
-                    break;
-                }
-            }
-        }
-
-        try {
-            $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
-        } catch (InvalidArgumentException) {
-            $this->logger->info("Table $tableId requested for editing not found");
-            return $this->getErrorPage($response, 'Collation Table Error', "Table $tableId not found", HttpStatus::NOT_FOUND);
-        }
-
-        $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
-        $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
-        [ $workId, $chunkNumber] = explode('-', $chunkId);
-        try {
-            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
-        } catch (WorkNotFoundException) {
-//          Not found!!!
-            return $this->getBasicErrorPage(
-                $response,
-                "Error",
-                "Work '$workId' not defined in the system", 404);
-        }
-
-
-        $peopleTids = [];
-        $peopleTids[] = $workInfo->authorId;
-        $peopleTids = array_merge($peopleTids, $this->getMentionedAuthorsFromCtData($ctData));
-        $peopleTids = array_merge($peopleTids, $this->getMentionedPeopleFromVersionArray($versionInfoArray));
-        $pm = $this->systemManager->getPersonManager();
-        $peopleInfo = [];
-        foreach($peopleTids as $personTid) {
-
+        if ($version === '') {
+            $timeStamp = '';
+            $isLastVersion = true;
+        } else {
             try {
-                $personData = $pm->getPersonEssentialData($personTid);
-            } catch (PersonNotFoundException) {
-                $this->logger->error("Person $personTid mentioned in CT not found");
+                $ctInfo = $ctManager->getCollationTableInfo($tableId, $version);
+                $timeStamp = $ctInfo->timeFrom;
+                $isLastVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
+            } catch(InvalidArgumentException $e) {
+                $this->logger->error("Collation table $tableId not found");
+                return $this->getBasicErrorPage($response, "Error", "Collation table $tableId not found", HttpStatus::NOT_FOUND);
             }
-            if (isset($personData)) {
-                $peopleInfo[$personTid] = $personData->getExportObject();
-            }
+
+            $this->logger->debug("Edit collation table id $tableId, version $version, actual timestamp: $timeStamp");
         }
 
-        $docs = $this->getMentionedDocsFromCtData($ctData);
-        $docManager = $this->systemManager->getDocumentManager();
-        $docInfoArray  = array_map( function ($id) use ($docManager) {
-            return $docManager->getDocInfo($id);
-        }, $docs);
 
         return $this->renderStandardPage(
             $response,
@@ -237,16 +187,9 @@ class SiteCollationTable extends SiteController
             'EditionComposer',
             'js/EditionComposer/EditionComposer.ts',
             [
-                'workId' => $workId,
-                'chunkNumber' => intval($chunkNumber),
                 'tableId' => $tableId,
-                'collationTableData' => $ctData,
-                'workInfo' => $workInfo,
-                'peopleInfo' => $peopleInfo,
-                'docInfo' => $docInfoArray,
-                'versionInfo' => $versionInfoArray,
                 'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
-                'versionId' => $versionId,
+                'version' => $timeStamp,
                 'lastVersion' => $isLastVersion
             ],
             [],
@@ -257,98 +200,8 @@ class SiteCollationTable extends SiteController
                 'edition-composer.css',
                 'collation.edit.css'
             ],
-//            [ 'js/SimpleProfiler.js']
         );
-
-//        if ($ctData['type'] === 'edition') {
-//            return $this->renderStandardPage(
-//              $response,
-//              '',
-//              'Edit Collation Table',
-//              'EditionComposer',
-//              'js/EditionComposer/EditionComposer.js',
-//                [
-//                  'workId' => $workId,
-//                  'chunkNumber' => intval($chunkNumber),
-//                  'tableId' => $tableId,
-//                  'collationTableData' => $ctData,
-//                  'workInfo' => $workInfo,
-//                  'peopleInfo' => $peopleInfo,
-//                  'docInfo' => $docInfoArray,
-//                  'versionInfo' => $versionInfoArray,
-//                  'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
-//                  'versionId' => $versionId,
-//                  'lastVersion' => $isLastVersion
-//                ],
-//                [],
-//                [
-//                    '../node_modules/quill/dist/quill.core.css',
-//                    'collationtable.css',
-//                    'multi-panel-ui/styles.css',
-//                    'edition-composer.css',
-//                    'collation.edit.css'
-//                ],
-//                [ 'js/SimpleProfiler.js']
-//            );
-//        } else {
-//            return $this->renderStandardPage(
-//                $response,
-//                '',
-//                'Edit Collation Table',
-//                'CollationTableEditor',
-//                'js/pages/CollationTableEditor.js',
-//                [
-//                    'workId' => $workId,
-//                    'chunkNumber' => intval($chunkNumber),
-//                    'tableId' => $tableId,
-//                    'collationTableData' => $ctData,
-//                    'workInfo' => $workInfo,
-//                    'peopleInfo' => $peopleInfo,
-//                    'docInfo' => $docInfoArray,
-//                    'versionInfo' => $versionInfoArray,
-//                ],
-//                [],
-//                [
-//                    'collationtable.css',
-//                    'collation.edit.css'
-//                ],
-//                [ 'js/SimpleProfiler.js']
-//            );
-//        }
     }
-
-    protected function getMentionedPeopleFromVersionArray($versionArray) : array {
-        $people = [];
-        foreach($versionArray as $version) {
-            /** @var CollationTableVersionInfo $version */
-            $people[] = $version->authorTid;
-        }
-        return $people;
-    }
-
-    protected function getMentionedAuthorsFromCtData(array $ctData) : array {
-        $authors = [];
-
-        foreach($ctData['witnesses'] as $witness) {
-            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
-                foreach($witness['items']  as $i => $item) {
-                    if (isset($item['notes'])) {
-                        $this->logger->debug("Found notes in witness " . $witness['ApmWitnessId'] . ", item $i");
-                        foreach($item['notes'] as $note) {
-                            $authors[] = $note['authorTid'] ?? $note['authorId'] ;
-                        }
-                    }
-                }
-            }
-        }
-
-        return $authors;
-    }
-
-    protected function getMentionedDocsFromCtData(array $ctData) : array {
-        return CtData::getMentionedDocsFromCtData($ctData);
-    }
-
     /**
      * @param Request $request
      * @param Response $response

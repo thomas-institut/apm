@@ -16,7 +16,17 @@
  *
  */
 
-export const defaultLanguageDefinition = {
+
+export interface LanguageDefinition {
+  code: string;
+  name: string;
+  rtl: boolean;
+  fontsize: number;
+  editionFont: string;
+  standardNormalizations: string[];
+}
+
+export const defaultLanguageDefinition: Record<string, LanguageDefinition> = {
   la: {
     code: 'la',
     name: 'Latin',

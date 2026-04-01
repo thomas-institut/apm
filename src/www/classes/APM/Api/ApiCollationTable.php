@@ -105,7 +105,13 @@ class ApiCollationTable extends ApiController
         }
 
         return $this->responseWithJson($response, $this->systemManager->getCollationTableManager()->getActiveTablesByWorkId($workData->workId));
+    }
 
+    private function isValidCompactTimeString(string $compactTimeString): bool {
+        if (strlen($compactTimeString) !== 20) {
+            return false;
+        }
+        return ctype_digit($compactTimeString);
     }
 
     public function versionInfo(Request $request, Response $response): Response {
@@ -113,10 +119,13 @@ class ApiCollationTable extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$tableId");
         $ctManager = $this->systemManager->getCollationTableManager();
         $compactEncodedTimeStamp =  $request->getAttribute('timestamp', '');
-        if ($compactEncodedTimeStamp !== '') {
-            $timeStamp = TimeString::compactDecode($compactEncodedTimeStamp);
+        if ($compactEncodedTimeStamp === 'latest') {
+            $timeStamp = TimeString::now();
         } else {
-            return $this->responseWithText($response, "Bad timestamp", 400);
+            if (!$this->isValidCompactTimeString($compactEncodedTimeStamp)) {
+                return $this->responseWithText($response, "Bad timestamp", 400);
+            }
+            $timeStamp = TimeString::compactDecode($compactEncodedTimeStamp);
         }
 
         $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);

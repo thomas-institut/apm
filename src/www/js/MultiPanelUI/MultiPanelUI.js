@@ -255,7 +255,7 @@ export class MultiPanelUI {
 
   async start() {
     let body = $('body')
-    body.html(`Rendering....`)
+    body.html(`<div class="prerender-msg">Rendering <span class="prerender-spinner"></span></div>`);
     let html = this.genHtmlTopBar()
     html += await this.genHtmlPanels()
     body.html(html)
@@ -569,7 +569,7 @@ ${this.options.topBarContent()}
 <div class="top-bar-item ${classes.topBarToolbar}">
 <div class="${classes.topBarToolbarGroup}">
   <button class="${classes.topBarButton}" id="${ids.horizontalModeButton}" role="button" title="Switch to horizontal mode">${this.options.icons.horizontalMode}</a>
-  <button class="${classes.topBarButton}" id="${ids.verticalModeButton}" role="button" title="Swith to vertical mode">${this.options.icons.verticalMode}</button>
+  <button class="${classes.topBarButton}" id="${ids.verticalModeButton}" role="button" title="Switch to vertical mode">${this.options.icons.verticalMode}</button>
 </div>
 ${this.options.topBarRightAreaContent()}
 </div>

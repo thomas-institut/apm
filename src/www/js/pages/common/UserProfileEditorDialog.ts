@@ -1,7 +1,7 @@
 import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
 import { tr } from './SiteLang'
-import { ApmApiClient } from '../../Api/ApmApiClient'
+import { ApmApiClient } from '@/Api/ApmApiClient'
 import { ApmPage } from '../ApmPage'
 import { wait } from '@/toolbox/wait'
 import {getStringVal} from "@/toolbox/UiToolBox";

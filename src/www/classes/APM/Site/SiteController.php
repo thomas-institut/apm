@@ -240,9 +240,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     <style>
     
         div.loadMessage {
-            color: gray;
-            margin: 5em;
+            margin: 20px;
             font-size: 1.2em;
+            color: gray;
             animation: appearAfter 1s linear;
         }
         
@@ -259,14 +259,14 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         }
         
         .spinner {
-            margin-top: 1em;
-            border: 0.25em solid #f3f3f3;
-            border-top: 0.25em solid gray; 
+            margin-top: 0.5em;
+            border: 0.15em solid #f3f3f3;
+            border-top: 0.15em solid gray;
             border-radius: 50%;
-            width: 2em;
-            height: 2em;
+            width: 1em;
+            height: 1em;
             display: inline-block;
-            animation: spin 2s linear infinite;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
@@ -275,19 +275,19 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         }
 </style>
 <script>
-       window.loading = true;
+       window.loading = true
        setTimeout( 
          () => {
             if (window.loading) {
-              let msgDiv = document.getElementById('message');
-              msgDiv.innerHTML = 'Oops, something went wrong loading APM. Is your Internet working? If so, there might be a problem with the server. Please try again later.';
+              let msgDiv = document.getElementById('message')
+              msgDiv.innerHTML = 'Oops, something went wrong loading APM. Is your Internet working? If so, there might be a problem with the server. Please try again later.'
             }
-         }, 30000);
+         }, 30000)
 </script>
 </head>
 <body>
     <div class="loadMessage" id="message">
-    APM is taking some time to load the $title page, please stand by... <div class="spinner"></div>
+    Loading $title page... <div class="spinner"></div>
     </div>
     
 </body>

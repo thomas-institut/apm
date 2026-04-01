@@ -31,7 +31,8 @@ import {
   ApiCollationTableConvertToEdition,
   ApiCollationTableInfo,
   ApiCollationTableVersionInfo,
-  AutomaticCollationSettings
+  AutomaticCollationSettings,
+  SingleChunkApiData
 } from "@/Api/DataSchema/ApiCollationTable";
 import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
@@ -51,6 +52,8 @@ import {
 import {ApiAutomaticCollationTablePreset, ApiPresetsQuery, ApiSiglaPreset} from "@/Api/DataSchema/ApiPresets";
 import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
 import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
+import {TimeString} from "@/toolbox/TimeString";
+import {CtData} from "@/CtData/CtData";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -207,6 +210,44 @@ export class ApmApiClient {
     }
   }
 
+
+  async getSingleChunkData(tableId: number, version: string, useCache: boolean = true): Promise<SingleChunkApiData> {
+
+    const lookingForLatestVersion = version === '';
+    if (lookingForLatestVersion) {
+      const latestVersionInfo = await this.collationTableVersionInfo(tableId, 'latest');
+      if (latestVersionInfo === null) {
+        throw new Error('Table does not exist, no latest version found')
+      }
+      version = latestVersionInfo.timeFrom;
+    }
+
+    let dbKey = `CtData-${tableId}-${TimeString.compactEncode(version)}`;
+    if (useCache) {
+      let cachedData = await this.caches.longTerm.retrieve(dbKey);
+      if (cachedData !== null) {
+        if (lookingForLatestVersion) {
+          cachedData.isLatestVersion =true;
+          return cachedData;
+        }
+        const versionInfo = await this.collationTableVersionInfo(tableId, version);
+        if (versionInfo !== null) {
+          cachedData.isLatestVersion = versionInfo.isLatestVersion;
+          return cachedData;
+        }
+      }
+    }
+    // really get from server
+    let url = urlGen.apiCollationTable_get(tableId, TimeString.compactEncode(version));
+    const data = await this.get(url) as SingleChunkApiData;
+    console.log(`Got data table ${tableId}, timeStamp '${version}'`);
+    console.log(data);
+    data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData);
+    await this.caches.longTerm.store(dbKey, data);
+    return data;
+  }
+
+
   async getAllPeopleData(): Promise<AllPeopleDataForPeoplePageItem[]> {
     return await this.get(urlGen.apiPersonGetDataForPeoplePage());
   }
@@ -300,7 +341,7 @@ export class ApmApiClient {
    *
    */
   async whoAmI(): Promise<any> {
-    let token: string|null = null;
+    let token: string | null = null;
     if (this.useBearerAuthentication) {
       token = await this.getBearerToken();
       if (token === null) {
@@ -309,7 +350,7 @@ export class ApmApiClient {
     }
     try {
       // this results in a long TTL is bearer authentication is used, and effectively no caching otherwise
-      const tokenFingerprint = ':' + await fingerprintToken(token ?? `Random${Math.floor(Math.random()*1000000)}`);
+      const tokenFingerprint = ':' + await fingerprintToken(token ?? `Random${Math.floor(Math.random() * 1000000)}`);
       return await this.get(urlGen.apiWhoAmI(), false, TtlOneMinute * 15, true, tokenFingerprint);
     } catch (error: any) {
       console.log(`Error getting whoami`, error);

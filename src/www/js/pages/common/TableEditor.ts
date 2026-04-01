@@ -364,20 +364,24 @@ export class TableEditor<T> {
     return this.tableEditMode;
   }
 
-  setEditMode(newEditMode: EditMode, redraw = false) {
+  setEditMode(newEditMode: EditMode, redraw = true) {
+    if (this.tableEditMode === newEditMode) return;
     if (this.getValidEditModes().indexOf(newEditMode) === -1) {
       console.error('Invalid edit mode: ' + newEditMode);
       return;
     }
 
+    const oldEditMode = this.tableEditMode;
     this.tableEditMode = newEditMode;
+
     if (this.container) {
       this.getValidEditModes().forEach((m) => {
         this.container?.classList.remove(tableEditModeClassPrefix + m);
       });
       this.container.classList.add(tableEditModeClassPrefix + newEditMode);
     }
-    if (redraw) {
+
+    if (redraw && (oldEditMode === EditModeOff || newEditMode === EditModeOff)) {
       this.redrawTable();
     } else {
       this.setupTableForEditMode(this.tableEditMode);
@@ -442,6 +446,39 @@ export class TableEditor<T> {
     html += this.generateTdHtml(row, col);
     html += '</td>';
     return html;
+  }
+
+  private generateThHtml(col: number): string {
+    let thClasses = [this.getThClass(col), this.getColClass(col)];
+    let html = `<th class="${thClasses.join(' ')}">`;
+    let addColumnBeforeIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnLeft : this.icons.addColumnRight;
+    let addColumnAfterIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnRight : this.icons.addColumnLeft;
+    html += this.genButtonHtml(addColumnBeforeIcon, [addColumnLeftButtonClass, headerButtonClass, moveModeButtonClass, hiddenClass], 'Add column before');
+    html += (col + 1);
+    html += this.genButtonHtml(this.icons.deleteColumn, [deleteColumnButtonClass, headerButtonClass, moveModeButtonClass, hiddenClass], 'Delete this column');
+    html += this.genButtonHtml(addColumnAfterIcon, [addColumnRightButtonClass, headerButtonClass, moveModeButtonClass, hiddenClass], 'Add column after');
+
+    if (col !== this.matrix.nCols - 1) {
+      let linkIcon = this.icons.unGroupedColumn;
+      let groupClass = groupNoneClass;
+      let title = "Click to group with next column";
+      let floatClass = this.options.textDirection === 'ltr' ? groupIconFloatRightClass : groupIconFloatLeftClass;
+      if (this.isColumnGroupedWithNext(col)) {
+        groupClass = groupNextClass;
+        linkIcon = this.icons.groupedColumn;
+        title = "Click to ungroup with next column";
+      }
+      html += this.genButtonHtml(linkIcon, [linkButtonClass, `${specificColumnLinkButtonClassPrefix}${col}`, groupClass, floatClass], title);
+    }
+    html += '</th>';
+    return html;
+  }
+
+  public redrawHeader(col: number) {
+    if (!this.container) return;
+    const oldTh = this.container.querySelector(this.getThSelector(col)) as HTMLElement;
+    if (!oldTh) return;
+    oldTh.outerHTML = this.generateThHtml(col);
   }
 
   // getColumnGroups() {
@@ -713,6 +750,18 @@ export class TableEditor<T> {
     }
   }
 
+  public refreshColumn(col: number) {
+    for (let row = 0; row < this.matrix.nRows; row++) {
+      this.refreshCell(row, col);
+    }
+  }
+
+  public refreshColumnClasses(col: number) {
+    for (let row = 0; row < this.matrix.nRows; row++) {
+      this.refreshCellClasses(row, col);
+    }
+  }
+
   refreshCellAttributes(row: number, col: number) {
     if (!this.container) return;
     let tdExtraArray = this.options.generateCellTdExtraAttributes ? this.options.generateCellTdExtraAttributes(row, col, this.matrix.getValue(row, col)) : [];
@@ -775,12 +824,13 @@ export class TableEditor<T> {
     let input = td.querySelector(`.${inputClass}`) as HTMLInputElement;
     let newText = input?.value ?? '';
     let confirmResult = this.options.onCellConfirmEdit(row, col, newText);
-    this.leaveCellEditMode(row, col);
+
     if (confirmResult.valueChange) {
-      //console.log('Change in value')
       this.setValue(row, col, confirmResult.value);
       this.dispatchContentChangedEvent(row, col);
     }
+
+    this.leaveCellEditMode(row, col);
     return false;
   }
 
@@ -1190,7 +1240,13 @@ export class TableEditor<T> {
               this.columnSequence.groupWithNext(col);
             }
             this.dispatchColumnGroupChangeEvent(col, !grouped);
-            this.redrawTable();
+
+            this.redrawHeader(col);
+            for (let r = 0; r < this.matrix.nRows; r++) {
+              this.refreshCellClasses(r, col);
+              this.refreshCellClasses(r, col + 1);
+            }
+
             ev.preventDefault();
           }
           return;
@@ -1474,28 +1530,7 @@ export class TableEditor<T> {
       html += '<th></th>';
       let tableColumnNumber = 0;
       for (let col = currentTableFirstColumn; col < currentTableLastColumnPlusOne; col++) {
-        let thClasses = [this.getThClass(col), this.getColClass(col)];
-        html += `<th class="${thClasses.join(' ')}">`;
-        let addColumnBeforeIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnLeft : this.icons.addColumnRight;
-        let addColumnAfterIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnRight : this.icons.addColumnLeft;
-        html += this.genButtonHtml(addColumnBeforeIcon, [addColumnLeftButtonClass, headerButtonClass, moveModeButtonClass, hiddenClass], 'Add column before');
-        html += (col + 1);
-        html += this.genButtonHtml(this.icons.deleteColumn, [deleteColumnButtonClass, headerButtonClass, moveModeButtonClass, hiddenClass], 'Delete this column');
-        html += this.genButtonHtml(addColumnAfterIcon, [addColumnRightButtonClass, headerButtonClass, moveModeButtonClass, hiddenClass], 'Add column after');
-
-        if (col !== this.matrix.nCols - 1) {
-          let linkIcon = this.icons.unGroupedColumn;
-          let groupClass = groupNoneClass;
-          let title = "Click to group with next column";
-          let floatClass = this.options.textDirection === 'ltr' ? groupIconFloatRightClass : groupIconFloatLeftClass;
-          if (this.isColumnGroupedWithNext(col)) {
-            groupClass = groupNextClass;
-            linkIcon = this.icons.groupedColumn;
-            title = "Click to ungroup with next column";
-          }
-          html += this.genButtonHtml(linkIcon, [linkButtonClass, `${specificColumnLinkButtonClassPrefix}${col}`, groupClass, floatClass], title);
-        }
-        html += '</th>';
+        html += this.generateThHtml(col);
         tableColumnNumber++;
       }
 

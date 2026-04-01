@@ -22,8 +22,7 @@
  *
  *  - Collation table manipulation: moving, grouping, normalizations
  */
-import {OptionsChecker} from '@thomas-inst/optionschecker';
-import {PanelWithToolbar} from '@/MultiPanelUI/PanelWithToolbar';
+import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
 import {MultiToggle, optionChange} from '@/widgets/MultiToggle';
 import {NiceToggle, toggleEvent} from '@/widgets/NiceToggle';
 import {NormalizerRegister} from '@/pages/common/NormalizerRegister';
@@ -31,7 +30,7 @@ import * as ArrayUtil from '../lib/ToolBox/ArrayUtil';
 import * as NormalizationSource from '../constants/NormalizationSource';
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType';
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
-import {defaultLanguageDefinition} from '@/defaults/languages';
+import {defaultLanguageDefinition, LanguageDefinition} from '@/defaults/languages';
 import {
   CellPostShiftEvent,
   CellPreShiftEvent,
@@ -75,6 +74,8 @@ import {Matrix} from "@thomas-inst/matrix";
 import {FmtText, fromString, getPlainText} from "@/lib/FmtText/FmtText";
 import * as FmtTextTokenType from "@/lib/FmtText/FmtTextTokenType";
 import {deepCopy} from "@/toolbox/Util";
+import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
+import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
 
 
 interface ViewSettings {
@@ -83,15 +84,26 @@ interface ViewSettings {
   showWitnessTitles: boolean;
 }
 
+interface CollationTablePanelOptions extends PanelWithToolbarOptions {
+  ctData: CtDataInterface;
+  langDef?: Record<string,LanguageDefinition>;
+  normalizerRegister: NormalizerRegister;
+  textDirection: string;
+  icons: Record<string, string>;
+  peopleInfo?: Record<number, PersonEssentialData>,
+  onCtDataChange?: (ctData: CtDataInterface) => void,
+  editApparatusEntry?: (appIndex: number, ctIndexFrom: number, ctIndexTo: number) => void,
+}
+
 export class CollationTablePanel extends PanelWithToolbar {
-  private options: any;
+  private options: Required<CollationTablePanelOptions>;
   private ctData: CtDataInterface;
   private readonly lang: string;
   private tableEditModeToRestore: EditMode;
   private panelIsSetup: boolean;
   private readonly normalizerRegister: NormalizerRegister;
   private readonly availableNormalizers: string[];
-  private icons: any;
+  private icons: Record<string, string>;
   private readonly textDirection: string;
   private aggregatedNonTokenItemIndexes: NonTokenItemIndex[][];
   private readonly toolbarCharacters: ToolbarCharacter[];
@@ -110,27 +122,21 @@ export class CollationTablePanel extends PanelWithToolbar {
   private selectedColumnsTo!: number;
   private variantsMatrix: Matrix | null;
 
-  constructor(options = {}) {
+  constructor(options: CollationTablePanelOptions) {
     super(options);
-    let optionsDefinition = {
-      ctData: {type: 'object'},
-      normalizerRegister: {type: 'object', objectClass: NormalizerRegister},
-      icons: {type: 'object', required: true},
-      langDef: {type: 'object', default: defaultLanguageDefinition},
-      peopleInfo: {type: 'object', default: []},
-      onCtDataChange: {
-        type: 'function', default: () => {
-          this.verbose && console.log(`New CT data, but no handler for change`);
-        }
-      },
-      editApparatusEntry: {
-        type: 'function', default: () => {
-        }
-      }
-    };
 
-    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'Collation Table Panel'});
-    this.options = oc.getCleanOptions(options);
+    const defaults: OptionalPropsRequired<CollationTablePanelOptions>= {
+      maximizeContentArea: this.maximizeContentArea,
+      contentAreaId: this.contentAreaId,
+      debug: this.debug,
+      verbose: this.verbose,
+      peopleInfo: [],
+      onCtDataChange: () => {},
+      editApparatusEntry: () => {},
+      langDef: defaultLanguageDefinition
+    }
+
+    this.options = {...defaults, ...options}
     this.debug = true;
     this.ctData = CtData.copyFromObject(this.options.ctData);
     this.lang = this.ctData.lang;

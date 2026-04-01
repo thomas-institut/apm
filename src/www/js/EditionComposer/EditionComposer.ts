@@ -304,6 +304,7 @@ export class EditionComposer extends ApmPage {
     // Construct panels
     this.collationTablePanel = new CollationTablePanel({
       containerSelector: `#${collationTableTabId}`,
+      textDirection: this.ctData.lang === 'la' ? 'ltr' : 'rtl',
       normalizerRegister: this.normalizerRegister,
       icons: this.icons,
       ctData: this.ctData,
@@ -1317,7 +1318,7 @@ function getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex: number, ctData: Ct
 }
 
 
-function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
+export function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
   const authors: number[] = [];
   ctData.witnesses.forEach(witness => {
     if (witness.witnessType === FULL_TX && witness.items !== undefined) {

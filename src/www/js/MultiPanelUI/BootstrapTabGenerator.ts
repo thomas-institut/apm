@@ -16,110 +16,68 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker'
+import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
+import {TabSpec} from "@/MultiPanelUI/MultiPanelUI";
+
+
+interface BootstrapTabGeneratorOptions {
+  id: string,
+  tabs: TabSpec[],
+  order?: number[],
+  activeTabId?: string
+  mode?: string;
+}
 
 /**
  * Helper class to generate a Bootstrap4 html code for a set of tabs and content
  */
 export class BootstrapTabGenerator {
+  private readonly id: string;
+  private order: number[];
+  private activeTabId: string;
+  private readonly tabSpecs: Required<TabSpec>[];
+  private readonly mode: string;
 
-  constructor (options) {
-    let optionsSpec = {
-      id: {
-        // the id of the tab list
-        type: 'NonEmptyString',
-        required: true
-      },
-      tabs: {
-        // an array of tab specifications
-        type: 'Array',
-        required: true
-      },
-      order: {
-        // the order of the tabs as an array of indexes referring to the tab array given in options.tabs
-        type: 'Array',
-        default: []
-      },
-      activeTabId: {
-        // the id of the active tab, if empty, the first tab will be the active one
-        type: 'string',
-        default: ''
-      },
-      mode: {
-        // a string to be passed to each tab's html generator
-        type: 'string',
-        default: ''
-      }
+
+  constructor (options: BootstrapTabGeneratorOptions) {
+
+    const defaults: OptionalPropsRequired<BootstrapTabGeneratorOptions> = {
+      activeTabId: '',
+      mode: '',
+      order: []
     }
 
-    let tabOptionsSpec = {
-      id: {
-        // the id that will be used for the tab content div
-        type: 'NonEmptyString',
-        required: true
-      },
-      title: {
-        // the title of the tab to be shown in the tab list
-        type: 'NonEmptyString',
-        required: true
-      },
-      linkTitle: {
-        // the title of the tab link, which the browser will show as a tooltip when hovering over the tab
-        // if empty, the generator will use the a message using the tab title
-        type: 'string',
-        default: ''
-      },
-      content: {
-        // a function to generate the tab's html content
-        //  (tabId, visible, mode) => string
-        type: 'function',
-        required: true
-      },
-      contentClasses: {
-        // a list of classes to be applied to the tab content div
-        type: 'array',
-        default: []
-      },
-      linkClasses: {
-        // a list of classes to be applied to the tab's link
-        type: 'array',
-        default: []
-      }
-    }
-
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context:  'Bootstrap Tab Manager'})
-
-    let cleanOptions = oc.getCleanOptions(options)
+    const cleanOptions: Required<BootstrapTabGeneratorOptions> = { ...defaults, ...options };
     this.id = cleanOptions.id
-    this.tabs = []
+    this.tabSpecs = []
     this.order = cleanOptions.order
     this.activeTabId = cleanOptions.activeTabId
 
-    cleanOptions.tabs.forEach( (tab, index) => {
-      let toc = new OptionsChecker({optionsDefinition: tabOptionsSpec, context: `Bootstrap Tab Manager, tab ${index}`})
-      this.tabs.push(toc.getCleanOptions(tab))
+    cleanOptions.tabs.forEach( (tab) => {
+      const tabSpecDefaults: OptionalPropsRequired<TabSpec> = { linkTitle: '', contentClasses: [], linkClasses: [], visible: true};
+      this.tabSpecs.push({...tabSpecDefaults, ...tab})
     })
 
     if (this.order.length === 0) {
       //console.log(`Generating default order`)
-      this.order = this.tabs.map( (tab, index) => { return index})
+      this.order = this.tabSpecs.map( (_tab, index) => { return index})
     }
 
     if (this.activeTabId === '') {
-      this.activeTabId = this.tabs[this.order[0]].id
+      this.activeTabId = this.tabSpecs[this.order[0]].id
     }
 
     this.mode = cleanOptions.mode
   }
 
-  setOrder(newOrder) {
+  setOrder(newOrder: number[]) {
     if (newOrder.length !== this.order.length) {
       return
     }
     this.order = newOrder
   }
 
-  setActiveTab(tabId) {
+  setActiveTab(tabId: string) {
     this.activeTabId = tabId
   }
 
@@ -128,7 +86,7 @@ export class BootstrapTabGenerator {
   }
 
   getTabIds() {
-    return this.order.map( index => this.tabs[index].id)
+    return this.order.map( index => this.tabSpecs[index].id)
   }
 
   async generateHtml() {
@@ -139,7 +97,7 @@ export class BootstrapTabGenerator {
     return this.id
   }
 
-  getTabLinkId(tabId) {
+  getTabLinkId(tabId: string) {
     return tabId + '-tab'
   }
 
@@ -151,7 +109,7 @@ export class BootstrapTabGenerator {
     let activeTabId = this.activeTabId
     return  `<ul class="nav nav-tabs" id="${this.getTabListId()}" role="tablist">` +
       this.order.map( (index) => {
-        let tab = this.tabs[index]
+        let tab = this.tabSpecs[index]
         let linkClasses = [ 'nav-link']
         if (tab.id === activeTabId) {
           linkClasses.push('active')
@@ -170,8 +128,8 @@ aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activ
     let activeTabId = this.activeTabId;
     let mode = this.mode;
     let html = '';
-    for (let i = 0; i < this.tabs.length; i++) {
-      let tab = this.tabs[i];
+    for (let i = 0; i < this.tabSpecs.length; i++) {
+      let tab = this.tabSpecs[i];
       let contentClasses = ['tab-pane']
       if (tab.contentClasses.length > 0) {
         contentClasses = contentClasses.concat(tab.contentClasses)

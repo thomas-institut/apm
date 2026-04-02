@@ -47,7 +47,7 @@ import {
   RowDefinition,
   TableEditor,
   ValueChangeReport
-} from '@/pages/common/TableEditor';
+} from '@/pages/common/TableEditor/TableEditor';
 import * as WitnessType from '../Witness/WitnessType';
 import * as TokenClass from '../Witness/WitnessTokenClass';
 import * as Util from '../toolbox/Util';

@@ -38,16 +38,9 @@ import {Matrix} from '@thomas-inst/matrix';
 import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
 import {SimpleProfiler} from '@/SimpleProfiler';
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
-import {
-  init,
-  classModule,
-  propsModule,
-  styleModule,
-  eventListenersModule,
-  h,
-  VNode,
-  attributesModule
-} from 'snabbdom';
+import {attributesModule, classModule, eventListenersModule, h, init, propsModule, styleModule, VNode} from 'snabbdom';
+
+import './TableEditor.css';
 
 const patch = init([
   classModule,
@@ -224,6 +217,8 @@ const deleteColumnButtonClass = 'delete-column-button';
 const tableEditModeClassPrefix = 'table-edit-mode-';
 const tablesDivClass = 'tables-div';
 const tableClass = 'te-table';
+const WINDOWING_THRESHOLD = 10000;
+const WINDOWING_MAX_CELLS = 2000;
 const headerClass = 'te-th';
 const specificHeaderClassPrefix = 'te-th-';
 const cellClass = 'te-cell';
@@ -271,6 +266,7 @@ export class TableEditor<T> {
   // private lastHoveredCell: HTMLElement | null = null;
   private vnode: VNode | HTMLElement | null = null;
   private redrawScheduled = false;
+  private currentWindowStartTableIndex = 0;
 
   constructor(options: TableEditorOptions<T>) {
     const defaults: OptionalPropsRequired<TableEditorOptions<T>> = {
@@ -330,7 +326,6 @@ export class TableEditor<T> {
     if (this.container) {
       this.container.classList.add('te-container');
       this.container.classList.add(tableEditModeClassPrefix + this.tableEditMode);
-      this.injectCss();
     }
 
     if (this.options.onCellDrawnEventHandler !== null) {
@@ -363,23 +358,6 @@ export class TableEditor<T> {
     });
   }
 
-  private injectCss() {
-    if (document.getElementById('te-style')) return;
-    const style = document.createElement('style');
-    style.id = 'te-style';
-    style.innerHTML = `
-      .te-container:not(.${tableEditModeClassPrefix}${EditModeMove}) .${moveModeButtonClass}, 
-      .te-container:not(.${tableEditModeClassPrefix}${EditModeMove}) .${editCellButtonClass} { display: none; }
-      .te-container:not(.${tableEditModeClassPrefix}${EditModeGroup}) .${linkButtonClass} { display: none; }
-      
-      .te-container.${tableEditModeClassPrefix}${EditModeMove} .${cellClass} .${cellButtonClass} { display: none; }
-      .te-container.${tableEditModeClassPrefix}${EditModeMove} .${cellClass}:hover .${cellButtonClass} { display: inline-block; }
-      
-      .te-container.${tableEditModeClassPrefix}${EditModeMove} .${headerClass} .${headerButtonClass} { display: none; }
-      .te-container.${tableEditModeClassPrefix}${EditModeMove} .${headerClass}:hover .${headerButtonClass} { display: inline-block; }
-    `;
-    document.head.appendChild(style);
-  }
 
   static genTextIconSet() {
     return defaultIcons;
@@ -1471,9 +1449,27 @@ export class TableEditor<T> {
       columnsPerTable = this.options.columnsPerRow;
     }
 
+    const totalCells = this.matrix.nRows * this.matrix.nCols;
+    let windowingActive = false;
+    let tablesInWindow = numTables;
+
+    if (totalCells > WINDOWING_THRESHOLD && this.options.showInMultipleRows) {
+      windowingActive = true;
+      const cellsPerTable = this.matrix.nRows * columnsPerTable;
+      tablesInWindow = Math.max(1, Math.floor(WINDOWING_MAX_CELLS / cellsPerTable));
+    }
+
+    // Adjust currentWindowStartTableIndex
+    if (this.currentWindowStartTableIndex > numTables - tablesInWindow) {
+      this.currentWindowStartTableIndex = Math.max(0, numTables - tablesInWindow);
+    }
+
+    let startTable = windowingActive ? this.currentWindowStartTableIndex : 0;
+    let endTable = Math.min(numTables, startTable + tablesInWindow);
+
     let tables: VNode[] = [];
 
-    for (let tableNumber = 0; tableNumber < numTables; tableNumber++) {
+    for (let tableNumber = startTable; tableNumber < endTable; tableNumber++) {
       let currentTableFirstColumn = tableNumber * columnsPerTable;
       let currentTableLastColumnPlusOne = Math.min(this.matrix.nCols, currentTableFirstColumn + columnsPerTable);
 
@@ -1521,7 +1517,36 @@ export class TableEditor<T> {
       tables.push(h('table', {class: tableClasses}, rows));
     }
 
-    return h('div', {class: {[tablesDivClass]: true}}, tables);
+    const tablesDiv = h('div', {class: {[tablesDivClass]: true}}, tables);
+
+    if (!windowingActive) {
+      return tablesDiv;
+    }
+
+    const navTop = this.genWindowingNavigation(numTables, startTable, endTable);
+    const navBottom = this.genWindowingNavigation(numTables, startTable, endTable);
+    return h('div', {class: {['te-windowed-container']: true}}, [navTop, tablesDiv, h('div', {style: {height: '20px'}}), navBottom]);
+  }
+
+  private genWindowingNavigation(numTables: number, startTable: number, endTable: number): VNode {
+    const slider = h('input', {
+      attrs: {
+        type: 'range',
+        min: 0,
+        max: numTables - (endTable - startTable),
+        value: startTable
+      },
+      on: {
+        input: (ev: Event) => {
+          this.currentWindowStartTableIndex = parseInt((ev.target as HTMLInputElement).value);
+          this.redrawTable();
+        }
+      }
+    });
+
+    const info = h('span', `Showing tables ${startTable + 1} to ${endTable} of ${numTables}`);
+
+    return h('div', {class: {['te-windowing-nav']: true}}, [info, slider]);
   }
 
 

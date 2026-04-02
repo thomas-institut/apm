@@ -1,0 +1,12 @@
+.te-container:not(.table-edit-mode-move) .button-move-mode, 
+.te-container:not(.table-edit-mode-move) .edit-cell-button { display: none; }
+.te-container:not(.table-edit-mode-group) .link-button { display: none; }
+
+.te-container.table-edit-mode-move .te-cell .cell-button { display: none; }
+.te-container.table-edit-mode-move .te-cell:hover .cell-button { display: inline-block; }
+
+.te-container.table-edit-mode-move .te-th .header-button { display: none; }
+.te-container.table-edit-mode-move .te-th:hover .header-button { display: inline-block; }
+
+.te-windowing-nav { margin: 10px 0; display: flex; align-items: center; gap: 10px; }
+.te-windowing-nav input[type="range"] { flex-grow: 1; }

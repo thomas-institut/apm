@@ -16,7 +16,7 @@
  *  
  */
 
-import {TableEditor, TdExtraAttributes} from '../common/TableEditor';
+import {TableEditor, TdExtraAttributes} from '../common/TableEditor/TableEditor';
 import * as CollationTableUtil from '../common/CollationTableUtil';
 import {defaultLanguageDefinition} from '@/defaults/languages';
 import * as PopoverFormatter from '../common/CollationTablePopovers';

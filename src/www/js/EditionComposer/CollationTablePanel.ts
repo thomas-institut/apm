@@ -834,36 +834,8 @@ export class CollationTablePanel extends PanelWithToolbar {
         this.syncEditionWitnessAndTableEditorFirstRow();
         this.ctData.customApparatuses = CtData.fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(this.ctData, firstCol, lastCol, numCols, direction);
       }
-
       console.log(`Cell post shift event dispatched`);
-
       this.recalculateVariants();
-
-      let firstColToRedraw = direction === 'right' ? firstCol : firstCol - numCols;
-      let lastColToRedraw = direction === 'right' ? lastCol + numCols : lastCol;
-
-      new Promise<void>((resolve) => {
-        // TODO: somehow tell the user that something is happening!
-        resolve();
-      })
-      .then(() => {
-        // refresh the cells in the row being shifted
-        for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
-          this.tableEditor.refreshCell(theRow, col);
-        }
-      })
-      .then(() => {
-        // refresh cell classes of the other cells so that variants are shown
-        for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
-          for (let row = 0; row < this.variantsMatrix.nRows; row++) {
-            if (row !== theRow) {
-              // this.verbose && console.log(`Refreshing classes for ${theRow}:${col}`)
-              this.tableEditor.refreshCellClasses(row, col);
-            }
-          }
-        }
-        //profiler.lap('classes refreshed')
-      });
     };
   }
 

@@ -76,6 +76,9 @@ import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {WorkData} from "@/Api/DataSchema/ApiWorks";
 import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
 
+
+import './EditionComposer.css';
+
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
 
@@ -1008,28 +1011,6 @@ export class EditionComposer extends ApmPage {
             }).map(w => w['ApmWitnessId']);
 
       return this.apiClient.getSiglaPresets(lang, witnesses);
-
-      // return new Promise((resolve, reject) => {
-      //   let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets();
-      //   let apiCallOptions = {
-      //     lang: this.ctData['lang'], witnesses: this.ctData['witnesses'].filter(w => {
-      //       return w['witnessType'] === 'fullTx';
-      //     }).map(w => w['ApmWitnessId'])
-      //   };
-      //   $.post(apiSiglaPresetsUrl, {data: JSON.stringify(apiCallOptions)})
-      //   .done(apiResponse => {
-      //     //console.log(apiResponse)
-      //     if (apiResponse['presets'] === undefined) {
-      //       resolve([]);
-      //     } else {
-      //       resolve(apiResponse['presets']);
-      //     }
-      //   }).fail(resp => {
-      //     console.log('Error loading sigla presets');
-      //     console.log(resp);
-      //     reject(resp);
-      //   });
-      // });
     };
   }
 

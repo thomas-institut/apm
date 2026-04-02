@@ -1524,8 +1524,7 @@ export class TableEditor<T> {
     }
 
     const navTop = this.genWindowingNavigation(numTables, startTable, endTable);
-    const navBottom = this.genWindowingNavigation(numTables, startTable, endTable);
-    return h('div', {class: {['te-windowed-container']: true}}, [navTop, tablesDiv, h('div', {style: {height: '20px'}}), navBottom]);
+    return h('div', {class: {['te-windowed-container']: true}}, [navTop, tablesDiv]);
   }
 
   private genWindowingNavigation(numTables: number, startTable: number, endTable: number): VNode {
@@ -1543,8 +1542,11 @@ export class TableEditor<T> {
         }
       }
     });
+    const numCols = this.matrix.nCols;
+    const startCol = startTable*this.options.columnsPerRow;
+    const endCol = Math.min(endTable*this.options.columnsPerRow, numCols);
 
-    const info = h('span', `Showing tables ${startTable + 1} to ${endTable} of ${numTables}`);
+    const info = h('span', `Showing cols ${startCol + 1} to ${endCol} of ${numCols}`);
 
     return h('div', {class: {['te-windowing-nav']: true}}, [info, slider]);
   }

@@ -62,11 +62,15 @@ describe('TableEditor', () => {
     });
 
     te.redrawTable(true);
-    te.setEditMode('move');
+    // Move buttons should NOT be present in EditModeOff
+    expect(container.querySelector('.button-move-mode')).toBeFalsy();
+
+    te.setEditMode('move', false);
+    te.redrawTable(true);
     
     expect(container.classList.contains('table-edit-mode-move')).toBe(true);
     
-    // Check if move buttons are present (even if hidden by CSS, they should be in DOM)
+    // Check if move buttons are present now
     expect(container.querySelector('.button-move-mode')).toBeTruthy();
   });
 });

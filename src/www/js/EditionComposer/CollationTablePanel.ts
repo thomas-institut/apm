@@ -76,6 +76,7 @@ import * as FmtTextTokenType from "@/lib/FmtText/FmtTextTokenType";
 import {deepCopy} from "@/toolbox/Util";
 import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
+import {createDelayer} from "@/toolbox/Delayer";
 
 
 interface ViewSettings {
@@ -121,6 +122,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   private selectedColumnsFrom!: number;
   private selectedColumnsTo!: number;
   private variantsMatrix: Matrix | null;
+  private readonly delayedOnCtDataChange!: (ctData: CtDataInterface) => void;
 
   constructor(options: CollationTablePanelOptions) {
     super(options);
@@ -150,6 +152,11 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes();
     this.debug && console.log(`Aggregated non-token item indexes`, this.aggregatedNonTokenItemIndexes);
     const toolBarCharsDef = toolbarCharactersDefinition[this.ctData.lang];
+    const matrixSize = this.getCtDataMatrixSize();
+    const delay = Math.round(matrixSize / 25);
+    console.log(`Collation table matrix size: ${matrixSize}, delay: ${delay}ms`)
+
+    this.delayedOnCtDataChange = createDelayer((ctData) => this.options.onCtDataChange(ctData), delay);
 
     this.toolbarCharacters = Object.keys(toolBarCharsDef).map(char => toolBarCharsDef[char]);
 
@@ -165,6 +172,13 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   getContentAreaClasses() {
     return super.getContentAreaClasses().concat([`${this.textDirection}text`]);
+  }
+
+  private getCtDataMatrixSize(): number {
+    if (this.ctData.collationMatrix.length === 0) {
+      return 0;
+    }
+    return this.ctData.collationMatrix.length * this.ctData.collationMatrix[0].length;
   }
 
 
@@ -556,7 +570,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     // this.verbose && console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
     // this.verbose && console.log(this.ctData)
 
-    this.options.onCtDataChange(this.ctData);
+    this.delayedOnCtDataChange(this.ctData);
+    // this.options.onCtDataChange(this.ctData);
 
     // Update UI
     this.resetTokenDataCache();
@@ -706,7 +721,8 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     this.tableEditor.editModeOn(false);
     this.tableEditor.redrawTable();
-    this.tableEditor.on([CellShiftEvent, ContentChangedEvent], this.genOnCollationChanges());
+    // const delayedOnCollationChanges = createDelayer( () => this.onCollationChanges(), 500)
+    this.tableEditor.on([CellShiftEvent, ContentChangedEvent], () => this.onCollationChanges());
     this.tableEditor.on(ColumnGroupEvent, this.genOnGroupUngroupColumn(true));
     this.tableEditor.on(ColumnUngroupEvent, this.genOnGroupUngroupColumn(false));
     this.tableEditor.on(ColumnSelectEvent, this.genOnSelectColumns());
@@ -737,16 +753,15 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.verbose && console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`);
       this.verbose && console.log('New sequence grouped with next');
       this.ctData['groupedColumns'] = data.detail.groupedColumns;
-      this.options.onCtDataChange(this.ctData);
+      this.delayedOnCtDataChange(this.ctData);
+      // this.options.onCtDataChange(this.ctData);
     };
   }
 
-  genOnCollationChanges() {
-    return () => {
-      this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor();
-      this.setCsvDownloadFile();
-      this.options.onCtDataChange(this.ctData);
-    };
+  private onCollationChanges() {
+    this.ctData.collationMatrix = this.getCollationMatrixFromTableEditor();
+    this.setCsvDownloadFile();
+    this.delayedOnCtDataChange(this.ctData);
   }
 
   getCollationMatrixFromTableEditor() {
@@ -780,7 +795,8 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1);
       this.setCsvDownloadFile();
       if (isLastDeleted) {
-        this.options.onCtDataChange(this.ctData);
+        this.delayedOnCtDataChange(this.ctData);
+        // this.options.onCtDataChange(this.ctData);
       }
     };
   }
@@ -997,7 +1013,8 @@ export class CollationTablePanel extends PanelWithToolbar {
 
       this.invalidateTokenDataCacheForToken(witnessIndex, witnessTokenIndex);
       this.recalculateVariants();
-      this.options.onCtDataChange(this.ctData);
+      this.delayedOnCtDataChange(this.ctData);
+      // this.options.onCtDataChange(this.ctData);
 
       //  this.verbose && console.log('Edition Witness updated')
       //  this.verbose && console.log(this.ctData.witnesses[witnessIndex]['tokens'])

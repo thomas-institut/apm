@@ -528,6 +528,11 @@ export class TableEditor<T> {
       [this.getThClass(col)]: true,
       [this.getColClass(col)]: true
     };
+
+    if (this.tableEditMode === EditModeOff) {
+      return h('th', {class: thClasses}, [(col + 1).toString()]);
+    }
+
     let addColumnBeforeIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnLeft : this.icons.addColumnRight;
     let addColumnAfterIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnRight : this.icons.addColumnLeft;
 
@@ -580,6 +585,13 @@ export class TableEditor<T> {
   // }
 
   private genTdChildrenVNodes(row: number, col: number): (VNode | string)[] {
+    if (this.tableEditMode === EditModeOff) {
+      return [h('span', {
+        class: {[cellContentClass]: true},
+        props: {innerHTML: this.options.generateCellContent(row, col, this.matrix.getValue(row, col))}
+      })];
+    }
+
     let children: (VNode | string)[] = [];
 
     let moveCellBackwardIcon = this.icons.moveCellLeft;

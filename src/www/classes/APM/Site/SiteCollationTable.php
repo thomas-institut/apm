@@ -121,7 +121,6 @@ class SiteCollationTable extends SiteController
             [],
             [
                 'collationtable.css',
-                'multi-panel-ui/styles.css',
                 'collation.edit.css'
             ],
 //            [ 'js/SimpleProfiler.js']
@@ -196,7 +195,6 @@ class SiteCollationTable extends SiteController
             [
                 '../node_modules/quill/dist/quill.core.css',
                 'collationtable.css',
-                'multi-panel-ui/styles.css',
                 'edition-composer.css',
                 'collation.edit.css'
             ],

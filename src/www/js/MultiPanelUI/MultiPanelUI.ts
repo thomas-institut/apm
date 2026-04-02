@@ -22,6 +22,7 @@ import {createIndexArray, prettyPrintArray} from '@/lib/ToolBox/ArrayUtil';
 import {BootstrapTabGenerator} from './BootstrapTabGenerator';
 import {UiToolBox} from '@/toolbox/UiToolBox';
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
+import './MultiPanelUI.css';
 
 
 interface MultiPanelUiOptions {
@@ -32,7 +33,7 @@ interface MultiPanelUiOptions {
   panels: [ PanelSpec, PanelSpec],
   panelOrder?: [number, number],
   mode?: MultiPanelUiMode,
-  onModeChanged?: (mode: MultiPanelUiMode) => void
+  onModeChange?: (mode: MultiPanelUiMode) => void
 }
 
 interface PanelSpec {
@@ -128,7 +129,7 @@ export class MultiPanelUI {
       mode: verticalMode,
       topBarContent: () => '',
       topBarRightAreaContent: () => '',
-      onModeChanged: () => {},
+      onModeChange: () => {},
       icons: defaultIcons
     }
     this.options = {...defaults, ...options}
@@ -468,7 +469,7 @@ export class MultiPanelUI {
     this._setupSplit();
     this._setupDraggingEventHandlers();
     this._callPostRenderHandlers();
-    this.options.onModeChanged(newMode);
+    this.options.onModeChange(newMode);
   }
 
   _updateActiveTabIds() {

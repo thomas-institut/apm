@@ -224,24 +224,24 @@ class Authenticator
      * @throws LoaderError
      * @throws Exception
      */
-    public function login(ServerRequestInterface $request, ResponseInterface $response, bool $site = true): ResponseInterface
+    public function apiLogin(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         session_start();
         $this->debugMode = true;
-        $this->debug('Site Login request');
+        $this->debug('Login request');
         $this->debug("Login headers", $request->getHeaders());
         $this->debug('Request method is ' . $request->getMethod());
         $msg = '';
         if ($request->getMethod() === 'POST') {
-            if ($site) {
-                $data = $request->getParsedBody();
-            } else {
+//            if ($site) {
+//                $data = $request->getParsedBody();
+//            } else {
                 $data = json_decode($request->getBody()->getContents(), true);
                 if ($data === null) {
                     $this->debug('Cannot parse JSON data');
                     return $response->withStatus(HttpStatus::BAD_REQUEST);
                 }
-            }
+//            }
 
             // DON'T DO THIS:    $this->debug('Got POST data', $data);
             // ... it will show the user password in the log!
@@ -289,10 +289,10 @@ class Authenticator
                     }
 
                     $response = FigResponseCookies::set($response, $cookie);
-                    if ($site) {
-                        return $response->withHeader('Location',
-                            $this->router->urlFor('home'))->withStatus(302);
-                    } else {
+//                    if ($site) {
+//                        return $response->withHeader('Location',
+//                            $this->router->urlFor('home'))->withStatus(302);
+//                    } else {
                         $data = [
                             'status' => 'OK',
                             'message' => 'Login successful',
@@ -300,7 +300,7 @@ class Authenticator
                             'ttl' => $rememberMe === 'on' ? 30 * 24 * 3600 : 24 * 3600
                         ];
                         return $this->responseWithJson($response, $data);
-                    }
+//                    }
                 } else {
                     $this->siteLogger->notice('Wrong user/password',
                         ['user' => $userName]);
@@ -309,19 +309,20 @@ class Authenticator
             }
         }
         // not authenticated
-        if ($site) {
-            $this->debug('Showing login page');
-
-            return $this->view->render($response, 'login.twig',
-                [
-                    'message' => $msg,
-                    'baseUrl' => $this->getBaseUrl(),
-                    'signature' => self::LOGIN_PAGE_SIGNATURE
-                ]);
-        } else {
-            $this->debug('API login unsuccessful');
-            return $response->withStatus(HttpStatus::UNAUTHORIZED);
-        }
+        $this->debug('API login unsuccessful');
+        return $response->withStatus(HttpStatus::UNAUTHORIZED);
+//        if ($site) {
+//            $this->debug('Showing login page');
+//
+//            return $this->view->render($response, 'login.twig',
+//                [
+//                    'message' => $msg,
+//                    'baseUrl' => $this->getBaseUrl(),
+//                    'signature' => self::LOGIN_PAGE_SIGNATURE
+//                ]);
+//        } else {
+//
+//        }
     }
 
     public function logout(ServerRequestInterface $request, ResponseInterface $response, bool $site = true): ResponseInterface

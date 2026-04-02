@@ -212,13 +212,13 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
         // MULTI-CHUNK EDITION
         $group->get('/multi-chunk-edition/new',
             function (Request $request, Response $response) use ($container) {
-                return (new SiteMultiChunkEdition($container))->newMultiChunkEdition($response);
+                return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response, true);
             }
         )->setName('mce.new');
 
         $group->get('/multi-chunk-edition/{editionId}',
             function (Request $request, Response $response) use ($container) {
-                return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response);
+                return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response, false);
             }
         )->setName('mce.edit');
 
@@ -269,7 +269,7 @@ function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container)
 {
     $app->group('/api', function (RouteCollectorProxy $group) use ($container) {
         $group->post('/login', function (Request $request, Response $response) use ($container) {
-            return (new Authenticator($container))->login($request, $response, false);
+            return (new Authenticator($container))->apiLogin($request, $response);
         });
     });
 }

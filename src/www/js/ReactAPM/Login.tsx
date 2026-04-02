@@ -1,7 +1,7 @@
 import {KeyboardEvent, RefObject, useContext, useRef, useState} from "react";
 import {AppContext} from "./App";
 import {urlGen} from "@/pages/common/SiteUrlGen";
-import '../../css/login.css';
+import './Login.css';
 import {Button, Form, InputGroup} from "react-bootstrap";
 import {Eye, EyeSlash} from "react-bootstrap-icons";
 

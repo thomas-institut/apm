@@ -9,7 +9,7 @@
 
 input:focus {
     border: 1px solid #009dff;
-    outline: none; !important;
+    outline: none !important;
 }
 
 div#ct-info {
@@ -313,7 +313,7 @@ div.main-text p.paragraph-empty {
 
 .main-text-token input:focus {
     border: 1px solid #eaecee;
-    outline: none; !important;
+    outline: none !important;
 }
 
 .main-text-token  .confirmButton {

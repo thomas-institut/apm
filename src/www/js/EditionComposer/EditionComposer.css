@@ -9,7 +9,7 @@
 
 input:focus {
     border: 1px solid #009dff;
-    outline: none; !important;
+    outline: none !important;
 }
 
 div#ct-info {
@@ -41,7 +41,7 @@ div#ct-info {
 }
 
 .panel-toolbar-item {
-   margin-right: 0.25rem;
+    margin-right: 0.25rem;
 }
 
 :root {
@@ -313,7 +313,7 @@ div.main-text p.paragraph-empty {
 
 .main-text-token input:focus {
     border: 1px solid #eaecee;
-    outline: none; !important;
+    outline: none !important;
 }
 
 .main-text-token  .confirmButton {
@@ -459,7 +459,6 @@ b.blot-sigla {
 /* Collation Table Panel */
 
 #collation-table .panel-content {
-    padding: 1rem;
 }
 
 th.highlight {
@@ -690,7 +689,7 @@ span.empty-sub-entry {
 }
 
 div.sub-entry-edit-div {
-   margin-left: 1em;
+    margin-left: 1em;
     margin-bottom: 0.5em;
     margin-top: 0.5em;
 }

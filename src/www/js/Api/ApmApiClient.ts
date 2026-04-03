@@ -448,7 +448,16 @@ export class ApmApiClient {
   }
 
   async getSiglaPresets(lang: string, witnessIds: string[]): Promise<ApiSiglaPreset[]> {
-    const resp = await this.post(urlGen.apiGetSiglaPresets(), {lang: lang, witnesses: witnessIds}, true);
+
+    const payload = {lang: lang, witnesses: witnessIds};
+    const payloadId = `${lang}_${witnessIds.join('_')}`
+    const key = `sigla_presets_${await fingerprintToken(payloadId)}`;
+    const presetsFromCache = this.caches.local.retrieve(key);
+    if (presetsFromCache !== null) {
+      return presetsFromCache;
+    }
+    const resp = await this.post(urlGen.apiGetSiglaPresets(), payload, true);
+    this.caches.local.store(key, resp['presets'], TtlOneMinute*5);
     return resp['presets'];
   }
 

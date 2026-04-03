@@ -26,7 +26,7 @@ import {
   WitnessInterface,
   WitnessTokenInterface
 } from "@/CtData/CtDataInterface";
-import {PeopleInfoObject} from "@/Api/DataSchema/ApiCollationTable";
+import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 
 // Classes
 const popoverDivClass = 'ctPopover';
@@ -39,7 +39,7 @@ const notesDivClass = 'notes';
 const noteDivClass = 'note';
 const noteTextClass = 'note-text';
 const noteCaptionClass = 'note-caption';
-const tokenAddressClass = 'tokenaddress';
+const tokenAddressClass = 'token-address';
 const langClassPrefix = 'text-';
 
 // Icons
@@ -51,7 +51,7 @@ const formatIcon = '<i class="fas fa-paint-brush"></i>';
 
 const altTextIcon = '<span class="text-icon">ALT</span>';
 
-export function getPopoverHtml(witnessIndex: number, tokenIndex: number, witness: WitnessInterface, postNotes: any, peopleInfo: PeopleInfoObject = []) {
+export function getPopoverHtml(witnessIndex: number, tokenIndex: number, witness: WitnessInterface, postNotes: any, peopleInfo: Record<number, PersonEssentialData> = []) {
   if (witness === undefined) {
     throw `Undefined witness getting popover html for witness index ${witnessIndex}, token index ${tokenIndex}`;
   }
@@ -182,7 +182,7 @@ export function getTokenAddressHtml(row: number, token: WitnessTokenInterface, i
   return html;
 }
 
-export function getItemPopoverHtmlForToken(row: number, token: WitnessTokenInterface, tokenSourceItemData: any, peopleInfo: PeopleInfoObject, items: FullTxItemInterface[], showItemText = false) {
+export function getItemPopoverHtmlForToken(row: number, token: WitnessTokenInterface, tokenSourceItemData: any, peopleInfo: Record<number, PersonEssentialData>, items: FullTxItemInterface[], showItemText = false) {
 
   let normalizationLabels: { [key: string]: string} = {
     'sic': 'Sic', 'abbr': 'Abbreviation'
@@ -285,7 +285,7 @@ function genEnglishTextSpan(text: string) {
   return `<span class="${langClassPrefix}en">${text}</span>`;
 }
 
-function getNotesHtml(notes: FullTxItemEditorialNote[], peopleInfo: PeopleInfoObject, title = 'Notes') {
+function getNotesHtml(notes: FullTxItemEditorialNote[], peopleInfo: Record<number, PersonEssentialData>, title = 'Notes') {
   let html = '';
   html += `<div class="${notesDivClass}">`;
   html += `<h1>${genEnglishTextSpan(title)}</h1>`;
@@ -296,19 +296,14 @@ function getNotesHtml(notes: FullTxItemEditorialNote[], peopleInfo: PeopleInfoOb
   return html;
 }
 
-function getNoteHtml(note: FullTxItemEditorialNote, peopleInfo: PeopleInfoObject) {
+function getNoteHtml(note: FullTxItemEditorialNote, peopleInfo: Record<number, PersonEssentialData>) {
   let html = `<div class="${noteDivClass} ${langClassPrefix}en">`;
   let authorShortName = 'Unknown';
   if (peopleInfo[note.authorTid] === undefined) {
     console.warn(`No author info for user Id ${note.authorTid}`);
   } else {
-    authorShortName = peopleInfo[note.authorTid]['shortName'];
-    if (authorShortName === undefined) {
-      //console.warn(`No short name defined for author ${note.authorId}`)
-      authorShortName = peopleInfo[note.authorTid]['name'];
-    }
+    authorShortName = peopleInfo[note.authorTid]['name'];
   }
-
 
   html += `<p class="${noteTextClass}">${Util.escapeHtml(note.text)}</p>`;
   html += `<p class="${noteCaptionClass}">-- ${authorShortName}, ${formatNoteTime(note.timeStamp)}</p>`;

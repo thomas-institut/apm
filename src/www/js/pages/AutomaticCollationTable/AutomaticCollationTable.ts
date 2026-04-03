@@ -16,7 +16,7 @@
  *  
  */
 
-import {TableEditor, TdExtraAttributes} from '../common/TableEditor';
+import {TableEditor, TdExtraAttributes} from '../common/TableEditor/TableEditor';
 import * as CollationTableUtil from '../common/CollationTableUtil';
 import {defaultLanguageDefinition} from '@/defaults/languages';
 import * as PopoverFormatter from '../common/CollationTablePopovers';
@@ -34,10 +34,12 @@ import {
   CtDataInterface, FullTxItemEditorialNote, FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface
 } from "@/CtData/CtDataInterface";
 import {
-  ApiCollationTableAuto, AutoCTablePersonInfo, AutomaticCollationSettings, EngineRunDetails
+  ApiCollationTableAuto, AutomaticCollationSettings, EngineRunDetails
 } from "@/Api/DataSchema/ApiCollationTable";
 // @ts-expect-error No TS types for matrix yet
 import {Matrix} from "@thomas-inst/matrix";
+import {getPeopleMentionedInCtData} from "@/EditionComposer/EditionComposer";
+import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 
 export class AutomaticCollationTable extends HeaderAndContentPage {
   private options: any;
@@ -65,7 +67,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
   private collationTableActionsDiv!: JQuery<HTMLElement>;
   private saveTableButton!: JQuery<HTMLElement>;
   private ctData!: CtDataInterface;
-  private peopleInfo!: { [key: number]: AutoCTablePersonInfo };
+  private peopleInfo!: Record<number, PersonEssentialData>;
   private ctf!: CollationTableFormatter;
   private viewSettingsFormSelector!: string;
   private viewSettingsButton!: JQuery<HTMLElement>;
@@ -151,9 +153,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
           });
         }
       }
-
     }
-
     this.initPage().then(() => {
       console.log(`Automatic Collation Table initialized`);
     });
@@ -307,7 +307,6 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     if (this.options.loadNow) {
       this.fetchCollationTable();
     }
-
   }
 
   genOnClickSaveTableButton() {
@@ -353,7 +352,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     return this.editSettingsFormManager.getTitleFromSettings(this.apiCallOptions);
   }
 
-  fetchCollationTable() {
+  async fetchCollationTable() {
     this.redoButton.prop('disabled', true);
     this.actTitleElement.html(this.getTitleFromOptions());
     this.status.html('Collating... <i class="fa fa-spinner fa-spin fa-fw"></i>');
@@ -363,18 +362,17 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
     this.editionContainer.addClass('hidden');
     this.lastTimeLabel.html('TBD...');
     this.witnessInfoDiv.html('TBD...');
-    console.log(`Fetching collation table`, this.apiCallOptions);
-    this.apiClient.collationTableAuto(this.apiCallOptions).then((apiResponse) => {
+    console.log(`Fetching collation table`, this.apiCallOptions)
+    try {
+      const apiResponse = await this.apiClient.collationTableAuto(this.apiCallOptions);
       console.log('Automatic collation successful. Data:');
       console.log(apiResponse);
-      this.setDataFromApiResponse(apiResponse);
+      await this.setDataFromApiResponse(apiResponse);
       this.status.html('Collating... done,<br/>Formatting table <i class="fa fa-spinner fa-spin fa-fw"></i>');
       this.lastChangeInData = this.getLastChangeInData();
       this.lastTimeLabel.html(ApmFormats.time(this.lastChangeInData));
       this.witnessInfoDiv.html(this.getVersionInfoHtml());
-
       this.setCsvDownloadFile();
-
       this.status.html('');
       this.redoButton.prop('disabled', false);
       this.collationEngineDetailsElement.html(this.getCollationEngineDetailsHtml());
@@ -389,25 +387,27 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         container: 'body'
       });
       this.setupTableEditor();
-    }).catch((resp) => {
-      console.log('Error in automatic collation, resp:');
-      console.log(resp);
+    } catch (error) {
+      console.log('Error in automatic collation', error);
       let failMsg = 'Collating... fail <i class="fa fa-frown-o" aria-hidden="true"></i><br/> ';
-      failMsg += '<span class="small">HTTP code ' + resp.status + '</span>';
-      if (typeof (resp.responseJSON) !== 'undefined') {
-        failMsg += '<br/><span class="small"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>&nbsp;Error ' + resp.responseJSON.error + '</span>';
-      }
+      // failMsg += '<span class="small">HTTP code ' + resp.status + '</span>';
+      // if (typeof (resp.responseJSON) !== 'undefined') {
+      //   failMsg += '<br/><span class="small"><i class="fa fa-exclamation-triangle" aria-hidden="true"></i>&nbsp;Error ' + resp.responseJSON.error + '</span>';
+      // }
       this.status.html(failMsg);
-    });
+      return;
+    }
   }
 
-  /**
-   *
-   * @param {ApiCollationTableAuto}apiResponse
-   */
-  setDataFromApiResponse(apiResponse: ApiCollationTableAuto) {
+
+  async setDataFromApiResponse(apiResponse: ApiCollationTableAuto) {
     this.ctData = CtData.getCleanAndUpdatedCtData(apiResponse.collationTable, true, true);
-    this.peopleInfo = apiResponse.people;
+    this.peopleInfo = [];
+    const peopleMentioned: number[] = getPeopleMentionedInCtData(this.ctData);
+    for (let i = 0; i < peopleMentioned.length; i++) {
+      const personId = peopleMentioned[i];
+      this.peopleInfo[personId] = await this.apiClient.getPersonEssentialData(personId);
+    }
     this.collationEngineDetails = apiResponse.collationEngineDetails;
     this.aggregatedNonTokenItemIndexes = CtData.calculateAggregatedNonTokenItemIndexes(this.ctData);
   }
@@ -482,7 +482,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         title: siglum, values: tokenArray, isEditable: false
       });
     }
-    this.tableEditor = new TableEditor({
+    this.tableEditor = new TableEditor<number>({
       id: this.collationTableNewDivId,
       showInMultipleRows: true,
       columnsPerRow: this.viewSettings.maxColumnsPerTable,
@@ -514,7 +514,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
         return false;
       },
       onCellConfirmEdit: (row, col, newValue) => {
-        return {valueChange: false, value: newValue};
+        return {valueChange: false, value: parseInt(newValue)};
       },
       cellValidationFunction: (row, col, currentText) => {
         return {isValid: true, warnings: [], errors: []};

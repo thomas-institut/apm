@@ -27,8 +27,8 @@ import {AsyncKeyCache} from '@/toolbox/KeyCache/AsyncKeyCache';
 import {ServerLogger} from '@/Server/ServerLogger';
 
 // MultiPanel UI
-import {horizontalMode, MultiPanelUI, verticalMode} from '@/MultiPanelUI/MultiPanelUI';
-import {TabConfig, TabConfigInterface} from '@/MultiPanelUI/TabConfig';
+import {horizontalMode, MultiPanelUI, TabSpec, verticalMode} from '@/MultiPanelUI/MultiPanelUI';
+import {TabConfig} from '@/MultiPanelUI/TabConfig';
 
 // Panels
 import {WitnessInfoPanel} from './WitnessInfoPanel';
@@ -75,6 +75,9 @@ import {FULL_TX} from "@/Witness/WitnessType";
 import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {WorkData} from "@/Api/DataSchema/ApiWorks";
 import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
+
+
+import './EditionComposer.css';
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -254,10 +257,10 @@ export class EditionComposer extends ApmPage {
 
     const body = $('body');
 
-    body.html(getPrenderMessage(`Getting data for table ${this.tableId}`, 0, 3));
+    body.html(getPrenderMessage(`Getting data for table ${this.tableId}`));
     const apiCtDataResponse = await this.apiClient.getSingleChunkData(this.options.tableId, this.options.version);
 
-    body.html(getPrenderMessage(`Setting up data`, 1, 3));
+    body.html(getPrenderMessage(`Setting up data`));
     this.ctData = apiCtDataResponse.ctData;
     this.ctData.tableId = this.tableId;
     this.ctData = this.addMissingDataForCollationTable(this.ctData);
@@ -299,11 +302,12 @@ export class EditionComposer extends ApmPage {
 
     this.viewOptions = await this.getViewOptions();
     console.log(`ViewOptions`, this.viewOptions);
-    body.html(getPrenderMessage(`Setting up UI`, 2, 3));
+    body.html(getPrenderMessage(`Setting up UI`));
 
     // Construct panels
     this.collationTablePanel = new CollationTablePanel({
       containerSelector: `#${collationTableTabId}`,
+      textDirection: this.ctData.lang === 'la' ? 'ltr' : 'rtl',
       normalizerRegister: this.normalizerRegister,
       icons: this.icons,
       ctData: this.ctData,
@@ -420,21 +424,21 @@ export class EditionComposer extends ApmPage {
     });
 
 
-    let panelOneTabs: TabConfigInterface[] = [];
+    let panelOneTabs: TabSpec[] = [];
     if (this.ctData.type === CollationTableType.EDITION) {
-      panelOneTabs.push(TabConfig.createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel));
+      panelOneTabs.push(TabConfig.createTabSpec(mainTextTabId, 'Main Text', this.mainTextPanel));
     }
-    panelOneTabs.push(TabConfig.createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel), TabConfig.createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel));
-    let panelTwoTabs: TabConfigInterface[] = [];
+    panelOneTabs.push(TabConfig.createTabSpec(collationTableTabId, 'Collation Table', this.collationTablePanel), TabConfig.createTabSpec(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel));
+    let panelTwoTabs: TabSpec[] = [];
     if (this.ctData.type === CollationTableType.EDITION) {
       panelTwoTabs.push(...this.edition.apparatuses
       .map((apparatus, index) => {
-        return TabConfig.createTabConfig(`apparatus-${index}`, this.getTitleForApparatusType(apparatus.type), this.apparatusPanels[index], this._getLinkTitleForApparatusType(apparatus.type));
+        return TabConfig.createTabSpec(`apparatus-${index}`, this.getTitleForApparatusType(apparatus.type), this.apparatusPanels[index], this._getLinkTitleForApparatusType(apparatus.type));
       }));
-      panelTwoTabs.push(TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel), TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel));
+      panelTwoTabs.push(TabConfig.createTabSpec(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel), TabConfig.createTabSpec(adminPanelTabId, 'Admin', this.adminPanel));
     } else {
       // not an edition, show admin panel first
-      panelTwoTabs.push(TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel), TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel),);
+      panelTwoTabs.push(TabConfig.createTabSpec(adminPanelTabId, 'Admin', this.adminPanel), TabConfig.createTabSpec(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel),);
     }
 
 
@@ -445,7 +449,7 @@ export class EditionComposer extends ApmPage {
       });
 
       this.techSupportPanel.setActive(true);
-      panelTwoTabs.push(TabConfig.createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel));
+      panelTwoTabs.push(TabConfig.createTabSpec(techSupportTabId, 'Tech', this.techSupportPanel));
     }
 
     this.multiPanelUI = new MultiPanelUI({
@@ -472,7 +476,7 @@ export class EditionComposer extends ApmPage {
         id: 'panel-two', type: 'tabs', tabs: panelTwoTabs
       }]
     });
-    $(body).html(getPrenderMessage('Ready', 3, 3));
+    $(body).html(getPrenderMessage('Ready'));
 
     await this.multiPanelUI.start();
     //  Edition title
@@ -1007,28 +1011,6 @@ export class EditionComposer extends ApmPage {
             }).map(w => w['ApmWitnessId']);
 
       return this.apiClient.getSiglaPresets(lang, witnesses);
-
-      // return new Promise((resolve, reject) => {
-      //   let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets();
-      //   let apiCallOptions = {
-      //     lang: this.ctData['lang'], witnesses: this.ctData['witnesses'].filter(w => {
-      //       return w['witnessType'] === 'fullTx';
-      //     }).map(w => w['ApmWitnessId'])
-      //   };
-      //   $.post(apiSiglaPresetsUrl, {data: JSON.stringify(apiCallOptions)})
-      //   .done(apiResponse => {
-      //     //console.log(apiResponse)
-      //     if (apiResponse['presets'] === undefined) {
-      //       resolve([]);
-      //     } else {
-      //       resolve(apiResponse['presets']);
-      //     }
-      //   }).fail(resp => {
-      //     console.log('Error loading sigla presets');
-      //     console.log(resp);
-      //     reject(resp);
-      //   });
-      // });
     };
   }
 
@@ -1317,7 +1299,7 @@ function getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex: number, ctData: Ct
 }
 
 
-function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
+export function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
   const authors: number[] = [];
   ctData.witnesses.forEach(witness => {
     if (witness.witnessType === FULL_TX && witness.items !== undefined) {
@@ -1333,8 +1315,8 @@ function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
   return authors;
 }
 
-function getPrenderMessage(msg: string, step: number, numSteps: number) : string {
-  return `<div class="prerender-msg"><b>Edition Composer</b>: ${step} / ${numSteps}: ${msg}  <span class="prerender-spinner"></span></div>`;
+function getPrenderMessage(msg: string) : string {
+  return `<div class="prerender-msg"><b>Edition Composer</b>: ${msg}  <span class="prerender-spinner"></span></div>`;
 }
 
 

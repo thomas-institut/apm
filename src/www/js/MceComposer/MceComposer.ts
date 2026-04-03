@@ -47,6 +47,7 @@ import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {Apparatus} from "@/Edition/Apparatus";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
+import './MceComposer.css';
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -1233,8 +1234,8 @@ export class MceComposer extends ApmPage {
     });
 
     // tab arrays
-    let panelOneTabs = [TabConfig.createTabConfig(editionPanelId, 'Edition', this.editionPanel), TabConfig.createTabConfig(chunkSearchPanelId, 'Chunk Search', this.chunkSearchPanel),];
-    let panelTwoTabs = [TabConfig.createTabConfig(previewPanelId, 'Preview', this.previewPanel),];
+    let panelOneTabs = [TabConfig.createTabSpec(editionPanelId, 'Edition', this.editionPanel), TabConfig.createTabSpec(chunkSearchPanelId, 'Chunk Search', this.chunkSearchPanel),];
+    let panelTwoTabs = [TabConfig.createTabSpec(previewPanelId, 'Preview', this.previewPanel),];
 
     this.multiPanelUI = new MultiPanelUI({
       logo: `<a href="${urlGen.siteHome()}" title="Home">

@@ -17,31 +17,10 @@
  */
 
 import {Panel} from './Panel';
-
-export interface TabConfigInterface {
-  id: string,
-  title: string,
-  linkTitle: string,
-  content: (tabId: string, mode: string, visible: boolean) => Promise<string>,
-  contentClasses: string[],
-  onResize: (id: string, visible: boolean) => void,
-  postRender: (id: string, mode: string, visible: boolean) => void,
-  onShown: (id: string) => void,
-  onHidden: (id: string) => void
-}
-
+import {TabSpec} from "@/MultiPanelUI/MultiPanelUI";
 export class TabConfig {
 
-  /**
-   *
-   * @param id
-   * @param {string}title
-   * @param panelObject
-   * @param {string}linkTitle
-   * @return {TabConfigInterface}
-   *
-   */
-  static createTabConfig(id: string, title: string, panelObject: Panel, linkTitle: string = ''): TabConfigInterface {
+  static createTabSpec(id: string, title: string, panelObject: Panel, linkTitle: string = ''): TabSpec {
     return {
       id: id,
       title: title,

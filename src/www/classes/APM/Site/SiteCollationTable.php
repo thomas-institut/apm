@@ -38,6 +38,7 @@ use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
+use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -120,8 +121,6 @@ class SiteCollationTable extends SiteController
             [],
             [
                 'collationtable.css',
-                'multi-panel-ui/styles.css',
-                'edition-composer.css',
                 'collation.edit.css'
             ],
 //            [ 'js/SimpleProfiler.js']
@@ -196,8 +195,6 @@ class SiteCollationTable extends SiteController
             [
                 '../node_modules/quill/dist/quill.core.css',
                 'collationtable.css',
-                'multi-panel-ui/styles.css',
-                'edition-composer.css',
                 'collation.edit.css'
             ],
         );
@@ -469,8 +466,12 @@ class SiteCollationTable extends SiteController
             return $this->getBasicErrorPage($response, 'Error', "Work $workId not found", 404);
         }
 
+        SystemProfiler::lap('getWorkInfo');
+
         // get total witness counts
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
+
+        SystemProfiler::lap('getValidWitnessesForChunkLang');
 
         //$this->codeDebug('Found ' . count($validWitnesses) . " valid witnesses");
 

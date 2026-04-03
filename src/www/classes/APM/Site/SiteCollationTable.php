@@ -195,7 +195,6 @@ class SiteCollationTable extends SiteController
             [
                 '../node_modules/quill/dist/quill.core.css',
                 'collationtable.css',
-                'edition-composer.css',
                 'collation.edit.css'
             ],
         );

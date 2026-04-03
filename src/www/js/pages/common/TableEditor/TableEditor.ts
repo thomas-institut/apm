@@ -219,6 +219,7 @@ const tablesDivClass = 'tables-div';
 const tableClass = 'te-table';
 const WINDOWING_THRESHOLD = 10000;
 const WINDOWING_MAX_CELLS = 2000;
+const headerRowClass = 'te-header-row';
 const headerClass = 'te-th';
 const specificHeaderClassPrefix = 'te-th-';
 const cellClass = 'te-cell';
@@ -426,7 +427,7 @@ export class TableEditor<T> {
 
   redrawTable(force = false) {
     if (force) {
-      this._doRedrawTable();
+      this.doRedrawTable();
       this.redrawScheduled = false;
       return;
     }
@@ -437,11 +438,11 @@ export class TableEditor<T> {
     queueMicrotask(() => {
       if (!this.redrawScheduled) return;
       this.redrawScheduled = false;
-      this._doRedrawTable();
+      this.doRedrawTable();
     });
   }
 
-  private _doRedrawTable() {
+  private doRedrawTable() {
     //console.log("Redrawing table")
     let profiler = new SimpleProfiler('TableRedraw');
     this.dispatchTableDrawnPreEvent();
@@ -503,6 +504,7 @@ export class TableEditor<T> {
 
   private genThVNode(col: number): VNode {
     let thClasses: Record<string, boolean> = {
+      [headerClass]: true,
       [this.getThClass(col)]: true,
       [this.getColClass(col)]: true
     };
@@ -1486,7 +1488,7 @@ export class TableEditor<T> {
       for (let col = currentTableFirstColumn; col < currentTableLastColumnPlusOne; col++) {
         headerChildren.push(this.genThVNode(col));
       }
-      rows.push(h('tr', {class: {[headerClass]: true}}, headerChildren));
+      rows.push(h('tr', {class: {[headerRowClass]: true}}, headerChildren));
 
       // Data rows
       for (let row = 0; row < this.matrix.nRows; row++) {

@@ -90,7 +90,7 @@ export class BootstrapTabGenerator {
   }
 
   async generateHtml() {
-    return this.generateTabListHtml() + await this.generateTabContentHtml()
+    return this.genTabListDiv() + await this.genTabContentDiv()
   }
 
   getTabListId() {
@@ -105,9 +105,9 @@ export class BootstrapTabGenerator {
     return this.id + `-content`
   }
 
-  generateTabListHtml() {
+  genTabListDiv() {
     let activeTabId = this.activeTabId
-    return  `<ul class="nav nav-tabs" id="${this.getTabListId()}" role="tablist">` +
+    return  `<div class="tab-list"><ul class="nav nav-tabs" id="${this.getTabListId()}" role="tablist">` +
       this.order.map( (index) => {
         let tab = this.tabSpecs[index]
         let linkClasses = [ 'nav-link']
@@ -121,10 +121,10 @@ export class BootstrapTabGenerator {
 aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activeTabId ? 'true' : 'false'}">${tab.title} </a>
 </li>`
       }).join('') +
-      '</ul>'
+      '</ul></div>'
   }
 
-  async generateTabContentHtml() {
+  async genTabContentDiv() {
     let activeTabId = this.activeTabId;
     let mode = this.mode;
     let html = '';
@@ -143,6 +143,7 @@ aria-controls="${tab.id}" title="${linkTitle}" aria-selected="${tab.id === activ
       html += `<div class="${contentClasses.join(' ')}" id="${tab.id}" role="tabpanel" aria-labelledby="${tab.id}-tab">
     ${tabContent}</div>`
     }
+    // return html;
 
     return `<div class="tab-content" id="${this.getTabContentDivId()}">${html}</div>`
   }

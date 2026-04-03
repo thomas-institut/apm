@@ -25,10 +25,15 @@
 
 .te-windowing-nav {
     flex-grow: 0;
-    margin: 10px 0;
+    direction: ltr;
     display: flex;
     align-items: center;
+    padding: 10px;
     gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: white;
 }
 
 .te-windowing-nav input[type="range"] {
@@ -40,6 +45,9 @@
     flex-direction: column;
 }
 
+.tables-div {
+    padding: 1rem;
+}
 
 
 .te-tables-div {

@@ -1,0 +1,16 @@
+
+
+.panel-content {
+    padding: 0.5rem;
+}
+
+.no-padding {
+    padding: 0;
+}
+
+.panel-toolbar {
+    padding: 0.25rem;
+    background-color: seashell;
+}
+
+.second-toolbar { background-color: lightblue; }

@@ -1,87 +1,34 @@
-:root {
-    --standard-padding: 5px;
-}
-
 body {
     margin: 0;
     padding: 0;
+
 }
 .app {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto 1fr;
     height: 100dvh;
+    overflow: hidden;
+    font-size: 10pt;
 }
 
 .header {
-    flex-grow: 0;
-}
-
-.panelContainer {
-    flex-grow: 1;
-    margin: 5px;
-    overflow-y: auto;
-}
-
-.panel {
-
-    /*height: 100%;*/
-    overflow-y: auto;
-}
-
-.simplePanel {
-  padding: var(--standard-padding);
-  border: 1px solid #eee;
-}
-
-.divider {
-
-}
-
-.toolBar {
+    padding-left: 10px;
+    padding-right: 10px;
     display: flex;
     flex-direction: row;
-    gap: 5px;
-    background-color: #e9edec;
-    padding: 0 var(--standard-padding);
-
+    justify-content: space-between;
+    align-items: center
 }
 
-.toolBar .btn {
-    margin: 3px;
-    color: gray;
-    padding: 0;
-    font-weight: bold;
+.padding-1 {
+    padding: 1rem;
 }
 
-.panelWithToolBarContent {
-    background-color: ivory;
-    padding: var(--standard-padding);
+.border-1 {
+    border: 1px solid silver;
 }
 
-
-/* Ensure the panel container itself is a flex container */
-.nicePanel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden; /* Prevent the outer panel from scrolling */
-}
-
-/* Force the Bootstrap Tabs component to fill the height */
-.nicePanel .nav-tabs {
-    flex-shrink: 0;
-}
-
-.nicePanel .tab-content {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    min-height: 0; /* Important for flex children to allow shrinking/scrolling */
-}
-
-.nicePanel .tab-pane {
-    flex-grow: 1;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
+.my-toolbar {
+    background: #eee;
+    padding: 5px;
 }

@@ -1,16 +1,12 @@
 import {createRoot} from "react-dom/client";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
-import SimplePanel from "@/ReactAPM/Components/PanelUI/SimplePanel";
-import PanelWithToolbar from "@/ReactAPM/Components/PanelUI/PanelWithToolbar";
 import {useState} from "react";
-import {LoremIpsum} from "lorem-ipsum";
+import Panel from "@/ReactAPM/Components/PanelUI/Panel";
+import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
+import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
+import './tabPanelTest.css';
+import LoremIpsumText from "@/ReactAPM/Components/LoremIpsumText";
 
-const lorem = new LoremIpsum();
-lorem.format = 'html';
-
-const homeText = lorem.generateParagraphs(30);
-const dataText = lorem.generateParagraphs(30);
-const otherText = lorem.generateParagraphs(30);
 function TabPanelTest() {
 
   const [activeTab, setActiveTab] = useState('home');
@@ -19,22 +15,26 @@ function TabPanelTest() {
 
     <div style={{height: '100%', minHeight: '0'}}>
       <TabPanel activeTabKey={activeTab} onClickTab={(tabKey) => setActiveTab(tabKey)}>
-
-        <SimplePanel tabKey={'home'} tabTitle={'Home'}>
+        <Panel tabKey={'home'} tabTitle={'Home'}>
           <div>This is the content of Tab 1</div>
-          <div dangerouslySetInnerHTML={{__html: homeText}}/>
-        </SimplePanel>
+          <LoremIpsumText paragraphs={20}/>
+        </Panel>
 
-        <PanelWithToolbar tabKey={'data'} tabTitle={'Data'} toolbar={'the toolbar'}>
-          <div>This is some data</div>
-          <div dangerouslySetInnerHTML={{__html: dataText}}/>
-        </PanelWithToolbar>
+        <Panel tabKey={'data'} tabTitle={'Data'}>
+          <Toolbar>Data Toolbar</Toolbar>
+          <PanelContent>
+            <div>This is some data</div>
+           <LoremIpsumText paragraphs={20}/>
+          </PanelContent>
+        </Panel>
 
-        <PanelWithToolbar tabKey={'other'} tabTitle={'Other'} toolbar={'Other Toolbar'} contentClassName={'no-padding'}>
-          <PanelWithToolbar tabKey={'other-sub'} tabTitle={'Other Sub'} toolbar={'Other Sub Toolbar'} >
-            <div dangerouslySetInnerHTML={{__html: otherText}}/>
-          </PanelWithToolbar>
-        </PanelWithToolbar>
+        <Panel tabKey={'other'} tabTitle={'Other'} className={'no-padding'}>
+          <Toolbar>Other Toolbar</Toolbar>
+          <Panel tabKey={'other-sub'} tabTitle={'Other Sub'} >
+            <Toolbar className={'second-toolbar'}>Other Sub Toolbar</Toolbar>
+            <LoremIpsumText paragraphs={20}/>
+          </Panel>
+        </Panel>
       </TabPanel>
     </div>
   </div>

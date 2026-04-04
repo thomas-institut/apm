@@ -1,15 +1,30 @@
 import {
-  type CSSProperties, type MouseEvent, type MouseEventHandler, type ReactNode, type RefObject, useRef, useState,
+  Children,
+  cloneElement,
+  type CSSProperties,
+  isValidElement,
+  type MouseEvent,
+  type MouseEventHandler,
+  ReactElement,
+  type ReactNode,
+  type RefObject,
+  useRef,
+  useState,
 } from "react";
+import Panel from "@/ReactAPM/Components/PanelUI/Panel";
+import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
+
+
+type SplitPanelsChild = ReactElement<{}, typeof Panel> | ReactElement<{}, typeof TabPanel>;
+
+const ValidTypes = [Panel, TabPanel];
 
 interface Props {
   direction: "horizontal" | "vertical";
-  firstPanel: ReactNode;
-  secondPanel: ReactNode;
+  children?: ReactNode;
   dividerWidth?: number;
-  containerClass?: string;
-  firstPanelClass?: string;
-  secondPanelClass?: string;
+  outerMargin?: number;
+  className?: string;
   dividerClass?: string;
   onResize?: (firstRatio: number, secondRatio: number) => void;
 }
@@ -20,12 +35,29 @@ const DefaultDividerWidth = 5;
 export default function SplitPanels(props: Props) {
 
   const direction = props.direction;
-  const firstPanelContent = props.firstPanel;
-  const secondPanelContent = props.secondPanel;
   const dividerWidth = props.dividerWidth ?? DefaultDividerWidth;
-  const containerClass = props.containerClass ?? "";
-  const firstPanelClass = props.firstPanelClass ?? "";
-  const secondPanelClass = props.secondPanelClass ?? "";
+  const outerMargin = props.outerMargin ?? dividerWidth;
+
+
+  const children = Children.toArray(props.children) as SplitPanelsChild[];
+
+  if (children.length !== 2) {
+    throw new Error("SplitPanels must have exactly two children");
+  }
+
+  children.forEach((child) => {
+    if (!isValidElement(child)) {
+      throw new Error('SplitPanels children must be valid React elements');
+    }
+    if (!ValidTypes.includes(child.type)) {
+      throw new Error(`SplitPanels children must be Panel or TabPanel components`);
+    }
+  });
+
+  const firstPanel = children[0];
+  const secondPanel = children[1];
+
+  const containerClass = props.className ?? "";
   const dividerClass = props.dividerClass ?? "";
 
 
@@ -42,6 +74,11 @@ export default function SplitPanels(props: Props) {
     display: "grid",
     gridTemplateColumns: direction === 'vertical' ? gridTemplate : '',
     gridTemplateRows: direction === 'horizontal' ? gridTemplate : '',
+    // height:  `calc(100% - ${outerMargin * 2}px)`,
+    height: "100%",
+    boxSizing: "border-box",
+    padding: outerMargin,
+    overflow: "hidden",
   };
 
   const dividerStyle: CSSProperties = {
@@ -84,24 +121,28 @@ export default function SplitPanels(props: Props) {
       lastXY.current = newXY;
     }
   };
+  const firstPanelStyle = {};
+  const secondPanelStyle = {};
+  return <div ref={containerRef} style={containerStyle} className={containerClass}
+              onMouseUp={stopResizing} onMouseMove={handleMouseMove}>
+    {addStyleToChild(firstPanel, firstPanelStyle)}
+    <div style={dividerStyle} className={dividerClass} onMouseDown={startResizing} onMouseUp={stopResizing}></div>
+    {addStyleToChild(secondPanel, secondPanelStyle)}
+  </div>;
+}
 
 
-  return (<>
-    <div
-      ref={containerRef}
-      style={containerStyle}
-      className={containerClass}
-      onMouseUp={stopResizing}
-      onMouseMove={handleMouseMove}
-    >
-      <div className={firstPanelClass}>{firstPanelContent}</div>
-      <div
-        style={dividerStyle}
-        className={dividerClass}
-        onMouseDown={startResizing}
-        onMouseUp={stopResizing}
-      ></div>
-      <div className={secondPanelClass}>{secondPanelContent}</div>
-    </div>
-  </>);
+function addStyleToChild(child: ReactNode, extraStyle: CSSProperties) {
+  if (!isValidElement(child)) {
+    return child;
+  }
+
+  return cloneElement(child, {
+    // @ts-ignore
+    style: {
+      // @ts-ignore
+      ...(child.props.style ?? {}),
+      ...extraStyle,
+    },
+  });
 }

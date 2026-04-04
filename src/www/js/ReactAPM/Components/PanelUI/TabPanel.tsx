@@ -1,9 +1,9 @@
 
-import {Children, isValidElement, ReactElement, ReactNode} from "react";
-import SimplePanel from "@/ReactAPM/Components/PanelUI/SimplePanel";
-import PanelWithToolbar from "@/ReactAPM/Components/PanelUI/PanelWithToolbar";
+import {Children, CSSProperties, isValidElement, ReactElement} from "react";
+import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 
 import './panel-ui.css'
+
 
 interface TabPanelChildProps {
   tabKey?: string;
@@ -17,16 +17,15 @@ interface TabPanelChildSpec extends Required<TabPanelChildProps> {
 
 
 
-type TabPanelChild =
-  | ReactElement<TabPanelChildProps, typeof SimplePanel>
-  | ReactElement<TabPanelChildProps, typeof PanelWithToolbar>;
+type TabPanelChild = ReactElement<TabPanelChildProps, typeof Panel>;
 
 
-const ValidTypes = [SimplePanel, PanelWithToolbar];
+const ValidTypes = [Panel];
 interface TabPanelProps {
   activeTabKey?: string;
   onClickTab?: (tabKey: string) => void;
   children: TabPanelChild | TabPanelChild[];
+  style?: CSSProperties
 }
 export default function TabPanel(props: TabPanelProps) {
 
@@ -38,7 +37,7 @@ export default function TabPanel(props: TabPanelProps) {
       throw new Error('TabPanel children must be valid React elements');
     }
     if (!ValidTypes.includes(child.type)) {
-      throw new Error('TabPanel children must be SimplePanel or PanelWithToolbar');
+      throw new Error(`TabPanel children must be Panel, got ${child.type}`);
     }
     return {
       tabKey: child.props.tabKey ?? `tab-${index}`,

@@ -33,8 +33,6 @@ body {
   border: 1px solid #eee;
 }
 
-
-
 .divider {
 
 }
@@ -60,3 +58,30 @@ body {
     padding: var(--standard-padding);
 }
 
+
+/* Ensure the panel container itself is a flex container */
+.nicePanel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden; /* Prevent the outer panel from scrolling */
+}
+
+/* Force the Bootstrap Tabs component to fill the height */
+.nicePanel .nav-tabs {
+    flex-shrink: 0;
+}
+
+.nicePanel .tab-content {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* Important for flex children to allow shrinking/scrolling */
+}
+
+.nicePanel .tab-pane {
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}

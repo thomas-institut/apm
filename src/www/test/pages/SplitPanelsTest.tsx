@@ -1,30 +1,40 @@
 import '../../node_modules/bootstrap/dist/css/bootstrap.css';
 import './splitPanelsTest.css';
-import SplitPanels from "@/ReactAPM/Components/SplitPanels";
+import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import {createRoot} from "react-dom/client";
 import {useState} from "react";
-import PanelWithToolbar from "@/ReactAPM/Components/PanelWithToolbar";
+import PanelWithToolbar from "@/ReactAPM/Components/PanelUI/PanelWithToolbar";
 
 import {LoremIpsum} from "lorem-ipsum";
+import {Tabs, Tab} from "react-bootstrap";
 
 const lorem = new LoremIpsum();
 lorem.format = 'html';
-function MyNicePanel() {
+
+const someLoremContent = lorem.generateParagraphs(10);
+
+interface MyNicePanelProps {
+  title: string;
+  buttons?: string[],
+  showToolbar?: boolean;
+}
+function MyNicePanel(props: MyNicePanelProps) {
+  const { title, buttons, showToolbar } = props;
   const toolBar = (<>
-    <button className="btn">A</button>
-    <button className="btn">B</button>
-    <button className="btn">C</button>
+    { (buttons ?? []).map((b,i) => <button key={i} className="btn">{b}</button>)}
   </>);
   return (<PanelWithToolbar
-    toolBar={toolBar} toolBarClass="toolBar" panelClass='panelWithToolBarContent'>
-    <p>This is a nice panel.</p>
-    <div dangerouslySetInnerHTML={{__html: lorem.generateParagraphs(10) }}/>
+    showToolBar={showToolbar ?? true}
+    toolbar={toolBar} toolbarClassName="toolBar" contentClassName='panelWithToolBarContent'>
+    <p>This is a nice panel called {title}</p>
+    <div dangerouslySetInnerHTML={{__html: someLoremContent }}/>
   </PanelWithToolbar>);
 }
 
-function SplitPanelsTest() {
+export function SplitPanelsTest() {
 
   const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
+  const [key, setKey] = useState('home');
 
   const toggleDirection = () => {
     if (direction === 'horizontal') {
@@ -40,11 +50,24 @@ function SplitPanelsTest() {
     console.log("handleResize", firstRatio, secondRatio);
   };
 
-  const firstPanel = <><
-    h1>First Panel</h1>
-    <div dangerouslySetInnerHTML={{__html: lorem.generateParagraphs(10)}}/>
-  </>;
-  const secondPanel = <MyNicePanel/>;
+  const firstPanel = <MyNicePanel title="First Panel" buttons={['Button 1', 'Button 2']} />;
+  const secondPanel =   <Tabs
+    id="controlled-tab-example"
+    activeKey={key}
+    onSelect={(k) => setKey(k ?? 'home')}
+    className= {"flex-grow-1 d-flex flex-row"}
+  >
+    <Tab eventKey="home" title="Home" className="h-100">
+      <MyNicePanel title="Home" buttons={['H1', 'H2']} />
+    </Tab>
+    <Tab eventKey="profile" title="Profile" className="h-100" >
+      <MyNicePanel title="Profile"  buttons={['P1', 'P2']} />
+    </Tab>
+    <Tab eventKey="contact" title="Contact" disabled>
+      Tab content for Contact
+    </Tab>
+  </Tabs>
+;
 
   return (<div className="app">
     <div className="header"

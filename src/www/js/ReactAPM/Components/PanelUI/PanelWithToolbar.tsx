@@ -2,18 +2,22 @@ import React, {CSSProperties, ReactNode} from "react";
 
 
 interface PanelWithToolbarProps {
-  toolBar: ReactNode;
-  toolBarClass?: string;
-  panelClass?: string;
-  containerClass?: string;
+  tabKey?: string;
+  tabTitle?: string;
+  toolbar: ReactNode;
+  toolbarClassName?: string;
+  contentClassName?: string;
+  containerClassName?: string;
   children?: ReactNode;
+  showToolBar?: boolean;
 }
 
 export default function PanelWithToolbar(props: PanelWithToolbarProps) {
 
-  const toolBarClass = props.toolBarClass ?? "";
-  const panelClass = props.panelClass ?? "";
-  const containerClass = props.containerClass ?? "";
+  const toolBarClass = props.toolbarClassName ?? "";
+  const panelClass = props.contentClassName ?? "";
+  const containerClass = props.containerClassName ?? "";
+  const showToolBar = props.showToolBar ?? true;
 
   const containerStyle: CSSProperties = {
     display: "flex",
@@ -23,6 +27,7 @@ export default function PanelWithToolbar(props: PanelWithToolbarProps) {
 
   const toolBarStyle: CSSProperties = {
     flexGrow: 0,
+    display: 'flex',
   }
   const panelStyle: CSSProperties = {
     flexGrow: 1,
@@ -31,10 +36,10 @@ export default function PanelWithToolbar(props: PanelWithToolbarProps) {
   }
 
   return (<div style={containerStyle} className={containerClass}>
-    <div style={toolBarStyle} className={toolBarClass}>
-      {props.toolBar}
+    <div style={toolBarStyle} className={toolBarClass + ' panel-toolbar'}>
+      {showToolBar && props.toolbar}
     </div>
-    <div style={panelStyle} className={panelClass}>
+    <div style={panelStyle} className={panelClass + ' panel-content'}>
       {props.children}
     </div>
 

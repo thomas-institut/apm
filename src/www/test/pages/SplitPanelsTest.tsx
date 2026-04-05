@@ -1,4 +1,5 @@
-import '../../node_modules/bootstrap/dist/css/bootstrap.min.css'
+import '../../node_modules/bootstrap5/dist/css/bootstrap.css';
+import './splitPanelsTest.css';
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import {createRoot} from "react-dom/client";
 import {useState} from "react";
@@ -7,7 +8,8 @@ import LoremIpsumText from "@/ReactAPM/Components/LoremIpsumText";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
-import './splitPanelsTest.css';
+import { Button } from "react-bootstrap";
+
 
 export function SplitPanelsTest() {
 
@@ -29,7 +31,8 @@ export function SplitPanelsTest() {
   return (<div className="app">
     <div className="header">
       <h1>Split Panels Test</h1>
-      <button className="btn btn-primary" onClick={toggleDirection}>Toggle Direction</button>
+      <Button variant={"outline-primary"} size={"sm"} onClick={toggleDirection}>Toggle Direction</Button>
+
     </div>
     <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={5} outerMargin={10} onResize={handleResize}>
       <Panel className={"padding-1 border-1"}>

@@ -10,42 +10,42 @@ div.tab-panel {
     gap: 0;
     height: 100%;
     overflow: hidden;
+}
 
-    .tab-panel-tabs {
-        display: flex;
-        flex-direction: row;
-        align-items: center;
-        border-bottom: 1px solid var(--tab-border-color);
+.tab-panel-tabs {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-bottom: 1px solid var(--tab-border-color);
+}
 
-        .tab-panel-tab {
-            cursor: pointer;
-            padding: 0.5rem;
-            border-bottom: none;
-            border-top-left-radius: 0.25rem;
-            border-top-right-radius: 0.25rem;
-            margin-bottom: -1px;
+.tab-panel-tab {
+    cursor: pointer;
+    padding: 0.5rem;
+    border-bottom: none;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    margin-bottom: -1px;
 
-            &.active {
-                border: solid 1px;
-                border-color: var(--tab-border-color) var(--tab-border-color) #fff;
-                background-color: var(--active-tab-bg-color);
-            }
-        }
+    &.active {
+        border: solid 1px;
+        border-color: var(--tab-border-color) var(--tab-border-color) #fff;
+        background-color: var(--active-tab-bg-color);
     }
+}
 
-    .tab-panel-content {
-        border: 1px solid var(--tab-border-color);
-        border-top: none;
+.tab-panel-content {
+    border: 1px solid var(--tab-border-color);
+    border-top: none;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    .tab-panel-content-item {
+        display: none;
         height: 100%;
-        overflow: hidden;
-        box-sizing: border-box;
-
-        .tab-panel-content-item {
-            display: none;
-            height: 100%;
-            &.active {
-                display: block;
-            }
+        &.active {
+            display: block;
         }
     }
 }

@@ -1,14 +1,11 @@
 body {
-    margin: 0;
-    padding: 0;
-
+    font-size: 11pt;
 }
 .app {
     display: grid;
     grid-template-rows: auto 1fr;
     height: 100dvh;
     overflow: hidden;
-    font-size: 10pt;
 }
 
 .header {
@@ -29,6 +26,20 @@ body {
 }
 
 .my-toolbar {
-    background: #eee;
+    background: #f5f5f5;
     padding: 5px;
 }
+
+
+/*.tab-panel-tab {*/
+/*    padding: 5px 20px;*/
+/*    color: darkgray;*/
+/*    border: none;*/
+
+
+/*    &.active {*/
+/*        color: black;*/
+/*        font-weight: bold;*/
+/*        border-bottom: 2px solid #6a423b;*/
+/*    }*/
+/*}*/

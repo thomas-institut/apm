@@ -103,7 +103,7 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
         return null;
       }
 
-      const cell = targetNode.closest('td');
+      const cell = targetNode.closest('div');
       if (cell === null || !(cell instanceof HTMLElement)) {
         return null;
       }
@@ -199,26 +199,23 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
       {children}
 
       <Overlay
+        key={activeCell ? `${activeCell.x}-${activeCell.y}` : 'none'}
         show={show && target !== null}
         target={target}
-        placement="auto"
+        placement="right"
         container={document.body}
         transition={false}
         rootClose={false}
-        offset={[0, 8]}
       >
-        {({ ref, ...props }) => (
-          <Popover
-            {...props}
-            ref={ref}
-            id="shared-table-popover"
-            style={{ ...props.style, pointerEvents: 'none' }}
-          >
+        { (props) => (
+          <Popover {...props} placement={props.placement} style={{ ...props.style,  pointerEvents: 'none' }}>
             <Popover.Header as="h3" className="popover-header">Shared Table Info</Popover.Header>
             <Popover.Body>
               {loading ? (<span>Loading...</span>) : content}
             </Popover.Body>
-          </Popover>)}
+          </Popover>
+        )}
+
       </Overlay>
     </div>);
 }

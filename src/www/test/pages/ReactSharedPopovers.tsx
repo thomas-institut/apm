@@ -9,6 +9,17 @@ async function getPopoverContent(x: number, y: number): Promise<ReactNode> {
   return <><strong>Cell</strong>: {x}, {y}<br/>Important information here.</>;
 }
 
+function getTable(numRows: number, numCols: number) {
+  return (<div style={{display: 'grid', gridTemplateColumns: `repeat(${numCols}, max-content)`}}>
+    {
+      Array.from({length: numRows}, (_, i) => Array.from({length: numCols}, (_, j) =>
+        <div key={`${i}-${j}`} className={`cell-${i}-${j}`} style={{border: '1px solid black', padding: '10px'}}>
+          Cell {`${i},${j}`}
+        </div>))
+    }
+  </div>)
+}
+
 export function ReactSharedPopovers() {
 
   const popover = (
@@ -25,25 +36,12 @@ export function ReactSharedPopovers() {
       <Container>
         <h1>React Shared Popovers Example</h1>
         <div style={{marginBottom: '2em', marginTop: '2em'}}>
-          This is a normal popover set up using OverlayTrigger: <OverlayTrigger trigger={["hover", "focus"]} placement="right" overlay={popover}>
+          This is a normal popover set up using OverlayTrigger: <OverlayTrigger trigger={["hover", "focus"]} placement="auto-end" overlay={popover}>
           <Button variant="success">Hover me to see</Button>
         </OverlayTrigger>
         </div>
         <SharedTablePopover getPopoverContent={getPopoverContent}>
-          <table className="table table-bordered">
-            <tbody>
-            <tr>
-              <td className="cell-0-0" tabIndex={0}>A</td>
-              <td className="cell-1-0" tabIndex={0}>B</td>
-              <td className="cell-2-0" tabIndex={0}>C</td>
-            </tr>
-            <tr>
-              <td className="cell-0-1" tabIndex={0}>D</td>
-              <td className="cell-1-1" tabIndex={0}>E</td>
-              <td className="cell-2-1" tabIndex={0}>F</td>
-            </tr>
-            </tbody>
-          </table>
+          {getTable(3, 3)}
         </SharedTablePopover>
       </Container>
   );

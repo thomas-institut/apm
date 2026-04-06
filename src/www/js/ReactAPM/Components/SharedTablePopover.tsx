@@ -3,8 +3,30 @@ import Overlay from 'react-bootstrap/Overlay';
 import Popover from 'react-bootstrap/Popover';
 
 type SharedTablePopoverProps = {
+  /**
+   * If false, no popovers will be shown.
+   */
+  enabled?: boolean;
+  /**
+   * A function that returns a promise that resolves to the content of the popover.
+   *
+   * The function is called with the cell coordinates (x, y) of the cell that was hovered over.
+   * If x or y is is -1, it means that the cell is a header.
+   *
+   * The function should return a React node that represents the content of the popover or null
+   * if the popover should not be shown.
+   */
   getPopoverContent: (x: number, y: number) => Promise<ReactNode>;
+  placement?: 'top' | 'right' | 'bottom' | 'left';
   children: React.ReactNode;
+  /**
+   * The class name used to identify table cells. Defaults to 'cell'.
+   */
+  cellClass?: string;
+  /**
+   * The infix that is used to identify header cells. Defaults to 'header'.
+   */
+  headerInfix?: string;
   hoverDelayMs?: number;
   hideDelayMs?: number;
 };
@@ -13,21 +35,40 @@ type ActiveCell = {
   element: HTMLElement; x: number; y: number;
 };
 
-function parseCellCoordinates(element: Element): { x: number; y: number } | null {
+function parseCellCoordinates(element: Element, headerInfix: string): { x: number; y: number } | null {
   for (const className of Array.from(element.classList)) {
     const match = /^cell-(\d+)-(\d+)$/.exec(className);
     if (match !== null) {
       return {
-        x: Number(match[1]), y: Number(match[2]),
+        x: match[1] === headerInfix ? -1 : Number(match[1]), y: match[2] === headerInfix ? -1 : Number(match[2]),
       };
     }
   }
-
   return null;
 }
 
+
+/**
+ * Adds popovers to a table based on the cell coordinates.
+ *
+ * Children with the class `cell` are considered table cells and the cell coordinates are identified with
+ * an extra class `cell-x-y`, where `x` and `y` are the cell coordinates. A function is used to generate the content of the popover.
+ *
+ * Column and row headers can be identified using the word `header` instead of a number in the
+ * class name. For example, `cell-header-1` (row header 1) or `cell-1-header` (column header 1).
+ *
+ * If the content generator function returns `null`, the popover will not be shown.
+ *
+ *
+ *
+ * The cells in
+ * @param props
+ * @constructor
+ */
 export function SharedTablePopover(props: SharedTablePopoverProps) {
   const {
+    enabled= true, placement = 'bottom',
+    cellClass = 'cell', headerInfix = 'header',
     getPopoverContent, children, hoverDelayMs = 200, hideDelayMs = 100,
   } = props;
 
@@ -75,6 +116,10 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
 
     try {
       const contentNode = await getPopoverContent(cell.x, cell.y);
+      if (contentNode === null) {
+        setShow(false);
+        return;
+      }
       if (requestId !== requestIdRef.current) {
         return;
       }
@@ -103,7 +148,7 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
         return null;
       }
 
-      const cell = targetNode.closest('div');
+      const cell = targetNode.closest(`.${cellClass}`);
       if (cell === null || !(cell instanceof HTMLElement)) {
         return null;
       }
@@ -112,7 +157,7 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
         return null;
       }
 
-      const coords = parseCellCoordinates(cell);
+      const coords = parseCellCoordinates(cell, headerInfix);
       if (coords === null) {
         return null;
       }
@@ -195,6 +240,10 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
     };
   }, [getPopoverContent, hideDelayMs, hoverDelayMs]);
 
+  if (!enabled) {
+    return <div ref={containerRef}>{children}</div>;
+  }
+
   return (<div ref={containerRef}>
       {children}
 
@@ -202,14 +251,13 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
         key={activeCell ? `${activeCell.x}-${activeCell.y}` : 'none'}
         show={show && target !== null}
         target={target}
-        placement="right"
+        placement={placement}
         container={document.body}
         transition={false}
         rootClose={false}
       >
         { (props) => (
           <Popover {...props} placement={props.placement} style={{ ...props.style,  pointerEvents: 'none' }}>
-            <Popover.Header as="h3" className="popover-header">Shared Table Info</Popover.Header>
             <Popover.Body>
               {loading ? (<span>Loading...</span>) : content}
             </Popover.Body>

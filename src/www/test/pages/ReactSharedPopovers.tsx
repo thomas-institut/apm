@@ -5,15 +5,13 @@ import '../../node_modules/bootstrap5/dist/css/bootstrap.min.css'
 import {Button, Container, OverlayTrigger, Popover} from "react-bootstrap";
 
 
-async function getPopoverContent(x: number, y: number): Promise<ReactNode> {
-  return <><strong>Cell</strong>: {x}, {y}<br/>Important information here.</>;
-}
+
 
 function getTable(numRows: number, numCols: number) {
   return (<div style={{display: 'grid', gridTemplateColumns: `repeat(${numCols}, max-content)`}}>
     {
       Array.from({length: numRows}, (_, i) => Array.from({length: numCols}, (_, j) =>
-        <div key={`${i}-${j}`} className={`cell-${i}-${j}`} style={{border: '1px solid black', padding: '10px'}}>
+        <div key={`${i}-${j}`} className={`cell cell-${i}-${j}`} style={{border: '1px solid black', padding: '10px'}}>
           Cell {`${i},${j}`}
         </div>))
     }
@@ -21,6 +19,15 @@ function getTable(numRows: number, numCols: number) {
 }
 
 export function ReactSharedPopovers() {
+
+  const [enabledByFunction, setEnabledByFunction] = React.useState(true);
+  const [enabledByState, setEnabledByState] = React.useState(true);
+  async function getPopoverContent(x: number, y: number): Promise<ReactNode> {
+    if (!enabledByFunction) {
+      return null;
+    }
+    return <><strong>Cell</strong>: {x}, {y}<br/>Important information here.</>;
+  }
 
   const popover = (
     <Popover id="popover-basic">
@@ -40,7 +47,17 @@ export function ReactSharedPopovers() {
           <Button variant="success">Hover me to see</Button>
         </OverlayTrigger>
         </div>
-        <SharedTablePopover getPopoverContent={getPopoverContent}>
+        <div>
+          This is a shared popover set up using SharedTablePopover.  Set enable state:
+          <div>By function:
+            <Button variant="primary" onClick={() => setEnabledByFunction(!enabledByFunction)}>{ enabledByFunction ? 'Disable' : 'Enable'}</Button></div>
+          <div>
+            By state:
+            <Button variant="primary" onClick={() => setEnabledByState(!enabledByState)}>{ enabledByState ? 'Disable' : 'Enable'}</Button>
+          </div>
+
+        </div>
+        <SharedTablePopover getPopoverContent={getPopoverContent} enabled={enabledByState}>
           {getTable(3, 3)}
         </SharedTablePopover>
       </Container>

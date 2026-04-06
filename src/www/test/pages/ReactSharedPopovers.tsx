@@ -1,20 +1,34 @@
-import React from 'react';
+import React, {ReactNode} from 'react';
 import {SharedTablePopover} from "@/ReactAPM/Components/SharedTablePopover";
 import {createRoot} from "react-dom/client";
-import '../../node_modules/bootstrap/dist/css/bootstrap.min.css'
-import {Container} from "react-bootstrap";
+import '../../node_modules/bootstrap5/dist/css/bootstrap.min.css'
+import {Button, Container, OverlayTrigger, Popover} from "react-bootstrap";
 
 
-async function getPopoverContent(x: number, y: number): Promise<string> {
-  await new Promise((resolve) => window.setTimeout(resolve, 150));
-
-  return `<strong>Cell</strong>: ${x}, ${y}<br/>Important information here.`;
+async function getPopoverContent(x: number, y: number): Promise<ReactNode> {
+  return <><strong>Cell</strong>: {x}, {y}<br/>Important information here.</>;
 }
 
 export function ReactSharedPopovers() {
+
+  const popover = (
+    <Popover id="popover-basic">
+      <Popover.Header as="h3">Popover right</Popover.Header>
+      <Popover.Body>
+        And here's some <strong>amazing</strong> content. It's very engaging.
+        right?
+      </Popover.Body>
+    </Popover>
+  );
+
   return (
       <Container>
         <h1>React Shared Popovers Example</h1>
+        <div style={{marginBottom: '2em', marginTop: '2em'}}>
+          This is a normal popover set up using OverlayTrigger: <OverlayTrigger trigger={["hover", "focus"]} placement="right" overlay={popover}>
+          <Button variant="success">Hover me to see</Button>
+        </OverlayTrigger>
+        </div>
         <SharedTablePopover getPopoverContent={getPopoverContent}>
           <table className="table table-bordered">
             <tbody>

@@ -1,18 +1,16 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import Overlay from 'react-bootstrap/Overlay';
 import Popover from 'react-bootstrap/Popover';
 
 type SharedTablePopoverProps = {
-  getPopoverContent: (x: number, y: number) => Promise<string>;
+  getPopoverContent: (x: number, y: number) => Promise<ReactNode>;
   children: React.ReactNode;
   hoverDelayMs?: number;
   hideDelayMs?: number;
 };
 
 type ActiveCell = {
-  element: HTMLElement;
-  x: number;
-  y: number;
+  element: HTMLElement; x: number; y: number;
 };
 
 function parseCellCoordinates(element: Element): { x: number; y: number } | null {
@@ -20,8 +18,7 @@ function parseCellCoordinates(element: Element): { x: number; y: number } | null
     const match = /^cell-(\d+)-(\d+)$/.exec(className);
     if (match !== null) {
       return {
-        x: Number(match[1]),
-        y: Number(match[2]),
+        x: Number(match[1]), y: Number(match[2]),
       };
     }
   }
@@ -31,10 +28,7 @@ function parseCellCoordinates(element: Element): { x: number; y: number } | null
 
 export function SharedTablePopover(props: SharedTablePopoverProps) {
   const {
-    getPopoverContent,
-    children,
-    hoverDelayMs = 500,
-    hideDelayMs = 100,
+    getPopoverContent, children, hoverDelayMs = 200, hideDelayMs = 100,
   } = props;
 
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -44,7 +38,7 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
 
   const [activeCell, setActiveCell] = useState<ActiveCell | null>(null);
   const [show, setShow] = useState(false);
-  const [content, setContent] = useState<string>('Loading...');
+  const [content, setContent] = useState<ReactNode>('Loading...');
   const [loading, setLoading] = useState(false);
 
   const target = useMemo(() => activeCell?.element ?? null, [activeCell]);
@@ -80,24 +74,17 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
     setShow(true);
 
     try {
-      const html = await getPopoverContent(cell.x, cell.y);
-
+      const contentNode = await getPopoverContent(cell.x, cell.y);
       if (requestId !== requestIdRef.current) {
         return;
       }
-
-      if (html.trim() === '') {
-        setShow(false);
-        return;
-      }
-
-      setContent(html);
+      setContent(contentNode);
     } catch (error) {
       if (requestId !== requestIdRef.current) {
         return;
       }
 
-      setContent('<div class="text-danger">Could not load popover content.</div>');
+      setContent(<div className="text-danger">Could not load popover content.</div>);
     } finally {
       if (requestId === requestIdRef.current) {
         setLoading(false);
@@ -131,9 +118,7 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
       }
 
       return {
-        element: cell,
-        x: coords.x,
-        y: coords.y,
+        element: cell, x: coords.x, y: coords.y,
       };
     };
 
@@ -210,8 +195,7 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
     };
   }, [getPopoverContent, hideDelayMs, hoverDelayMs]);
 
-  return (
-    <div ref={containerRef}>
+  return (<div ref={containerRef}>
       {children}
 
       <Overlay
@@ -221,19 +205,20 @@ export function SharedTablePopover(props: SharedTablePopoverProps) {
         container={document.body}
         transition={false}
         rootClose={false}
+        offset={[0, 8]}
       >
-        {(overlayProps) => (
-          <Popover id="shared-table-popover" {...overlayProps}>
+        {({ ref, ...props }) => (
+          <Popover
+            {...props}
+            ref={ref}
+            id="shared-table-popover"
+            style={{ ...props.style, pointerEvents: 'none' }}
+          >
+            <Popover.Header as="h3" className="popover-header">Shared Table Info</Popover.Header>
             <Popover.Body>
-              {loading ? (
-                <span>Loading...</span>
-              ) : (
-                <div dangerouslySetInnerHTML={{ __html: content }} />
-              )}
+              {loading ? (<span>Loading...</span>) : content}
             </Popover.Body>
-          </Popover>
-        )}
+          </Popover>)}
       </Overlay>
-    </div>
-  );
+    </div>);
 }

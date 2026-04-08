@@ -8,6 +8,12 @@ export const latinLibertine: StyleSheetDefinition =  {
     name: 'Libertine',
     description: 'A4 paper, Linux Libertine'
   },
+  fontConversions: [
+    {
+      from: { script: 'ar' },
+      to: { fontFamily: 'Amiri' }
+    }
+  ],
   default: {
     strings: {
       omission: 'om.',

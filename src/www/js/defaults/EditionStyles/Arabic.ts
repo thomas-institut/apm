@@ -6,6 +6,9 @@ export const defaultArabicEditionStyle: StyleSheetDefinition = {
   _metaData: {
     name: 'Default', description: 'A4 paper, Noto Naskh'
   },
+  fontConversions: [
+    { from: { script: 'la' }, to: { fontFamily: 'FreeSerif' } }
+  ],
   default: {
     strings: {
       omission: 'نقص',

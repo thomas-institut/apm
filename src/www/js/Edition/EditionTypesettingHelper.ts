@@ -38,8 +38,13 @@ import {ApparatusUtil} from './ApparatusUtil.js';
 import {NumeralSystems} from '../toolbox/NumeralSystems.js';
 import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';
 import {SiglaGroup} from './SiglaGroup.js';
-import {ParagraphStyleDef, StyleSheet, StyleSheetDefinition} from '../lib/Typesetter2/Style/StyleSheet.js';
-import {FontConversionDefinition, FontConversions} from '../lib/Typesetter2/FontConversions.js';
+import {
+  FontConversionDefinition,
+  ParagraphStyleDef,
+  StyleSheet,
+  StyleSheetDefinition
+} from '../lib/Typesetter2/Style/StyleSheet.js';
+import {FontConversions} from '../lib/Typesetter2/FontConversions.js';
 import {ItemLineInfo} from './ItemLineInfo.js';
 import {TypesetterItem} from '../lib/Typesetter2/TypesetterItem.js';
 import {MARGINALIA} from '../constants/ApparatusType.js';

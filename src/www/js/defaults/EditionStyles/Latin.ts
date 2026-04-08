@@ -8,6 +8,12 @@ export const defaultLatinEditionStyle: StyleSheetDefinition =  {
     name: 'Default',
     description: 'A4 paper, FreeSerif'
   },
+  fontConversions: [
+    {
+      from: { script: 'ar' },
+      to: { fontFamily: 'Amiri', fontSizeFactor: 0.9 }
+    }
+  ],
   default: {
     strings: {
       omission: 'om.',
@@ -83,12 +89,6 @@ export const defaultLatinEditionStyle: StyleSheetDefinition =  {
     parent: 'default',
     paragraph: {
       indent: '1 em'
-    }
-  },
-  arabicText: {
-    parent: "",
-    text: {
-      fontFamily: "Noto Naskh Arabic",
     }
   },
   h1: {

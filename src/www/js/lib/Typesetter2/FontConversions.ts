@@ -1,19 +1,10 @@
+// noinspection ES6PreferShortImport
+
 import {ItemList} from './ItemList.js';
 import {TextBox} from './TextBox.js';
 import {LanguageDetector} from '../../toolbox/LanguageDetector.js';
+import {FontConversionDefinition} from "./Style/StyleSheet.js";
 
-export interface FontConversionDefinition {
-  from: FontDefinition;
-  to: FontDefinition;
-}
-
-export interface FontDefinition {
-  fontFamily?: string;
-  fontStyle?: string;
-  fontWeight?: string;
-  fontSize?: number;
-  script?: string;
-}
 
 export class FontConversions {
 
@@ -40,10 +31,18 @@ export class FontConversions {
     if (item instanceof TextBox) {
       let match = this.findMatch(item, fontConversionDefinitions, defaultScript);
       if (match !== null) {
-        Object.keys(match.to).forEach((prop) => {
-          // @ts-expect-error Accessing TextBox members as array
-          item[prop] = match.to[prop];
-        });
+        if (match.to.fontFamily !== undefined) {
+          item.setFontFamily(match.to.fontFamily);
+        }
+        if (match.to.fontStyle !== undefined) {
+          item.setFontStyle(match.to.fontStyle);
+        }
+        if (match.to.fontWeight !== undefined) {
+          item.setFontWeight(match.to.fontWeight);
+        }
+        if (match.to.fontSizeFactor !== undefined) {
+          item.setFontSize(item.getFontSize() * match.to.fontSizeFactor);
+        }
         return item;
       }
       return item;

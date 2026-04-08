@@ -8,6 +8,12 @@ export const latinPeetersJournal: StyleSheetDefinition =  {
     name: 'Peeters Journal',
     description: 'A4 paper, Linux Libertine'
   },
+  fontConversions: [
+    {
+      from: { script: 'ar' },
+      to: { fontFamily: 'Amiri' }
+    }
+  ],
   default: {
     strings: {
       omission: 'om.',

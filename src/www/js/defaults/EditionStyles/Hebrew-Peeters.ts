@@ -7,6 +7,20 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
     name: 'Peeters Journal',
     description: 'A4 paper, SBL Hebrew'
   },
+  fontConversions: [
+    {
+      from: { script: 'ar' },
+      to: { fontFamily: 'Amiri' }
+    },
+    {
+      from: { script: 'la'},
+      to: { fontFamily: 'EB Garamond'}
+    },
+    {
+      from: { script: 'el'},
+      to: { fontFamily: 'EB Garamond'}
+    }
+  ],
   default: {
     strings : {
       omission: 'חסר',
@@ -126,10 +140,10 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
   apparatus: {
     parent: "default",
     text: {
-      fontSize: "11 pt",
+      fontSize: "9.4 pt",
     },
     paragraph: {
-      lineSkip: "14 pt"
+      lineSkip: "10.54 pt"
     },
     glue: {
       width: "0.25 em",

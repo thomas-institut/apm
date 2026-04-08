@@ -617,6 +617,7 @@ END;
             try {
                 $thePage = $legacyPageInfo;
                 $pageNumber = $legacyPageInfo['page_number'];
+                $imageNumber = $legacyPageInfo['img_number'];
                 $thePage['pageId'] = $legacyPageInfo['id'];
                 $thePage['sequence'] = $legacyPageInfo['seq'];
                 $thePage['pageNumber'] = $legacyPageInfo['page_number'];
@@ -629,9 +630,9 @@ END;
                 $thePage['imageUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
                     $pageNumber, ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
                 $thePage['jpgUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
-                    $pageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
+                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
                 $thePage['thumbnailUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
-                    $pageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
+                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
 //                $this->logger->debug("The page", $thePage);
                 $thePages[$legacyPageInfo['id']] = $thePage;
             } catch (DocumentNotFoundException $e) {

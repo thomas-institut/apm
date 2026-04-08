@@ -645,7 +645,7 @@ export class DocPage extends NormalPage {
                     <div class="metadata-editor">
                     </div>
                     <div>
-                    <a href="${urlGen.siteAdminEntity(this.docId)}">[ Entity Admin ]</a>
+                    Doc ${this.docId} &bull; Db ${this.pageArray[0]['doc_id']} &bull; <a href="${urlGen.siteAdminEntity(this.docId)}">[ Entity Admin ]</a>
                     </div>
                    
                 </div>

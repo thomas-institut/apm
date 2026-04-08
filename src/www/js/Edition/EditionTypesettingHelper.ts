@@ -775,24 +775,10 @@ export class EditionTypesettingHelper {
           keywordString = this.ss.getStrings()[keyword];
           let keywordTextBox = await this.ss.apply((new TextBox()).setText(keywordString).setTextDirection(this.textDirection), keywordStyle);
           items.push(keywordTextBox);
-          if (keyword !== 'omission') {
-            items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
-          }
+          items.push(this.createPenalty(InfinitePenalty));
+          items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
         }
-        if (keyword !== 'omission') {
-          items.push(...await this.getTsItemsForFmtText(subEntry.fmtText, apparatusStyle, 'detect'));
-          // let customTextItems = this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect');
-          // if (this.edition.lang === 'la') {
-          //   // add hyphenation to text boxes
-          //   customTextItems = customTextItems.map((item) => {
-          //     if (item instanceof TextBox) {
-          //       item.setHyphenation('la');
-          //     }
-          //     return item;
-          //   });
-          // }
-          // items.push(...customTextItems);
-        }
+        items.push(...await this.getTsItemsForFmtText(subEntry.fmtText, apparatusStyle, 'detect'));
         if (subEntry.type !== 'autoFoliation' && subEntry.witnessData.length !== 0) {
           items.push(this.createPenalty(InfinitePenalty));
           items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));

@@ -424,7 +424,7 @@ export class MultiPanelUI {
 
   _renderTabList(panel: Required<PanelSpec>) {
     let tabGenerator = this._getTabGeneratorForPanel(panel, this.currentMode)
-    $(`#${panel.id}-tabs`).replaceWith(tabGenerator.generateTabListHtml())
+    $(`#${panel.id}-tabs`).replaceWith(tabGenerator.genTabListDiv())
     this._setupDraggingEventHandlers()
   }
 

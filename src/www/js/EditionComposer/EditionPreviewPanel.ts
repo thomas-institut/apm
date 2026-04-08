@@ -52,7 +52,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
   private zoomController!: ZoomController;
   private styleSelect!: JQuery<HTMLElement>;
 
-  constructor(options = {}) {
+  constructor(options:any ) {
     super(options);
     let optionsSpec = {
       edition: {type: 'object', objectClass: Edition, required: true},

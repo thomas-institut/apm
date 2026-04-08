@@ -1,6 +1,6 @@
 {
   "name": "apm-ti",
-  "version": "v1.1",
+  "version": "v1.1.1",
   "description": "Averroes Project Manager",
   "directories": {
     "test": "test"
@@ -56,7 +56,7 @@
     "@types/node": "^24.12.0",
     "@vitejs/plugin-react": "^5.0.1",
     "fake-indexeddb": "^6.1.0",
-    "happy-dom": "20.0.2",
+    "happy-dom": "20.8.9",
     "lorem-ipsum": "^2.0.8",
     "openapi-typescript": "^7.8.0",
     "standard": "^17.0.0",

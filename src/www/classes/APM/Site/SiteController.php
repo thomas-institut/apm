@@ -302,8 +302,8 @@ END;
         $baseUrl = $this->getBaseUrl();
 
         // all imports are handled by Vite
-        $viteImportsHtml = $this->getViteImportHtml([$viteEntryPoint]);
-        $html = $this->getPageHtml($baseUrl, $title, $viteImportsHtml, '');
+        [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint]);
+        $html = $this->getPageHtml($baseUrl, $title, $viteJsImportsHtml . $viteCssImportsHtml, '');
         $response->getBody()->write($html);
         SystemProfiler::lap('Response ready');
         $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms", SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
@@ -394,9 +394,10 @@ END;
         }
 
 
-        $viteImportsHtml = $this->getViteImportHtml([$viteEntryPoint, ...$extraViteEntryPoints]);
+        [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint, ...$extraViteEntryPoints]);
+        $cssHtml = implode('', [ $cssHtml, $viteCssImportsHtml ]);
 
-        $postBodyImports = implode('', [ $jsHtml, $viteImportsHtml, "<script> $script </script>" ]);
+        $postBodyImports = implode('', [ $jsHtml, $viteJsImportsHtml, "<script> $script </script>" ]);
         $html = $this->getPageHtml($baseUrl, $title, $cssHtml, $postBodyImports);
         $response->getBody()->write($html);
         if ($cacheKey !== '') {
@@ -425,15 +426,24 @@ END;
         return '';
     }
 
-    protected function getViteImportHtml(array $viteEntryPoints): string
+    /**
+     * Returns the HTML for the Vite imports for the given entry points.
+     * The first element in the return array is the HTML for JS imports,
+     * the second element is the HTML for CSS imports.
+     * @param array $viteEntryPoints
+     * @return string[]
+     */
+    protected function getViteImportHtml(array $viteEntryPoints): array
     {
+        $viteJsImportsHtml = '';
+        $viteCssImportsHtml = '';
         if ($this->systemManager->getConfig()['devMode']) {
-            $viteImportsHtml = sprintf(
+            $viteJsImportsHtml = sprintf(
                 "<script type=\"module\" src=\"%s/@vite/client\"></script>\n",
                 self::VITE_DEV_BASE
             );
             foreach ($viteEntryPoints as $viteEntryPoint) {
-                $viteImportsHtml .= sprintf(
+                $viteJsImportsHtml .= sprintf(
                     "<script type=\"module\" src=\"%s/$viteEntryPoint\"></script>\n",
                     self::VITE_DEV_BASE
                 );
@@ -448,20 +458,21 @@ END;
                 $viteJsImports = [...$viteJsImports, ...$viteImports['js']];;
                 $viteCssImports = [...$viteCssImports, ...$viteImports['css']];
             }
-            $this->logger->debug("Vite imports: " . implode(', ', $viteJsImports));
-            $viteImportsHtml = '';
+            $this->logger->debug("Vite JS imports: " . implode(', ', $viteJsImports));
+            $this->logger->debug("Vite CSS imports: " . implode(', ', $viteCssImports));
             foreach ($viteJsImports as $import) {
-                $viteImportsHtml .= <<<END
+                $viteJsImportsHtml .= <<<END
     <script type="module" src="$baseUrl/dist/$import"></script>
 END;
             }
             foreach ($viteCssImports as $import) {
-                $viteImportsHtml .= <<<END
+                $viteCssImportsHtml .= <<<END
      <link rel="stylesheet" type="text/css" href="$baseUrl/dist/$import">
 END;
             }
         }
-        return $viteImportsHtml;
+        $this->logger->debug("Vite imports HTML: " . $viteJsImportsHtml);
+        return [$viteJsImportsHtml, $viteCssImportsHtml];
     }
 
     /**

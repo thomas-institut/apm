@@ -16,6 +16,8 @@
  *
  */
 
+import './EditionComposer.css';
+
 // defaults
 import {defaultLanguageDefinition, LanguageDefinition} from '@/defaults/languages';
 
@@ -77,7 +79,7 @@ import {WorkData} from "@/Api/DataSchema/ApiWorks";
 import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
 
 
-import './EditionComposer.css';
+
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS

@@ -98,10 +98,6 @@ export class AutomaticCollationTableSettingsForm {
     let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "AutoCollTableSettingsForm"})
     this.options = oc.getCleanOptions(options)
 
-    // console.log('AutoCollTableSettingsFrom options')
-    // console.log(this.options)
-
-
     this.witnessList = []
     this.initialSettings = this.options.initialSettings
     this.verbose = this.options.verbose
@@ -555,9 +551,8 @@ export class AutomaticCollationTableSettingsForm {
   }
   
   genOnClickCancelButton() {
-    let thisObject = this
-    return function() {
-      thisObject.dispatchEvent(thisObject.cancelEventName)
+    return ()=> {
+      this.dispatchEvent(this.cancelEventName)
     }
   }
   
@@ -683,7 +678,7 @@ export class AutomaticCollationTableSettingsForm {
           tool: thisObject.automaticCollationPresetTool,
           userTid: thisObject.options.userTid,
           title: newPresetTitle,
-          presetId: -1,
+          id: -1,
           presetData : {
             lang: currentSettings.lang,
             witnesses: witnessIdArray,
@@ -696,8 +691,8 @@ export class AutomaticCollationTableSettingsForm {
           urlGen.apiPostPresets(),
           { data: JSON.stringify(apiCallOptions) }
         ).done(function(data){
-          console.log('New preset API call successful')
-          console.log(data)
+          thisObject.verbose && console.log('New preset API call successful')
+          thisObject.verbose && console.log(data)
           thisObject.dispatchEvent('preset-new', data)
           thisObject.presetTitle.html(newPresetTitle)
           thisObject.options.isPreset = true
@@ -728,7 +723,7 @@ export class AutomaticCollationTableSettingsForm {
           tool: thisObject.automaticCollationPresetTool,
           userTid: thisObject.options.userTid,
           title: newPresetTitle,
-          presetId: thisObject.options.preset.presetId,
+          presetId: thisObject.options.preset.id,
           presetData : {
             lang: currentSettings.lang,
             witnesses: witnessIdArray,
@@ -736,7 +731,6 @@ export class AutomaticCollationTableSettingsForm {
             normalizers: currentSettings.normalizers !== undefined ? currentSettings.normalizers : null
           }
         }
-        console.log(apiCallOptions)
         $.post(
           urlGen.apiPostPresets(),
           { data: JSON.stringify(apiCallOptions) }
@@ -791,7 +785,7 @@ export class AutomaticCollationTableSettingsForm {
         tool: thisObject.automaticCollationPresetTool,
         userTid: thisObject.options.userTid,
         title: newPresetTitle,
-        presetId: -1,
+        id: -1,
         presetData : {
           lang: currentSettings.lang,
           witnesses: witnessIdArray,
@@ -1021,19 +1015,19 @@ export class AutomaticCollationTableSettingsForm {
 </div>
             <div class="preset-buttons-div">
          <b>Preset</b>: <span class="preset-title">--- [ none ] ---</span>
-            <button type="button" class="btn btn-default btn-xs edit-preset-btn">
+            <button type="button" class="btn btn-outline-secondary btn-sm edit-preset-btn">
             Edit
             </button>
 
       <span class="edit-preset-div hidden">
             <input type="text" class="preset-input-text" value="--">
-            <button type="button" class="btn btn-default btn-xs preset-save-btn">
+            <button type="button" class="btn btn-primary btn-sm preset-save-btn">
               Save as Preset
             </button>
-      <button type="button" class="btn btn-default btn-xs preset-save2-btn hidden">
+      <button type="button" class="btn btn-primary btn-sm preset-save2-btn hidden">
               Save as New Preset
             </button>
-      <button type="button" class="btn btn-default btn-xs preset-cancel-btn">
+      <button type="button" class="btn btn-secondary btn-sm preset-cancel-btn">
               Cancel
             </button>
       <span class="text-danger preset-error-span hidden">
@@ -1044,7 +1038,7 @@ export class AutomaticCollationTableSettingsForm {
           <button type="button" class="btn btn-primary btn-sm apply-btn">
             ${applyButtonText}
           </button>
-          <button type="button" class="btn btn-default btn-sm cancel-btn">
+          <button type="button" class="btn btn-primary btn-sm cancel-btn">
             Cancel
           </button>
           </form>

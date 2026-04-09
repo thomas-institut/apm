@@ -16,10 +16,8 @@
  *
  */
 
-
 import * as Popper from '@popperjs/core'
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { NormalPage } from './NormalPage'
+import {NormalPage, NormalPageOptions} from './NormalPage';
 import { urlGen } from './common/SiteUrlGen'
 import { tr } from './common/SiteLang'
 import { EditableTextField } from '@/widgets/EditableTextField'
@@ -29,8 +27,8 @@ import { PageArray } from './common/PageArray'
 import { MultiToggle } from '@/widgets/MultiToggle'
 import { ApmUtil } from '@/ApmUtil'
 import { ApmFormats } from './common/ApmFormats'
-import { TimeString } from '../toolbox/TimeString.mjs'
-import Split from 'split-grid'
+import { TimeString } from '@/toolbox/TimeString'
+import Split, {SplitInstance} from 'split-grid';
 import { ApmPage } from './ApmPage'
 import * as Entity from '../constants/Entity'
 import { MetadataEditorSchema } from '@/MetadataEditor/MetadataEditorSchemata/MetadataEditorSchema'
@@ -38,6 +36,10 @@ import { MetadataEditor } from '@/MetadataEditor/MetadataEditor'
 import { WidgetAddPages } from '@/WidgetAddPages'
 import { CollapsePanel } from '@/widgets/CollapsePanel'
 import { SetLanguage } from '@/widgets/SetLanguage'
+import {DocInfoLegacy} from "@/Api/DataSchema/ApiDocuments";
+import {SchemaInterface} from "@/MetadataEditor/MetadataEditorSchemata/SchemaInterface";
+import { EntityDataInterface } from "@/Api/DataSchema/ApiEntity";
+import OpenSeadragon from "openseadragon";
 
 const TabId_DocDetails = 'doc-info';
 const TabId_Pages = 'page-list';
@@ -45,26 +47,132 @@ const TabId_Contents = 'contents';
 const TabId_LastSaves = 'last-saves';
 const TabId_PageInfo = 'page-info';
 
+interface DocPageOptions extends NormalPageOptions {
+  doc: DocProps,
+  chunkInfo: ChunkMap,
+  versionInfo: Record<string, Record<number, VersionInfo>>,
+  lastSaves: VersionInfo[],
+  canDefinePages?: boolean,
+  canEditDocuments?: boolean,
+  params: string[],
+  selectedPage?: number,
+  metadata: any[]
+}
+
+interface DocProps {
+  docInfo: DocInfoLegacy;
+  editors: number[];
+  numPages: number;
+  numTranscribedPages: number;
+  pages: Record<number, OverkillPageInfoItem>;
+  tableId: string;
+}
+
+type ChunkMap = Record<string, ChunkMapForWork>
+type ChunkMapForWork = Record<number, SegmentDataForChunk>
+type SegmentDataForChunk = Record<number, SegmentInfoItem>
+
+interface SegmentInfoItem {
+  start: StartEndInfo;
+  end: StartEndInfo;
+  errorCode: number;
+  errorMsg: string;
+  valid: boolean;
+}
+
+interface StartEndInfo {
+  seq: number;
+  column: number;
+  numColumns: number;
+  foliation: string;
+}
+
+export interface OverkillPageInfoItem {
+  doc_id: number;
+  foliation: string;
+  foliationIsSet: boolean;
+  id: number;
+  imageNumber: number;
+  imageSource: number;
+  imageUrl: string;
+  img_number: number;
+  isDeepZoom: boolean;
+  isTranscribed: boolean;
+  jpgUrl: string;
+  lang: number;
+  numCols: number;
+  num_cols: number;
+  pageId: number;
+  pageNumber: number;
+  page_number: number;
+  seq: number;
+  sequence: number;
+  thumbnailUrl: string;
+  type: number;
+  valid_from: string;
+  valid_until: string;
+}
+
+interface VersionInfo {
+  authorTid: number;
+  column: number;
+  description: string;
+  id: number;
+  isMinor: boolean;
+  isPublished: boolean;
+  isReview: boolean;
+  pageId: number;
+  timeFrom: string;
+  timeUntil: string;
+}
 
 export class DocPage extends NormalPage {
-  constructor(options) {
-    super(options)
 
-    let oc = new OptionsChecker({
-      context: 'DocumentPage',
-      optionsDefinition: {
-        doc: { type: 'object', required: true},
-        chunkInfo: {type: 'object', required: true},
-        versionInfo: { type: 'object', required: true},
-        lastSaves: { type: 'object', required: true},
-        canDefinePages: {type: 'boolean', default: false},
-        canEditDocuments: { type: 'boolean', default: false},
-        params: {type: 'array', default: []},
-        selectedPage: { type: 'number', default: 0}
-      }
-    })
+  options:DocPageOptions;
+  private chunkInfo: ChunkMap;
+  private doc: DocProps;
+  docInfo: DocInfoLegacy;
+  private docId: number;
+  pages: Record<number, OverkillPageInfoItem>;
+  private pageSeqToPageKeyMap: Record<number, number>;
+  pageArray: OverkillPageInfoItem[];
+  firstPage: number;
+  private lastPage: number;
+  private versionInfo: Record<string, Record<number, VersionInfo>>;
+  authors: any;
+  lastSaves: VersionInfo[];
+  private canDefinePages: boolean;
+  canEditDocuments: boolean;
+  private osd: OpenSeadragon.Viewer|null;
+  private selectedPage: number;
+  tabSlugs: Record<string, string>;
+  tabTitles: Record<string, string>;
+  initialTab: string;
+  private currentTab: string;
+  private initialPage: number;
+  docPageUrl: string;
+  private reestablishingPreviousState: boolean;
+  private initialState: { tab: string; selectedPage: number };
+  private pageTypes: Record<number, string> = [];
+  private entityData!: EntityDataInterface;
+  private schema!: SchemaInterface;
+  private thumbnails: string = 'none';
+  private thumbnailToggle!: MultiToggle;
+  private pageListPopoverDiv!: JQuery<HTMLElement>;
+  private pageInfoPopper: any;
+  private pageInfoPopperShown: boolean = false;
+  private split!: SplitInstance;
 
-    this.options = oc.getCleanOptions(options);
+  constructor(options: DocPageOptions) {
+    super(options);
+
+    const defaults = {
+      canDefinePages: false,
+      canEditDocuments: false,
+      params: [],
+      selectedPage: 0
+    }
+    this.options = { ...defaults, ...options};
 
     this.chunkInfo = this.options.chunkInfo;
     this.doc = this.options.doc;
@@ -72,7 +180,8 @@ export class DocPage extends NormalPage {
     this.docId = this.docInfo.id;
     this.pages = this.doc.pages;
 
-    Object.keys(this.pages).forEach( (pageId) => {
+    Object.keys(this.pages).forEach( (key) => {
+      const pageId = Number(key);
       if (this.pages[pageId]['foliation'] === null) {
         this.pages[pageId]['foliation'] = this.pages[pageId]['seq'].toString();
       }
@@ -87,16 +196,16 @@ export class DocPage extends NormalPage {
     this.firstPage = -1;
     this.lastPage = -1;
 
-    if (this.pageSeqToPageKeyMap.length !== 0) {
+    if (Object.keys(this.pageSeqToPageKeyMap).length !== 0) {
       this.firstPage = Math.min(...Object.keys(this.pageSeqToPageKeyMap).map( k => parseInt(k)));
       this.lastPage = Math.max(...Object.keys(this.pageSeqToPageKeyMap).map( k => parseInt(k)));
     }
 
     this.versionInfo = this.options.versionInfo;
-    this.authors = this.options.authorInfo;
+    // this.authors = this.options.authorInfo;
     this.lastSaves = this.options.lastSaves;
-    this.canDefinePages = this.options.canDefinePages;
-    this.canEditDocuments = this.options.canEditDocuments;
+    this.canDefinePages = this.options.canDefinePages ?? false;
+    this.canEditDocuments = this.options.canEditDocuments ?? false;
     this.osd = null;
     this.selectedPage = -1;
 
@@ -120,7 +229,7 @@ export class DocPage extends NormalPage {
     this.currentTab = this.initialTab;
     this.initialPage = this.firstPage;
     if (this.options.selectedPage !== 0) {
-      this.initialPage = this.options.selectedPage;
+      this.initialPage = this.options.selectedPage ?? 0;
     }
     this.docPageUrl = urlGen.siteDocPage(Tid.toBase36String(this.docId));
     // parse params
@@ -152,7 +261,7 @@ export class DocPage extends NormalPage {
     }
     this.initialState = { tab: this.initialTab, selectedPage: this.initialPage};
     window.history.replaceState(this.initialState, '', this.getUrlForTab(this.initialTab, this.initialPage));
-    this.restablishingPreviousState = false;
+    this.reestablishingPreviousState = false;
 
     // console.log(`Ready to init page`, window.history.state);
 
@@ -189,11 +298,8 @@ export class DocPage extends NormalPage {
    * Returns the url for the given tab id and selected page
    *
    * If selectedPage is null, the current selected page is used
-   * @param {string}tabId
-   * @param {number|null}selectedPage
-   * @returns {string}
    */
-  getUrlForTab(tabId, selectedPage = null) {
+  getUrlForTab(tabId: string, selectedPage: number|null = null): string {
     if (selectedPage === null) {
       selectedPage = this.selectedPage;
     }
@@ -218,14 +324,15 @@ export class DocPage extends NormalPage {
       case TabId_PageInfo:
         return `${this.docPageUrl}/${this.tabSlugs[tabId]}/${selectedPage}`;
     }
+    throw new Error(`Invalid tabId: ${tabId}`);
   }
 
-  genOnShowTab(tabId) {
+  genOnShowTab(tabId: string) {
     return () => {
       // console.log(`show.bs.tab ${tabId}`);
-      if (this.restablishingPreviousState) {
+      if (this.reestablishingPreviousState) {
         // console.log(`Re-establishing previous state, nothing to do`);
-        this.restablishingPreviousState = false;
+        this.reestablishingPreviousState = false;
         return;
       }
       if (this.currentTab !== tabId) {
@@ -238,7 +345,7 @@ export class DocPage extends NormalPage {
     }
   }
 
-  showTab(tabId) {
+  showTab(tabId: string) {
     $(`.btn-${tabId}`).tab('show').focus();
   }
 
@@ -252,7 +359,7 @@ export class DocPage extends NormalPage {
         console.log(`Using initial state`, this.initialState);
         state = this.initialState;
       }
-      this.restablishingPreviousState = true; // will be set to false by the tab's onShow event handler
+      this.reestablishingPreviousState = true; // will be set to false by the tab's onShow event handler
       this.selectPage(state.selectedPage, false);
       this.showTab(state.tab);
       document.title = this.getTitle();
@@ -271,7 +378,11 @@ export class DocPage extends NormalPage {
 
 
     this.entityData = await this.apiClient.getEntityData(this.docId);
-    this.schema = MetadataEditorSchema.getSchema(Entity.tDocument);
+    const schema =  MetadataEditorSchema.getSchema(Entity.tDocument);
+    if (schema === null) {
+      throw new Error('Schema not found for Document type');
+    }
+    this.schema =schema;
     console.log(`Entity Schema for type Document`, this.schema);
 
 
@@ -358,7 +469,9 @@ export class DocPage extends NormalPage {
 
     let pageNumberSpan = $('div.page-info');
 
+
     this.pageInfoPopper = Popper.createPopper(
+      // @ts-ignore this should be defined
       pageNumberSpan.get(0),
       this.pageListPopoverDiv.get(0),
       {
@@ -378,10 +491,14 @@ export class DocPage extends NormalPage {
       }
     })
 
+    const dividerElement = document.querySelector('div.divider') as HTMLElement;
+    if (dividerElement === null) {
+      throw new Error('Divider element not found');
+    }
     this.split = Split( {
       columnGutters: [{
         track: 1,
-        element: document.querySelector('div.divider'),
+        element: dividerElement,
       }],
       // onDragStart: (direction, track) => { console.log(`Dragging ${direction}:${track}`)},
       // onDragEnd: (direction, track) => {console.log(`Drag end ${direction}:${track}`)}
@@ -407,9 +524,9 @@ export class DocPage extends NormalPage {
     new WidgetAddPages('div.add-pages-widget-container', this.docId, this.doc.numPages);
     new SetLanguage({
       containerSelector: 'div.set-default-language-container',
-      defaultLanguage: this.doc.docInfo['lang'],
+      defaultLanguage: this.doc.docInfo.lang,
       confirmMessage: `Are you sure you want to set this language as the default transcription language for ALL pages?`,
-      onSetLanguage: async (newLanguage) => {
+      onSetLanguage: async (newLanguage: number) => {
         return this.setDefaultLanguageForAllPages(newLanguage);
       }
     });
@@ -425,7 +542,7 @@ export class DocPage extends NormalPage {
 
   }
 
-  setDefaultLanguageForAllPages(newLanguage) {
+  setDefaultLanguageForAllPages(newLanguage: number) {
     let pageDefs = [];
     for(let i = 0; i < this.doc.numPages; i++) {
       pageDefs.push({
@@ -441,21 +558,27 @@ export class DocPage extends NormalPage {
       ).done( () => {
           resolve('');
       }).fail((resp) => {
+        console.log('Could not change page settings', resp);
          reject('Could not change page settings');
         })
     });
   }
 
   maximizeElementsHeight() {
-
     let rightPanelHeight = $('div.right-panel').height();
     let tabsHeight = $('div.tabs').height();
+    if (rightPanelHeight === undefined || tabsHeight === undefined) {
+      return;
+    }
     let panelContentHeight = rightPanelHeight - tabsHeight;
     // console.log(`Right panel: ${rightPanelHeight}, tabs: ${tabsHeight}, content: ${panelContentHeight}`)
     $('div.right-panel .tab-pane').outerHeight(panelContentHeight);
 
     [ 'div.page-list-panel'].forEach( (panelSelector) => {
       let toolbarHeight = $(`${panelSelector} div.panel-toolbar`).height();
+      if (toolbarHeight === undefined) {
+        return;
+      }
       // console.log(`Panel ${panelSelector}: toolbar height = ${toolbarHeight}`);
       $(`${panelSelector} div.panel-content`).outerHeight(panelContentHeight - toolbarHeight -1 );
     })
@@ -469,18 +592,19 @@ export class DocPage extends NormalPage {
   }
 
   hidePageListPopover() {
+    // @ts-ignore
     this.pageListPopoverDiv.get(0).removeAttribute('data-show')
     this.pageInfoPopperShown = false
   }
 
   getPageListHtml(withThumbnails = true) {
-    let divs = []
+    let divs: string[] = []
     this.pageArray.forEach( (page) => {
-      let classes = [ `page-div`, `page-div-${page['sequence']}`, `type${page['type']}`]
-      if (page['foliationIsSet']) {
+      let classes = [ `page-div`, `page-div-${page.sequence}`, `type${page.type}`]
+      if (page.foliationIsSet) {
         classes.push('foliation-set');
       }
-      if (!page['isTranscribed']) {
+      if (!page.isTranscribed) {
         classes.push('without-transcription');
       }
 
@@ -497,7 +621,7 @@ export class DocPage extends NormalPage {
   }
 
 
-  setThumbnailSize(size) {
+  setThumbnailSize(size: number) {
     this.pageArray.forEach( (page) => {
       let thumbnailImg = $(`img.thumbnail-${page['sequence']}`);
       if (size === 0) {
@@ -510,7 +634,7 @@ export class DocPage extends NormalPage {
 
   loadThumbnails() {
     const parallelRequests = 5;
-    return new Promise( async (outerResolve) => {
+    return new Promise<void>( async (outerResolve): Promise<void> => {
       for (let i = 0; i < this.pageArray.length; i+=parallelRequests) {
         let promises = [];
         for (let j = 0; i+j < this.pageArray.length && j < parallelRequests; j++) {
@@ -520,7 +644,7 @@ export class DocPage extends NormalPage {
             outerResolve();
             return;
           }
-          promises.push(  new Promise( (resolve) => {
+          promises.push(  new Promise<void>( (resolve) => {
             let thumbnailUrl = page['thumbnailUrl'];
             if (thumbnailUrl === '') {
               thumbnailUrl = page['jpgUrl'];
@@ -550,6 +674,7 @@ export class DocPage extends NormalPage {
 
 
   showPageListPopover() {
+    // @ts-ignore
     this.pageListPopoverDiv.get(0).setAttribute('data-show', '');
     this.pageInfoPopper.update().then( () => {
       this.pageInfoPopperShown = true;
@@ -567,10 +692,11 @@ export class DocPage extends NormalPage {
     })
   }
 
-  getPageSequenceToPageKeyMap(pages) {
-    let map = []
+  getPageSequenceToPageKeyMap(pages:Record<number, OverkillPageInfoItem>) {
+    let map: Record<number, number> = [];
     Object.keys(pages).forEach( (pageKey) => {
-      map[pages[pageKey]['seq']] = pageKey
+      const pageId = Number(pageKey);
+      map[pages[pageId].seq] = pageId
     })
     return map
   }
@@ -583,10 +709,10 @@ export class DocPage extends NormalPage {
 
   async genContentHtml() {
 
-    let tabActiveClasses = (tabId) => {
+    let tabActiveClasses = (tabId: string) => {
       return this.initialTab===tabId ? 'active' : '';
     }
-    let buttonClasses = (tabId) => {
+    let buttonClasses = (tabId: string) => {
       let classes = [ `btn-${tabId}`];
       if (this.initialTab === tabId) {
         classes.push('active');
@@ -702,7 +828,7 @@ export class DocPage extends NormalPage {
    * @param pageSequence
    * @param changeBrowserHistory
    */
-  selectPage(pageSequence, changeBrowserHistory = false) {
+  selectPage(pageSequence: number, changeBrowserHistory = false) {
     // console.log(`Selecting page with page sequence ${pageSequence}`)
 
     if (pageSequence === -1 || this.selectedPage === pageSequence) {
@@ -714,11 +840,20 @@ export class DocPage extends NormalPage {
     let page = this.pages[pageIndex];
     // console.log(`Page`, page);
     if (this.osd !== null) {
+      console.log(`Destroying existing viewer for page ${this.selectedPage}`);
       this.osd.destroy();
+      this.osd = null;
+    }
+    const osdElement = document.getElementById('osd-div');
+    if (osdElement === null) {
+      console.error('OSD element not found, cannot initialize viewer');
+      return;
     }
 
-    let osdOptions = {
-      id: "osd-div",
+    console.log(`Initializing viewer for page ${pageSequence}`);
+
+    let osdOptions: OpenSeadragon.Options = {
+      element: osdElement,
       prefixUrl: urlGen.siteOpenSeadragonIconsPrefix(),
       minZoomLevel: 0.4,
       maxZoomLevel:5,
@@ -726,18 +861,17 @@ export class DocPage extends NormalPage {
       tileSources: {
         type: 'image',
         url: page['jpgUrl'],
-        buildPyramid: false,
-        homeFillsViewer: true
       },
-      preserveImageSizeOnResize: true
+      preserveImageSizeOnResize: true,
+      debugMode: false
     }
 
     let pageInfoDiv = $('div.page-info');
     pageInfoDiv.html(`<span class="page-info-foliation">${ApmPage.genLoadingMessageHtml('')}</span>`);
-    this.osd = new OpenSeadragon(osdOptions);
-    // console.log(`Loading image...`)
+    this.osd = OpenSeadragon(osdOptions);
+    console.log(`Loading image...`)
     this.osd.addHandler('open', () => {
-      // console.log(`Image loaded`);
+      console.log(`Image loaded`);
       pageInfoDiv.html(`<span title="Click to show page list" class="page-info-foliation">${page['foliation']}</span>`);
     })
     $('.page-selected').removeClass('page-selected');
@@ -749,7 +883,7 @@ export class DocPage extends NormalPage {
     let foliationEditor = new EditableTextField({
       containerSelector: `div.page-info-panel span.foliation-span`,
       initialText: page['foliation'],
-      onConfirm: (ev) => {
+      onConfirm: (ev:any) => {
         let data = ev.originalEvent.detail;
         let newText = trimWhiteSpace(data.newText);
         if (newText === '') {
@@ -783,18 +917,12 @@ export class DocPage extends NormalPage {
   }
 
 
-  /**
-   *
-   * @param {number}pageIndex
-   * @param {string}newFoliation
-   * @return {Promise<void>}
-   */
-  async saveFoliation(pageIndex, newFoliation) {
+  async saveFoliation(pageIndex: number, newFoliation: string): Promise<void> {
     let page = this.pages[pageIndex]
-    await this.apiClient.savePageSettings(page['pageId'], newFoliation, page['type'], page['lang'])
+    await this.apiClient.savePageSettings(page.pageId, newFoliation, page.type, page.lang)
   }
 
-  getPageInfoHtml(pageIndex) {
+  getPageInfoHtml(pageIndex: number) {
     let page = this.pages[pageIndex]
     let infoItems = []
     infoItems.push(`<strong>${tr('Page Id')}</strong>: ${page['pageId']}`)
@@ -824,14 +952,14 @@ export class DocPage extends NormalPage {
     return infoItems.map( item => `<div class="page-info-item">${item}</div>`).join('')
   }
 
-  getAdminHtml() {
-
-    let defineDocPagesUrl = urlGen.siteDocDefinePages(Tid.toBase36String(this.docId));
-    let definePagesHtml = this.canDefinePages ?
-      `<a class="btn btn-sm btn-primary" href="${defineDocPagesUrl}">Define pages</a>` : '';
-
-    return `${definePagesHtml}`;
-  }
+  // getAdminHtml() {
+  //
+  //   let defineDocPagesUrl = urlGen.siteDocDefinePages(Tid.toBase36String(this.docId));
+  //   let definePagesHtml = this.canDefinePages ?
+  //     `<a class="btn btn-sm btn-primary" href="${defineDocPagesUrl}">Define pages</a>` : '';
+  //
+  //   return `${definePagesHtml}`;
+  // }
   async genWorkInfoHtml() {
     if (Object.keys(this.chunkInfo).length === 0) {
       return '<ul>No chunk start/end marks found</ul>';
@@ -848,7 +976,8 @@ export class DocPage extends NormalPage {
             <a href="${urlGen.siteWorkPage(workDareId)}"><em>${workData['title']}</em> (${workDareId})</a>`
       html += '<ul><li>';
       let tdArray = [];
-      for (const chunkNumber in chunkInfo[workDareId]) {
+      for (const chunkNumberKey in chunkInfo[workDareId]) {
+        const chunkNumber = Number(chunkNumberKey);
         if (!chunkInfo[workDareId].hasOwnProperty(chunkNumber)) {
           continue;
         }
@@ -861,8 +990,10 @@ export class DocPage extends NormalPage {
           }
           let segmentHtml = '';
           let segmentInfo = chunkInfo[workDareId][chunkNumber][segmentNumber];
-          let startLabel = segmentInfo['start'] === '' ? '???' : this.getPageLinkFromSegmentInfo(segmentInfo['start']);
-          let endLabel = segmentInfo['end'] === '' ? '???' : this.getPageLinkFromSegmentInfo(segmentInfo['end']);
+          // @ts-ignore TODO: check that the chunk map generated in the server sends '' for segments without a start mark
+          let startLabel = segmentInfo['start'] === '' ? '???' : this.getPageLinkFromSegmentInfo(segmentInfo.start);
+          // @ts-ignore
+          let endLabel = segmentInfo['end'] === '' ? '???' : this.getPageLinkFromSegmentInfo(segmentInfo.end);
           segmentHtml += startLabel + ' &ndash; ' + endLabel;
           if (!segmentInfo['valid']) {
             segmentHtml += ' <a href="#" title="' + segmentInfo['errorMsg'] + '">*</a>';
@@ -888,7 +1019,7 @@ export class DocPage extends NormalPage {
     }
     return html;
   }
-  async getChunkLabelHtml(work, chunk) {
+  async getChunkLabelHtml(work: string, chunk: number) {
     let dataContent
     if (!this.isChunkValid(work, chunk)) {
       dataContent = 'Not defined correctly';
@@ -896,8 +1027,8 @@ export class DocPage extends NormalPage {
     else {
       let formattedTime = ApmFormats.time(TimeString.toDate(this.versionInfo[work][chunk]['timeFrom']))
       let authorName = '';
-      if (this.versionInfo[work][chunk].authorId !== 0) {
-        let authorData = await this.apiClient.getPersonEssentialData(this.versionInfo[work][chunk]['authorTid'])
+      if (this.versionInfo[work][chunk].authorTid !== 0) {
+        let authorData = await this.apiClient.getPersonEssentialData(this.versionInfo[work][chunk].authorTid)
         authorName = authorData['name']
       }
       dataContent = '<b>Last change:</b><br/>' + formattedTime + '<br/>' + authorName;
@@ -905,7 +1036,7 @@ export class DocPage extends NormalPage {
     return `<a href="${urlGen.siteChunkPage(work, chunk)}" target="_blank" data-toggle="popover" title="${work}-${chunk}" data-content="${dataContent}">${chunk}</a>`
   }
 
-  isChunkValid(work, chunk) {
+  isChunkValid(work: string, chunk: number) {
     for (const segmentNumber in this.chunkInfo[work][chunk]) {
       if (!this.chunkInfo[work][chunk][segmentNumber].valid) {
         return false;
@@ -913,19 +1044,15 @@ export class DocPage extends NormalPage {
     }
     return true;
   }
-  getChunkLink(work, chunk) {
+  getChunkLink(work: string, chunk: number) {
     let icon = '<span class="glyphicon glyphicon-new-window"></span>';
     // @ts-ignore
     return '<a href="' + urlGen.siteChunkPage(work, chunk) + '" target="_blank" title="Open chunk page ' +
       work + '-' + chunk + ' in new tab">' +
       icon + '</a>';
   }
-  /**
-   *
-   * @param {int} authorTid
-   * @return {Promise<string>}
-   */
-  async getAuthorLink(authorTid) {
+
+  async getAuthorLink(authorTid: number) {
     if (authorTid === 0) {
       return 'n/a';
     }
@@ -947,21 +1074,21 @@ export class DocPage extends NormalPage {
     html += '</ol>';
     return html;
   }
-  getPageLinkFromSegmentInfo(segmentInfo) {
-    let foliation = segmentInfo['foliation'];
-    let pageSeq = segmentInfo['seq'];
+  getPageLinkFromSegmentInfo(startEndInfo: StartEndInfo) {
+    let foliation = startEndInfo.foliation;
+    let pageSeq = startEndInfo.seq;
     let label = foliation;
-    if (segmentInfo['numColumns'] > 1) {
-      label += ' c' + segmentInfo['column'];
+    if (startEndInfo.numColumns > 1) {
+      label += ' c' + startEndInfo.column;
     }
     return this.getPageLink(pageSeq, label);
   }
 
-  getPageLink(pageSeq, label) {
+  getPageLink(pageSeq: number, label: string) {
     return `<a href="#" title= "${tr('Click to select page')}" class="page-select-${pageSeq}">${label}</a>`
   }
 
-  getPageLinkFromPageId(pageId, col) {
+  getPageLinkFromPageId(pageId: number, col: number) {
     let pageInfo = this.pages[pageId];
     let foliation = pageInfo.foliation;
     let pageSeq = pageInfo.sequence;
@@ -974,4 +1101,5 @@ export class DocPage extends NormalPage {
 }
 
 // Load as global variable so that it can be referenced in the Twig template
+// @ts-ignore
 window.DocPage = DocPage

@@ -2,12 +2,8 @@
 
 export class TimeString {
 
-  /**
-   *
-   * @param {string}timeString
-   * @return Date
-   */
-  static toDate(timeString) {
+
+  static toDate(timeString:string): Date {
     return new Date(this.toJsTimeStamp(timeString));
   }
 
@@ -15,10 +11,8 @@ export class TimeString {
    * Returns a JS timestamp (number of milliseconds since epoch)
    * out of TimeString
    *
-   * @param timeString
-   * @return {number}
    */
-  static toJsTimeStamp(timeString) {
+  static toJsTimeStamp(timeString: string): number {
     let [date, time]= timeString.split(' ');
 
     let [ year, month, day] = date.split('-');
@@ -29,14 +23,14 @@ export class TimeString {
 
 
 
-    let milliSecs = Math.round(microSecs / 1000);
+    let milliSecs = Math.round(parseInt(microSecs) / 1000);
 
     return Date.UTC(
       parseInt(year),parseInt(month) -1, parseInt(day),
       parseInt(hours), parseInt(minutes), parseInt(secs), milliSecs)
   }
 
-  static compactEncode(timeString) {
+  static compactEncode(timeString: string): string {
     return String(timeString)
       .replaceAll(' ', '')
       .replaceAll('-', '')

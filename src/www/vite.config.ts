@@ -42,7 +42,7 @@ export default defineConfig({
         ChunkPage: resolve(__dirname, 'js/pages/ChunkPage.ts'),
 
         // Ancillary pages that should disappear
-        DocPage: resolve(__dirname, 'js/pages/DocPage.js'),
+        DocPage: resolve(__dirname, 'js/pages/DocPage.ts'),
         DocDefPages: resolve(__dirname, 'js/pages/DocDefPages.js'),
 
         EditionComposer: resolve(__dirname, 'js/EditionComposer/EditionComposer.ts'),

@@ -18,7 +18,7 @@
 
 import * as Entity from './constants/Entity';
 import {Tid} from './Tid/Tid';
-import {TimeString} from "@/toolbox/TimeString.mjs";
+import {TimeString} from "@/toolbox/TimeString";
 
 export class ApmUrlGenerator {
   private base: string = '';

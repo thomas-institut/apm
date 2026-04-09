@@ -31,3 +31,14 @@ export interface DocInfo {
   language: number;
   type: number;
 }
+
+export interface DocInfoLegacy {
+  deep_zoom: boolean;
+  doc_type: number;
+  id: number;
+  image_source: number;
+  image_source_data: string;
+  lang: number;
+  tid: number;
+  title: string;
+}

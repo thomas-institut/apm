@@ -863,7 +863,7 @@ export class DocPage extends NormalPage {
         url: page['jpgUrl'],
       },
       preserveImageSizeOnResize: true,
-      debugMode: false
+      drawer: 'canvas',
     }
 
     let pageInfoDiv = $('div.page-info');

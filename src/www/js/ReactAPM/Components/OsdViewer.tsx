@@ -1,4 +1,3 @@
-import {randomAlphaString} from "@/toolbox/ToolBox";
 import React, {useEffect, useRef} from "react";
 import OpenSeadragon from 'openseadragon';
 
@@ -11,12 +10,11 @@ interface OsdViewerProps {
 }
 
 export default function OsdViewer(props: OsdViewerProps) {
-  const divId = useRef(randomAlphaString(20));
-  const osdInstance = useRef<OpenSeadragon.Viewer>(null);
+   const osdInstance = useRef<OpenSeadragon.Viewer>(null);
   const divRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (divRef.current && !osdInstance.current) {
+    if (divRef.current && osdInstance.current === null) {
       const tileSource = props.isDeepZoom ? props.url : {
         type: 'image',
         url: props.url,
@@ -29,7 +27,8 @@ export default function OsdViewer(props: OsdViewerProps) {
         maxZoomLevel:5,
         showRotationControl: true,
         tileSources: tileSource,
-        preserveImageSizeOnResize: true
+        preserveImageSizeOnResize: true,
+        drawer: 'canvas',
       });
       if (props.onOpen) {
         osdInstance.current.addHandler('open', props.onOpen);
@@ -41,7 +40,7 @@ export default function OsdViewer(props: OsdViewerProps) {
         osdInstance.current = null;
       }
     }
-  })
+  }, [props.url, props.isDeepZoom])
 
-  return <div id={divId.current} style={{width: '100%', height: '100%'}} ref={divRef}></div>
+  return <div style={{width: '100%', height: '100%'}} ref={divRef}></div>
 }

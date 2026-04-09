@@ -488,8 +488,9 @@ END;
             return [];
         }
         $manifest = json_decode($manifestFileContents, true);
+//        $this->logger->debug("Vite manifest: ", [ 'entryPoints' => array_keys($manifest)]);
         if (!isset($manifest[$entryPoint])) {
-            $this->logger->error("Page $entryPoint not found in Vite manifest");
+            $this->logger->error("Page '$entryPoint' not found in Vite manifest");
             return [];
         }
 

@@ -426,7 +426,7 @@ export class ApmApiClient {
    * @param {string}lang
    * @return {Promise<any>}
    */
-  async savePageSettings(pageId: number, foliation: string, type: number, lang: string): Promise<any> {
+  async savePageSettings(pageId: number, foliation: string, type: number, lang: number): Promise<any> {
     return this.post(urlGen.apiUpdatePageSettings(pageId), {
       foliation: foliation, type: type, lang: lang
     }, true);

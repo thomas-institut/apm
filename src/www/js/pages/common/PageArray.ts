@@ -1,3 +1,4 @@
+import {OverkillPageInfoItem} from "@/pages/DocPage";
 
 
 export class PageArray {
@@ -6,15 +7,11 @@ export class PageArray {
    * Creates an array of pageInfo objects from a document page
    * object from the server
    *
-   * @param pageObject
-   * @param {string}orderBy
-   * @param {boolean}asc
-   * @return {*[]}
    */
-  static getPageArray(pageObject, orderBy = '', asc = true) {
-    let pageArray = []
+  static getPageArray(pageObject: Record<number, OverkillPageInfoItem>, orderBy = '', asc = true): OverkillPageInfoItem[] {
+    let pageArray: OverkillPageInfoItem[] = []
     Object.keys(pageObject).forEach( (pageKey) => {
-      pageArray.push(pageObject[pageKey])
+      pageArray.push(pageObject[Number(pageKey)])
     })
     if (orderBy === '') {
       return pageArray
@@ -23,9 +20,11 @@ export class PageArray {
     if (allowedOrderKeys.indexOf(orderBy) !== -1) {
       return pageArray.sort( (a, b) => {
         if (asc) {
-          return a[orderBy] > b[orderBy]
+          // @ts-ignore
+          return a[orderBy] - b[orderBy]
         }
-        return a[orderBy] < b[orderBy]
+        // @ts-ignore
+        return b[orderBy] - b[orderBy]
       })
     }
     console.warn(`Invalid order key '${orderBy}'`)

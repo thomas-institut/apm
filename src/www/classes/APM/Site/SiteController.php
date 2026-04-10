@@ -458,8 +458,8 @@ END;
                 $viteJsImports = [...$viteJsImports, ...$viteImports['js']];;
                 $viteCssImports = [...$viteCssImports, ...$viteImports['css']];
             }
-            $this->logger->debug("Vite JS imports: " . implode(', ', $viteJsImports));
-            $this->logger->debug("Vite CSS imports: " . implode(', ', $viteCssImports));
+//            $this->logger->debug("Vite JS imports: " . implode(', ', $viteJsImports));
+//            $this->logger->debug("Vite CSS imports: " . implode(', ', $viteCssImports));
             foreach ($viteJsImports as $import) {
                 $viteJsImportsHtml .= <<<END
     <script type="module" src="$baseUrl/dist/$import"></script>
@@ -471,7 +471,7 @@ END;
 END;
             }
         }
-        $this->logger->debug("Vite imports HTML: " . $viteJsImportsHtml);
+//        $this->logger->debug("Vite imports HTML: " . $viteJsImportsHtml);
         return [$viteJsImportsHtml, $viteCssImportsHtml];
     }
 
@@ -488,8 +488,9 @@ END;
             return [];
         }
         $manifest = json_decode($manifestFileContents, true);
+//        $this->logger->debug("Vite manifest: ", [ 'entryPoints' => array_keys($manifest)]);
         if (!isset($manifest[$entryPoint])) {
-            $this->logger->error("Page $entryPoint not found in Vite manifest");
+            $this->logger->error("Page '$entryPoint' not found in Vite manifest");
             return [];
         }
 

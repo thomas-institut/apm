@@ -42,14 +42,14 @@ export default defineConfig({
         ChunkPage: resolve(__dirname, 'js/pages/ChunkPage.ts'),
 
         // Ancillary pages that should disappear
-        DocPage: resolve(__dirname, 'js/pages/DocPage.js'),
+        DocPage: resolve(__dirname, 'js/pages/DocPage.ts'),
         DocDefPages: resolve(__dirname, 'js/pages/DocDefPages.js'),
 
         EditionComposer: resolve(__dirname, 'js/EditionComposer/EditionComposer.ts'),
         MceComposer: resolve(__dirname, 'js/MceComposer/MceComposer.ts'),
         AutomaticCollationTable: resolve(__dirname, 'js/pages/AutomaticCollationTable/AutomaticCollationTable.ts'),
         PageViewer: resolve(__dirname, 'js/pages/PageViewer/PageViewer.js'),
-        React_Main: resolve(__dirname, 'js/reactAPM/index.tsx'),
+        React_Main: resolve(__dirname, 'js/ReactAPM/index.tsx'),
       },
       output: {
         entryFileNames: '[name]-[hash].js',
@@ -57,8 +57,8 @@ export default defineConfig({
         assetFileNames: '[name]-[hash][extname]',
       }
     },
-
   },
+  // @ts-ignore
   test: {
     globals: true,
     projects: ['test/js'],

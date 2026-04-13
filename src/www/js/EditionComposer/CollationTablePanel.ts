@@ -632,8 +632,10 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   _setupPanelContent() {
     this.verbose && console.log(`Setting up CT panel content`);
-    this.replaceContent(`Loading collation table...`);
-    this.popoversSetup();
+    if (this.tableEditor === undefined) {
+      this.replaceContent(`Loading collation table...`);
+      this.popoversSetup();
+    }
     this.setupTableEditor();
     this.verbose && console.log(`Setting tableEditor edit mode '${this.tableEditModeToRestore}'`);
     this.tableEditor.setEditMode(this.tableEditModeToRestore, false);
@@ -668,7 +670,15 @@ export class CollationTablePanel extends PanelWithToolbar {
         title: title, values: tokenArray, isEditable: isEditable
       });
     }
-    console.log(`RowDefinition`, rowDefinition)
+    console.log(`RowDefinition`, rowDefinition);
+    if (this.tableEditor !== undefined) {
+      // no need to do a full setup, just update the data
+      this.tableEditor.setRowDefinition(rowDefinition);
+      this.tableEditor.setGroupedColumns(this.ctData.groupedColumns);
+      this.tableEditor.redrawTable();
+      return;
+    }
+
     let icons = TableEditor.genTextIconSet();
     icons.editCell = this.icons.editText;
     icons.confirmCellEdit = this.icons.confirmEdit;

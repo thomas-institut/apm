@@ -349,6 +349,15 @@ export class TableEditor<T> {
     });
   }
 
+  setRowDefinition(rowDefinition: RowDefinition<T>[]) {
+    this.rowDefinition = rowDefinition;
+    this.matrix.setFromArray(this.rowDefinition.map(r => r.values));
+    this.editFlagMatrix = new Matrix<boolean>(this.matrix.nRows, this.matrix.nCols, false);
+  }
+
+  setGroupedColumns(groupedColumns: number[]) {
+    this.columnSequence =  new SequenceWithGroups(this.matrix.nCols, groupedColumns);
+  }
 
   static genTextIconSet() {
     return defaultIcons;
@@ -701,6 +710,7 @@ export class TableEditor<T> {
    */
   deleteSingleColumnData(col: number) {
     this.matrix.deleteColumn(col);
+    this.editFlagMatrix.deleteColumn(col);
     this.columnSequence.removeNumber(col);
   }
 

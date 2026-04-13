@@ -82,7 +82,8 @@ export class PageViewer extends ApmPage {
         maxZoomLevel: 5,
         showRotationControl: true,
         defaultZoomLevel: this.layout.zoom,
-        preserveImageSizeOnResize: true
+        preserveImageSizeOnResize: true,
+        drawer: 'canvas',
       }
       if (options.deepZoom) {
         osdOptions.tileSources = options.imageUrl

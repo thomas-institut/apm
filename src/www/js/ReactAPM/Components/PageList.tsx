@@ -113,6 +113,253 @@ export default function PageList({ pageInfoArray, onPageClick, thumbnails= {init
     );
 }
 
+// Ausgelagerter Editor für einzelne Ranges – stabiler Komponententyp verhindert Remounts beim Tippen
+const RangeEditor: React.FC<{
+    r: {
+        id: number;
+        from: number;
+        to: number;
+        type: 'text' | 'front' | 'back';
+        foliate: boolean;
+        textFoliationType?: number;
+        textFoliationStart?: number;
+        textFoliationPrefix?: string;
+        textFoliationSuffix?: string;
+        textFoliationReverse?: boolean;
+        autoFrontBack?: boolean;
+        createCols?: boolean;
+        colsNumber?: number;
+    };
+    index: number;
+    numPages: number;
+    updateRange: (id: number, patch: Partial<any>) => void;
+    removeRange: (id: number) => void;
+    focusedRangeId: number | null;
+    setFocusedRangeId: (id: number | null) => void;
+    ranges: Array<any>;
+    preserveWindowScroll: (fn: () => void) => void;
+}> = ({ r, index, numPages, updateRange, removeRange, focusedRangeId, setFocusedRangeId, ranges, preserveWindowScroll }) => {
+    // Lokaler Eingabe-Puffer, damit Eingaben den Fokus nicht verlieren
+    const [fromInput, setFromInput] = useState<string>(() => String(r.from));
+    const [toInput, setToInput] = useState<string>(() => String(r.to));
+
+    // Wenn sich der Range von außen ändert, Eingabefelder synchronisieren
+    useEffect(() => {
+        setFromInput(String(r.from));
+    }, [r.from]);
+    useEffect(() => {
+        setToInput(String(r.to));
+    }, [r.to]);
+
+    const commitFrom = useCallback(() => {
+        const n = parseInt(fromInput, 10);
+        if (!Number.isNaN(n)) {
+            if (n !== r.from) updateRange(r.id, { from: n });
+        } else {
+            // Ungültige Eingabe zurücksetzen auf aktuellen Wert
+            setFromInput(String(r.from));
+        }
+    }, [fromInput, r.id, r.from, updateRange]);
+
+    const commitTo = useCallback(() => {
+        const n = parseInt(toInput, 10);
+        if (!Number.isNaN(n)) {
+            if (n !== r.to) updateRange(r.id, { to: n });
+        } else {
+            setToInput(String(r.to));
+        }
+    }, [toInput, r.id, r.to, updateRange]);
+
+    const pr = new PageRange(
+        Math.max(1, Math.min(r.from, r.to)),
+        Math.min(numPages, Math.max(r.from, r.to)),
+        numPages
+    );
+    const textFoliationPreview = r.type === 'text' && r.foliate && !r.autoFrontBack
+        ? pr.toStringWithFoliation('', ' - ', '', r.textFoliationType!, r.textFoliationStart!, (r.textFoliationPrefix||'').replace(/\s+/g,''), (r.textFoliationSuffix||'').replace(/\s+/g,''), !!r.textFoliationReverse)
+        : '';
+    const fbFoliationPreview = r.foliate && (r.type === 'front' || r.type === 'back')
+        ? pr.toStringWithFoliation('', ' - ', '', FoliationType.FOLIATION_CONSECUTIVE, 1, 'x')
+        : '';
+
+    const isFocused = focusedRangeId === r.id;
+
+    return (
+        <div
+            className="card mb-2"
+            onClick={() => setFocusedRangeId(r.id)}
+            onFocusCapture={() => setFocusedRangeId(r.id)}
+            onBlurCapture={(e) => {
+                // nur zurücksetzen, wenn Fokus die Karte komplett verlässt
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                    setFocusedRangeId(null);
+                }
+            }}
+            style={{
+                padding: '10px',
+                border: '1px solid ' + (isFocused ? '#0d6efd' : '#999'),
+                borderRadius: 8,
+                boxShadow: isFocused ? '0 0 0 0.2rem rgba(13,110,253,.25)' : 'none'
+            }}
+        >
+            <div className="d-flex justify-content-between align-items-center mb-2">
+                <span className="badge bg-secondary text-uppercase">{r.type}</span>
+                <button className="btn btn-sm btn-outline-danger" onClick={() => removeRange(r.id)}>Remove</button>
+            </div>
+            <div className="d-flex align-items-center gap-3 mb-2 flex-wrap">
+                <input
+                    type="number"
+                    min={1}
+                    max={numPages}
+                    value={fromInput}
+                    onChange={e => {
+                        const v = e.target.value;
+                        setFromInput(v);
+                        const n = parseInt(v, 10);
+                        if (!Number.isNaN(n) && n !== r.from) updateRange(r.id, { from: n });
+                    }}
+                    onBlur={commitFrom}
+                    onKeyDown={e => { if (e.key === 'Enter') commitFrom(); }}
+                    className="form-control form-control-sm rounded-2"
+                    style={{ width: 60 }}
+                />
+                <label className="ms-2 me-2">–</label>
+                {/* To-Input mit oben positioniertem Foliation-Toggle-Button (volle Breite wie das Input) */}
+                <div className="position-relative d-inline-block" style={{ width: 60 }}>
+                    {(((r.type === 'text') && !r.autoFrontBack) || (r.type !== 'text')) && (
+                        <button
+                            type="button"
+                            className={`position-absolute w-100 btn btn-sm ${r.foliate ? 'btn-primary' : 'btn-outline-secondary'}`}
+                            style={{ top: -30, lineHeight: 0.5, fontSize: '0.7em', borderColor: '#000', borderWidth: 1, borderStyle: 'solid' }}
+                            title="Foliation"
+                            onClick={() => preserveWindowScroll(() => updateRange(r.id, { foliate: !r.foliate }))}
+                        >
+                            Foliation
+                        </button>
+                    )}
+                    <input
+                        type="number"
+                        min={1}
+                        max={numPages}
+                        value={toInput}
+                        onChange={e => {
+                            const v = e.target.value;
+                            setToInput(v);
+                            const n = parseInt(v, 10);
+                            if (!Number.isNaN(n) && n !== r.to) updateRange(r.id, { to: n });
+                        }}
+                        onBlur={commitTo}
+                        onKeyDown={e => { if (e.key === 'Enter') commitTo(); }}
+                        className="form-control form-control-sm rounded-2"
+                        style={{ width: '100%' }}
+                    />
+                </div>
+                <span className={`ms-3 ${r.type === 'text' ? 'text-primary' : 'text-muted'}`}>
+                    {(textFoliationPreview || fbFoliationPreview) && (
+                        <>
+                            {' '}{textFoliationPreview || fbFoliationPreview}
+                        </>
+                    )}
+                </span>
+            </div>
+
+            {/* TEXT-spezifische Optionen */}
+            {r.type === 'text' ? (
+                <>
+                    {!r.autoFrontBack && (
+                        <>
+                            {r.foliate && (
+                                <div
+                                    className="mt-2 p-2"
+                                    style={{
+                                        border: '1px solid #999',
+                                        background: '#f8f9fa',
+                                        borderRadius: 8,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        minHeight: 44
+                                    }}
+                                >
+                                    <div className="d-flex align-items-center flex-wrap gap-3 mb-2">
+                                        <label className="me-1 small text-muted">Foliation Type</label>
+                                        <select
+                                            className="form-select form-select-sm rounded-2"
+                                            style={{ width: 220 }}
+                                            value={r.textFoliationType}
+                                            onChange={(e) => updateRange(r.id, { textFoliationType: parseInt(e.target.value) })}
+                                        >
+                                            <option value={FoliationType.FOLIATION_CONSECUTIVE}>consecutive (1,2,3,...)</option>
+                                            <option value={FoliationType.FOLIATION_RECTOVERSO}>recto/verso (1r,1v,...)</option>
+                                            <option value={FoliationType.FOLIATION_LEFTRIGHT}>left/right (1l,1r,...)</option>
+                                            <option value={FoliationType.FOLIATION_AB}>a/b (1a,1b,...)</option>
+                                        </select>
+                                        <label className="me-1 small text-muted">Start</label>
+                                        <input
+                                            type="number"
+                                            min={1}
+                                            className="form-control form-control-sm rounded-2"
+                                            value={r.textFoliationStart}
+                                            onChange={(e) => updateRange(r.id, { textFoliationStart: Math.max(1, Number(e.target.value)) })}
+                                            style={{ width: 60 }}
+                                        />
+                                        <label className="me-1 small text-muted">Prefix</label>
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm rounded-2"
+                                            value={r.textFoliationPrefix}
+                                            onChange={(e) => updateRange(r.id, { textFoliationPrefix: e.target.value })}
+                                            style={{ width: 100 }}
+                                        />
+                                        <label className="me-1 ms-1 small text-muted">Suffix</label>
+                                        <input
+                                            type="text"
+                                            className="form-control form-control-sm rounded-2"
+                                            value={r.textFoliationSuffix}
+                                            onChange={(e) => updateRange(r.id, { textFoliationSuffix: e.target.value })}
+                                            style={{ width: 100 }}
+                                        />
+                                        <label className="d-flex align-items-center gap-2 small text-muted">
+                                            <input
+                                                type="checkbox"
+                                                checked={!!r.textFoliationReverse}
+                                                onChange={(e) => updateRange(r.id, { textFoliationReverse: e.target.checked })}
+                                            />
+                                            Reverse
+                                        </label>
+                                    </div>
+                                </div>
+                            )}
+                            {/* Spaltenzuweisung optional (wie zuvor global, jetzt je Text-Range) */}
+                            <div className="mt-2">
+                                <label className="d-flex align-items-center gap-2">
+                                    <input type="checkbox" checked={!!r.createCols}
+                                           onChange={e => updateRange(r.id, { createCols: e.target.checked })} />
+                                    <input
+                                        type="number"
+                                        min={1}
+                                        className="form-control form-control-sm rounded-2"
+                                        style={{ width: 60 }}
+                                        disabled={!r.createCols}
+                                        value={r.colsNumber ?? 1}
+                                        onChange={e => updateRange(r.id, { colsNumber: Math.max(1, Number(e.target.value)) })}
+                                    />
+                                    <span className="small text-muted">column(s) per page</span>
+                                </label>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Auto Front/Back-Option wurde auf Wunsch vollständig entfernt (nie verfügbar). */}
+                    {/* Keine weitere Vorschau innerhalb der Text-Range – Einstellungen erfolgen in den automatisch erzeugten Front/Back-Ranges */}
+                </>
+            ) : (
+                // Nicht-Text: nur einfache Foliation-Checkbox (keine Optionen)
+                <div className="mb-2"></div>
+            )}
+        </div>
+    );
+};
+
 const PageItem = memo(
     function PageItem({ page, withThumbnail, thumbnailSize, isSelected, onClick }: PageItemProps) {
 
@@ -204,6 +451,16 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
 
     const [ranges, setRanges] = useState<RangeConfig[]>([]);
     const [nextId, setNextId] = useState(1);
+    // Aktuell fokussierte Range (für blauen Rahmen)
+    const [focusedRangeId, setFocusedRangeId] = useState<number | null>(null);
+
+    // Helfer: Scroll-Position konservieren, um "Ruckeln" zu vermeiden
+    const preserveWindowScroll = (fn: () => void) => {
+        const y = window.scrollY || document.documentElement.scrollTop || 0;
+        fn();
+        // nach Render zurückscrollen
+        setTimeout(() => window.scrollTo({ top: y, behavior: 'instant' as any }), 0);
+    };
 
     // Abdeckung berechnen
     const coveredPages = React.useMemo(() => {
@@ -223,6 +480,47 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
         const from = Math.max(1, Math.min(r.from, r.to));
         const to = Math.min(numPages, Math.max(r.from, r.to));
         return { from, to };
+    };
+
+    // Sync: passt Frontmatter.to an das kleinste Text.from - 1 an
+    //       und Backmatter.from an das größte Text.to + 1 – automatisch
+    const syncFrontBack = (list: RangeConfig[]): RangeConfig[] => {
+        const texts = list.filter(r => r.type === 'text');
+        if (texts.length === 0) return list;
+
+        // min(Text.from) und max(Text.to) mit Normalisierung berechnen
+        let minTextFrom = Infinity;
+        let maxTextTo = -Infinity;
+        for (const t of texts) {
+            const nf = Math.max(1, Math.min(t.from, t.to));
+            const nt = Math.min(numPages, Math.max(t.from, t.to));
+            if (nf < minTextFrom) minTextFrom = nf;
+            if (nt > maxTextTo) maxTextTo = nt;
+        }
+
+        // Falls keine sinnvollen Werte (sollte nicht passieren, da texts.length>0)
+        if (!Number.isFinite(minTextFrom) || !Number.isFinite(maxTextTo)) return list;
+
+        let changed = false;
+        const mapped = list.map(r => {
+            if (r.type === 'front') {
+                const desiredTo = Math.max(1, Math.min(numPages, minTextFrom - 1));
+                if (r.to !== desiredTo) {
+                    changed = true;
+                    return { ...r, to: desiredTo };
+                }
+            }
+            if (r.type === 'back') {
+                const desiredFrom = Math.max(1, Math.min(numPages, maxTextTo + 1));
+                if (r.from !== desiredFrom) {
+                    changed = true;
+                    return { ...r, from: desiredFrom };
+                }
+            }
+            return r;
+        });
+
+        return changed ? mapped : list;
     };
 
     // Bereich hinzufügen mit vorgegebenem Typ und intelligenten Initialwerten
@@ -261,20 +559,43 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
 
         let initFrom = nextStart;
         let initTo = numPages;
+        const hasText = ranges.some(r => r.type === 'text');
 
         if (type === 'front') {
-            if (ranges.length > 0 && minOtherFrom !== null) {
+            if (!hasText) {
+                // Wunsch: Ohne bestehende Text-Range soll Frontmatter initial 1..5 sein
+                initFrom = 1;
+                initTo = Math.min(5, numPages);
+            } else if (ranges.length > 0 && minOtherFrom !== null) {
                 // Front vor alle existierenden Ranges legen
                 initFrom = 1;
                 initTo = Math.max(1, Math.min(numPages, minOtherFrom - 1));
                 if (initTo < initFrom) initTo = 1; // Fallback 1..1
             } else {
-                // Erste Range → start bei 1 bis Ende
+                // Standard
                 initFrom = 1;
                 initTo = numPages;
             }
         } else if (type === 'text') {
-            if (minBackFrom !== null) {
+            // Spezielle Startwerte für die allererste Text-Range, wenn weder Front- noch Backmatter existieren:
+            // from = 6, to = numPages - 3 (beides innerhalb gültiger Grenzen clampen)
+            const hasFrontMatter = ranges.some(r => r.type === 'front');
+            const hasBackMatter = ranges.some(r => r.type === 'back');
+            const hasAnyText = ranges.some(r => r.type === 'text');
+
+            if (!hasAnyText && !hasFrontMatter && !hasBackMatter) {
+                // Erste Text-Range ohne Front/Back vorhanden
+                initFrom = Math.min(Math.max(1, 6), numPages);
+                const desiredTo = numPages - 3;
+                initTo = Math.min(numPages, Math.max(initFrom, desiredTo));
+            } else if (!hasAnyText && hasFrontMatter && !hasBackMatter) {
+                // NEUE REGEL: Wenn bereits Frontmatter existiert, aber keine Text- und keine Backmatter-Range,
+                // dann soll die Text-Range bis (numPages - 3) gehen. Start bleibt "nextStart" hinter Front.
+                initFrom = nextStart;
+                const desiredTo = numPages - 3;
+                // clamp: mindestens initFrom, höchstens numPages
+                initTo = Math.min(numPages, Math.max(initFrom, desiredTo));
+            } else if (minBackFrom !== null) {
                 // Text muss kleiner als Backmatter sein
                 const limitTo = Math.max(1, Math.min(numPages, minBackFrom - 1));
                 initFrom = Math.min(nextStart, limitTo);
@@ -287,15 +608,26 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
                 initTo = numPages;
             }
         } else if (type === 'back') {
+            // Backmatter darf nur hinzugefügt werden, wenn die letzte Seite noch NICHT abgedeckt ist
+            // Prüfe, ob Seite numPages bereits durch irgendeine Range (inkl. Normalisierung) abgedeckt ist
+            const lastCovered = ranges.some(r => {
+                const from = Math.max(1, Math.min(r.from, r.to));
+                const to = Math.min(numPages, Math.max(r.from, r.to));
+                return to === numPages; // reicht, denn wenn 'to' = numPages, deckt die Range die letzte Seite ab
+            });
+            if (lastCovered) {
+                return; // Backmatter nicht hinzufügen, wenn letzte Seite schon belegt ist
+            }
             // Standard: konsekutiv nach letzter Range bis Ende
             initFrom = nextStart;
             initTo = numPages;
         }
 
+        const newId = nextId;
         setRanges(prev => ([
             ...prev,
             {
-                id: nextId,
+                id: newId,
                 from: initFrom,
                 to: initTo,
                 type,
@@ -312,6 +644,8 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
             }
         ]));
         setNextId(id => id + 1);
+        // Neu hinzugefügte Range sofort fokussieren (blauer Rahmen)
+        setFocusedRangeId(newId);
     };
 
     const updateRange = (id: number, patch: Partial<RangeConfig>) => {
@@ -406,6 +740,9 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
 
             // 7. (Angepasst) Auto-Front/Back nicht automatisch deaktivieren, wenn Front/Back existiert,
             //     da diese Ranges nun bewusst beim Aktivieren erzeugt werden.
+
+            // 8. NEU: Front/Back stets an Text-Ranges koppeln (Front.to = min(Text.from)-1; Back.from = max(Text.to)+1)
+            updated = syncFrontBack(updated);
 
             return updated;
         });
@@ -505,215 +842,105 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
         }
     };
 
-    // UI für eine einzelne Range
-    const RangeEditor: React.FC<{ r: RangeConfig, index: number }> = ({ r, index }) => {
-        const pr = new PageRange(
-            Math.max(1, Math.min(r.from, r.to)),
-            Math.min(numPages, Math.max(r.from, r.to)),
-            numPages
-        );
-        const label = pr.toString();
-        const textFoliationPreview = r.type === 'text' && r.foliate && !r.autoFrontBack
-            ? pr.toStringWithFoliation('', ' - ', '', r.textFoliationType!, r.textFoliationStart!, (r.textFoliationPrefix||'').replace(/\s+/g,''), (r.textFoliationSuffix||'').replace(/\s+/g,''), !!r.textFoliationReverse)
-            : '';
-        const fbFoliationPreview = r.foliate && (r.type === 'front' || r.type === 'back')
-            ? pr.toStringWithFoliation('', ' - ', '', FoliationType.FOLIATION_CONSECUTIVE, 1, 'x')
-            : '';
-        // Für die Auto‑Front/Back‑Vorschau NICHT auf interne PageRange‑Felder zugreifen (pr hat keine 'from'/'to')
-        // Stattdessen die normalisierten Grenzen aus r berechnen
-        const nf = Math.max(1, Math.min(r.from, r.to));
-        const nt = Math.min(numPages, Math.max(r.from, r.to));
-        const fbFront = r.autoFrontBack ? new PageRange(1, nf - 1, numPages) : null;
-        const fbBack = r.autoFrontBack ? new PageRange(nt + 1, numPages, numPages) : null;
-        const hasFront = ranges.some(x => x.type === 'front');
-        const hasBack = ranges.some(x => x.type === 'back');
+    // RangeEditor wurde nach unten (außerhalb von PageDefiner) ausgelagert.
 
-        return (
-            <div className="card mb-2" style={{ padding: '10px', border: '1px solid #eee' }}>
-                <div className="d-flex justify-content-between align-items-center mb-2">
-                    <strong>Range #{index + 1}</strong>
-                    <button className="btn btn-sm btn-outline-danger" onClick={() => removeRange(r.id)}>Remove</button>
-                </div>
-                <div className="d-flex align-items-center gap-2 mb-2">
-                    <label className="me-2">From</label>
-                    <input type="number" min={1} max={numPages} value={r.from}
-                           onChange={e => updateRange(r.id, { from: Number(e.target.value) })}
-                           style={{ width: 80 }} />
-                    <label className="ms-2 me-2">to</label>
-                    <input type="number" min={1} max={numPages} value={r.to}
-                           onChange={e => updateRange(r.id, { to: Number(e.target.value) })}
-                           style={{ width: 80 }} />
-                    <span className="badge bg-secondary text-uppercase ms-3">{r.type}</span>
-                    <span className="ms-3 text-muted">
-                        {label}
-                        {(textFoliationPreview || fbFoliationPreview) && (
-                            <>
-                                {' '}({textFoliationPreview || fbFoliationPreview})
-                            </>
-                        )}
-                    </span>
-                </div>
-
-                {/* TEXT-spezifische Optionen */}
-                {r.type === 'text' ? (
-                    <>
-                        {!r.autoFrontBack && (
-                            <>
-                                <div className="mb-2">
-                                    <label>
-                                        <input type="checkbox" checked={!!r.foliate}
-                                               onChange={e => updateRange(r.id, { foliate: e.target.checked })} />{' '}
-                                        Foliation
-                                    </label>
-                                </div>
-                                {r.foliate && (
-                                    <div className="mt-2" style={{ borderLeft: '3px solid #eee', paddingLeft: '10px' }}>
-                                        <div className="mb-1">
-                                            <label className="me-2">Foliation type:</label>
-                                            <select
-                                                value={r.textFoliationType}
-                                                onChange={(e) => updateRange(r.id, { textFoliationType: parseInt(e.target.value) })}
-                                            >
-                                                <option value={FoliationType.FOLIATION_CONSECUTIVE}>consecutive (1,2,3,...)</option>
-                                                <option value={FoliationType.FOLIATION_RECTOVERSO}>recto/verso (1r,1v,...)</option>
-                                                <option value={FoliationType.FOLIATION_LEFTRIGHT}>left/right (1l,1r,...)</option>
-                                                <option value={FoliationType.FOLIATION_AB}>a/b (1a,1b,...)</option>
-                                            </select>
-                                        </div>
-                                        <div className="mb-1">
-                                            <label className="me-2">Start number:</label>
-                                            <input
-                                                type="number"
-                                                min={1}
-                                                value={r.textFoliationStart}
-                                                onChange={(e) => updateRange(r.id, { textFoliationStart: Math.max(1, Number(e.target.value)) })}
-                                                style={{ width: '80px' }}
-                                            />
-                                        </div>
-                                        <div className="mb-1">
-                                            <label className="me-2">Prefix:</label>
-                                            <input
-                                                type="text"
-                                                value={r.textFoliationPrefix}
-                                                onChange={(e) => updateRange(r.id, { textFoliationPrefix: e.target.value })}
-                                                style={{ width: '120px' }}
-                                            />
-                                            <label className="ms-3 me-2">Suffix:</label>
-                                            <input
-                                                type="text"
-                                                value={r.textFoliationSuffix}
-                                                onChange={(e) => updateRange(r.id, { textFoliationSuffix: e.target.value })}
-                                                style={{ width: '120px' }}
-                                            />
-                                        </div>
-                                        <div className="mb-1">
-                                            <label>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={!!r.textFoliationReverse}
-                                                    onChange={(e) => updateRange(r.id, { textFoliationReverse: e.target.checked })}
-                                                />{' '}
-                                                Reverse order
-                                            </label>
-                                        </div>
-                                    </div>
-                                )}
-                                {/* Spaltenzuweisung optional (wie zuvor global, jetzt je Text-Range) */}
-                                <div className="mt-2">
-                                    <label>
-                                        <input type="checkbox" checked={!!r.createCols}
-                                               onChange={e => updateRange(r.id, { createCols: e.target.checked })} />{' '}
-
-                                        <input type="number" min={1} style={{ width: 60 }} disabled={!r.createCols}
-                                               value={r.colsNumber ?? 1}
-                                               onChange={e => updateRange(r.id, { colsNumber: Math.max(1, Number(e.target.value)) })} />{' '}
-                                        column(s) per page
-                                    </label>
-                                </div>
-                            </>
-                        )}
-
-                        {/* Auto FB-Option am Ende; deaktivieren, wenn Front/Back existiert */}
-                        <div className="mb-2 mt-2">
-                            <label>
-                                <input
-                                    type="checkbox"
-                                    checked={!!r.autoFrontBack}
-                                    disabled={!r.autoFrontBack && (hasFront || hasBack)}
-                                    onChange={e => updateRange(r.id, { autoFrontBack: e.target.checked })}
-                                />{' '}
-                                Set Front/Back matter automatically around this text range
-                            </label>
-                        </div>
-                        {/* Keine weitere Vorschau innerhalb der Text-Range – Einstellungen erfolgen in den automatisch erzeugten Front/Back-Ranges */}
-                    </>
-                ) : (
-                    // Nicht-Text: nur einfache Foliation-Checkbox (keine Optionen)
-                    <div className="mb-2">
-                        <label>
-                            <input type="checkbox" checked={!!r.foliate}
-                                   onChange={e => updateRange(r.id, { foliate: e.target.checked })} />{' '}
-                            Foliation
-                        </label>
-                    </div>
-                )}
-            </div>
-        );
-    };
+    // Globaler Sync nach JEDEM Range-Change (z. B. nach addRangeOfType), damit Front/Back automatisch angepasst werden
+    useEffect(() => {
+        setRanges(prev => syncFrontBack(prev));
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [numPages, ranges]);
 
     return (
         <div className="page-definer">
-            <h3>Page Definer</h3>
+            <h4>Page Definer</h4>
 
             {/* Start mit drei Buttons: Text / Frontmatter / Backmatter (diese Reihenfolge) */}
             <div className="mb-2 d-flex gap-2 align-items-center flex-wrap">
-                <button className="btn btn-sm btn-primary"
-                        onClick={() => addRangeOfType('text')}
-                        disabled={anyAutoFB || isAllCovered}
-                >Text Range</button>
-                <button className="btn btn-sm btn-outline-secondary"
+                <button className="btn btn-sm btn-outline-primary"
                         onClick={() => addRangeOfType('front')}
                         disabled={anyAutoFB || isAllCovered || ranges.some(r => r.type === 'front')}
                 >Frontmatter</button>
-                <button className="btn btn-sm btn-outline-secondary"
+                <button className="btn btn-sm btn-outline-primary"
+                        onClick={() => addRangeOfType('text')}
+                        disabled={anyAutoFB || isAllCovered}
+                >Text Range</button>
+                <button className="btn btn-sm btn-outline-primary"
                         onClick={() => addRangeOfType('back')}
-                        disabled={anyAutoFB || isAllCovered || ranges.some(r => r.type === 'back')}
+                        disabled={
+                            anyAutoFB ||
+                            isAllCovered ||
+                            ranges.some(r => r.type === 'back') ||
+                            // Zusätzlich disabled, wenn die letzte Seite bereits abgedeckt ist
+                            ranges.some(r => {
+                                const from = Math.max(1, Math.min(r.from, r.to));
+                                const to = Math.min(numPages, Math.max(r.from, r.to));
+                                return to === numPages;
+                            })
+                        }
                 >Backmatter</button>
                 {anyAutoFB && <span className="ms-2 text-muted">Adding more ranges is disabled while automatic Front/Back is selected.</span>}
                 {isAllCovered && <span className="ms-2 text-muted">All pages are already covered by ranges.</span>}
             </div>
 
-            {/* Liste der angelegten Ranges */}
+            {/* Liste der angelegten Ranges (Sortierung: front → text → back) */}
             <div>
-                {ranges.map((r, idx) => (
-                    <RangeEditor key={r.id} r={r} index={idx} />
-                ))}
+                {React.useMemo(() => {
+                    const typeOrder: Record<RangeType, number> = { front: 0, text: 1, back: 2 };
+                    const sorted = [...ranges].sort((a, b) => {
+                        const ta = typeOrder[a.type] - typeOrder[b.type];
+                        if (ta !== 0) return ta;
+                        return a.id - b.id; // Stabilität: Erstellreihenfolge
+                    });
+                    return sorted.map((r, idx) => (
+                        <RangeEditor
+                            key={r.id}
+                            r={r}
+                            index={idx}
+                            numPages={numPages}
+                            updateRange={updateRange}
+                            removeRange={removeRange}
+                            focusedRangeId={focusedRangeId}
+                            setFocusedRangeId={setFocusedRangeId}
+                            ranges={ranges}
+                            preserveWindowScroll={preserveWindowScroll}
+                        />
+                    ));
+                }, [ranges, numPages, focusedRangeId])}
             </div>
 
-            {/* Globale Optionen: erst anzeigen, wenn mind. eine Range existiert */}
+            {/* Globale Optionen & Aktion: erst anzeigen, wenn mind. eine Range existiert */}
             {ranges.length > 0 && (
                 <>
-                    <div className="mt-2">
-                        <label>
-                            <input type="checkbox" checked={overwritePageTypes}
-                                   onChange={e => setOverwritePageTypes(e.target.checked)} />{' '}
-                            Overwrite current page types
-                        </label>
-                    </div>
-                    <div className="mt-1">
-                        <label>
-                            <input type="checkbox" checked={overwriteFoliation}
-                                   onChange={e => setOverwriteFoliation(e.target.checked)} />{' '}
-                            Overwrite current page foliation
-                        </label>
+                    {/* eleganter Trenner nach der letzten Range */}
+                    <hr className="mt-3 mb-2" style={{ borderTop: '1px solid #000000' }} />
+
+                    {/* Overwrite-Option als Button + Define-Button rechtsbündig (gleiche Größe wie Remove) */}
+                    <div className="d-flex justify-content-end align-items-center mb-2 flex-wrap">
+                        <button
+                            type="button"
+                            className={`btn btn-sm ${overwritePageTypes && overwriteFoliation ? 'btn-primary' : 'btn-outline-secondary'} me-2`}
+                            onClick={() => {
+                                const v = !(overwritePageTypes && overwriteFoliation);
+                                setOverwritePageTypes(v);
+                                setOverwriteFoliation(v);
+                            }}
+                            aria-pressed={overwritePageTypes && overwriteFoliation}
+                            title="Overwrite Existing Ranges"
+                            style={{ borderColor: '#000', borderWidth: 1, borderStyle: 'solid' }}
+                        >
+                            Overwrite Existing Ranges
+                        </button>
+
+                        <button
+                            className="btn btn-sm btn-success p-0 text-center"
+                            onClick={handleSubmit}
+                            disabled={isUpdating}
+                            style={{ width: 60, flex: '0 0 60px' }}
+                        >
+                            Define
+                        </button>
                     </div>
                 </>
-            )}
-
-            {ranges.length > 0 && (
-                <button className="btn btn-sm btn-success" onClick={handleSubmit} disabled={isUpdating}>
-                    Define
-                </button>
             )}
 
             <p>{statusMsg}</p>

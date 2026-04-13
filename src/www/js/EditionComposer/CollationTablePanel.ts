@@ -754,7 +754,6 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.verbose && console.log('New sequence grouped with next');
       this.ctData['groupedColumns'] = data.detail.groupedColumns;
       this.delayedOnCtDataChange(this.ctData);
-      // this.options.onCtDataChange(this.ctData);
     };
   }
 

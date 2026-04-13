@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2020 Universität zu Köln
+ *  Copyright (C) 2020-26 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -334,9 +334,6 @@ export class TableEditor<T> {
       this.on(ContentChangedEvent, this.options.onContentChangedEventHandler);
     }
 
-    if (this.options.onColumnGroupEventHandler !== null) {
-      this.on(ColumnGroupEvent, this.options.onColumnGroupEventHandler);
-    }
     if (this.options.onColumnUngroupEventHandler !== null) {
       this.on(ColumnGroupEvent, this.options.onColumnUngroupEventHandler);
     }
@@ -892,38 +889,6 @@ export class TableEditor<T> {
   dispatchTableDrawnEvent() {
     this.dispatchEvent(TableDrawnEvent, {});
   }
-
-  // private isColumnSelected(col: number) {
-  //   return (this.selectedColumnsStart !== -1 && col >= this.selectedColumnsStart && col <= this.selectedColumnsEnd);
-  // }
-
-
-  // private getColFromColumnHeader(domElement: HTMLElement) {
-  //   let classes = this.getClassList(domElement);
-  //   let col = -1;
-  //   for (const theClass of classes) {
-  //     // TODO: use class constant in regex
-  //     if (theClass.search(/^te-col-/) !== -1) {
-  //       col = parseInt(theClass.replace('te-col-', ''));
-  //       break;
-  //     }
-  //   }
-  //   return col;
-  // }
-
-
-  // private getColFromGroupColumnButton(domElement: HTMLElement) {
-  //   let classes = this.getClassList(domElement);
-  //   let col = -1;
-  //   for (const theClass of classes) {
-  //     // TODO: use class constant in regex
-  //     if (theClass.search(/^link-button-/) !== -1) {
-  //       col = parseInt(theClass.replace('link-button-', ''));
-  //       break;
-  //     }
-  //   }
-  //   return col;
-  // }
 
   dispatchColumnGroupChangeEvent(col: number, grouped: boolean) {
     let event = grouped ? ColumnGroupEvent : ColumnUngroupEvent;

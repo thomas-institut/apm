@@ -68,8 +68,7 @@ export class Matrix<T> {
 
   deleteColumn(theCol: number) {
     if (theCol < 0 || theCol >= this.nCols) {
-      console.error('Column to delete does not exist: ' + theCol)
-      return
+      throw new Error('Column to delete does not exist: ' + theCol)
     }
 
     for(let row=0; row < this.nRows; row++) {
@@ -80,8 +79,7 @@ export class Matrix<T> {
 
   addColumnAfter(afterCol: number, defaultValue: T) {
     if (afterCol < -1 ||afterCol > (this.nCols - 1) ) {
-      console.error('Cannot add column after ' + afterCol)
-      return
+      throw new Error('Cannot add column after ' + afterCol)
     }
 
     for(let row=0; row < this.nRows; row++) {
@@ -97,21 +95,21 @@ export class Matrix<T> {
 
   getValue(row: number, col: number) {
     if (row < 0 || col < 0 || row >= this.nRows || col >= this.nCols) {
-      console.error('Out of range row/col getting value: ' + row + ':' + col)
+      throw new Error('Out of range row/col getting value: ' + row + ':' + col)
     }
     return this.theMatrix[row][col]
   }
 
   getRow(row: number): T[] {
     if (row < 0 || row >= this.nRows) {
-      console.error('Out of range row : ' + row )
+      throw new Error('Out of range row : ' + row )
     }
     return this.theMatrix[row]
   }
 
   getColumn(col: number): T[] {
     if (col < 0 || col >= this.nCols) {
-      console.error('Out of range column : ' + col )
+      throw new Error('Out of range column : ' + col )
     }
     let theCol = []
     for(let i = 0; i < this.nRows; i++) {
@@ -122,7 +120,7 @@ export class Matrix<T> {
 
   setValue(row: number, col: number, value: T) {
     if (row < 0 || col < 0 || row >= this.nRows || col >= this.nCols) {
-      console.error('Out of range row/col setting value: ' + row + ':' + col)
+      throw new Error('Out of range row/col setting value: ' + row + ':' + col)
     }
     this.theMatrix[row][col] = value
   }

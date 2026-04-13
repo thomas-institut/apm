@@ -19,10 +19,6 @@
 import * as TokenType from '../../Witness/WitnessTokenType';
 import * as WitnessTokenType from '../../Witness/WitnessTokenType';
 import {SequenceWithGroups} from '../SequenceWithGroups';
-
-// @ts-ignore
-import {Matrix} from '@thomas-inst/matrix';
-
 import * as SubEntryType from '../SubEntryType';
 import * as ApparatusType from '../../constants/ApparatusType';
 import * as SubEntrySource from '../SubEntrySource';
@@ -39,6 +35,8 @@ import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {MainTextToken} from "../MainTextToken.js";
 import {Apparatus} from "@/Edition/Apparatus";
 import {fromString} from "@/lib/FmtText/FmtText";
+import {Matrix} from "@/lib/Matrix";
+import {EMPTY} from "@/Witness/WitnessTokenType";
 
 export class CriticalApparatusGenerator {
   protected verbose: boolean;
@@ -99,7 +97,8 @@ export class CriticalApparatusGenerator {
         return;
       }
 
-      let groupMatrix = new Matrix(ctColumns.length, ctColumns[0].length);
+      let groupMatrix = new Matrix<WitnessTokenInterface>(
+        ctColumns.length, ctColumns[0].length, { tokenType: EMPTY, text: '', tokenClass: ''});
       groupMatrix.setFromArray(ctColumns);
       // a row in groupMatrix is one collation table column
       // this means that a groupMatrix column is a row in the CT

@@ -69,14 +69,14 @@ import {
   NonTokenItemIndex,
   WitnessTokenInterface
 } from "@/CtData/CtDataInterface";
-// @ts-expect-error No TS definitions for matrix yet
-import {Matrix} from "@thomas-inst/matrix";
+
 import {FmtText, fromString, getPlainText} from "@/lib/FmtText/FmtText";
 import * as FmtTextTokenType from "@/lib/FmtText/FmtTextTokenType";
 import {deepCopy} from "@/toolbox/Util";
 import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
 import {createDelayer} from "@/toolbox/Delayer";
+import {Matrix} from "@/lib/Matrix";
 
 
 interface ViewSettings {
@@ -121,7 +121,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   private exportCsvButton!: JQuery<HTMLElement>;
   private selectedColumnsFrom!: number;
   private selectedColumnsTo!: number;
-  private variantsMatrix: Matrix | null;
+  private variantsMatrix: Matrix<number> | null = null;
   private readonly delayedOnCtDataChange!: (ctData: CtDataInterface) => void;
 
   constructor(options: CollationTablePanelOptions) {
@@ -1161,6 +1161,9 @@ export class CollationTablePanel extends PanelWithToolbar {
           //variant class
           if (this.viewSettings.highlightVariants) {
             // Note that the variantsMatrix refers to the tableRow not to the witness row
+            if (this.variantsMatrix === null) {
+              throw new Error('variantsMatrix is null, cannot get variant value');
+            }
             let variant = this.variantsMatrix.getValue(tableRow, col);
             if (variant !== 0) {
               // no class for variant 0

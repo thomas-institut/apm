@@ -475,7 +475,8 @@ export class ApparatusCommon {
       case 'full':
         if (lemmaText === '') {
           console.warn(`Lemma text is empty for full lemma`, apparatusEntry, lemmaComponents);
-          lemmaText = `<span class="text-danger">???_ReportBug_661</span>`;
+          lemmaText = `<span class="text-danger">???_ReportBug_478</span>`;
+          throw new Error('Lemma text cannot be empty for full lemma → Bug 478');
         }
         let lemmaNumberString = '';
         if (lemmaComponents.numWords === 1) {

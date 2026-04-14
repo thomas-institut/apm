@@ -36,10 +36,9 @@ import {
 import {
   ApiCollationTableAuto, AutomaticCollationSettings, EngineRunDetails
 } from "@/Api/DataSchema/ApiCollationTable";
-// @ts-expect-error No TS types for matrix yet
-import {Matrix} from "@thomas-inst/matrix";
 import {getPeopleMentionedInCtData} from "@/EditionComposer/EditionComposer";
 import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
+import {Matrix} from "@/lib/Matrix";
 
 export class AutomaticCollationTable extends HeaderAndContentPage {
   private options: any;
@@ -81,7 +80,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
   private lastChangeInData!: string;
   private collationEngineDetails!: EngineRunDetails;
   private aggregatedNonTokenItemIndexes!: NonTokenItemIndex[][];
-  private variantsMatrix!: Matrix;
+  private variantsMatrix!: Matrix<number>;
 
 
   constructor(options: any) {

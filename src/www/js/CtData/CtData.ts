@@ -19,8 +19,6 @@
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType';
 import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
-// @ts-ignore
-import {Matrix} from '@thomas-inst/matrix';
 import * as CollationTableType from '../constants/CollationTableType';
 import {deepCopy} from '@/toolbox/Util';
 import * as NormalizationSource from '../constants/NormalizationSource';
@@ -54,6 +52,7 @@ import {
 } from "./CtDataInterface";
 import {FULL_TX} from "@/Witness/WitnessType";
 import {NormalizerRegister} from "@/pages/common/NormalizerRegister";
+import {Matrix} from "@/lib/Matrix";
 
 
 /*
@@ -596,7 +595,7 @@ export class CtData {
       collationMatrix.addColumnAfter(col, -1);
       columnSequence.insertNumberAfter(col);
     }
-    ctData.collationMatrix = _getRawCollationMatrixFromMatrix(collationMatrix);
+    ctData.collationMatrix = getRawCollationMatrixFromMatrixHelper(collationMatrix);
     ctData.groupedColumns = columnSequence.getGroupedNumbers();
 
     if (ctData.type === CollationTableType.EDITION) {
@@ -817,12 +816,7 @@ export class CtData {
 }
 
 
-/**
- *
- * @param {Matrix} m
- * @private
- */
-function _getRawCollationMatrixFromMatrix(m: any): any[][] {
+function getRawCollationMatrixFromMatrixHelper(m: Matrix<number>): number[][] {
   let rawMatrix = [];
 
   for (let row = 0; row < m.nRows; row++) {

@@ -69,14 +69,14 @@ import {
   NonTokenItemIndex,
   WitnessTokenInterface
 } from "@/CtData/CtDataInterface";
-// @ts-expect-error No TS definitions for matrix yet
-import {Matrix} from "@thomas-inst/matrix";
+
 import {FmtText, fromString, getPlainText} from "@/lib/FmtText/FmtText";
 import * as FmtTextTokenType from "@/lib/FmtText/FmtTextTokenType";
 import {deepCopy} from "@/toolbox/Util";
 import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
 import {createDelayer} from "@/toolbox/Delayer";
+import {Matrix} from "@/lib/Matrix";
 
 
 interface ViewSettings {
@@ -121,7 +121,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   private exportCsvButton!: JQuery<HTMLElement>;
   private selectedColumnsFrom!: number;
   private selectedColumnsTo!: number;
-  private variantsMatrix: Matrix | null;
+  private variantsMatrix: Matrix<number> | null = null;
   private readonly delayedOnCtDataChange!: (ctData: CtDataInterface) => void;
 
   constructor(options: CollationTablePanelOptions) {
@@ -632,8 +632,10 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   _setupPanelContent() {
     this.verbose && console.log(`Setting up CT panel content`);
-    this.replaceContent(`Loading collation table...`);
-    this.popoversSetup();
+    if (this.tableEditor === undefined) {
+      this.replaceContent(`Loading collation table...`);
+      this.popoversSetup();
+    }
     this.setupTableEditor();
     this.verbose && console.log(`Setting tableEditor edit mode '${this.tableEditModeToRestore}'`);
     this.tableEditor.setEditMode(this.tableEditModeToRestore, false);
@@ -668,7 +670,15 @@ export class CollationTablePanel extends PanelWithToolbar {
         title: title, values: tokenArray, isEditable: isEditable
       });
     }
-    console.log(`RowDefinition`, rowDefinition)
+    console.log(`RowDefinition`, rowDefinition);
+    if (this.tableEditor !== undefined) {
+      // no need to do a full setup, just update the data
+      this.tableEditor.setRowDefinition(rowDefinition);
+      this.tableEditor.setGroupedColumns(this.ctData.groupedColumns);
+      this.tableEditor.redrawTable();
+      return;
+    }
+
     let icons = TableEditor.genTextIconSet();
     icons.editCell = this.icons.editText;
     icons.confirmCellEdit = this.icons.confirmEdit;
@@ -754,7 +764,6 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.verbose && console.log('New sequence grouped with next');
       this.ctData['groupedColumns'] = data.detail.groupedColumns;
       this.delayedOnCtDataChange(this.ctData);
-      // this.options.onCtDataChange(this.ctData);
     };
   }
 
@@ -1161,6 +1170,9 @@ export class CollationTablePanel extends PanelWithToolbar {
           //variant class
           if (this.viewSettings.highlightVariants) {
             // Note that the variantsMatrix refers to the tableRow not to the witness row
+            if (this.variantsMatrix === null) {
+              throw new Error('variantsMatrix is null, cannot get variant value');
+            }
             let variant = this.variantsMatrix.getValue(tableRow, col);
             if (variant !== 0) {
               // no class for variant 0

@@ -17,7 +17,7 @@
     "body-parser": "^2.2.0",
     "express": "^5.1.0",
     "node-gtk": "0.14.0",
-    "yaml": "^2.8.0"
+    "yaml": "2.8.3"
   },
   "devDependencies": {
     "@types/express": "^5.0.3",

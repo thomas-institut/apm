@@ -21,10 +21,9 @@ import {CtDataCleaner} from './CtDataCleaner';
 import {deepCopy} from '@/toolbox/Util';
 import * as CollationTableType from '../../constants/CollationTableType';
 
-// @ts-ignore
-import {Matrix} from '@thomas-inst/matrix';
 import * as TranscriptionTokenType from '../../Witness/WitnessTokenType';
 import {CtDataInterface} from "../CtDataInterface";
+import {Matrix} from "@/lib/Matrix";
 
 export class CollationTableConsistencyCleaner extends CtDataCleaner {
   private errors: string[] = [];
@@ -55,9 +54,9 @@ export class CollationTableConsistencyCleaner extends CtDataCleaner {
         this.debug && console.log(`... source witness, skipping`);
         continue;
       }
-      let ctMatrix = new Matrix(0, 0, -1);
-      ctMatrix.setFromArray(ctData.collationMatrix);
-      let row = ctMatrix.getRow(wIndex);
+      let matrixHelper = new Matrix(0, 0, -1);
+      matrixHelper.setFromArray(ctData.collationMatrix);
+      let row = matrixHelper.getRow(wIndex);
       let lastTokenInCt = -1;
       let lastGoodCtCol = -1;
       ctData.witnesses[wIndex].tokens.forEach((t, i) => {
@@ -79,10 +78,10 @@ export class CollationTableConsistencyCleaner extends CtDataCleaner {
               // shift may be needed
               let nColsToShift = nextNullRefIndex - lastGoodCtCol - 1;
               for (let c = 0; c < nColsToShift; c++) {
-                ctMatrix.setValue(wIndex, nextNullRefIndex - c, ctMatrix.getValue(wIndex, nextNullRefIndex - c - 1));
+                matrixHelper.setValue(wIndex, nextNullRefIndex - c, matrixHelper.getValue(wIndex, nextNullRefIndex - c - 1));
               }
-              ctMatrix.setValue(wIndex, lastGoodCtCol + 1, i);
-              row = ctMatrix.getRow(wIndex);
+              matrixHelper.setValue(wIndex, lastGoodCtCol + 1, i);
+              row = matrixHelper.getRow(wIndex);
               lastGoodCtCol += 1;
               lastTokenInCt = i;
               console.log(`--- Fixed, ${nColsToShift !== 0 ? 'shifted ' + nColsToShift + ' cols' : ' no shift needed'}, token now in ct col ${lastGoodCtCol + 1}`);
@@ -97,7 +96,7 @@ export class CollationTableConsistencyCleaner extends CtDataCleaner {
       let lastTokenRef = -1;
       let lastColumn = -1;
       let columnsInWrongOrder = false;
-      row = ctMatrix.getRow(wIndex);
+      row = matrixHelper.getRow(wIndex);
       row.forEach((tokenRef: number, ctIndex: number) => {
         if (tokenRef === -1) {
           return;
@@ -133,21 +132,21 @@ export class CollationTableConsistencyCleaner extends CtDataCleaner {
         let goodRefIndex = -1;
         row.forEach((ref: number, i: number) => {
           if (ref === -1) {
-            ctMatrix.setValue(wIndex, i, -1);
+            matrixHelper.setValue(wIndex, i, -1);
           } else {
             goodRefIndex++;
-            ctMatrix.setValue(wIndex, i, orderedTokenRefs[goodRefIndex]);
+            matrixHelper.setValue(wIndex, i, orderedTokenRefs[goodRefIndex]);
           }
         });
         console.log(`-- Order problems fixed`);
         this.debug && console.log(`Original row`);
         this.debug && console.log(row);
         this.debug && console.log(`Fixed row`);
-        this.debug && console.log(ctMatrix.getRow(wIndex));
+        this.debug && console.log(matrixHelper.getRow(wIndex));
       }
       if (errorsFound) {
         // replace fixed collation table
-        ctData['collationMatrix'] = this.matrixToArray(ctMatrix);
+        ctData['collationMatrix'] = this.matrixToArray(matrixHelper);
       } else {
         this.debug && console.log(`... no problems found`);
       }

@@ -2,6 +2,8 @@ import {CtDataCleaner} from './CtDataCleaner';
 import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface";
 
 
+const ColumnsToLookForwardWhenFixingBadReference = 5;
+
 export class ApparatusEntryPositionCleaner extends CtDataCleaner {
 
   /**
@@ -58,6 +60,20 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
         if (singleColumnEntry) {
           // no need to repeat the check for the 'to' token
           entry.to = entry.from;
+          if (fromToken.tokenType !== 'word') {
+            console.warn(`Token in single column entry ${entryIndex} is not a word, token ref = ${entry.from}, token type = ${fromToken.tokenType}`);
+            // look forward for a printable token, this should solve problems causes by Bug478 (formerly Bug661)
+            const newIndex = this.findPrintableIndex(editionWitnessTokens, entry.from+1, entry.from+1+ColumnsToLookForwardWhenFixingBadReference, true);
+            console.log(`New 'from' index is ${newIndex}`);
+            if (newIndex === -1) {
+              entry.from = EntryToBeDeleted;
+              entry.to = EntryToBeDeleted;
+            } else {
+              entry.from = newIndex;
+              entry.to = newIndex;
+            }
+            errorsFound = true;
+          }
         } else {
           if (toToken === undefined) {
             errorsFound = true;

@@ -1,5 +1,5 @@
 /*
- *  Copyright (C) 2020 Universität zu Köln
+ *  Copyright (C) 2020-26 Universität zu Köln
  *
  *  This program is free software: you can redistribute it and/or modify
  *  it under the terms of the GNU General Public License as published by
@@ -33,22 +33,15 @@
  */
 
 import {deepCopy} from '@/toolbox/Util';
-// @ts-ignore
-import {Matrix} from '@thomas-inst/matrix';
 import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
 import {SimpleProfiler} from '@/SimpleProfiler';
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
 import {attributesModule, classModule, eventListenersModule, h, init, propsModule, styleModule, VNode} from 'snabbdom';
 
 import './TableEditor.css';
+import {Matrix} from "@/lib/Matrix";
 
-const patch = init([
-  classModule,
-  propsModule,
-  styleModule,
-  eventListenersModule,
-  attributesModule
-]);
+const patch = init([classModule, propsModule, styleModule, eventListenersModule, attributesModule]);
 
 // Table Edit Modes
 export const EditModeOff = 'off';
@@ -247,13 +240,13 @@ const groupIconFloatRightClass = 'group-icon-float-right';
 
 export class TableEditor<T> {
 
-  public matrix: Matrix;
+  public matrix: Matrix<T>;
   public columnSequence: SequenceWithGroups;
   public tableEditMode: EditMode;
   private readonly options: Required<TableEditorOptions<T>>;
   private readonly debug: boolean;
   private rowDefinition: RowDefinition<T>[];
-  private editFlagMatrix: Matrix;
+  private editFlagMatrix: Matrix<boolean>;
   private readonly containerSelector: string;
   private readonly container: HTMLElement | null;
   private icons: TableEditorIcons;
@@ -313,10 +306,10 @@ export class TableEditor<T> {
     this.debug = this.options.debug;
 
     this.rowDefinition = this.options.rowDefinition;
-    this.matrix = new Matrix(0, 0, this.options.getEmptyValue());
+    this.matrix = new Matrix<T>(0, 0, this.options.getEmptyValue());
     this.matrix.setFromArray(this.rowDefinition.map(r => r.values));
     this.columnSequence = new SequenceWithGroups(this.matrix.nCols, this.options.groupedColumns);
-    this.editFlagMatrix = new Matrix(this.matrix.nRows, this.matrix.nCols, false);
+    this.editFlagMatrix = new Matrix<boolean>(this.matrix.nRows, this.matrix.nCols, false);
     this.containerSelector = '#' + this.options.id;
     this.container = document.querySelector(this.containerSelector);
     this.icons = this.options.icons ?? defaultIcons;
@@ -341,9 +334,6 @@ export class TableEditor<T> {
       this.on(ContentChangedEvent, this.options.onContentChangedEventHandler);
     }
 
-    if (this.options.onColumnGroupEventHandler !== null) {
-      this.on(ColumnGroupEvent, this.options.onColumnGroupEventHandler);
-    }
     if (this.options.onColumnUngroupEventHandler !== null) {
       this.on(ColumnGroupEvent, this.options.onColumnUngroupEventHandler);
     }
@@ -359,6 +349,15 @@ export class TableEditor<T> {
     });
   }
 
+  setRowDefinition(rowDefinition: RowDefinition<T>[]) {
+    this.rowDefinition = rowDefinition;
+    this.matrix.setFromArray(this.rowDefinition.map(r => r.values));
+    this.editFlagMatrix = new Matrix<boolean>(this.matrix.nRows, this.matrix.nCols, false);
+  }
+
+  setGroupedColumns(groupedColumns: number[]) {
+    this.columnSequence =  new SequenceWithGroups(this.matrix.nCols, groupedColumns);
+  }
 
   static genTextIconSet() {
     return defaultIcons;
@@ -442,111 +441,9 @@ export class TableEditor<T> {
     });
   }
 
-  private doRedrawTable() {
-    //console.log("Redrawing table")
-    let profiler = new SimpleProfiler('TableRedraw');
-    this.dispatchTableDrawnPreEvent();
-    if (this.container) {
-      const newVNode = this.genTableVNode();
-      profiler.lap('vnode generated');
-      if (!this.vnode) {
-        this.container.innerHTML = '';
-        const placeholder = document.createElement('div');
-        this.container.appendChild(placeholder);
-        this.vnode = placeholder;
-      }
-      this.vnode = patch(this.vnode, newVNode);
-    }
-    profiler.lap('vnode patched');
-    this.setupTableForEditMode(this.tableEditMode);
-    this.setupTableEventHandlers();
-    // dispatch redraw callbacks
-    if (this.options.onTableDrawnEventHandler !== null) {
-      this.dispatchTableDrawnEvent();
-    }
-    profiler.stop();
-  }
-
-  private genCellVNode(row: number, col: number, tableColumnNumber = -1): VNode {
-    let value = this.matrix.getValue(row, col);
-    let cellClasses: Record<string, boolean> = {
-      [cellClass]: true,
-      [this.getTdClass(row, col)]: true,
-      [this.getColClass(col)]: true
-    };
-    if (tableColumnNumber === 0) {
-      cellClasses[tableFirstColClass] = true;
-    }
-    this.getGroupClasses(col).forEach(c => cellClasses[c] = true);
-    this.options.generateCellClasses(row, col, value).forEach(c => cellClasses[c] = true);
-    let tdExtraArray = this.options.generateCellTdExtraAttributes ? this.options.generateCellTdExtraAttributes(row, col, value) : [];
-
-    const attrs: Record<string, string> = {};
-    tdExtraArray.forEach(attr => {
-      if (attr.attr) attrs[attr.attr] = attr.val ?? '';
-    });
-
-    const isEditing = this.editFlagMatrix.getValue(row, col);
-
-    return h('td', {
-      class: cellClasses,
-      attrs: attrs,
-      hook: {
-        insert: () => this.dispatchCellDrawnEvent(row, col),
-        update: (oldVNode, vnode) => {
-          if (oldVNode.data?.attrs?.class !== vnode.data?.attrs?.class || oldVNode.children !== vnode.children) {
-             this.dispatchCellDrawnEvent(row, col);
-          }
-        }
-      }
-    }, isEditing ? this.genTdChildrenVNodesCellEditMode(row, col) : this.genTdChildrenVNodes(row, col));
-  }
-
-  private genThVNode(col: number): VNode {
-    let thClasses: Record<string, boolean> = {
-      [headerClass]: true,
-      [this.getThClass(col)]: true,
-      [this.getColClass(col)]: true
-    };
-
-    if (this.tableEditMode === EditModeOff) {
-      return h('th', {class: thClasses}, [(col + 1).toString()]);
-    }
-
-    let addColumnBeforeIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnLeft : this.icons.addColumnRight;
-    let addColumnAfterIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnRight : this.icons.addColumnLeft;
-
-    let children: (VNode | string)[] = [];
-    children.push(this.genButtonVNode(addColumnBeforeIcon, [addColumnLeftButtonClass, headerButtonClass, moveModeButtonClass], 'Add column before'));
-    children.push((col + 1).toString());
-    if (this.canDeleteColumn(col)) {
-      children.push(this.genButtonVNode(this.icons.deleteColumn, [deleteColumnButtonClass, headerButtonClass, moveModeButtonClass], 'Delete this column'));
-    }
-    children.push(this.genButtonVNode(addColumnAfterIcon, [addColumnRightButtonClass, headerButtonClass, moveModeButtonClass], 'Add column after'));
-
-    if (col !== this.matrix.nCols - 1) {
-      let linkIcon = this.icons.unGroupedColumn;
-      let groupClass = groupNoneClass;
-      let title = "Click to group with next column";
-      let floatClass = this.options.textDirection === 'ltr' ? groupIconFloatRightClass : groupIconFloatLeftClass;
-      if (this.isColumnGroupedWithNext(col)) {
-        groupClass = groupNextClass;
-        linkIcon = this.icons.groupedColumn;
-        title = "Click to ungroup with next column";
-      }
-      children.push(this.genButtonVNode(linkIcon, [linkButtonClass, `${specificColumnLinkButtonClassPrefix}${col}`, groupClass, floatClass], title));
-    }
-    return h('th', {class: thClasses}, children);
-  }
-
   public redrawHeader(_col: number) {
     this.redrawTable();
   }
-
-  // getColumnGroups() {
-  //   return this.columnSequence.getGroups();
-  // }
-
 
   isRowEditable(row: number) {
     return this.rowDefinition[row].isEditable;
@@ -554,104 +451,6 @@ export class TableEditor<T> {
 
   isCellEditable(row: number, col: number) {
     return this.isRowEditable(row) && this.options.isCellEditable(row, col, this.matrix.getValue(row, col));
-  }
-
-  // getRow(row: number) {
-  //   return this.matrix.getRow(row);
-  // }
-
-  // getColumn(col: number) {
-  //   return this.matrix.getColumn(col);
-  // }
-
-  private genTdChildrenVNodes(row: number, col: number): (VNode | string)[] {
-    if (this.tableEditMode === EditModeOff) {
-      return [h('span', {
-        class: {[cellContentClass]: true},
-        props: {innerHTML: this.options.generateCellContent(row, col, this.matrix.getValue(row, col))}
-      })];
-    }
-
-    let children: (VNode | string)[] = [];
-
-    let moveCellBackwardIcon = this.icons.moveCellLeft;
-    let pushCellsBackwardIcon = this.icons.pushCellsLeft;
-    let moveCellForwardIcon = this.icons.moveCellRight;
-    let pushCellsForwardIcon = this.icons.pushCellsRight;
-
-    if (this.options.textDirection === 'rtl') {
-      moveCellBackwardIcon = this.icons.moveCellRight;
-      pushCellsBackwardIcon = this.icons.pushCellsRight;
-      moveCellForwardIcon = this.icons.moveCellLeft;
-      pushCellsForwardIcon = this.icons.pushCellsLeft;
-    }
-
-    if (this.canMoveCellLeft(row, col)) {
-      children.push(this.genButtonVNode(moveCellBackwardIcon, [moveCellLeftButtonClass, cellButtonClass, moveModeButtonClass], 'Move backward'));
-    }
-    if (this.canPushCellsLeft(row, col)) {
-      let firstCol = this.getFirstEmptyCellToTheLeft(row, col) + 1;
-      children.push(this.genButtonVNode(pushCellsBackwardIcon, [pushCellsLeftButtonClass, cellButtonClass, moveModeButtonClass], `Push ${firstCol + 1}-${col + 1} back 1 column`));
-    }
-    children.push(h('span', {
-      class: {[cellContentClass]: true},
-      props: {innerHTML: this.options.generateCellContent(row, col, this.matrix.getValue(row, col))}
-    }));
-    if (this.isCellEditable(row, col)) {
-      children.push(this.genButtonVNode(this.icons.editCell, [editCellButtonClass, cellButtonClass], 'Edit'));
-    }
-    if (this.canPushCellsRight(row, col)) {
-      let lastCol = this.getFirstEmptyCellToTheRight(row, col) - 1;
-      children.push(this.genButtonVNode(pushCellsForwardIcon, [pushCellsRightButtonClass, cellButtonClass, moveModeButtonClass], `Push ${col + 1}-${lastCol + 1} forward 1 column`));
-    }
-    if (this.canMoveCellRight(row, col)) {
-      children.push(this.genButtonVNode(moveCellForwardIcon, [moveCellRightButtonClass, cellButtonClass, moveModeButtonClass], 'Move forward'));
-    }
-    return children;
-  }
-
-
-  // getRowTitle(row: number) {
-  //   return this.rowDefinition[row].title;
-  // }
-
-  // isTableInEditMode() {
-  //   return this.tableEditMode !== EditModeOff;
-  // }
-
-  private genTdChildrenVNodesCellEditMode(row: number, col: number): (VNode | string)[] {
-    let value = this.getValue(row, col);
-    let textToEdit = this.options.generateCellContentEditMode(row, col, value);
-    let inputSize = Math.min(textToEdit.length, 8);
-    if (textToEdit === '') {
-      inputSize = 5;
-    }
-
-    return [
-      h('input', {
-        props: {type: 'text', value: textToEdit, size: inputSize},
-        class: {[inputClass]: true}
-      }),
-      this.genButtonVNode(this.icons.confirmCellEdit, [confirmEditButtonClass], 'Confirm edit'),
-      this.genButtonVNode(this.icons.cancelCellEdit, [cancelEditButtonClass], 'Cancel edit')
-    ];
-  }
-
-
-  // toggleTableEditMode() {
-  //   if (this.tableEditMode === EditModeOff) {
-  //     this.setEditMode(EditModeMove);
-  //   } else {
-  //     this.setEditMode(EditModeOff);
-  //   }
-  // }
-
-  private setupTableEventHandlers() {
-    if (this.container && !this.eventHandlersSetup) {
-      this.container.addEventListener('click', this.onContainerClick);
-      this.container.addEventListener('keyup', this.onContainerKeyUp);
-      this.eventHandlersSetup = true;
-    }
   }
 
   shiftCells(row: number, firstCol: number, lastCol: number, direction: 'left' | 'right', numCols = 1) {
@@ -703,17 +502,9 @@ export class TableEditor<T> {
     //profiler.stop()
   }
 
-  private genButtonVNode(icon: string, classes: string[], title = '') {
-    const classObj: Record<string, boolean> = {};
-    classes.forEach(c => {
-      if (c && c !== hiddenClass) classObj[c] = true;
-    });
-    return h('a', {
-      props: {href: '#', title: title, innerHTML: icon},
-      class: classObj
-    });
-  }
-
+  // getColumnGroups() {
+  //   return this.columnSequence.getGroups();
+  // }
 
   getClassList(element: HTMLElement): string[] {
     if (!(element instanceof HTMLElement)) {
@@ -729,6 +520,60 @@ export class TableEditor<T> {
     const classes: string[] = [];
     element.classList.forEach((c) => classes.push(c));
     return classes;
+  }
+
+  redrawCell(_row: number, _col: number) {
+    this.redrawTable();
+  }
+
+  // getRow(row: number) {
+  //   return this.matrix.getRow(row);
+  // }
+
+  // getColumn(col: number) {
+  //   return this.matrix.getColumn(col);
+  // }
+
+  refreshCell(_row: number, _col: number) {
+    this.redrawTable();
+  }
+
+
+  // getRowTitle(row: number) {
+  //   return this.rowDefinition[row].title;
+  // }
+
+  // isTableInEditMode() {
+  //   return this.tableEditMode !== EditModeOff;
+  // }
+
+  isColumnGroupedWithNext(col: number) {
+    return this.columnSequence.isGroupedWithNext(col);
+  }
+
+
+  // toggleTableEditMode() {
+  //   if (this.tableEditMode === EditModeOff) {
+  //     this.setEditMode(EditModeMove);
+  //   } else {
+  //     this.setEditMode(EditModeOff);
+  //   }
+  // }
+
+  isColumnGroupedWithPrevious(col: number) {
+    return this.columnSequence.isGroupedWithPrevious(col);
+  }
+
+  refreshCellContent(_row: number, _col: number) {
+    this.redrawTable();
+  }
+
+  refreshCellClassesTd(_td: HTMLElement, _row: number, _col: number) {
+    this.redrawTable();
+  }
+
+  refreshCellClasses(_row: number, _col: number) {
+    this.redrawTable();
   }
 
   // isTableShownInMultipleRows() {
@@ -754,34 +599,6 @@ export class TableEditor<T> {
   //     this.redrawTable();
   //   }
   // }
-
-  redrawCell(_row: number, _col: number) {
-    this.redrawTable();
-  }
-
-  refreshCell(_row: number, _col: number) {
-    this.redrawTable();
-  }
-
-  isColumnGroupedWithNext(col: number) {
-    return this.columnSequence.isGroupedWithNext(col);
-  }
-
-  isColumnGroupedWithPrevious(col: number) {
-    return this.columnSequence.isGroupedWithPrevious(col);
-  }
-
-  refreshCellContent(_row: number, _col: number) {
-    this.redrawTable();
-  }
-
-  refreshCellClassesTd(_td: HTMLElement, _row: number, _col: number) {
-    this.redrawTable();
-  }
-
-  refreshCellClasses(_row: number, _col: number) {
-    this.redrawTable();
-  }
 
   public refreshColumn(_col: number) {
     this.redrawTable();
@@ -867,6 +684,7 @@ export class TableEditor<T> {
 
   insertColumnAfter(col: number) {
     this.matrix.addColumnAfter(col, this.options.getEmptyValue());
+    this.editFlagMatrix.addColumnAfter(col, false);
     this.columnSequence.insertNumberAfter(col);
   }
 
@@ -892,6 +710,7 @@ export class TableEditor<T> {
    */
   deleteSingleColumnData(col: number) {
     this.matrix.deleteColumn(col);
+    this.editFlagMatrix.deleteColumn(col);
     this.columnSequence.removeNumber(col);
   }
 
@@ -965,27 +784,9 @@ export class TableEditor<T> {
     return specificHeaderClassPrefix + col;
   }
 
-  // refreshColumnClasses(col: number) {
-  //   for (let r = 0; r < this.matrix.nRows; r++) {
-  //     this.refreshCellClasses(r, col);
-  //   }
-  // }
-
   getColClass(col: number) {
     return 'te-col-' + col;
   }
-
-  // redrawColumn(col: number) {
-  //   for (let row = 0; row < this.matrix.nRows; row++) {
-  //     this.redrawCell(row, col);
-  //   }
-  // }
-
-  // refreshColumn(col: number) {
-  //   for (let row = 0; row < this.matrix.nRows; row++) {
-  //     this.refreshCell(row, col);
-  //   }
-  // }
 
   getTdSelector(row: number, col: number) {
     return '#' + this.options.id + ' .' + this.getTdClass(row, col);
@@ -1011,36 +812,10 @@ export class TableEditor<T> {
     return col !== 0 && !this.options.isEmptyValue(row, col, this.matrix.getValue(row, col)) && this.options.isEmptyValue(row, col, this.matrix.getValue(row, col - 1));
   }
 
-  // private isColumnSelected(col: number) {
-  //   return (this.selectedColumnsStart !== -1 && col >= this.selectedColumnsStart && col <= this.selectedColumnsEnd);
-  // }
-
-
-  // private getColFromColumnHeader(domElement: HTMLElement) {
-  //   let classes = this.getClassList(domElement);
-  //   let col = -1;
-  //   for (const theClass of classes) {
-  //     // TODO: use class constant in regex
-  //     if (theClass.search(/^te-col-/) !== -1) {
-  //       col = parseInt(theClass.replace('te-col-', ''));
-  //       break;
-  //     }
+  // refreshColumnClasses(col: number) {
+  //   for (let r = 0; r < this.matrix.nRows; r++) {
+  //     this.refreshCellClasses(r, col);
   //   }
-  //   return col;
-  // }
-
-
-  // private getColFromGroupColumnButton(domElement: HTMLElement) {
-  //   let classes = this.getClassList(domElement);
-  //   let col = -1;
-  //   for (const theClass of classes) {
-  //     // TODO: use class constant in regex
-  //     if (theClass.search(/^link-button-/) !== -1) {
-  //       col = parseInt(theClass.replace('link-button-', ''));
-  //       break;
-  //     }
-  //   }
-  //   return col;
   // }
 
   canPushCellsLeft(row: number, col: number) {
@@ -1051,6 +826,18 @@ export class TableEditor<T> {
     return this.getFirstEmptyCellToTheLeft(row, col) !== -1;
 
   }
+
+  // redrawColumn(col: number) {
+  //   for (let row = 0; row < this.matrix.nRows; row++) {
+  //     this.redrawCell(row, col);
+  //   }
+  // }
+
+  // refreshColumn(col: number) {
+  //   for (let row = 0; row < this.matrix.nRows; row++) {
+  //     this.refreshCell(row, col);
+  //   }
+  // }
 
   /**
    * Get the index of the first empty cell to the left
@@ -1113,10 +900,6 @@ export class TableEditor<T> {
     this.dispatchEvent(TableDrawnEvent, {});
   }
 
-  // getTableSelector(tableNumber: number) {
-  //   return '#' + this.options.id + ' .' + this.getTableClass(tableNumber);
-  // }
-
   dispatchColumnGroupChangeEvent(col: number, grouped: boolean) {
     let event = grouped ? ColumnGroupEvent : ColumnUngroupEvent;
     this.dispatchEvent(event, {
@@ -1167,18 +950,10 @@ export class TableEditor<T> {
     });
   }
 
-  // getTdSelectorAll() {
-  //   return '#' + this.options.id + ' .' + cellClass;
-  // }
-
   dispatchEvent(eventName: string, data: any = {}) {
     const event = new CustomEvent(eventName, {detail: data});
     this.container?.dispatchEvent(event);
   }
-
-  // getThSelectorAll() {
-  //   return '#' + this.options.id + ' .' + tableClass + ' th';
-  // }
 
   /**
    * Attaches a callback function to an editor event
@@ -1187,6 +962,210 @@ export class TableEditor<T> {
     const events = typeof eventName === 'string' ? [eventName] : eventName;
     events.forEach((eventName) => {
       this.container?.addEventListener(eventName, f);
+    });
+  }
+
+  // getTableSelector(tableNumber: number) {
+  //   return '#' + this.options.id + ' .' + this.getTableClass(tableNumber);
+  // }
+
+  getCellIndexFromElement(element: HTMLElement | null) {
+    if (element === null) {
+      return null;
+    }
+    let cellIndex = null;
+    let classes = this.getClassList(element);
+    // console.log(`Get cell index from element`)
+    // console.log(classes)
+    for (const theClass of classes) {
+      if (theClass.search(/^te-cell-/) !== -1) {
+        // TODO: use class constant in regex
+        let cellIndexArray = theClass.replace('te-cell-', '').split('-');
+        if (cellIndexArray.length !== 2) {
+          console.error('Found cell class with invalid cell index, class: ' + theClass);
+          break;
+        }
+        cellIndex = {
+          row: parseInt(cellIndexArray[0]), col: parseInt(cellIndexArray[1])
+        };
+        break;
+      }
+    }
+    return cellIndex;
+  }
+
+  private doRedrawTable() {
+    //console.log("Redrawing table")
+    let profiler = new SimpleProfiler('TableRedraw');
+    this.dispatchTableDrawnPreEvent();
+    if (this.container) {
+      const newVNode = this.genTableVNode();
+      profiler.lap('vnode generated');
+      if (!this.vnode) {
+        this.container.innerHTML = '';
+        const placeholder = document.createElement('div');
+        this.container.appendChild(placeholder);
+        this.vnode = placeholder;
+      }
+      this.vnode = patch(this.vnode, newVNode);
+    }
+    profiler.lap('vnode patched');
+    this.setupTableForEditMode(this.tableEditMode);
+    this.setupTableEventHandlers();
+    // dispatch redraw callbacks
+    if (this.options.onTableDrawnEventHandler !== null) {
+      this.dispatchTableDrawnEvent();
+    }
+    profiler.stop();
+  }
+
+  private genCellVNode(row: number, col: number, tableColumnNumber = -1): VNode {
+    let value = this.matrix.getValue(row, col);
+    let cellClasses: Record<string, boolean> = {
+      [cellClass]: true, [this.getTdClass(row, col)]: true, [this.getColClass(col)]: true
+    };
+    if (tableColumnNumber === 0) {
+      cellClasses[tableFirstColClass] = true;
+    }
+    this.getGroupClasses(col).forEach(c => cellClasses[c] = true);
+    this.options.generateCellClasses(row, col, value).forEach(c => cellClasses[c] = true);
+    let tdExtraArray = this.options.generateCellTdExtraAttributes ? this.options.generateCellTdExtraAttributes(row, col, value) : [];
+
+    const attrs: Record<string, string> = {};
+    tdExtraArray.forEach(attr => {
+      if (attr.attr) attrs[attr.attr] = attr.val ?? '';
+    });
+
+    const isEditing = this.editFlagMatrix.getValue(row, col);
+
+    return h('td', {
+      class: cellClasses, attrs: attrs, hook: {
+        insert: () => this.dispatchCellDrawnEvent(row, col), update: (oldVNode, vnode) => {
+          if (oldVNode.data?.attrs?.class !== vnode.data?.attrs?.class || oldVNode.children !== vnode.children) {
+            this.dispatchCellDrawnEvent(row, col);
+          }
+        }
+      }
+    }, isEditing ? this.genTdChildrenVNodesCellEditMode(row, col) : this.genTdChildrenVNodes(row, col));
+  }
+
+  private genThVNode(col: number): VNode {
+    let thClasses: Record<string, boolean> = {
+      [headerClass]: true, [this.getThClass(col)]: true, [this.getColClass(col)]: true
+    };
+
+    if (this.tableEditMode === EditModeOff) {
+      return h('th', {class: thClasses}, [(col + 1).toString()]);
+    }
+
+    let addColumnBeforeIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnLeft : this.icons.addColumnRight;
+    let addColumnAfterIcon = this.options.textDirection === 'ltr' ? this.icons.addColumnRight : this.icons.addColumnLeft;
+
+    let children: (VNode | string)[] = [];
+    children.push(this.genButtonVNode(addColumnBeforeIcon, [addColumnLeftButtonClass, headerButtonClass, moveModeButtonClass], 'Add column before'));
+    children.push((col + 1).toString());
+    if (this.canDeleteColumn(col)) {
+      children.push(this.genButtonVNode(this.icons.deleteColumn, [deleteColumnButtonClass, headerButtonClass, moveModeButtonClass], 'Delete this column'));
+    }
+    children.push(this.genButtonVNode(addColumnAfterIcon, [addColumnRightButtonClass, headerButtonClass, moveModeButtonClass], 'Add column after'));
+
+    if (col !== this.matrix.nCols - 1) {
+      let linkIcon = this.icons.unGroupedColumn;
+      let groupClass = groupNoneClass;
+      let title = "Click to group with next column";
+      let floatClass = this.options.textDirection === 'ltr' ? groupIconFloatRightClass : groupIconFloatLeftClass;
+      if (this.isColumnGroupedWithNext(col)) {
+        groupClass = groupNextClass;
+        linkIcon = this.icons.groupedColumn;
+        title = "Click to ungroup with next column";
+      }
+      children.push(this.genButtonVNode(linkIcon, [linkButtonClass, `${specificColumnLinkButtonClassPrefix}${col}`, groupClass, floatClass], title));
+    }
+    return h('th', {class: thClasses}, children);
+  }
+
+  private genTdChildrenVNodes(row: number, col: number): (VNode | string)[] {
+    if (this.tableEditMode === EditModeOff) {
+      return [h('span', {
+        class: {[cellContentClass]: true},
+        props: {innerHTML: this.options.generateCellContent(row, col, this.matrix.getValue(row, col))}
+      })];
+    }
+
+    let children: (VNode | string)[] = [];
+
+    let moveCellBackwardIcon = this.icons.moveCellLeft;
+    let pushCellsBackwardIcon = this.icons.pushCellsLeft;
+    let moveCellForwardIcon = this.icons.moveCellRight;
+    let pushCellsForwardIcon = this.icons.pushCellsRight;
+
+    if (this.options.textDirection === 'rtl') {
+      moveCellBackwardIcon = this.icons.moveCellRight;
+      pushCellsBackwardIcon = this.icons.pushCellsRight;
+      moveCellForwardIcon = this.icons.moveCellLeft;
+      pushCellsForwardIcon = this.icons.pushCellsLeft;
+    }
+
+    if (this.canMoveCellLeft(row, col)) {
+      children.push(this.genButtonVNode(moveCellBackwardIcon, [moveCellLeftButtonClass, cellButtonClass, moveModeButtonClass], 'Move backward'));
+    }
+    if (this.canPushCellsLeft(row, col)) {
+      let firstCol = this.getFirstEmptyCellToTheLeft(row, col) + 1;
+      children.push(this.genButtonVNode(pushCellsBackwardIcon, [pushCellsLeftButtonClass, cellButtonClass, moveModeButtonClass], `Push ${firstCol + 1}-${col + 1} back 1 column`));
+    }
+    children.push(h('span', {
+      class: {[cellContentClass]: true},
+      props: {innerHTML: this.options.generateCellContent(row, col, this.matrix.getValue(row, col))}
+    }));
+    if (this.isCellEditable(row, col)) {
+      children.push(this.genButtonVNode(this.icons.editCell, [editCellButtonClass, cellButtonClass], 'Edit'));
+    }
+    if (this.canPushCellsRight(row, col)) {
+      let lastCol = this.getFirstEmptyCellToTheRight(row, col) - 1;
+      children.push(this.genButtonVNode(pushCellsForwardIcon, [pushCellsRightButtonClass, cellButtonClass, moveModeButtonClass], `Push ${col + 1}-${lastCol + 1} forward 1 column`));
+    }
+    if (this.canMoveCellRight(row, col)) {
+      children.push(this.genButtonVNode(moveCellForwardIcon, [moveCellRightButtonClass, cellButtonClass, moveModeButtonClass], 'Move forward'));
+    }
+    return children;
+  }
+
+  // getTdSelectorAll() {
+  //   return '#' + this.options.id + ' .' + cellClass;
+  // }
+
+  private genTdChildrenVNodesCellEditMode(row: number, col: number): (VNode | string)[] {
+    let value = this.getValue(row, col);
+    let textToEdit = this.options.generateCellContentEditMode(row, col, value);
+    let inputSize = Math.min(textToEdit.length, 8);
+    if (textToEdit === '') {
+      inputSize = 5;
+    }
+
+    return [h('input', {
+      props: {type: 'text', value: textToEdit, size: inputSize}, class: {[inputClass]: true}
+    }), this.genButtonVNode(this.icons.confirmCellEdit, [confirmEditButtonClass], 'Confirm edit'), this.genButtonVNode(this.icons.cancelCellEdit, [cancelEditButtonClass], 'Cancel edit')];
+  }
+
+  // getThSelectorAll() {
+  //   return '#' + this.options.id + ' .' + tableClass + ' th';
+  // }
+
+  private setupTableEventHandlers() {
+    if (this.container && !this.eventHandlersSetup) {
+      this.container.addEventListener('click', this.onContainerClick);
+      this.container.addEventListener('keyup', this.onContainerKeyUp);
+      this.eventHandlersSetup = true;
+    }
+  }
+
+  private genButtonVNode(icon: string, classes: string[], title = '') {
+    const classObj: Record<string, boolean> = {};
+    classes.forEach(c => {
+      if (c && c !== hiddenClass) classObj[c] = true;
+    });
+    return h('a', {
+      props: {href: '#', title: title, innerHTML: icon}, class: classObj
     });
   }
 
@@ -1476,8 +1455,7 @@ export class TableEditor<T> {
       let currentTableLastColumnPlusOne = Math.min(this.matrix.nCols, currentTableFirstColumn + columnsPerTable);
 
       let tableClasses: Record<string, boolean> = {
-        [tableClass]: true,
-        [this.getTableClass(tableNumber)]: true
+        [tableClass]: true, [this.getTableClass(tableNumber)]: true
       };
       this.options.generateTableClasses().forEach(c => tableClasses[c] = true);
 
@@ -1510,8 +1488,7 @@ export class TableEditor<T> {
 
         rows.push(h('tr', {
           class: {
-            [tableRowClass]: true,
-            [`${tableSpecificRowClassPrefix}${row}`]: true
+            [tableRowClass]: true, [`${tableSpecificRowClassPrefix}${row}`]: true
           }
         }, rowChildren));
       }
@@ -1532,12 +1509,8 @@ export class TableEditor<T> {
   private genWindowingNavigation(numTables: number, startTable: number, endTable: number): VNode {
     const slider = h('input', {
       attrs: {
-        type: 'range',
-        min: 0,
-        max: numTables - (endTable - startTable),
-        value: startTable
-      },
-      on: {
+        type: 'range', min: 0, max: numTables - (endTable - startTable), value: startTable
+      }, on: {
         input: (ev: Event) => {
           this.currentWindowStartTableIndex = parseInt((ev.target as HTMLInputElement).value);
           this.redrawTable();
@@ -1545,14 +1518,13 @@ export class TableEditor<T> {
       }
     });
     const numCols = this.matrix.nCols;
-    const startCol = startTable*this.options.columnsPerRow;
-    const endCol = Math.min(endTable*this.options.columnsPerRow, numCols);
+    const startCol = startTable * this.options.columnsPerRow;
+    const endCol = Math.min(endTable * this.options.columnsPerRow, numCols);
 
     const info = h('span', `Showing cols ${startCol + 1} to ${endCol} of ${numCols}`);
 
     return h('div', {class: {['te-windowing-nav']: true}}, [info, slider]);
   }
-
 
   private getThIndexFromElement(element: HTMLElement | null) {
     if (element === null) {
@@ -1568,31 +1540,6 @@ export class TableEditor<T> {
       }
     }
     return thIndex;
-  }
-
-  getCellIndexFromElement(element: HTMLElement | null) {
-    if (element === null) {
-      return null;
-    }
-    let cellIndex = null;
-    let classes = this.getClassList(element);
-    // console.log(`Get cell index from element`)
-    // console.log(classes)
-    for (const theClass of classes) {
-      if (theClass.search(/^te-cell-/) !== -1) {
-        // TODO: use class constant in regex
-        let cellIndexArray = theClass.replace('te-cell-', '').split('-');
-        if (cellIndexArray.length !== 2) {
-          console.error('Found cell class with invalid cell index, class: ' + theClass);
-          break;
-        }
-        cellIndex = {
-          row: parseInt(cellIndexArray[0]), col: parseInt(cellIndexArray[1])
-        };
-        break;
-      }
-    }
-    return cellIndex;
   }
 
   private getGroupClasses(col: number) {

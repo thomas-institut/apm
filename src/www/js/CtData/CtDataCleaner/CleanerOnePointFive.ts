@@ -20,6 +20,10 @@ export class CleanerOnePointFive extends CtDataCleaner {
     // make sure all custom apparatuses are there
     let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose});
 
+    if (ctData.type === 'edition') {
+      ctData.customApparatuses = ctData.customApparatuses ?? [];
+    }
+
     ctData = defaultApparatusesCleaner.getCleanCtData(ctData);
     // run apparatus cleaners
     let subEntryPositionsCleaner = new SubEntryPositionsConsistencyCleaner({verbose: this.verbose});

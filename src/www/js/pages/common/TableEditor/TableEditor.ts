@@ -167,7 +167,9 @@ interface TableEditorOptions<T> {
   generateCellClasses?: (row: number, col: number, value: T) => string[];
   generateCellTdExtraAttributes?: (row: number, col: number, value: T) => TdExtraAttributes[];
   cellValidationFunction: (row: number, col: number, currentText: string) => CellValidationReport;
-  canDeleteColumn?: (col: number) => boolean;
+  //
+  // A function to test if a column can be deleted. If it returns null, the default behavior is used.
+  canDeleteColumn?: (col: number) => boolean|null;
   emptyCellHtml?: string;
   debug?: boolean;
 }
@@ -284,7 +286,7 @@ export class TableEditor<T> {
       onCellDrawnEventHandler: null,
       onTableDrawnEventHandler: () => {
       },
-      canDeleteColumn: () => true,
+      canDeleteColumn: () => null,
       onContentChangedEventHandler: () => {
       },
       onColumnGroupEventHandler: () => {
@@ -522,9 +524,9 @@ export class TableEditor<T> {
     return classes;
   }
 
-  redrawCell(_row: number, _col: number) {
-    this.redrawTable();
-  }
+  // redrawCell(_row: number, _col: number) {
+  //   this.redrawTable();
+  // }
 
   // getRow(row: number) {
   //   return this.matrix.getRow(row);
@@ -534,9 +536,9 @@ export class TableEditor<T> {
   //   return this.matrix.getColumn(col);
   // }
 
-  refreshCell(_row: number, _col: number) {
-    this.redrawTable();
-  }
+  // refreshCell(_row: number, _col: number) {
+  //   this.redrawTable();
+  // }
 
 
   // getRowTitle(row: number) {
@@ -564,13 +566,13 @@ export class TableEditor<T> {
     return this.columnSequence.isGroupedWithPrevious(col);
   }
 
-  refreshCellContent(_row: number, _col: number) {
-    this.redrawTable();
-  }
-
-  refreshCellClassesTd(_td: HTMLElement, _row: number, _col: number) {
-    this.redrawTable();
-  }
+  // refreshCellContent(_row: number, _col: number) {
+  //   this.redrawTable();
+  // }
+  //
+  // refreshCellClassesTd(_td: HTMLElement, _row: number, _col: number) {
+  //   this.redrawTable();
+  // }
 
   refreshCellClasses(_row: number, _col: number) {
     this.redrawTable();
@@ -599,18 +601,18 @@ export class TableEditor<T> {
   //     this.redrawTable();
   //   }
   // }
-
-  public refreshColumn(_col: number) {
-    this.redrawTable();
-  }
-
-  public refreshColumnClasses(_col: number) {
-    this.redrawTable();
-  }
-
-  refreshCellAttributes(_row: number, _col: number) {
-    this.redrawTable();
-  }
+  //
+  // public refreshColumn(_col: number) {
+  //   this.redrawTable();
+  // }
+  //
+  // public refreshColumnClasses(_col: number) {
+  //   this.redrawTable();
+  // }
+  //
+  // refreshCellAttributes(_row: number, _col: number) {
+  //   this.redrawTable();
+  // }
 
   enterCellEditMode(row: number, col: number) {
     //console.log('Entering edit mode, ' + row + ':' + col)
@@ -767,14 +769,14 @@ export class TableEditor<T> {
     return 'te-table-' + tableNumber;
   }
 
-  getTableNumberForColumn(col: number) {
-    if (this.options.showInMultipleRows) {
-      return Math.floor(col / this.options.columnsPerRow);
-    } else {
-      return 0;
-    }
-
-  }
+  // getTableNumberForColumn(col: number) {
+  //   if (this.options.showInMultipleRows) {
+  //     return Math.floor(col / this.options.columnsPerRow);
+  //   } else {
+  //     return 0;
+  //   }
+  //
+  // }
 
   getTdClass(row: number, col: number) {
     return specificCellClassPrefix + row + '-' + col;
@@ -801,11 +803,24 @@ export class TableEditor<T> {
   }
 
   isColumnEmpty(col: number) {
-    return this.matrix.isColumnEmpty(col, this.options.isEmptyValue);
+    if (this.matrix.isColumnEmpty(col, this.options.isEmptyValue)) {
+      return true;
+    }
+    // now check if the column is empty by checking if all cells are empty
+    for (let row = 0; row < this.matrix.nRows; row++) {
+      if (!this.options.isEmptyValue(row, col, this.matrix.getValue(row, col))) {
+        return false;
+      }
+    }
+    return true;
   }
 
   canDeleteColumn(col: number) {
-    return this.options.canDeleteColumn ? this.options.canDeleteColumn(col) : this.isColumnEmpty(col);
+    const optionalCheckerResult = this.options.canDeleteColumn(col);
+    if (optionalCheckerResult !== null) {
+      return optionalCheckerResult;
+    }
+    return this.isColumnEmpty(col);
   }
 
   canMoveCellLeft(row: number, col: number) {
@@ -1222,7 +1237,7 @@ export class TableEditor<T> {
             this.waitingForScrollZero = true;
             this.deleteSingleColumnData(col);
             if (this.options.onColumnDelete) {
-              this.options.onColumnDelete(col, false);
+              this.options.onColumnDelete(col, true);
             }
             this.redrawTable();
             this.forceRestoreScroll(250);

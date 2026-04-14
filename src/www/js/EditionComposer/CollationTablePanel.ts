@@ -793,19 +793,18 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   genOnColumnDelete() {
     return (deletedCol: number, isLastDeleted: boolean) => {
-      this.ctData['groupedColumns'] = this.tableEditor.columnSequence.getGroupedNumbers();
-      if (this.ctData['type'] === CollationTableType.COLLATION_TABLE) {
+      this.ctData.groupedColumns = this.tableEditor.columnSequence.getGroupedNumbers();
+      if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
         // nothing else to do for regular collation tables
         return;
       }
       this.syncEditionWitnessAndTableEditorFirstRow();
-      this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor();
+      this.ctData.collationMatrix= this.getCollationMatrixFromTableEditor();
       // fix references in custom apparatuses
-      this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1);
+      this.ctData.customApparatuses = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1);
       this.setCsvDownloadFile();
       if (isLastDeleted) {
         this.delayedOnCtDataChange(this.ctData);
-        // this.options.onCtDataChange(this.ctData);
       }
     };
   }
@@ -883,15 +882,9 @@ export class CollationTablePanel extends PanelWithToolbar {
           let editionWitnessIndex = this.ctData['witnessOrder'][0];
           let editionToken = this.ctData.witnesses[editionWitnessIndex]['tokens'][theMatrixCol[0]];
           if (editionToken !== undefined && editionToken.tokenType !== TranscriptionTokenType.EMPTY) {
-            // an undefined editionToken means that the edition token is empty
             return false;
           }
-          for (let i = 1; i < theMatrixCol.length; i++) {
-            if (theMatrixCol[i] !== -1) {
-              return false;
-            }
-          }
-          return true;
+          return this.tableEditor.isColumnEmpty(col);
 
         default:
           console.warn('Unknown collation table type!');

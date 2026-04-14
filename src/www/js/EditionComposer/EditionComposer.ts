@@ -263,9 +263,8 @@ export class EditionComposer extends ApmPage {
     const apiCtDataResponse = await this.apiClient.getSingleChunkData(this.options.tableId, this.options.version);
 
     body.html(getPrenderMessage(`Setting up data`));
-    this.ctData = apiCtDataResponse.ctData;
+    this.ctData = CtData.getCleanAndUpdatedCtData(apiCtDataResponse.ctData);
     this.ctData.tableId = this.tableId;
-    this.ctData = this.addMissingDataForCollationTable(this.ctData);
     console.log('Clean CT Data');
     console.log(this.ctData);
     this.isNew = this.ctData.tableId === -1;
@@ -481,6 +480,7 @@ export class EditionComposer extends ApmPage {
     $(body).html(getPrenderMessage('Ready'));
 
     await this.multiPanelUI.start();
+
     //  Edition title
     this.titleField = new EditableTextField({
       containerSelector: '#edition-title',
@@ -1245,16 +1245,6 @@ export class EditionComposer extends ApmPage {
     return `Click to show the Apparatus ${capitalizeFirstLetter(type)}`;
   }
 
-
-  /**
-   * Adds customApparatuses if not present in CtData
-   * @param ctData
-   * @private
-   */
-  private addMissingDataForCollationTable(ctData: CtDataInterface): CtDataInterface {
-    ctData.customApparatuses = ctData.customApparatuses ?? [];
-    return ctData;
-  }
 
   private genHighlightCollationTable() {
     return (colStart: number, colEnd: number | undefined) => {

@@ -1,5 +1,5 @@
 import React from 'react';
-import { useEditor, EditorContent } from '@tiptap/react';
+import { useEditor, EditorContent, JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Mark, mergeAttributes } from '@tiptap/core';
 import './TranscriptionEditor.css';
@@ -39,11 +39,11 @@ const Rubric = Mark.create({
  */
 const CustomBold = Bold.extend({
     renderHTML({ HTMLAttributes }) {
-        return ['b', mergeAttributes(HTMLAttributes, { class: 'boldtext' }), 0];
+        return ['b', mergeAttributes(HTMLAttributes, { class: 'bold-text' }), 0];
     },
     parseHTML() {
         return [
-            { tag: 'b.boldtext' },
+            { tag: 'b.bold-text' },
             { tag: 'strong' },
             {
                 tag: 'b',
@@ -59,11 +59,11 @@ const CustomBold = Bold.extend({
  */
 const CustomItalic = Italic.extend({
     renderHTML({ HTMLAttributes }) {
-        return ['b', mergeAttributes(HTMLAttributes, { class: 'italictext' }), 0];
+        return ['b', mergeAttributes(HTMLAttributes, { class: 'italic-text' }), 0];
     },
     parseHTML() {
         return [
-            { tag: 'b.italictext' },
+            { tag: 'b.italic-text' },
             { tag: 'em' },
             { tag: 'i' },
             {
@@ -86,24 +86,24 @@ const Abbreviation = Mark.create({
     return {
       expansion: {
         default: '',
-        parseHTML: element => element.getAttribute('alttext'),
-        renderHTML: attributes => ({ alttext: attributes.expansion }),
+        parseHTML: element => element.getAttribute('expansion'),
+        renderHTML: attributes => ({ expansion: attributes.expansion }),
       },
       handId: {
         default: 0,
-        parseHTML: element => parseInt(element.getAttribute('handid') || '0'),
+        parseHTML: element => parseInt(element.getAttribute('handId') || '0'),
         renderHTML: attributes => {
-          const attrs: Record<string, any> = { handid: attributes.handId };
+          const attrs: Record<string, any> = { handId: attributes.handId };
           if (attributes.handId > 0) {
-              attrs.class = `hand${attributes.handId}`;
+              attrs.class = `hand-${attributes.handId}`;
           }
           return attrs;
         },
       },
       editorialNote: {
         default: '',
-        parseHTML: element => element.getAttribute('extrainfo'),
-        renderHTML: attributes => ({ extrainfo: attributes.editorialNote }),
+        parseHTML: element => element.getAttribute('editorialNote'),
+        renderHTML: attributes => ({ editorialNote: attributes.editorialNote }),
       },
     };
   },
@@ -126,8 +126,8 @@ export interface TranscriptionEditorOptions {
 }
 
 export interface TranscriptionEditorProps {
-  content?: string;
-  onChange?: (content: string) => void;
+  content?: JSONContent;
+  onChange?: (content: JSONContent) => void;
   options?: TranscriptionEditorOptions;
 }
 
@@ -138,11 +138,13 @@ export interface TranscriptionEditorProps {
  */
 
 export default function TranscriptionEditor({
-  content = '',
+  content,
   onChange,
   options = {},
 }: TranscriptionEditorProps) {
   const handIdLimit = options.handIdLimit ?? HandIdLimit;
+
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
 
   const editor = useEditor({
     extensions: [
@@ -158,8 +160,11 @@ export default function TranscriptionEditor({
     content,
     onUpdate: ({ editor }) => {
       if (onChange) {
-        onChange(editor.getHTML());
+        onChange(editor.getJSON());
       }
+    },
+    onSelectionUpdate: () => {
+      forceUpdate();
     },
   });
 
@@ -225,6 +230,13 @@ export default function TranscriptionEditor({
           title="Abbreviation"
         >
           Abbr
+        </button>
+        <button
+          onClick={() => editor.chain().focus().unsetAllMarks().run()}
+          type="button"
+          title="Clear formatting"
+        >
+          Clear
         </button>
       </div>
       <EditorContent editor={editor} className="editor-content-wrapper" />

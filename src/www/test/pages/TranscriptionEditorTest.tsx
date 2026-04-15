@@ -1,13 +1,39 @@
 import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import TranscriptionEditor from "@/ReactAPM/Components/TranscriptionEditor";
+import { JSONContent } from '@tiptap/react';
+import TranscriptionEditor from "@/ReactAPM/Components/TranscriptionEditor/TranscriptionEditor";
+
+const initialContent: JSONContent = {
+  type: 'doc',
+  content: [
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Hello, this is a ' },
+        { type: 'text', text: 'bold', marks: [{ type: 'bold' }] },
+        { type: 'text', text: ' and ' },
+        { type: 'text', text: 'italic', marks: [{ type: 'italic' }] },
+        { type: 'text', text: ' text.' },
+      ],
+    },
+    {
+      type: 'paragraph',
+      content: [
+        { type: 'text', text: 'Here is some ' },
+        { type: 'text', text: 'rubric text', marks: [{ type: 'rubric' }] },
+        { type: 'text', text: ' and an ' },
+        { type: 'text', text: 'abbreviation', marks: [{ type: 'abbreviation', attrs: { expansion: 'expansion', handId: 1 } }] },
+        { type: 'text', text: '.' },
+      ],
+    },
+  ],
+};
 
 const TranscriptionEditorTest = () => {
-  const [content, setContent] = useState('<p>Hello, this is a <strong>bold</strong> and <em>italic</em> text.</p><p>Here is some <b class="rubric">rubric text</b> and an <b class="abbr" alttext="expansion" handid="1">abbreviation</b>.</p>');
+  const [content, setContent] = useState<JSONContent>(initialContent);
 
-  const handleChange = (newContent: string) => {
+  const handleChange = (newContent: JSONContent) => {
     setContent(newContent);
-    console.log('Editor content changed:', newContent);
   };
 
   return (
@@ -24,19 +50,12 @@ const TranscriptionEditorTest = () => {
       </div>
 
       <div style={{ marginTop: '40px', border: '1px solid #ddd', padding: '10px', backgroundColor: '#f9f9f9' }}>
-        <h3>Raw HTML Output</h3>
+        <h3>JSON Output</h3>
         <pre style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', fontSize: '12px' }}>
-          {content}
+          {JSON.stringify(content, null, 2)}
         </pre>
       </div>
 
-      <div style={{ marginTop: '20px' }}>
-        <h3>Preview (dangerouslySetInnerHTML)</h3>
-        <div 
-          style={{ border: '1px solid #ddd', padding: '10px' }}
-          dangerouslySetInnerHTML={{ __html: content }} 
-        />
-      </div>
     </div>
   );
 };

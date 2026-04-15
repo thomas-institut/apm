@@ -60,6 +60,14 @@
     font-weight: normal;
 }
 
+.ProseMirror b.bold-text {
+    font-weight: bold;
+}
+
+.ProseMirror b.italic-text {
+    font-style: italic;
+}
+
 .ProseMirror b.rubric {
     color: blue;
     font-weight: bold;
@@ -80,12 +88,12 @@
 }
 
 /* Hand styles (example) */
-.ProseMirror .hand1 {
+.ProseMirror .hand-1 {
     /* hand 1 styles */
     border-bottom: 2px solid #ddd;
 }
 
-.ProseMirror .hand2 {
+.ProseMirror .hand-2 {
     /* hand 2 styles */
     border-bottom: 2px solid #bbb;
 }

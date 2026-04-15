@@ -53,3 +53,31 @@ There is a UI issue with the current version of the TranscriptionEditor componen
 be highlighted when the user clicks on text that has the format. E.g., if a user click in the middle of 
 a bold word, the bold button should be highlighted. Right now the button is only highlighted when the user
 types something in the middle of the word. Fix this issue.
+
+# 4. Dialog for abbreviation parameters
+
+Implement and use a modal dialog to get the user to enter the abbreviation parameters. Use react-bootstrap components
+for the dialog (Modal, Form, Button, etc.) Make this a separate component and import it into TranscriptionEditor.tsx.
+The component's source code should be saved in the same directory as TranscriptionEditor.tsx.
+
+# 5. Sic Button
+
+Implement a Sic button that marks some text as Sic. This requires asking the user for the corrected text, the
+hand and an optional editorial note. This is very similar to the Abbreviation button but with "correction" instead
+of "expansion". The dialog for asking the user is therefore essentially the same as for the Abbreviation button. So
+modify the current Abbreviation dialog to reuse it with Sic as well.
+
+## Follow up
+
+Change the names of the attributes in Abbreviation and Sic marks in the 
+TranscriptionEditor component to reflect their purpose and to use camelCase. So, for example, 'handid' must be 'handId', 
+'alttext' should be 'expansion', and 'extrainfo' should be 'editorialNote'. In Sic marks, 'alttext' should be 'correction', 
+etc. Do not care about compatibility with the old TranscriptionEditor.js,
+use better naming for the attributes.
+
+
+---
+*This is the end of the first long session with Junie on April 15, 2026. Around 2.5 hours of 
+work. About 1.6 Jetbrains AI credits used.*
+
+

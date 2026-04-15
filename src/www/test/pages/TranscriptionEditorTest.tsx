@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { JSONContent } from '@tiptap/react';
 import TranscriptionEditor from "@/ReactAPM/Components/TranscriptionEditor/TranscriptionEditor";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 const initialContent: JSONContent = {
   type: 'doc',
@@ -23,6 +24,8 @@ const initialContent: JSONContent = {
         { type: 'text', text: 'rubric text', marks: [{ type: 'rubric' }] },
         { type: 'text', text: ' and an ' },
         { type: 'text', text: 'abbreviation', marks: [{ type: 'abbreviation', attrs: { expansion: 'expansion', handId: 1 } }] },
+        { type: 'text', text: ' and ' },
+        { type: 'text', text: 'sic text', marks: [{ type: 'sic', attrs: { correction: 'correction', handId: 2 } }] },
         { type: 'text', text: '.' },
       ],
     },

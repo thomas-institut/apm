@@ -2,6 +2,7 @@ import React from 'react';
 import { useEditor, EditorContent, JSONContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import { Mark, mergeAttributes } from '@tiptap/core';
+import TranscriptionMarkDialog, { TranscriptionMarkData } from './TranscriptionMarkDialog';
 import './TranscriptionEditor.css';
 
 import { Bold } from '@tiptap/extension-bold';
@@ -90,8 +91,8 @@ const Abbreviation = Mark.create({
         renderHTML: attributes => ({ expansion: attributes.expansion }),
       },
       handId: {
-        default: 0,
-        parseHTML: element => parseInt(element.getAttribute('handId') || '0'),
+        default: 1,
+        parseHTML: element => parseInt(element.getAttribute('handId') || '1'),
         renderHTML: attributes => {
           const attrs: Record<string, any> = { handId: attributes.handId };
           if (attributes.handId > 0) {
@@ -121,6 +122,53 @@ const Abbreviation = Mark.create({
   },
 });
 
+/**
+ * Custom Sic Mark
+ * Sic requires asking the user for the correction of the selected text,
+ * a hand id (1, 2, 3, up to a configurable limit) and an optional editorial note.
+ */
+const Sic = Mark.create({
+  name: 'sic',
+
+  addAttributes() {
+    return {
+      correction: {
+        default: '',
+        parseHTML: element => element.getAttribute('correction'),
+        renderHTML: attributes => ({ correction: attributes.correction }),
+      },
+      handId: {
+        default: 1,
+        parseHTML: element => parseInt(element.getAttribute('handId') || '1'),
+        renderHTML: attributes => {
+          const attrs: Record<string, any> = { handId: attributes.handId };
+          if (attributes.handId > 0) {
+              attrs.class = `hand-${attributes.handId}`;
+          }
+          return attrs;
+        },
+      },
+      editorialNote: {
+        default: '',
+        parseHTML: element => element.getAttribute('editorialNote'),
+        renderHTML: attributes => ({ editorialNote: attributes.editorialNote }),
+      },
+    };
+  },
+
+  parseHTML() {
+    return [
+      {
+        tag: 'b.sic',
+      },
+    ];
+  },
+
+  renderHTML({ HTMLAttributes }) {
+    return ['b', mergeAttributes(HTMLAttributes, { class: 'sic' }), 0];
+  },
+});
+
 export interface TranscriptionEditorOptions {
     handIdLimit?: number;
 }
@@ -134,7 +182,7 @@ export interface TranscriptionEditorProps {
 /**
  * TranscriptionEditor component using TipTap.
  * 
- * Implements: Bold, Italic, Rubric, and Abbreviation.
+ * Implements: Bold, Italic, Rubric, Abbreviation, and Sic.
  */
 
 export default function TranscriptionEditor({
@@ -144,6 +192,17 @@ export default function TranscriptionEditor({
 }: TranscriptionEditorProps) {
   const handIdLimit = options.handIdLimit ?? HandIdLimit;
 
+  const [dialogConfig, setDialogConfig] = React.useState<{
+    show: boolean;
+    type: 'abbreviation' | 'sic';
+    initialData?: TranscriptionMarkData;
+  }>({
+    show: false,
+    type: 'abbreviation',
+  });
+
+  // This forces a re-render. The state is unused, but triggers a re-render by increasing
+  // the value every time forceUpdate (the reducer's dispatch function) is called.
   const [, forceUpdate] = React.useReducer(x => x + 1, 0);
 
   const editor = useEditor({
@@ -156,6 +215,7 @@ export default function TranscriptionEditor({
       CustomItalic,
       Rubric,
       Abbreviation,
+      Sic,
     ],
     content,
     onUpdate: ({ editor }) => {
@@ -173,7 +233,7 @@ export default function TranscriptionEditor({
   }
 
   /**
-   * Prompts user for abbreviation details and applies the mark.
+   * Opens the abbreviation dialog.
    */
   const addAbbreviation = () => {
     const { from, to } = editor.state.selection;
@@ -181,19 +241,55 @@ export default function TranscriptionEditor({
       alert('Please select some text first.');
       return;
     }
-    const selectedText = editor.state.doc.textBetween(from, to);
     
-    const expansion = window.prompt(`Expansion of "${selectedText}":`, '');
-    if (expansion === null) return;
+    const attrs = editor.getAttributes('abbreviation');
+    setDialogConfig({
+      show: true,
+      type: 'abbreviation',
+      initialData: {
+        value: attrs.expansion || '',
+        handId: attrs.handId || 1,
+        editorialNote: attrs.editorialNote || '',
+      },
+    });
+  };
 
-    const handIdStr = window.prompt(`Hand ID (1-${handIdLimit}):`, '1');
-    if (handIdStr === null) return;
-    const handId = Math.max(0, parseInt(handIdStr) - 1);
+  /**
+   * Opens the sic dialog.
+   */
+  const addSic = () => {
+    const { from, to } = editor.state.selection;
+    if (from === to) {
+      alert('Please select some text first.');
+      return;
+    }
+    
+    const attrs = editor.getAttributes('sic');
+    setDialogConfig({
+      show: true,
+      type: 'sic',
+      initialData: {
+        value: attrs.correction || '',
+        handId: attrs.handId || 1,
+        editorialNote: attrs.editorialNote || '',
+      },
+    });
+  };
 
-    const editorialNote = window.prompt('Editorial Note (optional):', '') || '';
-    if (editorialNote === null) return;
-
-    editor.chain().focus().setMark('abbreviation', { expansion, handId, editorialNote }).run();
+  /**
+   * Applies mark parameters from the dialog.
+   */
+  const handleDialogSubmit = (data: TranscriptionMarkData) => {
+    const markAttrs: Record<string, any> = {
+      handId: data.handId,
+      editorialNote: data.editorialNote,
+    };
+    if (dialogConfig.type === 'abbreviation') {
+      markAttrs.expansion = data.value;
+    } else {
+      markAttrs.correction = data.value;
+    }
+    editor.chain().focus().setMark(dialogConfig.type, markAttrs).run();
   };
 
   return (
@@ -232,6 +328,14 @@ export default function TranscriptionEditor({
           Abbr
         </button>
         <button
+          onClick={addSic}
+          className={editor.isActive('sic') ? 'is-active' : ''}
+          type="button"
+          title="Sic"
+        >
+          Sic
+        </button>
+        <button
           onClick={() => editor.chain().focus().unsetAllMarks().run()}
           type="button"
           title="Clear formatting"
@@ -240,6 +344,16 @@ export default function TranscriptionEditor({
         </button>
       </div>
       <EditorContent editor={editor} className="editor-content-wrapper" />
+      <TranscriptionMarkDialog
+        show={dialogConfig.show}
+        onHide={() => setDialogConfig({ ...dialogConfig, show: false })}
+        onSubmit={handleDialogSubmit}
+        initialData={dialogConfig.initialData}
+        handIdLimit={handIdLimit}
+        title={dialogConfig.type === 'abbreviation' ? 'Abbreviation Parameters' : 'Sic Parameters'}
+        label={dialogConfig.type === 'abbreviation' ? 'Expansion' : 'Correction'}
+        placeholder={dialogConfig.type === 'abbreviation' ? 'Enter expansion' : 'Enter correction'}
+      />
     </div>
   );
 }

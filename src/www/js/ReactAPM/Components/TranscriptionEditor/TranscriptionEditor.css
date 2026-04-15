@@ -78,6 +78,11 @@
     border-bottom: 1px dotted chocolate;
 }
 
+.ProseMirror b.sic {
+    color: red;
+    border-bottom: 1px dashed red;
+}
+
 /* Standard TipTap marks might use <strong> or <em> */
 .ProseMirror strong {
     font-weight: bold;

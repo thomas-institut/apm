@@ -17,7 +17,7 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
       // not apparatuses to fix!
       return ctData;
     }
-    const EntryToBeDeleted = -1234; // assigning this value to the 'from' index signals that the entry should be deleted
+    const EntryToBeDeleted = -123456789; // assigning this value to the 'from' index signals that the entry should be deleted
     this.verbose && console.log(`Checking consistency in entry positions`);
     let errorsFound = false;
     let errorsNotFixed = false;
@@ -57,9 +57,10 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
             }
           }
         }
-        if (singleColumnEntry) {
+        if (entry.from !== EntryToBeDeleted && singleColumnEntry) {
           // no need to repeat the check for the 'to' token
           entry.to = entry.from;
+
           if (fromToken.tokenType !== 'word') {
             console.warn(`Token in single column entry ${entryIndex} is not a word, token ref = ${entry.from}, token type = ${fromToken.tokenType}`);
             // look forward for a printable token, this should solve problems causes by Bug478 (formerly Bug661)
@@ -126,6 +127,10 @@ export class ApparatusEntryPositionCleaner extends CtDataCleaner {
 
 
     while (index !== limit) {
+      if (tokens[index] === undefined) {
+        console.warn(`Token ${index} is undefined`);
+        break;
+      }
       if (tokens[index].tokenType === 'word' || tokens[index].tokenType === 'punctuation') {
         return index;
       }

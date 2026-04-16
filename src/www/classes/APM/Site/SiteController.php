@@ -495,6 +495,8 @@ END;
         }
 
         $jsImports = [];
+        $cssImports = [];
+
         $jsImports[] = $manifest[$entryPoint]["file"];
         foreach ($manifest[$entryPoint]["imports"] as $import) {
             if (!isset($manifest[$import])) {
@@ -502,9 +504,25 @@ END;
                 continue;
             }
             $jsImports[] = $manifest[$import]["file"];
+            $importCss = $this->getCssImportsFromEntry($import, $manifest);
+            if (count($importCss) > 0) {
+//                $this->logger->debug("Adding $import CSS imports: ", $importCss);
+                array_push($cssImports, ...$importCss);
+            }
         }
 
+        $mainCssImports = $this->getCssImportsFromEntry($entryPoint, $manifest);
+//        $this->logger->debug("Main CSS imports: ", $mainCssImports);
+//        $this->logger->debug("All CSS imports: ", $cssImports);
+
+        array_push($cssImports, ...$mainCssImports);
+
+        return [ 'js' => $jsImports, 'css' => $cssImports] ;
+    }
+
+    private function getCssImportsFromEntry(string $entryPoint, array $manifest): array {
         $cssImports = [];
+
         if (isset($manifest[$entryPoint]["css"])) {
             foreach ($manifest[$entryPoint]["css"] as $css) {
                 $cssImports[] = $css;
@@ -515,8 +533,7 @@ END;
                 $cssImports[] = $cssModule;
             }
         }
-
-        return [ 'js' => $jsImports, 'css' => $cssImports] ;
+        return $cssImports;
     }
 
     /**

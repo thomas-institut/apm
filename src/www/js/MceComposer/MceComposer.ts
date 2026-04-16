@@ -15,7 +15,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
-
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {MceData} from '@/MceData/MceData';
 import {EditionPanel} from './EditionPanel';
@@ -47,6 +46,7 @@ import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {Apparatus} from "@/Edition/Apparatus";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
+import '../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css';
 import './MceComposer.css';
 
 const defaultIcons = {

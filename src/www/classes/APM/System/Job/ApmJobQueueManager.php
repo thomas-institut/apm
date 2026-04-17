@@ -85,7 +85,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         if (count($timestamps) === 0) {
             return -1;
         }
-        return max($timestamps);
+        return intval(max($timestamps));
     }
 
     public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): int

@@ -31,11 +31,15 @@ export default function Document() {
   const docInfoQueryResult = useQuery({
     queryKey: ['docInfo', id], queryFn: async () : Promise<DocInfoData> => {
       return {
-        docInfo: await  context.apiClient.getDocumentInfo(Tid.fromCanonicalString(id), true, true),
+        docInfo: await  context.apiClient.getDocumentInfo(Tid.fromCanonicalString(id), true, true, true),
         entityData: await context.apiClient.getEntityData(Tid.fromCanonicalString(id))
       };
     }
   });
+
+  const handleDefineSuccess = () => {
+    docInfoQueryResult.refetch();
+  };
 
   const provisionalBreadCrumb = <Breadcrumb>
     <Breadcrumb.Item linkAs={Link} linkProps={{to: RouteUrls.docs()}}>Documents</Breadcrumb.Item>
@@ -82,6 +86,7 @@ export default function Document() {
           onPageClick={handleImageOpen}
           thumbnails={{initSize: 0, sizeSmall: 80, panel: true}}
           definer={true}
+          onDefineSuccess={handleDefineSuccess}
       />
 
     </NormalPageContainer>

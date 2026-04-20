@@ -408,7 +408,8 @@ class ApiDocuments extends ApiController
                 }
                 if ($pageDef['overwriteFoliation']) {
                     $newPageInfo->foliation = $pageDef['foliation'];
-                    $newPageInfo->foliationIsSet = true;
+                    // If foliation equals page number, it means user cleared it (set to default)
+                    $newPageInfo->foliationIsSet = strval($pageDef['foliation']) !== strval($pageNumber);
                 }
             }
             

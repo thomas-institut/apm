@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback, memo } from 'react';
 import { PageRange } from '../../PageRange';
 import * as FoliationType from '../../constants/FoliationType';
 import * as Entity from '../../constants/Entity';           // PageTypeFrontMatter, PageTypeText, etc.
+import { urlGen } from '@/pages/common/SiteUrlGen'
 
 
 interface PageListProps {
@@ -11,6 +12,7 @@ interface PageListProps {
     onPageClick?: (seq: number) => void;
     thumbnails?: Thumbnail;
     definer?: boolean;
+    onDefineSuccess?: () => void;
 }
 
 interface PageItemProps {
@@ -19,6 +21,7 @@ interface PageItemProps {
     thumbnailSize: number;
     isSelected: boolean;
     onClick: (seq: number) => void;
+    backgroundColor?: string;
 }
 
 interface Thumbnail {
@@ -30,14 +33,61 @@ interface Thumbnail {
 interface PageDefinerProps {
     docId: number;
     numPages: number;
+    onDefineSuccess?: () => void;
+    onRangesChange?: (ranges: any[]) => void;
+    onAddRangeAtPage?: (pageNumber: number) => void;
     urlGen?: {
         apiBulkPageSettings: () => string;
     };
 }
 
-export default function PageList({ pageInfoArray, onPageClick, thumbnails= {initSize: 0, sizeSmall: 0, panel: false}, definer=false }: PageListProps) {
+export default function PageList({ pageInfoArray, onPageClick, thumbnails= {initSize: 0, sizeSmall: 0, panel: false}, definer=false, onDefineSuccess }: PageListProps) {
 
     const [selectedPage, setSelectedPage] = useState<number | null>(null);
+    const [ranges, setRanges] = useState<any[]>([]);
+    const [definerModeActive, setDefinerModeActive] = useState(false);
+
+    // Farben für Text-Ranges in Reihenfolge
+    const textRangeColors = ['#d4e6f1', '#e8d4f1', '#d4f1e8']; // hellblau, hellviolett, hellgrün
+
+    // Helper: Bestimme Index der Text-Range unter allen Text-Ranges
+    const getTextRangeIndex = (rangeType?: any): number => {
+        if (!rangeType) return -1;
+        const textRanges = ranges.filter(r => r.type === 'text').sort((a, b) => {
+            const aFrom = Math.max(1, Math.min(a.from, a.to));
+            const bFrom = Math.max(1, Math.min(b.from, b.to));
+            return aFrom - bFrom;
+        });
+        return textRanges.findIndex(r => r.type === rangeType?.type && r.from === rangeType?.from);
+    };
+
+    // Helper: Bestimme Range-Typ und Farbe für eine Seite
+    const getRangeTypeForPage = (pageNum: number) => {
+        for (const r of ranges) {
+            const from = Math.max(1, Math.min(r.from, r.to));
+            const to = Math.min(pageInfoArray.length, Math.max(r.from, r.to));
+            if (pageNum >= from && pageNum <= to) {
+                return { type: r.type, rangeObj: r };
+            }
+        }
+        return undefined;
+    };
+
+    // Helper: Bestimme Farbe für eine Seite
+    const getColorForPage = (pageNum: number) => {
+        const rangeInfo = getRangeTypeForPage(pageNum);
+        if (!rangeInfo) return 'transparent';
+        if (rangeInfo.type === 'text') {
+            const textRanges = ranges.filter(r => r.type === 'text').sort((a, b) => {
+                const aFrom = Math.max(1, Math.min(a.from, a.to));
+                const bFrom = Math.max(1, Math.min(b.from, b.to));
+                return aFrom - bFrom;
+            });
+            const idx = textRanges.findIndex(r => r === rangeInfo.rangeObj);
+            return textRangeColors[idx % textRangeColors.length];
+        }
+        return '#e8e8e8'; // hellgrau für front/back
+    };
 
     const handleItemClick = useCallback((seq: number) => {
         setSelectedPage(seq);
@@ -57,10 +107,11 @@ export default function PageList({ pageInfoArray, onPageClick, thumbnails= {init
     const columnWidth = thumbnailSize > 0 ? `${thumbnailSize + 20}px` : "50px";
 
     const thumbnailPanel = (
-        <div className="panel-toolbar mb-2 d-flex align-items-center border-bottom pb-2"
+        <div className="panel-toolbar mb-2 d-flex align-items-center justify-content-between border-bottom pb-2"
              style={{ letterSpacing: '0.03em', fontSize: '0.85rem' }}>
-            <span className="text-uppercase text-muted small fw-bold me-3">Thumbnails:</span>
-            <div className="d-flex gap-3">
+            <div className="d-flex align-items-center">
+                <span className="text-uppercase text-muted small fw-bold me-3">Thumbnails:</span>
+                <div className="d-flex gap-3">
                 {sizeOptions.map(opt => (
                     <span
                         key={opt.label}
@@ -76,6 +127,7 @@ export default function PageList({ pageInfoArray, onPageClick, thumbnails= {init
           {opt.label}
         </span>
                 ))}
+                </div>
             </div>
         </div>
     )
@@ -103,11 +155,12 @@ export default function PageList({ pageInfoArray, onPageClick, thumbnails= {init
                         thumbnailSize={thumbnailSize ?? 0}
                         isSelected={selectedPage === page.sequence}
                         onClick={handleItemClick}
+                        backgroundColor={getColorForPage(page.pageNumber)}
                     />
                 ))}
             </div>
 
-        {definer ? <PageDefiner docId={pageInfoArray[0].docId} numPages={pageInfoArray.length}/> : ''}
+        {definer ? <PageDefiner docId={pageInfoArray[0].docId} numPages={pageInfoArray.length} urlGen={urlGen} onDefineSuccess={onDefineSuccess} onRangesChange={setRanges}/> : ''}
 
         </div>
     );
@@ -178,11 +231,43 @@ const RangeEditor: React.FC<{
     const textFoliationPreview = r.type === 'text' && r.foliate && !r.autoFrontBack
         ? pr.toStringWithFoliation('', ' - ', '', r.textFoliationType!, r.textFoliationStart!, (r.textFoliationPrefix||'').replace(/\s+/g,''), (r.textFoliationSuffix||'').replace(/\s+/g,''), !!r.textFoliationReverse)
         : '';
+    // Compute front/back foliation start for chronology: backmatter starts after frontmatter ends
+    const fbFoliationStart = React.useMemo(() => {
+        if (r.type === 'front') return 1;
+        if (r.type === 'back') {
+            const frontRange = ranges.find(rx => rx.type === 'front');
+            if (frontRange) {
+                const fpr = new PageRange(
+                    Math.max(1, Math.min(frontRange.from, frontRange.to)),
+                    Math.min(numPages, Math.max(frontRange.from, frontRange.to)),
+                    numPages
+                );
+                return fpr.toArray().length + 1;
+            }
+            return 1;
+        }
+        return 1;
+    }, [r.type, r.from, r.to, ranges, numPages]);
     const fbFoliationPreview = r.foliate && (r.type === 'front' || r.type === 'back')
-        ? pr.toStringWithFoliation('', ' - ', '', FoliationType.FOLIATION_CONSECUTIVE, 1, 'x')
+        ? pr.toStringWithFoliation('', ' - ', '', FoliationType.FOLIATION_CONSECUTIVE, fbFoliationStart, 'x')
         : '';
 
     const isFocused = focusedRangeId === r.id;
+
+    // Bestimme Hintergrundfarbe basierend auf Range-Typ
+    const textRangeColors = ['#d4e6f1', '#e8d4f1', '#d4f1e8']; // hellblau, hellviolett, hellgrün
+    let cardBgColor = 'transparent';
+    if (r.type === 'text') {
+        const textRanges = ranges.filter(rx => rx.type === 'text').sort((a, b) => {
+            const aFrom = Math.max(1, Math.min(a.from, a.to));
+            const bFrom = Math.max(1, Math.min(b.from, b.to));
+            return aFrom - bFrom;
+        });
+        const idx = textRanges.findIndex(rx => rx.id === r.id);
+        cardBgColor = textRangeColors[idx % textRangeColors.length];
+    } else if (r.type === 'front' || r.type === 'back') {
+        cardBgColor = '#e8e8e8'; // hellgrau
+    }
 
     return (
         <div
@@ -203,7 +288,17 @@ const RangeEditor: React.FC<{
             }}
         >
             <div className="d-flex justify-content-between align-items-center mb-2">
-                <span className="badge bg-secondary text-uppercase">{r.type}</span>
+                <span
+                    className="badge text-uppercase text-dark"
+                    style={{ backgroundColor: cardBgColor, cursor: 'pointer' }}
+                    onClick={() => {
+                        const types: RangeType[] = ['front', 'text', 'back'];
+                        const currentIdx = types.indexOf(r.type);
+                        const nextIdx = (currentIdx + 1) % types.length;
+                        updateRange(r.id, { type: types[nextIdx] });
+                    }}
+                    title="Click to change type"
+                >{r.type}</span>
                 <button className="btn btn-sm btn-outline-danger" onClick={() => removeRange(r.id)}>Remove</button>
             </div>
             <div className="d-flex align-items-center gap-3 mb-2 flex-wrap">
@@ -213,10 +308,7 @@ const RangeEditor: React.FC<{
                     max={numPages}
                     value={fromInput}
                     onChange={e => {
-                        const v = e.target.value;
-                        setFromInput(v);
-                        const n = parseInt(v, 10);
-                        if (!Number.isNaN(n) && n !== r.from) updateRange(r.id, { from: n });
+                        setFromInput(e.target.value);
                     }}
                     onBlur={commitFrom}
                     onKeyDown={e => { if (e.key === 'Enter') commitFrom(); }}
@@ -229,8 +321,8 @@ const RangeEditor: React.FC<{
                     {(((r.type === 'text') && !r.autoFrontBack) || (r.type !== 'text')) && (
                         <button
                             type="button"
-                            className={`position-absolute w-100 btn btn-sm ${r.foliate ? 'btn-primary' : 'btn-outline-secondary'}`}
-                            style={{ top: -30, lineHeight: 0.5, fontSize: '0.7em', borderColor: '#000', borderWidth: 1, borderStyle: 'solid' }}
+                            className={`position-absolute btn btn-sm ${r.foliate ? 'btn-primary' : 'btn-outline-secondary'}`}
+                            style={{ top: -30, left: 0, width: 60, lineHeight: 0.8, fontSize: '0.7em', borderColor: '#000', borderWidth: 1, borderStyle: 'solid' }}
                             title="Foliation"
                             onClick={() => preserveWindowScroll(() => updateRange(r.id, { foliate: !r.foliate }))}
                         >
@@ -243,10 +335,7 @@ const RangeEditor: React.FC<{
                         max={numPages}
                         value={toInput}
                         onChange={e => {
-                            const v = e.target.value;
-                            setToInput(v);
-                            const n = parseInt(v, 10);
-                            if (!Number.isNaN(n) && n !== r.to) updateRange(r.id, { to: n });
+                            setToInput(e.target.value);
                         }}
                         onBlur={commitTo}
                         onKeyDown={e => { if (e.key === 'Enter') commitTo(); }}
@@ -254,13 +343,63 @@ const RangeEditor: React.FC<{
                         style={{ width: '100%' }}
                     />
                 </div>
-                <span className={`ms-3 ${r.type === 'text' ? 'text-primary' : 'text-muted'}`}>
-                    {(textFoliationPreview || fbFoliationPreview) && (
-                        <>
-                            {' '}{textFoliationPreview || fbFoliationPreview}
-                        </>
-                    )}
-                </span>
+                {r.foliate && (textFoliationPreview || fbFoliationPreview) && (
+                    <div className="position-relative d-inline-block ms-2">
+                        {r.type === 'text' && !r.autoFrontBack && (
+                            <button
+                                type="button"
+                                className={`position-absolute btn btn-sm ${r.textFoliationReverse ? 'btn-primary' : 'btn-outline-secondary'}`}
+                                style={{ top: -34.5, left: -10, lineHeight: 0.8, fontSize: '0.7em', borderColor: '#000', borderWidth: 1, borderStyle: 'solid' }}
+                                onClick={() => preserveWindowScroll(() => updateRange(r.id, { textFoliationReverse: !r.textFoliationReverse }))}
+                            >
+                                Reverse
+                            </button>
+                        )}
+                        <span className="text-muted" style={{ fontSize: '0.82em', opacity: 0.75 }}>
+                            {textFoliationPreview || fbFoliationPreview}
+                        </span>
+                    </div>
+                )}
+                {r.foliate && r.type === 'text' && !r.autoFrontBack && (
+                    <div className="ms-2 d-flex align-items-center flex-wrap gap-2" style={{ fontSize: '0.85em' }}>
+                        <select
+                            className="form-select form-select-sm rounded-2"
+                            style={{ width: 130 }}
+                            value={r.textFoliationType}
+                            onChange={(e) => updateRange(r.id, { textFoliationType: parseInt(e.target.value) })}
+                        >
+                            <option value={FoliationType.FOLIATION_CONSECUTIVE}>consecutive</option>
+                            <option value={FoliationType.FOLIATION_RECTOVERSO}>recto/verso</option>
+                            <option value={FoliationType.FOLIATION_LEFTRIGHT}>left/right</option>
+                            <option value={FoliationType.FOLIATION_AB}>a/b</option>
+                        </select>
+                        <label className="small text-muted mb-0">Start</label>
+                        <input
+                            type="number"
+                            min={1}
+                            className="form-control form-control-sm rounded-2"
+                            value={r.textFoliationStart}
+                            onChange={(e) => updateRange(r.id, { textFoliationStart: Math.max(1, Number(e.target.value)) })}
+                            style={{ width: 55 }}
+                        />
+                        <label className="small text-muted mb-0">Prefix</label>
+                        <input
+                            type="text"
+                            className="form-control form-control-sm rounded-2"
+                            value={r.textFoliationPrefix}
+                            onChange={(e) => updateRange(r.id, { textFoliationPrefix: e.target.value })}
+                            style={{ width: 55 }}
+                        />
+                        <label className="small text-muted mb-0">Suffix</label>
+                        <input
+                            type="text"
+                            className="form-control form-control-sm rounded-2"
+                            value={r.textFoliationSuffix}
+                            onChange={(e) => updateRange(r.id, { textFoliationSuffix: e.target.value })}
+                            style={{ width: 55 }}
+                        />
+                    </div>
+                )}
             </div>
 
             {/* TEXT-spezifische Optionen */}
@@ -268,67 +407,6 @@ const RangeEditor: React.FC<{
                 <>
                     {!r.autoFrontBack && (
                         <>
-                            {r.foliate && (
-                                <div
-                                    className="mt-2 p-2"
-                                    style={{
-                                        border: '1px solid #999',
-                                        background: '#f8f9fa',
-                                        borderRadius: 8,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        minHeight: 44
-                                    }}
-                                >
-                                    <div className="d-flex align-items-center flex-wrap gap-3 mb-2">
-                                        <label className="me-1 small text-muted">Foliation Type</label>
-                                        <select
-                                            className="form-select form-select-sm rounded-2"
-                                            style={{ width: 220 }}
-                                            value={r.textFoliationType}
-                                            onChange={(e) => updateRange(r.id, { textFoliationType: parseInt(e.target.value) })}
-                                        >
-                                            <option value={FoliationType.FOLIATION_CONSECUTIVE}>consecutive (1,2,3,...)</option>
-                                            <option value={FoliationType.FOLIATION_RECTOVERSO}>recto/verso (1r,1v,...)</option>
-                                            <option value={FoliationType.FOLIATION_LEFTRIGHT}>left/right (1l,1r,...)</option>
-                                            <option value={FoliationType.FOLIATION_AB}>a/b (1a,1b,...)</option>
-                                        </select>
-                                        <label className="me-1 small text-muted">Start</label>
-                                        <input
-                                            type="number"
-                                            min={1}
-                                            className="form-control form-control-sm rounded-2"
-                                            value={r.textFoliationStart}
-                                            onChange={(e) => updateRange(r.id, { textFoliationStart: Math.max(1, Number(e.target.value)) })}
-                                            style={{ width: 60 }}
-                                        />
-                                        <label className="me-1 small text-muted">Prefix</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm rounded-2"
-                                            value={r.textFoliationPrefix}
-                                            onChange={(e) => updateRange(r.id, { textFoliationPrefix: e.target.value })}
-                                            style={{ width: 100 }}
-                                        />
-                                        <label className="me-1 ms-1 small text-muted">Suffix</label>
-                                        <input
-                                            type="text"
-                                            className="form-control form-control-sm rounded-2"
-                                            value={r.textFoliationSuffix}
-                                            onChange={(e) => updateRange(r.id, { textFoliationSuffix: e.target.value })}
-                                            style={{ width: 100 }}
-                                        />
-                                        <label className="d-flex align-items-center gap-2 small text-muted">
-                                            <input
-                                                type="checkbox"
-                                                checked={!!r.textFoliationReverse}
-                                                onChange={(e) => updateRange(r.id, { textFoliationReverse: e.target.checked })}
-                                            />
-                                            Reverse
-                                        </label>
-                                    </div>
-                                </div>
-                            )}
                             {/* Spaltenzuweisung optional (wie zuvor global, jetzt je Text-Range) */}
                             <div className="mt-2">
                                 <label className="d-flex align-items-center gap-2">
@@ -361,7 +439,7 @@ const RangeEditor: React.FC<{
 };
 
 const PageItem = memo(
-    function PageItem({ page, withThumbnail, thumbnailSize, isSelected, onClick }: PageItemProps) {
+    function PageItem({ page, withThumbnail, thumbnailSize, isSelected, onClick, backgroundColor }: PageItemProps) {
 
         const classes = ["page-div"];
         if (page.foliationIsSet) classes.push("foliation-set");
@@ -378,6 +456,9 @@ const PageItem = memo(
         const handleClick = () => {
             onClick(page.sequence);
         };
+
+        // Hintergrundfarbe: Selected überschreibt Range-Farbe
+        const bgColor = isSelected ? '#f0f8ff' : (backgroundColor || 'transparent');
 
         const thumbnail = (
             <div className="thumbnail-div mb-1" style={{ height: `${thumbnailSize}px`, display: 'flex', justifyContent: 'center' }}>
@@ -404,7 +485,7 @@ const PageItem = memo(
                     textAlign: 'center',
                     padding: '5px',
                     borderRadius: '4px',
-                    backgroundColor: isSelected ? '#f0f8ff' : 'transparent',
+                    backgroundColor: bgColor,
                     transition: 'background-color 0.2s ease'
                 }}
             >
@@ -418,7 +499,7 @@ const PageItem = memo(
         );
     });
 
-function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
+function PageDefiner({ docId, numPages, urlGen, onDefineSuccess, onRangesChange }: PageDefinerProps) {
 
     // Globale Flags
     const [overwritePageTypes, setOverwritePageTypes] = useState(false);
@@ -482,8 +563,8 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
         return { from, to };
     };
 
-    // Sync: passt Frontmatter.to an das kleinste Text.from - 1 an
-    //       und Backmatter.from an das größte Text.to + 1 – automatisch
+    // Sync: Löst Kollisionen auf wenn Text-Range in Front/Back eindringt
+    // Füllt aber KEINE Lücken - nur wenn nötig anpassen
     const syncFrontBack = (list: RangeConfig[]): RangeConfig[] => {
         const texts = list.filter(r => r.type === 'text');
         if (texts.length === 0) return list;
@@ -498,23 +579,30 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
             if (nt > maxTextTo) maxTextTo = nt;
         }
 
-        // Falls keine sinnvollen Werte (sollte nicht passieren, da texts.length>0)
         if (!Number.isFinite(minTextFrom) || !Number.isFinite(maxTextTo)) return list;
 
         let changed = false;
         const mapped = list.map(r => {
             if (r.type === 'front') {
-                const desiredTo = Math.max(1, Math.min(numPages, minTextFrom - 1));
-                if (r.to !== desiredTo) {
-                    changed = true;
-                    return { ...r, to: desiredTo };
+                const normalizedTo = Math.min(numPages, Math.max(r.from, r.to));
+                // Nur anpassen wenn Text eindringt, nicht für Lücken
+                if (normalizedTo >= minTextFrom) {
+                    const newTo = Math.max(1, minTextFrom - 1);
+                    if (r.to !== newTo) {
+                        changed = true;
+                        return { ...r, to: newTo };
+                    }
                 }
             }
             if (r.type === 'back') {
-                const desiredFrom = Math.max(1, Math.min(numPages, maxTextTo + 1));
-                if (r.from !== desiredFrom) {
-                    changed = true;
-                    return { ...r, from: desiredFrom };
+                const normalizedFrom = Math.max(1, Math.min(r.from, r.to));
+                // Nur anpassen wenn Text eindringt, nicht für Lücken
+                if (normalizedFrom <= maxTextTo) {
+                    const newFrom = Math.min(numPages, maxTextTo + 1);
+                    if (r.from !== newFrom) {
+                        changed = true;
+                        return { ...r, from: newFrom };
+                    }
                 }
             }
             return r;
@@ -656,6 +744,11 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
             const changed = updated.find(r => r.id === id);
             if (!changed) return updated;
 
+            // Validierung: from darf nicht größer als to sein (und umgekehrt)
+            if (changed.from > changed.to) {
+                [changed.from, changed.to] = [changed.to, changed.from];
+            }
+
             // Normalisierte Werte des geänderten Ranges ermitteln
             const nf = Math.max(1, Math.min(changed.from, changed.to));
             const nt = Math.min(numPages, Math.max(changed.from, changed.to));
@@ -707,6 +800,28 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
                 }
             }
 
+            // 1.5 Text-Ranges dürfen nicht überlappen - bei Überlappungen automatisch anpassen
+            if (changed.type === 'text' && (typeof patch.from !== 'undefined' || typeof patch.to !== 'undefined')) {
+                updated = updated.map(r => {
+                    if (r.type === 'text' && r.id !== changed.id) {
+                        const otherFrom = Math.max(1, Math.min(r.from, r.to));
+                        const otherTo = Math.min(numPages, Math.max(r.from, r.to));
+
+                        // Wenn geänderter Range.from dringt in andere Range ein → reduziere other.to
+                        if (nf >= otherFrom && nf <= otherTo) {
+                            const newTo = Math.max(1, nf - 1);
+                            return { ...r, to: newTo };
+                        }
+                        // Wenn geänderter Range.to dringt in andere Range ein → erhöhe other.from
+                        if (nt >= otherFrom && nt <= otherTo) {
+                            const newFrom = Math.min(numPages, nt + 1);
+                            return { ...r, from: newFrom };
+                        }
+                    }
+                    return r;
+                });
+            }
+
             // 2. Kollisionen automatisch auflösen
             // Frontmatter: wenn 'to' vergrößert/gesetzt und Text-from erreicht/überschreitet → Text-from = front.to + 1
             if (changed.type === 'front' && typeof patch.to !== 'undefined') {
@@ -742,7 +857,10 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
             //     da diese Ranges nun bewusst beim Aktivieren erzeugt werden.
 
             // 8. NEU: Front/Back stets an Text-Ranges koppeln (Front.to = min(Text.from)-1; Back.from = max(Text.to)+1)
-            updated = syncFrontBack(updated);
+            // Nur syncFrontBack aufrufen wenn Text-Range geändert wurde, nicht wenn User Front/Back manuell ändert
+            if (changed.type === 'text') {
+                updated = syncFrontBack(updated);
+            }
 
             return updated;
         });
@@ -787,6 +905,9 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
                         opts.reverse ?? false
                     );
                     def.overwriteFoliation = overwriteFoliation;
+                } else if (overwriteFoliation) {
+                    def.foliation = String(page);
+                    def.overwriteFoliation = true;
                 }
                 pageDefs.push(def);
             }
@@ -816,11 +937,18 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
                     prefix: 'x'
                 });
             } else if (r.type === 'back') {
+                const frontRange = ranges.find(rx => rx.type === 'front');
+                let backStart = 1;
+                if (frontRange) {
+                    const ffrom = Math.max(1, Math.min(frontRange.from, frontRange.to));
+                    const fto = Math.min(numPages, Math.max(frontRange.from, frontRange.to));
+                    backStart = new PageRange(ffrom, fto, numPages).toArray().length + 1;
+                }
                 pushRange(pr, {
                     pageType: Entity.PageTypeBackMatter,
                     foliate: !!r.foliate,
                     foliationType: FoliationType.FOLIATION_CONSECUTIVE,
-                    start: 1,
+                    start: backStart,
                     prefix: 'x'
                 });
             }
@@ -829,12 +957,13 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
         try {
             const response = await fetch(urlGen.apiBulkPageSettings(), {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ data: pageDefs }),
+                headers: { "Content-Type": "application/x-www-form-urlencoded" },
+                body: new URLSearchParams({ data: JSON.stringify(pageDefs) }).toString(),
             });
             if (!response.ok) throw new Error("Network response was not ok");
-            setStatusMsg("Update completed successfully!");
-            // Optional: Hier kannst du noch eine Seite neu laden, z.B. window.location.reload();
+            setStatusMsg("Defined!");
+            onRangesChange([]);
+            onDefineSuccess?.();
         } catch (error: any) {
             setStatusMsg("Update failed: " + error.message);
         } finally {
@@ -848,39 +977,15 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
     useEffect(() => {
         setRanges(prev => syncFrontBack(prev));
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [numPages, ranges]);
+    }, [numPages]);
+
+    // Benachrichtige Parent wenn sich Ranges ändern
+    useEffect(() => {
+        onRangesChange?.(ranges);
+    }, [ranges, onRangesChange]);
 
     return (
         <div className="page-definer">
-            <h4>Page Definer</h4>
-
-            {/* Start mit drei Buttons: Text / Frontmatter / Backmatter (diese Reihenfolge) */}
-            <div className="mb-2 d-flex gap-2 align-items-center flex-wrap">
-                <button className="btn btn-sm btn-outline-primary"
-                        onClick={() => addRangeOfType('front')}
-                        disabled={anyAutoFB || isAllCovered || ranges.some(r => r.type === 'front')}
-                >Frontmatter</button>
-                <button className="btn btn-sm btn-outline-primary"
-                        onClick={() => addRangeOfType('text')}
-                        disabled={anyAutoFB || isAllCovered}
-                >Text Range</button>
-                <button className="btn btn-sm btn-outline-primary"
-                        onClick={() => addRangeOfType('back')}
-                        disabled={
-                            anyAutoFB ||
-                            isAllCovered ||
-                            ranges.some(r => r.type === 'back') ||
-                            // Zusätzlich disabled, wenn die letzte Seite bereits abgedeckt ist
-                            ranges.some(r => {
-                                const from = Math.max(1, Math.min(r.from, r.to));
-                                const to = Math.min(numPages, Math.max(r.from, r.to));
-                                return to === numPages;
-                            })
-                        }
-                >Backmatter</button>
-                {anyAutoFB && <span className="ms-2 text-muted">Adding more ranges is disabled while automatic Front/Back is selected.</span>}
-                {isAllCovered && <span className="ms-2 text-muted">All pages are already covered by ranges.</span>}
-            </div>
 
             {/* Liste der angelegten Ranges (Sortierung: front → text → back) */}
             <div>
@@ -908,9 +1013,21 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
                 }, [ranges, numPages, focusedRangeId])}
             </div>
 
+            {/* Single "+" button to add new ranges (text range by default) - always visible after ranges list */}
+            <div className="mb-2 d-flex justify-content-center">
+                <button className="btn btn-sm btn-outline-primary"
+                        onClick={() => addRangeOfType('text')}
+                        disabled={anyAutoFB || isAllCovered}
+                        style={{ fontSize: '1.2em', fontWeight: 'bold', width: '40px', height: '40px', padding: '0' }}
+                >+</button>
+            </div>
+            {anyAutoFB && <div className="text-center text-muted small mb-2">Adding more ranges is disabled while automatic Front/Back is selected.</div>}
+            {isAllCovered && <div className="text-center text-muted small mb-2">All pages are already covered by ranges.</div>}
+
             {/* Globale Optionen & Aktion: erst anzeigen, wenn mind. eine Range existiert */}
             {ranges.length > 0 && (
                 <>
+
                     {/* eleganter Trenner nach der letzten Range */}
                     <hr className="mt-3 mb-2" style={{ borderTop: '1px solid #000000' }} />
 
@@ -928,11 +1045,11 @@ function PageDefiner({ docId, numPages, urlGen }: PageDefinerProps) {
                             title="Overwrite Existing Ranges"
                             style={{ borderColor: '#000', borderWidth: 1, borderStyle: 'solid' }}
                         >
-                            Overwrite Existing Ranges
+                            Overwrite
                         </button>
 
                         <button
-                            className="btn btn-sm btn-success p-0 text-center"
+                            className="btn btn-sm btn-success text-center"
                             onClick={handleSubmit}
                             disabled={isUpdating}
                             style={{ width: 60, flex: '0 0 60px' }}

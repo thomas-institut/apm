@@ -232,8 +232,8 @@ export class ApmApiClient {
     return this.get(urlGen.apiDocumentsGetPageInfo(pageId), false, TtlOneHour);
   }
 
-  async getDocumentInfo(docId: number, withPageIds: boolean = false, withFullPageInfo: boolean = false): Promise<DocInfo> {
-    return this.get(urlGen.apiDocGetInfo(docId, withPageIds, withFullPageInfo), false, TtlOneHour);
+  async getDocumentInfo(docId: number, withPageIds: boolean = false, withFullPageInfo: boolean = false, forceGet: boolean = false): Promise<DocInfo> {
+    return this.get(urlGen.apiDocGetInfo(docId, withPageIds, withFullPageInfo), forceGet, TtlOneHour);
   }
 
   async getWorkChunksWithTranscription(workId: string) : Promise<ApiChunksWithTranscription> {

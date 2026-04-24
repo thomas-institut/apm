@@ -3,12 +3,9 @@
 namespace APM\Jobs;
 
 use APM\CommandLine\IndexManager;
-use APM\EntitySystem\Exception\EntityDoesNotExistException;
-use APM\System\Document\Exception\DocumentNotFoundException;
-use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
-use ThomasInstitut\DataTable\InvalidTimeStringException;
+use Throwable;
 
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
@@ -25,9 +22,9 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
         $im->setIndexNamePrefix('editions');
 
         try {
-            $im->updateOrAddItem($table_id);
+            $im->updateOrAddItem($table_id, null, true);
             return true;
-        } catch (EntityDoesNotExistException|DocumentNotFoundException|PageNotFoundException|InvalidTimeStringException $e) {
+        } catch (Throwable $e) {
             $sm->getLogger()->error("Error updating editions index for table $table_id: " . $e->getMessage());
             return false;
         }

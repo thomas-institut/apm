@@ -5,6 +5,7 @@ use APM\System\ApmConfigParameter;
 use APM\System\Cache\CacheKey;
 use APM\System\Lemmatizer;
 use APM\System\SystemManager;
+use Fiber;
 use Http\Client\Exception;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
@@ -416,9 +417,11 @@ class ApiSearch extends ApiController
      * @param SystemManager $systemManager
      * @param string $whichIndex
      * @param LoggerInterface|null $logger
+     * @param bool $useFibers
      * @return bool
+     * @throws \Throwable
      */
-    static public function updateDataCache (SystemManager $systemManager, string $whichIndex, ?LoggerInterface $logger): bool
+    static public function updateDataCache (SystemManager $systemManager, string $whichIndex, ?LoggerInterface $logger, bool $useFibers = false): bool
     {
 
         $cache = $systemManager->getSystemDataCache();
@@ -427,14 +430,26 @@ class ApiSearch extends ApiController
         if ($whichIndex === 'transcriptions')
         {
             $transcriptions = self::getAllEntriesFromIndex($client, 'transcription', $logger);
+            if ($useFibers) {
+                Fiber::suspend();
+            }
             $transcribers = self::getAllEntriesFromIndex($client, 'transcriber', $logger);
+            if ($useFibers) {
+                Fiber::suspend();
+            }
             $cache->set(CacheKey::ApiSearchTranscriptions, serialize($transcriptions));
             $cache->set(CacheKey::ApiSearchTranscribers, serialize($transcribers));
 
         }
         else if ($whichIndex === 'editions') {
             $editions = self::getAllEntriesFromIndex($client, 'edition', $logger);
+            if ($useFibers) {
+                Fiber::suspend();
+            }
             $editors = self::getAllEntriesFromIndex($client, 'editor', $logger);
+            if ($useFibers) {
+                Fiber::suspend();
+            }
             $cache->set(CacheKey::ApiSearchEditions, serialize($editions));
             $cache->set(CacheKey::ApiSearchEditors, serialize($editors));
         }

@@ -64,6 +64,8 @@ export const MaxLineCount = 10000;
 const enDash = '\u2013';
 const MarginaliaApparatusType = 'marginalia';
 
+const FoliationChangeMainTextCharacters = [ '|', '¦', '║']
+
 interface LineRange {
   key: string,
   lineFrom: number,
@@ -262,38 +264,47 @@ export class EditionTypesettingHelper {
           case MainTextTokenType.TEXT:
             textItems = [];
 
-            // Add foliation change markers if needed
-            let witnessIndices = this.getWitnessIndicesWithFoliationChanges(mainTextToken.originalIndex);
-            if (witnessIndices.length > 0) {
-              textItems.push(...await this.tokenRenderer.renderWithStyle(fromString('|'), paragraphStyle));
+            const plainText = getPlainText(mainTextToken.fmtText);
+            if (FoliationChangeMainTextCharacters.includes(plainText)) {
+              // detect manual foliation change marks and add penalty so that they stay with the next word
+              textItems.push(...await this.tokenRenderer.renderWithStyle(fromString(plainText), paragraphStyle));
+              // the next token needs to be a glue in order for this penalty to work but this is what
+              // an editor will naturally do in the text, so there's no need to do further checks.
               textItems.push(this.createPenalty(InfinitePenalty));
-              textItems.push(await this.createGlue(paragraphStyle));
+              paragraphToTypeset.pushItemArray(textItems);
+            } else {
+              // Add foliation change markers if needed
+              let witnessIndices = this.getWitnessIndicesWithFoliationChanges(mainTextToken.originalIndex);
+              if (witnessIndices.length > 0) {
+                textItems.push(...await this.tokenRenderer.renderWithStyle(fromString('|'), paragraphStyle));
+                textItems.push(this.createPenalty(InfinitePenalty));
+                textItems.push(await this.createGlue(paragraphStyle));
+              }
+              const firstActualTextTokenIndex = textItems.length;
 
-            }
-            const firstActualTextTokenIndex = textItems.length;
-
-            // Add the text
-            textItems.push(...await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle));
-            if (textItems.length > 0) {
-              // tag the first item with the original index, this will be used to associate main text tokens
-              // with their line numbers in order to construct the apparatuses.
-              textItems[firstActualTextTokenIndex].addMetadata(MetadataKey.MainTextOriginalIndex, mainTextToken.originalIndex);
-              // detect text direction for text boxes
-              textItems = textItems.map((item) => {
-                if (item instanceof TextBox) {
-                  return this.detectAndSetTextBoxTextDirection(item);
-                }
-                return item;
-              });
-              if (this.edition.lang === 'la' && paragraphStyleDef.align !== 'center') {
+              // Add the text
+              textItems.push(...await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle));
+              if (textItems.length > 0) {
+                // tag the first item with the original index, this will be used to associate main text tokens
+                // with their line numbers in order to construct the apparatuses.
+                textItems[firstActualTextTokenIndex].addMetadata(MetadataKey.MainTextOriginalIndex, mainTextToken.originalIndex);
+                // detect text direction for text boxes
                 textItems = textItems.map((item) => {
                   if (item instanceof TextBox) {
-                    item.setHyphenation('la');
+                    return this.detectAndSetTextBoxTextDirection(item);
                   }
                   return item;
                 });
+                if (this.edition.lang === 'la' && paragraphStyleDef.align !== 'center') {
+                  textItems = textItems.map((item) => {
+                    if (item instanceof TextBox) {
+                      item.setHyphenation('la');
+                    }
+                    return item;
+                  });
+                }
+                paragraphToTypeset.pushItemArray(textItems);
               }
-              paragraphToTypeset.pushItemArray(textItems);
             }
             break;
         }
@@ -318,6 +329,14 @@ export class EditionTypesettingHelper {
   }
 
 
+  /**
+   * Retrieves the indices of witnesses that have foliation changes for a given main text token index.
+   *
+   * @param {number | undefined} mainTextTokenIndex - The index of the main text token to check for foliation changes.
+   * If undefined, the function will return an empty array.
+   * @return {number[]} An array containing the indices of witnesses with foliation changes.
+   * If no foliation changes are found, an empty array is returned.
+   */
   getWitnessIndicesWithFoliationChanges(mainTextTokenIndex: number | undefined): number[] {
     if (mainTextTokenIndex === undefined) {
       return [];

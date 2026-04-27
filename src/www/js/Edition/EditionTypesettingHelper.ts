@@ -219,8 +219,6 @@ export class EditionTypesettingHelper {
         paragraphStyle = 'normal';
       }
       let paragraphStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle(paragraphStyle);
-      // this.debug && console.log(`Paragraph style ${paragraphStyle}`)
-      // this.debug && console.log(paragraphStyleDef)
       const spaceBefore = Dimension.getPixelValue(paragraphStyleDef.spaceBefore, 12);
       if (spaceBefore != 0) {
         verticalItems.push((new Glue(TypesetterItemDirection.VerticalItemDirection)).setHeight(spaceBefore));
@@ -302,6 +300,10 @@ export class EditionTypesettingHelper {
       paragraphToTypeset.pushItem(Glue.createLineFillerGlue().setTextDirection(this.textDirection));
       paragraphToTypeset.pushItem(Penalty.createForcedBreakPenalty());
       verticalItems.push(paragraphToTypeset);
+      if (paragraphStyleDef.keepWithNext) {
+        // console.log(`keepWithNext paragraph style detected, adding never break penalty, style: ${paragraphStyle}`);
+        verticalItems.push(Penalty.createNeverBreakPenalty());
+      }
       const spaceAfter = Dimension.getPixelValue(paragraphStyleDef.spaceAfter, 12);
       if (spaceAfter !== 0) {
         verticalItems.push((new Glue(TypesetterItemDirection.VerticalItemDirection)).setHeight(spaceAfter));

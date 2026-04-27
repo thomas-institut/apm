@@ -54,6 +54,18 @@ import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
 import {NiceToggle, toggleEvent} from "@/widgets/NiceToggle";
+import {
+  attributesModule,
+  classModule,
+  eventListenersModule,
+  h,
+  init,
+  propsModule,
+  styleModule,
+  VNode
+} from 'snabbdom';
+
+const patch = init([classModule, propsModule, styleModule, eventListenersModule, attributesModule]);
 
 const doubleVerticalLine = String.fromCodePoint(0x2016);
 const verticalLine = String.fromCodePoint(0x007c);
@@ -134,6 +146,10 @@ export class ApparatusPanel extends PanelWithToolbar {
   private useCtColNumbers: boolean = false;
   private mainTextTypesettingInfo: MainTextTypesettingInfo|null = null
   private mtTsInfoFromCt : MainTextTypesettingInfo|null = null;
+  /**
+   * The current VNode of the apparatus, used for snabbdom patching
+   */
+  private apparatusVNode: VNode | Element | null = null;
 
 
   constructor(options: ApparatusPanelOptions) {
@@ -425,7 +441,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   async generateContentHtml(_tabId: string, _mode: string, _visible: boolean): Promise<string> {
     let textDirection = this.edition.lang === 'la' ? 'ltr' : 'rtl';
     return `<div class="aei-form" style="direction: ${textDirection}">${this.generateApparatusEntryFormHtml()}</div>
-<div class="apparatus text-${this.lang}">Apparatus coming soon...</div>`;
+<div class="apparatus text-${this.lang}"></div>`;
   }
 
   getContentAreaClasses() {
@@ -740,7 +756,18 @@ export class ApparatusPanel extends PanelWithToolbar {
     if (mainTextTypesettingInfo !== null) {
       this.mainTextTypesettingInfo = mainTextTypesettingInfo;
     }
-     $(this.getApparatusDivSelector()).html(this._genApparatusHtml());
+
+    const apparatusDiv = document.querySelector(this.getApparatusDivSelector());
+    if (apparatusDiv) {
+      const newVNode = this.genApparatusVNode();
+      if (this.apparatusVNode === null) {
+        patch(apparatusDiv, newVNode);
+      } else {
+        patch(this.apparatusVNode, newVNode);
+      }
+      this.apparatusVNode = newVNode;
+    }
+
     this._setUpEventHandlers();
 
     if (this.currentSelectedEntryIndex !== -1) {
@@ -954,7 +981,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     return this.mtTsInfoFromCt;
   }
 
-  _genApparatusHtml() {
+  private genApparatusHtml() {
     let debug = false;
     let html = '';
     let lastLine = '';
@@ -1058,6 +1085,99 @@ export class ApparatusPanel extends PanelWithToolbar {
       html = `<i>... empty ...</i>`;
     }
     return html;
+  }
+
+  /**
+   * Generates a VNode for the apparatus div
+   *
+   * @returns {VNode}
+   * @private
+   */
+  private genApparatusVNode(): VNode {
+    let lastLine = '';
+    let sigla = this.edition.getSigla();
+    let textDirectionMarker = this.edition.lang === 'la' ? '\u200E' : '\u200F';
+
+    let tsInfo = this.mainTextTypesettingInfo;
+    if (this.useCtColNumbers) {
+      tsInfo = this.getMainTextTypesettingInfoFromCtTable();
+    }
+
+    if (tsInfo === null) {
+      return h(`div.apparatus.text-${this.lang}`, 'Apparatus coming soon...');
+    }
+
+    const entries: VNode[] = [];
+
+    this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
+      let currentLine = "__UNDEFINED__";
+      try {
+        currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, this.lang);
+      } catch (e) {
+        console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`);
+      }
+
+      const entryNodes: (VNode | string)[] = [];
+
+      // line html
+      if (currentLine !== lastLine) {
+        let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}\u00A0` : '';
+        entryNodes.push(textDirectionMarker, lineSep, h('b.apparatus-line-number', currentLine), ' ');
+        lastLine = currentLine;
+      } else {
+        entryNodes.push(textDirectionMarker, '\u00A0', this.options.entrySeparator || '', '\u00A0', ' ');
+      }
+
+      // pre lemma
+      const preLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.preLemma));
+      if (preLemmaText !== '') {
+        entryNodes.push(h('span.pre-lemma', [ApparatusCommon.getKeywordVNode(preLemmaText, this.edition.lang)]), ' ');
+      }
+
+      // lemma
+      entryNodes.push(h(`span.lemma.lemma-${this.options.apparatusIndex}-${aeIndex}`, ApparatusCommon.getLemmaVNode(apparatusEntry, tsInfo, this.edition.lang)));
+
+      // post lemma
+      const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));
+      if (postLemmaText !== '') {
+        entryNodes.push(' ', h('span.pre-lemma', [ApparatusCommon.getKeywordVNode(postLemmaText, this.edition.lang)]));
+      }
+
+      // separator
+      let separator: string;
+      switch (apparatusEntry.separator) {
+        case '':
+          separator = apparatusEntry.allSubEntriesAreOmissions() ? '' : ']';
+          break;
+        case 'off':
+          separator = '';
+          break;
+        case 'colon':
+          separator = ':';
+          break;
+        default:
+          separator = getPlainText(fromCompactFmtText(apparatusEntry.separator));
+      }
+      entryNodes.push(separator, ' ');
+
+      // sub entries
+      apparatusEntry.subEntries.forEach((subEntry, subEntryIndex) => {
+        let classes = ['sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`];
+        if (!subEntry.enabled) {
+          classes.push('sub-entry-disabled');
+        }
+        entryNodes.push(h(`span.${classes.join('.')}`, ApparatusCommon.genSubEntryVNodeContent(this.lang, subEntry, sigla, this.edition.siglaGroups)));
+        entryNodes.push(h('span', {style: {direction: this.defaultTextDirection, unicodeBidi: 'embed'}}, '\u00A0'));
+      });
+
+      entries.push(h(`span.apparatus-entry.apparatus-entry-${this.options.apparatusIndex}-${aeIndex}`, entryNodes));
+    });
+
+    if (entries.length === 0) {
+      return h(`div.apparatus.text-${this.lang}`, [h('i', '... empty ...')]);
+    }
+
+    return h(`div.apparatus.text-${this.lang}`, entries);
   }
 
   private hideApparatusEntryForm() {

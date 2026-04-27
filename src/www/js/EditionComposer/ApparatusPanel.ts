@@ -840,7 +840,6 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _selectLemma(entryIndex: number, runCallbacks = true) {
-    //console.log(`Selecting ${entryIndex}, runCallbacks = ${runCallbacks}`)
     this._getAllLemmaElements().removeClass('lemma-selected lemma-hover');
     this.options.highlightCollationTableRange(-1, -1);
     if (entryIndex === -1) {

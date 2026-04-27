@@ -330,8 +330,6 @@ div.main-text p.paragraph-empty {
 
 b.apparatus-line-number {
     font-size: 1.2em;
-    border: 1px dotted #eeeeee;
-    border-radius: 5px;
     padding-right: 3px;
     padding-left: 3px;
 }
@@ -503,6 +501,15 @@ th.selected.highlight {
 
 .sub-entry-source-auto {
     color: var(--dimmed-apparatus-text-color);
+}
+
+
+.sub-entry {
+    padding-left: 0.25em;
+}
+
+.text-la .sub-entry {
+    padding-right: 0.5em;
 }
 
 span.pre-lemma {

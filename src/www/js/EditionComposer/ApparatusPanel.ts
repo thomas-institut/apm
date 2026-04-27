@@ -1073,10 +1073,12 @@ export class ApparatusPanel extends PanelWithToolbar {
     let lastLine = '';
     let sigla = this.edition.getSigla();
     let textDirectionMarker = this.edition.lang === 'la' ? '\u200E' : '\u200F';
+    let lineNumbersLang = this.lang;
 
     let tsInfo = this.mainTextTypesettingInfo;
     if (this.useCtColNumbers) {
       tsInfo = this.getMainTextTypesettingInfoFromCtTable();
+      lineNumbersLang = 'la';
     }
 
     if (tsInfo === null) {
@@ -1088,7 +1090,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
       let currentLine = "__UNDEFINED__";
       try {
-        currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, this.lang);
+        currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, lineNumbersLang);
       } catch (e) {
         console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`);
       }
@@ -1098,7 +1100,12 @@ export class ApparatusPanel extends PanelWithToolbar {
       // line html
       if (currentLine !== lastLine) {
         let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}\u00A0` : '';
-        entryNodes.push(textDirectionMarker, lineSep, h('b.apparatus-line-number', currentLine), ' ');
+        if (this.useCtColNumbers) {
+          entryNodes.push(textDirectionMarker, lineSep, h('b.apparatus-line-number.ct-col-number', currentLine), ' ');
+        } else {
+          entryNodes.push(textDirectionMarker, lineSep, h('b.apparatus-line-number', currentLine), ' ');
+        }
+
         lastLine = currentLine;
       } else {
         entryNodes.push(textDirectionMarker, '\u00A0', this.options.entrySeparator || '', '\u00A0', ' ');

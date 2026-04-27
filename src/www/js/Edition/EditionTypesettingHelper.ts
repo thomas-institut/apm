@@ -642,7 +642,7 @@ export class EditionTypesettingHelper {
 
       case 'full':
         // e.g., word1 word2 word3]
-        tsItems.push(...await this.getTsItemsForString(entry.lemmaText, 'apparatus', 'detect'));
+        tsItems.push(...await this.getTsItemsForString(lemmaComponents.text, 'apparatus', 'detect'));
         tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from, entry.to));
         return tsItems;
 

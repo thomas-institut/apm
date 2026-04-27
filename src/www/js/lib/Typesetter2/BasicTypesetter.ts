@@ -134,7 +134,7 @@ export class BasicTypesetter extends Typesetter2 {
   private readonly textAreaHeight: number;
   private lineSkip: number;
   private readonly minLineSkip: number;
-  private readonly debug: boolean;
+  private debug: boolean;
   private pageOutputProcessors: PageProcessor[] = [];
 
   constructor(options: BasicTypesetterOptions) {
@@ -431,7 +431,7 @@ export class BasicTypesetter extends Typesetter2 {
    * Typesets a list of paragraphs into a document.
    *
    * Each vertical item in the input list must be either a horizontal list
-   * containing a paragraph or vertical glue.
+   * containing a paragraph, vertical glue or a penalty
    *
    * A paragraph is a single horizontal list containing text and
    * inter-word glue. The typesetter will convert each paragraph into
@@ -483,8 +483,12 @@ export class BasicTypesetter extends Typesetter2 {
         }
         continue;
       }
+      if (mainTextListItem instanceof Penalty) {
+        mainTextVerticalList.pushItem(mainTextListItem);
+        continue;
+      }
       // any other item type is ignored
-      this.debug && console.log(`Ignoring non-glue non-list item while building main text vertical list`, mainTextListItem);
+      console.warn(`Ignoring non-supported item while building main text vertical list`, mainTextListItem);
     }
     // set any inter line glue that still unset, normally, inter line glue between paragraphs
     mainTextVerticalList = this.setUnsetInterLineGlue(mainTextVerticalList);
@@ -1003,9 +1007,13 @@ export class BasicTypesetter extends Typesetter2 {
               widows = lastParagraphLineCount - orphans;
             }
             itemsInRange.push(item);
-            // if the next item is a penalty, that's the range's penalty
-            if (itemList[index + 1] !== undefined) {
-              let nextItem = itemList[index + 1];
+            // the range's penalty is the penalty of the next penalty item after any glue
+            let lookAheadItemIndex = index +1;
+            while (itemList[lookAheadItemIndex] !== undefined && itemList[lookAheadItemIndex] instanceof Glue) {
+              lookAheadItemIndex++;
+            }
+            if (itemList[lookAheadItemIndex] !== undefined) {
+              let nextItem = itemList[lookAheadItemIndex];
               if (nextItem instanceof Penalty) {
                 penalty = nextItem.getPenalty();
               }

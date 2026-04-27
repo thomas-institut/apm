@@ -106,7 +106,7 @@ export interface ParagraphStyleDef {
   spaceBefore?: string;
   spaceAfter?: string;
   align?: string;
-
+  keepWithNext?: boolean
 }
 
 export interface GlueStyleDef {
@@ -386,6 +386,9 @@ export class StyleSheet {
         }
         if (parDef.align !== undefined && parDef.align !== '') {
           paragraphDef['align'] = parDef.align;
+        }
+        if (parDef.keepWithNext !== undefined) {
+          paragraphDef.keepWithNext = parDef.keepWithNext;
         }
       }
       resolve([paragraphDef, baseTextBox]);

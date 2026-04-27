@@ -78,6 +78,10 @@ export class Penalty extends TypesetterItem {
     return (new Penalty()).setPenalty(MinusInfinitePenalty);
   }
 
+  static createNeverBreakPenalty() {
+    return (new Penalty()).setPenalty(InfinitePenalty);
+  }
+
   isFlagged() {
     return this.flagged;
   }

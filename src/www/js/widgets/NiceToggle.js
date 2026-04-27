@@ -80,7 +80,9 @@ export class NiceToggle {
   }
 
   genOnClickButton() {
-    return () => {
+    return (ev) => {
+      ev.preventDefault();
+      ev.stopPropagation();
       if (this.isOn) {
         this.toggleOff()
       } else {

@@ -1628,7 +1628,7 @@ export class MainTextPanel extends PanelWithToolbar {
       switch (this.currentEditMode) {
         case EDIT_MODE_OFF:
           this.hoverEntriesInApparatusPanels($(ev.target), true);
-          this.showElementPopover($(ev.target));
+          this.showElementPopover($(ev.target.closest('.main-text-token')));
           break;
 
         case EDIT_MODE_APPARATUS:
@@ -1643,7 +1643,7 @@ export class MainTextPanel extends PanelWithToolbar {
             this._processNewSelection();
           } else {
             this.hoverEntriesInApparatusPanels($(ev.target), true);
-            this.showElementPopover($(ev.target));
+            this.showElementPopover($(ev.target.closest('.main-text-token')));
           }
           break;
 
@@ -1660,13 +1660,13 @@ export class MainTextPanel extends PanelWithToolbar {
       switch (this.currentEditMode) {
         case EDIT_MODE_OFF:
           this.hoverEntriesInApparatusPanels($(ev.target), false);
-          $(ev.target).popover('hide');
+          $(ev.target.closest('.main-text-token')).popover('hide');
           break;
 
         case EDIT_MODE_APPARATUS:
           ev.stopPropagation();
           this.hoverEntriesInApparatusPanels($(ev.target), false);
-          $(ev.target).popover('hide');
+          $(ev.target.closest('.main-text-token')).popover('hide');
           this.cursorInToken = false;
           break;
 

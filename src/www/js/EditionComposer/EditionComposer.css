@@ -6,6 +6,9 @@
     --text-select-color: yellow;
 }
 
+body {
+    overflow-y: hidden;
+}
 
 input:focus {
     border: 1px solid #009dff;
@@ -328,12 +331,19 @@ div.main-text p.paragraph-empty {
     margin-left: 1rem
 }
 
-b.apparatus-line-number {
+.apparatus-line-number {
     font-size: 1.2em;
-    border: 1px dotted #eeeeee;
-    border-radius: 5px;
     padding-right: 3px;
     padding-left: 3px;
+}
+
+.ct-col-number {
+    font-family: var(--default-font-family), sans-serif;
+    font-size: 1em;
+}
+
+.text-ar .ct-col-number {
+    font-size: 0.9em;
 }
 
 .token-selected {
@@ -503,6 +513,15 @@ th.selected.highlight {
 
 .sub-entry-source-auto {
     color: var(--dimmed-apparatus-text-color);
+}
+
+
+.sub-entry {
+    padding-left: 0.25em;
+}
+
+.text-la .sub-entry {
+    padding-right: 0.5em;
 }
 
 span.pre-lemma {

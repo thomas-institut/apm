@@ -24,11 +24,7 @@ import {CtData} from '@/CtData/CtData';
 import {onClickAndDoubleClick} from '@/toolbox/DoubleClick';
 import {ApparatusEntryTextEditor} from './ApparatusEntryTextEditor';
 import {
-  capitalizeFirstLetter,
-  deepCopy,
-  getTextDirectionForLang,
-  removeExtraWhiteSpace,
-  trimWhiteSpace
+  capitalizeFirstLetter, deepCopy, getTextDirectionForLang, removeExtraWhiteSpace, trimWhiteSpace
 } from '@/toolbox/Util';
 import {varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import * as SubEntryType from '../Edition/SubEntryType';
@@ -54,16 +50,7 @@ import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
 import {NiceToggle, toggleEvent} from "@/widgets/NiceToggle";
-import {
-  attributesModule,
-  classModule,
-  eventListenersModule,
-  h,
-  init,
-  propsModule,
-  styleModule,
-  VNode
-} from 'snabbdom';
+import {attributesModule, classModule, eventListenersModule, h, init, propsModule, styleModule, VNode} from 'snabbdom';
 
 const patch = init([classModule, propsModule, styleModule, eventListenersModule, attributesModule]);
 
@@ -144,8 +131,8 @@ export class ApparatusPanel extends PanelWithToolbar {
   private tagEditor!: TagEditor;
   private subEntryEditors: SubEntryEditorsArray = [];
   private useCtColNumbers: boolean = false;
-  private mainTextTypesettingInfo: MainTextTypesettingInfo|null = null
-  private mtTsInfoFromCt : MainTextTypesettingInfo|null = null;
+  private mainTextTypesettingInfo: MainTextTypesettingInfo | null = null;
+  private mtTsInfoFromCt: MainTextTypesettingInfo | null = null;
   /**
    * The current VNode of the apparatus, used for snabbdom patching
    */
@@ -473,24 +460,6 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.entryFormState = entryFormStateEmpty;
   }
 
-  private setupLineColumnNumbersToggle() {
-    const lineColumnNumbersToggle = new NiceToggle({
-      containerSelector: `${this.containerSelector} #line-column-numbers-toggle`,
-      title: 'Show Col Numbers: ',
-      onIcon: '<i class="fas fa-toggle-on"></i>',
-      onPopoverText: 'Click to use main text numbers for apparatus entries',
-      offIcon: '<i class="fas fa-toggle-off"></i>',
-      offPopoverText: 'Click to use collation table column numbers for apparatus entries',
-      initialValue: this.useCtColNumbers
-    });
-    lineColumnNumbersToggle.on(toggleEvent, (ev: any) => {
-      this.useCtColNumbers = ev.detail.toggleStatus;
-      this.updateApparatus(this.mainTextTypesettingInfo);
-    });
-  }
-
-
-
   _setupApparatusEntryForm() {
     let formSelector = this.getApparatusEntryFormSelector();
     this.updateButton = $(`${formSelector} .update-btn`);
@@ -682,7 +651,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _genOnClickApparatusEntryCancelButton() {
-    return (ev: Event) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       ev.preventDefault();
       ev.stopPropagation();
       this.hideApparatusEntryForm();
@@ -700,7 +669,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _genOnClickEditEntryButton() {
-    return (ev: any) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       ev.preventDefault();
       ev.stopPropagation();
       if (this.apparatusEntryFormIsVisible) {
@@ -712,7 +681,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _genOnClickPanelContainer() {
-    return (ev: any) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       if (this.apparatusEntryFormIsVisible) {
         return;
       }
@@ -813,8 +782,12 @@ export class ApparatusPanel extends PanelWithToolbar {
   _setUpEventHandlers() {
     let lemmaElements = this._getAllLemmaElements();
     lemmaElements.off()
-    .on('mouseenter', this._genOnMouseEnterLemma())
-    .on('mouseleave', this._genOnMouseLeaveLemma());
+    .on('mouseenter', (ev) => {
+      this.hoverLemma($(ev.target), true);
+    })
+    .on('mouseleave', (ev) => {
+      this.hoverLemma($(ev.target), false);
+    });
     onClickAndDoubleClick(lemmaElements, this._genOnClickLemma(), this._genOnDoubleClickLemma());
   }
 
@@ -851,28 +824,15 @@ export class ApparatusPanel extends PanelWithToolbar {
       lemmaElement.removeClass('lemma-hover');
     }
   }
-
-  _genOnMouseEnterLemma() {
-    return (ev: any) => {
-      this.hoverLemma($(ev.target), true);
-    };
-  }
-
-  _genOnMouseLeaveLemma() {
-    return (ev: any) => {
-      this.hoverLemma($(ev.target), false);
-    };
-  }
-
   _genOnDoubleClickLemma() {
-    return (ev: any) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       this._selectLemmaFromClickTarget(ev.target);
       this._editSelectedEntry();
     };
   }
 
   _genOnClickLemma() {
-    return (ev: any) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       if (!this.apparatusEntryFormIsVisible) {
         this._selectLemmaFromClickTarget(ev.target);
       }
@@ -965,6 +925,22 @@ export class ApparatusPanel extends PanelWithToolbar {
     return $(`${this.containerSelector} .clear-selection-btn`);
   }
 
+  private setupLineColumnNumbersToggle() {
+    const lineColumnNumbersToggle = new NiceToggle({
+      containerSelector: `${this.containerSelector} #line-column-numbers-toggle`,
+      title: 'Show Col Numbers: ',
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      onPopoverText: 'Click to use main text numbers for apparatus entries',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to use collation table column numbers for apparatus entries',
+      initialValue: this.useCtColNumbers
+    });
+    lineColumnNumbersToggle.on(toggleEvent, (ev: any) => {
+      this.useCtColNumbers = ev.detail.toggleStatus;
+      this.updateApparatus(this.mainTextTypesettingInfo);
+    });
+  }
+
   private getMainTextTypesettingInfoFromCtTable(): MainTextTypesettingInfo {
     if (this.mtTsInfoFromCt !== null) {
       return this.mtTsInfoFromCt;
@@ -981,111 +957,111 @@ export class ApparatusPanel extends PanelWithToolbar {
     return this.mtTsInfoFromCt;
   }
 
-  private genApparatusHtml() {
-    let debug = false;
-    let html = '';
-    let lastLine = '';
-    let sigla = this.edition.getSigla();
-    let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;';
-
-    let tsInfo = this.mainTextTypesettingInfo;
-    if (this.useCtColNumbers) {
-      tsInfo = this.getMainTextTypesettingInfoFromCtTable();
-    }
-
-    if (tsInfo === null) {
-      return 'Apparatus coming soon...';
-    }
-
-    this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
-      debug && console.log(`Generating apparatus entry ${aeIndex}`);
-      html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`;
-      let currentLine = "__UNDEFINED__";
-      try {
-        currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, this.lang);
-      } catch (e) {
-        console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`);
-        console.log(apparatusEntry);
-      }
-
-      let lineHtml = `${textDirectionMarker}&nbsp;${this.options.entrySeparator}&nbsp;`;
-      if (currentLine !== lastLine) {
-        let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}&nbsp;` : '';
-        lineHtml = `${textDirectionMarker}${lineSep}<b class="apparatus-line-number">${currentLine}</b>`;
-        lastLine = currentLine;
-      }
-      // build lemma section
-      let preLemmaSpanHtml = '';
-      const preLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.preLemma));
-      switch (preLemmaText) {
-        case '':
-          // do nothing
-          break;
-
-        case 'ante':
-        case 'post':
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
-          break;
-
-        default:
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
-      }
-      let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `;
-
-
-      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, tsInfo, this.edition.lang)}</span>`;
-
-      debug && console.log(`Lemma html: ${lemmaSpan}`);
-
-      let postLemmaSpan = '';
-      const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));
-      if (postLemmaText !== '') {
-        let postLemma = ApparatusCommon.getKeywordHtml(postLemmaText, this.edition.lang);
-        postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
-      }
-
-      let separator: CompactFmtText;
-
-      switch (apparatusEntry.separator) {
-        case '':
-          if (apparatusEntry.allSubEntriesAreOmissions()) {
-            separator = '';
-          } else {
-            separator = ']';
-          }
-          break;
-
-        case 'off':
-          separator = '';
-          break;
-
-        case 'colon':
-          separator = ':';
-          break;
-
-        default:
-          separator = apparatusEntry.separator;
-      }
-      separator = getPlainText(fromCompactFmtText(separator));
-
-      html += `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `;
-      apparatusEntry.subEntries.forEach((subEntry, subEntryIndex) => {
-        let classes = ['sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`];
-        if (!subEntry.enabled) {
-          classes.push('sub-entry-disabled');
-        }
-        html += `<span class="${classes.join(' ')}">
-                            ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla, this.edition.siglaGroups)}
-         </span>`;
-        html += `<span style="direction: ${this.defaultTextDirection}; unicode-bidi: embed">&nbsp;</span>`;
-      });
-      html += '</span>';
-    });
-    if (html === '') {
-      html = `<i>... empty ...</i>`;
-    }
-    return html;
-  }
+  // private genApparatusHtml() {
+  //   let debug = false;
+  //   let html = '';
+  //   let lastLine = '';
+  //   let sigla = this.edition.getSigla();
+  //   let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;';
+  //
+  //   let tsInfo = this.mainTextTypesettingInfo;
+  //   if (this.useCtColNumbers) {
+  //     tsInfo = this.getMainTextTypesettingInfoFromCtTable();
+  //   }
+  //
+  //   if (tsInfo === null) {
+  //     return 'Apparatus coming soon...';
+  //   }
+  //
+  //   this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
+  //     debug && console.log(`Generating apparatus entry ${aeIndex}`);
+  //     html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`;
+  //     let currentLine = "__UNDEFINED__";
+  //     try {
+  //       currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, this.lang);
+  //     } catch (e) {
+  //       console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`);
+  //       console.log(apparatusEntry);
+  //     }
+  //
+  //     let lineHtml = `${textDirectionMarker}&nbsp;${this.options.entrySeparator}&nbsp;`;
+  //     if (currentLine !== lastLine) {
+  //       let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}&nbsp;` : '';
+  //       lineHtml = `${textDirectionMarker}${lineSep}<b class="apparatus-line-number">${currentLine}</b>`;
+  //       lastLine = currentLine;
+  //     }
+  //     // build lemma section
+  //     let preLemmaSpanHtml = '';
+  //     const preLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.preLemma));
+  //     switch (preLemmaText) {
+  //       case '':
+  //         // do nothing
+  //         break;
+  //
+  //       case 'ante':
+  //       case 'post':
+  //         preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
+  //         break;
+  //
+  //       default:
+  //         preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
+  //     }
+  //     let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `;
+  //
+  //
+  //     let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, tsInfo, this.edition.lang)}</span>`;
+  //
+  //     debug && console.log(`Lemma html: ${lemmaSpan}`);
+  //
+  //     let postLemmaSpan = '';
+  //     const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));
+  //     if (postLemmaText !== '') {
+  //       let postLemma = ApparatusCommon.getKeywordHtml(postLemmaText, this.edition.lang);
+  //       postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
+  //     }
+  //
+  //     let separator: CompactFmtText;
+  //
+  //     switch (apparatusEntry.separator) {
+  //       case '':
+  //         if (apparatusEntry.allSubEntriesAreOmissions()) {
+  //           separator = '';
+  //         } else {
+  //           separator = ']';
+  //         }
+  //         break;
+  //
+  //       case 'off':
+  //         separator = '';
+  //         break;
+  //
+  //       case 'colon':
+  //         separator = ':';
+  //         break;
+  //
+  //       default:
+  //         separator = apparatusEntry.separator;
+  //     }
+  //     separator = getPlainText(fromCompactFmtText(separator));
+  //
+  //     html += `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `;
+  //     apparatusEntry.subEntries.forEach((subEntry, subEntryIndex) => {
+  //       let classes = ['sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`];
+  //       if (!subEntry.enabled) {
+  //         classes.push('sub-entry-disabled');
+  //       }
+  //       html += `<span class="${classes.join(' ')}">
+  //                           ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla, this.edition.siglaGroups)}
+  //        </span>`;
+  //       html += `<span style="direction: ${this.defaultTextDirection}; unicode-bidi: embed">&nbsp;</span>`;
+  //     });
+  //     html += '</span>';
+  //   });
+  //   if (html === '') {
+  //     html = `<i>... empty ...</i>`;
+  //   }
+  //   return html;
+  // }
 
   /**
    * Generates a VNode for the apparatus div
@@ -1713,7 +1689,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   private genOnClickAddEntryButton(appIndex: number) {
-    return (ev: Event) => {
+    return (ev: any) => {
       ev.preventDefault();
       ev.stopPropagation();
 

@@ -6,6 +6,9 @@
     --text-select-color: yellow;
 }
 
+body {
+    overflow-y: hidden;
+}
 
 input:focus {
     border: 1px solid #009dff;

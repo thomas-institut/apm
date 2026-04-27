@@ -7,11 +7,9 @@ import {AppContext} from "@/ReactAPM/App";
 import {Breadcrumb} from "react-bootstrap";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
-import {DocInfo, PageInfo} from "@/Api/DataSchema/ApiDocuments";
+import {DocInfo} from "@/Api/DataSchema/ApiDocuments";
 import {EntityData} from "@/EntityData/EntityData";
 import PageList from "@/ReactAPM/Components/PageList";
-import Thumbnail from "@/ReactAPM/Components/PageList";
-
 
 
 interface DocInfoData {
@@ -83,9 +81,9 @@ export default function Document() {
 
       <PageList
           pageInfoArray={docInfo.pageInfoArray ?? []}
-          onPageClick={handleImageOpen}
-          thumbnails={{initSize: 0, sizeSmall: 80, panel: true}}
+          thumbnails={{initSize: 80, sizeSmall: 80, panel: true}}
           definer={true}
+          onPageClick={handleImageOpen}
           onDefineSuccess={handleDefineSuccess}
       />
 

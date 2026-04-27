@@ -62,11 +62,14 @@ export class ApparatusUtil {
     if (custom) {
       return {type: 'custom', text: getPlainText(fromCompactFmtText(apparatusEntryLemma))};
     }
-    let lemmaTextWords = lemmaText.split(' ');
+    // filter out punctuation from the last word, which should never happen after version 1.0,
+    // but there's still some old cases in the data (see issue #294)
+    const theLemmaText = lemmaText.replace(/[.,;!?)\]]$/, '');
+    let lemmaTextWords = theLemmaText.split(' ');
     // if lemmaText is short,
     if (lemmaTextWords.length <= 3) {
       return {
-        type: 'full', text: lemmaText, numWords: lemmaTextWords.length
+        type: 'full', text: theLemmaText, numWords: lemmaTextWords.length
       };
     }
     return {

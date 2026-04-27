@@ -18,12 +18,18 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {Edition} from '@/Edition/Edition';
-import {ApparatusCommon} from './ApparatusCommon';
+import {ApparatusCommon, MainTextTypesettingInfo} from './ApparatusCommon';
 import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
 import {CtData} from '@/CtData/CtData';
 import {onClickAndDoubleClick} from '@/toolbox/DoubleClick';
 import {ApparatusEntryTextEditor} from './ApparatusEntryTextEditor';
-import {capitalizeFirstLetter, getTextDirectionForLang, removeExtraWhiteSpace, trimWhiteSpace} from '@/toolbox/Util';
+import {
+  capitalizeFirstLetter,
+  deepCopy,
+  getTextDirectionForLang,
+  removeExtraWhiteSpace,
+  trimWhiteSpace
+} from '@/toolbox/Util';
 import {varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import * as SubEntryType from '../Edition/SubEntryType';
 import * as SubEntrySource from '../Edition/SubEntrySource';
@@ -47,6 +53,7 @@ import {
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {NiceToggle, toggleEvent} from "@/widgets/NiceToggle";
 
 const doubleVerticalLine = String.fromCodePoint(0x2016);
 const verticalLine = String.fromCodePoint(0x007c);
@@ -104,7 +111,6 @@ export class ApparatusPanel extends PanelWithToolbar {
   private apparatus: Apparatus;
   private lang: string;
   private readonly defaultTextDirection: string;
-  private cachedHtml: string;
   private currentSelectedEntryIndex: number;
   private entryInEditor: ApparatusEntry | null;
   private editedEntry: ApparatusEntry | null;
@@ -125,6 +131,9 @@ export class ApparatusPanel extends PanelWithToolbar {
   private cancelButton!: JQuery<HTMLElement>;
   private tagEditor!: TagEditor;
   private subEntryEditors: SubEntryEditorsArray = [];
+  private useCtColNumbers: boolean = false;
+  private mainTextTypesettingInfo: MainTextTypesettingInfo|null = null
+  private mtTsInfoFromCt : MainTextTypesettingInfo|null = null;
 
 
   constructor(options: ApparatusPanelOptions) {
@@ -182,7 +191,6 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex];
     this.lang = this.edition.getLang();
     this.defaultTextDirection = getTextDirectionForLang(this.lang);
-    this.cachedHtml = 'Apparatus coming soon...';
     this.currentSelectedEntryIndex = -1;
     this.hideApparatusEntryForm();
     this.entryInEditor = null;
@@ -306,6 +314,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.edition = edition;
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex];
     this.lang = this.edition.getLang();
+    this.mtTsInfoFromCt = null;
   }
 
   _drawAndSetupSubEntryTableInForm() {
@@ -416,7 +425,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   async generateContentHtml(_tabId: string, _mode: string, _visible: boolean): Promise<string> {
     let textDirection = this.edition.lang === 'la' ? 'ltr' : 'rtl';
     return `<div class="aei-form" style="direction: ${textDirection}">${this.generateApparatusEntryFormHtml()}</div>
-<div class="apparatus text-${this.lang}">${this.cachedHtml}</div>`;
+<div class="apparatus text-${this.lang}">Apparatus coming soon...</div>`;
   }
 
   getContentAreaClasses() {
@@ -434,6 +443,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   postRender(id: string, mode: string, visible: boolean) {
     super.postRender(id, mode, visible);
     this._getEditEntryButtonElement().on('click', this._genOnClickEditEntryButton());
+    this.setupLineColumnNumbersToggle();
     this.edition.apparatuses.forEach((_app, index) => {
       $(`${this.containerSelector} .add-entry-apparatus-${index}`).on('click', this.genOnClickAddEntryButton(index));
     });
@@ -446,6 +456,24 @@ export class ApparatusPanel extends PanelWithToolbar {
     this._setupApparatusEntryForm();
     this.entryFormState = entryFormStateEmpty;
   }
+
+  private setupLineColumnNumbersToggle() {
+    const lineColumnNumbersToggle = new NiceToggle({
+      containerSelector: `${this.containerSelector} #line-column-numbers-toggle`,
+      title: 'Show Col Numbers: ',
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      onPopoverText: 'Click to use main text numbers for apparatus entries',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to use collation table column numbers for apparatus entries',
+      initialValue: this.useCtColNumbers
+    });
+    lineColumnNumbersToggle.on(toggleEvent, (ev: any) => {
+      this.useCtColNumbers = ev.detail.toggleStatus;
+      this.updateApparatus(this.mainTextTypesettingInfo);
+    });
+  }
+
+
 
   _setupApparatusEntryForm() {
     let formSelector = this.getApparatusEntryFormSelector();
@@ -708,11 +736,13 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.fitDivs();
   }
 
-  updateApparatus(mainTextTypesettingInfo: any) {
-    // this.verbose && console.log(`Updating apparatus ${this.options.apparatusIndex}`)
-    this.cachedHtml = this._genApparatusHtml(mainTextTypesettingInfo);
-    $(this.getApparatusDivSelector()).html(this.cachedHtml);
+  updateApparatus(mainTextTypesettingInfo: MainTextTypesettingInfo | null) {
+    if (mainTextTypesettingInfo !== null) {
+      this.mainTextTypesettingInfo = mainTextTypesettingInfo;
+    }
+     $(this.getApparatusDivSelector()).html(this._genApparatusHtml());
     this._setUpEventHandlers();
+
     if (this.currentSelectedEntryIndex !== -1) {
       this._selectLemma(this.currentSelectedEntryIndex, false);
     } else {
@@ -749,10 +779,8 @@ export class ApparatusPanel extends PanelWithToolbar {
                      <div class="dropdown-menu" aria-labelledby="add-entry-dropdown-${appIndex}">${apparatusLinks}</div>
                   </div>
                </div>
-               <div class="panel-toolbar-item"> 
-                &nbsp;
-               </div>
-            </div>`;
+            </div>
+            <div class="panel-toolbar-group"><span id="line-column-numbers-toggle"></span></div>`;
   }
 
   _setUpEventHandlers() {
@@ -910,27 +938,44 @@ export class ApparatusPanel extends PanelWithToolbar {
     return $(`${this.containerSelector} .clear-selection-btn`);
   }
 
-  _genApparatusHtml(mainTextTypesettingInfo: any) {
-    // console.log(`Generating Apparatus html`)
-    // console.log(mainTextTokensWithTypesettingInfo)
-    // console.log(mainTextTokensWithTypesettingInfo.tokens.filter( (t) => { return t.type === 'text' && t.occurrenceInLine > 1}))
-
-    let debug = false;
-    if (this.apparatus.type === 'marginalia') {
-      debug = true;
+  private getMainTextTypesettingInfoFromCtTable(): MainTextTypesettingInfo {
+    if (this.mtTsInfoFromCt !== null) {
+      return this.mtTsInfoFromCt;
     }
-    let html = '';
+    const positions: number[] = [];
+    const ctDataMainTextRow = this.ctData.collationMatrix[this.ctData.editionWitnessIndex];
+    const tokensMap = this.edition.mainText.map((t) => {
+      const newToken = deepCopy(t);
+      newToken.numberOfOccurrencesInLine = 1;
+      newToken.lineNumber = ctDataMainTextRow.findIndex(ref => ref === t.editionWitnessTokenIndex) + 1;
+      return newToken;
+    });
+    this.mtTsInfoFromCt = {yPositions: positions, tokens: tokensMap, lineMap: []};
+    return this.mtTsInfoFromCt;
+  }
 
+  _genApparatusHtml() {
+    let debug = false;
+    let html = '';
     let lastLine = '';
     let sigla = this.edition.getSigla();
     let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;';
+
+    let tsInfo = this.mainTextTypesettingInfo;
+    if (this.useCtColNumbers) {
+      tsInfo = this.getMainTextTypesettingInfoFromCtTable();
+    }
+
+    if (tsInfo === null) {
+      return 'Apparatus coming soon...';
+    }
 
     this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
       debug && console.log(`Generating apparatus entry ${aeIndex}`);
       html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`;
       let currentLine = "__UNDEFINED__";
       try {
-        currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), mainTextTypesettingInfo, this.lang);
+        currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, this.lang);
       } catch (e) {
         console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`);
         console.log(apparatusEntry);
@@ -961,7 +1006,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `;
 
 
-      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, mainTextTypesettingInfo, this.edition.lang)}</span>`;
+      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, tsInfo, this.edition.lang)}</span>`;
 
       debug && console.log(`Lemma html: ${lemmaSpan}`);
 

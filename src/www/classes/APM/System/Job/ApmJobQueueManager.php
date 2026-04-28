@@ -88,11 +88,11 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         return intval(max($timestamps));
     }
 
-    public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): int
+    public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): string
     {
         if (!$this->isRegistered($name)) {
             $this->logger->error("Attempt to schedule non-registered job '$name'");
-            return -1;
+            return '';
         }
         $signature = $this->getJobSignature($name, $description, $payload);
 
@@ -102,7 +102,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
             $timeSinceLastSchedule = time() - $this->getLastScheduledTimeForJob($signature);
             if ($timeSinceLastSchedule < $minSecsBetweenSchedules) {
                 $this->logger->info("Rejecting schedule for job $name, only $timeSinceLastSchedule seconds has passed since last schedule");
-                return -1;
+                return '';
             }
         }
 
@@ -114,7 +114,7 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         } catch (InvalidTimeZoneException $e) {
             // should never happen!
             $this->logger->error($e->getMessage());
-            return -1;
+            return '';
         }
 
         $row = [
@@ -134,16 +134,16 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         } catch (RowAlreadyExists $e) {
             // should never happen!
             $this->logger->error($e->getMessage());
-            return -1;
+            return '';
         }
         $this->logger->info(sprintf("Job '%s' scheduled with id %d", $this->getScheduledJobTitle($name, $description), $rowId));
-        return $rowId;
+        return strval($rowId);
     }
 
-    public function rescheduleJob(int $jobId, int $secondsToWait = 0, int $maxAttempts = -1, int $secondBetweenRetries = -1): int
+    public function rescheduleJob(string $jobId, int $secondsToWait = 0, int $maxAttempts = -1, int $secondBetweenRetries = -1): string
     {
-        if (!$this->dataTable->rowExists($jobId)) {
-            return -1;
+        if (!$this->dataTable->rowExists(intval($jobId))) {
+            return '';
         }
         $timeStampNow = microtime(true);
         try {
@@ -152,10 +152,10 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         } catch (InvalidTimeZoneException $e) {
             // should never happen!
             $this->logger->error($e->getMessage());
-            return -1;
+            return '';
         }
         $row = [
-            'id' => $jobId,
+            'id' => intval($jobId),
             'state'=> ScheduledJobState::WAITING,
             'next_retry_at' => $nextRetry,
             'scheduled_at' => $scheduledAt,
@@ -174,10 +174,9 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         } catch (InvalidRowForUpdate $e) {
             // should never happen!
             $this->logger->error($e->getMessage());
-            return -1;
+            return '';
         }
         return $jobId;
-
     }
 
     private function isRegistered(string $name) : bool {

@@ -108,8 +108,8 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
                 }
                 $errors = false;
                 for ($i = 2; $i < $argc; $i++) {
-                    $jobId = intval($argv[$i]);
-                    if ($jobId <= 0) {
+                    $jobId = $argv[$i];
+                    if ($jobId === '') {
                         $this->printErrorMsg("Invalid job ID '$argv[$i]'");
                     } else {
                         $result = $this->rescheduleJob($jobId);
@@ -127,9 +127,9 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         return 0;
     }
 
-    private function rescheduleJob(int $jobId) : bool {
+    private function rescheduleJob(string $jobId) : bool {
         $result = $this->getSystemManager()->getJobManager()->rescheduleJob($jobId);
-        if ($result === -1) {
+        if ($result === '') {
             $this->printErrorMsg("Job $jobId does not exist");
             return false;
         } else {
@@ -169,8 +169,8 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
     private function printJobs(array $jobs): void {
         foreach($jobs as $job) {
-            printf("   %d: %s\t%s, %s, scheduled at %s, attempts %d/%d, last run at %s\n",
-                $job['id'], $job['state'], $job['name'], $job['description'], $job['scheduled_at'], $job['completed_runs'], $job['max_attempts'], $job['last_run_at']);
+            printf("   %s: %s\t%s, %s, scheduled at %s, attempts %d/%d, last run at %s\n",
+                $job['id'], $job['state'], $job['name'], $job['description'], $job['scheduled_at'], $job['completed_runs'] ?? 0, $job['max_attempts'], $job['last_run_at'] ?? 'never');
         }
     }
 

@@ -33,13 +33,7 @@ class ValkeyWorker
 
 
         $logger = $systemManager->getLogger();
-        $this->logger = $logger->withName("APM_W_$instanceId");
-//        if ($logger instanceof Logger) {
-//
-//        } else {
-//            /** @noinspection PhpFieldAssignmentTypeMismatchInspection */
-//            $this->logger = $logger;
-//        }
+        $this->logger = $logger->withName(sprintf("WORKER_%02d", $instanceId));
     }
 
     /**
@@ -47,7 +41,7 @@ class ValkeyWorker
      */
     public function run(): void
     {
-        $this->logger->info("Worker starting", [
+        $this->logger->info("Worker $this->instanceId starting", [
             'worker_id' => $this->workerId,
             'max_jobs' => $this->maxJobs,
             'instance_id' => $this->instanceId
@@ -69,6 +63,7 @@ class ValkeyWorker
                 if ($job) {
                     $this->processJob($jobManager, $job);
                     $this->jobsProcessed++;
+                    $this->logger->info("Job processed", ['job_id' => $job['signature'], 'jobs_count' => $this->jobsProcessed]);
                 } else {
                     usleep($this->microSecondsToSleep);
                 }

@@ -287,7 +287,7 @@ LUA;
         $jobData = json_decode($data, true);
         $jobData['attempts']++;
         $jobData['last_error'] = $error;
-        $jobData['last_run_at'] = TimeString::fromTimeStamp(microtime(true));
+        $jobData['last_run_at'] = TimeString::now();
 
         if ($retry && $jobData['attempts'] < $jobData['max_attempts']) {
             $delay = $jobData['secs_between_retries'] * pow(2, $jobData['attempts'] - 1);

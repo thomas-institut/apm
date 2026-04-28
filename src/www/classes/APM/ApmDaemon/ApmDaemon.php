@@ -50,7 +50,7 @@ class ApmDaemon extends CommandLineUtility
 
         $this->getSystemManager(); // just to get the right logger
         if (is_a($this->logger, Logger::class)) {
-            $this->logger = $this->logger->withName('APM_D');
+            $this->logger = $this->logger->withName('DAEMON');
         }
 
         $this->logger->info("Starting as a daemon, pid is $this->pid");

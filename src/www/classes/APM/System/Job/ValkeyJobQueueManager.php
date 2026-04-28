@@ -44,6 +44,11 @@ class ValkeyJobQueueManager extends JobQueueManager
         return true;
     }
 
+    public function getJobHandler(string $name): ?JobHandlerInterface
+    {
+        return $this->registeredJobs[$name] ?? null;
+    }
+
     private function getJobSignature(string $name, string $description, array $payload): string
     {
         $id = $name . $description . json_encode($payload);
@@ -197,5 +202,141 @@ class ValkeyJobQueueManager extends JobQueueManager
                 break;
         }
         return $jobs;
+    }
+
+    /**
+     * Atomically fetches a job that is ready to be processed.
+     * Moves the job from Waiting to Processing.
+     *
+     * @param string $workerId
+     * @return array|null [signature, data] or null if no job available
+     */
+    public function fetchJob(string $workerId): ?array
+    {
+        $script = <<<LUA
+local waiting_key = KEYS[1]
+local data_key = KEYS[2]
+local processing_key = KEYS[3]
+local now = ARGV[1]
+local worker_id = ARGV[2]
+
+local jobs = redis.call('ZRANGEBYSCORE', waiting_key, '-inf', now, 'LIMIT', 0, 1)
+if #jobs == 0 then
+    return nil
+end
+
+local signature = jobs[1]
+local data = redis.call('HGET', data_key, signature)
+
+if not data then
+    redis.call('ZREM', waiting_key, signature)
+    return nil
+end
+
+redis.call('ZREM', waiting_key, signature)
+redis.call('HSET', processing_key, signature, cjson.encode({
+    worker_id = worker_id,
+    started_at = tonumber(now)
+}))
+
+return {signature, data}
+LUA;
+
+        $result = $this->valkey->eval($script, 3, $this->keyWaiting, $this->keyData, $this->keyProcessing, microtime(true), $workerId);
+
+        if (!$result) {
+            return null;
+        }
+
+        return [
+            'signature' => $result[0],
+            'data' => json_decode($result[1], true)
+        ];
+    }
+
+    /**
+     * Marks a job as successfully finished and removes it from the queue.
+     *
+     * @param string $signature
+     */
+    public function finishJob(string $signature): void
+    {
+        $this->valkey->transaction(function ($tx) use ($signature) {
+            /** @var Client $tx */
+            $tx->hdel($this->keyData, [$signature]);
+            $tx->hdel($this->keyProcessing, [$signature]);
+        });
+    }
+
+    /**
+     * Marks a job as failed. Depending on the retry flag and max attempts,
+     * it might be rescheduled or moved to the Dead Letter queue.
+     *
+     * @param string $signature
+     * @param string $error
+     * @param bool $retry
+     */
+    public function failJob(string $signature, string $error, bool $retry): void
+    {
+        $data = $this->valkey->hget($this->keyData, $signature);
+        if (!$data) {
+            $this->valkey->hdel($this->keyProcessing, [$signature]);
+            return;
+        }
+
+        $jobData = json_decode($data, true);
+        $jobData['attempts']++;
+        $jobData['last_error'] = $error;
+        $jobData['last_run_at'] = TimeString::fromTimeStamp(microtime(true));
+
+        if ($retry && $jobData['attempts'] < $jobData['max_attempts']) {
+            $delay = $jobData['secs_between_retries'] * pow(2, $jobData['attempts'] - 1);
+            $score = microtime(true) + $delay;
+
+            $this->valkey->transaction(function ($tx) use ($signature, $jobData, $score) {
+                /** @var Client $tx */
+                $tx->hset($this->keyData, $signature, json_encode($jobData));
+                $tx->zadd($this->keyWaiting, [$signature => $score]);
+                $tx->hdel($this->keyProcessing, [$signature]);
+            });
+        } else {
+            // Dead Letter
+            $this->valkey->transaction(function ($tx) use ($signature, $jobData) {
+                /** @var Client $tx */
+                $tx->hset($this->keyDead, $signature, json_encode($jobData));
+                $tx->hdel($this->keyProcessing, [$signature]);
+                $tx->hdel($this->keyData, [$signature]);
+                $tx->zrem($this->keyWaiting, $signature);
+            });
+        }
+    }
+
+    /**
+     * Scans for orphaned jobs in the Processing queue and moves them back to Waiting.
+     *
+     * @param int $timeoutSeconds
+     * @return int Number of recovered jobs
+     */
+    public function runRecovery(int $timeoutSeconds = 1800): int
+    {
+        $processing = $this->valkey->hgetall($this->keyProcessing);
+        $recovered = 0;
+        $now = microtime(true);
+
+        foreach ($processing as $signature => $infoJson) {
+            $info = json_decode($infoJson, true);
+            if ($now - $info['started_at'] > $timeoutSeconds) {
+                $this->logger->warning("Recovering orphaned job", ['signature' => $signature, 'info' => $info]);
+
+                // Move back to waiting
+                $this->valkey->transaction(function ($tx) use ($signature) {
+                    /** @var Client $tx */
+                    $tx->zadd($this->keyWaiting, [$signature => microtime(true)]);
+                    $tx->hdel($this->keyProcessing, [$signature]);
+                });
+                $recovered++;
+            }
+        }
+        return $recovered;
     }
 }

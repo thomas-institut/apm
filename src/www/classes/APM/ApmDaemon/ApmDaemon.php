@@ -84,7 +84,7 @@ class ApmDaemon extends CommandLineUtility
 
         $daemonTasks = [
             new DaemonTask('CacheMaintainer', $cacheMaintainerGenerator),
-            new DaemonTask('JobProcessor', $jobProcessorFiberGenerator),
+//            new DaemonTask('JobProcessor', $jobProcessorFiberGenerator),
         ];
 
 

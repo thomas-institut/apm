@@ -8,7 +8,6 @@ use APM\Site\SiteDocuments;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
 use Exception;
-use Fiber;
 use Monolog\Logger;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use Throwable;
@@ -27,7 +26,7 @@ class ApmDaemon extends CommandLineUtility
                 'ttl' => SiteWorks::WORK_DATA_TTL,
                 'json' => false,
                 'builder' => function () {
-                    return SiteWorks::buildWorkData($this->getSystemManager(), $this->logger, true);
+                    return SiteWorks::buildWorkData($this->getSystemManager(), $this->logger);
                 }
             ],
             [
@@ -70,21 +69,10 @@ class ApmDaemon extends CommandLineUtility
             $stopCommandReceived = true;
         });
 
-        $cacheMaintainerGenerator = function () use ($cacheItemsToReestablish) {
-            return new Fiber( function() use ($cacheItemsToReestablish) {
-                $this->reestablishCacheItems($cacheItemsToReestablish);
-            });
-        };
-
-        $jobProcessorFiberGenerator = function ()  {
-            return new Fiber( function()  {
-                $this->getSystemManager()->getJobManager()->process();
-            });
-        };
-
         $daemonTasks = [
-            new DaemonTask('CacheMaintainer', $cacheMaintainerGenerator),
-//            new DaemonTask('JobProcessor', $jobProcessorFiberGenerator),
+            new DaemonTask('CacheMaintainer', function() use ($cacheItemsToReestablish) {
+                $this->reestablishCacheItems($cacheItemsToReestablish);
+            }),
         ];
 
 
@@ -137,7 +125,6 @@ class ApmDaemon extends CommandLineUtility
                     $this->logger->error("Exception trying to build data for $key", [ 'code'=> $e->getCode(), 'msg' => $e->getMessage()]);
                     continue;
                 }
-                Fiber::suspend();
                 if ($item['json']) {
                     $cache->set($item['cacheKey'], json_encode($data), $item['ttl'] ?? 0);
                 } else {
@@ -146,7 +133,6 @@ class ApmDaemon extends CommandLineUtility
                 $end = microtime(true);
                 $this->logger->info(sprintf("Data for %s built and cached successfully in %.3f seconds", $key, $end - $start));
             }
-            Fiber::suspend();
         }
     }
 

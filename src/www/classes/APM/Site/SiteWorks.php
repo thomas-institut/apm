@@ -29,7 +29,6 @@ namespace APM\Site;
 use APM\System\SystemManager;
 use APM\System\Work\WorkNotFoundException;
 use Exception;
-use Fiber;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
@@ -119,17 +118,15 @@ class SiteWorks extends SiteController
      *
      * @param SystemManager $systemManager
      * @param LoggerInterface $logger
-     * @param bool $async
      * @return array
      */
-    public static function buildWorkData(SystemManager $systemManager, LoggerInterface $logger, bool $async = false) : array {
+    public static function buildWorkData(SystemManager $systemManager, LoggerInterface $logger) : array {
         try {
             $debug = true;
-            $debug && $logger->debug("BuildWorkData: Starting, async = " . $async ? 'true' : 'false');
+            $debug && $logger->debug("BuildWorkData: Starting");
             $works = [];
             $tableInfoArray = $systemManager->getCollationTableManager()->getTablesInfo();
             $debug && $logger->debug('BuildWorkData: Found ' . count($tableInfoArray) . ' active collation tables / editions');
-            $async && Fiber::suspend();
             foreach ($tableInfoArray as $index => $table) {
                 $workId = $table['workId'];
                 if (!isset($works[$workId])) {
@@ -152,11 +149,9 @@ class SiteWorks extends SiteController
                         $works[$workId]['chunks'][$chunkNumber]['ct'] = true;
                     }
                 }
-                $async && $index !== 0 && $index % 10 === 0 && Fiber::suspend();
             }
             $worksWithTranscriptions = $systemManager->getTranscriptionManager()->getWorksWithTranscription();
             $debug && $logger->debug('BuildWorkData: Found ' . count($worksWithTranscriptions) . ' works with transcriptions');
-            $async && Fiber::suspend();
             foreach($worksWithTranscriptions as $workId) {
                 if (!isset($works[$workId])) {
                     $works[$workId] = self::getWorkDataBasicInfo($workId, $systemManager);
@@ -176,7 +171,6 @@ class SiteWorks extends SiteController
                         }
                     }
                 }
-                $async && Fiber::suspend();
             }
             // Sort the data
             $workIds = array_keys($works);
@@ -186,7 +180,7 @@ class SiteWorks extends SiteController
             $debug && $logger->debug('BuildWorkData: Finished building work data, there are ' . count($works) . ' active works');
             return $works;
         } catch (Throwable $e) {
-            throw new RuntimeException("Fiber error: " . $e->getMessage(), $e->getCode(), $e);
+            throw new RuntimeException("Error building work data: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
 

@@ -14,7 +14,7 @@ class ApiSearchUpdateEditorsAndEditionsCache implements JobHandlerInterface
     public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
         try {
-            return ApiSearch::updateDataCache($sm, 'editions',  $sm->getLogger(), true);
+            return ApiSearch::updateDataCache($sm, 'editions',  $sm->getLogger());
         } catch (Throwable $e) {
             $sm->getLogger()->error("Error updating editors and editions cache: " . $e->getMessage());
             return false;

@@ -32,7 +32,6 @@ use APM\System\Transcription\TxText\Item;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\DateTimeFormat;
 use Exception;
-use Fiber;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use Typesense\Exceptions\TypesenseClientError;
 
@@ -497,14 +496,13 @@ END;
      * @param string|null $columnNumber column no. in case of transcriptions
      * @param string|null $indexId , open search id for the item, only necessary when an already indexed item with a given id becomes updated
      * @param string|null $context , determines if the method is called in an updating process and if so, modifies its behavior slightly
-     * @param bool $withFibers
      * @return void
      * @throws DocumentNotFoundException
      * @throws EntityDoesNotExistException
      * @throws InvalidTimeStringException
      * @throws PageNotFoundException
      */
-    private function addItem(string $tableOrDocId, string $columnNumber = null, string $indexId = null, string $context = null, bool $withFibers = false): void
+    private function addItem(string $tableOrDocId, string $columnNumber = null, string $indexId = null, string $context = null): void
     {
 
         if ($this->isAlreadyIndexed($tableOrDocId, $columnNumber) and $context !== 'update') {
@@ -524,7 +522,7 @@ END;
 
         switch ($this->indexNamePrefix) {
             case 'transcriptions':
-                $this->addItemToTranscriptionsIndex(intval($tableOrDocId), intval($columnNumber), $indexId, $withFibers);
+                $this->addItemToTranscriptionsIndex(intval($tableOrDocId), intval($columnNumber), $indexId);
                 break;
             case 'editions':
                 $this->addItemToEditionsIndex($tableOrDocId, $indexId);
@@ -1112,23 +1110,16 @@ END;
      * @param int $pageId
      * @param int $col
      * @param string|null $indexId , null if adding a new transcription
-     * @param bool $withFibers
      * @return void
      * @throws DocumentNotFoundException
      * @throws InvalidTimeStringException
      * @throws PageNotFoundException
      * @throws \Throwable
      */
-    private function addItemToTranscriptionsIndex (int $pageId, int $col, string $indexId = null, bool $withFibers = false): void {
+    private function addItemToTranscriptionsIndex (int $pageId, int $col, string $indexId = null): void {
 
         $pageInfo = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageId);
-        if ($withFibers) {
-            Fiber::suspend();
-        }
         $docInfo = $this->getSystemManager()->getDocumentManager()->getDocInfo($pageInfo->docId);
-        if ($withFibers) {
-            Fiber::suspend();
-        }
         $docId = $docInfo->id;
         $title = $docInfo->title;
         $page = $pageInfo->pageNumber;
@@ -1138,9 +1129,6 @@ END;
         $lang = $this->getLangCode($pageInfo->lang);
         $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
         $versions = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
-        if ($withFibers) {
-            Fiber::suspend();
-        }
         if (count($versions) === 0) {
             print("No transcription in database with page id $pageId and column number $col.\n");
             return;
@@ -1155,13 +1143,7 @@ END;
             return;
         }
         $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($pageId, $col);
-        if ($withFibers) {
-            Fiber::suspend();
-        }
         $transcription = $this->getPlainTextFromElements($elements);
-        if ($withFibers) {
-            Fiber::suspend();
-        }
         $this->indexTranscription($this->getSystemManager()->getTypesenseClient(), $indexId, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
     }
 
@@ -1243,7 +1225,7 @@ END;
      * @throws TypesenseClientError
      * @throws \Http\Client\Exception
      */
-    public function updateOrAddItem(string $tableOrDocId, string $columnNumber = null, bool $withFibers = false): void
+    public function updateOrAddItem(string $tableOrDocId, string $columnNumber = null): void
     {
         if (!$this->isAlreadyIndexed($tableOrDocId, $columnNumber)) {
             $this->addItem($tableOrDocId, $columnNumber);
@@ -1251,7 +1233,7 @@ END;
         } else {
             $id = $this->getTypesenseIdAndIndexName($tableOrDocId, $columnNumber)['id'];
             $this->removeItem($tableOrDocId, $columnNumber, 'update');
-            $this->addItem($tableOrDocId, $columnNumber, $id, 'update', $withFibers);
+            $this->addItem($tableOrDocId, $columnNumber, $id, 'update');
         }
 
     }

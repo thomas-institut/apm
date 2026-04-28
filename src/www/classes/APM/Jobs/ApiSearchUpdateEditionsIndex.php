@@ -22,7 +22,7 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
         $im->setIndexNamePrefix('editions');
 
         try {
-            $im->updateOrAddItem($table_id, null, true);
+            $im->updateOrAddItem($table_id);
             return true;
         } catch (Throwable $e) {
             $sm->getLogger()->error("Error updating editions index for table $table_id: " . $e->getMessage());

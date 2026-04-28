@@ -39,7 +39,7 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex i
 
 
         try {
-            $im->updateOrAddItem($pageId, $col, true);
+            $im->updateOrAddItem($pageId, $col);
             return true;
         } catch (EntityDoesNotExistException|DocumentNotFoundException|PageNotFoundException|InvalidTimeStringException $e) {
             $sm->getLogger()->error("Error updating transcription index for page $pageId col $col: " . $e->getMessage());

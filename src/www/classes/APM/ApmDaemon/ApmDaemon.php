@@ -7,6 +7,7 @@ use APM\CommandLine\CommandLineUtility;
 use APM\Site\SiteDocuments;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
+use APM\System\Job\ValkeyJobQueueManager;
 use Exception;
 use Monolog\Logger;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
@@ -14,7 +15,11 @@ use Throwable;
 
 class ApmDaemon extends CommandLineUtility
 {
-    const int MICROSECONDS_TO_SLEEP = 100*1000;
+    const int MICROSECONDS_TO_SLEEP = 100 * 1000;
+    const int RECOVERY_INTERVAL = 300; // 5 minutes
+    const int JOB_TIMEOUT = 1800; // 30 minutes
+
+    private int $lastRecoveryRun = 0;
 
 
     public function main($argc, $argv): void
@@ -70,8 +75,11 @@ class ApmDaemon extends CommandLineUtility
         });
 
         $daemonTasks = [
-            new DaemonTask('CacheMaintainer', function() use ($cacheItemsToReestablish) {
+            new DaemonTask('CacheMaintainer', function () use ($cacheItemsToReestablish) {
                 $this->reestablishCacheItems($cacheItemsToReestablish);
+            }),
+            new DaemonTask('JobQueueRecovery', function () {
+                $this->runJobQueueRecovery();
             }),
         ];
 
@@ -97,18 +105,20 @@ class ApmDaemon extends CommandLineUtility
         }
     }
 
-    private function writePidFile() : bool {
+    private function writePidFile(): bool
+    {
         return file_put_contents($this->config['daemonPidFile'], "$this->pid") !== false;
     }
 
-    private  function erasePidFile() : bool {
+    private function erasePidFile(): bool
+    {
         return unlink($this->config['daemonPidFile']);
     }
 
     /**
      * @throws Throwable
      */
-    private function reestablishCacheItems(array $cacheItemInfo) : void
+    private function reestablishCacheItems(array $cacheItemInfo): void
     {
         $cache = $this->getSystemManager()->getSystemDataCache();
         foreach ($cacheItemInfo as $item) {
@@ -122,7 +132,7 @@ class ApmDaemon extends CommandLineUtility
                 try {
                     $data = ($item['builder'])();
                 } catch (Exception $e) {
-                    $this->logger->error("Exception trying to build data for $key", [ 'code'=> $e->getCode(), 'msg' => $e->getMessage()]);
+                    $this->logger->error("Exception trying to build data for $key", ['code' => $e->getCode(), 'msg' => $e->getMessage()]);
                     continue;
                 }
                 if ($item['json']) {
@@ -134,6 +144,21 @@ class ApmDaemon extends CommandLineUtility
                 $this->logger->info(sprintf("Data for %s built and cached successfully in %.3f seconds", $key, $end - $start));
             }
         }
+    }
+
+    private function runJobQueueRecovery(): void
+    {
+        if (time() - $this->lastRecoveryRun < self::RECOVERY_INTERVAL) {
+            return;
+        }
+
+        $jobManager = $this->getSystemManager()->getJobManager();
+        if ($jobManager instanceof ValkeyJobQueueManager) {
+            $this->logger->info("Running Job Queue Recovery check");
+            $recovered = $jobManager->runRecovery(self::JOB_TIMEOUT);
+            $this->logger->info("Job Queue Recovery: $recovered jobs recovered");
+        }
+        $this->lastRecoveryRun = time();
     }
 
 }

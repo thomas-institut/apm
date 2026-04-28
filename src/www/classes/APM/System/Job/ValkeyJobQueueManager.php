@@ -2,7 +2,6 @@
 
 namespace APM\System\Job;
 
-use APM\System\SystemManager;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
@@ -202,6 +201,23 @@ class ValkeyJobQueueManager extends JobQueueManager
                 break;
         }
         return $jobs;
+    }
+
+    public function isJobActive(string $name, string $description, array $payload): bool
+    {
+        $signature = $this->getJobSignature($name, $description, $payload);
+
+        // Check waiting queue (Sorted Set)
+        if ($this->valkey->zscore($this->keyWaiting, $signature) !== null) {
+            return true;
+        }
+
+        // Check processing queue (Hash)
+        if ($this->valkey->hexists($this->keyProcessing, $signature)) {
+            return true;
+        }
+
+        return false;
     }
 
     /**

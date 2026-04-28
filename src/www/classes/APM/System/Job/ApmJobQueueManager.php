@@ -341,5 +341,22 @@ class ApmJobQueueManager extends JobQueueManager implements LoggerAwareInterface
         return iterator_to_array($this->dataTable->findRows([ 'state' => $state]));
     }
 
-
+    public function isJobActive(string $name, string $description, array $payload): bool
+    {
+        $signature = $this->getJobSignature($name, $description, $payload);
+        try {
+            $jobs = $this->dataTable->search([
+                ['column' => 'signature', 'condition' => DataTable::COND_EQUAL_TO, 'value' => $signature],
+            ]);
+            foreach ($jobs as $job) {
+                if ($job['state'] === ScheduledJobState::WAITING || $job['state'] === ScheduledJobState::RUNNING) {
+                    return true;
+                }
+            }
+            return false;
+        } catch (InvalidSearchSpec | InvalidSearchType $e) {
+            $this->logger->error($e->getMessage());
+            return false;
+        }
+    }
 }

@@ -73,4 +73,14 @@ abstract class JobQueueManager
      * @return array
      */
     abstract public function getJobsByState(string $state) : array;
+
+    /**
+     * Returns true if a job with the given name and payload is already scheduled (waiting or running)
+     *
+     * @param string $name
+     * @param string $description
+     * @param array $payload
+     * @return bool
+     */
+    abstract public function isJobActive(string $name, string $description, array $payload): bool;
 }

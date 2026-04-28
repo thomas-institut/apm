@@ -170,7 +170,7 @@ class SiteDocuments extends SiteController
         }
 
         if (count($data) !== 0) {
-            $systemManager->getSystemDataCache()->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
+            $systemManager->getSystemDataCache()->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data), self::DOCUMENT_DATA_TTL);
         }
 
         return true;

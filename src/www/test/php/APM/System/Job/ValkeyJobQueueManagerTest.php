@@ -155,4 +155,30 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->jm->cleanQueue();
         $this->assertEquals(0, $this->valkey->hlen($this->prefix . 'Dead'));
     }
+
+    public function testIsJobActive()
+    {
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $this->jm->registerJob('TestJob', $handler);
+
+        $name = 'TestJob';
+        $desc = 'Description';
+        $payload = ['foo' => 'bar'];
+
+        // Not active yet
+        $this->assertFalse($this->jm->isJobActive($name, $desc, $payload));
+
+        // Schedule it
+        $sig = $this->jm->scheduleJob($name, $desc, $payload);
+        $this->assertTrue($this->jm->isJobActive($name, $desc, $payload));
+
+        // Mock it as running
+        $this->valkey->zrem($this->prefix . 'Waiting', $sig);
+        $this->valkey->hset($this->prefix . 'Processing', $sig, json_encode(['worker' => 'w1', 'started' => time()]));
+        $this->assertTrue($this->jm->isJobActive($name, $desc, $payload));
+
+        // Complete it
+        $this->valkey->hdel($this->prefix . 'Processing', [$sig]);
+        $this->assertFalse($this->jm->isJobActive($name, $desc, $payload));
+    }
 }

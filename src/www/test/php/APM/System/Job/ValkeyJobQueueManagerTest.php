@@ -5,6 +5,7 @@ namespace APM\Test\System\Job;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\Job\ScheduledJobState;
 use APM\System\Job\ValkeyJobQueueManager;
+use Exception;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\NullLogger;
@@ -28,7 +29,7 @@ class ValkeyJobQueueManagerTest extends TestCase
         
         try {
             $this->valkey->connect();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $this->markTestSkipped('Valkey not available: ' . $e->getMessage());
         }
 
@@ -56,12 +57,12 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->assertNotEmpty($sig);
 
         // Check Waiting ZSET
-        $score = $this->valkey->zscore($this->prefix . 'Waiting', $sig);
+        $score = $this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig);
         $this->assertNotNull($score);
         $this->assertLessThanOrEqual(microtime(true) + 1, $score);
 
         // Check Data HASH
-        $data = $this->valkey->hget($this->prefix . 'Data', $sig);
+        $data = $this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig);
         $this->assertNotEmpty($data);
         $jobData = json_decode($data, true);
         $this->assertEquals('TestJob', $jobData['name']);
@@ -75,19 +76,19 @@ class ValkeyJobQueueManagerTest extends TestCase
 
         $payload = ['id' => 1];
         $sig1 = $this->jm->scheduleJob('TestJob', 'Coalesce', $payload, 10);
-        $score1 = floatval($this->valkey->zscore($this->prefix . 'Waiting', $sig1));
+        $score1 = floatval($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig1));
 
         // Schedule same job again with different delay
         $sig2 = $this->jm->scheduleJob('TestJob', 'Coalesce', $payload, 5);
         $this->assertEquals($sig1, $sig2);
 
-        $score2 = floatval($this->valkey->zscore($this->prefix . 'Waiting', $sig1));
+        $score2 = floatval($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig1));
         $this->assertLessThan($score1, $score2);
 
         // Verify only one entry exists in Waiting
-        $this->assertEquals(1, $this->valkey->zcard($this->prefix . 'Waiting'));
+        $this->assertEquals(1, $this->valkey->zcard($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING));
         // Verify only one entry exists in Data
-        $this->assertEquals(1, $this->valkey->hlen($this->prefix . 'Data'));
+        $this->assertEquals(1, $this->valkey->hlen($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA));
     }
 
     public function testT4SignatureStability()
@@ -111,12 +112,12 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->jm->registerJob('TestJob', $handler);
 
         $sig = $this->jm->scheduleJob('TestJob', 'Desc', ['id' => 1], 100);
-        $score1 = floatval($this->valkey->zscore($this->prefix . 'Waiting', $sig));
+        $score1 = floatval($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig));
 
-        $resig = $this->jm->rescheduleJob($sig, 10);
-        $this->assertEquals($sig, $resig);
+        $reSig = $this->jm->rescheduleJob($sig, 10);
+        $this->assertEquals($sig, $reSig);
 
-        $score2 = floatval($this->valkey->zscore($this->prefix . 'Waiting', $sig));
+        $score2 = floatval($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig));
         $this->assertLessThan($score1, $score2);
     }
 
@@ -136,24 +137,24 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->assertCount(2, $jobs);
         
         // Mock a running job
-        $this->valkey->hset($this->prefix . 'Processing', $sig1, json_encode(['worker' => 'w1', 'started' => time()]));
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig1, json_encode(['worker' => 'w1', 'started' => time()]));
         $counts = $this->jm->getJobCountsByState();
         $this->assertEquals(1, $counts[ScheduledJobState::RUNNING]);
 
         // Mock a dead job
-        $data = $this->valkey->hget($this->prefix . 'Data', $sig2);
-        $this->valkey->hset($this->prefix . 'Dead', $sig2, $data);
+        $data = $this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig2);
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_DEAD, $sig2, $data);
         $counts = $this->jm->getJobCountsByState();
         $this->assertEquals(1, $counts[ScheduledJobState::ERROR]);
     }
 
     public function testCleanQueue()
     {
-        $this->valkey->hset($this->prefix . 'Dead', 'sig1', json_encode(['name' => 'DeadJob']));
-        $this->assertEquals(1, $this->valkey->hlen($this->prefix . 'Dead'));
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_DEAD, 'sig1', json_encode(['name' => 'DeadJob']));
+        $this->assertEquals(1, $this->valkey->hlen($this->prefix . ValkeyJobQueueManager::SUFFIX_DEAD));
 
         $this->jm->cleanQueue();
-        $this->assertEquals(0, $this->valkey->hlen($this->prefix . 'Dead'));
+        $this->assertEquals(0, $this->valkey->hlen($this->prefix . ValkeyJobQueueManager::SUFFIX_DEAD));
     }
 
     public function testIsJobActive()
@@ -173,12 +174,12 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->assertTrue($this->jm->isJobActive($name, $desc, $payload));
 
         // Mock it as running
-        $this->valkey->zrem($this->prefix . 'Waiting', $sig);
-        $this->valkey->hset($this->prefix . 'Processing', $sig, json_encode(['worker' => 'w1', 'started' => time()]));
+        $this->valkey->zrem($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig);
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig, json_encode(['worker' => 'w1', 'started' => time()]));
         $this->assertTrue($this->jm->isJobActive($name, $desc, $payload));
 
         // Complete it
-        $this->valkey->hdel($this->prefix . 'Processing', [$sig]);
+        $this->valkey->hdel($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, [$sig]);
         $this->assertFalse($this->jm->isJobActive($name, $desc, $payload));
     }
 }

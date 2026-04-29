@@ -5,6 +5,7 @@ namespace APM\System\Job;
 use Predis\Client;
 use Predis\Transaction\MultiExec;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -23,16 +24,22 @@ class ValkeyJobQueueManager extends JobQueueManager
     private string $keyProcessing;
     private string $keyDead;
 
-    public function __construct(Client $valkey, LoggerInterface $logger, string $prefix = 'APM:Queue:')
+    public const string DEFAULT_PREFIX = 'APM:Queue:';
+    public const string SUFFIX_WAITING = 'Waiting';
+    public const string SUFFIX_DATA = 'Data';
+    public const string SUFFIX_PROCESSING = 'Processing';
+    public const string SUFFIX_DEAD = 'Dead';
+
+    public function __construct(Client $valkey, LoggerInterface $logger, string $prefix = self::DEFAULT_PREFIX)
     {
         $this->valkey = $valkey;
         $this->logger = $logger;
         $this->prefix = $prefix;
 
-        $this->keyWaiting = $this->prefix . 'Waiting';
-        $this->keyData = $this->prefix . 'Data';
-        $this->keyProcessing = $this->prefix . 'Processing';
-        $this->keyDead = $this->prefix . 'Dead';
+        $this->keyWaiting = $this->prefix . self::SUFFIX_WAITING;
+        $this->keyData = $this->prefix . self::SUFFIX_DATA;
+        $this->keyProcessing = $this->prefix . self::SUFFIX_PROCESSING;
+        $this->keyDead = $this->prefix . self::SUFFIX_DEAD;
     }
 
     public function registerJob(string $name, JobHandlerInterface $job): bool
@@ -74,7 +81,7 @@ class ValkeyJobQueueManager extends JobQueueManager
             $scheduledAt = TimeString::fromTimeStamp($now);
         } catch (InvalidTimeZoneException $e) {
             $this->logger->error($e->getMessage());
-            return '';
+            throw new RuntimeException("Failed to create TimeString from timestamp", 0, $e);
         }
 
         $jobData = [
@@ -123,9 +130,8 @@ class ValkeyJobQueueManager extends JobQueueManager
         $this->valkey->transaction(function (MultiExec $tx) use ($jobId, $jobData, $score) {
             $tx->hset($this->keyData, $jobId, json_encode($jobData));
             $tx->zadd($this->keyWaiting, [$jobId => $score]);
-            // Ensure it's not in Processing if we are rescheduling it manually? 
-            // Actually, if it's in Processing, we might want to leave it there or let the worker finish.
-            // But usually reschedule means "run it again/later".
+            // no need to check if the job is in the processing queue, even if it were
+            // rescheduling means process it again later
         });
 
         return $jobId;
@@ -133,16 +139,14 @@ class ValkeyJobQueueManager extends JobQueueManager
 
     public function process(): void
     {
-        // For Valkey based system, processing is done by external workers.
-        // This method might be used for local processing if needed, but PRD says Workers are separate.
-        // I'll leave it empty or implement a simple loop if we want to support the old way too.
+        // processing must be done by external workers
         $this->logger->warning("process() called on ValkeyJobQueueManager. Use external workers instead.");
     }
 
     public function cleanQueue(): void
     {
         // In Valkey, successful jobs are removed immediately.
-        // We could clean the Dead queue here if we want.
+        // We only clean the Dead queue here
         $this->valkey->del([$this->keyDead]);
         $this->logger->info("Dead job queue cleared.");
     }

@@ -50,10 +50,11 @@ class ValkeyWorker
         $this->setupSignals();
 
         $jobManager = $this->systemManager->getJobManager();
-        if (!($jobManager instanceof ValkeyJobQueueManager)) {
-            $this->logger->error("Job manager is not ValkeyJobQueueManager, exiting");
-            return;
-        }
+        // this check would be needed if we ever support other job managers
+//        if (!($jobManager instanceof ValkeyJobQueueManager)) {
+//            $this->logger->error("Job manager is not ValkeyJobQueueManager, exiting");
+//            return;
+//        }
 
         while (!$this->stopRequested && $this->jobsProcessed < $this->maxJobs) {
             try {
@@ -61,9 +62,16 @@ class ValkeyWorker
 
                 $job = $jobManager->fetchJob($this->workerId);
                 if ($job) {
+                    $now = microtime(true);
                     $this->processJob($jobManager, $job);
+                    $durationInMs = round(1000000 * (microtime(true) - $now)) / 1000;
                     $this->jobsProcessed++;
-                    $this->logger->info("Job processed", ['job_id' => $job['signature'], 'jobs_count' => $this->jobsProcessed]);
+                    $this->logger->info("Job processed", [
+                        'jobId' => $job['signature'],
+                        'jobName' => $job['data']['name'],
+                        'durationInMs' => $durationInMs,
+                        'jobsProcessed' => $this->jobsProcessed
+                    ]);
                 } else {
                     usleep($this->microSecondsToSleep);
                 }

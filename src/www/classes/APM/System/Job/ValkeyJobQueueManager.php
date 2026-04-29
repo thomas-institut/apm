@@ -148,8 +148,6 @@ class ValkeyJobQueueManager extends JobQueueManager
 
     public function cleanQueue(): void
     {
-        // In Valkey, successful jobs are removed immediately.
-        // We only clean the Dead queue here
         $this->valkey->del([$this->keyDead]);
         $this->logger->info("Dead job queue cleared.");
     }
@@ -159,7 +157,6 @@ class ValkeyJobQueueManager extends JobQueueManager
         return [
             ScheduledJobState::WAITING => $this->valkey->zcard($this->keyWaiting),
             ScheduledJobState::RUNNING => $this->valkey->hlen($this->keyProcessing),
-            ScheduledJobState::DONE => 0, // Done jobs are removed
             ScheduledJobState::ERROR => $this->valkey->hlen($this->keyDead),
         ];
     }

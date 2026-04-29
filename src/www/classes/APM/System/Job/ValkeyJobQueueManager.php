@@ -3,6 +3,7 @@
 namespace APM\System\Job;
 
 use Predis\Client;
+use Predis\Transaction\MultiExec;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
 use ThomasInstitut\TimeString\TimeString;
@@ -90,9 +91,7 @@ class ValkeyJobQueueManager extends JobQueueManager
 
         $score = $now + $secondsToWait;
 
-        // Atomic schedule/update
-        $this->valkey->transaction(function ($tx) use ($signature, $jobData, $score) {
-            /** @var Client $tx */
+        $this->valkey->transaction(function (MultiExec $tx) use ($signature, $jobData, $score) {
             $tx->hsetnx($this->keyData, $signature, json_encode($jobData));
             $tx->zadd($this->keyWaiting, [$signature => $score]);
         });
@@ -121,8 +120,7 @@ class ValkeyJobQueueManager extends JobQueueManager
         $now = microtime(true);
         $score = $now + $secondsToWait;
 
-        $this->valkey->transaction(function ($tx) use ($jobId, $jobData, $score) {
-            /** @var Client $tx */
+        $this->valkey->transaction(function (MultiExec $tx) use ($jobId, $jobData, $score) {
             $tx->hset($this->keyData, $jobId, json_encode($jobData));
             $tx->zadd($this->keyWaiting, [$jobId => $score]);
             // Ensure it's not in Processing if we are rescheduling it manually? 
@@ -229,6 +227,17 @@ class ValkeyJobQueueManager extends JobQueueManager
      */
     public function fetchJob(string $workerId): ?array
     {
+        /*
+         * A LUA script is used here because the fetch operation must be atomic.
+         * Specifically, we need to:
+         * 1. Find a job ready to be processed (ZRANGEBYSCORE).
+         * 2. Read the job's full data (HGET).
+         * 3. Move the job from 'Waiting' to 'Processing' (ZREM and HSET).
+         *
+         * Standard Redis transactions (MULTI/EXEC) do not allow using the results of a command
+         * (like the job signature from ZRANGEBYSCORE) within subsequent commands in the same transaction.
+         * LUA scripts run atomically on the server and can use variables to bridge these steps.
+         */
         $script = <<<LUA
 local waiting_key = KEYS[1]
 local data_key = KEYS[2]
@@ -277,8 +286,7 @@ LUA;
      */
     public function finishJob(string $signature): void
     {
-        $this->valkey->transaction(function ($tx) use ($signature) {
-            /** @var Client $tx */
+        $this->valkey->transaction(function (MultiExec $tx) use ($signature) {
             $tx->hdel($this->keyData, [$signature]);
             $tx->hdel($this->keyProcessing, [$signature]);
         });
@@ -309,16 +317,14 @@ LUA;
             $delay = $jobData['secs_between_retries'] * pow(2, $jobData['attempts'] - 1);
             $score = microtime(true) + $delay;
 
-            $this->valkey->transaction(function ($tx) use ($signature, $jobData, $score) {
-                /** @var Client $tx */
+            $this->valkey->transaction(function (MultiExec $tx) use ($signature, $jobData, $score) {
                 $tx->hset($this->keyData, $signature, json_encode($jobData));
                 $tx->zadd($this->keyWaiting, [$signature => $score]);
                 $tx->hdel($this->keyProcessing, [$signature]);
             });
         } else {
             // Dead Letter
-            $this->valkey->transaction(function ($tx) use ($signature, $jobData) {
-                /** @var Client $tx */
+            $this->valkey->transaction(function (MultiExec $tx) use ($signature, $jobData) {
                 $tx->hset($this->keyDead, $signature, json_encode($jobData));
                 $tx->hdel($this->keyProcessing, [$signature]);
                 $tx->hdel($this->keyData, [$signature]);
@@ -345,8 +351,7 @@ LUA;
                 $this->logger->warning("Recovering orphaned job", ['signature' => $signature, 'info' => $info]);
 
                 // Move back to waiting
-                $this->valkey->transaction(function ($tx) use ($signature) {
-                    /** @var Client $tx */
+                $this->valkey->transaction(function (MultiExec $tx) use ($signature) {
                     $tx->zadd($this->keyWaiting, [$signature => microtime(true)]);
                     $tx->hdel($this->keyProcessing, [$signature]);
                 });

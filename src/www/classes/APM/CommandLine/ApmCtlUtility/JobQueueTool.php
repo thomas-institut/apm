@@ -20,6 +20,8 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
     const string CMD_PROCESS = 'process';
     const string CMD_CLEAN = 'clean';
     const string CMD_INFO = 'info';
+    const string CMD_STATS = 'stats';
+    const string CMD_RESET_STATS = 'reset-stats';
 
     const string CMD_LIST = 'list';
     const string CMD_RESCHEDULE = 'reschedule';
@@ -34,6 +36,16 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         $this->commandInfo[] = [
             'command' => self::CMD_INFO,
             'info' => "prints information about the current job queue",
+        ];
+
+        $this->commandInfo[] = [
+            'command' => self::CMD_STATS,
+            'info' => "displays the number of completed and failed tasks per day",
+        ];
+
+        $this->commandInfo[] = [
+            'command' => self::CMD_RESET_STATS,
+            'info' => "resets all job statistics",
         ];
 
         $this->commandInfo[] = [
@@ -90,6 +102,14 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
             case self::CMD_INFO:
                 $this->info();
+                break;
+
+            case self::CMD_STATS:
+                $this->stats();
+                break;
+
+            case self::CMD_RESET_STATS:
+                $this->resetStats();
                 break;
 
             case self::CMD_LIST:
@@ -197,6 +217,44 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
                     $total, $counts[ScheduledJobState::RUNNING], $counts[ScheduledJobState::WAITING],  $counts[ScheduledJobState::ERROR]);
             }
         }
+    }
+
+    /**
+     * Displays daily job completion and failure statistics.
+     *
+     * @return void
+     */
+    private function stats(): void
+    {
+        $jm = $this->getSystemManager()->getJobManager();
+        $jobStats = $jm->getJobStats();
+
+        if ($jobStats->isEmpty()) {
+            print "No job statistics available.\n";
+            return;
+        }
+
+        printf("%-12s %-12s %-12s\n", "Date", "Completed", "Failed");
+        print str_repeat("-", 38) . "\n";
+
+        foreach ($jobStats->getDailyStats() as $dailyStat) {
+            printf("%-12s %-12d %-12d\n",
+                $dailyStat->getDate(),
+                $dailyStat->getCompleted(),
+                $dailyStat->getFailed()
+            );
+        }
+    }
+
+    /**
+     * Resets all job statistics.
+     *
+     * @return void
+     */
+    private function resetStats(): void
+    {
+        $this->getSystemManager()->getJobManager()->resetJobStats();
+        print "Job statistics reset successfully.\n";
     }
 
     private function test(): void

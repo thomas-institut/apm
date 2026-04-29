@@ -33,7 +33,7 @@ abstract class JobQueueManager
      * @return string
      */
 
-    abstract public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5) : string;
+    abstract public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): string;
 
 
     /**
@@ -41,7 +41,7 @@ abstract class JobQueueManager
      * If the job does not exist returns empty string, otherwise returns the job's id
      * @param string $jobId
      * @param int $secondsToWait
-     * @param int $maxAttempts  if not -1, changes the job's maxAttempts value
+     * @param int $maxAttempts if not -1, changes the job's maxAttempts value
      * @param int $secondBetweenRetries if not -1, changes the job's secondBetweenRetries value
      * @return string
      */
@@ -51,13 +51,13 @@ abstract class JobQueueManager
      * Process the current job queue: runs all pending jobs
      * @return void
      */
-    abstract public function process() : void;
+    abstract public function process(): void;
 
     /**
      * Removes all finished jobs from the queue
      * @return void
      */
-    abstract public function cleanQueue() : void;
+    abstract public function cleanQueue(): void;
 
 
     /**
@@ -65,14 +65,14 @@ abstract class JobQueueManager
      *  [ 'waiting' => someInt, 'running' => someInt, .... ]
      * @return array
      */
-    abstract public function getJobCountsByState() : array;
+    abstract public function getJobCountsByState(): array;
 
     /**
      * Returns job information for jobs with the given state
      * @param string $state
      * @return array
      */
-    abstract public function getJobsByState(string $state) : array;
+    abstract public function getJobsByState(string $state): array;
 
     /**
      * Returns true if a job with the given name and payload is already scheduled (waiting or running)
@@ -83,4 +83,16 @@ abstract class JobQueueManager
      * @return bool
      */
     abstract public function isJobActive(string $name, string $description, array $payload): bool;
+
+    /**
+     * Returns statistics about completed and failed jobs per day
+     * @return JobStats
+     */
+    abstract public function getJobStats(): JobStats;
+
+    /**
+     * Resets all job statistics
+     * @return void
+     */
+    abstract public function resetJobStats(): void;
 }

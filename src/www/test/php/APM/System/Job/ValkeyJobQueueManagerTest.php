@@ -5,6 +5,8 @@ namespace APM\Test\System\Job;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\Job\ScheduledJobState;
 use APM\System\Job\ValkeyJobQueueManager;
+use APM\System\Job\JobStats;
+use APM\System\Job\DailyJobStats;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
@@ -181,5 +183,38 @@ class ValkeyJobQueueManagerTest extends TestCase
         // Complete it
         $this->valkey->hdel($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, [$sig]);
         $this->assertFalse($this->jm->isJobActive($name, $desc, $payload));
+    }
+
+    public function testJobStats()
+    {
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $this->jm->registerJob('TestJob', $handler);
+
+        $sig1 = $this->jm->scheduleJob('TestJob', 'J1', ['id' => 1]);
+        $sig2 = $this->jm->scheduleJob('TestJob', 'J2', ['id' => 2]);
+
+        // Finish sig1
+        $this->jm->finishJob($sig1);
+
+        $today = date('Y-m-d');
+        $jobStats = $this->jm->getJobStats();
+        $this->assertFalse($jobStats->isEmpty());
+        $daily = $jobStats->getDailyStats();
+        $this->assertCount(1, $daily);
+        $this->assertEquals($today, $daily[0]->getDate());
+        $this->assertEquals(1, $daily[0]->getCompleted());
+        $this->assertEquals(0, $daily[0]->getFailed());
+
+        // Fail sig2 (dead letter)
+        $this->jm->failJob($sig2, "Error", false);
+        $jobStats = $this->jm->getJobStats();
+        $daily = $jobStats->getDailyStats();
+        $this->assertCount(1, $daily);
+        $this->assertEquals(1, $daily[0]->getCompleted());
+        $this->assertEquals(1, $daily[0]->getFailed());
+
+        // Reset stats
+        $this->jm->resetJobStats();
+        $this->assertTrue($this->jm->getJobStats()->isEmpty());
     }
 }

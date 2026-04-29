@@ -23,12 +23,14 @@ class ValkeyJobQueueManager extends JobQueueManager
     private string $keyData;
     private string $keyProcessing;
     private string $keyDead;
+    private string $keyStats;
 
     public const string DEFAULT_PREFIX = 'APM:Queue:';
     public const string SUFFIX_WAITING = 'Waiting';
     public const string SUFFIX_DATA = 'Data';
     public const string SUFFIX_PROCESSING = 'Processing';
     public const string SUFFIX_DEAD = 'Dead';
+    public const string SUFFIX_STATS = 'Stats';
 
     public function __construct(Client $valkey, LoggerInterface $logger, string $prefix = self::DEFAULT_PREFIX)
     {
@@ -40,6 +42,7 @@ class ValkeyJobQueueManager extends JobQueueManager
         $this->keyData = $this->prefix . self::SUFFIX_DATA;
         $this->keyProcessing = $this->prefix . self::SUFFIX_PROCESSING;
         $this->keyDead = $this->prefix . self::SUFFIX_DEAD;
+        $this->keyStats = $this->prefix . self::SUFFIX_STATS;
     }
 
     public function registerJob(string $name, JobHandlerInterface $job): bool
@@ -290,9 +293,11 @@ LUA;
      */
     public function finishJob(string $signature): void
     {
-        $this->valkey->transaction(function (MultiExec $tx) use ($signature) {
+        $today = date('Y-m-d');
+        $this->valkey->transaction(function (MultiExec $tx) use ($signature, $today) {
             $tx->hdel($this->keyData, [$signature]);
             $tx->hdel($this->keyProcessing, [$signature]);
+            $tx->hincrby($this->keyStats, "completed:$today", 1);
         });
     }
 
@@ -328,11 +333,13 @@ LUA;
             });
         } else {
             // Dead Letter
-            $this->valkey->transaction(function (MultiExec $tx) use ($signature, $jobData) {
+            $today = date('Y-m-d');
+            $this->valkey->transaction(function (MultiExec $tx) use ($signature, $jobData, $today) {
                 $tx->hset($this->keyDead, $signature, json_encode($jobData));
                 $tx->hdel($this->keyProcessing, [$signature]);
                 $tx->hdel($this->keyData, [$signature]);
                 $tx->zrem($this->keyWaiting, $signature);
+                $tx->hincrby($this->keyStats, "failed:$today", 1);
             });
         }
     }
@@ -363,5 +370,43 @@ LUA;
             }
         }
         return $recovered;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getJobStats(): JobStats
+    {
+        $stats = $this->valkey->hgetall($this->keyStats);
+        $parsedStats = [];
+        foreach ($stats as $key => $count) {
+            $parts = explode(':', $key);
+            if (count($parts) !== 2) {
+                continue;
+            }
+            [$type, $date] = $parts;
+            $parsedStats[$date][$type] = (int)$count;
+        }
+
+        ksort($parsedStats);
+
+        $dailyStats = [];
+        foreach ($parsedStats as $date => $counts) {
+            $dailyStats[] = new DailyJobStats(
+                $date,
+                $counts['completed'] ?? 0,
+                $counts['failed'] ?? 0
+            );
+        }
+
+        return new JobStats($dailyStats);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function resetJobStats(): void
+    {
+        $this->valkey->del($this->keyStats);
     }
 }

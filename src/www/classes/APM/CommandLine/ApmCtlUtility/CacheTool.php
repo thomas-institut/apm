@@ -6,26 +6,22 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\Api\ApiPeople;
 use APM\CommandLine\CommandLineUtility;
-use APM\System\ApmMySqlTableName;
 use APM\System\Cache\CacheKey;
-use PDO;
+use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 
 class CacheTool extends CommandLineUtility implements AdminUtility
 {
-    const CMD = 'cache';
+    const string CMD = 'cache';
 
-    const USAGE = self::CMD . " <option>\n\nOptions:\n  info: print cache size, length, etc\n  delete <key>: deletes a key\n  flush: erases all cache entries\n  clean: removes all expired entries\n";
-    const DESCRIPTION = "Cache management functions: info, clean, etc";
-    const FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
+    const string USAGE = self::CMD . " <option>\n\nOptions:\  info: print cache size, length, etc\n  delete <key>: deletes a key\n  flush <all|Sys|Mem>: erases all cache entries in given cache\n  clean: removes all expired entries\n";
+    const string DESCRIPTION = "Cache management functions: info, clean, etc";
+    const string FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
 
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
     }
 
-    private function getCacheTableName() : string {
-        return $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_SYSTEM_CACHE];
-    }
 
     public function main($argc, $argv) : int
     {
@@ -61,18 +57,25 @@ class CacheTool extends CommandLineUtility implements AdminUtility
     private function printCacheInfo(): void
     {
 
-        $cacheTable = $this->getCacheTableName();
+        $caches = $this->getCaches();
 
-        $cacheSizeQuery = "SELECT sum(length(`value`)) AS size from `$cacheTable`";
-        $cacheLengthQuery = "SELECT count(*) as length FROM `$cacheTable`";
+        foreach ($caches as $cacheName => $cache) {
+            if ($cache instanceof ValkeyDataCache) {
+                $info = $cache->getInfo();
+                $msg = "$cacheName: Size: " . round(($info->memoryUsage / (1024 * 1024)), 2) . " MB, " . $info->itemCount . " entries\n";
+                $this->logger->info($msg);
+            } else {
+                $this->logger->info("$cacheName: No info available");
+            }
+        }
+     }
 
-        $cacheSize = $this->getSingleValue($cacheSizeQuery, 'size');
-        $cacheLength = $this->getSingleValue($cacheLengthQuery, 'length');
-        $msg = "Cache size: " . round((intval($cacheSize) / (1024*1024)), 2) . " MB, " . $cacheLength . " entries\n";
-
-        $this->logger->info($msg);
-
-    }
+     private function getCaches() : array {
+        return [
+            'Mem' => $this->getSystemManager()->getMemDataCache(),
+            'Sys' => $this->getSystemManager()->getSystemDataCache(),
+            ];
+     }
 
     private function deleteKey() : void {
         if ($this->argc < 3) {
@@ -101,43 +104,39 @@ class CacheTool extends CommandLineUtility implements AdminUtility
 
     private function flushCache(): void
     {
-        if ($this->argc < 3) {
-            print "Please use 'cache flush <theSafeWord>' to actually flush the cache\n";
+        if ($this->argc < 4) {
+            print "Please use 'cache flush <cacheName> <theSafeWord>' to actually flush the cache\n";
             return;
         }
 
-        if ($this->argv[2] !== self::FLUSH_SAFE_WORD) {
+        if ($this->argv[3] !== self::FLUSH_SAFE_WORD) {
             print "Sorry, you don't seem to know what you're doing\n";
             return;
         }
 
-        $query = 'TRUNCATE ' . $this->getCacheTableName();
-        $this->getDbConn()->query($query);
-        $this->getSystemManager()->getMemDataCache()->flush();
-        $this->logger->info("Cache flushed");
+        $caches = $this->getCaches();
+        $cacheNames = array_keys($caches);
 
-    }
-
-    private function  getSingleValue(string $query, string $name) {
-        $r = $this->getDbConn()->query($query);
-
-        $rows = [];
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
-            $rows[] = $row;
+        if (in_array($this->argv[2], $cacheNames)) {
+            $caches[$this->argv[2]]->flush();
+            $this->logger->info("Cache flushed: " . $this->argv[2]);
+            return;
         }
 
-        if (count($rows) === 0) {
-            return '';
+        if ($this->argv[2] === 'all') {
+            foreach ($caches as $cache) {
+                $cache->flush();
+            }
+            return;
         }
 
-        return $rows[0][$name];
+        printf("Unrecognized cache name '%s', valid names are: %s, or all\n", $this->argv[2], implode(', ', $cacheNames));
 
     }
 
     private function cleanCache() : void
     {
         $this->getSystemManager()->getSystemDataCache()->clean();
-        //$this->logger->info('Cache cleaned');
     }
 
     public function getCommand(): string

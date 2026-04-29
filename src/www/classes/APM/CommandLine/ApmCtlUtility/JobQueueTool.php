@@ -193,8 +193,8 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
                 printf("There are %d jobs in the queue, all finished: %d successfully, %d with error\n",
                    $total, $counts[ScheduledJobState::DONE], $counts[ScheduledJobState::ERROR]);
             } else {
-                printf("There %d jobs in the queue: %d running, %d waiting, %d finished successfully, %d finished with error\n",
-                    $total, $counts[ScheduledJobState::RUNNING], $counts[ScheduledJobState::WAITING], $counts[ScheduledJobState::DONE], $counts[ScheduledJobState::ERROR]);
+                printf("There %d jobs in the queue: %d running, %d waiting, %d finished with error\n",
+                    $total, $counts[ScheduledJobState::RUNNING], $counts[ScheduledJobState::WAITING],  $counts[ScheduledJobState::ERROR]);
             }
         }
     }

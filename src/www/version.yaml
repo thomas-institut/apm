@@ -11,8 +11,8 @@
 # Delete app-setting.json after making changes to this file
 #
 
-version: '1.1.11'
-versionDate: '2026-Apr-24'
+version: '1.2'
+versionDate: '2026-Apr-29'
 versionExtra: ''
 
 jsAppCacheDataId: '20260330_133120'

@@ -9,6 +9,9 @@ use APM\System\SystemManager;
 class ApiSearchUpdateTranscribersAndTranscriptionsCache implements JobHandlerInterface
 
 {
+    /**
+     * @throws \Throwable
+     */
     public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
         return ApiSearch::updateDataCache($sm, 'transcriptions', $sm->getLogger());

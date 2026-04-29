@@ -12,7 +12,6 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
 
     public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
-        $logger = $sm->getLogger();
         $config = $sm->getConfig();
 
         // Fetch data from payload

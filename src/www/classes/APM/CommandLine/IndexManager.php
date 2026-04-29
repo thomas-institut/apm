@@ -98,23 +98,23 @@ class IndexManager extends CommandLineUtility
         if (!isset($argv[4])) {$argv[4] = "";}
 
         switch ($operation) {
-            case 'csvFromDocTitles':
-                $this->createCsvTablesFromDocTitles();
-                break;
-
-            case 'csvFromDare':
-                $this->createCsvTableWithInstitutionCodesAndNames();
-                break;
-
-            case 'cityNames':
-                $city = $this->getCityNamesByUNLocode($argv[3]);
-                print_r($city);
-                break;
-
-            case 'countryNames':
-                $country = $this->getCountryNamesByAlpha2($argv[3]);
-                print_r($country);
-                break;
+//            case 'csvFromDocTitles':
+//                $this->createCsvTablesFromDocTitles();
+//                break;
+//
+//            case 'csvFromDare':
+//                $this->createCsvTableWithInstitutionCodesAndNames();
+//                break;
+//
+//            case 'cityNames':
+//                $city = $this->getCityNamesByUNLocode($argv[3]);
+//                print_r($city);
+//                break;
+//
+//            case 'countryNames':
+//                $country = $this->getCountryNamesByAlpha2($argv[3]);
+//                print_r($country);
+//                break;
 
             case 'build': // create new or replace existing index with a specific name
                 $this->buildIndex();
@@ -204,7 +204,9 @@ END;
     }
 
     /**
-     * Builds the transcriptions or editions index in open search after getting all relevant data from the sql database. Deletes already existing transcriptions or editions index.
+     * Builds the transcriptions or editions index in typesense after getting all relevant data from the sql database.
+     * Deletes already existing transcriptions or editions index.
+     *
      * @return void
      * @throws DocumentNotFoundException
      * @throws EntityDoesNotExistException

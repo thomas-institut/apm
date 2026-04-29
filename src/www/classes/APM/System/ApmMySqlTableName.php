@@ -22,40 +22,39 @@ namespace APM\System;
 
 class ApmMySqlTableName
 {
-    const TABLE_SETTINGS = 'settings';
-    const TABLE_EDNOTES = 'ednotes';
-    const TABLE_ELEMENTS = 'elements';
-    const TABLE_ITEMS = 'items';
-    const TABLE_USERS = 'users';
-    const TABLE_TOKENS = 'tokens';
-//    const TABLE_RELATIONS = 'relations';
-    const TABLE_DOCS = 'docs';
-    const TABLE_PEOPLE = 'people';
-    const TABLE_PAGES = 'pages';
-    const TABLE_PAGETYPES = 'types_page';
-    const TABLE_WORKS = 'works';
-    const TABLE_PRESETS = 'presets';
-    const TABLE_VERSIONS_TX = 'versions_tx';
-    const TABLE_SYSTEM_CACHE = 'system_cache';
-    const TABLE_JOBS = 'jobs';
-    const TABLE_COLLATION_TABLE = 'ctables';
-    const TABLE_VERSIONS_CT = 'versions_ct';
-    const TABLE_MULTI_CHUNK_EDITIONS = 'mc_editions';
-    const TABLE_EDITION_SOURCES = 'edition_sources';
-    const TABLE_SESSIONS_REGISTER = 'sessions_register';
-    const TABLE_SESSIONS_LOG = 'sessions_log';
+    const string TABLE_SETTINGS = 'settings';
+    const string TABLE_EDNOTES = 'ednotes';
+    const string TABLE_ELEMENTS = 'elements';
+    const string TABLE_ITEMS = 'items';
+    const string TABLE_USERS = 'users';
+    const string TABLE_TOKENS = 'tokens';
+    const string TABLE_DOCS = 'docs';
+    const string TABLE_PEOPLE = 'people';
+    const string TABLE_PAGES = 'pages';
+    const string TABLE_PAGETYPES = 'types_page';
+    const string TABLE_WORKS = 'works';
+    const string TABLE_PRESETS = 'presets';
+    const string TABLE_VERSIONS_TX = 'versions_tx';
+    const string TABLE_SYSTEM_CACHE = 'system_cache';
+    const string TABLE_JOBS = 'jobs';
+    const string TABLE_COLLATION_TABLE = 'ctables';
+    const string TABLE_VERSIONS_CT = 'versions_ct';
+    const string TABLE_MULTI_CHUNK_EDITIONS = 'mc_editions';
+    const string TABLE_EDITION_SOURCES = 'edition_sources';
+    const string TABLE_SESSIONS_REGISTER = 'sessions_register';
+    const string TABLE_SESSIONS_LOG = 'sessions_log';
 
     // Entity system tables:
 
-    const ES_Statements_Default = 'es_default_st';
+    const string ES_Statements_Default = 'es_default_st';
 //    const ES_Statements_Person = 'es_st_person';
 //    const ES_Statements_Document = 'es_st_doc';
 //    const ES_Statements_Work = 'es_st_work';
 
-    const ES_Cache_Default = 'es_default_cache';
+    const string ES_Cache_Default = 'es_default_cache';
 //    const ES_Cache_Person = 'es_cache_person';
 //    const ES_Cache_Document = 'es_cache_document';
 //    const ES_Cache_Work =  'es_cache_work';
 
-    const ES_Merges = 'es_merges';
+    const string ES_Merges = 'es_merges';
 }

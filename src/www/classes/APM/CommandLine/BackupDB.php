@@ -30,16 +30,16 @@ use APM\System\ApmMySqlTableName;
 
 class BackupDB extends CommandLineUtility {
     
-    const USAGE = "USAGE: backupdb <output_directory>\n";
+    const string USAGE = "USAGE: backupdb <output_directory>\n";
 
-    const CACHE_TABLES = [ ApmMySqlTableName::TABLE_SYSTEM_CACHE];
+    const array CACHE_TABLES = [ ApmMySqlTableName::TABLE_SYSTEM_CACHE];
     
     public function __construct(array $config, int $argc, array $argv) {
         parent::__construct($config, $argc, $argv);
 //        $this->logger = $this->logger->withName('BACKUP');
     }
     
-    public function main($argc, $argv)
+    public function main($argc, $argv): bool
     {
         $shell = '/bin/bash';
         $mysqldump = 'mysqldump';

@@ -20,6 +20,8 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
     const string CMD_PROCESS = 'process';
     const string CMD_CLEAN = 'clean';
     const string CMD_INFO = 'info';
+    const string CMD_STATS = 'stats';
+    const string CMD_RESET_STATS = 'reset-stats';
 
     const string CMD_LIST = 'list';
     const string CMD_RESCHEDULE = 'reschedule';
@@ -37,15 +39,25 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         ];
 
         $this->commandInfo[] = [
+            'command' => self::CMD_STATS,
+            'info' => "displays the number of completed and failed tasks per day",
+        ];
+
+        $this->commandInfo[] = [
+            'command' => self::CMD_RESET_STATS,
+            'info' => "resets all job statistics",
+        ];
+
+        $this->commandInfo[] = [
             'command' => self::CMD_LIST,
-            'usage' => '[waiting|running|done|error]',
+            'usage' => '[waiting|running|error]',
             'info' => "lists all jobs or jobs in the given state",
         ];
 
 
         $this->commandInfo[] = [
             'command' => self::CMD_CLEAN,
-            'info' => "removes all finished jobs from the queue"
+            'info' => "removes all dead jobs from the queue"
         ];
 
 
@@ -75,7 +87,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
 
-        switch($argv[1]) {
+        switch ($argv[1]) {
             case self::CMD_TEST:
                 $this->test();
                 break;
@@ -92,10 +104,18 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
                 $this->info();
                 break;
 
+            case self::CMD_STATS:
+                $this->stats();
+                break;
+
+            case self::CMD_RESET_STATS:
+                $this->resetStats();
+                break;
+
             case self::CMD_LIST:
 
                 if (!isset($argv[2])) {
-                    $this->printErrorMsg("Need a type of job to list: all, waiting, running, error, done");
+                    $this->printErrorMsg("Need a type of job to list: all, waiting, running, error");
                     return 1;
                 }
                 $this->list($argv[2]);
@@ -108,28 +128,29 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
                 }
                 $errors = false;
                 for ($i = 2; $i < $argc; $i++) {
-                    $jobId = intval($argv[$i]);
-                    if ($jobId <= 0) {
+                    $jobId = $argv[$i];
+                    if ($jobId === '') {
                         $this->printErrorMsg("Invalid job ID '$argv[$i]'");
                     } else {
                         $result = $this->rescheduleJob($jobId);
                         if (!$result) {
-                            $errors =true;
+                            $errors = true;
                         }
                     }
                 }
-                return  $errors ? 1 : 0;
+                return $errors ? 1 : 0;
 
             default:
-                print "Unrecognized option: "  . $argv[1] ."\n";
+                print "Unrecognized option: " . $argv[1] . "\n";
                 return 1;
         }
         return 0;
     }
 
-    private function rescheduleJob(int $jobId) : bool {
+    private function rescheduleJob(string $jobId): bool
+    {
         $result = $this->getSystemManager()->getJobManager()->rescheduleJob($jobId);
-        if ($result === -1) {
+        if ($result === '') {
             $this->printErrorMsg("Job $jobId does not exist");
             return false;
         } else {
@@ -138,9 +159,10 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         }
     }
 
-    private function list(string $state): void {
+    private function list(string $state): void
+    {
 
-        $validStates =  [ ScheduledJobState::WAITING, ScheduledJobState::RUNNING, ScheduledJobState::ERROR, ScheduledJobState::DONE];
+        $validStates = [ScheduledJobState::WAITING, ScheduledJobState::RUNNING, ScheduledJobState::ERROR];
 
         if ($state === 'all') {
             $statesToList = $validStates;
@@ -149,10 +171,10 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
                 $this->printErrorMsg("Invalid state '$state'");
                 exit(1);
             }
-            $statesToList = [ $state ];
+            $statesToList = [$state];
         }
 
-        foreach($statesToList as $state) {
+        foreach ($statesToList as $state) {
             $jobs = $this->getSystemManager()->getJobManager()->getJobsByState($state);
             $countJobs = count($jobs);
             printf("%s, %d job(s)", $state, $countJobs);
@@ -166,15 +188,16 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
     }
 
 
-
-    private function printJobs(array $jobs): void {
-        foreach($jobs as $job) {
-            printf("   %d: %s\t%s, %s, scheduled at %s, attempts %d/%d, last run at %s\n",
-                $job['id'], $job['state'], $job['name'], $job['description'], $job['scheduled_at'], $job['completed_runs'], $job['max_attempts'], $job['last_run_at']);
+    private function printJobs(array $jobs): void
+    {
+        foreach ($jobs as $job) {
+            printf("   %s: %s\t%s, %s, scheduled at %s, attempts %d/%d, last run at %s\n",
+                $job['id'], $job['state'], $job['name'], $job['description'], $job['scheduled_at'], $job['completed_runs'] ?? 0, $job['max_attempts'], $job['last_run_at'] ?? 'never');
         }
     }
 
-    private function info() : void {
+    private function info(): void
+    {
         $jm = $this->getSystemManager()->getJobManager();
 
         $counts = $jm->getJobCountsByState();
@@ -182,29 +205,66 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         $total = 0;
 
 
-        foreach($counts as $count) {
+        foreach ($counts as $count) {
             $total += $count;
         }
         if ($total == 0) {
             print "The job queue is empty\n";
         } else {
-            $finished = $counts[ScheduledJobState::DONE] + $counts[ScheduledJobState::ERROR];
-            if ($finished === $total) {
-                printf("There are %d jobs in the queue, all finished: %d successfully, %d with error\n",
-                   $total, $counts[ScheduledJobState::DONE], $counts[ScheduledJobState::ERROR]);
+            $finishedWithError = $counts[ScheduledJobState::ERROR];
+            if ($finishedWithError === $total) {
+                printf("There are %d jobs in the queue, all finished with error\n", $total);
             } else {
-                printf("There %d jobs in the queue: %d running, %d waiting, %d finished successfully, %d finished with error\n",
-                    $total, $counts[ScheduledJobState::RUNNING], $counts[ScheduledJobState::WAITING], $counts[ScheduledJobState::DONE], $counts[ScheduledJobState::ERROR]);
+                printf("There %d jobs in the queue: %d running, %d waiting, %d finished with error\n",
+                    $total, $counts[ScheduledJobState::RUNNING], $counts[ScheduledJobState::WAITING], $counts[ScheduledJobState::ERROR]);
             }
         }
+    }
+
+    /**
+     * Displays daily job completion and failure statistics.
+     *
+     * @return void
+     */
+    private function stats(): void
+    {
+        $jm = $this->getSystemManager()->getJobManager();
+        $jobStats = $jm->getJobStats();
+
+        if ($jobStats->isEmpty()) {
+            print "No job statistics available.\n";
+            return;
+        }
+
+        printf("%-12s %-12s %-12s\n", "Date", "Completed", "Failed");
+        print str_repeat("-", 38) . "\n";
+
+        foreach ($jobStats->getDailyStats() as $dailyStat) {
+            printf("%-12s %-12d %-12d\n",
+                $dailyStat->getDate(),
+                $dailyStat->getCompleted(),
+                $dailyStat->getFailed()
+            );
+        }
+    }
+
+    /**
+     * Resets all job statistics.
+     *
+     * @return void
+     */
+    private function resetStats(): void
+    {
+        $this->getSystemManager()->getJobManager()->resetJobStats();
+        print "Job statistics reset successfully.\n";
     }
 
     private function test(): void
     {
         $jm = $this->getSystemManager()->getJobManager();
 
-        for ($i = 0; $i< self::NUM_TEST_JOBS; $i++) {
-            $jm->scheduleJob(ApmJobName::NULL_JOB, "No. $i", [ 'returnValue' => ($i % 2) === 0 ], $i, $i+1, 4*($i + 1));
+        for ($i = 0; $i < self::NUM_TEST_JOBS; $i++) {
+            $jm->scheduleJob(ApmJobName::NULL_JOB, "No. $i", ['returnValue' => ($i % 2) === 0], $i, $i + 1, 4 * ($i + 1));
         }
     }
 

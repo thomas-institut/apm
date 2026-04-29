@@ -12,7 +12,6 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
 
     public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
-        $logger = $sm->getLogger();
         $config = $sm->getConfig();
 
         // Fetch data from payload
@@ -22,7 +21,7 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
         $im->setIndexNamePrefix('editions');
 
         try {
-            $im->updateOrAddItem($table_id, null, true);
+            $im->updateOrAddItem($table_id);
             return true;
         } catch (Throwable $e) {
             $sm->getLogger()->error("Error updating editions index for table $table_id: " . $e->getMessage());

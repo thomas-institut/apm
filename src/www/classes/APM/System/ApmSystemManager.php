@@ -53,9 +53,9 @@ use APM\System\Document\ApmDocumentManager;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
-use APM\System\Job\ApmJobQueueManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\Job\NullJobHandler;
+use APM\System\Job\ValkeyJobQueueManager;
 use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Lemmatizer\UdPipeLemmatizer;
 use APM\System\Person\EntitySystemPersonManager;
@@ -172,7 +172,7 @@ class ApmSystemManager extends SystemManager {
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?ApmUserManager $userManager = null;
     private ?PersonManagerInterface $personManager = null;
-    private ?ApmJobQueueManager $jobManager = null;
+    private ?JobQueueManager $jobManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
     private ?WorkManager $workManager = null;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem = null;
@@ -843,10 +843,7 @@ class ApmSystemManager extends SystemManager {
     public function getJobManager(): JobQueueManager
     {
         if ($this->jobManager === null) {
-//            $this->logger->debug("Creating Job manager");
-            $this->jobManager = new ApmJobQueueManager($this,
-                new MySqlDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_JOBS], true));
-            $this->jobManager->setLogger($this->logger->withName('JOB_QUEUE'));
+            $this->jobManager = new ValkeyJobQueueManager($this->createValkeyClient(), $this->logger->withName('JOB_QUEUE'));
             $this->registerSystemJobs();
         }
         return $this->jobManager;

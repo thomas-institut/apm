@@ -236,16 +236,18 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
             return;
         }
 
-        printf("%-12s %-12s %-12s\n", "Date", "Completed", "Failed");
+        print str_repeat("=", 38) . "\n";
+        printf("%-10s %12s %12s\n", "Date", "Completed", "Failed");
         print str_repeat("-", 38) . "\n";
 
         foreach ($jobStats->getDailyStats() as $dailyStat) {
-            printf("%-12s %-12d %-12d\n",
+            printf("%-10s %12d %12d\n",
                 $dailyStat->getDate(),
                 $dailyStat->getCompleted(),
                 $dailyStat->getFailed()
             );
         }
+        print str_repeat("=", 38) . "\n";
     }
 
     /**

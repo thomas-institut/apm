@@ -62,10 +62,9 @@ class CacheTool extends CommandLineUtility implements AdminUtility
         foreach ($caches as $cacheName => $cache) {
             if ($cache instanceof ValkeyDataCache) {
                 $info = $cache->getInfo();
-                $msg = "$cacheName: Size: " . round(($info->memoryUsage / (1024 * 1024)), 2) . " MB, " . $info->itemCount . " entries\n";
-                $this->logger->info($msg);
+                print "$cacheName: Size: " . round(($info->memoryUsage / (1024 * 1024)), 2) . " MB, " . $info->itemCount . " entries\n";
             } else {
-                $this->logger->info("$cacheName: No info available");
+                print "$cacheName: No info available\n";
             }
         }
      }
@@ -99,7 +98,9 @@ class CacheTool extends CommandLineUtility implements AdminUtility
         }
 
 
-        $this->logger->info("Cache key deleted: " . $key);
+        $msg = "Cache key deleted: " . $key;
+        $this->logger->info($msg);
+        print $msg . "\n";
     }
 
     private function flushCache(): void
@@ -119,13 +120,18 @@ class CacheTool extends CommandLineUtility implements AdminUtility
 
         if (in_array($this->argv[2], $cacheNames)) {
             $caches[$this->argv[2]]->flush();
-            $this->logger->info("Cache flushed: " . $this->argv[2]);
+            $msg = "Cache flushed: " . $this->argv[2];
+            $this->logger->info($msg);
+            print $msg . "\n";
             return;
         }
 
         if ($this->argv[2] === 'all') {
             foreach ($caches as $cache) {
                 $cache->flush();
+                $msg = "Cache flushed: " . $cache->getName();
+                $this->logger->info($msg);
+                print $msg . "\n";
             }
             return;
         }

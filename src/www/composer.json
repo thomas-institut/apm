@@ -8,7 +8,7 @@
     "homepage": "https://averroes.uni-koeln.de",
     "license": "GPL-3.0-or-later",
     "scripts" : {
-        "test": "./vendor/phpunit/phpunit/phpunit test/php"
+        "test": "./vendor/phpunit/phpunit/phpunit test/php --display-all-issues"
     },
     "require": {
         "php": "^8.3",

@@ -106,8 +106,8 @@ export class ApmApiClient {
   private readonly cachedFetcher: CachedFetcher;
   private readonly localCachedFetcher: CachedFetcher;
   private readonly ignoreDataIds: string[] = [];
-
   private useBearerAuthentication: boolean = false;
+  private verbose: boolean = true;
 
   /**
    *
@@ -125,7 +125,13 @@ export class ApmApiClient {
     this.cachedFetcher = new CachedFetcher(this.caches.session, 0);
     this.localCachedFetcher = new CachedFetcher(this.caches.local, 0);
     this.ignoreDataIds = ignoreDataIds;
+  }
 
+  public withVerbose(verbose: boolean): this {
+    this.verbose = verbose;
+    this.cachedFetcher.withVerbose(verbose);
+    this.localCachedFetcher.withVerbose(verbose);
+    return this;
   }
 
   public async initialize(): Promise<void> {
@@ -137,7 +143,7 @@ export class ApmApiClient {
 
       let total = sessionRemovedItemCount + localRemovedItemCount + longTermRemovedItemCount;
       if (total > 0) {
-        console.log(`Removed ${total} items from web caches:  ${sessionRemovedItemCount} session, ${localRemovedItemCount} local, ${longTermRemovedItemCount} long term`);
+        this.verbose && console.log(`Removed ${total} items from web caches:  ${sessionRemovedItemCount} session, ${localRemovedItemCount} local, ${longTermRemovedItemCount} long term`);
       }
     });
   }
@@ -170,7 +176,7 @@ export class ApmApiClient {
   async getPdfDownloadUrl(rawData: any): Promise<PdfUrlResponse> {
     try {
       const resp = await this.post(urlGen.apiTypesetRaw(), rawData, true);
-      console.log(`Got PDF download resp`, resp);
+      this.verbose && console.log(`Got PDF download resp`, resp);
       if (resp.status !== 'OK') {
         return {
           url: null, errorMsg: `Could not get PDF download url: ${resp.status}`
@@ -240,8 +246,8 @@ export class ApmApiClient {
     // really get from server
     let url = urlGen.apiCollationTable_get(tableId, TimeString.compactEncode(version));
     const data = await this.get(url) as SingleChunkApiData;
-    console.log(`Got data table ${tableId}, timeStamp '${version}'`);
-    console.log(data);
+    this.verbose && console.log(`Got data table ${tableId}, timeStamp '${version}'`);
+    this.verbose && console.log(data);
     data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData);
     await this.caches.longTerm.store(dbKey, data);
     return data;
@@ -291,9 +297,9 @@ export class ApmApiClient {
 
   async getChunksInWorkInfo(workId: string): Promise<ChunkInWorkInfo[]> {
     const chunksWithTranscriptionResponse = await this.getWorkChunksWithTranscription(workId);
-    console.log('Chunks with transcription', chunksWithTranscriptionResponse);
+    this.verbose && console.log('Chunks with transcription', chunksWithTranscriptionResponse);
     const activeCollationTables = await this.getCollationTablesActiveForWork(workId);
-    console.log('Active collation tables', activeCollationTables);
+    this.verbose && console.log('Active collation tables', activeCollationTables);
     const info: ChunkInWorkInfo[] = chunksWithTranscriptionResponse.chunks.map(n => {
       return {
         workId: workId, chunkNumber: n, hasTranscriptions: true, hasCollationTables: false, hasEditions: false
@@ -353,7 +359,7 @@ export class ApmApiClient {
       const tokenFingerprint = ':' + await fingerprintToken(token ?? `Random${Math.floor(Math.random() * 1000000)}`);
       return await this.get(urlGen.apiWhoAmI(), false, TtlOneMinute * 15, true, tokenFingerprint);
     } catch (error: any) {
-      console.log(`Error getting whoami`, error);
+      console.warn(`Error getting whoami`, error);
       if (error.httpStatus === 401) {
         return null;
       }
@@ -368,7 +374,7 @@ export class ApmApiClient {
       });
       if (resp.status === 200) {
         const data = await resp.json();
-        console.log(`Got login response`, data);
+        this.verbose && console.log(`Got login response`, data);
         if (data.status === 'OK') {
           await this.setBearerToken(data.token, data.ttl ?? 15 * 24 * 3600);
           return true;
@@ -685,7 +691,7 @@ export class ApmApiClient {
         resolve(cachedInfo);
         return;
       }
-      console.log(`Cache key ${cacheKey} not found, getting data from server`);
+      this.verbose && console.log(`Cache key ${cacheKey} not found, getting data from server`);
       this.get(getUrl, true).then(async (serverData) => {
         let dataToStore = null;
         switch (entityType) {
@@ -783,7 +789,7 @@ export class ApmApiClient {
           fetchOptions['headers'] = fetchOptions['headers'] || {};
           fetchOptions['headers']['Content-Type'] = 'application/json';
           fetchOptions['body'] = JSON.stringify(actualPayload);
-          // console.log(`Sending POST request to ${url}. Fetch options`, fetchOptions);
+          // this.verbose && console.log(`Sending POST request to ${url}. Fetch options`, fetchOptions);
           return fetch(url, fetchOptions);
         };
 
@@ -803,7 +809,7 @@ export class ApmApiClient {
               resolve(responseText);
             }
           } else {
-            console.log(`Error fetching ${url}`, response);
+            console.warn(`Error fetching ${url}`, response);
             const data = responseData ? responseData : {errorMsg: responseText};
             reject({
               errorType: 'http',
@@ -855,7 +861,7 @@ export class ApmApiClient {
     // it makes sense to introduce some variability in the TTL
     ttl = this.getTtlWithVariability(ttl);
 
-    // console.log(`Storing entity ${data.id} data in cache with ttl = ${ttl}`);
+    // this.verbose && console.log(`Storing entity ${data.id} data in cache with ttl = ${ttl}`);
 
     // use the session cache, so that all entity data can disappear when resetting the browser
     cache.store(`${EntityDataCacheKeyPrefix}:${data.id}`, data, ttl);

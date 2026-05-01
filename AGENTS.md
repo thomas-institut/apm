@@ -9,7 +9,7 @@ If local code differs from these guidelines, follow mandatory rules in this docu
 This repository contains:
 - a PHP web application for API handling and frontend serving
 - a TypeScript/React frontend
-- a background daemon for periodic tasks
+- a background daemon and workers for periodic tasks
 - a Node.js service for typesetting and PDF generation
 
 Infrastructure used by the project:
@@ -28,6 +28,7 @@ Development services run in Docker containers.
 - API code: `src/www/classes/APM/Api`
 - Frontend-serving PHP code: `src/www/classes/APM/Site`
 - Daemon code: `src/www/classes/APM/ApmDaemon`
+- Workers code: `src/www/classes/APM/ApmWorker`
 - CLI utilities: `src/www/classes/APM/CommandLine`
 - Utility scripts: `src/www/utilities`
 
@@ -62,6 +63,15 @@ Development services run in Docker containers.
 Example:
 - `function foo(options: FooOptions)`
 
+
+### Frontend - Backend Communication
+
+- Always use `ApmApiClient` for backend communication from the frontend, never make direct HTTP requests.
+- If any interface or method that is involved with communication with the backend is changed, add or update API
+  client integration tests. Try to make the test run without problems, but be aware that successful testing may require
+  coordination with the user because specific environment variables and data in the test environment may need to be
+  added manually.
+
 ### React
 - All new UI must be written in React.
 - Use one component per file.
@@ -72,8 +82,7 @@ Example:
 - Use `useContext(AppContext)` to access app context.
 - Do not pass context as a prop.
 - Do not pass JSX-producing functions as props; create a component instead.
-- Use `ApmApiClient` for backend communication.
-- Do not make direct HTTP requests from React components.
+- Remember to only use `ApmApiClient` for backend communication.
 - Check for and fix state update loops.
 
 ### Legacy Areas
@@ -95,6 +104,11 @@ Example:
 - Vitest tests are located in `src/www/test/js`.
 - Mirror the source structure in the test structure.
 - Use the `.test` suffix for JS/TS test files.
+- Use the utility script `dev-test-js` to run all JS tests except API client integration. Fix all issues reported.
+- API client integration test code is in `src/www/test/js/Api/ApmApiClient.integration.test.ts`. This test will not run
+  unless the environment variable IT_RUN has a value of 1, which the user should have set in `src/www/.env.it` together
+  with all the information needed for the test to run. If this file is missing and this test is needed, alert the user 
+  and stop; do not try to work around it. Run the test with `cd src/www; npm run api-integration-test`
 
 ## Task Completion Requirements
 

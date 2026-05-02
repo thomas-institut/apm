@@ -2,17 +2,20 @@
 
 This document defines the required working rules for contributors and automated coding agents in this repository.
 
-If local code differs from these guidelines, follow mandatory rules in this document first. Otherwise, prefer consistency with the surrounding code and avoid unnecessary refactors.
+If local code differs from these guidelines, follow mandatory rules in this document first. Otherwise, prefer
+consistency with the surrounding code and avoid unnecessary refactors.
 
 ## Project Summary
 
 This repository contains:
+
 - a PHP web application for API handling and frontend serving
 - a TypeScript/React frontend
 - a background daemon and workers for periodic tasks
 - a Node.js service for typesetting and PDF generation
 
 Infrastructure used by the project:
+
 - MySQL
 - Valkey
 - Typesense
@@ -24,6 +27,7 @@ Development services run in Docker containers.
 ## Repository Layout
 
 ### PHP
+
 - Main PHP code: `src/www/classes`
 - API code: `src/www/classes/APM/Api`
 - Frontend-serving PHP code: `src/www/classes/APM/Site`
@@ -33,26 +37,34 @@ Development services run in Docker containers.
 - Utility scripts: `src/www/utilities`
 
 ### Frontend
+
 - JavaScript/TypeScript code: `src/www/js`
 - React SPA: `src/www/js/ReactAPM`
 
 ### Typesetting
+
 - Service code: `src/www/typesetting-service`
 
 ## Core Rules
 
 ### General
+
 - Follow the existing structure and naming conventions of the local area.
-- Avoid broad refactors unless explicitly required by the task.
+- Avoid broad refactors unless explicitly required by the task. This is a project developed and maintained mostly by a
+  single person: new dependencies, new programming languages, new data formats and the like should generally be avoided
+  unless they have a big positive impact in the codebase. If a new dependency or an structural change makes the
+  code and the production environment easier to maintain, make a case of it and put it up for discussion.
 - Prefer small, safe, task-focused changes.
 - Reuse existing abstractions and components whenever practical.
 - Document intentional exceptions in the task summary.
 
 ### PHP
+
 - Add a documentation comment for every generated function and class method.
 - Add or update unit tests for every generated function and class method.
 
 ### TypeScript
+
 - Do not use `any`.
 - Prefer `async`/`await`.
 - Use `Record<string, T>` instead of index-signature object types where applicable.
@@ -61,8 +73,8 @@ Development services run in Docker containers.
 - If a function or method needs 4 or more parameters, use a typed options object instead.
 
 Example:
-- `function foo(options: FooOptions)`
 
+- `function foo(options: FooOptions)`
 
 ### Frontend - Backend Communication
 
@@ -73,6 +85,7 @@ Example:
   added manually.
 
 ### React
+
 - All new UI must be written in React.
 - Use one component per file.
 - Use functional components only.
@@ -86,6 +99,7 @@ Example:
 - Check for and fix state update loops.
 
 ### Legacy Areas
+
 - Do not introduce new legacy patterns for new UI when React is a reasonable option.
 - Keep fixes scoped and safe.
 - Prefer incremental migration over large rewrites unless explicitly requested.
@@ -93,6 +107,7 @@ Example:
 ## Testing Rules
 
 ### PHP
+
 - PHPUnit tests are located in `src/www/test/php`.
 - Mirror the source structure in the test structure.
 - Use the `Test` suffix for PHP test files.
@@ -101,18 +116,20 @@ Example:
 - Pay attention to calls to createMock() for test doubles with no expectations configured, use createStub() instead.
 
 ### JS/TS
+
 - Vitest tests are located in `src/www/test/js`.
 - Mirror the source structure in the test structure.
 - Use the `.test` suffix for JS/TS test files.
 - Use the utility script `dev-test-js` to run all JS tests except API client integration. Fix all issues reported.
 - API client integration test code is in `src/www/test/js/Api/ApmApiClient.integration.test.ts`. This test will not run
   unless the environment variable IT_RUN has a value of 1, which the user should have set in `src/www/.env.it` together
-  with all the information needed for the test to run. If this file is missing and this test is needed, alert the user 
+  with all the information needed for the test to run. If this file is missing and this test is needed, alert the user
   and stop; do not try to work around it. Run the test with `cd src/www; npm run api-integration-test`
 
 ## Task Completion Requirements
 
 Before finishing a task:
+
 - add or update tests for new or changed behavior
 - ensure relevant tests pass
 - follow the rules in this document

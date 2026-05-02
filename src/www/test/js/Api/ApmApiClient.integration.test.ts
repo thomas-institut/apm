@@ -99,12 +99,25 @@ function assertDocInfo(data: unknown): void {
   expect(typeof data.type).toBe('number');
 }
 
+function assertEntityNameTupleArray(data: any[], nonEmpty: boolean): void {
+  expect(data).toBeInstanceOf(Array);
+  if (nonEmpty) {
+    expect(data.length).toBeGreaterThan(0);
+  }
+  data.forEach((tuple) => {
+    expect(tuple.length).toBe(2);
+    expect(typeof tuple[0]).toBe('number');
+    expect(typeof tuple[1]).toBe('string');
+  });
+}
+
 integrationDescribe('ApmApiClient integration', () => {
   const fixtureIds = shouldRunIntegration ? getFixtureIds() : null;
 
   beforeAll(async () => {
     const client = createAuthenticatedClient();
     await client.initialize();
+    await client.flushCaches();
 
     if (bearerToken === null) {
       console.log(`Bearer token is not set. Attempting authentication with username and password...`);
@@ -123,27 +136,53 @@ integrationDescribe('ApmApiClient integration', () => {
     // expect(whoAmI).not.toBeNull();
   });
 
+  it ('gets entity name tuples', async () => {
+    const client = createAuthenticatedClient();
+    await client.initialize();
+    await client.flushCaches();
+
+    const pageTypes = await client.getAvailablePageTypes();
+    assertEntityNameTupleArray(pageTypes, true);
+
+    const languages = await client.getAvailableLanguages();
+    assertEntityNameTupleArray(languages, true);
+
+    const docTypes = await client.getAvailableDocumentTypes();
+    assertEntityNameTupleArray(docTypes, true);
+
+    const imageSources = await client.getAvailableImagesSources();
+    assertEntityNameTupleArray(imageSources, true);
+
+  });
+
   it('calls people/work/document endpoints with bearer authentication', async () => {
     const ids = fixtureIds as IntegrationFixtureIds;
     const client = createAuthenticatedClient();
     await client.initialize();
 
+
     const allPeopleData = await client.getAllPeopleData();
     expect(Array.isArray(allPeopleData)).toBe(true);
+    await client.flushCaches();
 
     const allWorksData = await client.getAllWorksData();
     expect(typeof allWorksData).toBe('object');
     expect(allWorksData).not.toBeNull();
+    await client.flushCaches();
 
     const personEssentialData = await client.getPersonEssentialData(ids.personId);
     assertPersonEssentialData(personEssentialData);
+    await client.flushCaches();
+
 
     const workData = await client.getWorkData(ids.workId);
     assertWorkData(workData);
+    await client.flushCaches();
 
     const documentInfo = await client.getDocumentInfo(ids.docId, true, false);
     assertDocInfo(documentInfo);
     expect(Array.isArray(documentInfo.pageIds)).toBe(true);
+    await client.flushCaches();
 
     const pageInfo = await client.getPageInfo(ids.pageId);
     assertObject(pageInfo);
@@ -156,11 +195,13 @@ integrationDescribe('ApmApiClient integration', () => {
     const ids = fixtureIds as IntegrationFixtureIds;
     const client = createAuthenticatedClient();
     await client.initialize();
+    await client.flushCaches();
 
     const chunksWithTranscription = await client.getWorkChunksWithTranscription(ids.workId);
     assertObject(chunksWithTranscription);
     expect(typeof chunksWithTranscription.workId).toBe('string');
     expect(Array.isArray(chunksWithTranscription.chunks)).toBe(true);
+    await client.flushCaches();
 
     const chunkInfo = await client.getChunksInWorkInfo(ids.workId);
     expect(Array.isArray(chunkInfo)).toBe(true);
@@ -171,6 +212,7 @@ integrationDescribe('ApmApiClient integration', () => {
       expect(typeof chunk.hasCollationTables).toBe('boolean');
       expect(typeof chunk.hasEditions).toBe('boolean');
     });
+    await client.flushCaches();
 
     const collationTablesForChunk = await client.getCollationTablesForChunk(ids.workId, ids.chunkNumber);
     expect(Array.isArray(collationTablesForChunk)).toBe(true);

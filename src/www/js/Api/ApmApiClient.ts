@@ -127,6 +127,13 @@ export class ApmApiClient {
     this.ignoreDataIds = ignoreDataIds;
   }
 
+  async flushCaches(): Promise<void> {
+    await this.caches.memory.flushCache();
+    this.caches.session.flushCache();
+    this.caches.local.flushCache();
+    await this.caches.longTerm.flushCache();
+  }
+
   public withVerbose(verbose: boolean): this {
     this.verbose = verbose;
     this.cachedFetcher.withVerbose(verbose);

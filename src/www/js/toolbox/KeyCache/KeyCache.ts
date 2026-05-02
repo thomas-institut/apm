@@ -116,6 +116,12 @@ export class KeyCache {
     this.deleteItemObject(key);
   }
 
+  public flushCache(): void {
+    for (const key of this.getKeys()) {
+      this.delete(key);
+    }
+  }
+
   /**
    * Deletes all expired items as well as all items
    * set before the given date and, if a dataId is given,

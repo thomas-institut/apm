@@ -436,11 +436,16 @@ class ApmUserManager implements UserManagerInterface
      */
     public function verifyPassword(int $userId, string $password): bool
     {
-        $userData = $this->getUserData($userId);
-        if ($userData->disabled || $userData->passwordHash === '') {
+        try {
+            $userData = $this->getUserData($userId);
+            if ($userData->disabled || $userData->passwordHash === '') {
+                return false;
+            }
+            return password_verify($password, $userData->passwordHash);
+        } catch (UserNotFoundException) {
             return false;
         }
-        return password_verify($password, $userData->passwordHash);
+
     }
 
     /**

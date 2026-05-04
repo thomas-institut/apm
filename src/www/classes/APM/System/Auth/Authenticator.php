@@ -32,6 +32,8 @@
 
 namespace APM\System\Auth;
 
+use APM\Api\DataSchema\ApiLoginRequest;
+use APM\Api\DataSchema\ApiLoginResponse;
 use APM\System\ApmContainerKey;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
@@ -52,6 +54,7 @@ use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Random\RandomException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response;
 use Slim\Views\Twig;
@@ -132,7 +135,12 @@ class Authenticator
      */
     private function generateRandomToken(): string
     {
-        return bin2hex(random_bytes(20));
+        try {
+            return bin2hex(random_bytes(20));
+        } catch (RandomException $e) {
+            // should not happen really
+            throw new Exception("Cannot generate random token", 0, $e);
+        }
     }
 
     private function generateFullToken($token, $userTid): string
@@ -152,7 +160,6 @@ class Authenticator
      * @param string $msg
      * @param array $data
      */
-    #[CodeCoverageIgnore]
     private function debug(string $msg, array $data = []): void
     {
         if ($this->debugMode) {
@@ -209,7 +216,7 @@ class Authenticator
         }
     }
 
-    protected function responseWithJson(ResponseInterface $response, array $data, int $status = 200): ResponseInterface
+    protected function responseWithJson(ResponseInterface $response, mixed $data, int $status = 200): ResponseInterface
     {
         $response->getBody()->write(json_encode($data));
         return $response
@@ -217,13 +224,6 @@ class Authenticator
             ->withStatus($status);
     }
 
-    /**
-     * @throws SyntaxError
-     * @throws RuntimeError
-     * @throws UserNotFoundException
-     * @throws LoaderError
-     * @throws Exception
-     */
     public function apiLogin(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface
     {
         session_start();
@@ -232,69 +232,76 @@ class Authenticator
         $this->debug("Login headers", $request->getHeaders());
         $this->debug('Request method is ' . $request->getMethod());
         if ($request->getMethod() === 'POST') {
-            $data = json_decode($request->getBody()->getContents(), true);
-            if ($data === null) {
+            $loginRequest = $this->parseApiLoginRequestData($request);
+            if ($loginRequest === null) {
                 $this->debug('Cannot parse JSON data');
                 return $response->withStatus(HttpStatus::BAD_REQUEST);
             }
 
             // DON'T DO THIS:    $this->debug('Got POST data', $data);
             // ... it will show the user password in the log!
-            if (isset($data['user']) && isset($data['pwd'])) {
-                $this->debug('Got data for login');
-                $userName = htmlspecialchars($data['user']);
-                $pwd = htmlspecialchars($data['pwd']);
-                $rememberMe = $data['rememberMe'] ?? '';
-                $this->debug('Trying to log in user ' . $userName);
-                $userId = $this->userManager->getUserIdForUserName($userName);
+            $this->debug('Got data for login');
+            $userName = $loginRequest->user;
+            $pwd = $loginRequest->pwd;
+            $rememberMe = $loginRequest->rememberMe;
+            $this->debug('Trying to log in user ' . $userName);
+            $userId = $this->userManager->getUserIdForUserName($userName);
 
-                if ($userId !== -1 && $this->userManager->verifyPassword($userId, $pwd)) {
-                    $userAgent = $request->getHeader('User-Agent')[0];
-                    $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
-                    $this->siteLogger->info("Login", [
-                        'tid' => $userId,
-                        'tidString' => Tid::toBase36String($userId),
-                        'username' => $userName,
-                        'user_agent' => $userAgent,
-                        'ip_address' => $ipAddress
-                    ]);
-                    // Success!
-                    $_SESSION['userid'] = $userId;
-                    $this->debug('Generating token cookie');
+            if ($userId !== -1 && $this->userManager->verifyPassword($userId, $pwd)) {
+                $userAgent = $request->getHeader('User-Agent')[0];
+                $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
+                $this->siteLogger->info("Login", [
+                    'id' => $userId,
+                    'idString' => Tid::toBase36String($userId),
+                    'username' => $userName,
+                    'userAgent' => $userAgent,
+                    'ipAddress' => $ipAddress
+                ]);
+                // Success!
+                $_SESSION['userid'] = $userId;
+                $this->debug('Generating token cookie');
+                try {
                     $token = $this->generateRandomToken();
+                } catch (Exception $e) {
+                    $this->logger->error('Cannot generate random token', ['exception' => $e]);
+                    return $response->withStatus(HttpStatus::INTERNAL_SERVER_ERROR);
+                }
+                try {
                     $this->userManager->storeToken(
                         $userId,
                         $userAgent,
                         $ipAddress,
                         $token
                     );
-                    $fullToken = $this->generateFullToken($token,
-                        $userId);
-                    if ($rememberMe === 'on') {
-                        $this->debug('User wants to be remembered');
-                        $now = new DateTime();
-                        $cookie = SetCookie::create($this->cookieName)
-                            ->withValue($fullToken)
-                            ->withExpires($now->add(
-                                new DateInterval('P14D')));
-                    } else {
-                        $cookie = SetCookie::create($this->cookieName)
-                            ->withValue($fullToken);
-                    }
-
-                    $response = FigResponseCookies::set($response, $cookie);
-                    $data = [
-                        'status' => 'OK',
-                        'message' => 'Login successful',
-                        'token' => $fullToken,
-                        'ttl' => $rememberMe === 'on' ? 30 * 24 * 3600 : 24 * 3600
-                    ];
-                    return $this->responseWithJson($response, $data);
-//                    }
-                } else {
-                    $this->siteLogger->notice('Wrong user/password',
-                        ['user' => $userName]);
+                } catch (UserNotFoundException $e) {
+                    // should never happen since the user is guaranteed to exist at this point
+                    $this->logger->error('User not found while storing token', ['exception' => $e]);
+                    return $response->withStatus(HttpStatus::INTERNAL_SERVER_ERROR);
                 }
+                $fullToken = $this->generateFullToken($token,
+                    $userId);
+                if ($rememberMe === 'on') {
+                    $this->debug('User wants to be remembered');
+                    $now = new DateTime();
+                    $cookie = SetCookie::create($this->cookieName)
+                        ->withValue($fullToken)
+                        ->withExpires($now->add(
+                            new DateInterval('P14D')));
+                } else {
+                    $cookie = SetCookie::create($this->cookieName)
+                        ->withValue($fullToken);
+                }
+
+                $response = FigResponseCookies::set($response, $cookie);
+                $data = new ApiLoginResponse();
+                $data->status = 'OK';
+                $data->message = 'Login successful';
+                $data->token = $fullToken;
+                $data->ttl = $rememberMe === 'on' ? 30 * 24 * 3600 : 24 * 3600;
+                return $this->responseWithJson($response, $data);
+            } else {
+                $this->siteLogger->notice('Wrong user/password',
+                    ['user' => $userName]);
             }
         }
         // not authenticated
@@ -302,64 +309,39 @@ class Authenticator
         return $response->withStatus(HttpStatus::UNAUTHORIZED);
     }
 
-    public function logout(ServerRequestInterface $request, ResponseInterface $response, bool $site = true): ResponseInterface
+    /**
+     * Parses the API login request body into a typed request schema.
+     *
+     * @param ServerRequestInterface $request
+     * @return ApiLoginRequest|null
+     */
+    private function parseApiLoginRequestData(ServerRequestInterface $request): ?ApiLoginRequest
     {
-        $this->debug('Logout request');
-        $logger = $site ? $this->siteLogger : $this->apiLogger;
-        session_start();
-        if (isset($_SESSION['userid'])) {
-            $userId = intval($_SESSION['userid']);
-        } else {
-            $userId = $this->getUserIdFromRequest($request);
+        $data = json_decode($request->getBody()->getContents(), true);
+        if (!is_array($data) || !isset($data['user'], $data['pwd'])) {
+            return null;
         }
-        if ($userId > 0) {
-            try {
-                $userData = $this->userManager->getUserData($userId);
-            } catch (UserNotFoundException) {
-                $logger->error("Can't get username from user Id at "
-                    . "logout attempt", ['userId' => $userId]);
-            }
 
-            $userAgent = $request->getHeader('User-Agent')[0];
-            $ipAddress = $request->getServerParams()['REMOTE_ADDR'];
+        if (!is_string($data['user']) || !is_string($data['pwd'])) {
+            return null;
+        }
 
-            $logger->info('Logout',
-                [
-                    'id' => $userId,
-                    'idString' => Tid::toBase36String($userId),
-                    'username' => $userData->userName ?? '',
-                    'user_agent' => $userAgent,
-                    'ip_address' => $ipAddress
-                ]
-            );
-            session_unset();
-            session_destroy();
-            $cookie = SetCookie::create($this->cookieName);
-            $response = FigResponseCookies::set($response, $cookie->expire());
-            $this->userManager->removeToken($userId, $userAgent);
-        } else {
-            $logger->error("Can't get user Id at logout attempt");
+        if (isset($data['rememberMe']) && !is_string($data['rememberMe'])) {
+            return null;
         }
-        if ($site) {
-            return $response->withHeader('Location', $this->router->urlFor('home'))
-                ->withStatus(302);
-        } else {
-            return $response->withStatus(HttpStatus::SUCCESS);
-        }
+
+        $requestData = new ApiLoginRequest();
+        $requestData->user = $data['user'];
+        $requestData->pwd = $data['pwd'];
+        $requestData->rememberMe = $data['rememberMe'] ?? '';
+
+        return $requestData;
     }
-
-//    public function authenticateDataApiRequest(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
-//    {
-//        $this->container->set(ApmContainerKey::API_USER_ID, 0);
-//        return $handler->handle($request);
-//    }
-
 
     public function authenticateApiRequest(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         $userId = $this->getUserIdFromRequest($request);
         if ($userId <= 0) {
-//            $this->apiLogger->notice("Authentication fail");
             $response = new Response();
             return $response->withStatus(HttpStatus::UNAUTHORIZED);
         }

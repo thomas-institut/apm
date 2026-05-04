@@ -257,7 +257,7 @@ function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container)
          * API Inventory:
          *    Method: POST
          *    Authentication: none
-         *    Uses action: not necessary
+         *    Uses action: No, not necessary
          *    PHP Unit Test: no
          *    PHP Input Schema: TBD
          *    PHP Output Schema: TBD

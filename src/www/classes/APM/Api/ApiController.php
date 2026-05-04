@@ -95,6 +95,8 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected int $apiUserId;
     protected bool $devMode;
 
+    protected ApmResponseFactory $responseFactory;
+
 
     /**
      * ApiController constructor.
@@ -115,11 +117,14 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->apiCallName = self::CLASS_NAME . ":generic";
 
        $this->devMode = $this->systemManager->getConfig()['devMode'] ?? false;
+
+       $this->responseFactory = new ApmResponseFactory($this->systemManager->getLogger());
 //       $this->logger->debug('API : dev mode is ' . ($this->devMode ? 'on' : 'off'));
     }
     
     protected function setApiCallName(string $name) : void {
         $this->apiCallName  = $name;
+        $this->responseFactory->withApiCallName($name);
     }
 
     /**
@@ -228,10 +233,6 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected function responseWithRawJson(ResponseInterface $response, string $json, int $status = 200) : ResponseInterface {
         $this->logProfilers("Response with JSON ready");
         $response->getBody()->write($json);
-//        if ($this->devMode) {
-//            $this->logger->debug("Allowing CORS for $this->apiCallName: $json");
-//            $response = $response->withHeader('Access-Control-Allow-Origin', '*');
-//        }
         return $response
             ->withHeader('Content-Type', 'application/json')
             ->withStatus($status);

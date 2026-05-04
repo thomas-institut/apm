@@ -6,8 +6,8 @@ namespace APM;
 class SystemProfiler
 {
 
-    static private float $start;
-    static private array $laps;
+    static private float $start = 0.0;
+    static private array $laps = [];
 
     static private bool $started = false;
 

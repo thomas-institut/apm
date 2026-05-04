@@ -41,6 +41,7 @@ class ApmResponseFactory implements LoggerAwareInterface
 
     private function logSystemProfiler(string $endLapName): void
     {
+
         SystemProfiler::lap($endLapName);
         $this->logger->debug(
             sprintf("API PROFILER %s Finished in %.3f ms", $this->apiCallName, SystemProfiler::getTotalTimeInMs()),

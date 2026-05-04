@@ -2,6 +2,7 @@
 
 namespace APM\Test\System\Auth;
 
+use APM\Api\ApmResponseFactory;
 use APM\Api\DataSchema\ApiLoginRequest;
 use APM\System\Auth\Authenticator;
 use APM\System\User\UserManagerInterface;
@@ -116,9 +117,13 @@ class AuthenticatorTest extends TestCase
             ->with(42, $rawPassword)
             ->willReturn(false);
 
-        $this->setPrivateProperty($authenticator, 'logger', $logger);
-        $this->setPrivateProperty($authenticator, 'siteLogger', $logger);
-        $this->setPrivateProperty($authenticator, 'userManager', $userManager);
+        $this->setProperty($authenticator, 'logger', $logger);
+        $this->setProperty($authenticator, 'siteLogger', $logger);
+        $this->setProperty($authenticator, 'apiLogger', $logger);
+        $this->setProperty($authenticator, 'userManager', $userManager);
+        $this->setProperty($authenticator, 'responseFactory', new ApmResponseFactory());
+
+
 
         $request = $this->buildRequest( json_encode(['user' => $rawUser, 'pwd' => $rawPassword, 'rememberMe' => '']));
         $response = new Response();
@@ -177,7 +182,7 @@ class AuthenticatorTest extends TestCase
      * @return void
      * @throws ReflectionException
      */
-    private function setPrivateProperty(Authenticator $authenticator, string $propertyName, mixed $value): void
+    private function setProperty(Authenticator $authenticator, string $propertyName, mixed $value): void
     {
         $property = new ReflectionProperty(Authenticator::class, $propertyName);
         $property->setValue($authenticator, $value);

@@ -38,7 +38,7 @@ use function PHPUnit\Framework\isType;
  *
  * @author Lukas Reichert
  */
-class EntityManager extends CommandLineUtility
+class DareDataImporter extends CommandLineUtility
 {
 
     private ApmEntitySystemInterface $es;

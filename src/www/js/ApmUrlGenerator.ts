@@ -345,8 +345,8 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/page/types`;
   }
 
-  apiTypesetRaw() {
-    return this.apiBase + '/typeset/raw';
+  apiTypesetPdf() {
+    return this.apiBase + '/typeset/pdf';
   }
 
 

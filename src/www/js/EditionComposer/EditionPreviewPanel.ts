@@ -288,7 +288,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       console.log(data);
       let currentButtonHtml = this.downloadPdfButton.html();
       this.downloadPdfButton.html(`Waiting for server's PDF... ${this.options.icons.busy}`);
-      /** @var {PdfUrlResponse}*/
+      /** @var {ApiTypesetPdfResponse}*/
       const result = await this.options.getPdfDownloadUrl(data);
       if (result.url === null) {
         this.downloadPdfButton.html(currentButtonHtml + ` (Error)`);

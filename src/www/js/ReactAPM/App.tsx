@@ -16,6 +16,7 @@ import {trimCharacters} from "@/toolbox/Util";
 import NotFound from "@/ReactAPM/NotFound";
 import {Tid} from "@/Tid/Tid";
 import Help from "@/ReactAPM/Pages/Help";
+import {AppSettings} from "@/Api/DataSchema/AppSettings";
 
 
 // @ts-ignore
@@ -64,15 +65,7 @@ export interface AppContextProps {
   versionTag: string;
 }
 
-interface AppSettings {
-  appVersion: string;
-  _info: string;
-  baseUrl: string;
-  cacheDataId: string;
-  versionDate: string;
-  versionExtra: string;
-  devMode: boolean;
-}
+
 
 const DefaultAppContext: AppContextProps = {
   devMode: false,
@@ -155,7 +148,7 @@ function RealApp() {
       const response = await fetch(appSettingsPath);
       if (response.ok) {
         try {
-          const data = await response.json();
+          const data = await response.json() as AppSettings;
           if (data.devMode) {
             console.log(`Loaded app settings from '${appSettingsPath}'`);
           }

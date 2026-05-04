@@ -20,37 +20,39 @@
  * Metadata key constants
  */
 
+export const ParagraphNumber = 'paragraphNumber';
+export const LineNumberInParagraph = 'lineNumberInParagraph';
+export const ParagraphLineCount = 'paragraphLineCount';
+export const LineNumber = 'lineNumber';
+export const LineRatio = 'lineRatio';
+export const AdjustmentRatio = 'adjustmentRatio';
+export const UnadjustedLineWidth = 'unadjustedLineWidth';
+export const ListType = 'type';
+export const GlueType = 'type';
+export const ItemType = 'type';
+export const InterLineGlueSet = 'interLineGlueSet';
+export const HasReverseText = 'hasReverseText';
+export const HasReorderedItems = 'hasReorderedItems';
+export const OriginalItemOrder = 'originalItemOrder';
+export const OriginalArrayIndex = 'originalArrayIndex';
 
+export const MergedItem = 'mergedItem';
+export const SourceItems = 'sourceItems';
 
-export const PARAGRAPH_NUMBER = 'paragraphNumber';
-export const LINE_NUMBER_IN_PARAGRAPH = 'lineNumberInParagraph';
-export const PARAGRAPH_LINE_COUNT = 'paragraphLineCount';
-export const LINE_NUMBER = 'lineNumber';
-export const LINE_RATIO = 'lineRatio';
-export const ADJUSTMENT_RATIO = 'adjustmentRatio';
-export const UNADJUSTED_LINE_WIDTH = 'unadjustedLineWidth';
-export const LIST_TYPE = 'type';
-export const GLUE_TYPE = 'type';
-export const ITEM_TYPE = 'type';
-export const INTER_LINE_GLUE_SET = 'interLineGlueSet';
-export const HAS_REVERSE_TEXT = 'hasReverseText';
-export const HAS_REORDERED_ITEMS = 'hasReorderedItems';
-export const ORIGINAL_ITEM_ORDER = 'originalItemOrder';
-export const ORIGINAL_ARRAY_INDEX = 'originalArrayIndex';
+export const PageNumber = 'pageNumber';
+export const PageFoliation = 'pageFoliation';
 
-export const MERGED_ITEM = 'mergedItem';
-export const SOURCE_ITEMS = 'sourceItems';
+export const MainTextOriginalIndex = 'editionMainTextIndex';
+export const LineType = 'lineType';
 
-export const PAGE_NUMBER = 'pageNumber';
-export const PAGE_FOLIATION = 'pageFoliation';
+export const MainTextLineData = 'mainTextLineData';
+export const PageMarginalia = 'pageMarginalia';
+export const TokenForCountingPurposes = 'textTokenForCountingPurposes';
+export const TokenOccurrenceInLine = 'textTokenOccurrenceInLine';
+export const TokenTotalOccurrencesInLine = 'textTokenTotalOccurrencesInLine';
 
-export const MAIN_TEXT_ORIGINAL_INDEX = 'editionMainTextIndex';
-export const LINE_TYPE = 'lineType';
-
-export const MAIN_TEXT_LINE_DATA = 'mainTextLineData';
-
-export const PAGE_MARGINALIA = 'pageMarginalia';
-
-export const TOKEN_FOR_COUNTING_PURPOSES = 'textTokenForCountingPurposes';
-export const TOKEN_OCCURRENCE_IN_LINE = 'textTokenOccurrenceInLine';
-export const TOKEN_TOTAL_OCCURRENCES_IN_LINE = 'textTokenTotalOccurrencesInLine';
+export const SplitInSyllablesItem = 'splitInSyllablesItem';
+export const ItemIndexBeforeHyphenation = 'itemIndexBeforeHyphenation';
+export const SyllableIndex = 'syllableIndex';
+export const SyllableCount = 'syllableCount';
+export const OriginalText = 'originalText';

@@ -24,7 +24,7 @@ import {TypesetterObject} from './TypesetterObject.js';
  * The base class for all typesetter items.
  *
  * All typesetting work can be done with 3 types of typesetter items:
- *   Box, Glue and Penalty.
+ *   Box, Glue, and Penalty.
  *
  * Of these, Box is the one that could have different types of descendents,
  * the most common one being TextBox
@@ -32,7 +32,7 @@ import {TypesetterObject} from './TypesetterObject.js';
  */
 export class TypesetterItem extends TypesetterObject {
   /**
-   * The item's direction: HORIZONTAL, VERTICAL or UNDEFINED
+   * The item's direction: HORIZONTAL, VERTICAL, or UNDEFINED
    */
   direction: number;
 
@@ -85,7 +85,7 @@ export class TypesetterItem extends TypesetterObject {
    */
   shiftY: number = 0;
 
-  constructor(direction = TypesetterItemDirection.UNDEFINED) {
+  constructor(direction = TypesetterItemDirection.UndefinedItemDirection) {
     super();
     if (this.constructor === TypesetterItem) {
       throw new Error("Abstract classes cannot be instantiated");
@@ -173,7 +173,7 @@ export class TypesetterItem extends TypesetterObject {
     if (this.shiftY !== 0) {
       obj.shiftY = this.shiftY;
     }
-    if (this.direction !== TypesetterItemDirection.UNDEFINED) {
+    if (this.direction !== TypesetterItemDirection.UndefinedItemDirection) {
       obj.direction = this.direction;
     }
     if (this.textDirection !== '') {
@@ -185,7 +185,7 @@ export class TypesetterItem extends TypesetterObject {
   setFromObject(object: any, mergeValues: boolean): this {
     super.setFromObject(object, mergeValues);
     const template = {
-      width: -1, height: -1, shiftX: 0, shiftY: 0, direction: TypesetterItemDirection.UNDEFINED, textDirection: ''
+      width: -1, height: -1, shiftX: 0, shiftY: 0, direction: TypesetterItemDirection.UndefinedItemDirection, textDirection: ''
     };
     this.copyValues(template, object, mergeValues);
     return this;

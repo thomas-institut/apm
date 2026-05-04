@@ -63,28 +63,9 @@ class Lemmatizer
             $dataCache?->set($key, serialize($data));
         }
 
-//
-//        $resultFileName = "$tempDir/lemmatizer-$hash-out.txt";
-//
-//
-//        $data = null;
-//        if (file_exists($resultFileName)) {
-//            $fileContents = file_get_contents($resultFileName);
-//            if ($fileContents !== false) {
-//                $data = unserialize($fileContents);
-//            }
-//        }
-//
-//        if ($data === null) {
-//            if (!file_put_contents($inputFileName, $text_clean)) {
-//                throw new \RuntimeException("Cannot write temp file for lemmatization");
-//            };
-//            // make api call
-//            exec("curl -s -F data=@$inputFileName -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
-//            // remove temp file after lemmatization
-//            unlink($inputFileName);
-//            file_put_contents($resultFileName, serialize($data));
-//        }
+        if (!isset($data[6])) {
+            throw new RuntimeException("No lemmatization data returned from curl");
+        }
 
         // return tokens and lemmata
         return self::getTokensAndLemmata($data[6]);

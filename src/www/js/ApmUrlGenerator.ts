@@ -18,7 +18,7 @@
 
 import * as Entity from './constants/Entity';
 import {Tid} from './Tid/Tid';
-import {TimeString} from "@/toolbox/TimeString.mjs";
+import {TimeString} from "@/toolbox/TimeString";
 
 export class ApmUrlGenerator {
   private base: string = '';
@@ -127,6 +127,10 @@ export class ApmUrlGenerator {
     return this.base + '/search';
   }
 
+  siteHelp() {
+    return this.base + '/help';
+  }
+
   siteSearchNew() {
     return this.base + '/searchnew';
   }
@@ -163,9 +167,9 @@ export class ApmUrlGenerator {
     return `${this.base}/collation-table/${tableId}${postfix}`;
   }
 
-  siteChunkEdition(editionId: number, version = 0) {
+  siteChunkEdition(editionId: number, version: string = '') {
     let postfix = '';
-    if (version !== 0) {
+    if (version !== '') {
       postfix = `/${version}`;
     }
     return `${this.base}/chunk-edition/${editionId}${postfix}`;
@@ -352,7 +356,11 @@ export class ApmUrlGenerator {
   }
 
   apiEntityGetPredicateDefinitionsForType(type: number) {
-    return `${this.apiBase}/entity/${type}/predicateDefinitions`;
+    return `${this.apiBase}/entity/${type}/predicateDefinitionsForType`;
+  }
+
+  apiEntityGetPredicateDefinition(predicate: number) {
+    return `${this.apiBase}/entity/${predicate}/predicateDefinition`;
   }
 
   apiEntityGetStatementQualificationObjects(withData = true) {

@@ -18,12 +18,14 @@
 
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {Edition} from '@/Edition/Edition';
-import {ApparatusCommon} from './ApparatusCommon';
+import {ApparatusCommon, MainTextTypesettingInfo} from './ApparatusCommon';
 import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
 import {CtData} from '@/CtData/CtData';
 import {onClickAndDoubleClick} from '@/toolbox/DoubleClick';
 import {ApparatusEntryTextEditor} from './ApparatusEntryTextEditor';
-import {capitalizeFirstLetter, getTextDirectionForLang, removeExtraWhiteSpace, trimWhiteSpace} from '@/toolbox/Util';
+import {
+  capitalizeFirstLetter, deepCopy, getTextDirectionForLang, removeExtraWhiteSpace, trimWhiteSpace
+} from '@/toolbox/Util';
 import {varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import * as SubEntryType from '../Edition/SubEntryType';
 import * as SubEntrySource from '../Edition/SubEntrySource';
@@ -47,6 +49,10 @@ import {
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {NiceToggle, toggleEvent} from "@/widgets/NiceToggle";
+import {attributesModule, classModule, eventListenersModule, h, init, propsModule, styleModule, VNode} from 'snabbdom';
+
+const patch = init([classModule, propsModule, styleModule, eventListenersModule, attributesModule]);
 
 const doubleVerticalLine = String.fromCodePoint(0x2016);
 const verticalLine = String.fromCodePoint(0x007c);
@@ -104,7 +110,6 @@ export class ApparatusPanel extends PanelWithToolbar {
   private apparatus: Apparatus;
   private lang: string;
   private readonly defaultTextDirection: string;
-  private cachedHtml: string;
   private currentSelectedEntryIndex: number;
   private entryInEditor: ApparatusEntry | null;
   private editedEntry: ApparatusEntry | null;
@@ -125,6 +130,13 @@ export class ApparatusPanel extends PanelWithToolbar {
   private cancelButton!: JQuery<HTMLElement>;
   private tagEditor!: TagEditor;
   private subEntryEditors: SubEntryEditorsArray = [];
+  private useCtColNumbers: boolean = false;
+  private mainTextTypesettingInfo: MainTextTypesettingInfo | null = null;
+  private mtTsInfoFromCt: MainTextTypesettingInfo | null = null;
+  /**
+   * The current VNode of the apparatus, used for snabbdom patching
+   */
+  private apparatusVNode: VNode | Element | null = null;
 
 
   constructor(options: ApparatusPanelOptions) {
@@ -182,7 +194,6 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex];
     this.lang = this.edition.getLang();
     this.defaultTextDirection = getTextDirectionForLang(this.lang);
-    this.cachedHtml = 'Apparatus coming soon...';
     this.currentSelectedEntryIndex = -1;
     this.hideApparatusEntryForm();
     this.entryInEditor = null;
@@ -306,6 +317,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.edition = edition;
     this.apparatus = this.edition.apparatuses[this.options.apparatusIndex];
     this.lang = this.edition.getLang();
+    this.mtTsInfoFromCt = null;
   }
 
   _drawAndSetupSubEntryTableInForm() {
@@ -416,7 +428,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   async generateContentHtml(_tabId: string, _mode: string, _visible: boolean): Promise<string> {
     let textDirection = this.edition.lang === 'la' ? 'ltr' : 'rtl';
     return `<div class="aei-form" style="direction: ${textDirection}">${this.generateApparatusEntryFormHtml()}</div>
-<div class="apparatus text-${this.lang}">${this.cachedHtml}</div>`;
+<div class="apparatus text-${this.lang}"></div>`;
   }
 
   getContentAreaClasses() {
@@ -434,6 +446,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   postRender(id: string, mode: string, visible: boolean) {
     super.postRender(id, mode, visible);
     this._getEditEntryButtonElement().on('click', this._genOnClickEditEntryButton());
+    this.setupLineColumnNumbersToggle();
     this.edition.apparatuses.forEach((_app, index) => {
       $(`${this.containerSelector} .add-entry-apparatus-${index}`).on('click', this.genOnClickAddEntryButton(index));
     });
@@ -638,7 +651,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _genOnClickApparatusEntryCancelButton() {
-    return (ev: Event) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       ev.preventDefault();
       ev.stopPropagation();
       this.hideApparatusEntryForm();
@@ -656,7 +669,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _genOnClickEditEntryButton() {
-    return (ev: any) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       ev.preventDefault();
       ev.stopPropagation();
       if (this.apparatusEntryFormIsVisible) {
@@ -668,7 +681,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _genOnClickPanelContainer() {
-    return (ev: any) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       if (this.apparatusEntryFormIsVisible) {
         return;
       }
@@ -708,11 +721,24 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.fitDivs();
   }
 
-  updateApparatus(mainTextTypesettingInfo: any) {
-    // this.verbose && console.log(`Updating apparatus ${this.options.apparatusIndex}`)
-    this.cachedHtml = this._genApparatusHtml(mainTextTypesettingInfo);
-    $(this.getApparatusDivSelector()).html(this.cachedHtml);
+  updateApparatus(mainTextTypesettingInfo: MainTextTypesettingInfo | null) {
+    if (mainTextTypesettingInfo !== null) {
+      this.mainTextTypesettingInfo = mainTextTypesettingInfo;
+    }
+
+    const apparatusDiv = document.querySelector(this.getApparatusDivSelector());
+    if (apparatusDiv) {
+      const newVNode = this.genApparatusVNode();
+      if (this.apparatusVNode === null) {
+        patch(apparatusDiv, newVNode);
+      } else {
+        patch(this.apparatusVNode, newVNode);
+      }
+      this.apparatusVNode = newVNode;
+    }
+
     this._setUpEventHandlers();
+
     if (this.currentSelectedEntryIndex !== -1) {
       this._selectLemma(this.currentSelectedEntryIndex, false);
     } else {
@@ -749,17 +775,19 @@ export class ApparatusPanel extends PanelWithToolbar {
                      <div class="dropdown-menu" aria-labelledby="add-entry-dropdown-${appIndex}">${apparatusLinks}</div>
                   </div>
                </div>
-               <div class="panel-toolbar-item"> 
-                &nbsp;
-               </div>
-            </div>`;
+            </div>
+            <div class="panel-toolbar-group"><span id="line-column-numbers-toggle"></span></div>`;
   }
 
   _setUpEventHandlers() {
     let lemmaElements = this._getAllLemmaElements();
     lemmaElements.off()
-    .on('mouseenter', this._genOnMouseEnterLemma())
-    .on('mouseleave', this._genOnMouseLeaveLemma());
+    .on('mouseenter', (ev) => {
+      this.hoverLemma($(ev.target), true);
+    })
+    .on('mouseleave', (ev) => {
+      this.hoverLemma($(ev.target), false);
+    });
     onClickAndDoubleClick(lemmaElements, this._genOnClickLemma(), this._genOnDoubleClickLemma());
   }
 
@@ -796,28 +824,15 @@ export class ApparatusPanel extends PanelWithToolbar {
       lemmaElement.removeClass('lemma-hover');
     }
   }
-
-  _genOnMouseEnterLemma() {
-    return (ev: any) => {
-      this.hoverLemma($(ev.target), true);
-    };
-  }
-
-  _genOnMouseLeaveLemma() {
-    return (ev: any) => {
-      this.hoverLemma($(ev.target), false);
-    };
-  }
-
   _genOnDoubleClickLemma() {
-    return (ev: any) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       this._selectLemmaFromClickTarget(ev.target);
       this._editSelectedEntry();
     };
   }
 
   _genOnClickLemma() {
-    return (ev: any) => {
+    return (ev: JQuery.ClickEvent<HTMLElement>) => {
       if (!this.apparatusEntryFormIsVisible) {
         this._selectLemmaFromClickTarget(ev.target);
       }
@@ -825,7 +840,6 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _selectLemma(entryIndex: number, runCallbacks = true) {
-    //console.log(`Selecting ${entryIndex}, runCallbacks = ${runCallbacks}`)
     this._getAllLemmaElements().removeClass('lemma-selected lemma-hover');
     this.options.highlightCollationTableRange(-1, -1);
     if (entryIndex === -1) {
@@ -910,109 +924,242 @@ export class ApparatusPanel extends PanelWithToolbar {
     return $(`${this.containerSelector} .clear-selection-btn`);
   }
 
-  _genApparatusHtml(mainTextTypesettingInfo: any) {
-    // console.log(`Generating Apparatus html`)
-    // console.log(mainTextTokensWithTypesettingInfo)
-    // console.log(mainTextTokensWithTypesettingInfo.tokens.filter( (t) => { return t.type === 'text' && t.occurrenceInLine > 1}))
+  private setupLineColumnNumbersToggle() {
+    const lineColumnNumbersToggle = new NiceToggle({
+      containerSelector: `${this.containerSelector} #line-column-numbers-toggle`,
+      title: 'Show Col Numbers: ',
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      onPopoverText: 'Click to use main text numbers for apparatus entries',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to use collation table column numbers for apparatus entries',
+      initialValue: this.useCtColNumbers
+    });
+    lineColumnNumbersToggle.on(toggleEvent, (ev: any) => {
+      this.useCtColNumbers = ev.detail.toggleStatus;
+      this.updateApparatus(this.mainTextTypesettingInfo);
+    });
+  }
 
-    let debug = false;
-    if (this.apparatus.type === 'marginalia') {
-      debug = true;
+  private getMainTextTypesettingInfoFromCtTable(): MainTextTypesettingInfo {
+    if (this.mtTsInfoFromCt !== null) {
+      return this.mtTsInfoFromCt;
     }
-    let html = '';
+    const positions: number[] = [];
+    const ctDataMainTextRow = this.ctData.collationMatrix[this.ctData.editionWitnessIndex];
+    const tokensMap = this.edition.mainText.map((t) => {
+      const newToken = deepCopy(t);
+      newToken.numberOfOccurrencesInLine = 1;
+      newToken.lineNumber = ctDataMainTextRow.findIndex(ref => ref === t.editionWitnessTokenIndex) + 1;
+      return newToken;
+    });
+    this.mtTsInfoFromCt = {yPositions: positions, tokens: tokensMap, lineMap: []};
+    return this.mtTsInfoFromCt;
+  }
 
+  // private genApparatusHtml() {
+  //   let debug = false;
+  //   let html = '';
+  //   let lastLine = '';
+  //   let sigla = this.edition.getSigla();
+  //   let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;';
+  //
+  //   let tsInfo = this.mainTextTypesettingInfo;
+  //   if (this.useCtColNumbers) {
+  //     tsInfo = this.getMainTextTypesettingInfoFromCtTable();
+  //   }
+  //
+  //   if (tsInfo === null) {
+  //     return 'Apparatus coming soon...';
+  //   }
+  //
+  //   this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
+  //     debug && console.log(`Generating apparatus entry ${aeIndex}`);
+  //     html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`;
+  //     let currentLine = "__UNDEFINED__";
+  //     try {
+  //       currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, this.lang);
+  //     } catch (e) {
+  //       console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`);
+  //       console.log(apparatusEntry);
+  //     }
+  //
+  //     let lineHtml = `${textDirectionMarker}&nbsp;${this.options.entrySeparator}&nbsp;`;
+  //     if (currentLine !== lastLine) {
+  //       let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}&nbsp;` : '';
+  //       lineHtml = `${textDirectionMarker}${lineSep}<b class="apparatus-line-number">${currentLine}</b>`;
+  //       lastLine = currentLine;
+  //     }
+  //     // build lemma section
+  //     let preLemmaSpanHtml = '';
+  //     const preLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.preLemma));
+  //     switch (preLemmaText) {
+  //       case '':
+  //         // do nothing
+  //         break;
+  //
+  //       case 'ante':
+  //       case 'post':
+  //         preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
+  //         break;
+  //
+  //       default:
+  //         preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
+  //     }
+  //     let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `;
+  //
+  //
+  //     let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, tsInfo, this.edition.lang)}</span>`;
+  //
+  //     debug && console.log(`Lemma html: ${lemmaSpan}`);
+  //
+  //     let postLemmaSpan = '';
+  //     const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));
+  //     if (postLemmaText !== '') {
+  //       let postLemma = ApparatusCommon.getKeywordHtml(postLemmaText, this.edition.lang);
+  //       postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
+  //     }
+  //
+  //     let separator: CompactFmtText;
+  //
+  //     switch (apparatusEntry.separator) {
+  //       case '':
+  //         if (apparatusEntry.allSubEntriesAreOmissions()) {
+  //           separator = '';
+  //         } else {
+  //           separator = ']';
+  //         }
+  //         break;
+  //
+  //       case 'off':
+  //         separator = '';
+  //         break;
+  //
+  //       case 'colon':
+  //         separator = ':';
+  //         break;
+  //
+  //       default:
+  //         separator = apparatusEntry.separator;
+  //     }
+  //     separator = getPlainText(fromCompactFmtText(separator));
+  //
+  //     html += `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `;
+  //     apparatusEntry.subEntries.forEach((subEntry, subEntryIndex) => {
+  //       let classes = ['sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`];
+  //       if (!subEntry.enabled) {
+  //         classes.push('sub-entry-disabled');
+  //       }
+  //       html += `<span class="${classes.join(' ')}">
+  //                           ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla, this.edition.siglaGroups)}
+  //        </span>`;
+  //       html += `<span style="direction: ${this.defaultTextDirection}; unicode-bidi: embed">&nbsp;</span>`;
+  //     });
+  //     html += '</span>';
+  //   });
+  //   if (html === '') {
+  //     html = `<i>... empty ...</i>`;
+  //   }
+  //   return html;
+  // }
+
+  /**
+   * Generates a VNode for the apparatus div
+   *
+   * @returns {VNode}
+   * @private
+   */
+  private genApparatusVNode(): VNode {
     let lastLine = '';
     let sigla = this.edition.getSigla();
-    let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;';
+    let textDirectionMarker = this.edition.lang === 'la' ? '\u200E' : '\u200F';
+    let lineNumbersLang = this.lang;
+
+    let tsInfo = this.mainTextTypesettingInfo;
+    if (this.useCtColNumbers) {
+      tsInfo = this.getMainTextTypesettingInfoFromCtTable();
+      lineNumbersLang = 'la';
+    }
+
+    if (tsInfo === null) {
+      return h(`div.apparatus.text-${this.lang}`, 'Apparatus coming soon...');
+    }
+
+    const entries: VNode[] = [];
 
     this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
-      debug && console.log(`Generating apparatus entry ${aeIndex}`);
-      html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`;
       let currentLine = "__UNDEFINED__";
       try {
-        currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), mainTextTypesettingInfo, this.lang);
+        currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, lineNumbersLang);
       } catch (e) {
         console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`);
-        console.log(apparatusEntry);
       }
 
-      let lineHtml = `${textDirectionMarker}&nbsp;${this.options.entrySeparator}&nbsp;`;
+      const entryNodes: (VNode | string)[] = [];
+
+      // line html
       if (currentLine !== lastLine) {
-        let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}&nbsp;` : '';
-        lineHtml = `${textDirectionMarker}${lineSep}<b class="apparatus-line-number">${currentLine}</b>`;
+        let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}\u00A0` : '';
+        if (this.useCtColNumbers) {
+          entryNodes.push(textDirectionMarker, lineSep, h('b.apparatus-line-number.ct-col-number', currentLine), ' ');
+        } else {
+          entryNodes.push(textDirectionMarker, lineSep, h('b.apparatus-line-number', currentLine), ' ');
+        }
+
         lastLine = currentLine;
+      } else {
+        entryNodes.push(textDirectionMarker, '\u00A0', this.options.entrySeparator || '', '\u00A0', ' ');
       }
-      // build lemma section
-      let preLemmaSpanHtml = '';
+
+      // pre lemma
       const preLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.preLemma));
-      switch (preLemmaText) {
-        case '':
-          // do nothing
-          break;
-
-        case 'ante':
-        case 'post':
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
-          break;
-
-        default:
-          preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
+      if (preLemmaText !== '') {
+        entryNodes.push(h('span.pre-lemma', [ApparatusCommon.getKeywordVNode(preLemmaText, this.edition.lang)]), ' ');
       }
-      let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `;
 
+      // lemma
+      entryNodes.push(h(`span.lemma.lemma-${this.options.apparatusIndex}-${aeIndex}`, ApparatusCommon.getLemmaVNode(apparatusEntry, tsInfo, this.edition.lang)));
 
-      let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, mainTextTypesettingInfo, this.edition.lang)}</span>`;
-
-      debug && console.log(`Lemma html: ${lemmaSpan}`);
-
-      let postLemmaSpan = '';
+      // post lemma
       const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));
       if (postLemmaText !== '') {
-        let postLemma = ApparatusCommon.getKeywordHtml(postLemmaText, this.edition.lang);
-        postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
+        entryNodes.push(' ', h('span.pre-lemma', [ApparatusCommon.getKeywordVNode(postLemmaText, this.edition.lang)]));
       }
 
-      let separator: CompactFmtText;
-
+      // separator
+      let separator: string;
       switch (apparatusEntry.separator) {
         case '':
-          if (apparatusEntry.allSubEntriesAreOmissions()) {
-            separator = '';
-          } else {
-            separator = ']';
-          }
+          separator = apparatusEntry.allSubEntriesAreOmissions() ? '' : ']';
           break;
-
         case 'off':
           separator = '';
           break;
-
         case 'colon':
           separator = ':';
           break;
-
         default:
-          separator = apparatusEntry.separator;
+          separator = getPlainText(fromCompactFmtText(apparatusEntry.separator));
       }
-      separator = getPlainText(fromCompactFmtText(separator));
+      entryNodes.push(separator, ' ');
 
-      html += `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `;
+      // sub entries
       apparatusEntry.subEntries.forEach((subEntry, subEntryIndex) => {
         let classes = ['sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`];
         if (!subEntry.enabled) {
           classes.push('sub-entry-disabled');
         }
-        html += `<span class="${classes.join(' ')}">
-                            ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla, this.edition.siglaGroups)}
-         </span>`;
-        html += `<span style="direction: ${this.defaultTextDirection}; unicode-bidi: embed">&nbsp;</span>`;
+        entryNodes.push(h(`span.${classes.join('.')}`, ApparatusCommon.genSubEntryVNodeContent(this.lang, subEntry, sigla, this.edition.siglaGroups)));
+        entryNodes.push(h('span', {style: {direction: this.defaultTextDirection, unicodeBidi: 'embed'}}, '\u00A0'));
       });
-      html += '</span>';
+
+      entries.push(h(`span.apparatus-entry.apparatus-entry-${this.options.apparatusIndex}-${aeIndex}`, entryNodes));
     });
-    if (html === '') {
-      html = `<i>... empty ...</i>`;
+
+    if (entries.length === 0) {
+      return h(`div.apparatus.text-${this.lang}`, [h('i', '... empty ...')]);
     }
-    return html;
+
+    return h(`div.apparatus.text-${this.lang}`, entries);
   }
 
   private hideApparatusEntryForm() {
@@ -1548,7 +1695,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   private genOnClickAddEntryButton(appIndex: number) {
-    return (ev: Event) => {
+    return (ev: any) => {
       ev.preventDefault();
       ev.stopPropagation();
 

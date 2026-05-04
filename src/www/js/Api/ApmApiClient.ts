@@ -31,7 +31,8 @@ import {
   ApiCollationTableConvertToEdition,
   ApiCollationTableInfo,
   ApiCollationTableVersionInfo,
-  AutomaticCollationSettings
+  AutomaticCollationSettings,
+  SingleChunkApiData
 } from "@/Api/DataSchema/ApiCollationTable";
 import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
@@ -39,14 +40,20 @@ import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 import {DocInfo, DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
-import {
-  AllPeopleDataForPeoplePageItem, PersonEssentialData
-} from "@/Api/DataSchema/ApiPeople";
+import {AllPeopleDataForPeoplePageItem, PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {ApiChunksWithTranscription, ApiWorksAll, ChunkCollationTableInfo, WorkData} from "@/Api/DataSchema/ApiWorks";
-import {EntityDataInterface, PredicateDefinitionsForType} from "@/Api/DataSchema/ApiEntity";
-import {ApiSiglaPreset, ApiPresetsQuery, ApiAutomaticCollationTablePreset} from "@/Api/DataSchema/ApiPresets";
+import {
+  EntityDataInterface,
+  PredicateDefinitionInterface,
+  PredicateDefinitionsForType,
+  StatementEditCommand,
+  StatementEditResponse
+} from "@/Api/DataSchema/ApiEntity";
+import {ApiAutomaticCollationTablePreset, ApiPresetsQuery, ApiSiglaPreset} from "@/Api/DataSchema/ApiPresets";
 import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
 import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
+import {TimeString} from "@/toolbox/TimeString";
+import {CtData} from "@/CtData/CtData";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -203,6 +210,44 @@ export class ApmApiClient {
     }
   }
 
+
+  async getSingleChunkData(tableId: number, version: string, useCache: boolean = true): Promise<SingleChunkApiData> {
+
+    const lookingForLatestVersion = version === '';
+    if (lookingForLatestVersion) {
+      const latestVersionInfo = await this.collationTableVersionInfo(tableId, 'latest');
+      if (latestVersionInfo === null) {
+        throw new Error('Table does not exist, no latest version found')
+      }
+      version = latestVersionInfo.timeFrom;
+    }
+
+    let dbKey = `CtData-${tableId}-${TimeString.compactEncode(version)}`;
+    if (useCache) {
+      let cachedData = await this.caches.longTerm.retrieve(dbKey);
+      if (cachedData !== null) {
+        if (lookingForLatestVersion) {
+          cachedData.isLatestVersion =true;
+          return cachedData;
+        }
+        const versionInfo = await this.collationTableVersionInfo(tableId, version);
+        if (versionInfo !== null) {
+          cachedData.isLatestVersion = versionInfo.isLatestVersion;
+          return cachedData;
+        }
+      }
+    }
+    // really get from server
+    let url = urlGen.apiCollationTable_get(tableId, TimeString.compactEncode(version));
+    const data = await this.get(url) as SingleChunkApiData;
+    console.log(`Got data table ${tableId}, timeStamp '${version}'`);
+    console.log(data);
+    data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData);
+    await this.caches.longTerm.store(dbKey, data);
+    return data;
+  }
+
+
   async getAllPeopleData(): Promise<AllPeopleDataForPeoplePageItem[]> {
     return await this.get(urlGen.apiPersonGetDataForPeoplePage());
   }
@@ -236,12 +281,12 @@ export class ApmApiClient {
     return this.get(urlGen.apiDocGetInfo(docId, withPageIds, withFullPageInfo), forceGet, TtlOneHour);
   }
 
-  async getWorkChunksWithTranscription(workId: string) : Promise<ApiChunksWithTranscription> {
+  async getWorkChunksWithTranscription(workId: string): Promise<ApiChunksWithTranscription> {
     return await this.get(urlGen.apiWorkGetChunksWithTranscription(workId), false, TtlOneMinute);
   }
 
   async getWitnessesForChunk(workId: string, chunkNumber: number): Promise<WitnessInfo[]> {
-    return await this.get(urlGen.apiWitnessGetWitnessesForChunk(workId, chunkNumber), false, 5* TtlOneMinute);
+    return await this.get(urlGen.apiWitnessGetWitnessesForChunk(workId, chunkNumber), false, 5 * TtlOneMinute);
   }
 
   async getChunksInWorkInfo(workId: string): Promise<ChunkInWorkInfo[]> {
@@ -251,11 +296,7 @@ export class ApmApiClient {
     console.log('Active collation tables', activeCollationTables);
     const info: ChunkInWorkInfo[] = chunksWithTranscriptionResponse.chunks.map(n => {
       return {
-        workId: workId,
-        chunkNumber: n,
-        hasTranscriptions: true,
-        hasCollationTables: false,
-        hasEditions: false
+        workId: workId, chunkNumber: n, hasTranscriptions: true, hasCollationTables: false, hasEditions: false
       };
     });
     activeCollationTables.forEach((ctInfo) => {
@@ -282,7 +323,7 @@ export class ApmApiClient {
 
 
   async getCollationTablesActiveForWork(workId: string): Promise<ApiCollationTableInfo[]> {
-    return await  this.get(urlGen.apiCollationTable_activeForWork(workId), false, TtlOneMinute);
+    return await this.get(urlGen.apiCollationTable_activeForWork(workId), false, TtlOneMinute);
   }
 
   async getLegacySystemLanguagesArray(): Promise<any> {
@@ -300,14 +341,17 @@ export class ApmApiClient {
    *
    */
   async whoAmI(): Promise<any> {
+    let token: string | null = null;
     if (this.useBearerAuthentication) {
-      let token = await this.getBearerToken();
+      token = await this.getBearerToken();
       if (token === null) {
         return null;
       }
     }
     try {
-      return await this.get(urlGen.apiWhoAmI(), false, 30);
+      // this results in a long TTL is bearer authentication is used, and effectively no caching otherwise
+      const tokenFingerprint = ':' + await fingerprintToken(token ?? `Random${Math.floor(Math.random() * 1000000)}`);
+      return await this.get(urlGen.apiWhoAmI(), false, TtlOneMinute * 15, true, tokenFingerprint);
     } catch (error: any) {
       console.log(`Error getting whoami`, error);
       if (error.httpStatus === 401) {
@@ -382,7 +426,7 @@ export class ApmApiClient {
    * @param {string}lang
    * @return {Promise<any>}
    */
-  async savePageSettings(pageId: number, foliation: string, type: number, lang: string): Promise<any> {
+  async savePageSettings(pageId: number, foliation: string, type: number, lang: number): Promise<any> {
     return this.post(urlGen.apiUpdatePageSettings(pageId), {
       foliation: foliation, type: type, lang: lang
     }, true);
@@ -404,7 +448,16 @@ export class ApmApiClient {
   }
 
   async getSiglaPresets(lang: string, witnessIds: string[]): Promise<ApiSiglaPreset[]> {
-    const resp = await this.post(urlGen.apiGetSiglaPresets(), {lang: lang, witnesses: witnessIds}, true);
+
+    const payload = {lang: lang, witnesses: witnessIds};
+    const payloadId = `${lang}_${witnessIds.join('_')}`
+    const key = `sigla_presets_${await fingerprintToken(payloadId)}`;
+    const presetsFromCache = this.caches.local.retrieve(key);
+    if (presetsFromCache !== null) {
+      return presetsFromCache;
+    }
+    const resp = await this.post(urlGen.apiGetSiglaPresets(), payload, true);
+    this.caches.local.store(key, resp['presets'], TtlOneMinute*5);
     return resp['presets'];
   }
 
@@ -431,23 +484,14 @@ export class ApmApiClient {
     }, true);
   }
 
-  async personCreate(name: string, sortName: string): Promise<any> {
+  async personCreate(name: string, sortName: string): Promise<number> {
     return this.post(urlGen.apiPersonCreate(), {
       name: name, sortName: sortName
     }, true);
   }
 
-  /**
-   * Calls the createDocument API on APM
-   * @param {string}name
-   * @param type
-   * @param lang
-   * @param imageSource
-   * @param imageSourceData
-   * @returns {Promise<{}>}
-   */
-  async createDocument(name: string, type: string | null = null, lang: string | null = null, imageSource: string | null = null, imageSourceData: string | null = null): Promise<any> {
-    return this.post(urlGen.apiDocumentCreate(), {
+  async createDocument(name: string, type: number, lang: number, imageSource: number, imageSourceData: string): Promise<number> {
+    return await this.post(urlGen.apiDocumentCreate(), {
       name: name, type: type, lang: lang, imageSource: imageSource, imageSourceData: imageSourceData
     }, true);
   }
@@ -470,10 +514,11 @@ export class ApmApiClient {
    * @param {boolean} [forceGet=true] if true, the cache is not checked, and the GET request is actually made to the URL
    * @param {number} [ttl=-1] seconds to cache the results, or no caching if <=0
    * @param sessionCache
+   * @param cacheKeyPostfix
    * @return {Promise<{}>}
    */
-  get(url: string, forceGet: boolean = true, ttl: number = -1, sessionCache = true): Promise<any> {
-    return this.fetch(url, 'GET', null, forceGet, false, ttl, sessionCache);
+  get(url: string, forceGet: boolean = true, ttl: number = -1, sessionCache = true, cacheKeyPostfix: string = ''): Promise<any> {
+    return this.fetch(url, 'GET', null, forceGet, false, ttl, sessionCache, cacheKeyPostfix);
   }
 
   /**
@@ -526,9 +571,9 @@ export class ApmApiClient {
     });
   }
 
-  async apiEntityStatementsEdit(commands: any) {
-    return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
-
+  async apiEntityStatementsEdit(commands: StatementEditCommand[]): Promise<StatementEditResponse> {
+    return this.post(urlGen.apiEntityStatementsEdit(), commands, true);
+    // return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
   }
 
   /**
@@ -579,6 +624,10 @@ export class ApmApiClient {
 
   getPredicateDefinitionsForType(type: number): Promise<PredicateDefinitionsForType> {
     return this.fetch(urlGen.apiEntityGetPredicateDefinitionsForType(type), 'GET', {}, false, false, TtlOneHour);
+  }
+
+  getPredicateDefinition(predicate: number): Promise<PredicateDefinitionInterface> {
+    return this.fetch(urlGen.apiEntityGetPredicateDefinition(predicate), 'GET', {}, false, false, TtlOneHour);
   }
 
   getEntityListForType(typeTid: number): Promise<number[]> {
@@ -701,11 +750,12 @@ export class ApmApiClient {
    * @param {boolean}useRawData if true, the payload is posted as is, otherwise the payload is encapsulated on an object { data: payload}
    * @param {number} ttl
    * @param sessionCache
+   * @param cacheKeyPostfix
    * @return {Promise<any>}
    * @throws {ApmApiClientError}
    */
-  private fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true): Promise<any> {
-    let key = encodeURI(url);
+  private fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true, cacheKeyPostfix: string = ''): Promise<any> {
+    let key = encodeURI(url) + cacheKeyPostfix;
     let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
     return fetcher.fetch(key, () => {
       return new Promise(async (resolve, reject: (e: ApmApiClientError) => void) => {
@@ -830,7 +880,6 @@ export class ApmApiClient {
   }
 
   private async getEntityDataRaw(tid: number): Promise<EntityDataInterface> {
-    let url = urlGen.apiEntityGetData(tid);
     return await this.get(urlGen.apiEntityGetData(tid));
   }
 
@@ -883,4 +932,12 @@ export class ApmApiClient {
   private setBearerToken: (t: string, ttl: number) => Promise<void> = () => Promise.resolve();
 
 
+}
+
+
+async function fingerprintToken(token: string): Promise<string> {
+  const data = new TextEncoder().encode(token);
+  const digest = await crypto.subtle.digest('SHA-256', data);
+  const bytes = new Uint8Array(digest);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('').slice(0, 16);
 }

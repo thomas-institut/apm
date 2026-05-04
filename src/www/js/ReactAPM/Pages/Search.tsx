@@ -304,6 +304,8 @@ export default function SearchPage() {
       if (e instanceof Error && e.name === 'AbortError') {
         console.log("Stopped running search.");
         return;
+      } else {
+        console.error("Error during search:", e);
       }
 
       setSearchStatus(STATE_INIT);
@@ -326,7 +328,7 @@ export default function SearchPage() {
 
     const newEntries: any[] = [];
     rawData.forEach((match: any) => {
-      console.log(match);
+      // console.log(match);
       const link = corpus === 'transcriptions' ? urlGen.sitePageView(match.docID, match.seq, match.column) : urlGen.siteCollationTableEdit(match.table_id);
       match.passage_tokenized.forEach((p: any, j: number) => {
         storedData.current.numDisplayedPassages++;

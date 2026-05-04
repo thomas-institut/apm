@@ -1,0 +1,92 @@
+#!/usr/bin/php -q
+<?php
+
+
+
+if ($argc != 5) {
+    print "doc_page_fix <DocDBId> <numpages> <command> <'seq'|'img'>\n  Command: reverse | pair_swap | reverse_pair_swap\n";
+    return false;
+}
+
+$docId = $argv[1];
+if ($docId < 1) {
+    print "Invalid document id\n";
+    return false;
+}
+
+$n = intval($argv[2]);
+if ($n < 1) {
+    print "Invalid number of pages\n";
+    return false;
+}
+$command = $argv[3];
+$seqOrImg = $argv[4];
+
+if ($seqOrImg !== 'seq' && $seqOrImg !== 'img') {
+    print "Invalid sequence or image type\n";
+    return false;
+}
+
+switch ($command) {
+    case 'reverse':
+        $pageTuples = generatePageTuples($n);
+        $reversedPages = reversePages($pageTuples);
+        printSqlScript($reversedPages, $docId, $seqOrImg);
+        break;
+
+    case 'pair_swap':
+        $pageTuples = generatePageTuples($n);
+        $swappedPairs = swapPairs($pageTuples);
+        printSqlScript($swappedPairs, $docId, $seqOrImg);
+        break;
+
+    case 'reverse_pair_swap':
+        $pageTuples = generatePageTuples($n);
+        $swappedPairs = swapPairs(reversePages($pageTuples));
+        printSqlScript($swappedPairs, $docId, $seqOrImg);
+        break;
+
+    default:
+        print "Unknown command: $command";
+        return false;
+}
+
+function printSqlScript(array $tuples, int $docId, string $seqOrImg) : void {
+    $field = $seqOrImg === 'seq' ? 'seq' : 'img_number';
+    foreach ($tuples as $tuple) {
+        [ $pageNumber, $imgNumber ] = $tuple;
+        print "UPDATE `ap_pages` SET `$field`=$imgNumber WHERE `doc_id`=$docId AND `page_number`=$pageNumber;\n";
+    }
+}
+
+
+function generatePageTuples($n): array {
+    $result = [];
+    for ($i = 1; $i <= $n; $i++) {
+        $result[] = [$i, $i];
+    }
+    return $result;
+}
+
+function reversePages(array $pageTuples): array {
+    $n = count($pageTuples);
+    $newPageTuples = [];
+    foreach ($pageTuples as $pair) {
+        $newPageTuples[] = [$pair[0], $n - $pair[1] + 1];
+    }
+    return $newPageTuples;
+}
+
+function swapPairs(array $pageTuples): array {
+    $n = count($pageTuples);
+    $result = generatePageTuples($n);
+    for ($i = 0; $i < $n; $i += 2) {
+        if ($i + 1 < $n) {
+            // Swap the second elements of the current pair and the next pair
+            $result[$i][1] = $pageTuples[$i + 1][1];
+            $result[$i + 1][1] = $pageTuples[$i][1];
+        }
+    }
+    return $result;
+}
+

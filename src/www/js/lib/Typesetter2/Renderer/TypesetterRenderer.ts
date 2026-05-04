@@ -25,6 +25,7 @@ import {TextBox} from '../TextBox.js';
 import {TypesetterPage} from "../TypesetterPage.js";
 import {TypesetterDocument} from "../TypesetterDocument.js";
 import {TypesetterItem} from "../TypesetterItem.js";
+import {Hyphen} from "@/lib/Typesetter2/Hyphenator/HyphenateTextBoxes";
 
 export class TypesetterRenderer {
 
@@ -45,7 +46,7 @@ export class TypesetterRenderer {
     }
     horizontalList.getList().forEach((item) => {
       let [itemWidth,] = this.getDeviceCoordinates(item.getWidth(), item.getHeight());
-      if (item.getTextDirection() === textDirection || item.getTextDirection() === '') {
+      if (item.getTextDirection() === textDirection || item.getTextDirection() === '' || item.getTextDirection() === undefined) {
         this.renderItem(item, currentX, currentY);
       } else {
         // a reverse item
@@ -161,11 +162,11 @@ export class TypesetterRenderer {
    */
   renderList(listItem: ItemList, x: number, y: number) {
     switch (listItem.getDirection()) {
-      case TypesetterItemDirection.HORIZONTAL:
+      case TypesetterItemDirection.HorizontalItemDirection:
         this.renderHorizontalList(listItem, x, y);
         break;
 
-      case TypesetterItemDirection.VERTICAL:
+      case TypesetterItemDirection.VerticalItemDirection:
         this.renderVerticalList(listItem, x, y);
         break;
     }

@@ -23,6 +23,10 @@ export class RouteUrls {
     return baseUrl + '/dashboard';
   }
 
+  static help() {
+    return baseUrl + '/help';
+  }
+
   static docs() {
     return baseUrl + '/documents';
   }
@@ -88,12 +92,24 @@ export class RouteUrls {
     return baseUrl + '/work/' + id;
   }
 
-  static patternDocument() {
+  static patternAdminEntity() {
+    return baseUrl + '/entity/:id/admin';
+  }
+
+  static adminEntity(id: number|string) {
+    return baseUrl + '/entity/' + id + '/admin';
+  }
+
+  static patternDocumentBeta() {
     return baseUrl + betaPathInfix +  '/doc/:id/*';
   }
 
-  static document(id: number|string) {
+  static documentBeta(id: number|string) {
     return baseUrl +  betaPathInfix + '/doc/' + id;
+  }
+
+  static document(id: number|string) {
+    return baseUrl +  '/doc/' + id;
   }
 
   static docPage(id: number|string, page: number) {

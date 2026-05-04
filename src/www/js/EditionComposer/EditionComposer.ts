@@ -16,20 +16,21 @@
  *
  */
 
+import './EditionComposer.css';
+
 // defaults
-import {defaultLanguageDefinition} from '@/defaults/languages';
+import {defaultLanguageDefinition, LanguageDefinition} from '@/defaults/languages';
 
 // utilities
 import * as Util from '../toolbox/Util';
 import {capitalizeFirstLetter, deepCopy} from '@/toolbox/Util';
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil';
 import {AsyncKeyCache} from '@/toolbox/KeyCache/AsyncKeyCache';
 import {ServerLogger} from '@/Server/ServerLogger';
 
 // MultiPanel UI
-import {horizontalMode, MultiPanelUI, verticalMode} from '@/MultiPanelUI/MultiPanelUI';
-import {TabConfig, TabConfigInterface} from '@/MultiPanelUI/TabConfig';
+import {horizontalMode, MultiPanelUI, TabSpec, verticalMode} from '@/MultiPanelUI/MultiPanelUI';
+import {TabConfig} from '@/MultiPanelUI/TabConfig';
 
 // Panels
 import {WitnessInfoPanel} from './WitnessInfoPanel';
@@ -66,12 +67,19 @@ import {CollationTableConsistencyCleaner} from '@/CtData/CtDataCleaner/Collation
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
 
 // import { IgnoreHyphen } from '../normalizers/TokenNormalizer/IgnoreHyphen'
-import {ApmPage} from '@/pages/ApmPage';
+import {ApmPage, ApmPageOptions} from '@/pages/ApmPage';
 import {ApmFormats} from '@/pages/common/ApmFormats';
 import {urlGen} from '@/pages/common/SiteUrlGen';
 import {DataId_EC_ViewOptions} from '@/constants/WebStorageDataId';
 import {CtDataInterface, NonTokenItemIndex, WitnessInterface} from "@/CtData/CtDataInterface";
 import {getNonTokenItemIndices} from "@/Witness/TranscriptionWitness";
+import {FULL_TX} from "@/Witness/WitnessType";
+import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
+import {WorkData} from "@/Api/DataSchema/ApiWorks";
+import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
+
+
+
 
 // import { Punctuation} from '../defaults/Punctuation.mjs'
 // CONSTANTS
@@ -101,8 +109,20 @@ interface SourceData {
   tid: number;
 }
 
+interface EditionComposerOptions extends  ApmPageOptions {
+  isTechSupport?: boolean;
+  lastVersion: string,
+  collationTableData: CtDataInterface,
+  tableId: number,
+  version: string;
+  langDef: Record<string, LanguageDefinition> ,
+  availableWitnesses: {
+    type: 'Array', default: []
+  },
+}
+
 export class EditionComposer extends ApmPage {
-  private readonly options: any;
+  private readonly options: Required<EditionComposerOptions>;
   private readonly tableId: number;
   private readonly icons: {
     moveUp: string;
@@ -126,16 +146,16 @@ export class EditionComposer extends ApmPage {
   private errorDetail: string;
   private readonly apiSaveCollationUrl: string;
   private serverLogger: ServerLogger;
-  private ctData: CtDataInterface;
-  private readonly isNew: boolean;
-  private lang: string;
-  private readonly normalizerRegister: NormalizerRegister;
-  private lastSavedCtData: CtDataInterface;
-  private versionInfo: any;
-  private lastVersion: string;
-  private versionId: any;
+  private ctData!: CtDataInterface;
+  private isNew!: boolean;
+  private lang!: string;
+  private normalizerRegister!: NormalizerRegister;
+  private lastSavedCtData!: CtDataInterface;
+  private versionInfo!: CtVersionInfo[];
+  private isLastVersion!: string;
+  private version!: string;
   private cache: AsyncKeyCache;
-  private edition: Edition;
+  private edition!: Edition;
   private convertingToEdition: boolean;
   private saving: boolean;
   private witnessUpdates: any[];
@@ -159,42 +179,28 @@ export class EditionComposer extends ApmPage {
   private errorButtonPopoverTitle!: string;
   private saveErrors!: boolean;
 
-  constructor(options: any) {
+  private workId!: string;
+  private chunkNumber!: number;
+  private peopleInfo: PersonEssentialData[] = [];
+  private workInfo!: WorkData;
+
+
+  constructor(options: EditionComposerOptions) {
     super(options);
     console.log(`Common Apm Page Data`);
     console.log(this.commonData);
     console.log(`Initializing Edition Composer`);
 
-    // first load the fonts!
+    const defaults = {
+      isTechSupport: false,
+      langDef: defaultLanguageDefinition,
+      availableWitnesses: [],
+      workInfo: {},
+      versionInfo: {}
+    }
 
-    // let fontsToLoad = [  '14pt AdobeArabic', 'bold 14pt AdobeArabic', '1em Apm_FreeSerif', '1em Noto Sans']
-    //
-    // fontsToLoad.forEach( (fontName) => {
-    //   document.fonts.load(fontName).then( () => { console.log(`Font '${fontName}' loaded`)}).catch( (e) => {
-    //     console.log(`Error loading font '${fontName}'`)
-    //   })
-    // })
+    this.options = {...defaults, ...options}
 
-    let optionsDefinition = {
-      isTechSupport: {type: 'boolean', default: false},
-      lastVersion: {type: 'boolean', required: true},
-      collationTableData: {type: 'object', required: true},
-      workId: {type: 'string', required: true},
-      chunkNumber: {type: 'NonZeroNumber', required: true},
-      tableId: {type: 'NonZeroNumber', required: true},
-      versionId: {type: 'NonZeroNumber', required: true},
-      langDef: {type: 'object', default: defaultLanguageDefinition},
-      availableWitnesses: {
-        type: 'Array', default: []
-      }, // urlGenerator: { type: 'object', objectClass: ApmUrlGenerator, required: true},
-      workInfo: {type: 'object', default: {}},
-      peopleInfo: {type: 'object', default: {}},
-      docInfo: {type: 'object', default: {}},
-      versionInfo: {type: 'object', default: {}}
-    };
-
-    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'EditionComposer'});
-    this.options = oc.getCleanOptions(options);
     this.tableId = this.options.tableId;
 
     console.log(`EditionComposer Options`);
@@ -229,73 +235,86 @@ export class EditionComposer extends ApmPage {
       apiCallUrl: urlGen.apiAdminLog(), module: 'EditionComposer'
     });
 
-    this.ctData = CtData.getCleanAndUpdatedCtData(this.options['collationTableData']);
-    this.ctData.tableId = this.tableId;
-    this.ctData = this.addMissingDataForCollationTable(this.ctData);
-
-    console.log('Clean CT Data');
-
-    console.log(this.ctData);
-
-
-    this.isNew = this.ctData.tableId === -1;
-
-    this.lang = this.ctData.lang;
-
-    // Normalizers
-    this.normalizerRegister = new NormalizerRegister();
-    this.registerStandardNormalizers();
-    this.lastSavedCtData = Util.deepCopy(this.ctData);
-
-    // this.ctData['tableId'] = this.tableId
-    this.versionInfo = this.options.versionInfo;
-    this.lastVersion = this.options.lastVersion;
-    this.versionId = this.options.versionId;
-
-    if (!this.lastVersion) {
-      console.warn('Working on an older version of the Edition/CollationTable');
-    }
-
     this.cache = new AsyncKeyCache();
-
-    this.edition = new Edition();
-    this.reGenerateEdition();
-
-    document.title = `${this.ctData.title} (${this.ctData['chunkId']})`;
-
+    this.unsavedChanges = false;
     this.convertingToEdition = false;
+
     this.saving = false;
     this.witnessUpdates = [];
     this.editionSources = null;
-    this.unsavedChanges = false;
 
     $(window).on('beforeunload', () => {
       if (this.unsavedChanges || this.convertingToEdition) {
         return false; // make the browser ask if the user wants to leave
       }
     });
+
     this.initPage().then(() => {
       console.log(`EditionComposer ready`);
     });
-
   }
 
   async initPage() {
     await super.initPage();
+
+    const body = $('body');
+
+    body.html(getPrenderMessage(`Getting data for table ${this.tableId}`));
+    const apiCtDataResponse = await this.apiClient.getSingleChunkData(this.options.tableId, this.options.version);
+
+    body.html(getPrenderMessage(`Setting up data`));
+    this.ctData = CtData.getCleanAndUpdatedCtData(apiCtDataResponse.ctData);
+    this.ctData.tableId = this.tableId;
+    console.log('Clean CT Data');
+    console.log(this.ctData);
+    this.isNew = this.ctData.tableId === -1;
+    this.lang = this.ctData.lang;
+    const [workId, chunkNumber] = this.ctData.chunkId.split('-');
+    this.workId = workId;
+    this.chunkNumber = Number(chunkNumber);
+
+    // Normalizers
+    this.normalizerRegister = new NormalizerRegister();
+    this.registerStandardNormalizers();
+    this.lastSavedCtData = Util.deepCopy(this.ctData);
+
+    this.versionInfo = apiCtDataResponse.versions;
+    this.isLastVersion = this.options.lastVersion;
+    this.version = this.options.version;
+
+    if (!this.isLastVersion) {
+      console.warn('Working on an older version of the Edition/CollationTable');
+    }
+
+    this.workInfo = await this.apiClient.getWorkData(this.workId);
+
+    this.peopleInfo = [];
+    const peopleMentioned: number[] = getPeopleMentionedInCtData(this.ctData);
+    peopleMentioned.push(this.workInfo.authorId);
+    for (let i = 0; i < peopleMentioned.length; i++) {
+      const personId = peopleMentioned[i];
+      this.peopleInfo[personId] = await this.apiClient.getPersonEssentialData(personId);
+    }
+
+    this.edition = new Edition();
+    this.reGenerateEdition();
+
+    document.title = `${this.ctData.title} (${this.ctData['chunkId']})`;
+
     this.viewOptions = await this.getViewOptions();
     console.log(`ViewOptions`, this.viewOptions);
+    body.html(getPrenderMessage(`Setting up UI`));
 
     // Construct panels
-
-
     this.collationTablePanel = new CollationTablePanel({
       containerSelector: `#${collationTableTabId}`,
+      textDirection: this.ctData.lang === 'la' ? 'ltr' : 'rtl',
       normalizerRegister: this.normalizerRegister,
       icons: this.icons,
       ctData: this.ctData,
       onCtDataChange: this.genOnCtDataChange('collationTablePanel'),
       contentAreaId: 'ct-panel-content',
-      peopleInfo: this.options.peopleInfo,
+      peopleInfo: this.peopleInfo,
       editApparatusEntry: (ctDataAppIndex: number, ctIndexFrom: number, ctIndexTo: number) => {
         this.editApparatusEntryFromCollationTable(getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex, this.ctData, this.edition), ctIndexFrom, ctIndexTo);
       },
@@ -384,7 +403,6 @@ export class EditionComposer extends ApmPage {
       verbose: false,
       containerSelector: `#${adminPanelTabId}`,
       versionInfo: this.versionInfo,
-      peopleInfo: this.options.peopleInfo,
       ctType: this.ctData.type,
       archived: this.ctData.archived,
       canArchive: true,
@@ -407,21 +425,21 @@ export class EditionComposer extends ApmPage {
     });
 
 
-    let panelOneTabs: TabConfigInterface[] = [];
+    let panelOneTabs: TabSpec[] = [];
     if (this.ctData.type === CollationTableType.EDITION) {
-      panelOneTabs.push(TabConfig.createTabConfig(mainTextTabId, 'Main Text', this.mainTextPanel));
+      panelOneTabs.push(TabConfig.createTabSpec(mainTextTabId, 'Main Text', this.mainTextPanel));
     }
-    panelOneTabs.push(TabConfig.createTabConfig(collationTableTabId, 'Collation Table', this.collationTablePanel), TabConfig.createTabConfig(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel));
-    let panelTwoTabs: TabConfigInterface[] = [];
+    panelOneTabs.push(TabConfig.createTabSpec(collationTableTabId, 'Collation Table', this.collationTablePanel), TabConfig.createTabSpec(witnessInfoTabId, 'Witness Info', this.witnessInfoPanel));
+    let panelTwoTabs: TabSpec[] = [];
     if (this.ctData.type === CollationTableType.EDITION) {
       panelTwoTabs.push(...this.edition.apparatuses
       .map((apparatus, index) => {
-        return TabConfig.createTabConfig(`apparatus-${index}`, this.getTitleForApparatusType(apparatus.type), this.apparatusPanels[index], this._getLinkTitleForApparatusType(apparatus.type));
+        return TabConfig.createTabSpec(`apparatus-${index}`, this.getTitleForApparatusType(apparatus.type), this.apparatusPanels[index], this._getLinkTitleForApparatusType(apparatus.type));
       }));
-      panelTwoTabs.push(TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel), TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel));
+      panelTwoTabs.push(TabConfig.createTabSpec(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel), TabConfig.createTabSpec(adminPanelTabId, 'Admin', this.adminPanel));
     } else {
       // not an edition, show admin panel first
-      panelTwoTabs.push(TabConfig.createTabConfig(adminPanelTabId, 'Admin', this.adminPanel), TabConfig.createTabConfig(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel),);
+      panelTwoTabs.push(TabConfig.createTabSpec(adminPanelTabId, 'Admin', this.adminPanel), TabConfig.createTabSpec(editionPreviewNewTabId, 'Edition Preview', this.editionPreviewPanel),);
     }
 
 
@@ -432,14 +450,14 @@ export class EditionComposer extends ApmPage {
       });
 
       this.techSupportPanel.setActive(true);
-      panelTwoTabs.push(TabConfig.createTabConfig(techSupportTabId, 'Tech', this.techSupportPanel));
+      panelTwoTabs.push(TabConfig.createTabSpec(techSupportTabId, 'Tech', this.techSupportPanel));
     }
 
     this.multiPanelUI = new MultiPanelUI({
       logo: `<a href="${urlGen.siteHome()}" title="Home">
 <img src="${urlGen.images()}/apm-logo-plain.svg" height="40px" alt="logo"/></a>`, topBarContent: () => {
         let warningSign = '';
-        if (!this.lastVersion) {
+        if (!this.isLastVersion) {
           warningSign = `<a href="" class="text-danger" title="WARNING: showing an older version of this edition">${this.icons.alert}</a>&nbsp;`;
         }
         return `<div class="top-bar-item top-bar-title" >${warningSign}<span id="${editionTitleId}">Multi-panel User Interface</span></div>${this.genCtInfoDiv()}`;
@@ -459,8 +477,10 @@ export class EditionComposer extends ApmPage {
         id: 'panel-two', type: 'tabs', tabs: panelTwoTabs
       }]
     });
+    $(body).html(getPrenderMessage('Ready'));
 
     await this.multiPanelUI.start();
+
     //  Edition title
     this.titleField = new EditableTextField({
       containerSelector: '#edition-title',
@@ -736,7 +756,7 @@ export class EditionComposer extends ApmPage {
         this.saveButtonPopoverTitle = '';
         this._changeBootstrapTextClass(this.saveButton, saveButtonTextClassSaving);
         console.log('Saving table via API call to ' + this.apiSaveCollationUrl);
-        let description = this.lastVersion ? '' : `From version ${this.versionId}: `;
+        let description = this.isLastVersion ? '' : `From version ${this.version}: `;
         description += changes.join('. ');
         let apiCallOptions: any = {
           collationTable: this.ctData, descr: description, source: 'edit', baseSiglum: this.ctData['sigla'][0]
@@ -752,7 +772,7 @@ export class EditionComposer extends ApmPage {
             this.unsavedChanges = false;
             location.replace(urlGen.siteChunkEdition(apiResponse.tableId));
           }
-          if (!this.lastVersion) {
+          if (!this.isLastVersion) {
             // redirect to last version
             this.unsavedChanges = false;
             location.replace(urlGen.siteCollationTableEdit(this.tableId));
@@ -923,7 +943,6 @@ export class EditionComposer extends ApmPage {
             await this.cache.store(`PageInfo-${pageInfo.id}`, pageInfo);
           }
           pageInfoInCache.push(...pageInfoArrayFromServer);
-          console.log(`Page Info`, pageInfoInCache);
           resolve(pageInfoInCache);
         })
         .fail(function (resp) {
@@ -994,28 +1013,6 @@ export class EditionComposer extends ApmPage {
             }).map(w => w['ApmWitnessId']);
 
       return this.apiClient.getSiglaPresets(lang, witnesses);
-
-      // return new Promise((resolve, reject) => {
-      //   let apiSiglaPresetsUrl = urlGen.apiGetSiglaPresets();
-      //   let apiCallOptions = {
-      //     lang: this.ctData['lang'], witnesses: this.ctData['witnesses'].filter(w => {
-      //       return w['witnessType'] === 'fullTx';
-      //     }).map(w => w['ApmWitnessId'])
-      //   };
-      //   $.post(apiSiglaPresetsUrl, {data: JSON.stringify(apiCallOptions)})
-      //   .done(apiResponse => {
-      //     //console.log(apiResponse)
-      //     if (apiResponse['presets'] === undefined) {
-      //       resolve([]);
-      //     } else {
-      //       resolve(apiResponse['presets']);
-      //     }
-      //   }).fail(resp => {
-      //     console.log('Error loading sigla presets');
-      //     console.log(resp);
-      //     reject(resp);
-      //   });
-      // });
     };
   }
 
@@ -1232,10 +1229,10 @@ export class EditionComposer extends ApmPage {
   }
 
   genCtInfoDiv() {
-    let workTitle = this.options.workInfo['title'];
-    let workAuthorTid = this.options.workInfo['authorId'];
-    let workAuthorName = this.options.peopleInfo[workAuthorTid]['name'];
-    return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.options.workId}-${this.options.chunkNumber}</div>`;
+    let workTitle = this.workInfo['title'];
+    let workAuthorTid = this.workInfo['authorId'];
+    let workAuthorName = this.peopleInfo[workAuthorTid]['name'];
+    return `<div id="ct-info" title="${workAuthorName}, ${workTitle}; table ID: ${this.tableId}">${this.workId}-${this.chunkNumber}</div>`;
   }
 
   /**
@@ -1248,15 +1245,6 @@ export class EditionComposer extends ApmPage {
     return `Click to show the Apparatus ${capitalizeFirstLetter(type)}`;
   }
 
-  /**
-   *
-   * @param {CtDataInterface }ctData
-   * @return {CtDataInterface}
-   */
-  private addMissingDataForCollationTable(ctData: CtDataInterface): CtDataInterface {
-    ctData.customApparatuses = ctData.customApparatuses ?? [];
-    return ctData;
-  }
 
   private genHighlightCollationTable() {
     return (colStart: number, colEnd: number | undefined) => {
@@ -1301,6 +1289,28 @@ function getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex: number, ctData: Ct
   const appType = ctData.customApparatuses[ctDataAppIndex].type;
   return edition.apparatuses.findIndex(app => app.type === appType);
 }
+
+
+export function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
+  const authors: number[] = [];
+  ctData.witnesses.forEach(witness => {
+    if (witness.witnessType === FULL_TX && witness.items !== undefined) {
+       witness.items.forEach( (item)=> {
+         if (item.notes !== undefined) {
+           item.notes.forEach( (note) => {
+             authors.push(note.authorTid)
+           })
+         }
+       })
+    }
+  });
+  return authors;
+}
+
+function getPrenderMessage(msg: string) : string {
+  return `<div class="prerender-msg"><b>Edition Composer</b>: ${msg}  <span class="prerender-spinner"></span></div>`;
+}
+
 
 // Load as global variable so that it can be referenced in the Twig template
 // @ts-ignore

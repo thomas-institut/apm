@@ -44,11 +44,31 @@ export interface StyleSheetDefinition {
   [key: string]: StyleDef | Metadata | FontConversionDefinitions | SpecialStringsDef | undefined;
 }
 
-interface FontConversionDefinition {
-  from: any;
-  to: any;
+export interface FontConversionDefinition {
+  from: FontConversionInputFontSpec;
+  to: FontConversionOutputSpec;
 }
 
+export interface FontConversionInputFontSpec {
+  script?: string;
+  fontFamily?: string;
+  // Font style, e.g. 'italic'
+  fontStyle?: string;
+  // Font weight, e.g., 'bold'
+  fontWeight?: string;
+  // Font size in pixels
+  fontSize?: number;
+}
+
+export interface FontConversionOutputSpec {
+  fontFamily?: string;
+  // Font style, e.g. 'italic'
+  fontStyle?: string;
+  // Font weight, e.g., 'bold'
+  fontWeight?: string;
+  // E.g. 0.9, to make the output 90% the size of the input text
+  fontSizeFactor?: number;
+}
 type FontConversionDefinitions = FontConversionDefinition[];
 
 interface Metadata {
@@ -86,7 +106,7 @@ export interface ParagraphStyleDef {
   spaceBefore?: string;
   spaceAfter?: string;
   align?: string;
-
+  keepWithNext?: boolean
 }
 
 export interface GlueStyleDef {
@@ -366,6 +386,9 @@ export class StyleSheet {
         }
         if (parDef.align !== undefined && parDef.align !== '') {
           paragraphDef['align'] = parDef.align;
+        }
+        if (parDef.keepWithNext !== undefined) {
+          paragraphDef.keepWithNext = parDef.keepWithNext;
         }
       }
       resolve([paragraphDef, baseTextBox]);

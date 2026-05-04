@@ -20,9 +20,9 @@
 
 
 import {deepCopy} from '../toolbox/Util.js';
-import {WitnessDataItem} from "./WitnessDataItem.js";
 import {SiglaGroup} from "./SiglaGroup.js";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "../lib/FmtText/FmtText.js";
+import {WitnessDataItemInterface} from "./../CtData/CtDataInterface.js";
 
 const enDash = String.fromCodePoint(0x2013);
 
@@ -62,11 +62,14 @@ export class ApparatusUtil {
     if (custom) {
       return {type: 'custom', text: getPlainText(fromCompactFmtText(apparatusEntryLemma))};
     }
-    let lemmaTextWords = lemmaText.split(' ');
+    // filter out punctuation from the last word, which should never happen after version 1.0,
+    // but there's still some old cases in the data (see issue #294)
+    const theLemmaText = lemmaText.replace(/[.,;!?)\]]$/, '');
+    let lemmaTextWords = theLemmaText.split(' ');
     // if lemmaText is short,
     if (lemmaTextWords.length <= 3) {
       return {
-        type: 'full', text: lemmaText, numWords: lemmaTextWords.length
+        type: 'full', text: theLemmaText, numWords: lemmaTextWords.length
       };
     }
     return {
@@ -78,9 +81,9 @@ export class ApparatusUtil {
     };
   }
 
-  static getSiglaData(witnessData: WitnessDataItem[], sigla: string[], siglaGroups: SiglaGroup[]) {
+  static getSiglaData(witnessData: WitnessDataItemInterface[], sigla: string[], siglaGroups: SiglaGroup[]) {
 
-    let wData: WitnessDataItem[] = deepCopy(witnessData);
+    let wData: WitnessDataItemInterface[] = deepCopy(witnessData);
     let wDataArray = wData.filter((w) => {
       return !w.omitSiglum;
     }).map((w) => {

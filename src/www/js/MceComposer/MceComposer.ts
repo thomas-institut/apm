@@ -15,7 +15,6 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
  */
-
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {MceData} from '@/MceData/MceData';
 import {EditionPanel} from './EditionPanel';
@@ -36,20 +35,19 @@ import {ApparatusTools} from '@/Edition/ApparatusTools';
 import {ApparatusEntry} from '@/Edition/ApparatusEntry';
 import {ApparatusSubEntry} from '@/Edition/ApparatusSubEntry';
 import {EditableTextField} from '@/widgets/EditableTextField';
-import {TimeString} from '@/toolbox/TimeString';
 import {BasicProfiler} from '@/toolbox/BasicProfiler';
-import {CtData} from '@/CtData/CtData';
 import {urlGen} from '@/pages/common/SiteUrlGen';
 import {ApmPage, ApmPageOptions} from '@/pages/ApmPage';
 import {ApmFormats} from '@/pages/common/ApmFormats';
-import {IndexedDbAux} from '@/toolbox/KeyCache/IndexedDbAux';
 import {ChunkInMceData, MceDataInterface, WitnessInMceData} from "@/MceData/MceDataInterface";
-import {SingleChunkApiData} from "@/MceComposer/MceComposerInterfaces";
 import {CtDataInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {FoliationChangeInfoInterface} from "@/Edition/FoliationChangeInfoInterface";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {Apparatus} from "@/Edition/Apparatus";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
+import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
+import '../../node_modules/datatables.net-dt/css/jquery.dataTables.min.css';
+import './MceComposer.css';
 
 const defaultIcons = {
   moveUp: '&uarr;',
@@ -111,7 +109,6 @@ interface MceComposerIcons {
 }
 
 export class MceComposer extends ApmPage {
-  private dbCache: IndexedDbAux;
   private options: any;
   private icons: MceComposerIcons;
   private errorDetected: boolean;
@@ -147,8 +144,6 @@ export class MceComposer extends ApmPage {
         editionId: {type: 'number', required: true}, langDef: {type: 'object', default: defaultLanguageDefinition},
       }
     });
-
-    this.dbCache = new IndexedDbAux('APM', 1, 'CtData');
 
     this.options = oc.getCleanOptions(options);
     this.icons = defaultIcons;
@@ -188,7 +183,6 @@ export class MceComposer extends ApmPage {
 
   async _init() {
     await this.constructorPromise;
-    await this.dbCache.initialize();
     await this._init_setupUi();
     await this._init_saveArea();
     await this._init_loadEdition();
@@ -701,37 +695,37 @@ export class MceComposer extends ApmPage {
    * @return {Promise<SingleChunkApiData>}
    */
   getSingleChunkData(tableId: number, versionTimeString: string = '', useCache: boolean = true): Promise<SingleChunkApiData> {
-    return new Promise(async (resolve, reject) => {
-      let dbKey = `CtData-${tableId}-${TimeString.compactEncode(versionTimeString)}`;
-      if (versionTimeString !== '' && useCache) {
-        let cachedData = await this.dbCache.retrieve(dbKey);
-        if (cachedData !== null) {
-          const versionInfo = await this.apiClient.collationTableVersionInfo(tableId, versionTimeString);
-          if (versionInfo !== null) {
-            cachedData.isLatestVersion = versionInfo.isLatestVersion;
-            resolve(cachedData);
-            return;
-          }
-        }
-      }
-      // really get from server
-      let url = urlGen.apiCollationTable_get(tableId, TimeString.compactEncode(versionTimeString));
-      this.apiClient.get(url).then(async (data) => {
-        /** @var {SingleChunkApiData} data */
-        console.log(`Got data table ${tableId}, timeStamp '${versionTimeString}'`);
-        console.log(data);
-        data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData);
-        // cache doc info
-        for (const docInfo of data.docInfo) {
-          await this.cache.store(`DOC-${docInfo['docId']}`, docInfo);
-        }
-        // cache data
-        await this.dbCache.store(dbKey, data);
-        resolve(data);
-      }, (error) => {
-        reject(error);
-      });
-    });
+    return this.apiClient.getSingleChunkData(tableId, versionTimeString, useCache)
+    // return new Promise(async (resolve, reject) => {
+    //   let dbKey = `CtData-${tableId}-${TimeString.compactEncode(versionTimeString)}`;
+    //   if (versionTimeString !== '' && useCache) {
+    //     let cachedData = await this.dbCache.retrieve(dbKey);
+    //     if (cachedData !== null) {
+    //       const versionInfo = await this.apiClient.collationTableVersionInfo(tableId, versionTimeString);
+    //       if (versionInfo !== null) {
+    //         cachedData.isLatestVersion = versionInfo.isLatestVersion;
+    //         resolve(cachedData);
+    //         return;
+    //       }
+    //     }
+    //   }
+    //   // really get from server
+    //   let url = urlGen.apiCollationTable_get(tableId, TimeString.compactEncode(versionTimeString));
+    //   this.apiClient.get(url).then(async (data: SingleChunkApiData) => {
+    //     console.log(`Got data table ${tableId}, timeStamp '${versionTimeString}'`);
+    //     console.log(data);
+    //     data.ctData = CtData.getCleanAndUpdatedCtData(data.ctData);
+    //     // cache doc info
+    //     for (const docInfo of data.docInfo) {
+    //       await this.cache.store(`DOC-${docInfo['docId']}`, docInfo);
+    //     }
+    //     // cache data
+    //     await this.dbCache.store(dbKey, data);
+    //     resolve(data);
+    //   }, (error) => {
+    //     reject(error);
+    //   });
+    // });
   }
 
   /**
@@ -1240,8 +1234,8 @@ export class MceComposer extends ApmPage {
     });
 
     // tab arrays
-    let panelOneTabs = [TabConfig.createTabConfig(editionPanelId, 'Edition', this.editionPanel), TabConfig.createTabConfig(chunkSearchPanelId, 'Chunk Search', this.chunkSearchPanel),];
-    let panelTwoTabs = [TabConfig.createTabConfig(previewPanelId, 'Preview', this.previewPanel),];
+    let panelOneTabs = [TabConfig.createTabSpec(editionPanelId, 'Edition', this.editionPanel), TabConfig.createTabSpec(chunkSearchPanelId, 'Chunk Search', this.chunkSearchPanel),];
+    let panelTwoTabs = [TabConfig.createTabSpec(previewPanelId, 'Preview', this.previewPanel),];
 
     this.multiPanelUI = new MultiPanelUI({
       logo: `<a href="${urlGen.siteHome()}" title="Home">

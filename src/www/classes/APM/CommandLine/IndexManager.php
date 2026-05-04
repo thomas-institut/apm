@@ -23,7 +23,6 @@ namespace APM\CommandLine;
 use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\System\ApmConfigParameter;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Lemmatizer;
@@ -33,15 +32,8 @@ use APM\System\Transcription\TxText\Item;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\DateTimeFormat;
 use Exception;
-use stdClass;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
-use Typesense\Client;
-use Typesense\Exceptions\ConfigError;
 use Typesense\Exceptions\TypesenseClientError;
-use GuzzleHttp\Client as HttpClient;
-
-
-
 
 /**
  * Description of IndexManager
@@ -106,23 +98,23 @@ class IndexManager extends CommandLineUtility
         if (!isset($argv[4])) {$argv[4] = "";}
 
         switch ($operation) {
-            case 'csvFromDocTitles':
-                $this->createCsvTablesFromDocTitles();
-                break;
-
-            case 'csvFromDare':
-                $this->createCsvTableWithInstitutionCodesAndNames();
-                break;
-
-            case 'cityNames':
-                $city = $this->getCityNamesByUNLocode($argv[3]);
-                print_r($city);
-                break;
-
-            case 'countryNames':
-                $country = $this->getCountryNamesByAlpha2($argv[3]);
-                print_r($country);
-                break;
+//            case 'csvFromDocTitles':
+//                $this->createCsvTablesFromDocTitles();
+//                break;
+//
+//            case 'csvFromDare':
+//                $this->createCsvTableWithInstitutionCodesAndNames();
+//                break;
+//
+//            case 'cityNames':
+//                $city = $this->getCityNamesByUNLocode($argv[3]);
+//                print_r($city);
+//                break;
+//
+//            case 'countryNames':
+//                $country = $this->getCountryNamesByAlpha2($argv[3]);
+//                print_r($country);
+//                break;
 
             case 'build': // create new or replace existing index with a specific name
                 $this->buildIndex();
@@ -212,7 +204,9 @@ END;
     }
 
     /**
-     * Builds the transcriptions or editions index in open search after getting all relevant data from the sql database. Deletes already existing transcriptions or editions index.
+     * Builds the transcriptions or editions index in typesense after getting all relevant data from the sql database.
+     * Deletes already existing transcriptions or editions index.
+     *
      * @return void
      * @throws DocumentNotFoundException
      * @throws EntityDoesNotExistException
@@ -336,14 +330,15 @@ END;
     }
 
     /**
-     * @param string $doc_id
+     * @param int $docId
      * @return string
      * @throws DocumentNotFoundException
      */
-    public function getTitle(string $doc_id): string
+    public function getTitle(int $docId): string
     {
-        $doc_info = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int)$doc_id);
-        return $doc_info['title'];
+        return $this->getSystemManager()->getDocumentManager()->getDocInfo($docId)->title;
+//        $doc_info = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int)$doc_id);
+//        return $doc_info['title'];
     }
 
     /**
@@ -408,14 +403,7 @@ END;
         }
     }
 
-    /**
-     * @param string $pageId
-     * @return string
-     * @throws PageNotFoundException
-     */
-    private function getLang(string $pageId): string
-    {
-        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageId)->lang;
+    private function getLangCode(int $langId) : string | bool{
 
         return match ($langId) {
             Entity::LangLatin => 'la',
@@ -424,7 +412,17 @@ END;
             Entity::LangJudeoArabic => 'jrb',
             default => false,
         };
+    }
 
+    /**
+     * @param string $pageId
+     * @return string
+     * @throws PageNotFoundException
+     */
+    private function getLang(string $pageId): string
+    {
+        $langId = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageId)->lang;
+        return $this->getLangCode($langId);
     }
 
     /**
@@ -496,9 +494,9 @@ END;
 
     /**
      * Adds a new item to the transcription or editions index.
-     * @param string $arg1 , page ID in case of transcriptions, table ID for editions
-     * @param string|null $arg2 column no. in case of transcriptions
-     * @param string|null $id , open search id for the item, only necessary when an already indexed item with a given id becomes updated
+     * @param string $tableOrDocId , page ID in case of transcriptions, table ID for editions
+     * @param string|null $columnNumber column no. in case of transcriptions
+     * @param string|null $indexId , open search id for the item, only necessary when an already indexed item with a given id becomes updated
      * @param string|null $context , determines if the method is called in an updating process and if so, modifies its behavior slightly
      * @return void
      * @throws DocumentNotFoundException
@@ -506,15 +504,15 @@ END;
      * @throws InvalidTimeStringException
      * @throws PageNotFoundException
      */
-    private function addItem(string $arg1, string $arg2 = null, string $id = null, string $context = null): void
+    private function addItem(string $tableOrDocId, string $columnNumber = null, string $indexId = null, string $context = null): void
     {
 
-        if ($this->isAlreadyIndexed($arg1, $arg2) and $context !== 'update') {
+        if ($this->isAlreadyIndexed($tableOrDocId, $columnNumber) and $context !== 'update') {
             print ("Item is already indexed in the corresponding index. Do you want to update it? (y/n)\n");
             $input = rtrim(fgets(STDIN));
 
             if ($input === 'y') {
-                $this->updateItem($arg1, $arg2);
+                $this->updateItem($tableOrDocId, $columnNumber);
             }
 
             return;
@@ -526,10 +524,10 @@ END;
 
         switch ($this->indexNamePrefix) {
             case 'transcriptions':
-                $this->addItemToTranscriptionsIndex($arg1, $arg2, $id);
+                $this->addItemToTranscriptionsIndex(intval($tableOrDocId), intval($columnNumber), $indexId);
                 break;
             case 'editions':
-                $this->addItemToEditionsIndex($arg1, $id);
+                $this->addItemToEditionsIndex($tableOrDocId, $indexId);
                 break;
         }
 
@@ -537,26 +535,28 @@ END;
 
     /**
      * Returns the doc id of a transcribed page.
-     * @param string $pageID
+     * @param string $pageId
      * @return string
      * @throws DocumentNotFoundException|PageNotFoundException
      */
-    private function getDocIdByPageId(string $pageID): string
+    private function getDocIdByPageId(string $pageId): int
     {
 
-        $docList = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        return $this->getSystemManager()->getDocumentManager()->getPageInfo(intval($pageId))->docId;
 
-        foreach ($docList as $doc) {
-            $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc);
-            foreach ($pages_transcribed as $page_transcribed) {
-                $currentPageID = $this->getPageId($doc, $page_transcribed);
-                if ((string)$currentPageID === $pageID) {
-                    return $doc;
-                }
-            }
-        }
-
-        return '';
+//        $docList = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+//
+//        foreach ($docList as $doc) {
+//            $pages_transcribed = $this->getSystemManager()->getTranscriptionManager()->getTranscribedPageListByDocId($doc);
+//            foreach ($pages_transcribed as $page_transcribed) {
+//                $currentPageID = $this->getPageId($doc, $page_transcribed);
+//                if ((string)$currentPageID === $pageId) {
+//                    return $doc;
+//                }
+//            }
+//        }
+//
+//        return '';
     }
 
 
@@ -1109,45 +1109,44 @@ END;
 
     /**
      * Adds a transcription to the index.
-     * @param string $pageID
-     * @param string $col
-     * @param string|null $id , null if the adding is not part of an updating process
+     * @param int $pageId
+     * @param int $col
+     * @param string|null $indexId , null if adding a new transcription
      * @return void
      * @throws DocumentNotFoundException
-     * @throws EntityDoesNotExistException
      * @throws InvalidTimeStringException
      * @throws PageNotFoundException
+     * @throws \Throwable
      */
-    private function addItemToTranscriptionsIndex (string $pageID, string $col, string $id = null): void {
+    private function addItemToTranscriptionsIndex (int $pageId, int $col, string $indexId = null): void {
 
-        try {
-            $doc_id = $this->getDocIdByPageId($pageID);
-        } catch (DocumentNotFoundException|PageNotFoundException) {
-            print("No transcription in database with page id $pageID and column number $col.\n");
+        $pageInfo = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageId);
+        $docInfo = $this->getSystemManager()->getDocumentManager()->getDocInfo($pageInfo->docId);
+        $docId = $docInfo->id;
+        $title = $docInfo->title;
+        $page = $pageInfo->pageNumber;
+        $seq = $pageInfo->sequence;
+        $foliation = $pageInfo->foliation;
+
+        $lang = $this->getLangCode($pageInfo->lang);
+        $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
+        $versions = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
+        if (count($versions) === 0) {
+            print("No transcription in database with page id $pageId and column number $col.\n");
             return;
         }
-        // Get other relevant data for indexing
-        $title = $this->getTitle($doc_id);
-        $page = $this->getSystemManager()->getDocumentManager()->getPageInfo($pageID)->pageNumber;
-        $seq = $this->getSeq($doc_id, $page);
-        $foliation = $this->getFoliation($doc_id, $page);
-        $transcriber = $this->getTranscriber($doc_id, $page, $col);
-        $transcription = $this->getTranscription($doc_id, $page, $col);
-        $lang = $this->getLang($pageID);
+        $currentVersionInfo = $versions[count($versions) - 1];
 
-        // Get timestamp
-        $versionManager = $this->getSystemManager()->getTranscriptionManager()->getColumnVersionManager();
-        $versions = $versionManager->getColumnVersionInfoByPageCol($pageID, $col);
-        $currentVersionInfo = (array)(end($versions));
-        $timeFrom = (string) $currentVersionInfo['timeFrom'];
+        $timeFrom = $currentVersionInfo->timeFrom;
+        $transcriber = $currentVersionInfo->authorTid;
 
         if ($timeFrom === '') {
-            print("No transcription in database with page id $pageID and column number $col.\n");
+            print("No transcription in database with page id $pageId and column number $col.\n");
             return;
         }
-
-        $this->indexTranscription($this->getSystemManager()->getTypesenseClient(), $id, $title, $page, $seq, $foliation, $col, $transcriber, $pageID, $doc_id, $transcription, $lang, $timeFrom);
-
+        $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($pageId, $col);
+        $transcription = $this->getPlainTextFromElements($elements);
+        $this->indexTranscription($this->getSystemManager()->getTypesenseClient(), $indexId, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
     }
 
     /**

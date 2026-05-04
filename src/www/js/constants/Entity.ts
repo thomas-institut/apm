@@ -1,5 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
+export const MaxSystemEntityId = 10000000;
+
 // System Entity
 export const System = 1;
 

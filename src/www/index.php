@@ -162,13 +162,6 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
             })
             ->setName('person');
 
-        // Entity admin page
-        $group->get('/entity/{tid}/admin',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteEntity($container))->adminEntityPage($request, $response);
-            })
-            ->setName('entity');
-
         $group->get('/work/{work}/chunk/{chunk}',
             function (Request $request, Response $response) use ($container) {
                 return (new SiteChunkPage($container))->singleChunkPage($request, $response);
@@ -198,7 +191,7 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
             ->setName('chunk.collation-table.custom');
 
         // edit collation table
-        $group->get('/collation-table/{tableId}[/{versionId}]',
+        $group->get('/collation-table/{tableId}[/{version}]',
             function (Request $request, Response $response) use ($container) {
                 return (new SiteCollationTable($container))->editCollationTable($request, $response);
             })
@@ -210,7 +203,7 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
                 return (new SiteCollationTable($container))->newChunkEdition($request, $response);
             })->setName('chunk-edition.new');
 
-        $group->get('/chunk-edition/{tableId}[/{versionId}]',
+        $group->get('/chunk-edition/{tableId}[/{version}]',
             function (Request $request, Response $response) use ($container) {
                 return (new SiteCollationTable($container))->editCollationTable($request, $response);
             })->setName('chunk-edition.edit');
@@ -219,13 +212,13 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
         // MULTI-CHUNK EDITION
         $group->get('/multi-chunk-edition/new',
             function (Request $request, Response $response) use ($container) {
-                return (new SiteMultiChunkEdition($container))->newMultiChunkEdition($response);
+                return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response, true);
             }
         )->setName('mce.new');
 
         $group->get('/multi-chunk-edition/{editionId}',
             function (Request $request, Response $response) use ($container) {
-                return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response);
+                return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response, false);
             }
         )->setName('mce.edit');
 
@@ -276,7 +269,7 @@ function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container)
 {
     $app->group('/api', function (RouteCollectorProxy $group) use ($container) {
         $group->post('/login', function (Request $request, Response $response) use ($container) {
-            return (new Authenticator($container))->login($request, $response, false);
+            return (new Authenticator($container))->apiLogin($request, $response);
         });
     });
 }
@@ -596,9 +589,13 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
         return (new ApiEntity($container))->getEntitiesForType($request, $response);
     })->setName("api.entity.entities");
 
-    $group->get("/entity/{id}/predicateDefinitions", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->getPredicateDefinitions($request, $response);
-    })->setName("api.entity.predicateDefinitions");
+    $group->get("/entity/{id}/predicateDefinitionsForType", function (Request $request, Response $response) use ($container) {
+        return (new ApiEntity($container))->getPredicateDefinitionsForType($request, $response);
+    })->setName("api.entity.predicateDefinitionsForType");
+
+    $group->get("/entity/{id}/predicateDefinition", function (Request $request, Response $response) use ($container) {
+        return (new ApiEntity($container))->getPredicateDefinition($request, $response);
+    })->setName("api.entity.predicateDefinition");
 
     $group->get("/entity/{tid}/data", function (Request $request, Response $response) use ($container) {
         return (new ApiEntity($container))->getEntityData($request, $response);

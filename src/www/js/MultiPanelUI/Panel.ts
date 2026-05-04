@@ -20,7 +20,7 @@
 export interface PanelOptions {
   verbose?: boolean;
   debug?: boolean;
-  containerSelector?: string;
+  containerSelector: string;
 }
 
 /**
@@ -34,16 +34,12 @@ export class Panel {
   protected visible: boolean;
   protected mode: string;
 
-  constructor(options: PanelOptions = {}) {
+  constructor(options: PanelOptions) {
     this.verbose = options.verbose ?? false;
     this.debug = options.debug ?? false;
     if (this.debug) {
       this.verbose = true;
     }
-    if (options.containerSelector === undefined) {
-      throw new Error('Panel constructor: containerSelector is required');
-    }
-
     this.containerSelector = options.containerSelector;
     this.visible = false;
     this.mode = '';

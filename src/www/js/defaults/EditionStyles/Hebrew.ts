@@ -7,6 +7,12 @@ export const defaultHebrewEditionStyle: StyleSheetDefinition = {
     name: 'Default',
     description: 'A4 paper, Linux Libertine'
   },
+  fontConversions: [
+    {
+      from: { script: 'ar' },
+      to: { fontFamily: 'Noto Naskh Arabic', fontSizeFactor: 0.9 }
+    }
+  ],
   default: {
     strings : {
       omission: 'חסר',
@@ -77,13 +83,6 @@ export const defaultHebrewEditionStyle: StyleSheetDefinition = {
       shiftY: "0.6 em"
     }
   },
-  hebrewText: {
-  },
-  latinText: {
-    text: {
-      fontFamily: 'FreeSerif'
-    }
-  },
   normal: {
     parent: 'default',
     paragraph: {
@@ -99,7 +98,8 @@ export const defaultHebrewEditionStyle: StyleSheetDefinition = {
     paragraph: {
       align: 'center',
       spaceBefore: '2 em',
-      spaceAfter: '1 em'
+      spaceAfter: '1 em',
+      keepWithNext: true
     }
   },
   h2: {
@@ -110,7 +110,8 @@ export const defaultHebrewEditionStyle: StyleSheetDefinition = {
     },
     paragraph: {
       spaceBefore: '1 em',
-      spaceAfter: '0.5 em'
+      spaceAfter: '0.5 em',
+      keepWithNext: true
     }
   },
   h3: {
@@ -120,7 +121,8 @@ export const defaultHebrewEditionStyle: StyleSheetDefinition = {
     },
     paragraph: {
       spaceBefore: '0.5 em',
-      spaceAfter: '0.25 em'
+      spaceAfter: '0.25 em',
+      keepWithNext: true
     }
   },
   apparatus: {
@@ -129,7 +131,7 @@ export const defaultHebrewEditionStyle: StyleSheetDefinition = {
       fontSize: "11 pt",
     },
     paragraph: {
-      lineSkip: "14 pt"
+      lineSkip: "14.5 pt"
     },
     glue: {
       width: "0.25 em",

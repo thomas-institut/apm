@@ -58,13 +58,13 @@ export class Typesetter2 {
    * to the typesetter) and inter-line glue.
    *
    */
-  typesetHorizontalList(list: ItemList): Promise<ItemList> {
+  async typesetHorizontalList(list: ItemList): Promise<ItemList> {
     // performs type checks and returns the input list if there's no problem
     // the actual typesetting work should be done by a child of this class
-    if (list.getDirection() !== TypesetterItemDirection.HORIZONTAL) {
+    if (list.getDirection() !== TypesetterItemDirection.HorizontalItemDirection) {
       throw new Error('typesetHorizontalList called with a vertical list');
     }
-    return Promise.resolve(list);
+    return list;
   }
 
   /**
@@ -73,16 +73,14 @@ export class Typesetter2 {
    *
    * In essence, splits a vertical list into pages
    *
-   * @param {ItemList}list
-   * @return {Promise<ItemList>}
    */
-  typesetVerticalList(list: ItemList): Promise<ItemList> {
+  async typesetVerticalList(list: ItemList): Promise<ItemList> {
     // performs type checks and returns the input list if there's no problem
     // the actual typesetting work should be done by a child of this class
-    if (list.getDirection() !== TypesetterItemDirection.VERTICAL) {
+    if (list.getDirection() !== TypesetterItemDirection.VerticalItemDirection) {
       throw new Error('typesetVerticalList called with a horizontal list');
     }
-    return Promise.resolve(list);
+    return list;
   }
 
   /**
@@ -100,8 +98,8 @@ export class Typesetter2 {
    * @param {any} _data
    * @return {Promise<TypesetterDocument>}
    */
-  typeset(_list: ItemList, _data: any = null): Promise<TypesetterDocument> {
-    return Promise.resolve(new TypesetterDocument());
+  async typeset(_list: ItemList, _data: any = null): Promise<TypesetterDocument> {
+    return new TypesetterDocument();
   }
 
 

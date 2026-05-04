@@ -16,10 +16,8 @@
  *
  */
 
-// @ts-ignore
-import { Matrix } from '@thomas-inst/matrix'
-import * as ArrayUtil from '../../lib/ToolBox/ArrayUtil'
 import {WitnessInterface} from "@/CtData/CtDataInterface";
+import {Matrix} from "@/lib/Matrix";
 
 /**
  * Generates a matrix with all the textual variants in all columns ranked
@@ -28,8 +26,8 @@ import {WitnessInterface} from "@/CtData/CtDataInterface";
  * @param witnessOrder  array that maps the row indexes in refMatrix to the indexes in the witnesses array;  order[refMatrixRow] = witnessIndex
  * @param refWitness if other than -1, the variant for this witness will have the highest rank
  */
-export function genVariantsMatrix(refMatrix: Matrix, witnesses: WitnessInterface[], witnessOrder: number[], refWitness = -1): Matrix {
-  let variantMatrix = new Matrix(refMatrix.nRows, refMatrix.nCols)
+export function genVariantsMatrix(refMatrix: Matrix<number>, witnesses: WitnessInterface[], witnessOrder: number[], refWitness = -1): Matrix<number> {
+  let variantMatrix = new Matrix<number>(refMatrix.nRows, refMatrix.nCols, -1)
 
   for (let col=0; col < refMatrix.nCols; col++) {
     let refCol = refMatrix.getColumn(col)
@@ -74,14 +72,14 @@ export function genVariantsMatrix(refMatrix: Matrix, witnesses: WitnessInterface
 }
 
 
-/**
- * compares two arrays of arrays to see if they're equal
- * @param matrix1
- * @param matrix2
- */
-export function collationMatricesAreEqual(matrix1: Matrix, matrix2: Matrix) {
-  return ArrayUtil.arraysAreEqual(matrix1, matrix2, function(a,b){return a===b}, 2)
-}
+// /**
+//  * compares two arrays of arrays to see if they're equal
+//  * @param matrix1
+//  * @param matrix2
+//  */
+// export function collationMatricesAreEqual(matrix1: Matrix, matrix2: Matrix) {
+//   return ArrayUtil.arraysAreEqual(matrix1, matrix2, function(a,b){return a===b}, 2)
+// }
 
 function rankVariants(stringArray: string[], referenceString: string, debug = false) {
   debug && console.log(`Ranking Variants `)

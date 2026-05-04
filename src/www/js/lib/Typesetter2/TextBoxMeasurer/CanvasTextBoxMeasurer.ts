@@ -44,11 +44,13 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
   }
 
   getBoxWidth(textBox: TextBox): Promise<number> {
+    const debug = textBox.getText() === 'que' || textBox.getText() === '-';
     if (this.useCache) {
       let cacheKey = this.getCacheKeyForTextBox(textBox);
       let cachedWidth = this.widthCache.get(cacheKey);
       if (cachedWidth !== undefined) {
         this.debug && console.log(`Getting width from cache`);
+        debug && console.log(`Cache hit for ${cacheKey}`, cachedWidth);
         this.cacheHits++;
         return Promise.resolve(cachedWidth);
       }
@@ -63,6 +65,7 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
     let fontVariant = 'normal';
     context.font = `${fontStyle} ${fontVariant} ${fontWeight} ${textBox.getFontSize()}px ${textBox.getFontFamily()}`;
     let metrics = context.measureText(textBox.getText());
+    debug && console.log(`Measured width for '${textBox.getText()}': ${metrics.width}`);
     return Promise.resolve(metrics.width);
   }
 

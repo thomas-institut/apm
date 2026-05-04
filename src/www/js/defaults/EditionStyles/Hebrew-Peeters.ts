@@ -7,6 +7,20 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
     name: 'Peeters Journal',
     description: 'A4 paper, SBL Hebrew'
   },
+  fontConversions: [
+    {
+      from: { script: 'ar' },
+      to: { fontFamily: 'Amiri' }
+    },
+    {
+      from: { script: 'la'},
+      to: { fontFamily: 'EB Garamond'}
+    },
+    {
+      from: { script: 'el'},
+      to: { fontFamily: 'EB Garamond'}
+    }
+  ],
   default: {
     strings : {
       omission: 'חסר',
@@ -99,7 +113,8 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
     paragraph: {
       align: 'center',
       spaceBefore: '2 em',
-      spaceAfter: '1 em'
+      spaceAfter: '1 em',
+      keepWithNext: true
     }
   },
   h2: {
@@ -110,7 +125,8 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
     },
     paragraph: {
       spaceBefore: '1 em',
-      spaceAfter: '0.5 em'
+      spaceAfter: '0.5 em',
+      keepWithNext: true
     }
   },
   h3: {
@@ -120,16 +136,17 @@ export const hebrewPeetersJournal: StyleSheetDefinition = {
     },
     paragraph: {
       spaceBefore: '0.5 em',
-      spaceAfter: '0.25 em'
+      spaceAfter: '0.25 em',
+      keepWithNext: true
     }
   },
   apparatus: {
     parent: "default",
     text: {
-      fontSize: "11 pt",
+      fontSize: "9.4 pt",
     },
     paragraph: {
-      lineSkip: "14 pt"
+      lineSkip: "10.54 pt"
     },
     glue: {
       width: "0.25 em",

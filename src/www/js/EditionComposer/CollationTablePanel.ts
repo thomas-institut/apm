@@ -22,8 +22,7 @@
  *
  *  - Collation table manipulation: moving, grouping, normalizations
  */
-import {OptionsChecker} from '@thomas-inst/optionschecker';
-import {PanelWithToolbar} from '@/MultiPanelUI/PanelWithToolbar';
+import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
 import {MultiToggle, optionChange} from '@/widgets/MultiToggle';
 import {NiceToggle, toggleEvent} from '@/widgets/NiceToggle';
 import {NormalizerRegister} from '@/pages/common/NormalizerRegister';
@@ -31,16 +30,24 @@ import * as ArrayUtil from '../lib/ToolBox/ArrayUtil';
 import * as NormalizationSource from '../constants/NormalizationSource';
 import * as TranscriptionTokenType from '../Witness/WitnessTokenType';
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
-import {defaultLanguageDefinition} from '@/defaults/languages';
+import {defaultLanguageDefinition, LanguageDefinition} from '@/defaults/languages';
 import {
-  columnClearSelectionEvent,
-  columnGroupEvent,
-  columnSelectEvent,
-  columnUngroupEvent,
-  editModeGroup,
-  editModeOff,
-  TableEditor
-} from '@/pages/common/TableEditor';
+  CellPostShiftEvent,
+  CellPreShiftEvent,
+  CellShiftEvent,
+  ColumnClearSelectionEvent,
+  ColumnGroupEvent,
+  ColumnSelectEvent,
+  ColumnUngroupEvent,
+  ContentChangedEvent,
+  EditMode,
+  EditModeGroup,
+  EditModeOff,
+  PreTableDrawnEvent,
+  RowDefinition,
+  TableEditor,
+  ValueChangeReport
+} from '@/pages/common/TableEditor/TableEditor';
 import * as WitnessType from '../Witness/WitnessType';
 import * as TokenClass from '../Witness/WitnessTokenClass';
 import * as Util from '../toolbox/Util';
@@ -55,11 +62,21 @@ import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
 import {Punctuation} from '@/defaults/Punctuation';
 import {ToolbarCharacter, toolbarCharactersDefinition,} from '@/EditionComposer/ToolbarCharactersDefinition';
 import {SimpleConfirmDialog} from '@/pages/common/SimpleConfirmDialog';
-import {CtDataInterface, FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface} from "@/CtData/CtDataInterface";
-// @ts-expect-error No TS definitions for matrix yet
-import {Matrix} from "@thomas-inst/matrix";
-import {FmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {
+  CtDataInterface,
+  FullTxItemEditorialNote,
+  FullTxItemInterface,
+  NonTokenItemIndex,
+  WitnessTokenInterface
+} from "@/CtData/CtDataInterface";
+
+import {FmtText, fromString, getPlainText} from "@/lib/FmtText/FmtText";
 import * as FmtTextTokenType from "@/lib/FmtText/FmtTextTokenType";
+import {deepCopy} from "@/toolbox/Util";
+import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
+import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
+import {createDelayer} from "@/toolbox/Delayer";
+import {Matrix} from "@/lib/Matrix";
 
 
 interface ViewSettings {
@@ -68,21 +85,32 @@ interface ViewSettings {
   showWitnessTitles: boolean;
 }
 
+interface CollationTablePanelOptions extends PanelWithToolbarOptions {
+  ctData: CtDataInterface;
+  langDef?: Record<string,LanguageDefinition>;
+  normalizerRegister: NormalizerRegister;
+  textDirection: string;
+  icons: Record<string, string>;
+  peopleInfo?: Record<number, PersonEssentialData>,
+  onCtDataChange?: (ctData: CtDataInterface) => void,
+  editApparatusEntry?: (appIndex: number, ctIndexFrom: number, ctIndexTo: number) => void,
+}
+
 export class CollationTablePanel extends PanelWithToolbar {
-  private options: any;
+  private options: Required<CollationTablePanelOptions>;
   private ctData: CtDataInterface;
   private readonly lang: string;
-  private tableEditModeToRestore: string;
+  private tableEditModeToRestore: EditMode;
   private panelIsSetup: boolean;
   private readonly normalizerRegister: NormalizerRegister;
   private readonly availableNormalizers: string[];
-  private icons: any;
+  private icons: Record<string, string>;
   private readonly textDirection: string;
   private aggregatedNonTokenItemIndexes: NonTokenItemIndex[][];
   private readonly toolbarCharacters: ToolbarCharacter[];
   private viewSettings: ViewSettings;
   private popoversAreOn: boolean = true;
-  private tableEditor!: TableEditor;
+  private tableEditor!: TableEditor<number>;
   private tokenDataCache: any;
   private normalizationSettingsButton!: JQuery<HTMLElement>;
   private savedNormalizerSettings!: string[];
@@ -93,33 +121,28 @@ export class CollationTablePanel extends PanelWithToolbar {
   private exportCsvButton!: JQuery<HTMLElement>;
   private selectedColumnsFrom!: number;
   private selectedColumnsTo!: number;
-  private variantsMatrix: Matrix | null;
+  private variantsMatrix: Matrix<number> | null = null;
+  private readonly delayedOnCtDataChange!: (ctData: CtDataInterface) => void;
 
-  constructor(options = {}) {
+  constructor(options: CollationTablePanelOptions) {
     super(options);
-    let optionsDefinition = {
-      ctData: {type: 'object'},
-      normalizerRegister: {type: 'object', objectClass: NormalizerRegister},
-      icons: {type: 'object', required: true},
-      langDef: {type: 'object', default: defaultLanguageDefinition},
-      peopleInfo: {type: 'object', default: []},
-      onCtDataChange: {
-        type: 'function', default: () => {
-          this.verbose && console.log(`New CT data, but no handler for change`);
-        }
-      },
-      editApparatusEntry: {
-        type: 'function', default: () => {
-        }
-      }
-    };
 
-    let oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: 'Collation Table Panel'});
-    this.options = oc.getCleanOptions(options);
+    const defaults: OptionalPropsRequired<CollationTablePanelOptions>= {
+      maximizeContentArea: this.maximizeContentArea,
+      contentAreaId: this.contentAreaId,
+      debug: this.debug,
+      verbose: this.verbose,
+      peopleInfo: [],
+      onCtDataChange: () => {},
+      editApparatusEntry: () => {},
+      langDef: defaultLanguageDefinition
+    }
+
+    this.options = {...defaults, ...options}
     this.debug = true;
     this.ctData = CtData.copyFromObject(this.options.ctData);
     this.lang = this.ctData.lang;
-    this.tableEditModeToRestore = editModeOff;
+    this.tableEditModeToRestore = EditModeOff;
     this.panelIsSetup = false;
     this.normalizerRegister = this.options.normalizerRegister;
     this.availableNormalizers = this.normalizerRegister.getRegisteredNormalizers();
@@ -129,6 +152,11 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.aggregatedNonTokenItemIndexes = this.calculateAggregatedNonTokenItemIndexes();
     this.debug && console.log(`Aggregated non-token item indexes`, this.aggregatedNonTokenItemIndexes);
     const toolBarCharsDef = toolbarCharactersDefinition[this.ctData.lang];
+    const matrixSize = this.getCtDataMatrixSize();
+    const delay = Math.round(matrixSize / 25);
+    console.log(`Collation table matrix size: ${matrixSize}, delay: ${delay}ms`)
+
+    this.delayedOnCtDataChange = createDelayer((ctData) => this.options.onCtDataChange(ctData), delay);
 
     this.toolbarCharacters = Object.keys(toolBarCharsDef).map(char => toolBarCharsDef[char]);
 
@@ -144,6 +172,13 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   getContentAreaClasses() {
     return super.getContentAreaClasses().concat([`${this.textDirection}text`]);
+  }
+
+  private getCtDataMatrixSize(): number {
+    if (this.ctData.collationMatrix.length === 0) {
+      return 0;
+    }
+    return this.ctData.collationMatrix.length * this.ctData.collationMatrix[0].length;
   }
 
 
@@ -358,7 +393,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   _genOnClickToolbar() {
     return (ev: any) => {
-      if (this.tableEditor.tableEditMode !== editModeGroup) {
+      if (this.tableEditor.tableEditMode !== EditModeGroup) {
         return;
       }
       let target = $(ev.target);
@@ -535,7 +570,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     // this.verbose && console.log(`New CT Data after automatic normalizations: [${normalizationsToApply.join(', ')}]`)
     // this.verbose && console.log(this.ctData)
 
-    this.options.onCtDataChange(this.ctData);
+    this.delayedOnCtDataChange(this.ctData);
+    // this.options.onCtDataChange(this.ctData);
 
     // Update UI
     this.resetTokenDataCache();
@@ -544,30 +580,28 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   _popoversGenContentFunction() {
-    // need to use thisObject because 'this' in the popover function is bound to the element for which the popover is shown
+    // need to use thisCtPanel because 'this' in the popover function is bound to the element for which the popover is shown
     // and that is needed to get the cell index
-    let thisObject = this;
-    return function () {
-
-      if (!thisObject.popoversAreOn) {
+    let thisCtPanel = this;
+    return function (): string {
+      if (!thisCtPanel.popoversAreOn) {
         return '';
       }
-
-      // @ts-ignore
-      let cellIndex = thisObject.tableEditor._getCellIndexFromElement($(this));
+      // @ts-expect-error awful use of this, but that's how popovers roll
+      const popoverElement = $(this)[0];
+      let cellIndex = thisCtPanel.tableEditor.getCellIndexFromElement(popoverElement);
       if (cellIndex === null) {
         console.error('Popover requested on a non-cell element!');
         return '';
       }
-
-      if (thisObject.tableEditor.isCellInEditMode(cellIndex.row, cellIndex.col)) {
+      if (thisCtPanel.tableEditor.isCellInEditMode(cellIndex.row, cellIndex.col)) {
         //  this.verbose && console.log(`Cell ${cellIndex.row}:${cellIndex.col} in is cell edit mode`)
         return '';
       }
-      let witnessIndex = thisObject.ctData['witnessOrder'][cellIndex.row];
-      let tokenIndex = thisObject.tableEditor.getValue(cellIndex.row, cellIndex.col);
+      let witnessIndex = thisCtPanel.ctData['witnessOrder'][cellIndex.row];
+      let tokenIndex = thisCtPanel.tableEditor.getValue(cellIndex.row, cellIndex.col);
       //  this.verbose && console.log(`Getting popover for witness index ${witnessIndex}, token ${tokenIndex}, col ${cellIndex.col}`)
-      return thisObject.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col);
+      return thisCtPanel.getPopoverHtml(witnessIndex, tokenIndex, cellIndex.col);
     };
   }
 
@@ -598,8 +632,10 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   _setupPanelContent() {
     this.verbose && console.log(`Setting up CT panel content`);
-    this.replaceContent(`Loading collation table...`);
-    this.popoversSetup();
+    if (this.tableEditor === undefined) {
+      this.replaceContent(`Loading collation table...`);
+      this.popoversSetup();
+    }
     this.setupTableEditor();
     this.verbose && console.log(`Setting tableEditor edit mode '${this.tableEditModeToRestore}'`);
     this.tableEditor.setEditMode(this.tableEditModeToRestore, false);
@@ -607,7 +643,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   setupTableEditor() {
     let collationTable = this.ctData;
-    let rowDefinition = [];
+    let rowDefinition: RowDefinition<number>[] = [];
     let columnsPerRow;
     for (let i = 0; i < collationTable['witnessOrder'].length; i++) {
       let wIndex = collationTable['witnessOrder'][i];
@@ -634,12 +670,21 @@ export class CollationTablePanel extends PanelWithToolbar {
         title: title, values: tokenArray, isEditable: isEditable
       });
     }
+    console.log(`RowDefinition`, rowDefinition);
+    if (this.tableEditor !== undefined) {
+      // no need to do a full setup, just update the data
+      this.tableEditor.setRowDefinition(rowDefinition);
+      this.tableEditor.setGroupedColumns(this.ctData.groupedColumns);
+      this.tableEditor.redrawTable();
+      return;
+    }
+
     let icons = TableEditor.genTextIconSet();
     icons.editCell = this.icons.editText;
     icons.confirmCellEdit = this.icons.confirmEdit;
     icons.cancelCellEdit = this.icons.cancelEdit;
 
-    this.tableEditor = new TableEditor({
+    this.tableEditor = new TableEditor<number>({
       id: this.contentAreaId,
       textDirection: this.textDirection,
       redrawOnCellShift: false,
@@ -671,27 +716,28 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.tableEditor.setOption('canDeleteColumn', this.genCanDeleteColumn());
 
     // hide popovers before moving cells
-    this.tableEditor.on('cell-pre-shift', (data: any) => {
+    this.tableEditor.on(CellPreShiftEvent, (data: any) => {
       for (const selector of data.detail.selectors) {
         $(selector).popover('hide');
       }
     });
 
     // recalculate variants before redrawing the table
-    this.tableEditor.on('table-drawn-pre', () => {
+    this.tableEditor.on(PreTableDrawnEvent, () => {
       thisObject.recalculateVariants();
     });
     // handle cell shifts
-    this.tableEditor.on('cell-post-shift', this.genOnCellPostShift());
+    this.tableEditor.on(CellPostShiftEvent, this.genOnCellPostShift());
 
     this.tableEditor.editModeOn(false);
     this.tableEditor.redrawTable();
-    this.tableEditor.on('cell-shift content-changed', this.genOnCollationChanges());
-    this.tableEditor.on(columnGroupEvent, this.genOnGroupUngroupColumn(true));
-    this.tableEditor.on(columnUngroupEvent, this.genOnGroupUngroupColumn(false));
-    this.tableEditor.on(columnSelectEvent, this.genOnSelectColumns());
-    this.tableEditor.on(columnClearSelectionEvent, this.genOnClearColumnSelection());
-    this.tableEditor.setEditMode(editModeOff);
+    // const delayedOnCollationChanges = createDelayer( () => this.onCollationChanges(), 500)
+    this.tableEditor.on([CellShiftEvent, ContentChangedEvent], () => this.onCollationChanges());
+    this.tableEditor.on(ColumnGroupEvent, this.genOnGroupUngroupColumn(true));
+    this.tableEditor.on(ColumnUngroupEvent, this.genOnGroupUngroupColumn(false));
+    this.tableEditor.on(ColumnSelectEvent, this.genOnSelectColumns());
+    this.tableEditor.on(ColumnClearSelectionEvent, this.genOnClearColumnSelection());
+    this.tableEditor.setEditMode(EditModeOff);
   }
 
   genOnSelectColumns() {
@@ -717,16 +763,14 @@ export class CollationTablePanel extends PanelWithToolbar {
       this.verbose && console.log(`Column ${data.detail.col} ${isGrouped ? 'grouped' : 'ungrouped'}`);
       this.verbose && console.log('New sequence grouped with next');
       this.ctData['groupedColumns'] = data.detail.groupedColumns;
-      this.options.onCtDataChange(this.ctData);
+      this.delayedOnCtDataChange(this.ctData);
     };
   }
 
-  genOnCollationChanges() {
-    return () => {
-      this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor();
-      this.setCsvDownloadFile();
-      this.options.onCtDataChange(this.ctData);
-    };
+  private onCollationChanges() {
+    this.ctData.collationMatrix = this.getCollationMatrixFromTableEditor();
+    this.setCsvDownloadFile();
+    this.delayedOnCtDataChange(this.ctData);
   }
 
   getCollationMatrixFromTableEditor() {
@@ -749,18 +793,18 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   genOnColumnDelete() {
     return (deletedCol: number, isLastDeleted: boolean) => {
-      this.ctData['groupedColumns'] = this.tableEditor.columnSequence.getGroupedNumbers();
-      if (this.ctData['type'] === CollationTableType.COLLATION_TABLE) {
+      this.ctData.groupedColumns = this.tableEditor.columnSequence.getGroupedNumbers();
+      if (this.ctData.type === CollationTableType.COLLATION_TABLE) {
         // nothing else to do for regular collation tables
         return;
       }
       this.syncEditionWitnessAndTableEditorFirstRow();
-      this.ctData['collationMatrix'] = this.getCollationMatrixFromTableEditor();
+      this.ctData.collationMatrix= this.getCollationMatrixFromTableEditor();
       // fix references in custom apparatuses
-      this.ctData['customApparatuses'] = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1);
+      this.ctData.customApparatuses = CtData.fixReferencesInCustomApparatusesAfterColumnAdd(this.ctData, deletedCol, -1);
       this.setCsvDownloadFile();
       if (isLastDeleted) {
-        this.options.onCtDataChange(this.ctData);
+        this.delayedOnCtDataChange(this.ctData);
       }
     };
   }
@@ -814,35 +858,8 @@ export class CollationTablePanel extends PanelWithToolbar {
         this.syncEditionWitnessAndTableEditorFirstRow();
         this.ctData.customApparatuses = CtData.fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(this.ctData, firstCol, lastCol, numCols, direction);
       }
-
+      console.log(`Cell post shift event dispatched`);
       this.recalculateVariants();
-
-      let firstColToRedraw = direction === 'right' ? firstCol : firstCol - numCols;
-      let lastColToRedraw = direction === 'right' ? lastCol + numCols : lastCol;
-
-      new Promise<void>((resolve) => {
-        // TODO: somehow tell the user that something is happening!
-        resolve();
-      })
-      .then(() => {
-        // refresh the cells in the row being shifted
-        for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
-          this.tableEditor.refreshCell(theRow, col);
-          this.tableEditor.setupCellEventHandlers(theRow, col);
-        }
-      })
-      .then(() => {
-        // refresh cell classes of the other cells so that variants are shown
-        for (let col = firstColToRedraw; col <= lastColToRedraw; col++) {
-          for (let row = 0; row < this.variantsMatrix.nRows; row++) {
-            if (row !== theRow) {
-              // this.verbose && console.log(`Refreshing classes for ${theRow}:${col}`)
-              this.tableEditor.refreshCellClasses(row, col);
-            }
-          }
-        }
-        //profiler.lap('classes refreshed')
-      });
     };
   }
 
@@ -852,8 +869,6 @@ export class CollationTablePanel extends PanelWithToolbar {
       refWitness = this.ctData.editionWitnessIndex;
     }
     this.variantsMatrix = CollationTableUtil.genVariantsMatrix(this.tableEditor.getMatrix(), this.ctData.witnesses, this.ctData.witnessOrder, refWitness);
-    // console.log(`Variants recalculated`)
-    // console.log(this.variantsMatrix)
   }
 
   genCanDeleteColumn() {
@@ -867,15 +882,9 @@ export class CollationTablePanel extends PanelWithToolbar {
           let editionWitnessIndex = this.ctData['witnessOrder'][0];
           let editionToken = this.ctData.witnesses[editionWitnessIndex]['tokens'][theMatrixCol[0]];
           if (editionToken !== undefined && editionToken.tokenType !== TranscriptionTokenType.EMPTY) {
-            // an undefined editionToken means that the edition token is empty
             return false;
           }
-          for (let i = 1; i < theMatrixCol.length; i++) {
-            if (theMatrixCol[i] !== -1) {
-              return false;
-            }
-          }
-          return true;
+          return this.tableEditor.isColumnEmpty(col);
 
         default:
           console.warn('Unknown collation table type!');
@@ -942,42 +951,44 @@ export class CollationTablePanel extends PanelWithToolbar {
   }
 
   genOnCellConfirmEditFunction() {
-    return (tableRow: number, col: number, newText: string) => {
-      let witnessIndex = this.ctData['witnessOrder'][tableRow];
-      let ref = this.ctData['collationMatrix'][witnessIndex][col];
-      if (ref === -1) {
+    const debug = true;
+    return (tableRow: number, col: number, newText: string): ValueChangeReport<number> => {
+      let witnessIndex = this.ctData.witnessOrder[tableRow];
+      let witnessTokenIndex = this.ctData.collationMatrix[witnessIndex][col];
+      if (witnessTokenIndex === -1) {
         // TODO: deal with null refs in edition witness
         console.warn(`Trying to edit a -1 ref at witness ${witnessIndex}, row ${tableRow}, col ${col}`);
-        return {valueChange: false, value: ref};  // forces TableEditor to keep current value
+        return {valueChange: false, value: witnessTokenIndex};  // forces TableEditor to keep current value
       }
-
-      let currentText = this.ctData.witnesses[witnessIndex]['tokens'][ref]['text'];
+      const currentToken = deepCopy(this.ctData.witnesses[witnessIndex].tokens[witnessTokenIndex]);
+      let currentText = currentToken.text;
+      newText = Util.trimWhiteSpace(newText);
+      debug && console.log(`Confirming edit of witness ${witnessIndex}, row ${tableRow}, col ${col} from '${currentText}' to '${newText}'`, currentToken);
       if (currentText === newText) {
         // no change!
-        return {valueChange: false, value: ref}; // forces TableEditor to keep current value
+        debug && console.log(`No change in witness ${witnessIndex}, row ${tableRow}, col ${col}`);
+        return {valueChange: false, value: witnessTokenIndex}; // forces TableEditor to keep current value
       }
-      newText = Util.trimWhiteSpace(newText);
       if (newText === '') {
         // empty token
-        this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, ref);
+        debug && console.log(`New text is empty ${witnessIndex}, row ${tableRow}, col ${col}`);
+        this.ctData = CtData.emptyWitnessToken(this.ctData, witnessIndex, witnessTokenIndex);
       } else {
         let tokenType = Punctuation.stringIsAllPunctuation(newText, this.lang) ? TranscriptionTokenType.PUNCTUATION : TranscriptionTokenType.WORD;
-        if (this.ctData.witnesses[witnessIndex].tokens[ref].fmtText === undefined) {
+        if (this.ctData.witnesses[witnessIndex].tokens[witnessTokenIndex].fmtText === undefined) {
           // no formatting, just copy the text
-          this.ctData.witnesses[witnessIndex].tokens[ref].text = newText;
+          this.ctData.witnesses[witnessIndex].tokens[witnessTokenIndex].text = newText;
         } else {
           //there is some formatting
-          console.log(`Replacing edition witness token that contains formatting`);
-          console.log(`newText: ${newText}`);
-          console.log(`current fmtText: `);
-          console.log(this.ctData.witnesses[witnessIndex].tokens[ref].fmtText);
-          let newFmtText = fmtTextChangePlainText(this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText'], newText);
-          this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText'] = newFmtText;
-          this.ctData.witnesses[witnessIndex]['tokens'][ref]['text'] = getPlainText(newFmtText);
+          debug && console.log(`Replacing edition witness token that contains formatting, new text '${newText}', current fmtText`, currentToken.fmtText);
+          let newFmtText = fmtTextChangePlainText(this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['fmtText'], newText);
+          debug && console.log(`New fmtText`, newFmtText);
+          this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['fmtText'] = newFmtText;
+          this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['text'] = getPlainText(newFmtText);
           console.log(`new fmtText: `);
-          console.log(this.ctData.witnesses[witnessIndex]['tokens'][ref]['fmtText']);
+          console.log(this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['fmtText']);
         }
-        this.ctData.witnesses[witnessIndex]['tokens'][ref]['tokenType'] = tokenType;
+        this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['tokenType'] = tokenType;
         if (tokenType === TranscriptionTokenType.WORD) {
           let norm;
           let normSource;
@@ -996,20 +1007,21 @@ export class CollationTablePanel extends PanelWithToolbar {
           }
           if (newText !== norm) {
             this.verbose && console.log(`New text normalized:  ${newText} => ${norm}`);
-            this.ctData.witnesses[witnessIndex]['tokens'][ref]['normalizedText'] = norm;
-            this.ctData.witnesses[witnessIndex]['tokens'][ref]['normalizationSource'] = normSource;
+            this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['normalizedText'] = norm;
+            this.ctData.witnesses[witnessIndex]['tokens'][witnessTokenIndex]['normalizationSource'] = normSource;
           }
         }
       }
 
-      this.invalidateTokenDataCacheForToken(witnessIndex, ref);
+      this.invalidateTokenDataCacheForToken(witnessIndex, witnessTokenIndex);
       this.recalculateVariants();
-      this.options.onCtDataChange(this.ctData);
+      this.delayedOnCtDataChange(this.ctData);
+      // this.options.onCtDataChange(this.ctData);
 
       //  this.verbose && console.log('Edition Witness updated')
       //  this.verbose && console.log(this.ctData.witnesses[witnessIndex]['tokens'])
       // ref stays the same
-      return {valueChange: true, value: ref};
+      return {valueChange: true, value: witnessTokenIndex};
     };
   }
 
@@ -1151,6 +1163,9 @@ export class CollationTablePanel extends PanelWithToolbar {
           //variant class
           if (this.viewSettings.highlightVariants) {
             // Note that the variantsMatrix refers to the tableRow not to the witness row
+            if (this.variantsMatrix === null) {
+              throw new Error('variantsMatrix is null, cannot get variant value');
+            }
             let variant = this.variantsMatrix.getValue(tableRow, col);
             if (variant !== 0) {
               // no class for variant 0
@@ -1260,15 +1275,11 @@ export class CollationTablePanel extends PanelWithToolbar {
     // this.debug && console.log(`postItemIndexes`, postItemIndexes);
 
     let itemWithAddressArray = this.ctData['witnesses'][witnessIndex]['items'] ?? [];
-    let notes = [];
+    let notes: FullTxItemEditorialNote[] = [];
     for (const itemIndex of postItemIndexes) {
       let theItem = itemWithAddressArray[itemIndex];
-      let itemNotes = [];
       if (theItem['notes'] !== undefined) {
-        itemNotes = theItem['notes'];
-      }
-      for (const note of itemNotes) {
-        notes.push(note);
+        notes.push(...theItem.notes)
       }
     }
     return notes;
@@ -1379,7 +1390,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
 function fmtTextChangePlainText(fmtText: FmtText, newPlainText: string): FmtText {
   if (fmtText.length === 0) {
-    return [];
+    return fromString(newPlainText);
   }
   let textTokens = fmtText.filter((token) => {
     return token.type === FmtTextTokenType.TEXT;

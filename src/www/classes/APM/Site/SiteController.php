@@ -240,9 +240,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     <style>
     
         div.loadMessage {
-            color: gray;
-            margin: 5em;
+            margin: 20px;
             font-size: 1.2em;
+            color: gray;
             animation: appearAfter 1s linear;
         }
         
@@ -259,14 +259,14 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         }
         
         .spinner {
-            margin-top: 1em;
-            border: 0.25em solid #f3f3f3;
-            border-top: 0.25em solid gray; 
+            margin-top: 0.5em;
+            border: 0.15em solid #f3f3f3;
+            border-top: 0.15em solid gray;
             border-radius: 50%;
-            width: 2em;
-            height: 2em;
+            width: 1em;
+            height: 1em;
             display: inline-block;
-            animation: spin 2s linear infinite;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin {
@@ -275,19 +275,19 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         }
 </style>
 <script>
-       window.loading = true;
+       window.loading = true
        setTimeout( 
          () => {
             if (window.loading) {
-              let msgDiv = document.getElementById('message');
-              msgDiv.innerHTML = 'Oops, something went wrong loading APM. Is your Internet working? If so, there might be a problem with the server. Please try again later.';
+              let msgDiv = document.getElementById('message')
+              msgDiv.innerHTML = 'Oops, something went wrong loading APM. Is your Internet working? If so, there might be a problem with the server. Please try again later.'
             }
-         }, 30000);
+         }, 30000)
 </script>
 </head>
 <body>
     <div class="loadMessage" id="message">
-    APM is taking some time to load the $title page, please stand by... <div class="spinner"></div>
+    Loading $title page... <div class="spinner"></div>
     </div>
     
 </body>
@@ -302,8 +302,8 @@ END;
         $baseUrl = $this->getBaseUrl();
 
         // all imports are handled by Vite
-        $viteImportsHtml = $this->getViteImportHtml([$viteEntryPoint]);
-        $html = $this->getPageHtml($baseUrl, $title, $viteImportsHtml, '');
+        [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint]);
+        $html = $this->getPageHtml($baseUrl, $title, $viteJsImportsHtml . $viteCssImportsHtml, '');
         $response->getBody()->write($html);
         SystemProfiler::lap('Response ready');
         $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms", SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
@@ -394,9 +394,10 @@ END;
         }
 
 
-        $viteImportsHtml = $this->getViteImportHtml([$viteEntryPoint, ...$extraViteEntryPoints]);
+        [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint, ...$extraViteEntryPoints]);
+        $cssHtml = implode('', [ $cssHtml, $viteCssImportsHtml ]);
 
-        $postBodyImports = implode('', [ $jsHtml, $viteImportsHtml, "<script> $script </script>" ]);
+        $postBodyImports = implode('', [ $jsHtml, $viteJsImportsHtml, "<script> $script </script>" ]);
         $html = $this->getPageHtml($baseUrl, $title, $cssHtml, $postBodyImports);
         $response->getBody()->write($html);
         if ($cacheKey !== '') {
@@ -425,15 +426,24 @@ END;
         return '';
     }
 
-    protected function getViteImportHtml(array $viteEntryPoints): string
+    /**
+     * Returns the HTML for the Vite imports for the given entry points.
+     * The first element in the return array is the HTML for JS imports,
+     * the second element is the HTML for CSS imports.
+     * @param array $viteEntryPoints
+     * @return string[]
+     */
+    protected function getViteImportHtml(array $viteEntryPoints): array
     {
+        $viteJsImportsHtml = '';
+        $viteCssImportsHtml = '';
         if ($this->systemManager->getConfig()['devMode']) {
-            $viteImportsHtml = sprintf(
+            $viteJsImportsHtml = sprintf(
                 "<script type=\"module\" src=\"%s/@vite/client\"></script>\n",
                 self::VITE_DEV_BASE
             );
             foreach ($viteEntryPoints as $viteEntryPoint) {
-                $viteImportsHtml .= sprintf(
+                $viteJsImportsHtml .= sprintf(
                     "<script type=\"module\" src=\"%s/$viteEntryPoint\"></script>\n",
                     self::VITE_DEV_BASE
                 );
@@ -448,20 +458,21 @@ END;
                 $viteJsImports = [...$viteJsImports, ...$viteImports['js']];;
                 $viteCssImports = [...$viteCssImports, ...$viteImports['css']];
             }
-            $this->logger->debug("Vite imports: " . implode(', ', $viteJsImports));
-            $viteImportsHtml = '';
+//            $this->logger->debug("Vite JS imports: " . implode(', ', $viteJsImports));
+//            $this->logger->debug("Vite CSS imports: " . implode(', ', $viteCssImports));
             foreach ($viteJsImports as $import) {
-                $viteImportsHtml .= <<<END
+                $viteJsImportsHtml .= <<<END
     <script type="module" src="$baseUrl/dist/$import"></script>
 END;
             }
             foreach ($viteCssImports as $import) {
-                $viteImportsHtml .= <<<END
+                $viteCssImportsHtml .= <<<END
      <link rel="stylesheet" type="text/css" href="$baseUrl/dist/$import">
 END;
             }
         }
-        return $viteImportsHtml;
+//        $this->logger->debug("Vite imports HTML: " . $viteJsImportsHtml);
+        return [$viteJsImportsHtml, $viteCssImportsHtml];
     }
 
     /**
@@ -477,12 +488,15 @@ END;
             return [];
         }
         $manifest = json_decode($manifestFileContents, true);
+//        $this->logger->debug("Vite manifest: ", [ 'entryPoints' => array_keys($manifest)]);
         if (!isset($manifest[$entryPoint])) {
-            $this->logger->error("Page $entryPoint not found in Vite manifest");
+            $this->logger->error("Page '$entryPoint' not found in Vite manifest");
             return [];
         }
 
         $jsImports = [];
+        $cssImports = [];
+
         $jsImports[] = $manifest[$entryPoint]["file"];
         foreach ($manifest[$entryPoint]["imports"] as $import) {
             if (!isset($manifest[$import])) {
@@ -490,9 +504,25 @@ END;
                 continue;
             }
             $jsImports[] = $manifest[$import]["file"];
+            $importCss = $this->getCssImportsFromEntry($import, $manifest);
+            if (count($importCss) > 0) {
+//                $this->logger->debug("Adding $import CSS imports: ", $importCss);
+                array_push($cssImports, ...$importCss);
+            }
         }
 
+        $mainCssImports = $this->getCssImportsFromEntry($entryPoint, $manifest);
+//        $this->logger->debug("Main CSS imports: ", $mainCssImports);
+//        $this->logger->debug("All CSS imports: ", $cssImports);
+
+        array_push($cssImports, ...$mainCssImports);
+
+        return [ 'js' => $jsImports, 'css' => $cssImports] ;
+    }
+
+    private function getCssImportsFromEntry(string $entryPoint, array $manifest): array {
         $cssImports = [];
+
         if (isset($manifest[$entryPoint]["css"])) {
             foreach ($manifest[$entryPoint]["css"] as $css) {
                 $cssImports[] = $css;
@@ -503,8 +533,7 @@ END;
                 $cssImports[] = $cssModule;
             }
         }
-
-        return [ 'js' => $jsImports, 'css' => $cssImports] ;
+        return $cssImports;
     }
 
     /**
@@ -617,6 +646,7 @@ END;
             try {
                 $thePage = $legacyPageInfo;
                 $pageNumber = $legacyPageInfo['page_number'];
+                $imageNumber = $legacyPageInfo['img_number'];
                 $thePage['pageId'] = $legacyPageInfo['id'];
                 $thePage['sequence'] = $legacyPageInfo['seq'];
                 $thePage['pageNumber'] = $legacyPageInfo['page_number'];
@@ -629,9 +659,9 @@ END;
                 $thePage['imageUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
                     $pageNumber, ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
                 $thePage['jpgUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
-                    $pageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
+                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
                 $thePage['thumbnailUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
-                    $pageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
+                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
 //                $this->logger->debug("The page", $thePage);
                 $thePages[$legacyPageInfo['id']] = $thePage;
             } catch (DocumentNotFoundException $e) {

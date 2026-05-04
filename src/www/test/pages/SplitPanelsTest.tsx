@@ -1,9 +1,9 @@
 import '../../node_modules/bootstrap/dist/css/bootstrap.css';
 import './splitPanelsTest.css';
-import SplitPanels from "@/Components/SplitPanels";
+import SplitPanels from "@/ReactAPM/Components/SplitPanels";
 import {createRoot} from "react-dom/client";
 import {useState} from "react";
-import PanelWithToolbar from "@/Components/PanelWithToolbar";
+import PanelWithToolbar from "@/ReactAPM/Components/PanelWithToolbar";
 
 import {LoremIpsum} from "lorem-ipsum";
 

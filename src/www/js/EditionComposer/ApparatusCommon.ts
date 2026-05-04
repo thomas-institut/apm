@@ -17,10 +17,8 @@
  */
 
 
-import {TypesetterTokenFactory} from '@/Typesetter/TypesetterTokenFactory';
 import * as ApparatusSubEntryType from '../Edition/SubEntryType';
-import {NumeralStyles} from '@/toolbox/NumeralStyles';
-import {TypesetterTokenRenderer} from '@/lib/FmtText/Renderer/TypesetterTokenRenderer';
+import {NumeralSystems} from '@/toolbox/NumeralSystems';
 import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
 import {escapeHtml, trimWhiteSpace} from '@/toolbox/Util';
 import {ApparatusUtil} from '@/Edition/ApparatusUtil';
@@ -28,12 +26,11 @@ import * as MainTextTokenType from '@/Edition/MainTextTokenType';
 import {StringCounter} from '@/toolbox/StringCounter';
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
-import {TypesetterToken} from "@/Typesetter/TypesetterToken";
-import {CompactFmtText, fromString, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText.js";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
-import {WitnessDataItem} from "@/Edition/WitnessDataItem";
-import {ITALIC} from "@/lib/FmtText/FontStyle";
+import {WitnessDataItemInterface} from "@/CtData/CtDataInterface";
+import {h, VNode} from 'snabbdom';
+
 
 
 export interface MainTextTypesettingInfo {
@@ -98,46 +95,25 @@ export class ApparatusCommon {
     }
   }
 
-  static typesetSubEntryHebrew(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
-    // TODO: use witnessData instead of witnessIndices, like in the html version
+  /**
+   * Generates VNodes for the content of an apparatus sub-entry
+   *
 
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
-    let theTokens: TypesetterToken[] = [];
+   */
+  static genSubEntryVNodeContent(style: string, subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[] = [], fullSiglaInBrackets = false): (VNode | string)[] {
+    switch (style) {
+      case 'la':
+        return this.genSubEntryVNodeContentLatin(subEntry, sigla, siglaGroups, fullSiglaInBrackets);
 
-    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'he').map((t) => {
-      return t.setBold();
-    });
-    // console.log(`Sigla tokens: `)
-    // console.log(siglaTokens)
+      case 'ar':
+        return this.genSubEntryVNodeContentArabic(subEntry, sigla, siglaGroups, fullSiglaInBrackets);
 
-    switch (subEntryType) {
-      case ApparatusSubEntryType.VARIANT:
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTextTokens.push(...siglaTokens);
-        return theTokens;
-
-      case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.omission, 'he').setFontSize(hebrewStyle.smallFontFactor));
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTextTokens.push(...siglaTokens);
-        return theTokens;
-
-      case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(hebrewStyle.strings.addition, 'he').setFontSize(hebrewStyle.smallFontFactor));
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTextTokens.push(...siglaTokens);
-        return theTokens;
-
-
-      case ApparatusSubEntryType.FULL_CUSTOM:
-        return theTextTokens;
+      case 'he':
+        return this.genSubEntryVNodeContentHebrew(subEntry, sigla, siglaGroups, fullSiglaInBrackets);
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${subEntryType}`);
-        return [];
+        console.warn(`Unsupported style/language ${style}`);
+        return ['---'];
     }
   }
 
@@ -165,53 +141,6 @@ export class ApparatusCommon {
     return keyword;
   }
 
-  /**
-   * Returns an array of typesetter tokens for the given keyword.
-   *
-   * Accepts also a FmtText array which will be converted to plain text before processing
-   *
-   * @param {FmtText} keyword
-   * @param {string}lang
-   * @return {TypesetterToken}
-   */
-  static getKeywordTypesetterTokens(keyword: CompactFmtText, lang: string): TypesetterToken[] {
-    keyword = getPlainText(fromCompactFmtText(keyword));
-    let keywordString = this.getKeywordString(keyword, lang);
-    let fmtText = fromString(keywordString);
-    switch (lang) {
-      case 'he':
-        fmtText = fmtText.map((token) => {
-          if (token.type !== 'text') {
-            return token;
-          }
-          token.fontSize = hebrewStyle.smallFontFactor;
-          return token;
-        });
-        break;
-
-      case 'ar':
-
-        fmtText = fmtText.map((token) => {
-          if (token.type !== 'text') {
-            return token;
-          }
-          token.fontSize = arabicStyle.smallFontFactor;
-          return token;
-        });
-        break;
-
-      default:
-        fmtText = fmtText.map((token) => {
-          if (token.type !== 'text') {
-            return token;
-          }
-          token.fontStyle = ITALIC;
-          return token;
-        });
-    }
-    return (new TypesetterTokenRenderer()).render(fmtText);
-  }
-
   static getKeywordHtml(keyword: string, lang: string) {
     let keywordString = this.getKeywordString(keyword, lang);
     switch (lang) {
@@ -224,8 +153,37 @@ export class ApparatusCommon {
     }
   }
 
+  /**
+   * Returns a VNode for the keyword in the given language
+   *
+   * @param {string}keyword
+   * @param {string}lang
+   * @returns {VNode}
+   */
+  static getKeywordVNode(keyword: string, lang: string): VNode {
+    let keywordString = this.getKeywordString(keyword, lang);
+    switch (lang) {
+      case 'ar':
+      case 'he':
+        return h('small', keywordString);
+
+      default:
+        return h('i', keywordString);
+    }
+  }
+
   static getForcedTextDirectionSpace(textDirection: string) {
     return `<span class="force-${textDirection}">&nbsp;</span>`;
+  }
+
+  /**
+   * Returns a VNode for a space with a forced text direction
+   *
+   * @param {string}textDirection
+   * @returns {VNode}
+   */
+  static getForcedTextDirectionSpaceVNode(textDirection: string): VNode {
+    return h(`span.force-${textDirection}`, '\u00A0');
   }
 
   /**
@@ -273,39 +231,53 @@ export class ApparatusCommon {
     }
   }
 
-  static typesetSubEntryArabic(entryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
-    // TODO: use witnessData instead of witnessIndices, like in the html version
-
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
-    let theTokens: TypesetterToken[] = [];
-    let siglaTokens = this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'ar');
+  /**
+   * Generates VNodes for the content of a Hebrew apparatus sub-entry
+   *
+   * @param {ApparatusSubEntry}subEntry
+   * @param {string[]}sigla
+   * @param {SiglaGroup[]}siglaGroups
+   * @param {boolean}fullSiglaInBrackets
+   * @returns {(VNode|string)[]}
+   */
+  static genSubEntryVNodeContentHebrew(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean): (VNode | string)[] {
+    let entryType = subEntry.type;
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText);
+    const theTextNode = h('span', {props: {innerHTML: theText}});
+    let siglaVNodes = this._genSiglaVNodeFromWitnessData(subEntry, sigla, 'he', siglaGroups, fullSiglaInBrackets);
+    let textDirection = 'rtl';
     switch (entryType) {
       case ApparatusSubEntryType.VARIANT:
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...siglaTokens);
-        return theTokens;
+        return [theTextNode, this.getForcedTextDirectionSpaceVNode(textDirection), h('b', siglaVNodes)];
 
       case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.omission, 'ar').setFontSize(arabicStyle.smallFontFactor));
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...siglaTokens);
-        return theTokens;
+        return [this.getKeywordVNode('omission', 'he'), this.getForcedTextDirectionSpaceVNode(textDirection), h('b', siglaVNodes)];
 
       case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(arabicStyle.strings.addition, 'ar').setFontSize(arabicStyle.smallFontFactor));
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...siglaTokens);
-        return theTokens;
+        return [this.getKeywordVNode('addition', 'he'), ' ', theTextNode, this.getForcedTextDirectionSpaceVNode(textDirection), h('b', siglaVNodes)];
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        return theTextTokens;
+        let keywordVNode: VNode | string = '';
+        switch (subEntry.keyword) {
+          case 'omission':
+          case 'addition':
+            keywordVNode = this.getKeywordVNode(subEntry.keyword, 'he');
+        }
+        let siglaNodes: (VNode | string)[] = [];
+        if (siglaVNodes.length > 0) {
+          siglaNodes = [this.getForcedTextDirectionSpaceVNode(textDirection), h('span.force-rtl', [h('b', siglaVNodes)])];
+        }
+        let res: (VNode | string)[] = [];
+        if (keywordVNode !== '') res.push(keywordVNode, ' ');
+        res.push(theTextNode, ...siglaNodes);
+        return res;
+
+      case ApparatusSubEntryType.AUTO_FOLIATION:
+        return [theTextNode, this.getForcedTextDirectionSpaceVNode(textDirection), h('b', siglaVNodes)];
 
       default:
         console.warn(`Unsupported apparatus entry type: ${entryType}`);
-        return [];
+        return ['???'];
     }
   }
 
@@ -354,56 +326,53 @@ export class ApparatusCommon {
     }
   }
 
-  static _getSiglaTypesetterTokens(witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[], lang: string): TypesetterToken[] {
-    // TODO: use witnessData instead of witnessIndices, like in the html version
-    let witnessData = witnessIndices.map((i) => {
-      return new WitnessDataItem().setWitnessIndex(i).setHand(0);
-    });
-    let filledUpWitnessData = ApparatusUtil.getSiglaData(witnessData, sigla, siglaGroups);
-
-    // TODO: support hands:
-    let siglaString = filledUpWitnessData.map((w) => {
-      return w.siglum;
-    }).join('');
-    return [TypesetterTokenFactory.simpleText(siglaString, lang)];
-  }
-
-
-  static typesetSubEntryLatin(subEntryType: string, theText: string, witnessIndices: number[], sigla: string[], siglaGroups: SiglaGroup[]): TypesetterToken[] {
-    // TODO: use witnessData instead of witnessIndices, like in the html version
-    // let siglaString = witnessIndices.map( (i) => { return sigla[i]}).join('')
-    // convert the text tokens to proper typesetter tokens
-    let theTextTokens = (new TypesetterTokenRenderer()).render(fromString(theText));
-
-    let theTokens: TypesetterToken[] = [];
-    switch (subEntryType) {
+  /**
+   * Generates VNodes for the content of an Arabic apparatus sub-entry
+   *
+   * @param {ApparatusSubEntry}subEntry
+   * @param {string[]}sigla
+   * @param {SiglaGroup[]}siglaGroups
+   * @param {boolean}fullSiglaInBrackets
+   * @returns {(VNode|string)[]}
+   */
+  static genSubEntryVNodeContentArabic(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean): (VNode | string)[] {
+    let entryType = subEntry.type;
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText);
+    const theTextNode = h('span', {props: {innerHTML: theText}});
+    let siglaVNodes = this._genSiglaVNodeFromWitnessData(subEntry, sigla, 'ar', siglaGroups, fullSiglaInBrackets);
+    let textDirection = 'rtl';
+    switch (entryType) {
       case ApparatusSubEntryType.VARIANT:
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
-        return theTokens;
+        return [theTextNode, ' ', ...siglaVNodes];
 
       case ApparatusSubEntryType.OMISSION:
-        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.omission).setItalic());
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
-        return theTokens;
+        return [h('small', arabicStyle.strings.omission), ' ', ...siglaVNodes];
 
       case ApparatusSubEntryType.ADDITION:
-        theTokens.push(TypesetterTokenFactory.simpleText(latinStyle.strings.addition).setItalic());
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...theTextTokens);
-        theTokens.push(TypesetterTokenFactory.normalSpace());
-        theTokens.push(...this._getSiglaTypesetterTokens(witnessIndices, sigla, siglaGroups, 'la'));
-        return theTokens;
-
+        return [h('small', arabicStyle.strings.addition), ' ', theTextNode, ' ', ...siglaVNodes];
 
       case ApparatusSubEntryType.FULL_CUSTOM:
-        return theTextTokens;
+        let keywordVNode: VNode | string = '';
+        switch (subEntry.keyword) {
+          case 'omission':
+          case 'addition':
+            keywordVNode = this.getKeywordVNode(subEntry.keyword, 'ar');
+        }
+        let siglaNodes: (VNode | string)[] = [];
+        if (siglaVNodes.length > 0) {
+          siglaNodes = [this.getForcedTextDirectionSpaceVNode(textDirection), h('span.force-rtl', siglaVNodes)];
+        }
+        let res: (VNode | string)[] = [];
+        if (keywordVNode !== '') res.push(keywordVNode, ' ');
+        res.push(theTextNode, ...siglaNodes);
+        return res;
+
+      case ApparatusSubEntryType.AUTO_FOLIATION:
+        return [theTextNode, this.getForcedTextDirectionSpaceVNode(textDirection), h('b', siglaVNodes)];
 
       default:
-        console.warn(`Unsupported apparatus entry type: ${subEntryType}`);
-        return [];
+        console.warn(`Unsupported apparatus entry type: ${entryType}`);
+        return ['???'];
     }
   }
 
@@ -441,7 +410,54 @@ export class ApparatusCommon {
     }
   }
 
-  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItem[], language: string, numberStyle: string|null = null) {
+  /**
+   * Generates VNodes for the content of a Latin apparatus sub-entry
+   *
+   * @param {ApparatusSubEntry}subEntry
+   * @param {string[]}sigla
+   * @param {SiglaGroup[]}siglaGroups
+   * @param {boolean}fullSiglaInBrackets
+   * @returns {(VNode|string)[]}
+   */
+  static genSubEntryVNodeContentLatin(subEntry: ApparatusSubEntry, sigla: string[], siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean): (VNode | string)[] {
+    let entryType = subEntry.type;
+
+    let theText = (new HtmlRenderer({plainMode: true})).render(subEntry.fmtText);
+    const theTextNode = h('span', {props: {innerHTML: theText}});
+
+    let siglaVNodes = this._genSiglaVNodeFromWitnessData(subEntry, sigla, 'la', siglaGroups, fullSiglaInBrackets);
+    switch (entryType) {
+      case ApparatusSubEntryType.VARIANT:
+        return [theTextNode, ' ', ...siglaVNodes];
+
+      case ApparatusSubEntryType.OMISSION:
+        return [h('i', latinStyle.strings.omission), ' ', ...siglaVNodes];
+
+      case ApparatusSubEntryType.ADDITION:
+        return [h('i', latinStyle.strings.addition), ' ', theTextNode, ' ', ...siglaVNodes];
+
+      case ApparatusSubEntryType.FULL_CUSTOM:
+        let keywordVNode: VNode | string = '';
+        switch (subEntry.keyword) {
+          case 'omission':
+          case 'addition':
+            keywordVNode = h('i', latinStyle.strings[subEntry.keyword]);
+        }
+        let res: (VNode | string)[] = [];
+        if (keywordVNode !== '') res.push(keywordVNode, ' ');
+        res.push(theTextNode, ' ', ...siglaVNodes);
+        return res;
+
+      case ApparatusSubEntryType.AUTO_FOLIATION:
+        return [theTextNode, h('b', siglaVNodes)];
+
+      default:
+        console.warn(`Unsupported apparatus entry type: ${entryType}`);
+        return ['???'];
+    }
+  }
+
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItemInterface[], language: string, numberStyle: string|null = null) {
     const actualNumberStyle = numberStyle ?? language;
     return witnessData.map((w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {
@@ -452,6 +468,32 @@ export class ApparatusCommon {
       }
       return `${w.siglum}<sup>${this.getNumberString(w.hand + 1, actualNumberStyle)}</sup>`;
     }).join('');
+  }
+
+  /**
+   * Generates VNodes for the sigla from the witness data
+   *
+   * @param {WitnessDataItemInterface[]}witnessData
+   * @param {string}language
+   * @param {string|null}numberStyle
+   * @returns {(VNode|string)[]}
+   */
+  static __getSiglaVNodeFromFilledUpWitnessData(witnessData: WitnessDataItemInterface[], language: string, numberStyle: string|null = null): (VNode | string)[] {
+    const actualNumberStyle = numberStyle ?? language;
+    let nodes: (VNode | string)[] = [];
+    witnessData.forEach((w) => {
+      if (w.hand === 0 && !w.forceHandDisplay) {
+        if (language === 'ar') {
+          nodes.push(w.siglum + '\u200B');
+        } else {
+          nodes.push(w.siglum);
+        }
+      } else {
+        nodes.push(w.siglum);
+        nodes.push(h('sup', this.getNumberString(w.hand + 1, actualNumberStyle)));
+      }
+    });
+    return nodes;
   }
 
   /**
@@ -485,6 +527,40 @@ export class ApparatusCommon {
   }
 
   /**
+   * Generates VNodes for the sigla from the witness data, considering sigla groups
+   *
+   * @param {ApparatusSubEntry}subEntry
+   * @param {string[]}sigla
+   * @param {string}numberStyle
+   * @param {SiglaGroup[]}siglaGroups
+   * @param {boolean}fullSiglaInBrackets
+   * @returns {(VNode|string)[]}
+   * @private
+   */
+  static _genSiglaVNodeFromWitnessData(subEntry: ApparatusSubEntry, sigla: string[], numberStyle: string, siglaGroups: SiglaGroup[], fullSiglaInBrackets: boolean = false): (VNode | string)[] {
+
+    if (subEntry.witnessData.length === 0) {
+      return [];
+    }
+
+    let fullSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, []);
+    let fullSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(fullSiglumDataArray, numberStyle);
+    let matchedSiglumDataArray = ApparatusUtil.getSiglaData(subEntry.witnessData, sigla, siglaGroups);
+    let matchedSiglaVNodes = this.__getSiglaVNodeFromFilledUpWitnessData(matchedSiglumDataArray, numberStyle);
+
+    // To compare, I might still need the HTML or just check if they are the same data
+    let matchedSiglaHtml = this.__getSiglaHtmlFromFilledUpWitnessData(matchedSiglumDataArray, numberStyle);
+
+    if (matchedSiglaHtml === fullSiglaHtml) {
+      return matchedSiglaVNodes;
+    }
+    if (fullSiglaInBrackets) {
+      return [...matchedSiglaVNodes, ` ( = ${fullSiglaHtml})` ];
+    }
+    return [h('a', {attrs: {title: `= ${fullSiglaHtml}`}}, matchedSiglaVNodes)];
+  }
+
+  /**
    *
    * @param {number}n
    * @param {string}style
@@ -495,9 +571,9 @@ export class ApparatusCommon {
       return '???';
     }
     if (style === 'ar') {
-      return NumeralStyles.toDecimalArabic(n);
+      return NumeralSystems.toEasternArabic(n);
     }
-    return NumeralStyles.toDecimalWestern(n);
+    return NumeralSystems.toWesternArabic(n);
   }
 
 
@@ -640,10 +716,7 @@ export class ApparatusCommon {
 
     let lemmaText = trimWhiteSpace(lemmaComponents.text);
 
-    if (lemmaText === '') {
-      console.warn(`Lemma text is empty for lemma ${apparatusEntry.lemma}`);
-      lemmaText = '???_ReportBug'
-    }
+
 
     if (lemmaText === '|') {
       // marker
@@ -652,9 +725,18 @@ export class ApparatusCommon {
 
     switch (lemmaComponents.type) {
       case 'custom':
+        if (lemmaText === '') {
+          console.warn(`Lemma text is empty for custom lemma`, apparatusEntry, lemmaComponents);
+          lemmaText = `<span class="text-danger">???_ReportBug_654</span>`;
+        }
         return lemmaText;
 
       case 'full':
+        if (lemmaText === '') {
+          console.warn(`Lemma text is empty for full lemma`, apparatusEntry, lemmaComponents);
+          lemmaText = `<span class="text-danger">???_ReportBug_478</span>`;
+          throw new Error('Lemma text cannot be empty for full lemma → Bug 478');
+        }
         let lemmaNumberString = '';
         if (lemmaComponents.numWords === 1) {
           let occurrenceInLine = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);
@@ -683,6 +765,70 @@ export class ApparatusCommon {
       default:
         console.warn(`Unknown lemma component type '${lemmaComponents.type}'`);
         return 'ERROR';
+    }
+  }
+
+  /**
+   * Generates VNodes for the lemma section of an apparatus entry
+   *
+   * @param {ApparatusEntry}apparatusEntry
+   * @param {MainTextTypesettingInfo}mainTextTypesettingInfo
+   * @param {string}lang
+   * @returns {(VNode|string)[]}
+   */
+  static getLemmaVNode(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): (VNode | string)[] {
+
+    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText);
+
+    let lemmaText = trimWhiteSpace(lemmaComponents.text);
+
+    if (lemmaText === '|') {
+      // marker
+      lemmaText = '\u00A0|\u00A0';
+    }
+
+    switch (lemmaComponents.type) {
+      case 'custom':
+        if (lemmaText === '') {
+          console.warn(`Lemma text is empty for custom lemma`, apparatusEntry, lemmaComponents);
+          return [h('span.text-danger', '???_ReportBug_654')];
+        }
+        return [lemmaText];
+
+      case 'full':
+        if (lemmaText === '') {
+          console.warn(`Lemma text is empty for full lemma`, apparatusEntry, lemmaComponents);
+          return [h('span.text-danger', '???_ReportBug_478')];
+        }
+        let nodes: (VNode | string)[] = [lemmaText];
+        if (lemmaComponents.numWords === 1) {
+          let occurrenceInLine = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);
+          let numberOfOccurrencesInLine = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens);
+          if (numberOfOccurrencesInLine > 1) {
+            nodes.push(h('sup', this.getNumberString(occurrenceInLine, lang)));
+          }
+        }
+        return nodes;
+
+      case 'shortened':
+        let resNodes: (VNode | string)[] = [lemmaComponents.from ?? ''];
+        let occurrenceInLineFrom = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);
+        let numberOfOccurrencesInLineFrom = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens);
+        if (numberOfOccurrencesInLineFrom > 1) {
+          resNodes.push(h('sup', this.getNumberString(occurrenceInLineFrom, lang)));
+        }
+        resNodes.push(lemmaComponents.separator ?? '');
+        resNodes.push(lemmaComponents.to ?? '');
+        let occurrenceInLineTo = this.getOccurrenceInLine(apparatusEntry.to, mainTextTypesettingInfo);
+        let numberOfOccurrencesInLineTo = this.getTotalOccurrencesInLine(apparatusEntry.to, mainTextTypesettingInfo.tokens);
+        if (numberOfOccurrencesInLineTo > 1) {
+          resNodes.push(h('sup', this.getNumberString(occurrenceInLineTo, lang)));
+        }
+        return resNodes;
+
+      default:
+        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`);
+        return ['ERROR'];
     }
   }
 

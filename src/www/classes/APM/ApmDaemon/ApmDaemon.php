@@ -2,56 +2,31 @@
 
 namespace APM\ApmDaemon;
 
-use APM\Api\ApiPeople;
 use APM\CommandLine\CommandLineUtility;
+use APM\Jobs\ApmJobName;
 use APM\Site\SiteDocuments;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
-use Exception;
-use Fiber;
+use APM\System\Job\ValkeyJobQueueManager;
 use Monolog\Logger;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use Throwable;
 
 class ApmDaemon extends CommandLineUtility
 {
-    const int MICROSECONDS_TO_SLEEP = 100*1000;
+    const int MICROSECONDS_TO_SLEEP = 100 * 1000;
+    const int RECOVERY_INTERVAL = 300; // 5 minutes
+    const int JOB_TIMEOUT = 1800; // 30 minutes
+
+    private int $lastRecoveryRun = 0;
 
 
     public function main($argc, $argv): void
     {
 
-        $cacheItemsToReestablish = [
-            [
-                'cacheKey' => SiteWorks::WORK_DATA_CACHE_KEY,
-                'ttl' => SiteWorks::WORK_DATA_TTL,
-                'json' => false,
-                'builder' => function () {
-                    return SiteWorks::buildWorkData($this->getSystemManager(), $this->logger, true);
-                }
-            ],
-            [
-                'cacheKey' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
-                'ttl' => SiteDocuments::DOCUMENT_DATA_TTL,
-                'json' => true,
-                'builder' => function () {
-                    return SiteDocuments::buildDocumentData($this->getSystemManager());
-                }
-            ],
-            [
-                'cacheKey' => CacheKey::ApiPeople_PeoplePageData_All,
-                'ttl' => ApiPeople::AllPeopleDataForPeoplePageTtl,
-                'json' => false,
-                'builder' => function () {
-                    return ApiPeople::buildAllPeopleDataForPeoplePage($this->getSystemManager()->getEntitySystem(),
-                        $this->getSystemManager()->getSystemDataCache(), $this->getSystemManager()->getLogger());
-                }
-            ]
-        ];
-
         $this->getSystemManager(); // just to get the right logger
         if (is_a($this->logger, Logger::class)) {
-            $this->logger = $this->logger->withName('APM_D');
+            $this->logger = $this->logger->withName('DAEMON');
         }
 
         $this->logger->info("Starting as a daemon, pid is $this->pid");
@@ -70,21 +45,13 @@ class ApmDaemon extends CommandLineUtility
             $stopCommandReceived = true;
         });
 
-        $cacheMaintainerGenerator = function () use ($cacheItemsToReestablish) {
-            return new Fiber( function() use ($cacheItemsToReestablish) {
-                $this->reestablishCacheItems($cacheItemsToReestablish);
-            });
-        };
-
-        $jobProcessorFiberGenerator = function ()  {
-            return new Fiber( function()  {
-                $this->getSystemManager()->getJobManager()->process();
-            });
-        };
-
         $daemonTasks = [
-            new DaemonTask('CacheMaintainer', $cacheMaintainerGenerator),
-            new DaemonTask('JobProcessor', $jobProcessorFiberGenerator),
+            new DaemonTask('CacheMaintainer', function () {
+                $this->scheduleCacheRebuildJobs();
+            }),
+            new DaemonTask('JobQueueRecovery', function () {
+                $this->runJobQueueRecovery();
+            }),
         ];
 
 
@@ -109,45 +76,65 @@ class ApmDaemon extends CommandLineUtility
         }
     }
 
-    private function writePidFile() : bool {
+    private function writePidFile(): bool
+    {
         return file_put_contents($this->config['daemonPidFile'], "$this->pid") !== false;
     }
 
-    private  function erasePidFile() : bool {
+    private function erasePidFile(): bool
+    {
         return unlink($this->config['daemonPidFile']);
     }
 
-    /**
-     * @throws Throwable
-     */
-    private function reestablishCacheItems(array $cacheItemInfo) : void
+    private function scheduleCacheRebuildJobs(): void
     {
+        $jobManager = $this->getSystemManager()->getJobManager();
         $cache = $this->getSystemManager()->getSystemDataCache();
-        foreach ($cacheItemInfo as $item) {
+
+        $tasks = [
+            [
+                'key' => SiteWorks::WORK_DATA_CACHE_KEY,
+                'jobName' => ApmJobName::SITE_WORKS_UPDATE_CACHE,
+                'payload' => []
+            ],
+            [
+                'key' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
+                'jobName' => ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+                'payload' => []
+            ],
+            [
+                'key' => CacheKey::ApiPeople_PeoplePageData_All,
+                'jobName' => ApmJobName::API_PEOPLE_UPDATE_CACHE,
+                'payload' => []
+            ],
+        ];
+
+        foreach ($tasks as $task) {
             try {
-                $cache->get($item['cacheKey']);
+                $cache->get($task['key']);
             } catch (ItemNotInCacheException) {
-                // not in cache
-                $key = $item['cacheKey'];
-                $this->logger->info("$key not in cache, re-building data");
-                $start = microtime(true);
-                try {
-                    $data = ($item['builder'])();
-                } catch (Exception $e) {
-                    $this->logger->error("Exception trying to build data for $key", [ 'code'=> $e->getCode(), 'msg' => $e->getMessage()]);
-                    continue;
+                // not in cache, check if job is already active
+                if (!$jobManager->isJobActive($task['jobName'], 'Cache rebuild scheduled by Daemon', $task['payload'])) {
+                    $this->logger->info("Cache item {$task['key']} missing, scheduling rebuild job {$task['jobName']}");
+                    $jobManager->scheduleJob($task['jobName'], 'Cache rebuild scheduled by Daemon', $task['payload']);
                 }
-                Fiber::suspend();
-                if ($item['json']) {
-                    $cache->set($item['cacheKey'], json_encode($data), $item['ttl'] ?? 0);
-                } else {
-                    $cache->set($item['cacheKey'], serialize($data), $item['ttl'] ?? 0);
-                }
-                $end = microtime(true);
-                $this->logger->info(sprintf("Data for %s built and cached successfully in %.3f seconds", $key, $end - $start));
             }
-            Fiber::suspend();
         }
+    }
+
+    private function runJobQueueRecovery(): void
+    {
+        if (time() - $this->lastRecoveryRun < self::RECOVERY_INTERVAL) {
+            return;
+        }
+
+        $jobManager = $this->getSystemManager()->getJobManager();
+        if ($jobManager instanceof ValkeyJobQueueManager) {
+            $this->logger->info("Running Job Queue Recovery check");
+            $recovered = $jobManager->runRecovery(self::JOB_TIMEOUT);
+            $this->logger->info("Job Queue Recovery: $recovered jobs recovered");
+        }
+        $this->lastRecoveryRun = time();
     }
 
 }

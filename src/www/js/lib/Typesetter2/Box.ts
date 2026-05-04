@@ -29,7 +29,7 @@ import * as TypesetterItemDirection from './TypesetterItemDirection.js';
  */
 export class Box extends TypesetterItem {
 
-  constructor(direction = TypesetterItemDirection.HORIZONTAL) {
+  constructor(direction = TypesetterItemDirection.HorizontalItemDirection) {
     super(direction);
     this.width = 0;
     this.height = 0;

@@ -2549,7 +2549,7 @@ export class TranscriptionEditor
           ednotesHtml += '<footer>' +
                         editorObject.people[note.authorTid].name +
                         ' @ ' +
-                        note.time + '</footer>'
+                        ApmFormats.time(note.time) + '</footer>'
           ednotesHtml += '</blockquote>'
         }
         return t + ednotesHtml
@@ -2557,7 +2557,7 @@ export class TranscriptionEditor
       container: 'body',
       animation: false,
       template: '<div class="popover" role="tooltip"><div class="arrow"></div><div class="popover-body"></div></div>',
-      delay: { 'show': 1500, 'hide': 0},
+      delay: { 'show': 500, 'hide': 0},
       html: true,
       placement: 'auto',
       sanitize: false,

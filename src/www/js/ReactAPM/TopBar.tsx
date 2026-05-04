@@ -1,10 +1,10 @@
 import {tr} from "@/pages/common/SiteLang";
 import {CSSProperties, ReactNode, useContext} from "react";
-import {Container, Nav, Navbar, NavDropdown, NavItem} from "react-bootstrap";
+import {Container, Nav, Navbar, NavDropdown} from "react-bootstrap";
 
 import {NavLink, useLocation, useNavigate} from "react-router";
 import {AppContext} from "./App";
-import {PersonCircle, QuestionCircle} from "react-bootstrap-icons";
+import {PersonCircle} from "react-bootstrap-icons";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import {Tid} from "@/Tid/Tid";
 import {ApmUrlGenerator} from "@/ApmUrlGenerator";
@@ -81,16 +81,9 @@ export default function TopBar(props: TopBarProps): ReactNode {
         <MyNav route={RouteUrls.works()} title={tr('Works')}/>
         <MyNav route={RouteUrls.people()} title={tr('People')}/>
         <MyNav route={RouteUrls.search()} title={tr('Search')}/>
-        <Nav.Item>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</Nav.Item>
-        <NavDropdown id="useful-links-dropdown" title={tr('Useful Links')}>
 
-          <NavDropdown.Item className="dd-menu-item"
-                            href="https://averroes.uni-koeln.de/apm/wiki">Wiki</NavDropdown.Item>
-          <NavDropdown.Item className="dd-menu-item" href="https://averroes.uni-koeln.de/legacy/">Legacy Files (e.g.,
-            old XML)</NavDropdown.Item>
-          <NavDropdown.Item className="dd-menu-item" href="https://averroes.uni-koeln.de/">Public
-            Website</NavDropdown.Item>
-        </NavDropdown>
+        <Nav.Item>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</Nav.Item>
+        <MyNav route={RouteUrls.help()} title={'About/Help'}/>
       </Navbar.Collapse>
       <Navbar.Collapse className="justify-content-end">
         <NavDropdown id="user-dropdown" align={'end'} title={(<UserIcon name={userName}/>)}>

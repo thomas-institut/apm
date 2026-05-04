@@ -18,6 +18,7 @@
 
 import {Box} from './Box.js';
 import * as TypesetterItemDirection from './TypesetterItemDirection.js';
+import {HyphenationLanguage} from "./Hyphenator/Hyphenator.js";
 
 const defaultFontFamily = 'FreeSerif';
 const defaultFontSize = 16;
@@ -32,9 +33,11 @@ export class TextBox extends Box {
   private fontSize: number;
   private fontStyle: string;
   private fontWeight: string;
+  private hyphenation: HyphenationLanguage | null;
+
 
   constructor() {
-    super(TypesetterItemDirection.HORIZONTAL);
+    super(TypesetterItemDirection.HorizontalItemDirection);
     /**
      * A string of printable text
      * @type {string}
@@ -64,6 +67,11 @@ export class TextBox extends Box {
      */
     this.fontWeight = '';
 
+    /**
+     * The language to use for hyphenation.
+     * If null, no hyphenation will be performed.
+     */
+    this.hyphenation = null;
 
     /**
      * Width and height start as undefined.
@@ -145,6 +153,15 @@ export class TextBox extends Box {
     return this;
   }
 
+  getHyphenation(): HyphenationLanguage|null {
+    return this.hyphenation;
+  }
+
+  setHyphenation(hyphenation: HyphenationLanguage|null): this {
+    this.hyphenation = hyphenation;
+    return this;
+  }
+
   /**
    * Resets the item's width and height to undefined
    */
@@ -165,6 +182,9 @@ export class TextBox extends Box {
     if (this.fontWeight !== '') {
       obj.fontWeight = this.fontWeight;
     }
+    if (this.hyphenation !== null) {
+      obj.hyphenation = this.hyphenation;
+    }
 
     return obj;
   }
@@ -172,7 +192,7 @@ export class TextBox extends Box {
   setFromObject(object: any, mergeValues: boolean): this {
     super.setFromObject(object, mergeValues);
     const template = {
-      text: '', fontFamily: defaultFontFamily, fontSize: defaultFontSize, fontStyle: '', fontWeight: '',
+      text: '', fontFamily: defaultFontFamily, fontSize: defaultFontSize, fontStyle: '', fontWeight: '', hyphenation: null,
 
     };
     this.copyValues(template, object, mergeValues);

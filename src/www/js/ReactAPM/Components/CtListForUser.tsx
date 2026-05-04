@@ -106,7 +106,7 @@ export default function CtListForUser(props: CtListForUserProps) {
           const url = type === 'edition' ? RouteUrls.singleChunkEdition(ctableInfo.id) : RouteUrls.collationTable(ctableInfo.id);
           const entityType = type === 'edition' ? 'singleChunkEdition' : 'collationTable';
           return (<p key={ctableInfo.id} className="dashboard-list-item-2">
-            <a href={urlGen.siteChunkPage(ctableInfo.work, parseInt(ctableInfo.chunk))}>{ctableInfo.chunk}</a> :
+            <a href={urlGen.siteChunkPage(ctableInfo.work, parseInt(ctableInfo.chunk))}>{ctableInfo.chunk}</a>: &nbsp;
             <EntityLink id={ctableInfo.id} type={entityType} name={ctableInfo.title} active={true}
                         openInNewTab={true}/>
           </p>);

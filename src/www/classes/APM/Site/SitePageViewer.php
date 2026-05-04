@@ -136,7 +136,7 @@ class SitePageViewer extends SiteController
                 HttpStatus::NOT_FOUND);
         }
 
-        $viteImportsHtml = $this->getViteImportHtml([ 'js/pages/PageViewer/PageViewer.js']);
+        [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([ 'js/pages/PageViewer/PageViewer.js']);
 
         return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => $byPage,  // i.e., navigate by sequence
@@ -155,7 +155,8 @@ class SitePageViewer extends SiteController
             'imageUrl' => $imageUrl,
             'languagesArray' => $languagesArray,
             'deepZoom' => $deepZoom,
-            'viteImportsHtml' => $viteImportsHtml,
+            'viteJsImportsHtml' => $viteJsImportsHtml,
+            'viteCssImportsHtml' => $viteCssImportsHtml,
         ]);
     }
 

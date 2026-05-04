@@ -167,7 +167,7 @@ class ApiEntity extends ApiController
                         ];
                         break;
                     }
-                    $note = $command['editorialNote'] ?? '';
+                    $note = $command['cancellationNote'] ?? '';
                     try {
                         $cancellationId = $es->cancelStatement(intval($command['statementId']), $this->apiUserId, $timestamp, $note);
                         $commandResults[] = [
@@ -499,11 +499,33 @@ class ApiEntity extends ApiController
         return $this->responseWithJson($response, $matcher->getMatches($inputString, self::MaxNameSearchMatches));
     }
 
+
+    /**
+     * API call:
+     *
+     *    GET ../api/entity/{id}/predicateDefinition
+     *
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     */
+
+    public function getPredicateDefinition(Request $request, Response $response): Response {
+        $predicate = intval($request->getAttribute('id'));
+        $es = $this->systemManager->getEntitySystem();
+        try {
+            $predicateDef = $es->getPredicateDefinition($predicate);
+            return $this->responseWithJson($response, $predicateDef);
+        } catch (EntityDoesNotExistException) {
+            return $this->responseWithJson($response, [ 'error' => "Predicate $predicate does not exist"], HttpStatus::BAD_REQUEST);
+        }
+    }
+
     /**
      *
      * API call:
      *
-     *    GET  .../api/entity/{id}/predicateDefinitions
+     *    GET  .../api/entity/{id}/predicateDefinitionsForType
      *
      * Returns an object with information about the predicates applicable to an entity type.
      * If the id is not a type, the data for given entity's type is returned.
@@ -521,7 +543,7 @@ class ApiEntity extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function getPredicateDefinitions(Request $request, Response $response): Response {
+    public function getPredicateDefinitionsForType(Request $request, Response $response): Response {
 
         $id = intval($request->getAttribute('id') ?? -1);
 

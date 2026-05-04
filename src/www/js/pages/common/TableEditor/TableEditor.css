@@ -1,0 +1,58 @@
+.te-container:not(.table-edit-mode-move) .button-move-mode,
+.te-container:not(.table-edit-mode-move) .edit-cell-button {
+    display: none;
+}
+
+.te-container:not(.table-edit-mode-group) .link-button {
+    display: none;
+}
+
+.te-container.table-edit-mode-move .te-cell .cell-button {
+    display: none;
+}
+
+.te-container.table-edit-mode-move .te-cell:hover .cell-button {
+    display: inline-block;
+}
+
+.te-container.table-edit-mode-move .te-th .header-button {
+    display: none;
+}
+
+.te-container.table-edit-mode-move .te-th:hover .header-button {
+    display: inline-block;
+}
+
+.te-windowing-nav {
+    flex-grow: 0;
+    direction: ltr;
+    display: flex;
+    align-items: center;
+    padding: 10px;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    background-color: white;
+}
+
+.te-windowing-nav input[type="range"] {
+    flex-grow: 1;
+}
+
+.te-windowed-container {
+    display: flex;
+    flex-direction: column;
+}
+
+.tables-div {
+    padding: 1rem;
+}
+
+
+.te-tables-div {
+    flex-grow: 1;
+    overflow-x: auto;
+    overflow-y: auto
+}
+

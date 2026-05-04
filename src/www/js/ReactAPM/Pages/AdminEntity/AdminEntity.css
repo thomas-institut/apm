@@ -1,0 +1,73 @@
+
+.cancelled-row td {
+    background-color: #fafafa;
+}
+
+.with-margin-left {
+    margin-left: 2rem;
+}
+
+.system-data-label {
+    color: #b9bcbf;
+}
+
+.basic-data {
+    margin-left: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+}
+
+h3 {
+    margin-top: 1em;
+    margin-bottom: 0.5em;
+}
+
+
+.actions-div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+.action-buttons-div {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5em;
+}
+
+.action-buttons-div button {
+    font-size: 0.8em;
+}
+
+.literal-value {
+    font-family: monospace;
+    font-size: 0.9em;
+}
+
+.timestamp-value {
+    font-size: 0.9em;
+    border-bottom: 1px dotted #c9c8c8;
+}
+
+div.predicate-data {
+    margin-top: 1em;
+    margin-left: 1em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5em;
+}
+
+div.type-data {
+    margin-top: 1em;
+    margin-left: 1em;
+}
+
+div.type-entity-list {
+    margin-top: 1em;
+    margin-bottom: 2em;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+}
+

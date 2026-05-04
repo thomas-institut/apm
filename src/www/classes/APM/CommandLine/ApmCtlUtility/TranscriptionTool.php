@@ -5,27 +5,32 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 
 use APM\CommandLine\CommandLineUtility;
+use APM\EntitySystem\Schema\Entity;
 use APM\System\ApmMySqlTableName;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
 use APM\ToolBox\ArrayPrint;
+use ThomasInstitut\EntitySystem\Tid;
+
+
 
 class TranscriptionTool extends CommandLineUtility implements AdminUtility
 {
-    const CMD = 'transcription';
+    const string CMD = 'transcription';
 
-    const USAGE = <<<TXT
-     transcription <option>
+    const string USAGE = <<<TXT
+     transcription <option> 
      
      Options:
         info <doc:page[:col]>|<page:pageId[:col]> : print info about a transcription
         delete <doc:page[:col]>|<page:pageId[:col]> : delete a transcription
-        move <doc:page[:col]>|<page:pageId[:col]> <doc:page[:col]>|<page:pageId[:col]>: move a transcription
+        addCols <doc:page>|<page:pageId> <number> [magicWord] : add columns to a page
+        move <doc:page[:col]>|<page:pageId[:col]> <doc:page[:col]>|<page:pageId[:col]> [magicWord]: move a transcription
 TXT;
 
-    const DESCRIPTION = "Transcription management functions";
-    const MAGIC_WORD = 'IKnowWhatImDoing';
+    const string DESCRIPTION = "Transcription management functions";
+    const string MAGIC_WORD = 'IKnowWhatImDoing';
 
     public function __construct(array $config, int $argc, array $argv)
     {
@@ -54,6 +59,32 @@ TXT;
                [$pageInfo, $columNumber] = $data;
 
                $this->printTranscriptionInfo($pageInfo, $columNumber);
+               break;
+
+           case 'addCol':
+               if (!isset($argv[3])) {
+                   $this->printErrorMsg("Need page and column information");
+                   return 1;
+               }
+
+               $data = $this->getPageColumnInfoFromArgumentString($argv[2]);
+               if (!$this->reportArgErrors($data, $argv[2], false)) {
+                   return 1;
+               }
+               [$pageInfo, ] = $data;
+
+               $numCols = intval($argv[3]);
+               if ($numCols <= 0 || $numCols > 2) {
+                   $this->printErrorMsg("Sorry, won't add more than 2 columns at once");
+                   return 0;
+               }
+               $requireConfirmation = true;
+
+               if (isset($argv[4]) && $argv[4] === self::MAGIC_WORD) {
+                   $requireConfirmation = false;
+               }
+
+               $this->addTranscriptionColumn($pageInfo, $numCols, $requireConfirmation);
                break;
 
            case 'delete':
@@ -88,8 +119,13 @@ TXT;
                    return 1;
                }
                [$toPageInfo, $toColumnNumber] = $toData;
+               $requireConfirmation = true;
 
-               $this->moveTranscription($fromPageInfo, $fromColumNumber, $toPageInfo, $toColumnNumber);
+               if (isset($argv[4]) && $argv[4] === self::MAGIC_WORD) {
+                   $requireConfirmation = false;
+               }
+
+               $this->moveTranscription($fromPageInfo, $fromColumNumber, $toPageInfo, $toColumnNumber, $requireConfirmation);
                break;
 
            default:
@@ -99,7 +135,7 @@ TXT;
        return 1;
     }
 
-    private function reportArgErrors(?array $data, string $arg) : bool {
+    private function reportArgErrors(?array $data, string $arg, bool $checkColumns = true) : bool {
         if ($data === null) {
             $this->printErrorMsg("Invalid page column information: $arg");
             return false;
@@ -110,11 +146,12 @@ TXT;
             $this->printErrorMsg("Page does not exist: $arg");
             return false;
         }
-        if ($columNumber === null) {
+        if ($checkColumns && $columNumber === null) {
             $pageId = $pageInfo->pageId;
             $docId = $pageInfo->docId;
+            $tidString = Tid::toBase36String($docId);
             $pageNumber = $pageInfo->pageNumber;
-            $this->printErrorMsg("Column does not exist in page $pageId (doc $docId, page number $pageNumber)");
+            $this->printErrorMsg("Column does not exist in page $pageId (doc $tidString = $docId, page number $pageNumber)");
             return false;
         }
         return true;
@@ -138,7 +175,7 @@ TXT;
      *  *null* is returned in the last element of the resulting array.
      *
      * @param string $arg
-     * @return array|null
+     * @return array{PageInfo, int}|null
      */
     private function getPageColumnInfoFromArgumentString(string $arg) : ?array {
 
@@ -164,7 +201,7 @@ TXT;
         $givenColumnNumber = 1;
 
         if ($type === 'doc') {
-            $givenDocId = intval($fields[1]);
+            $givenDocId = Tid::fromString($fields[1]);
             if (isset($fields[3])) {
                 $givenColumnNumber = intval($fields[3]);
             }
@@ -290,7 +327,7 @@ TXT;
         }
     }
 
-    private function moveTranscription(PageInfo $fromPage, int $fromColumn, PageInfo $toPage, int $toColumn) : void {
+    private function moveTranscription(PageInfo $fromPage, int $fromColumn, PageInfo $toPage, int $toColumn, bool $requireConfirmation) : void {
 
         // get page and doc ids
         $fromPageId = $fromPage->pageId;
@@ -303,8 +340,7 @@ TXT;
         $lastAuthor = $versions[count($versions) - 1]->authorTid;
 
         if (!$this->printTranscriptionInfo($fromPage, $fromColumn) and count($versions) != 0) { // check if there is data to move
-            if ($this->userRespondsYes("Are you sure you want to move this transcription?")) {
-
+            if (!$requireConfirmation || $this->userRespondsYes("Are you sure you want to move this transcription?")) {
                 // get table names and setup database connection
                 $tableNames = $this->getSystemManager()->getTableNames();
                 $elements = $tableNames[ApmMySqlTableName::TABLE_ELEMENTS];
@@ -334,7 +370,8 @@ TXT;
 
                     // commit changes and schedule update jobs
                     $dbConn->commit();
-                    $this->getSystemManager()->onTranscriptionUpdated($lastAuthor, $toDocId, $toPageId, $toColumn);
+                    $this->getSystemManager()->onTranscriptionUpdated($lastAuthor, $fromPage->docId, $fromPage->pageNumber, $fromColumn);
+                    $this->getSystemManager()->onTranscriptionUpdated($lastAuthor, $toDocId, $toPage->pageNumber, $toColumn);
 
                     print("\nRESULT:\n");
                     $this->printTranscriptionInfo($toPage,$toColumn);
@@ -359,5 +396,25 @@ TXT;
     public function getDescription(): string
     {
         return self::DESCRIPTION;
+    }
+
+    private function addTranscriptionColumn(PageInfo $pageInfo, int $columNumber, bool $requireConfirmation): void
+    {
+        $tidString = Tid::toBase36String($pageInfo->docId);
+        if (!$requireConfirmation || $this->userRespondsYes("Do you want to add $columNumber columns to page $pageInfo->pageId, which currently has $pageInfo->numCols column(s) (doc $tidString = $pageInfo->docId, page number $pageInfo->pageNumber)")) {
+            $txManager = $this->getSystemManager()->getTranscriptionManager();
+            for ($i = 0; $i < $columNumber; $i++) {
+                $pageInfo->numCols++;
+            }
+
+            try {
+                $txManager->updatePageSettings($pageInfo->pageId, $pageInfo, Entity::System);
+                print "Added $columNumber columns to page $pageInfo->pageId (doc $tidString = $pageInfo->docId, page number $pageInfo->pageNumber)\n";
+            } catch (DocumentNotFoundException|PageNotFoundException $e) {
+                print "Error: " . $e->getMessage() . "\n";
+                return;
+            }
+
+        }
     }
 }

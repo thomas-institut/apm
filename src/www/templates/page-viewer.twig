@@ -11,13 +11,14 @@
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/styles.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/pageviewer.css" />
     <link rel="stylesheet" type="text/css" media="screen" href="{{baseUrl}}/css/transcription-editor.css" />
+    {{ viteCssImportsHtml|raw }}
     
     <script type="application/javascript" src="{{baseUrl}}/node_modules/jquery/dist/jquery.js"></script>
     <script type="application/javascript" src="{{baseUrl}}/node_modules/bootstrap/dist/js/bootstrap.bundle.js"></script>
     <script type="application/javascript" src="{{baseUrl}}/node_modules/openseadragon/build/openseadragon/openseadragon.min.js"></script>
     <script type="text/javascript" src="{{baseUrl}}/node_modules/twig/twig.min.js"></script>
     <script type="application/javascript" src="{{baseUrl}}/js/split-pane.js"></script>
-    {{ viteImportsHtml|raw }}
+    {{ viteJsImportsHtml|raw }}
 
     <link href='{{baseUrl}}/images/apm-logo-square-32x32.png' rel='icon' sizes='32x32' type='image/png'>
     <script>

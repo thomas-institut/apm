@@ -41,7 +41,7 @@ class SiteWorksUpdateDataCache implements JobHandlerInterface
                         $version->timeFrom
                     );
                 }
-                $works = $this->getWorksMentioned($transcriptions[0]);
+                $works = count($transcriptions) !== 0 ? $this->getWorksMentioned($transcriptions[0]) : [];
                 if (count($transcriptions) === 1 && count($works) === 0){
                     // nothing to do!
                     $sm->getLogger()->debug(

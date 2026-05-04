@@ -412,11 +412,11 @@ class ApiSearch extends ApiController
     }
 
     /**
-     * updates the data cache for transcribers and transcription titles or editors and edition titles
      * @param SystemManager $systemManager
      * @param string $whichIndex
      * @param LoggerInterface|null $logger
      * @return bool
+     * @throws \Throwable
      */
     static public function updateDataCache (SystemManager $systemManager, string $whichIndex, ?LoggerInterface $logger): bool
     {

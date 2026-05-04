@@ -7,9 +7,12 @@
 
 #
 # This will create the version tagline "version (versionDate) versionExtra"
+#
+# Delete app-setting.json after making changes to this file
+#
 
-version: '0.74.7'
-versionDate: '2026-Mar-10'
+version: '1.2.2'
+versionDate: '2026-Apr-29'
 versionExtra: ''
 
-jsAppCacheDataId: '20260205_103425'
+jsAppCacheDataId: '20260330_133120'

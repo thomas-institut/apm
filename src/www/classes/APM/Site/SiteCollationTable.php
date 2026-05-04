@@ -29,6 +29,7 @@ namespace APM\Site;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
+use APM\System\ApmCollationEngine;
 use APM\System\Document\DocInfo;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
@@ -37,6 +38,7 @@ use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
+use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -119,8 +121,6 @@ class SiteCollationTable extends SiteController
             [],
             [
                 'collationtable.css',
-                'multi-panel-ui/styles.css',
-                'edition-composer.css',
                 'collation.edit.css'
             ],
 //            [ 'js/SimpleProfiler.js']
@@ -128,6 +128,13 @@ class SiteCollationTable extends SiteController
 
     }
 
+
+    private function isValidCompactTimeString(string $compactTimeString): bool {
+        if (strlen($compactTimeString) !== 20) {
+            return false;
+        }
+        return ctype_digit($compactTimeString);
+    }
 
     /**
      * Serves the collation table editor.
@@ -141,93 +148,36 @@ class SiteCollationTable extends SiteController
      */
     public function editCollationTable(Request $request, Response $response) : Response{
         $tableId = intval($request->getAttribute('tableId'));
-        $versionId = intval($request->getAttribute('versionId'));
+        $encodedTimeStamp = $request->getAttribute('version', 'latest');
 
-        
-        $this->logger->debug("Edit collation table id $tableId, version $versionId");
+        if ($encodedTimeStamp === 'latest') {
+            $version = '';
+        } else {
+            if (!$this->isValidCompactTimeString($encodedTimeStamp)) {
+                $this->logger->error("Invalid timestamp given: $encodedTimeStamp");
+                return $this->getBasicErrorPage($response, "Error", "Invalid timestamp given", HttpStatus::BAD_REQUEST);
+            }
+            $version = TimeString::compactDecode($encodedTimeStamp);
+        }
+
         $ctManager = $this->systemManager->getCollationTableManager();
-        $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
 
-
-        if (count($versionInfoArray) === 0) {
-            $this->logger->info("No version info found, table probably does not exist");
-            $versionId = 0;
-        }
-        $timeStamp = TimeString::now();
-        $isLastVersion = true;
-        if ($versionId !== 0) {
-            // find timestamp for given versionId
-            $found = false;
-            foreach ( $versionInfoArray as $versionInfo) {
-                if ($versionInfo->id == $versionId) {
-                    $timeStamp = $versionInfo->timeFrom;
-                    if ($versionInfo->timeUntil !== TimeString::END_OF_TIMES) {
-                        $isLastVersion = false;
-                    }
-                    $found = true;
-                    $this->logger->debug("Version timestamp: $timeStamp");
-                    break;
-                }
-            }
-            if (!$found) {
-                $this->logger->info("Version ID does exist or does not correspond to given table, defaulting to latest version");
-            }
-        }
-
-        if ($isLastVersion) {
-            // find version Id
-            foreach ( $versionInfoArray as $versionInfo) {
-                if ($versionInfo->timeUntil === TimeString::END_OF_TIMES) {
-                    $versionId = $versionInfo->id;
-                    break;
-                }
-            }
-        }
-
-        try {
-            $ctData = $ctManager->getCollationTableById($tableId, $timeStamp);
-        } catch (InvalidArgumentException) {
-            $this->logger->info("Table $tableId requested for editing not found");
-            return $this->getErrorPage($response, 'Collation Table Error', "Table $tableId not found", HttpStatus::NOT_FOUND);
-        }
-
-        $versionInfoArray = $ctManager->getCollationTableVersions($tableId);
-        $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
-        [ $workId, $chunkNumber] = explode('-', $chunkId);
-        try {
-            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
-        } catch (WorkNotFoundException) {
-//          Not found!!!
-            return $this->getBasicErrorPage(
-                $response,
-                "Error",
-                "Work '$workId' not defined in the system", 404);
-        }
-
-
-        $peopleTids = [];
-        $peopleTids[] = $workInfo->authorId;
-        $peopleTids = array_merge($peopleTids, $this->getMentionedAuthorsFromCtData($ctData));
-        $peopleTids = array_merge($peopleTids, $this->getMentionedPeopleFromVersionArray($versionInfoArray));
-        $pm = $this->systemManager->getPersonManager();
-        $peopleInfo = [];
-        foreach($peopleTids as $personTid) {
-
+        if ($version === '') {
+            $timeStamp = '';
+            $isLastVersion = true;
+        } else {
             try {
-                $personData = $pm->getPersonEssentialData($personTid);
-            } catch (PersonNotFoundException) {
-                $this->logger->error("Person $personTid mentioned in CT not found");
+                $ctInfo = $ctManager->getCollationTableInfo($tableId, $version);
+                $timeStamp = $ctInfo->timeFrom;
+                $isLastVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
+            } catch(InvalidArgumentException $e) {
+                $this->logger->error("Collation table $tableId not found");
+                return $this->getBasicErrorPage($response, "Error", "Collation table $tableId not found", HttpStatus::NOT_FOUND);
             }
-            if (isset($personData)) {
-                $peopleInfo[$personTid] = $personData->getExportObject();
-            }
+
+            $this->logger->debug("Edit collation table id $tableId, version $version, actual timestamp: $timeStamp");
         }
 
-        $docs = $this->getMentionedDocsFromCtData($ctData);
-        $docManager = $this->systemManager->getDocumentManager();
-        $docInfoArray  = array_map( function ($id) use ($docManager) {
-            return $docManager->getDocInfo($id);
-        }, $docs);
 
         return $this->renderStandardPage(
             $response,
@@ -236,118 +186,19 @@ class SiteCollationTable extends SiteController
             'EditionComposer',
             'js/EditionComposer/EditionComposer.ts',
             [
-                'workId' => $workId,
-                'chunkNumber' => intval($chunkNumber),
                 'tableId' => $tableId,
-                'collationTableData' => $ctData,
-                'workInfo' => $workInfo,
-                'peopleInfo' => $peopleInfo,
-                'docInfo' => $docInfoArray,
-                'versionInfo' => $versionInfoArray,
                 'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
-                'versionId' => $versionId,
+                'version' => $timeStamp,
                 'lastVersion' => $isLastVersion
             ],
             [],
             [
                 '../node_modules/quill/dist/quill.core.css',
                 'collationtable.css',
-                'multi-panel-ui/styles.css',
-                'edition-composer.css',
                 'collation.edit.css'
             ],
-//            [ 'js/SimpleProfiler.js']
         );
-
-//        if ($ctData['type'] === 'edition') {
-//            return $this->renderStandardPage(
-//              $response,
-//              '',
-//              'Edit Collation Table',
-//              'EditionComposer',
-//              'js/EditionComposer/EditionComposer.js',
-//                [
-//                  'workId' => $workId,
-//                  'chunkNumber' => intval($chunkNumber),
-//                  'tableId' => $tableId,
-//                  'collationTableData' => $ctData,
-//                  'workInfo' => $workInfo,
-//                  'peopleInfo' => $peopleInfo,
-//                  'docInfo' => $docInfoArray,
-//                  'versionInfo' => $versionInfoArray,
-//                  'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
-//                  'versionId' => $versionId,
-//                  'lastVersion' => $isLastVersion
-//                ],
-//                [],
-//                [
-//                    '../node_modules/quill/dist/quill.core.css',
-//                    'collationtable.css',
-//                    'multi-panel-ui/styles.css',
-//                    'edition-composer.css',
-//                    'collation.edit.css'
-//                ],
-//                [ 'js/SimpleProfiler.js']
-//            );
-//        } else {
-//            return $this->renderStandardPage(
-//                $response,
-//                '',
-//                'Edit Collation Table',
-//                'CollationTableEditor',
-//                'js/pages/CollationTableEditor.js',
-//                [
-//                    'workId' => $workId,
-//                    'chunkNumber' => intval($chunkNumber),
-//                    'tableId' => $tableId,
-//                    'collationTableData' => $ctData,
-//                    'workInfo' => $workInfo,
-//                    'peopleInfo' => $peopleInfo,
-//                    'docInfo' => $docInfoArray,
-//                    'versionInfo' => $versionInfoArray,
-//                ],
-//                [],
-//                [
-//                    'collationtable.css',
-//                    'collation.edit.css'
-//                ],
-//                [ 'js/SimpleProfiler.js']
-//            );
-//        }
     }
-
-    protected function getMentionedPeopleFromVersionArray($versionArray) : array {
-        $people = [];
-        foreach($versionArray as $version) {
-            /** @var CollationTableVersionInfo $version */
-            $people[] = $version->authorTid;
-        }
-        return $people;
-    }
-
-    protected function getMentionedAuthorsFromCtData(array $ctData) : array {
-        $authors = [];
-
-        foreach($ctData['witnesses'] as $witness) {
-            if ($witness['witnessType'] === WitnessType::FULL_TRANSCRIPTION) {
-                foreach($witness['items']  as $i => $item) {
-                    if (isset($item['notes'])) {
-                        $this->logger->debug("Found notes in witness " . $witness['ApmWitnessId'] . ", item $i");
-                        foreach($item['notes'] as $note) {
-                            $authors[] = $note['authorTid'] ?? $note['authorId'] ;
-                        }
-                    }
-                }
-            }
-        }
-
-        return $authors;
-    }
-
-    protected function getMentionedDocsFromCtData(array $ctData) : array {
-        return CtData::getMentionedDocsFromCtData($ctData);
-    }
-
     /**
      * @param Request $request
      * @param Response $response
@@ -403,13 +254,6 @@ class SiteCollationTable extends SiteController
                         $msg = 'Non-supported witness type given: ' . $witnessType;
                         $this->logger->error($msg, [ 'args' => $args]);
                         return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                            'work' => $workId,
-//                            'chunk' => $chunkNumber,
-//                            'lang' => $language,
-//                            'error' => true,
-//                            'errorMessage' => $msg
-//                        ]);
                     }
                     // for now, only full transcriptions are implemented, so the second field in
                     // the witness spec must be a number
@@ -417,13 +261,6 @@ class SiteCollationTable extends SiteController
                         $msg = 'Invalid doc id given: ' . $specs[1];
                         $this->logger->error($msg, [ 'args' => $args]);
                         return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                            'work' => $workId,
-//                            'chunk' => $chunkNumber,
-//                            'lang' => $language,
-//                            'error' => true,
-//                            'errorMessage' => $msg
-//                        ]);
                     }
                     $docId = intval($specs[1]);
                     $lwid = 'A';
@@ -443,13 +280,6 @@ class SiteCollationTable extends SiteController
                 $msg = 'Unrecognized option : ' . $argWitnessSpec;
                 $this->logger->error($msg, [ 'args' => $args]);
                 return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                    'work' => $workId,
-//                    'chunk' => $chunkNumber,
-//                    'lang' => $language,
-//                    'error' => true,
-//                    'errorMessage' => $msg
-//                ]);
             }
             $collationPageOptions['partialCollation'] = true;
         }
@@ -477,13 +307,6 @@ class SiteCollationTable extends SiteController
             $this->logger->error($msg,
                     [ 'presetId' => $presetId]);
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                'work' => $workId,
-//                'chunk' => $chunkNumber,
-//                'lang' => '??',
-//                'error' => true,
-//                'errorMessage' => $msg
-//            ]);
         }
 
         $preset = $presetManager->getPresetById($presetId);
@@ -567,26 +390,12 @@ class SiteCollationTable extends SiteController
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no data';
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                'work' => '??',
-//                'chunk' => '??',
-//                'lang' => '??',
-//                'error' => true,
-//                'errorMessage' => $msg
-//            ]);
         }
         if (!isset($inputData['options'])) {
             $this->logger->error('Automatic Collation Table:  no options in input',
                     [ 'rawdata' => $postData]);
             $msg = 'Bad request: no options';
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                'work' => '??',
-//                'chunk' => '??',
-//                'lang' => '??',
-//                'error' => true,
-//                'errorMessage' => $msg
-//            ]);
         }
         
         $collationPageOptions = $inputData['options'];
@@ -596,13 +405,6 @@ class SiteCollationTable extends SiteController
             if (!isset($collationPageOptions[$requiredField])) {
                 $msg = 'Bad request: missing required option ' . $requiredField ;
                 return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                    'work' => '??',
-//                    'chunk' => '??',
-//                    'lang' => '??',
-//                    'error' => true,
-//                    'errorMessage' => $msg
-//                ]);
             }
         }
         $collationPageOptions['isPreset'] = false;
@@ -616,14 +418,10 @@ class SiteCollationTable extends SiteController
      */
     private function getCollationTablePage(array $collationPageOptions, Response $response): Response
     {
-//        $this->codeDebug("Getting collation table page", $collationPageOptions);
-
         $workId = $collationPageOptions['work'];
         $chunkNumber = intval($collationPageOptions['chunk']);
         $language = $collationPageOptions['lang'];
         $partialCollation = $collationPageOptions['partialCollation'];
-
-
 
         $apiCallOptions = [
             'work' => $workId,
@@ -631,7 +429,7 @@ class SiteCollationTable extends SiteController
             'lang' => $language,
             'ignorePunctuation' => $collationPageOptions['ignorePunctuation'],
             'witnesses' => $collationPageOptions['witnesses'],
-            'collationEngine' => $collationPageOptions['collationEngine'] ?? 'DoNothing',
+            'collationEngine' => $collationPageOptions['collationEngine'] ?? '',
         ];
 
         if (isset($collationPageOptions['normalizers'])) {
@@ -659,13 +457,6 @@ class SiteCollationTable extends SiteController
         if (is_null($langInfo)) {
             $msg = 'Invalid language <b>' . $language . '</b>';
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//            return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                'work' => $workId,
-//                'chunk' => $chunkNumber,
-//                'lang' => $language,
-//                'error' => true,
-//                'errorMessage' => $msg
-//            ]);
         }
         
         // get work info
@@ -675,8 +466,12 @@ class SiteCollationTable extends SiteController
             return $this->getBasicErrorPage($response, 'Error', "Work $workId not found", 404);
         }
 
+        SystemProfiler::lap('getWorkInfo');
+
         // get total witness counts
         $validWitnesses = $this->getValidWitnessesForChunkLang($workId, $chunkNumber, $language);
+
+        SystemProfiler::lap('getValidWitnessesForChunkLang');
 
         //$this->codeDebug('Found ' . count($validWitnesses) . " valid witnesses");
 
@@ -713,13 +508,6 @@ class SiteCollationTable extends SiteController
                 if (!$found) {
                     $msg = 'Requested witness not valid ' . $systemId;
                     return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
-//                    return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, [
-//                        'work' => $workId,
-//                        'chunk' => $chunkNumber,
-//                        'lang' => $language,
-//                        'error' => true,
-//                        'errorMessage' => $msg
-//                    ]);
                 }
             }
         }
@@ -754,12 +542,7 @@ class SiteCollationTable extends SiteController
             $data,
             [],
             ['collationtable.css', 'act-settingsform.css'],
-//            ['js/SimpleProfiler.js']
         );
-
-
-        
-//        return $this->renderPage($response, self::TEMPLATE_COLLATION_TABLE, $data);
     }
     
 

@@ -20,6 +20,13 @@ export class CleanerOnePointFive extends CtDataCleaner {
     // make sure all custom apparatuses are there
     let defaultApparatusesCleaner = new DefaultApparatusesCleaner({verbose: this.verbose});
 
+
+    ctData.customApparatuses = ctData.customApparatuses ?? [];
+    if (ctData.editionWitnessIndex === undefined) {
+      ctData.editionWitnessIndex = 0;
+    }
+
+
     ctData = defaultApparatusesCleaner.getCleanCtData(ctData);
     // run apparatus cleaners
     let subEntryPositionsCleaner = new SubEntryPositionsConsistencyCleaner({verbose: this.verbose});

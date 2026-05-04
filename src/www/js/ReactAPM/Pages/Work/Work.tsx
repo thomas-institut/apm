@@ -55,9 +55,7 @@ export default function Work() {
   }
 
   const chunksDataQueryResult = useQuery({
-    queryKey: ['chunksData', numericalWorkId],
-    queryFn: getChunksData,
-    enabled: workDataQueryResult.status === 'success'
+    queryKey: ['chunksData', numericalWorkId], queryFn: getChunksData, enabled: workDataQueryResult.status === 'success'
   });
 
   const provisionalBreadCrumb = <Breadcrumb>
@@ -108,23 +106,23 @@ export default function Work() {
   }
 
   return (<NormalPageContainer>
-      <Breadcrumb>
-        <Breadcrumb.Item linkAs={Link} linkProps={{to: RouteUrls.works()}}>Works</Breadcrumb.Item>
-        <Breadcrumb.Item active>{workData.workId}</Breadcrumb.Item>
-      </Breadcrumb>
+    <Breadcrumb>
+      <Breadcrumb.Item linkAs={Link} linkProps={{to: RouteUrls.works()}}>Works</Breadcrumb.Item>
+      <Breadcrumb.Item active>{workData.workId}</Breadcrumb.Item>
+    </Breadcrumb>
+    <div>
+      <h2><EntityLink id={workData.authorId} type={'person'}/>, <em>{workData.title}</em></h2>
       <div>
-        <h2><EntityLink id={workData.authorId} type={'person'}/>, <em>{workData.title}</em></h2>
-        <div>
-          <div>Entity Id: {Tid.toCanonicalString(workData.entityId)}</div>
-          <div>Work Id: {workData.workId}</div>
-        </div>
-        {context.userIsAdmin ?
-          <div style={{marginTop: '1em'}}><a href={urlGen.siteAdminEntity(workData.entityId)}>[Entity Page]</a>
-          </div> : null}
-        <div style={{marginTop: '1em'}}>
-          {chunkTable}
-        </div>
-
+        <div>Entity Id: {Tid.toCanonicalString(workData.entityId)}</div>
+        <div>Work Id: {workData.workId}</div>
       </div>
-    </NormalPageContainer>);
+      {context.userIsAdmin ?
+        <div style={{marginTop: '1em'}}><EntityLink type={'admin'} id={workData.entityId} label={'[ Entity Admin ]'}/>
+        </div> : null}
+      <div style={{marginTop: '1em'}}>
+        {chunkTable}
+      </div>
+
+    </div>
+  </NormalPageContainer>);
 }

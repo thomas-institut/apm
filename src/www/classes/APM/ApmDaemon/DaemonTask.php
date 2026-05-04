@@ -2,7 +2,6 @@
 
 namespace APM\ApmDaemon;
 
-use Fiber;
 use Throwable;
 
 class DaemonTask
@@ -11,15 +10,14 @@ class DaemonTask
     /**
      * @var callable
      */
-    private $fiberGenerator;
-    private ?Fiber $currentFiber = null;
+    private $taskCallable;
     private string $name;
 
     private int $runCount = 0;
 
-    public function __construct(string $name, callable $fiberGenerator)
+    public function __construct(string $name, callable $taskCallable)
     {
-        $this->fiberGenerator = $fiberGenerator;
+        $this->taskCallable = $taskCallable;
         $this->name = $name;
     }
 
@@ -27,15 +25,8 @@ class DaemonTask
      * @throws Throwable
      */
     public function run() : void {
-        if ($this->currentFiber === null || $this->currentFiber->isTerminated()) {
-            $this->currentFiber = call_user_func($this->fiberGenerator);
-            $this->currentFiber->start();
-            $this->runCount++;
-            return;
-        }
-        if ($this->currentFiber->isSuspended()) {
-            $this->currentFiber->resume();
-        }
+        call_user_func($this->taskCallable);
+        $this->runCount++;
     }
 
     public function getName() : string {

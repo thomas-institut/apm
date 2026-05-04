@@ -177,7 +177,7 @@ export interface FullTxItemInterface {
   location?: string;
   deletion?: string;
   normalizationType?: string;
-  notes?: any[];
+  notes?: FullTxItemEditorialNote[];
   lang?: string;
 }
 

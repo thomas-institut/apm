@@ -1,11 +1,10 @@
-import {OptionsChecker} from "@thomas-inst/optionschecker";
 import {setBaseUrl, urlGen} from './common/SiteUrlGen';
 import {ApmApiClient} from '@/Api/ApmApiClient';
 import {defaultLanguage, setSiteLanguage, tr, validLanguages} from './common/SiteLang';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {ApmFormats} from './common/ApmFormats';
 import {DataId_EC_ViewOptions} from '@/constants/WebStorageDataId';
-import {CommonData, CommonDataOptionsDefinition} from "./CommonData";
+import {CommonData} from "./CommonData";
 
 
 const langCacheKey = 'apmSiteLanguage';
@@ -21,7 +20,7 @@ export interface ApmPageOptions {
 
 export class ApmPage {
 
-  protected commonData!: CommonData;
+  protected commonData!: Required<CommonData>;
   protected userId: number = -1;
   protected userName: string = '';
   protected apiClient!: ApmApiClient;
@@ -48,13 +47,17 @@ export class ApmPage {
 
     this.constructorPromise = new Promise(async (resolve, reject) => {
       if (options !== null && options.commonData !== undefined) {
-        let optionsChecker = new OptionsChecker({
-          context: 'ApmPage Common Data', optionsDefinition: CommonDataOptionsDefinition
-        });
-        this.commonData = optionsChecker.getCleanOptions(options.commonData);
-        setBaseUrl(this.commonData.baseUrl);
-        this.apiClient = new ApmApiClient(this.commonData.cacheDataId, [DataId_EC_ViewOptions]);
+        if (options.commonData.userInfo === undefined) {
+          reject('User info not found');
+          return;
+        }
+        const CommonDataDefaults = { devMode: false, siteLanguage: '', pageId: ''}
+        /** @ts-ignore **/
+        this.commonData = {...CommonDataDefaults, ...options.commonData};
+        setBaseUrl(options.commonData.baseUrl);
+        this.apiClient = new ApmApiClient(options.commonData.cacheDataId, [DataId_EC_ViewOptions]);
         await this.apiClient.initialize();
+
         this.userId = this.commonData.userInfo.id;
       } else {
         debug && console.log(`No options given, getting settings from backend`);
@@ -69,7 +72,7 @@ export class ApmPage {
         }
         debug && console.log(`Got app settings`, appSettings);
         setBaseUrl(appSettings.baseUrl);
-        this.commonData = {
+        const commonData = {
           baseUrl: appSettings.baseUrl,
           appName: appSettings.appName,
           appVersion: `${appSettings.appVersion} (${appSettings.versionDate}) ${appSettings.versionExtra}`.trim(),
@@ -78,33 +81,29 @@ export class ApmPage {
           cacheDataId: appSettings.cacheDataId,
           showLanguageSelector: appSettings.showLanguageSelector,
           renderTimestamp: Math.round(Date.now() / 1000),
-          userInfo: {}
+          pageId: '',
+          siteLanguage: ''
         };
-        setBaseUrl(this.commonData.baseUrl);
+        setBaseUrl(commonData.baseUrl);
         this.apiClient = new ApmApiClient(this.commonData.cacheDataId, [DataId_EC_ViewOptions]);
-
         let userData = await this.apiClient.whoAmI();
-
         if (userData === null) {
           // this means the user is not authorized
           window.location.href = urlGen.siteLogin();
         }
         this.userId = userData.id;
-        this.commonData.userInfo = userData;
-
+        this.commonData = {...commonData, userInfo: userData};
         debug && console.log(`Common data`, this.commonData);
       }
 
       this.userName = this.commonData.userInfo.userName;
-
       this.localCache = new WebStorageKeyCache('local', this.commonData.cacheDataId);
-
       this.showLanguageSelector = this.commonData.showLanguageSelector;
       if (this.showLanguageSelector) {
         this.siteLanguage = this.commonData.siteLanguage ?? '';
         if (this.siteLanguage === '' || this.siteLanguage === 'detect') {
           // console.log(`No site language given, detecting language`);
-          this.siteLanguage = await this.detectBrowserLanguage();
+          this.siteLanguage = this.detectBrowserLanguage();
         }
         setSiteLanguage(this.siteLanguage);
         ApmFormats.setLanguage(this.siteLanguage);
@@ -140,19 +139,6 @@ export class ApmPage {
 
   isUserRoot() {
     return this.commonData.userInfo['isRoot'];
-  }
-
-  /**
-   * Returns the object needed to properly set up a DataTables object using
-   * APM's language-aware strings
-   * @return {Object}
-   */
-  getDataTablesLanguageOption(): object {
-    return {
-      processing: tr('Processing'), search: tr('DataTables:Search'), emptyTable: tr('Empty Table'), paginate: {
-        first: tr('First'), previous: tr('Previous'), next: tr('Next'), last: tr('Last')
-      }, info: tr('Showing _START_ to _END_ of _TOTAL_ rows'), lengthMenu: tr('Show _MENU_ entries')
-    };
   }
 
 

@@ -90,21 +90,21 @@ export const arabicDeGruyterScheherazadeNew: StyleSheetDefinition = {
     parent: 'default', text: {
       fontSize: '1.33333333 em',
     }, paragraph: {
-      align: 'center', spaceBefore: '2 em', spaceAfter: '1 em'
+      align: 'center', spaceBefore: '2 em', spaceAfter: '1 em', keepWithNext: true
     }
   },
   h2: {
     parent: 'default', text: {
       fontSize: '1.1666666 em',
     }, paragraph: {
-      spaceBefore: '1 em', spaceAfter: '0.5 em'
+      spaceBefore: '1 em', spaceAfter: '0.5 em', keepWithNext: true
     }
   },
   h3: {
     parent: 'default', text: {
       fontWeight: 'bold',
     }, paragraph: {
-      spaceBefore: '0.5 em', spaceAfter: '0.25 em'
+      spaceBefore: '0.5 em', spaceAfter: '0.25 em', keepWithNext: true
     }
   },
   apparatus: {

@@ -107,7 +107,8 @@ export const arabicDeGruyter: StyleSheetDefinition = {
       paragraph: {
         align: "center",
         spaceBefore: "2 em",
-        spaceAfter: "1 em"
+        spaceAfter: "1 em",
+        keepWithNext: true
       }
     },
     h2: {
@@ -117,7 +118,8 @@ export const arabicDeGruyter: StyleSheetDefinition = {
       },
       paragraph: {
         spaceBefore: "1 em",
-        spaceAfter: "0.5 em"
+        spaceAfter: "0.5 em",
+        keepWithNext: true
       }
     },
     h3: {
@@ -127,7 +129,8 @@ export const arabicDeGruyter: StyleSheetDefinition = {
       },
       paragraph: {
         spaceBefore: "0.5 em",
-        spaceAfter: "0.25 em"
+        spaceAfter: "0.25 em",
+        keepWithNext: true
       }
     },
     apparatus: {

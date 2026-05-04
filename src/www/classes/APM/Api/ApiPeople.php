@@ -30,9 +30,9 @@ class ApiPeople extends ApiController
     const int WorksByPersonTtl =  8 * 24 * 3600;
 
     /**
-     * Make this number so that rebuilding the data for a part does not take more than one second.
-     * When changing this number, stop the ApmDaemon, delete the PeoplePageData cache and restart
-     * the daemon again to ensure the cache is regenerated
+     * Adjust this number so that rebuilding the data for a part does not take more than a few milliseconds
+     * When changing this number, stop the ApmWorkers, delete the PeoplePageData cache and restart
+     * the workers again to ensure the cache is regenerated
      */
     const int PeoplePageData_PeoplePerPart = 25;
 
@@ -92,12 +92,12 @@ class ApiPeople extends ApiController
         }
     }
 
-    public static function onPersonDataChanged(int $tid, ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : int {
+    public static function onPersonDataChanged(int $id, ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : int {
         $parts = self::getPartsData($es, $cache, $logger);
         $numParts = count($parts);
         $partToInvalidate = -1;
         for($i = 0; $i < count($parts); $i++) {
-            if (in_array($tid, $parts[$i])) {
+            if (in_array($id, $parts[$i])) {
                 $partToInvalidate = $i;
                 break;
             }
@@ -113,12 +113,11 @@ class ApiPeople extends ApiController
                 // we have the same number of parts as before,
                 // which means that the new person's data belongs in the last part
                 // and that part's cache should be invalidated
-                // Note that this works because tids are ordered in ascending order
-                // and new tids are always greater than older ones. New tids will always
+                // Note that this works because ids are ordered in ascending order when setting up the parts
+                // and new ids are always greater than older ones. New ids will always
                 // be in the last part.
                 $partToInvalidate = $numParts -1;
                 self::invalidatePeoplePageDataPart($numParts-1, $cache);
-
             } else {
                 // a new part is needed, but its cache is not built yet
                 // so there's no need to invalidate it
@@ -137,12 +136,14 @@ class ApiPeople extends ApiController
         } catch (ItemNotInCacheException) {
             // build parts structure
             $logger->debug("People page data: parts info not in cache, rebuilding");
-            // get all tids, including merged ones so that there's no need to deal with deletions in the cache
-            $allPeopleTids = $es->getAllEntitiesForType(Entity::tPerson, true);
-            // sort in ascending order, which results in any future new person tid to be always in the last part when newly
-            // created
-            sort($allPeopleTids, SORT_NUMERIC);
-            $parts = array_chunk($allPeopleTids, self::PeoplePageData_PeoplePerPart);
+            // get all ids, including merged ones so that there's no need to deal with deletions in the cache
+            $allPeopleIds = $es->getAllEntitiesForType(Entity::tPerson, true);
+
+            // Sort in ascending order. This ensures that any newly created person will always be in the last part.
+            // and therefore current parts will not need to be rebuilt when a new person is created
+            sort($allPeopleIds, SORT_NUMERIC);
+
+            $parts = array_chunk($allPeopleIds, self::PeoplePageData_PeoplePerPart);
             $cache->set(CacheKey::ApiPeople_PeoplePageData_Parts, serialize($parts), self::AllPeopleDataForPeoplePageTtl);
         }
 
@@ -150,13 +151,10 @@ class ApiPeople extends ApiController
     }
 
     public static function buildAllPeopleDataForPeoplePage(ApmEntitySystemInterface $es, DataCache $cache, LoggerInterface $logger) : array {
-
-
         $parts = self::getPartsData($es, $cache, $logger);
-
         $dataArray = [];
         for ($i = 0; $i < count($parts); $i++) {
-            $partTids = $parts[$i];
+            $partPersonIds = $parts[$i];
             $partCacheKey = self::getPeoplePageDataPartCacheKey($i);
             // check if the part is already built
             try {
@@ -165,16 +163,16 @@ class ApiPeople extends ApiController
                 // build part data
                 $logger->debug("People page data: part $i not in cache, rebuilding");
                 $partData  = [];
-                foreach ($partTids as $tid) {
+                foreach ($partPersonIds as $id) {
                     try {
-                        $personData = $es->getEntityData($tid);
+                        $personData = $es->getEntityData($id);
                     } catch (EntityDoesNotExistException) {
                         // should never happen
-                        throw new RuntimeException("Entity from all people list does not exist: $tid");
+                        throw new RuntimeException("Entity from all people list does not exist: $id");
                     }
 
                     $partData[] = [
-                        'tid' => $tid,
+                        'tid' => $id,
                         'name' => $personData->name,
                         'sortName' => $personData->getObjectForPredicate(Entity::pSortName) ?? '',
                         'dateOfBirth' => $personData->getObjectForPredicate(Entity::pDateOfBirth) ?? '',
@@ -254,15 +252,14 @@ class ApiPeople extends ApiController
         $pm = $this->systemManager->getPersonManager();
 
         try {
-            $tid = $pm->createPerson($name, $sortName, $this->apiUserId);
+            $newPersonId = $pm->createPerson($name, $sortName, $this->apiUserId);
         } catch (InvalidPersonNameException $e) {
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);
         }
-        $this->systemManager->onEntityDataChange($tid, $this->apiUserId);
+        $this->systemManager->onEntityDataChange($newPersonId, $this->apiUserId);
         // the person has been created
-        return $this->responseWithJson($response, [ 'tid' => $tid ], HttpStatus::SUCCESS);
-
+        return $this->responseWithJson($response, $newPersonId, HttpStatus::SUCCESS);
     }
 
 }

@@ -33,7 +33,7 @@ import {Penalty} from './Penalty.js';
 export class ItemList extends TypesetterItem {
   private list: TypesetterItem[];
 
-  constructor(direction = TypesetterItemDirection.HORIZONTAL) {
+  constructor(direction = TypesetterItemDirection.HorizontalItemDirection) {
     super(direction);
     this.list = [];
   }
@@ -59,10 +59,6 @@ export class ItemList extends TypesetterItem {
     this.list.push(item);
   }
 
-  /**
-   *
-   * @param {TypesetterItem[]}itemArray
-   */
   pushItemArray(itemArray: TypesetterItem[]) {
     itemArray.forEach((item) => {
       this.pushItem(item);
@@ -77,7 +73,7 @@ export class ItemList extends TypesetterItem {
     if (this.height !== -1) {
       return this.height;
     }
-    if (this.direction === TypesetterItemDirection.VERTICAL) {
+    if (this.direction === TypesetterItemDirection.VerticalItemDirection) {
       // the sum of the height of all items in the list
       return this.list.reduce((acc, item) => {
         return acc + item.getHeight();
@@ -93,7 +89,7 @@ export class ItemList extends TypesetterItem {
     if (this.width !== -1) {
       return this.width;
     }
-    if (this.direction === TypesetterItemDirection.HORIZONTAL) {
+    if (this.direction === TypesetterItemDirection.HorizontalItemDirection) {
       // the sum of the width of all items in the list
       return this.list.reduce((acc, item) => {
         return acc + item.getWidth();
@@ -143,13 +139,6 @@ export class ItemList extends TypesetterItem {
       }
       return '';
     });
-    // if (this.hasMetadata(MetadataKey.HAS_REVERSE_TEXT) && this.getMetadata(MetadataKey.HAS_REVERSE_TEXT) === true) {
-    //   // TODO: properly implement this!!!
-    //   let originalIndexes = this.getList().map( (item) => {
-    //     return item.getMetadata(MetadataKey.ORIGINAL_ARRAY_INDEX)
-    //   })
-    // }
-
     return textArray.join('');
   }
 

@@ -19,10 +19,6 @@
 import * as TokenType from '../../Witness/WitnessTokenType';
 import * as WitnessTokenType from '../../Witness/WitnessTokenType';
 import {SequenceWithGroups} from '../SequenceWithGroups';
-
-// @ts-ignore
-import {Matrix} from '@thomas-inst/matrix';
-
 import * as SubEntryType from '../SubEntryType';
 import * as ApparatusType from '../../constants/ApparatusType';
 import * as SubEntrySource from '../SubEntrySource';
@@ -39,6 +35,8 @@ import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {MainTextToken} from "../MainTextToken.js";
 import {Apparatus} from "@/Edition/Apparatus";
 import {fromString} from "@/lib/FmtText/FmtText";
+import {Matrix} from "@/lib/Matrix";
+import {EMPTY} from "@/Witness/WitnessTokenType";
 
 export class CriticalApparatusGenerator {
   protected verbose: boolean;
@@ -80,7 +78,7 @@ export class CriticalApparatusGenerator {
 
     let lang = ctData['lang'];
 
-    let columnGroups = this._getGroupsFromCtData(ctData);
+    let columnGroups = this.getGroupsFromCtData(ctData);
     // TODO: detect a series of empty main text tokens at the beginning of the text and create a group with them
     //  this group would only be added if the user has not already created it or created groups that contain it
     //  entirely (for example: a user might have decided to include the first few words of the main text in
@@ -93,18 +91,19 @@ export class CriticalApparatusGenerator {
         ctColumns.push(CtData.getCollationTableColumn(ctData, ctColNumber));
       }
 
-      if (ctColumns.every(col => this._isCtTableColumnEmpty(col))) {
+      if (ctColumns.every(col => this.isCtTableColumnEmpty(col))) {
         // skip groups consisting of only empty columns
         // this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} consists of empty columns, skipping.`)
         return;
       }
 
-      let groupMatrix = new Matrix(ctColumns.length, ctColumns[0].length);
+      let groupMatrix = new Matrix<WitnessTokenInterface>(
+        ctColumns.length, ctColumns[0].length, { tokenType: EMPTY, text: '', tokenClass: ''});
       groupMatrix.setFromArray(ctColumns);
       // a row in groupMatrix is one collation table column
       // this means that a groupMatrix column is a row in the CT
       // if (mainTextIndices.every( i => i === -1)) {
-      if (this._isCtRowEmpty(ctColumns, baseWitnessIndex)) {
+      if (this.isCtRowEmpty(ctColumns, baseWitnessIndex) || ctColumns.length > 1 && this.isCtRowForMultiColumnGroupEffectivelyEmpty(ctColumns, baseWitnessIndex)) {
         // this.verbose && console.log(`No base witness text for group ${columnGroup.from}-${columnGroup.to}`)
         // First find the previous index for which there is a word in the base witness,
         // the  sub-entries, one or more additions, will be associated with it
@@ -271,7 +270,7 @@ export class CriticalApparatusGenerator {
     return optimizedEntries;
   }
 
-  _getGroupsFromCtData(ctData: CtDataInterface) {
+  private getGroupsFromCtData(ctData: CtDataInterface) {
     if (ctData['witnesses'].length === 0) {
       return [];
     }
@@ -332,13 +331,37 @@ export class CriticalApparatusGenerator {
     .join(' ');
   }
 
-  _isCtTableColumnEmpty(ctColumn: WitnessTokenInterface[]) {
+  private isCtTableColumnEmpty(ctColumn: WitnessTokenInterface[]) {
     return ctColumn.every(e => e.tokenType === TokenType.EMPTY);
   }
 
-  _isCtRowEmpty(ctColumnArray: WitnessTokenInterface[][], rowIndex: number) {
+  /**
+   * Checks if a row in a range of columns in the collation table is empty
+   *
+   * @param ctColumnArray
+   * @param rowIndex
+   */
+  private isCtRowEmpty(ctColumnArray: WitnessTokenInterface[][], rowIndex: number) {
     return ctColumnArray.map(col => col[rowIndex]).every(token => {
       return token.tokenType === WitnessTokenType.EMPTY;
+    });
+  }
+
+
+  private isCtRowForMultiColumnGroupEffectivelyEmpty(ctColumnArray: WitnessTokenInterface[][], rowIndex: number) : boolean {
+    if (ctColumnArray.length < 2) {
+      // not a multi column group
+      return false;
+    }
+    return ctColumnArray.map(col => col[rowIndex]).every(token => {
+      if (token.tokenType !== TokenType.WORD) {
+        return true;
+      }
+      let tokenText = token.text;
+      if (Punctuation.stringIsAllPunctuation(tokenText)) {
+        return true;
+      }
+      return tokenText === '';
     });
   }
 

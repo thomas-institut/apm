@@ -27,6 +27,10 @@ export function uniq(theArray: any[]): any[] {
   });
 }
 
+export function ArrayUniqueValues<T>(theArray: T[]): T[] {
+  return [...new Set(theArray)];
+}
+
 export function swapElements(theArray: any[], index1: number, index2: number): any[] {
   let element1 = theArray[index1];
   theArray[index1] = theArray[index2];

@@ -20,6 +20,7 @@ import {TextBox} from './TextBox.js';
 import {Penalty} from './Penalty.js';
 import {TypesetterItem} from "./TypesetterItem.js";
 import {TextBoxMeasurer} from "./TextBoxMeasurer/TextBoxMeasurer.js";
+import {ObjectFactory} from "./ObjectFactory.js";
 
 /**
  * Utility functions operating TypesetterItem arrays
@@ -28,41 +29,44 @@ export class ItemArray {
   /**
    * Measures the text boxes in the given item array that are not
    * already measured.
-   * @param {TypesetterItem[]}itemArray
-   * @param {TextBoxMeasurer}textBoxMeasurer
-   * @return {Promise<void>}
+   *
+   * This will transform the item array in place.
    */
-  static measureTextBoxes(itemArray: TypesetterItem[], textBoxMeasurer: TextBoxMeasurer): Promise<void> {
-    return new Promise(async (resolve) => {
-      for (let i = 0; i < itemArray.length; i++) {
-        let item = itemArray[i];
-        if (item instanceof TextBox) {
-          if (item.getWidth() === -1) {
-            //debug && console.log(`Getting text box width`)
-            let measuredWidth = await textBoxMeasurer.getBoxWidth(item);
-            item.setWidth(measuredWidth);
-          }
-          if (item.getHeight() === -1) {
-            let measuredHeight = await textBoxMeasurer.getBoxHeight(item);
-            item.setHeight(measuredHeight);
-          }
+  static async measureTextBoxes(itemArray: TypesetterItem[], textBoxMeasurer: TextBoxMeasurer): Promise<void> {
+    for (let i = 0; i < itemArray.length; i++) {
+      let item = itemArray[i];
+      if (item instanceof TextBox) {
+        if (item.getWidth() === -1) {
+          //debug && console.log(`Getting text box width`)
+          let measuredWidth = await textBoxMeasurer.getBoxWidth(item);
+          item.setWidth(measuredWidth);
         }
-        if (item instanceof Penalty) {
-          let itemToInsert = item.getItemToInsert();
-          if (itemToInsert instanceof TextBox) {
-            if (itemToInsert.getWidth() === -1) {
-              let measuredWidth = await textBoxMeasurer.getBoxWidth(itemToInsert);
-              itemToInsert.setWidth(measuredWidth);
-            }
-            if (itemToInsert.getHeight() === -1) {
-              let measureHeight = await textBoxMeasurer.getBoxHeight(itemToInsert);
-              itemToInsert.setHeight(measureHeight);
-            }
+        if (item.getHeight() === -1) {
+          let measuredHeight = await textBoxMeasurer.getBoxHeight(item);
+          item.setHeight(measuredHeight);
+        }
+      }
+      if (item instanceof Penalty) {
+        let itemToInsert = item.getItemToInsert();
+        if (itemToInsert instanceof TextBox) {
+          if (itemToInsert.getWidth() === -1) {
+            let measuredWidth = await textBoxMeasurer.getBoxWidth(itemToInsert);
+            itemToInsert.setWidth(measuredWidth);
+          }
+          if (itemToInsert.getHeight() === -1) {
+            let measureHeight = await textBoxMeasurer.getBoxHeight(itemToInsert);
+            itemToInsert.setHeight(measureHeight);
           }
         }
       }
-      resolve();
-    });
+    }
   }
 
+  static createFromExportObjectsArray(exportObjects: object[]): TypesetterItem[] {
+    return exportObjects.map(exportObject => ObjectFactory.fromObject(exportObject) as TypesetterItem);
+  }
+
+  static getExportObjectsArray(itemArray: TypesetterItem[]): object[] {
+    return itemArray.map(item => item.getExportObject());
+  }
 }

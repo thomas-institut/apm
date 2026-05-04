@@ -32,8 +32,10 @@
 
 namespace APM\System\Auth;
 
+use APM\Api\ApmResponseFactory;
 use APM\Api\DataSchema\ApiLoginRequest;
 use APM\Api\DataSchema\ApiLoginResponse;
+use APM\Api\DataSchema\ApiResponse;
 use APM\System\ApmContainerKey;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
@@ -47,7 +49,6 @@ use Dflydev\FigCookies\FigResponseCookies;
 use Dflydev\FigCookies\SetCookie;
 use Exception;
 use Monolog\Logger;
-use PHPUnit\Framework\Attributes\CodeCoverageIgnore;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -59,9 +60,6 @@ use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response;
 use Slim\Views\Twig;
 use ThomasInstitut\EntitySystem\Tid;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
 
 /**
  * Middleware class for site authentication
@@ -101,6 +99,8 @@ class Authenticator
     private SystemManager $systemManager;
     private UserManagerInterface $userManager;
 
+    private ApmResponseFactory $responseFactory;
+
     /**
      * Authenticator constructor.
      * @param ContainerInterface $ci
@@ -119,15 +119,9 @@ class Authenticator
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
         $this->debugMode = false;
         $this->devMode = $this->systemManager->getConfig()['devMode'] ?? false;
+        $this->responseFactory = new ApmResponseFactory($this->apiLogger);
     }
 
-    /**
-     * @return string
-     */
-    private function getBaseUrl(): string
-    {
-        return $this->systemManager->getBaseUrl();
-    }
 
     /**
      * @return string
@@ -235,12 +229,11 @@ class Authenticator
             $loginRequest = $this->parseApiLoginRequestData($request);
             if ($loginRequest === null) {
                 $this->debug('Cannot parse JSON data');
-                return $response->withStatus(HttpStatus::BAD_REQUEST);
+                return $this->responseFactory->badRequest($response);
             }
 
-            // DON'T DO THIS:    $this->debug('Got POST data', $data);
-            // ... it will show the user password in the log!
-            $this->debug('Got data for login');
+            // DON'T DO THIS:  $this->debug('Got POST data', $data); ... it will show the user password in the log!
+
             $userName = $loginRequest->user;
             $pwd = $loginRequest->pwd;
             $rememberMe = $loginRequest->rememberMe;
@@ -264,7 +257,7 @@ class Authenticator
                     $token = $this->generateRandomToken();
                 } catch (Exception $e) {
                     $this->logger->error('Cannot generate random token', ['exception' => $e]);
-                    return $response->withStatus(HttpStatus::INTERNAL_SERVER_ERROR);
+                    return $this->responseFactory->internalServerError($response);
                 }
                 try {
                     $this->userManager->storeToken(
@@ -276,10 +269,9 @@ class Authenticator
                 } catch (UserNotFoundException $e) {
                     // should never happen since the user is guaranteed to exist at this point
                     $this->logger->error('User not found while storing token', ['exception' => $e]);
-                    return $response->withStatus(HttpStatus::INTERNAL_SERVER_ERROR);
+                    return $this->responseFactory->internalServerError($response);
                 }
-                $fullToken = $this->generateFullToken($token,
-                    $userId);
+                $fullToken = $this->generateFullToken($token, $userId);
                 if ($rememberMe === 'on') {
                     $this->debug('User wants to be remembered');
                     $now = new DateTime();
@@ -294,11 +286,11 @@ class Authenticator
 
                 $response = FigResponseCookies::set($response, $cookie);
                 $data = new ApiLoginResponse();
-                $data->status = 'OK';
+                $data->result =  ApiResponse::ResultSuccess;
                 $data->message = 'Login successful';
                 $data->token = $fullToken;
                 $data->ttl = $rememberMe === 'on' ? 30 * 24 * 3600 : 24 * 3600;
-                return $this->responseWithJson($response, $data);
+                return $this->responseFactory->success($response, $data->withTimeStampNow());
             } else {
                 $this->siteLogger->notice('Wrong user/password',
                     ['user' => $userName]);
@@ -306,7 +298,7 @@ class Authenticator
         }
         // not authenticated
         $this->debug('API login unsuccessful');
-        return $response->withStatus(HttpStatus::UNAUTHORIZED);
+        return $this->responseFactory->unauthorized($response);
     }
 
     /**
@@ -370,28 +362,41 @@ class Authenticator
         }
 
         if (!is_null($fullToken)) {
-            list($userId, $innerToken, $mac) = explode(':', $fullToken);
-            $userId = intval($userId);
-            if (hash_equals($this->generateMac($userId . ':' . $innerToken), $mac)) {
-                try {
-                    $userToken = $this->userManager->getTokenByUserAgent(
-                        $userId,
-                        $request->getHeader('User-Agent')[0]
-                    );
-                } catch (UserNotFoundException) {
-                    return -1;
-                }
-                if (hash_equals($userToken, $innerToken)) {
-                    return $userId;
-                }
-                $this->debug('User tokens do not match -> ' . $userToken .
-                    ' vs ' . $innerToken);
+            $userAgent = $request->getHeader('User-Agent');
+            if (count($userAgent) === 0) {
+                $this->debug('No user agent in request');
                 return -1;
             }
-            $this->debug('Macs do not match!');
-            return -1;
+            return $this->validateToken($fullToken, $userAgent[0]);
         }
         $this->debug('Neither long term cookie nor bearer token. Fail!');
+        return -1;
+    }
+
+    /**
+     * Validates a token and returns the user ID if valid, -1 otherwise.
+     *
+     * @param string $fullToken
+     * @param string $userAgent
+     * @return int
+     */
+    public function validateToken(string $fullToken, string $userAgent): int
+    {
+        list($userId, $innerToken, $mac) = explode(':', $fullToken);
+        $userId = intval($userId);
+        if (hash_equals($this->generateMac($userId . ':' . $innerToken), $mac)) {
+            try {
+                $userToken = $this->userManager->getTokenByUserAgent($userId, $userAgent);
+            } catch (UserNotFoundException) {
+                return -1;
+            }
+            if (hash_equals($userToken, $innerToken)) {
+                return $userId;
+            }
+            $this->debug('User tokens do not match -> ' . $userToken . ' vs ' . $innerToken);
+            return -1;
+        }
+        $this->debug('Macs do not match!');
         return -1;
     }
 

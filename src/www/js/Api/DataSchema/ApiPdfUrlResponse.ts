@@ -1,5 +1,7 @@
-export interface ApiTypesetPdfResponse {
-  status: 'OK';
+import {ApiResponse} from "@/Api/DataSchema/ApiResponse";
+
+export interface ApiTypesetPdfResponse extends ApiResponse{
+  result: 'Success';
   url: string;
   cached: boolean;
   typesetterProcessingTime: number;

@@ -54,7 +54,8 @@ import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
 import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
 import {TimeString} from "@/toolbox/TimeString";
 import {CtData} from "@/CtData/CtData";
-import {ApiErrorResponse} from "@/Api/DataSchema/ApiErrorResponse";
+import {ApiErrorResponse} from "@/Api/DataSchema/ApiResponse";
+import {ApiLoginRequest, ApiLoginResponse} from "@/Api/DataSchema/ApiLogin";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -172,7 +173,7 @@ export class ApmApiClient {
     try {
       const resp = await this.post(urlGen.apiTypesetPdf(), rawData, true) as ApiTypesetPdfResponse | ApiErrorResponse;
       console.log(`Got PDF download resp`, resp);
-      if (resp.status === 'Error') {
+      if (resp.result === 'Error') {
         return {
           url: null, errorMsg: `Could not get PDF download url: ${resp.message}`
         };
@@ -363,24 +364,26 @@ export class ApmApiClient {
   }
 
   async apiLogin(username: string, password: string, rememberMe: boolean): Promise<boolean> {
+    const request: ApiLoginRequest = {user: username, pwd: password, rememberMe: rememberMe ? 'on' : ''};
+    const currentUseBearerAuthentication = this.useBearerAuthentication;
+    this.useBearerAuthentication = false;
     try {
-      const resp = await fetch(urlGen.apiLogin(), {
-        method: 'POST', body: JSON.stringify({user: username, pwd: password, rememberMe: rememberMe ? 'on' : ''})
-      });
-      if (resp.status === 200) {
-        const data = await resp.json();
-        console.log(`Got login response`, data);
-        if (data.status === 'OK') {
-          await this.setBearerToken(data.token, data.ttl ?? 15 * 24 * 3600);
-          return true;
-        }
+      const resp = await this.post(urlGen.apiLogin(), request, true) as ApiLoginResponse | ApiErrorResponse;
+      this.useBearerAuthentication = currentUseBearerAuthentication;
+      if (resp.result === 'Success') {
+        console.log(`Login successful`, resp);
+        await this.setBearerToken(resp.token, resp.ttl ?? 15 * 24 * 3600);
+        return true;
+      } else {
+        console.warn(`Login error`, resp);
         return false;
       }
     } catch (error) {
-      console.warn(`Error logging in`, error);
+      console.error(`Error during login`, error);
+      this.useBearerAuthentication = currentUseBearerAuthentication;
       return false;
     }
-    return false;
+
   }
 
   async getRealDocId(docId: number): Promise<number> {

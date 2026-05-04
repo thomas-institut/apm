@@ -19,6 +19,7 @@
 
 namespace APM\Api;
 
+use APM\Api\DataSchema\ApiResponse;
 use APM\Api\DataSchema\ApiTypesetPdfResponse;
 use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
@@ -67,11 +68,11 @@ class ApiTypesetPdf extends ApiController
             if (file_exists($fileToDownload) && filesize($fileToDownload) > self::MIN_VALID_PDF_FILE_SIZE) {
                 $this->logger->debug("GeneratePDF: PDF already exists in cache, returning it");
                 $data = new ApiTypesetPdfResponse();
-                $data->status = 'OK';
+                $data->result = ApiResponse::ResultSuccess;
                 $data->url = $url;
                 $data->cached = true;
                 $data->typesetterProcessingTime = SystemProfiler::getTotalTimeInMs();
-                return $this->responseWithJson($response, $data);
+                return $this->responseFactory->success($response, $data);
             }
         }
 
@@ -93,34 +94,34 @@ class ApiTypesetPdf extends ApiController
             $typesettingServiceResponse = $guzzleClient->post('', ['body' => json_encode($inputData)]);
         } catch (GuzzleException $e) {
             $this->logger->error("$this->apiCallName: " . $e->getMessage());
-            return $this->internalServerError($response, 'Could not contact typesetting service');
+            return $this->responseFactory->internalServerError($response, 'Could not contact typesetting service');
         }
 
         if ($typesettingServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {
             $this->logger->error("$this->apiCallName: Typesetting service failed with code " . $typesettingServiceResponse->getBody());
-            return $this->internalServerError($response, "Typesetting service failed");
+            return $this->responseFactory->internalServerError($response, "Typesetting service failed");
         }
 
         $pdfString =  $typesettingServiceResponse->getBody();
 
         if (strlen($pdfString) < self::MIN_VALID_PDF_FILE_SIZE) {
             $this->logger->error("$this->apiCallName: Typesetting service returned empty or very small PDF");
-            return $this->internalServerError($response, "Typesetting service returned invalid PDF");
+            return $this->responseFactory->internalServerError($response, "Typesetting service returned invalid PDF");
         }
 
         $this->logger->debug("$this->apiCallName: PDF generated in $url");
         if ($this->saveStringToFile($fileToDownload, $pdfString)){
             SystemProfiler::lap('Ready to send PDF');
             $data = new ApiTypesetPdfResponse();
-            $data->status = 'OK';
+            $data->result = 'OK';
             $data->url = $url;
             $data->cached = false;
             $data->typesetterProcessingTime = SystemProfiler::getTotalTimeInMs();
-            return $this->responseWithJson($response, $data);
+            return $this->responseFactory->success($response, $data);
         }
         $this->logger->error("$this->apiCallName: Could not save PDF in server");
         unlink($fileToDownload);
-        return $this->internalServerError($response, "Could not save PDF in server");
+        return $this->responseFactory->internalServerError($response, "Could not save PDF in server");
     }
 
     private function saveStringToFile(string $tempFileName, string $data) : bool {
@@ -139,69 +140,6 @@ class ApiTypesetPdf extends ApiController
         fwrite($handle, $data);
         fclose($handle);
         return true;
-    }
-
-    private function renderPdfFromTypesetData(array $typesetData, $pdfId = '', $useCache = true): array
-    {
-        $jsonData  = json_encode($typesetData);
-        if ($pdfId === '') {
-            $jsonDataHash = hash('sha1', $jsonData);
-            $pdfId = $jsonDataHash;
-        }
-
-        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . $pdfId . '.pdf';
-        $baseUrl = $this->systemManager->getBaseUrl();
-
-
-        if ($useCache) {
-            if (file_exists($fileToDownload)) {
-                return [ 'status' => 'OK', 'cached' => true, 'url' => $baseUrl . '/' . $fileToDownload];
-            }
-        }
-
-        // File is not there, do the conversion
-        // 1. Create a temporary file and put the typesetter data in it
-        $tempDir = $this->systemManager->getConfig()['pdfRendererTmpDir'];
-
-        $tmpInputFileName = "$tempDir/$pdfId-renderer-input.json";
-        $rendererCmdOutputFileName = "$tempDir/$pdfId-renderer-cmd_output.txt";
-
-        if (!$this->saveStringToFile($tmpInputFileName, $jsonData)) {
-            return [ 'status' => 'error', 'errorCode' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE];
-        }
-
-        $renderer = $this->systemManager->getConfig()['pdfRenderer'];
-        if (isset($this->systemManager->getConfig()['pythonVenv'])) {
-            $pythonVenv = $this->systemManager->getConfig()['pythonVenv'];
-            $renderer = "$pythonVenv/bin/python $renderer";
-        }
-
-        $apmFullPath = $this->systemManager->getConfig()['baseFullPath'];
-        $outputFileName = "$apmFullPath/$fileToDownload";
-
-        $this->logger->debug("About to call PDF renderer '$renderer', input: $tmpInputFileName, output $outputFileName");
-
-        $returnValue = -1;
-        $returnArray = [];
-        $commandLine = "$renderer $outputFileName <$tmpInputFileName";
-
-        // run renderer
-        exec($commandLine, $returnArray, $returnValue);
-
-        $cmdLineReturn =  implode("\n", $returnArray);
-        $this->logger->debug("PDF renderer returned " . strlen($cmdLineReturn) . " bytes in cmd line, saving in $rendererCmdOutputFileName");
-        if (strlen($cmdLineReturn) > 0) {
-            if (! $this->saveStringToFile($rendererCmdOutputFileName,$cmdLineReturn)) {
-                $this->logger->error("Could not save typesetter cmd line output to $rendererCmdOutputFileName");
-            }
-        }
-        //$this->logger->debug('PDF renderer return', $returnArray);
-
-        if ($returnValue !== 1) {
-            $this->logger->debug('PDF renderer error', [ 'array' => $returnArray, 'value' => $returnValue]);
-            return [ 'status' => 'error', 'errorCode' => self::API_ERROR_PDF_RENDERER_ERROR];
-        }
-        return [ 'status' => 'OK', 'cached' => false,  'url' => $baseUrl . '/' . $fileToDownload];
     }
 
 

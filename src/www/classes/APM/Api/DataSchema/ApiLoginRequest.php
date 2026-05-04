@@ -7,7 +7,4 @@ final class ApiLoginRequest
     public string $user = '';
     public string $pwd = '';
     public string $rememberMe = '';
-
-
-
 }

@@ -47,10 +47,8 @@ class ApiPeople extends ApiController
             $data = $pm->getPersonEssentialData($personTid);
         } catch (PersonNotFoundException) {
             $this->logger->info("Person does not exist: $personTid");
-            $this->logProfilers('errorEncountered');
-            return $this->responseWithStatus($response, 404);
+            return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
         }
-        $this->logProfilers('normalFinish');
         try {
             if ($data->isUser && !$this->systemManager->getUserManager()->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
                 $data->userEmailAddress = "N/A";

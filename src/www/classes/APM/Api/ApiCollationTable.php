@@ -519,7 +519,8 @@ class ApiCollationTable extends ApiController
         }
         $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $lang]);
 
-        return $this->responseWithRawJson($response, $jsonToCache);
+
+        return $this->responseFactory->responseWithRawJson($response, $jsonToCache, HttpStatus::SUCCESS);
     }
 
     public function save(Request $request, Response $response): Response

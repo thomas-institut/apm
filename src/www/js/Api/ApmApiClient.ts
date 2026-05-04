@@ -37,7 +37,7 @@ import {
 import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
-import {PdfUrlResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
+import {ApiClientPdfUrlResponse, ApiTypesetPdfResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 import {DocInfo, DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
 import {AllPeopleDataForPeoplePageItem, PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
@@ -54,6 +54,7 @@ import {ApiPersonWorksResponse} from "@/Api/DataSchema/ApiPerson";
 import {WitnessInfo} from "@/Api/DataSchema/WitnessInfo";
 import {TimeString} from "@/toolbox/TimeString";
 import {CtData} from "@/CtData/CtData";
+import {ApiErrorResponse} from "@/Api/DataSchema/ApiErrorResponse";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -167,13 +168,13 @@ export class ApmApiClient {
     return await this.getApmEntityData('Person', 'essential', personId, 'local');
   }
 
-  async getPdfDownloadUrl(rawData: any): Promise<PdfUrlResponse> {
+  async getPdfDownloadUrl(rawData: any): Promise<ApiClientPdfUrlResponse> {
     try {
-      const resp = await this.post(urlGen.apiTypesetRaw(), rawData, true);
+      const resp = await this.post(urlGen.apiTypesetPdf(), rawData, true) as ApiTypesetPdfResponse | ApiErrorResponse;
       console.log(`Got PDF download resp`, resp);
-      if (resp.status !== 'OK') {
+      if (resp.status === 'Error') {
         return {
-          url: null, errorMsg: `Could not get PDF download url: ${resp.status}`
+          url: null, errorMsg: `Could not get PDF download url: ${resp.message}`
         };
       }
       return {
@@ -217,7 +218,7 @@ export class ApmApiClient {
     if (lookingForLatestVersion) {
       const latestVersionInfo = await this.collationTableVersionInfo(tableId, 'latest');
       if (latestVersionInfo === null) {
-        throw new Error('Table does not exist, no latest version found')
+        throw new Error('Table does not exist, no latest version found');
       }
       version = latestVersionInfo.timeFrom;
     }
@@ -227,7 +228,7 @@ export class ApmApiClient {
       let cachedData = await this.caches.longTerm.retrieve(dbKey);
       if (cachedData !== null) {
         if (lookingForLatestVersion) {
-          cachedData.isLatestVersion =true;
+          cachedData.isLatestVersion = true;
           return cachedData;
         }
         const versionInfo = await this.collationTableVersionInfo(tableId, version);
@@ -450,14 +451,14 @@ export class ApmApiClient {
   async getSiglaPresets(lang: string, witnessIds: string[]): Promise<ApiSiglaPreset[]> {
 
     const payload = {lang: lang, witnesses: witnessIds};
-    const payloadId = `${lang}_${witnessIds.join('_')}`
+    const payloadId = `${lang}_${witnessIds.join('_')}`;
     const key = `sigla_presets_${await fingerprintToken(payloadId)}`;
     const presetsFromCache = this.caches.local.retrieve(key);
     if (presetsFromCache !== null) {
       return presetsFromCache;
     }
     const resp = await this.post(urlGen.apiGetSiglaPresets(), payload, true);
-    this.caches.local.store(key, resp['presets'], TtlOneMinute*5);
+    this.caches.local.store(key, resp['presets'], TtlOneMinute * 5);
     return resp['presets'];
   }
 

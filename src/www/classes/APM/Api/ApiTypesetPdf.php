@@ -19,6 +19,7 @@
 
 namespace APM\Api;
 
+use APM\Api\DataSchema\ApiTypesetPdfResponse;
 use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use GuzzleHttp\Client;
@@ -29,11 +30,17 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 class ApiTypesetPdf extends ApiController
 {
 
-    const string CLASS_NAME = 'PDF_Typesetting';
+    const string CLASS_NAME = 'ApiTypesetPdf';
 
     const int API_ERROR_CANNOT_CREATE_TEMP_FILE = 5001;
     const int API_ERROR_PDF_RENDERER_ERROR = 5002;
     const string PDF_DOWNLOAD_SUBDIR = 'downloads/pdf';
+
+    /**
+     * Minimum valid PDF file size in bytes; if a PDF file is smaller than this, it is not considered valid and
+     * will not be returned or cached.
+     */
+    const int MIN_VALID_PDF_FILE_SIZE = 2048;
 
 
     /**
@@ -47,12 +54,28 @@ class ApiTypesetPdf extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $inputJson = $request->getBody()->getContents();
-        $this->logger->debug("GeneratePDF input data size is " . strlen($inputJson) . " bytes", [substr($inputJson, 0, 50)]);
+        $useCacheParam = $request->getAttribute('useCache', 'true');
+        $useCache = $useCacheParam === 'true' || $useCacheParam === '1' || $useCacheParam === true;
+        $this->logger->debug("GeneratePDF input data size is " . strlen($inputJson) . " bytes. Use cache " . ($useCache ? 'true' : 'false') . " ", [substr($inputJson, 0, 50)]);
 
-        $requestId = "APM-" . hash('sha1', $inputJson);
+        $requestId = "APM-" . hash('sha256', $inputJson);
         $this->logger->debug("GeneratePDF request id is " . $requestId);
+        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . $requestId . '.pdf';
+        $url = $this->systemManager->getBaseUrl() . '/' . $fileToDownload;
+
+        if ($useCache) {
+            if (file_exists($fileToDownload) && filesize($fileToDownload) > self::MIN_VALID_PDF_FILE_SIZE) {
+                $this->logger->debug("GeneratePDF: PDF already exists in cache, returning it");
+                $data = new ApiTypesetPdfResponse();
+                $data->status = 'OK';
+                $data->url = $url;
+                $data->cached = true;
+                $data->typesetterProcessingTime = SystemProfiler::getTotalTimeInMs();
+                return $this->responseWithJson($response, $data);
+            }
+        }
+
         $inputData = json_decode($inputJson, true);
-//        $this->logger->debug("GeneratePDF input data", [ $inputData ]);
         $inputData['id'] = $requestId;
         $serviceUrl = sprintf(
                 "http://%s:%s/api/typeset",
@@ -62,7 +85,7 @@ class ApiTypesetPdf extends ApiController
 
         $guzzleClient = new Client([
             'base_uri' => $serviceUrl,
-            'timeout'  => 30.0,
+            'timeout'  => $this->systemManager->getConfig()['apiTypesetPdfHttpClientTimeOut'],
             'headers' => [ 'Content-Type' => 'application/json' ]
         ]);
 
@@ -70,42 +93,34 @@ class ApiTypesetPdf extends ApiController
             $typesettingServiceResponse = $guzzleClient->post('', ['body' => json_encode($inputData)]);
         } catch (GuzzleException $e) {
             $this->logger->error("$this->apiCallName: " . $e->getMessage());
-            return $this->responseWithJson(
-                $response,
-                [ 'status' => 'Error', 'msg' => 'Could not contact typesetting service'],
-                HttpStatus::INTERNAL_SERVER_ERROR
-            );
+            return $this->internalServerError($response, 'Could not contact typesetting service');
         }
 
         if ($typesettingServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {
-            $this->logger->error("$this->apiCallName: " . $typesettingServiceResponse->getBody());
-            return $this->responseWithText(
-                $response,
-                "Internal Server Error: Typesetting service failed (status code {$typesettingServiceResponse->getStatusCode()})",
-                HttpStatus::INTERNAL_SERVER_ERROR);
+            $this->logger->error("$this->apiCallName: Typesetting service failed with code " . $typesettingServiceResponse->getBody());
+            return $this->internalServerError($response, "Typesetting service failed");
         }
 
         $pdfString =  $typesettingServiceResponse->getBody();
-        $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . $requestId . '.pdf';
-        $url = $this->systemManager->getBaseUrl() . '/' . $fileToDownload;
 
+        if (strlen($pdfString) < self::MIN_VALID_PDF_FILE_SIZE) {
+            $this->logger->error("$this->apiCallName: Typesetting service returned empty or very small PDF");
+            return $this->internalServerError($response, "Typesetting service returned invalid PDF");
+        }
 
         $this->logger->debug("$this->apiCallName: PDF generated in $url");
         if ($this->saveStringToFile($fileToDownload, $pdfString)){
             SystemProfiler::lap('Ready to send PDF');
-            return $this->responseWithJson($response, [
-                'status' => 'OK',
-                'url' => $url,
-                'typesetDocument' => [],
-                'typesetterProcessingTime' => SystemProfiler::getTotalTimeInMs(),
-            ]);
-        } else {
-           return $this->responseWithText(
-               $response,
-               "Internal Server Error: Could not save PDF in server",
-               HttpStatus::INTERNAL_SERVER_ERROR
-           );
+            $data = new ApiTypesetPdfResponse();
+            $data->status = 'OK';
+            $data->url = $url;
+            $data->cached = false;
+            $data->typesetterProcessingTime = SystemProfiler::getTotalTimeInMs();
+            return $this->responseWithJson($response, $data);
         }
+        $this->logger->error("$this->apiCallName: Could not save PDF in server");
+        unlink($fileToDownload);
+        return $this->internalServerError($response, "Could not save PDF in server");
     }
 
     private function saveStringToFile(string $tempFileName, string $data) : bool {
@@ -114,7 +129,7 @@ class ApiTypesetPdf extends ApiController
             // Cannot reproduce this condition in testing
             // @codeCoverageIgnoreStart
             $this->logger->error("Cannot create file $tempFileName",
-                [ 'apiUserTid' => $this->apiUserId,
+                [ 'apiUserId' => $this->apiUserId,
                     'apiError' => self::API_ERROR_CANNOT_CREATE_TEMP_FILE,
                     'data' => $data ]);
             return false;

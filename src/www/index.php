@@ -832,11 +832,11 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterfa
 
     // TYPESETTING
 
-    $group->post('/typeset/raw',
+    $group->post('/typeset/pdf',
         function (Request $request, Response $response) use ($container) {
             return (new ApiTypesetPdf($container))->generatePDF($request, $response);
         })
-        ->setName('api.typeset.raw');
+        ->setName('api.typeset.pdf');
 }
 
 function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container): void

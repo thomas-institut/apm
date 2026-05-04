@@ -22,8 +22,6 @@ languages:
 
 langCodes:  [ 'ar', 'jrb', 'he', 'la']
 
-pdfRenderer:  '../python/pdf-renderer.py'
-typeSetter:  'node ../node/typesetStdinJson.mjs'
 daemonPidFile: '/tmp/apmd.pid'
 
 siteShowLanguageSelector:  false
@@ -52,8 +50,13 @@ url:
   thomasInstitut:   "https://www.thomasinstitut.uni-koeln.de/"
 
 
-useTypesetterInCommandLine: true
+apiTypesetPdfHttpClientTimeOut: 45
+
+# Typesetter service configuration for the backend
+# (the server does not read this file)
 
 typesettingService:
   host: 'localhost'
   port: 4711
+  timeout: 45
+

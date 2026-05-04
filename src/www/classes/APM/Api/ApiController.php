@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\Api\DataSchema\ApiErrorResponse;
 use APM\CollationEngine\CollationEngine;
 use APM\SystemProfiler;
 use APM\System\ApmContainerKey;
@@ -211,6 +212,18 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
             }
         }
         return $inputData;
+    }
+
+
+    protected function error(Response $response, string $errorMsg, int $httpStatus = HttpStatus::INTERNAL_SERVER_ERROR): Response
+    {
+        return $this->responseWithJson($response, new ApiErrorResponse($errorMsg, $httpStatus), $httpStatus);
+    }
+
+    protected function internalServerError(Response $response, string $errorMsg = ''): Response
+    {
+        $msg = $errorMsg === '' ? 'Internal server error' : 'Internal server error: ' . $errorMsg;
+        return $this->error($response, $msg);
     }
 
     /**

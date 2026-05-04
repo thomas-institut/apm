@@ -9,7 +9,7 @@ import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import {DocInfo} from "@/Api/DataSchema/ApiDocuments";
 import {EntityData} from "@/EntityData/EntityData";
-import PageList from "@/ReactAPM/Components/PageList";
+import PageList from "@/ReactAPM/Components/PageList/PageList";
 
 
 interface DocInfoData {
@@ -82,7 +82,7 @@ export default function Document() {
       <PageList
           pageInfoArray={docInfo.pageInfoArray ?? []}
           thumbnails={{initSize: 80, sizeSmall: 80, panel: true}}
-          definer={true}
+          pageDefiner={true}
           onPageClick={handleImageOpen}
           onDefineSuccess={handleDefineSuccess}
       />

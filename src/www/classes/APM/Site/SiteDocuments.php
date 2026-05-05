@@ -328,60 +328,16 @@ class SiteDocuments extends SiteController
             "DocPage",
             'js/pages/DocPage.ts',
             [
-//                'navByPage' => false,
                 'canDefinePages' => true,
                 'canEditDocuments' => $userManager->isUserAllowedTo($this->userId, UserTag::EDIT_DOCUMENTS),
                 'doc' => $doc,
                 'chunkInfo' => $chunkInfo,
                 'versionInfo' => $versionInfo,
                 'lastSaves' => $lastSaves,
-//                'metaData' => [],
-//                'userTid' => $this->userId,
                 'params' => explode('/', $args['params'] ?? ''),
                 'selectedPage' => $selectedPage
             ],
         );
     }
 
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function defineDocPages(Request $request, Response $response): Response
-    {
-
-        $docId = Tid::fromString($request->getAttribute('id'));
-
-        $docManager = $this->systemManager->getDocumentManager();
-        $transcriptionManager = $this->systemManager->getTranscriptionManager();
-        $doc = [];
-        try {
-            $doc['numPages'] = $docManager->getDocPageCount($docId);
-            $transcribedPages = $transcriptionManager->getTranscribedPageListByDocId($docId);
-            $pageInfoArray = $docManager->getLegacyDocPageInfoArray($docId);
-            $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
-            $doc['numTranscribedPages'] = count($transcribedPages);
-            $doc['tableId'] = "doc-$docId-table";
-            $doc['pages'] = $this->buildPageArrayNew($pageInfoArray,
-                $transcribedPages, $doc['docInfo']);
-        } catch (DocumentNotFoundException $e) {
-            $this->logger->info($e->getMessage());
-            return $this->getBasicErrorPage($response, "Not found", "Document not found", HttpStatus::NOT_FOUND);
-        }
-
-        return $this->renderStandardPage(
-            $response,
-            '',
-            'Doc Def Pages',
-            'DocDefPages',
-            'js/pages/DocDefPages.js',
-            [
-                'doc' => $doc,
-                'numPages' => $doc['numPages'],
-            ],
-            [],
-            ['doc_page.css']
-        );
-    }
 }

@@ -34,7 +34,6 @@ class ApiTypesetPdf extends ApiController
     const string CLASS_NAME = 'ApiTypesetPdf';
 
     const int API_ERROR_CANNOT_CREATE_TEMP_FILE = 5001;
-    const int API_ERROR_PDF_RENDERER_ERROR = 5002;
     const string PDF_DOWNLOAD_SUBDIR = 'downloads/pdf';
 
     /**

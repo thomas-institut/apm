@@ -100,6 +100,14 @@ export class RouteUrls {
     return baseUrl + '/entity/' + id + '/admin';
   }
 
+  static patternDocDefinePages() {
+    return baseUrl + '/doc/:id/definePages';
+  }
+
+  static docDefinePages(id: number|string) {
+    return baseUrl + '/doc/' + id + '/definePages';
+  }
+
   static patternDocumentBeta() {
     return baseUrl + betaPathInfix +  '/doc/:id/*';
   }

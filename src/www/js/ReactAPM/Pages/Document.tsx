@@ -1,15 +1,15 @@
 import {Link, useParams} from "react-router";
 
-
 import {Tid} from "@/Tid/Tid";
 import {useQuery} from "@tanstack/react-query";
-import {useContext} from "react";
+import React, {useContext} from "react";
 import {AppContext} from "@/ReactAPM/App";
 import {Breadcrumb} from "react-bootstrap";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
-import {DocInfo, PageInfo} from "@/Api/DataSchema/ApiDocuments";
+import {DocInfo} from "@/Api/DataSchema/ApiDocuments";
 import {EntityData} from "@/EntityData/EntityData";
+import PageList from "@/ReactAPM/Components/PageList/PageList";
 
 
 interface DocInfoData {
@@ -29,12 +29,15 @@ export default function Document() {
   const docInfoQueryResult = useQuery({
     queryKey: ['docInfo', id], queryFn: async () : Promise<DocInfoData> => {
       return {
-        docInfo: await  context.apiClient.getDocumentInfo(Tid.fromCanonicalString(id), true, true),
+        docInfo: await  context.apiClient.getDocumentInfo(Tid.fromCanonicalString(id), true, true, true),
         entityData: await context.apiClient.getEntityData(Tid.fromCanonicalString(id))
       };
     }
   });
 
+  const handleDefineSuccess = () => {
+    docInfoQueryResult.refetch();
+  };
 
   const provisionalBreadCrumb = <Breadcrumb>
     <Breadcrumb.Item linkAs={Link} linkProps={{to: RouteUrls.docs()}}>Documents</Breadcrumb.Item>
@@ -56,32 +59,35 @@ export default function Document() {
   console.log('Document Info Data', docInfoData);
   const docInfo = docInfoData.docInfo;
 
+  const handleImageOpen = (seq: number) => {
+
+    // @ts-ignore
+    const page = docInfo.pageInfoArray.find((p: any) => p.sequence === seq);
+
+    if (page) {
+      const url = page.thumbnailUrl || page.jpgUrl || '';
+
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+    }
+  };
+
   return (<NormalPageContainer>
       <Breadcrumb>
         <Breadcrumb.Item linkAs={Link} linkProps={{to: RouteUrls.docs()}}>Documents</Breadcrumb.Item>
         <Breadcrumb.Item active>{docInfo.title}</Breadcrumb.Item>
       </Breadcrumb>
 
-      <div>
-        Data loaded. The document has {docInfo.pageIds.length} pages
-      </div>
-      <PageList pageInfoArray={docInfo.pageInfoArray ?? []}/>
+      <PageList
+          pageInfoArray={docInfo.pageInfoArray ?? []}
+          thumbnails={{initSize: 80, sizeSmall: 80, panel: true}}
+          pageDefiner={true}
+          onPageClick={handleImageOpen}
+          onDefineSuccess={handleDefineSuccess}
+      />
 
     </NormalPageContainer>
   );
-}
-
-interface PageListProps {
-  pageInfoArray: PageInfo[];
-  numCols?: number;
-}
-
-function PageList(props: PageListProps) {
-  const {pageInfoArray, numCols} = props;
-  const cols = numCols ?? 20;
-  return <div style={{display: 'grid', gridTemplateColumns: `repeat(${cols}, max-content)`, gap: '0.5em'}}>
-    {pageInfoArray.map((pageInfo, i) => <div key={i}>{pageInfo.foliation}</div>)}
-  </div>
-
 }
 

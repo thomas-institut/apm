@@ -16,6 +16,7 @@ class ValkeyWorker
 
     const int MinDbResetConnectionIntervalInMinutes = 5;
     const int DefaultMaxJobs = 100;
+    const int MinMaxJobs = 5;
     const int DefaultMicroSecondsToSleep = 500000;
     const int DefaultDbConnectionResetIntervalInMinutes = 360;
     private ApmSystemManager $systemManager;
@@ -42,13 +43,13 @@ class ValkeyWorker
         ApmSystemManager $systemManager,
         int $instanceId,
         int $maxJobs = self::DefaultMaxJobs,
+        int $dbConnectionResetIntervalInMinutes = self::DefaultDbConnectionResetIntervalInMinutes,
         int $microSecondsToSleep = self::DefaultMicroSecondsToSleep,
-        int $dbConnectionResetIntervalInMinutes = self::DefaultDbConnectionResetIntervalInMinutes
     )
     {
         $this->systemManager = $systemManager;
         $this->instanceId = $instanceId;
-        $this->maxJobs = $maxJobs;
+        $this->maxJobs = max(self::MinMaxJobs, $maxJobs );
         $this->microSecondsToSleep = $microSecondsToSleep;
         $this->dbConnectionResetIntervalInSeconds = max(self::MinDbResetConnectionIntervalInMinutes, $dbConnectionResetIntervalInMinutes) * 60;
         $this->workerId = gethostname() . ':' . getmypid() . ':' . $instanceId;
@@ -65,6 +66,8 @@ class ValkeyWorker
         $this->logger->info("Worker $this->instanceId starting", [
             'worker_id' => $this->workerId,
             'max_jobs' => $this->maxJobs,
+            'microsecs_to_sleep' => $this->microSecondsToSleep,
+            'db_connection_reset_interval' => $this->dbConnectionResetIntervalInSeconds / 60,
             'instance_id' => $this->instanceId
         ]);
 

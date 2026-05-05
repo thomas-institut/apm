@@ -19,6 +19,9 @@ export interface PageInfo {
   foliation: string;
   pageId: number;
   foliationIsSet: boolean;
+  isTranscribed: boolean;
+  thumbnailUrl: string;
+  jpgUrl: string;
 }
 
 export interface DocInfo {

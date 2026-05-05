@@ -24,6 +24,7 @@ use APM\Api\Action\PageUpdateDefinition;
 use APM\Api\Action\UpdatePageSettingsBulkAction;
 use APM\EntitySystem\Schema\Entity;
 use APM\Site\SiteDocuments;
+use APM\System\ApmImageType;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\User\UserNotFoundException;
@@ -274,15 +275,28 @@ class ApiDocuments extends ApiController
         $dataToReturn = get_object_vars($docInfo);
         if ($pageInfoToInclude === 'withFullPageInfo') {
             $dataToReturn['pageInfoArray'] = [];
+
+            $docManager = $this->systemManager->getDocumentManager();
+            $imageSources = $this->systemManager->getImageSources();
+            $transcribedPages = $this->systemManager->getTranscriptionManager()->getTranscribedPageListByDocId($docId);
+
             foreach($docInfo->pageIds as $pageId) {
                 try {
-                    $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+                    $pageInfo = $docManager->getPageInfo($pageId);
+                    $pageVars = get_object_vars($pageInfo);
+
+                    $pageVars['isTranscribed'] = in_array($pageInfo->pageNumber, $transcribedPages);
+                    $pageVars['thumbnailUrl'] = $docManager->getImageUrl($docId, $pageInfo->pageNumber,
+                        ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
+                    $pageVars['jpgUrl'] = $docManager->getImageUrl($docId, $pageInfo->pageNumber,
+                        ApmImageType::IMAGE_TYPE_JPG, $imageSources);
+
                 } catch (PageNotFoundException $e) {
                     // should never happen
                     $this->logger->error("Page not found getting info: " . $e->getMessage());
                     return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
                 }
-                $dataToReturn['pageInfoArray'][] = get_object_vars($pageInfo);
+                $dataToReturn['pageInfoArray'][] = $pageVars;
             }
         }
         return $this->responseWithJson($response, $dataToReturn);

@@ -44,7 +44,7 @@ export class CanvasTextBoxMeasurer extends TextBoxMeasurer {
   }
 
   getBoxWidth(textBox: TextBox): Promise<number> {
-    const debug = textBox.getText() === 'que' || textBox.getText() === '-';
+    const debug = false;
     if (this.useCache) {
       let cacheKey = this.getCacheKeyForTextBox(textBox);
       let cachedWidth = this.widthCache.get(cacheKey);

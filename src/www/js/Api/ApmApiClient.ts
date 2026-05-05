@@ -96,6 +96,15 @@ interface Caches {
   longTerm: IndexedDbKeyCache;
 }
 
+interface BulkPageDefinition {
+  docId: number;
+  page: number;
+  type?: number;
+  foliation?: string;
+  overwriteFoliation?: boolean;
+  cols?: number;
+}
+
 type CacheNames = 'memory' | 'session' | 'local' | 'longTerm';
 
 /**
@@ -293,8 +302,8 @@ export class ApmApiClient {
     return this.get(urlGen.apiDocumentsGetPageInfo(pageId), false, TtlOneHour);
   }
 
-  async getDocumentInfo(docId: number, withPageIds: boolean = false, withFullPageInfo: boolean = false): Promise<DocInfo> {
-    return this.get(urlGen.apiDocGetInfo(docId, withPageIds, withFullPageInfo), false, TtlOneHour);
+  async getDocumentInfo(docId: number, withPageIds: boolean = false, withFullPageInfo: boolean = false, forceGet: boolean = false): Promise<DocInfo> {
+    return this.get(urlGen.apiDocGetInfo(docId, withPageIds, withFullPageInfo), forceGet, TtlOneHour);
   }
 
   async getWorkChunksWithTranscription(workId: string): Promise<ApiChunksWithTranscription> {
@@ -448,6 +457,39 @@ export class ApmApiClient {
     return this.post(urlGen.apiUpdatePageSettings(pageId), {
       foliation: foliation, type: type, lang: lang
     }, true);
+  }
+
+  async bulkSavePageSettings(pageDefinitions: BulkPageDefinition[]): Promise<any> {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/x-www-form-urlencoded'
+    };
+
+    if (this.useBearerAuthentication) {
+      const token = await this.getBearerToken();
+      if (token === null) {
+        throw new Error('No authentication token available');
+      }
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(urlGen.apiBulkPageSettings(), {
+      method: 'POST',
+      headers,
+      body: new URLSearchParams({
+        data: JSON.stringify(pageDefinitions)
+      }).toString()
+    });
+
+    if (!response.ok) {
+      throw new Error(`Error ${response.status} fetching ${urlGen.apiBulkPageSettings()}`);
+    }
+
+    const responseText = await response.text();
+    try {
+      return JSON.parse(responseText);
+    } catch (_e) {
+      return responseText;
+    }
   }
 
   async userUpdateProfile(userTid: number, email: string, password1: string, password2: string): Promise<any> {

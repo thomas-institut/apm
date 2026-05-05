@@ -14,10 +14,10 @@ use Throwable;
 class ValkeyWorker
 {
 
-    const int MinDbResetConnectionIntervalInMinutes = 15;
+    const int MinDbResetConnectionIntervalInMinutes = 5;
     const int DefaultMaxJobs = 100;
     const int DefaultMicroSecondsToSleep = 500000;
-    const int DefaultDbConnectionResetIntervalInMinutes = 60;
+    const int DefaultDbConnectionResetIntervalInMinutes = 360;
     private ApmSystemManager $systemManager;
     private int $instanceId;
     private Logger $logger;
@@ -54,6 +54,7 @@ class ValkeyWorker
         $this->workerId = gethostname() . ':' . getmypid() . ':' . $instanceId;
         $logger = $systemManager->getLogger();
         $this->logger = $logger->withName(sprintf("WORKER_%02d", $instanceId));
+        $this->lastDbConnectionResetTime = time();
     }
 
     /**
@@ -198,6 +199,7 @@ class ValkeyWorker
                         'exception' => $e
                     ]);
                     $this->systemManager->resetDbConnectionAndDependentManagers();
+                    $this->lastDbConnectionResetTime = time();
                     continue;
                 }
 

@@ -20,7 +20,6 @@
 
 namespace APM\Api;
 
-use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 
 use APM\System\Preset\Preset;
@@ -35,7 +34,6 @@ use Psr\Http\Message\ResponseInterface as Response;
 
 use APM\ToolBox\Set;
 use APM\System\PresetFactory;
-use function PHPUnit\Framework\never;
 
 /**
  * Description of ApiPresets

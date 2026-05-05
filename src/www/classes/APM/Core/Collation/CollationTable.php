@@ -28,7 +28,6 @@ use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 use APM\Core\Token\Token;
 use APM\Core\Apparatus\ApparatusGenerator;
 use APM\Core\Token\TokenType;
-use APM\Core\Witness\TokenNormalizationsDecorator;
 use APM\Core\Witness\Witness;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
@@ -182,20 +181,16 @@ class CollationTable implements LoggerAwareInterface, CodeDebugInterface {
         return count($this->referenceMatrix[$sigla[0]]);
     }
 
-    private function getTokensForLog($witness) : array {
-        $decorator = new TokenNormalizationsDecorator();
-
-        return $decorator->getDecoratedTokens($witness);
-    }
-
     /**
      * Adds a witness to the collation with the given siglum
-     * 
+     *
      * @param string $siglum
      * @param Witness $witness
-     * @throws InvalidArgumentException
+     * @param string $title
+     * @param bool $isEdition
      */
-    public function addWitness(string $siglum, Witness $witness, string $title = '', bool $isEdition = false) {
+    public function addWitness(string $siglum, Witness $witness, string $title = '', bool $isEdition = false): void
+    {
 
 
         //$this->codeDebug("Adding witness $siglum", [ 'tokens' =>  $this->getTokensForLog($witness)]);

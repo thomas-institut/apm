@@ -28,7 +28,6 @@ use APM\EntitySystem\Schema\Languages;
 use GuzzleHttp\Client as HttpClient;
 use PHPUnit\Exception;
 use stdClass;
-use function PHPUnit\Framework\isType;
 
 /**
  * Description of EntityManager

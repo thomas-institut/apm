@@ -5,8 +5,6 @@ namespace APM\Test\System\Job;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\Job\ScheduledJobState;
 use APM\System\Job\ValkeyJobQueueManager;
-use APM\System\Job\JobStats;
-use APM\System\Job\DailyJobStats;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;

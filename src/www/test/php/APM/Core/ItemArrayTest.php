@@ -28,7 +28,6 @@ use APM\System\Transcription\TxText\ItemArray;
 use APM\System\Transcription\TxText\Rubric;
 use APM\System\Transcription\TxText\Text;
 use APM\ToolBox\MyersDiff;
-use InvalidArgumentException;
 use PHPUnit\Framework\Attributes\Depends;
 use PHPUnit\Framework\TestCase;
 use TypeError;

@@ -183,7 +183,6 @@ class ApmSystemManager extends SystemManager {
     private ?ApmDocumentManager $documentManager = null;
     private ?Client $typesenseClient = null;
     private ?UdPipeLemmatizer $lemmatizer = null;
-
     private ?TypesenseSearchManager $searchManager = null;
 
 
@@ -291,24 +290,17 @@ class ApmSystemManager extends SystemManager {
             ApmMySqlTableName::TABLE_ITEMS,
             ApmMySqlTableName::TABLE_USERS,
             ApmMySqlTableName::TABLE_TOKENS,
-            ApmMySqlTableName::TABLE_DOCS,
-            ApmMySqlTableName::TABLE_PEOPLE,
             ApmMySqlTableName::TABLE_PAGES,
-            ApmMySqlTableName::TABLE_PAGETYPES,
             ApmMySqlTableName::TABLE_WORKS,
             ApmMySqlTableName::TABLE_PRESETS,
             ApmMySqlTableName::TABLE_VERSIONS_TX,
             ApmMySqlTableName::TABLE_SYSTEM_CACHE,
-            ApmMySqlTableName::TABLE_JOBS,
             ApmMySqlTableName::TABLE_COLLATION_TABLE,
             ApmMySqlTableName::TABLE_VERSIONS_CT,
             ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS,
-            ApmMySqlTableName::TABLE_EDITION_SOURCES,
             ApmMySqlTableName::ES_Statements_Default,
             ApmMySqlTableName::ES_Cache_Default,
             ApmMySqlTableName::ES_Merges,
-            ApmMySqlTableName::TABLE_SESSIONS_REGISTER,
-            ApmMySqlTableName::TABLE_SESSIONS_LOG,
         ];
         
         $tables = [];

@@ -20,6 +20,7 @@
 
 namespace APM\System\Transcription;
 
+use APM\System\ApmMySqlTableName;
 use PDO;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
@@ -48,7 +49,7 @@ class EdNoteManager {
         $this->tNames = $tableNames;
         $this->logger = $logger;
         $this->edNotesDataTable = new MySqlDataTable($dbConn, 
-                $tableNames['ednotes']);
+                $tableNames[ApmMySqlTableName::TABLE_EDNOTES]);
     }
 
     /**

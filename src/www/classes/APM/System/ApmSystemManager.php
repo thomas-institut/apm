@@ -116,7 +116,7 @@ class ApmSystemManager extends SystemManager {
     const int ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
 
     // Database version
-    const int DB_VERSION = 38;
+    const int DB_VERSION = 38; // updated 2026-05-05
 
     // Entity system Data ID: key for entity system caches
     const string ES_DATA_ID = '0010'; // 2026 Jan 9

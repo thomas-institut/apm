@@ -2,7 +2,6 @@
 
 namespace APM\Site;
 
-use APM\SystemConfig;
 use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Psr\Http\Message\ResponseInterface as Response;

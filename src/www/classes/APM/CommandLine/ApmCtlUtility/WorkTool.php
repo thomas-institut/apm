@@ -9,7 +9,6 @@ use APM\System\Work\WorkData;
 use APM\System\Work\WorkNotFoundException;
 use Exception;
 use ThomasInstitut\EntitySystem\Tid;
-use function Symfony\Component\String\b;
 
 class WorkTool extends CommandLineUtility implements AdminUtility
 {

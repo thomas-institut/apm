@@ -21,8 +21,6 @@
 
 namespace APM;
 
-use APM\System\ConfigLoader;
-
 require __DIR__ . '/../vendor/autoload.php';
 $config = SystemConfig::get();
 if (!is_array($config)) {

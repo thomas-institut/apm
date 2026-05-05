@@ -43,3 +43,5 @@ or, showing a progress bar:
 
 ``pv somefile.sql.gz | gunzip | mysql apm``
 
+
+Follow the instructions in DatabaseMigration.md if the database loaded is not the latest version.

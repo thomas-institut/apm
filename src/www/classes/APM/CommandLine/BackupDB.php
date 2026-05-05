@@ -30,7 +30,7 @@ use APM\System\ApmMySqlTableName;
 
 class BackupDB extends CommandLineUtility {
     
-    const string USAGE = "USAGE: backupdb <output_directory>\n";
+    const string USAGE = "USAGE: backupdb <output_directory> --schemaOnly\n";
 
     const array CACHE_TABLES = [ ApmMySqlTableName::TABLE_SYSTEM_CACHE];
     
@@ -48,7 +48,7 @@ class BackupDB extends CommandLineUtility {
         
         $mySqlDumpPasswordWarning = 'mysqldump: [Warning] Using a password on the command line interface can be insecure.';
 
-        if ($argc != 2) {
+        if ($argc < 2) {
             print self::USAGE;
             return false;
         }
@@ -57,6 +57,7 @@ class BackupDB extends CommandLineUtility {
               
         $start = microtime(true);
         $outputDir = $argv[1];
+        $onlySchema = $argc > 2 && $argv[2] === '--schemaOnly';
         $hostName = gethostname();
 
         $tableNames = $this->getSystemManager()->getTableNames();
@@ -78,7 +79,10 @@ class BackupDB extends CommandLineUtility {
         $mysqlDumpCommandStructure = $mysqldumpCommandFirstPart . '--no-data --no-tablespaces ' . $databaseName . ' >' . $outputFileName;
         $mysqlDumpCommandData = $mysqldumpCommandFirstPart . '--no-tablespaces --no-create-info ' . $ignoreTablesCommand . ' ' . $databaseName . ' >> ' . $outputFileName;
 
-        $mySqlCommands = [$mysqlDumpCommandStructure, $mysqlDumpCommandData];
+        $mySqlCommands = [$mysqlDumpCommandStructure];
+        if (!$onlySchema) {
+            $mySqlCommands[] = $mysqlDumpCommandData;
+        }
 
         $success = true;
 

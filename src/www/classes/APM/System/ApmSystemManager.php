@@ -267,6 +267,30 @@ class ApmSystemManager extends SystemManager {
         return $this->dbConn;
     }
 
+    /**
+     * Resets the database connection and all cached managers that depend on it.
+     *
+     * This forces subsequent getter calls to recreate the connection and related managers.
+     * @return void
+     */
+    public function resetDbConnectionAndDependentManagers(): void
+    {
+        $this->dbConn = null;
+        $this->settingsMgr = null;
+        $this->presetsManager = null;
+        $this->transcriptionManager = null;
+        $this->collationTableManager = null;
+        $this->multiChunkEditionManager = null;
+        $this->editionSourceManager = null;
+        $this->userManager = null;
+        $this->personManager = null;
+        $this->workManager = null;
+        $this->typedMultiStorageEntitySystem = null;
+        $this->apmEntitySystem = null;
+        $this->documentManager = null;
+        $this->searchManager = null;
+    }
+
     public function getAvailableImageSources(): array
     {
         return array_keys($this->imageSources);

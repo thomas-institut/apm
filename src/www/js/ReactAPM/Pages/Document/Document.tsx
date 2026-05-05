@@ -35,10 +35,6 @@ export default function Document() {
     }
   });
 
-  const handleDefineSuccess = () => {
-    docInfoQueryResult.refetch();
-  };
-
   const provisionalBreadCrumb = <Breadcrumb>
     <Breadcrumb.Item linkAs={Link} linkProps={{to: RouteUrls.docs()}}>Documents</Breadcrumb.Item>
     <Breadcrumb.Item active>{id}</Breadcrumb.Item>
@@ -82,9 +78,8 @@ export default function Document() {
       <PageList
           pageInfoArray={docInfo.pageInfoArray ?? []}
           thumbnails={{initSize: 80, sizeSmall: 80, panel: true}}
-          pageDefiner={true}
+          pageDefiner={false}
           onPageClick={handleImageOpen}
-          onDefineSuccess={handleDefineSuccess}
       />
 
     </NormalPageContainer>

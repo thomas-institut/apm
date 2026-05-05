@@ -26,7 +26,7 @@ const Works = lazy(() => import('./Pages/Works/Works.js'));
 // @ts-ignore
 const People = lazy(() => import('./Pages/People/People.js'));
 // @ts-ignore
-const Search = lazy(() => import('./Pages/Search.js'));
+const Search = lazy(() => import('./Pages/Search/Search.js'));
 // @ts-ignore
 const Docs = lazy(() => import('@/ReactAPM/Pages/Docs/Docs.js'));
 // @ts-ignore
@@ -40,9 +40,11 @@ const Person = lazy(() => import('./Pages/Person/Person.js'));
 // @ts-ignore
 const EditionComposer = lazy(() => import('./Pages/EditionComposer.js'));
 // @ts-ignore
-const Document = lazy(() => import('./Pages/Document.js'));
+const Document = lazy(() => import('./Pages/Document/Document.js'));
 // @ts-ignore
-const AdminEntity = lazy( ()=> import('./Pages/AdminEntity/AdminEntity.js'));
+const DocDefinePages = lazy(() => import('./Pages/Document/DefinePages.js'));
+// @ts-ignore
+const AdminEntity = lazy(() => import('./Pages/AdminEntity/AdminEntity.js'));
 
 const AppSettingsUrl: string = "app-settings";
 const ReactAppBaseUrlSuffix = '';
@@ -64,7 +66,6 @@ export interface AppContextProps {
   apiClient: ApmApiClient;
   versionTag: string;
 }
-
 
 
 const DefaultAppContext: AppContextProps = {
@@ -269,12 +270,11 @@ function RealApp() {
   };
 
 
-  const routesWithTopBar = [RouteUrls.home(), RouteUrls.dashboard(), RouteUrls.docs(),
-
-    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.help(), RouteUrls.patternAdminEntity(),
-
-    RouteUrls.patternPerson(), RouteUrls.patternWork(), RouteUrls.patternChunk(), RouteUrls.patternDocumentBeta(),
-
+  const routesWithTopBar = [
+    RouteUrls.home(), RouteUrls.dashboard(), RouteUrls.docs(),
+    RouteUrls.works(), RouteUrls.people(), RouteUrls.search(), RouteUrls.help(),
+    RouteUrls.patternAdminEntity(), RouteUrls.patternPerson(), RouteUrls.patternWork(),
+    RouteUrls.patternChunk(), RouteUrls.patternDocumentBeta(), RouteUrls.patternDocDefinePages()
   ];
 
   const routeMatches = routesWithTopBar.map(path => useMatch(path));
@@ -319,6 +319,7 @@ function RealApp() {
               <Route id="work" path={RouteUrls.patternWork()} element={<Work/>}/>
               <Route id="person" path={RouteUrls.patternPerson()} element={<Person/>}/>
               <Route id="doc" path={RouteUrls.patternDocumentBeta()} element={<Document/>}/>
+              <Route id="doc-define-pages" path={RouteUrls.patternDocDefinePages()} element={<DocDefinePages/>}/>
               <Route id="admin-entity" path={RouteUrls.patternAdminEntity()} element={<AdminEntity/>}/>
               <Route id="help" path={RouteUrls.help()} element={<Help/>}/>
               <Route id="login" path={RouteUrls.login()} element={<Login/>}/>

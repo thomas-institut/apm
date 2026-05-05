@@ -204,15 +204,6 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
             }
         )->setName('mce.edit');
 
-
-        // will be deprecated soon
-        $group->get('/doc/{id}/definepages',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteDocuments($container))->defineDocPages($request, $response);
-            })
-            ->setName('doc.definedocpages');
-
-
         // transcription editor
         $group->get('/doc/{doc}/page/{n}/view[/c/{col}]',
             function (Request $request, Response $response) use ($container) {
@@ -227,6 +218,16 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
                 return (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, true);
             })
             ->setName('doc.page.transcribe.realPage');
+
+        // sending to React explicitly or else the path would be picked up by the show document page below
+        $group->get('/doc/{id}/definepages',
+            function (Request $request, Response $response) use ($container) {
+                return (new SiteReact($container))->ReactMain($request, $response);
+            });
+//            function (Request $request, Response $response) use ($container) {
+//                return (new SiteDocuments($container))->defineDocPages($request, $response);
+//            })
+//            ->setName('doc.definedocpages');
 
         // show document
         $group->get('/doc/{id}[/{params:.*}]',

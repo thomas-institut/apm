@@ -4,7 +4,7 @@ import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 export class CachedFetcher {
   private cache: AsyncKeyCache | KeyCache;
   private debug: boolean;
-  private readonly verbose: boolean;
+  private verbose: boolean;
   private readonly defaultTtl: number;
 
   constructor(cache: AsyncKeyCache | KeyCache, defaultTtl: number = 0) {
@@ -12,6 +12,11 @@ export class CachedFetcher {
     this.debug = false;
     this.verbose = true;
     this.defaultTtl = defaultTtl;
+  }
+
+  public withVerbose(verbose: boolean): this {
+    this.verbose = verbose;
+    return this;
   }
 
   /**

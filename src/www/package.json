@@ -7,6 +7,7 @@
   },
   "scripts": {
     "test": "vitest run test/js/",
+    "api-integration-test": "set -a; source .env.it; set +a; vitest run test/js/Api/ApmApiClient.integration.test.ts",
     "test-run": "vitest run",
     "test-watch": "vitest",
     "build-dev": "vite build --base=/dist",

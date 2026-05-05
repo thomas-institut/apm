@@ -20,6 +20,8 @@
 
 namespace APM\Api;
 
+use APM\Api\Action\PageUpdateDefinition;
+use APM\Api\Action\UpdatePageSettingsBulkAction;
 use APM\EntitySystem\Schema\Entity;
 use APM\Site\SiteDocuments;
 use APM\System\ApmImageType;
@@ -356,10 +358,7 @@ class ApiDocuments extends ApiController
      */
     public function updatePageSettingsBulk(Request $request, Response $response) : Response
     {
-
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $transcriptionManager = $this->systemManager->getTranscriptionManager();
-
         $rawData = $request->getBody()->getContents();
         $postData = [];
         parse_str($rawData, $postData);
@@ -367,91 +366,35 @@ class ApiDocuments extends ApiController
         if (isset($postData['data'])) {
             $inputArray = json_decode($postData['data'], true);
         }
-        
         if (is_null($inputArray) ) {
             $this->logger->error("Bulk page settings update: no data in input",
-                    [ 'apiUserTid' => $this->apiUserId,
+                    [ 'apiUserId' => $this->apiUserId,
                       'apiError' => ApiController::API_ERROR_NO_DATA,
                       'data' => $postData]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
         
-        $errors = [];
-        foreach($inputArray as $pageDef) {
-            if (!isset($pageDef['docId']) && !isset($pageDef['page'])) {
-                $errors[] = "No docId or page in request" . print_r($pageDef, true);
-                continue;
-            }
+        $pageDefinitions = array_map(
+            fn(array $data) => PageUpdateDefinition::fromArray($data),
+            $inputArray
+        );
+        $action = new UpdatePageSettingsBulkAction(
+            $this->systemManager->getTranscriptionManager(),
+            $this->systemManager->getEntitySystem(),
+            $this->logger
+        );
 
-            $docId = intval($pageDef['docId']);
-            $pageNumber = intval($pageDef['page']);
+        $result = $action->execute($pageDefinitions, $this->apiUserId);
 
-            try {
-                $pageInfo = $transcriptionManager->getPageInfoByDocPage($docId, $pageNumber);
-            } catch (PageNotFoundException|DocumentNotFoundException) {
-                $errors[] = "Page not found, doc " . $pageDef['docId'] . " page " . $pageDef['page'];
-                continue;
-            }
-
-            $pageId = $pageInfo->pageId;
-
-            $newPageInfo = clone $pageInfo;
-
-            if (isset($pageDef['type'])) {
-                $newPageInfo->type = $pageDef['type'];
-            }
-            
-            if (isset($pageDef['foliation'])) {
-                if (!isset($pageDef['overwriteFoliation'])) {
-                    $errors[] = "No overwriteFoliation in request, " . $pageDef['docId'] . " page " . $pageDef['page'];
-                    continue;
-                }
-                if ($pageDef['overwriteFoliation']) {
-                    $newPageInfo->foliation = $pageDef['foliation'];
-                    // If foliation equals page number, it means user cleared it (set to default)
-                    $newPageInfo->foliationIsSet = strval($pageDef['foliation']) !== strval($pageNumber);
-                }
-            }
-            
-            if (isset($pageDef['cols'])) {
-                if ($pageInfo->numCols < $pageDef['cols']) {
-                    $newPageInfo->numCols = $pageDef['cols'];
-                } else {
-                    // nothing to be done if asking for less or equal number of columns than what's already in the page
-                    $this->debug("Asked for " . $pageDef['cols'] . " col(s), currently " . $pageInfo->numCols . " col(s). Nothing done. ");
-                }
-            }
-            $validLanguages = $this->systemManager->getEntitySystem()->getAllEntitiesForType(Entity::tLanguage);
-            if (isset($pageDef['lang'])) {
-                $newLang = intval($pageDef['lang']);
-                if (in_array($newLang, $validLanguages)) {
-                    $newPageInfo->lang = $newLang;
-                } else {
-                    $this->logger->warning("Attempt to set a page language to invalid entity id $newLang");
-                }
-            }
-            $this->logger->debug("Updating page settings for page $pageId", [
-                'oldData' => get_object_vars($pageInfo),
-                'newData' => get_object_vars($newPageInfo)
-            ]);
-            try {
-                $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $newPageInfo, $this->apiUserId);
-            } catch (Exception $e) {
-                $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), get_object_vars($pageInfo));
-                return $this->responseWithText($response, "Error updating page $pageId ($docId:$pageNumber)", 409);
-            }
+        foreach ($result->updatedPageIds as $pageId) {
             $this->systemManager->onUpdatePageSettings($this->apiUserId, $pageId);
         }
 
-        $this->logger->info("Bulk page settings", [
-            'apiUserTid'=> $this->apiUserId,
-            'count' => count($inputArray)
-            ]);
-        if (count($errors) > 0) {
-            $this->logger->notice("Bulk page settings update with errors", $errors);
+        if ($result->hasErrors()) {
+            $this->logger->notice("Bulk page settings update with errors", $result->errors);
         }
 
-        return $this->responseWithStatus($response, 200);
+        return $this->responseWithJson($response, $result);
     }
 
     /**

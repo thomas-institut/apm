@@ -38,8 +38,6 @@ use APM\Api\ApiWorks;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
-use APM\Site\SiteEntity;
-use APM\Site\SiteMetadataEditor;
 use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePageViewer;
 use APM\Site\SitePeople;
@@ -117,8 +115,6 @@ try {
 createApiAuthenticatedRoutes($app, $container);
 createApiUnauthenticatedRoutes($app, $container);
 createSiteUnauthenticatedRoutes($app, $container);
-createBetaSiteRoutes($app, $container);
-createSiteDevRoutes($app, $container);
 createSiteRoutes($app, $container); // must be the last
 
 
@@ -138,23 +134,9 @@ function exitWithErrorMessage(string $msg): void
     exit();
 }
 
-function createBetaSiteRoutes(App $app, ContainerInterface $container): void
-{
-
-//    $app->group('/beta', function (RouteCollectorProxy $group) use ($container) {
-//        $group->get('{path:.*}',
-//            function (Request $request, Response $response) use ($container) {
-//                return (new SiteReact($container))->ReactMain($request, $response);
-//            });
-//    });
-
-
-}
-
 function createSiteRoutes(App $app, ContainerInterface $container): void
 {
     $app->group('', function (RouteCollectorProxy $group) use ($container) {
-
 
         $group->get('/person/{id}',
             function (Request $request, Response $response) use ($container) {
@@ -268,6 +250,19 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container): void
 {
     $app->group('/api', function (RouteCollectorProxy $group) use ($container) {
+
+        /**
+         * Login
+         *
+         * API Inventory:
+         *    Method: POST
+         *    Authentication: none
+         *    Uses action: no
+         *    PHP Unit Test: no
+         *    PHP Input Schema: yes
+         *    PHP Output Schema: yes
+         *    ApiClient Method: yes
+         */
         $group->post('/login', function (Request $request, Response $response) use ($container) {
             return (new Authenticator($container))->apiLogin($request, $response);
         });
@@ -318,525 +313,1491 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
 {
     // EDITION SOURCES
 
+    /**
+     * Returns all defined edition sources.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/edition/sources/all',
         function (Request $request, Response $response) use ($container) {
             return (new ApiEditionSources($container))->getAllSources($request, $response);
-        })
-        ->setName('api.edition_sources.get_all');
+        });
 
+    /**
+     * Returns a single edition source
+     *
+     * TODO: change parameter tid to id
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/edition/source/get/{tid}',
         function (Request $request, Response $response) use ($container) {
             return (new ApiEditionSources($container))->getSourceByTid($request, $response);
-        })
-        ->setName('api.edition_sources.get');
+        });
 
     // MULTI CHUNK EDITION
 
+    /**
+     * Return a multi-chunk edition by id and, optionally, timestamp
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/edition/multi/get/{editionId}[/{timestamp}]',
         function (Request $request, Response $response, array $args) use ($container) {
             return (new ApiMultiChunkEdition($container))->getEdition($request, $response, $args);
-        })->setName('api.multi_chunk.get');
+        });
 
+    /**
+     * Saves a multi chunk edition
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/edition/multi/save',
         function (Request $request, Response $response) use ($container) {
             return (new ApiMultiChunkEdition($container))->saveEdition($request, $response);
-        })
-        ->setName('api.multi_chunk.save');
+        });
 
 
 }
 
 function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
-    // COLLATION TABLES
+    /**
+     * Generates a collation table
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/collationTable/auto',
         function (Request $request, Response $response) use ($container) {
             return (new ApiCollationTable($container))->auto($request, $response);
         });
 
+    /**
+     * Saves a collation table
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/collationTable/save',
         function (Request $request, Response $response) use ($container) {
             return (new ApiCollationTable($container))->save($request, $response);
         });
 
+    /**
+     * Returns a list of active editions
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/collationTable/active/editions',
         function (Request $request, Response $response) use ($container) {
             return (new ApiCollationTable($container))->activeEditions($response);
         });
 
+    /**
+     * Returns a list of active collation tables for a work
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/collationTable/active/forWork/{workId}',
         function (Request $request, Response $response) use ($container) {
             return (new ApiCollationTable($container))->activeForWork($request, $response);
         });
 
+    /**
+     * Converts a collation table to an edition
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/collationTable/{tableId}/convertToEdition',
         function (Request $request, Response $response) use ($container) {
             return (new ApiCollationTable($container))->convertToEdition($request, $response);
         });
 
+    /**
+     * Returns a collation table by id
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/collationTable/{tableId}/get[/{timestamp}]',
         function (Request $request, Response $response) use ($container) {
             return (new ApiCollationTable($container))->get($request, $response);
-        });
+        }
+    );
 
+    /**
+     * Returns version info for a collation table
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/collationTable/{tableId}/versionInfo/{timestamp}',
         function (Request $request, Response $response) use ($container) {
             return (new ApiCollationTable($container))->versionInfo($request, $response);
-        });
+        }
+    );
 }
 
 function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
     // WITNESSES
+
+
+    /**
+     * Returns witness by id with optional output type and cache flag
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/witness/get/{witnessId}[/{outputType}[/{cache}]]',
         function (Request $request, Response $response) use ($container) {
             return (new ApiWitness($container))->getWitness($request, $response);
-        })
-        ->setName('api.witness.get');
+        }
+    );
 
+    /**
+     * Checks for updates of a number of witnesses
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/witness/check/updates',
         function (Request $request, Response $response) use ($container) {
             return (new ApiWitness($container))->checkWitnessUpdates($request, $response);
-        })
-        ->setName('api.witness.check.updates');
+        }
+    );
 
+    /**
+     * Creates an edition from a single witness
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/witness/{witnessId}/to/edition',
         function (Request $request, Response $response) use ($container) {
             return (new ApiCollationTable($container))->convertWitnessToEdition($request, $response);
-        })->setName('api.witness.convert.to.edition');
+        }
+    );
 
 }
 
 function createApiSystemRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
-    // LOG
+    /**
+     * Returns a list of all system languages and their names
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/system/languages',
         function (Request $request, Response $response) use ($container) {
             return (new ApiSystem($container))->getSystemLanguages($request, $response);
-        })
-        ->setName('api.system.languages');
+        }
+    );
 
 
-    $group->get('/whoami', function (Request $request, Response $response) use ($container) {
-        return (new ApiSystem($container))->whoAmI($request, $response);
-    })->setName('api.frontend.whoami');
+    /**
+     * Returns information about the authenticated API user.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get('/whoami',
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiSystem($container))->whoAmI($request, $response);
+        }
+    );
 }
 
 function createApiAdminRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
-    // LOG
+
+    /**
+     * Logs a message from the frontend to the backend's log
+     *
+     * TODO: determine if this is still needed, or if it can be removed.
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/admin/log',
         function (Request $request, Response $response) use ($container) {
             return (new ApiLog($container))->frontEndLog($request, $response);
-        })
-        ->setName('api.admin.log');
+        }
+    );
 }
 
 function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
-    //  PERSON
+    /**
+     * Returns essential data for all people in the system. Used to populate the people page on the frontend.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/person/all/dataForPeoplePage',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPeople($container))->getAllPeopleDataForPeoplePage($request, $response);
-        })
-        ->setName('api.person.data.essential.all');
+        }
+    );
 
+    /**
+     * Returns essential data for a person by id.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/person/{tid}/data/essential',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPeople($container))->getPersonEssentialData($request, $response);
-        })
-        ->setName('api.person.data.essential');
+        }
+    );
 
+    /**
+     * Returns a list of works by a person by id.
+     *
+     * TODO: change parameter tid to id
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/person/{tid}/works',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPeople($container))->getWorksByPerson($request, $response);
-        })
-        ->setName('api.person.works');
+        }
+    );
 
+    /**
+     * Creates a new person entity in the system
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/person/create',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPeople($container))->personCreate($request, $response);
-        })
-        ->setName('api.person.create');
+        }
+    );
 }
 
 function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
 
-    // USERS
-    // API -> user : update profile
+    /**
+     * Updates a user profile
+     *
+     * TODO: change parameter userTid to userId
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/user/{userTid}/update',
         function (Request $request, Response $response) use ($container) {
             return (new ApiUsers($container))->userUpdateProfile($request, $response);
-        })
-        ->setName('api.user.update');
+        }
+    );
 
+    /**
+     * Makes a user in the system
+     *
+     * TODO: change parameter personTid to personId
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/user/create/{personTid}',
         function (Request $request, Response $response) use ($container) {
             return (new ApiUsers($container))->userCreate($request, $response);
-        })
-        ->setName('api.user.create');
+        }
+    );
 
-    // API -> user : get collation tables (and chunk edition) by user
+    /**
+     * Returns the list of collation tables by a user
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/user/{userId}/collationTables',
         function (Request $request, Response $response) use ($container) {
             return (new ApiUsers($container))->userCollationTables($request, $response);
-        })
-        ->setName('api.user.collationTables');
+        }
+    );
 
-    // API -> user : get multi-chunk editions by user
+    /**
+     * Returns the list of multi-chunk editions by a user
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/user/{userId}/multiChunkEditions',
         function (Request $request, Response $response) use ($container) {
             return (new ApiUsers($container))->userMultiChunkEditions($request, $response);
-        })
-        ->setName('api.user.multiChunkEditions');
+        }
+    );
 }
 
 function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
-    // DOCUMENTS
 
-    $group->get('/docs/all', function (Request $request, Response $response) use ($container) {
-        return (new ApiDocuments($container))->allDocumentsData($request, $response);
-    });
+    /**
+     * Returns information about all documents in the system. Used to populate the documents page on the frontend.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get('/docs/all',
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiDocuments($container))->allDocumentsData($request, $response);
+        }
+    );
 
 
+    /**
+     * Returns the entityId of a document from its legacy DB id.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/doc/getId/{docId}',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->getDocId($request, $response);
-        });
+        }
+    );
 
+    /**
+     * Returns information about a document with optional page information of different kinds
+     *
+     * TODO: Try to get rid of the optional pageInfoToInclude parameter by using a different endpoint for page information.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/doc/{docId}/info[/{pageInfoToInclude}]',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->getDocumentInfo($request, $response);
-        });
+        }
+    );
 
 
+    /**
+     * Creates a new document entity in the system
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/doc/create',
         function (Request $request, Response $response, array $args) use ($container) {
             return (new ApiDocuments($container))->createDocument($request, $response, $args);
-        })
-        ->setName('api.doc.create');
+        }
+    );
 
-    // API -> add pages to a document
+    /**
+     * Adds pages to a document
+     *
+     * TODO: support adding pages in the middle of the document, not just at the end.
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/doc/{id}/addpages',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->addPages($request, $response);
-        })
-        ->setName('api.doc.addpages');
+        }
+    );
 
-
-    // API -> numColumns
+    /**
+     * Gets the number of columns in a page
+     *
+     * TODO: Get rid of this endpoint, the number of columns can be found from the page/{pageId}/info endpoint.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/{document}/{page}/numcolumns',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->getNumColumns($request, $response);
-        })
-        ->setName('api.numcolumns');
+        }
+    );
 
-    // API -> pageTypes
 
+    /**
+     * Returns the page types defined in the system and their names.
+     *
+     * TODO: move to 'api/system/pageTypes'
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/page/types',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->getPageTypes($request, $response);
-        })
-        ->setName('api.page.types');
+        }
+    );
 
-
-    // API -> updatePageSettings
+    /**
+     * Update the information of a single page
+     *
+     * TODO: remove this endpoint since the bulk update endpoint can do exactly the same thing.
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/page/{pageId}/update',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->updatePageSettings($request, $response);
-        })
-        ->setName('api.updatepagesettings');
+        }
+    );
 
+    /**
+     * Updates the information of multiple pages
+     *
+     * TODO: candidate for a refactor so as to make it the only page update endpoint in the system. May require work in the backend though.
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: yes
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/page/bulkupdate',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->updatePageSettingsBulk($request, $response);
-        })
-        ->setName('api.updatepagesettings.bulk');
+        }
+    );
 
-    // API -> newColumn
+    /**
+     * Adds a new column to a page
+     *
+     * TODO: change this endpoint to take a pageId instead of a documentId and a pageNumber.
+     * TODO: determine if this endpoint is still needed, adding a column can easily be done with a page update
+     *
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/{document}/{page}/newcolumn',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->addNewColumn($request, $response);
-        })
-        ->setName('api.newcolumn');
+        }
+    );
 
-    $group->get('/page/{pageId}/info', function (Request $request, Response $response) use ($container) {
-        return (new ApiDocuments($container))->getPageInfo($request, $response);
-    });
+    /**
+     * Get info about a page
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get('/page/{pageId}/info',
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiDocuments($container))->getPageInfo($request, $response);
+        }
+    );
 
-    // API -> getPageInfo
+    /**
+     * Gets information about a several pages at the same time
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/pages/info',
         function (Request $request, Response $response) use ($container) {
             return (new ApiDocuments($container))->getPageInfoBulk($request, $response);
-        })
-        ->setName('api.getPageInfo');
+        }
+    );
 }
 
 function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
 
+    /**
+     * Returns the entity data for all entities that can be used as qualifications in a statement
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get("/entity/statementQualificationObjects/data",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiEntity($container))->getValidQualificationObjects($request, $response, false);
+        }
+    );
 
-    $group->get("/entity/statementQualificationObjects/data", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->getValidQualificationObjects($request, $response, false);
-    })->setName("api.entity.statementQualificationObjects.data");
+    /**
+     * Returns the entity ids for all entities that can be used as qualifications in a statement
+     *
+     * TODO: merge with the above endpoint since the difference is only whether data or ids is returned.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get("/entity/statementQualificationObjects",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiEntity($container))->getValidQualificationObjects($request, $response, true);
+        }
+    );
 
-    $group->get("/entity/statementQualificationObjects", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->getValidQualificationObjects($request, $response, true);
-    })->setName("api.entity.statementQualificationObjects");
-    $group->get("/entity/{entityType}/entities", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->getEntitiesForType($request, $response);
-    })->setName("api.entity.entities");
+    /**
+     * Returns all entities of a given type.
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get("/entity/{entityType}/entities",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiEntity($container))->getEntitiesForType($request, $response);
+        }
+    );
 
-    $group->get("/entity/{id}/predicateDefinitionsForType", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->getPredicateDefinitionsForType($request, $response);
-    })->setName("api.entity.predicateDefinitionsForType");
+    /**
+     * Returns predicate definition for a given entity type
+     *
+     * TODO: change parameter id to typeOrEntityId
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get("/entity/{id}/predicateDefinitionsForType",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiEntity($container))->getPredicateDefinitionsForType($request, $response);
+        }
+    );
 
-    $group->get("/entity/{id}/predicateDefinition", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->getPredicateDefinition($request, $response);
-    })->setName("api.entity.predicateDefinition");
+    /**
+     * Returns the definition of a predicate
+     *
+     * TODO: change parameter id to predicateId
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get("/entity/{id}/predicateDefinition",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiEntity($container))->getPredicateDefinition($request, $response);
+        }
+    );
 
-    $group->get("/entity/{tid}/data", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->getEntityData($request, $response);
-    })->setName("api.entity.data");
+    /**
+     * Returns the entity data for an entity
+     *
+     * TODO: change parameter tid to entityId
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get("/entity/{tid}/data",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiEntity($container))->getEntityData($request, $response);
+        }
+    );
 
-    $group->post("/entity/statements/edit", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->statementEdition($request, $response);
-    })->setName("api.entity.statements.edit");
+    /**
+     * Executes a list of statement edition commands
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->post("/entity/statements/edit",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiEntity($container))->statementEdition($request, $response);
+        }
+    );
 
-    $group->get("/entity/nameSearch/{inputString}/{typeList}", function (Request $request, Response $response) use ($container) {
-        return (new ApiEntity($container))->nameSearch($request, $response);
-    })->setName("api.entity.nameSearch");
-
+    /**
+     * Returns matching entities for a given entity type and a search string
+     *
+     * TODO: move this to 'api/search', rename to something like 'api/search/entitiesByTypeName'
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get("/entity/nameSearch/{inputString}/{typeList}",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiEntity($container))->nameSearch($request, $response);
+        }
+    );
 }
 
 function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
-    //  PRESETS
 
+    /**
+     * Returns a preset
+     *
+     * TODO: can't this be a simple GET request? (Issue #321)
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/presets/get',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPresets($container))->getPresets($request, $response);
-        })
-        ->setName('api.presets.get');
+        }
+    );
 
+    /**
+     * Deletes a preset
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get('/presets/delete/{id}',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPresets($container))->deletePreset($request, $response);
-        })
-        ->setName('api.presets.delete');
+        }
+    );
 
+    /**
+     * Returns a sigla preset
+     *
+     * TODO: can't this be a simple GET request? (Issue #321)
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/presets/sigla/get',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPresets($container))->getSiglaPresets($request, $response);
-        })
-        ->setName('api.presets.sigla.get');
+        }
+    );
 
+    /**
+     * Saves a sigla preset
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/presets/sigla/save',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPresets($container))->saveSiglaPreset($request, $response);
-        })
-        ->setName('api.presets.sigla.save');
+        }
+    );
 
+    /**
+     * Returns an automatic collation preset
+     *
+     * TODO: can't this be a simple GET request? (Issue #321)
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/presets/act/get',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPresets($container))->getAutomaticCollationPresets($request, $response);
-        })
-        ->setName('api.presets.act.get');
+        }
+    );
 
+    /**
+     * Saves a preset
+     *
+     * TODO: this should be renamed to 'api/preset/save' and perhaps merge all other saves into it (Issue #321)
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post('/presets/post',
         function (Request $request, Response $response) use ($container) {
             return (new ApiPresets($container))->savePreset($request, $response);
-        })
-        ->setName('api.presets.post');
+        }
+    );
 }
 
+/**
+ * Create API image routes
+ *
+ * TODO: Find a way to generate images in the frontend and get rid of this (Issue #322)
+ *
+ * @param RouteCollectorProxy $group
+ * @param ContainerInterface $container
+ * @return void
+ */
 function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
 
-    // API -> images : Mark Icon
+    /**
+     * Returns a mark image
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/images/mark/{size}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiIcons($container))->generateMarkIcon($request, $response);
-        })
-        ->setName("api.images.mark");
+        }
+    );
 
-    // API -> images : No Word Break Icon
+    /**
+     * Returns a no word break image
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/images/nowb/{size}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiIcons($container))->generateNoWordBreakIcon($request, $response);
-        })
-        ->setName("api.images.nowb");
+        }
+    );
 
-    // API -> images : Illegible Icon
+    /**
+     * Returns an 'illegible' image
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/images/illegible/{size}/{length}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiIcons($container))->generateIllegibleIcon($request, $response);
-        })
-        ->setName("api.images.illegible");
+        }
+    );
 
-    // API -> images : ChunkMark Icon
+    /**
+     * Returns a chunk mark image
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/images/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiIcons($container))->generateChunkMarkIcon($request, $response);
-        })
-        ->setName("api.images.chunkmark");
+        }
+    );
 
-    // API -> images : ChapterMark Icon
+    /**
+     * Returns a chapter mark image
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/images/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiIcons($container))->generateChapterMarkIcon($request, $response);
-        })
-        ->setName("api.images.chaptermark");
+        }
+    );
 
-    // API -> images : Line Gap Mark
+    /**
+     * Returns a line gap image
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/images/linegap/{count}/{size}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiIcons($container))->generateLineGapImage($request, $response);
-        })
-        ->setName("api.images.linegap");
+        }
+    );
 
-    // API -> images : Character Gap Mark
+    /**
+     * Returns a character gap image
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/images/charactergap/{length}/{size}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiIcons($container))->generateCharacterGapImage($request, $response);
-        })
-        ->setName("api.images.charactergap");
+        }
+    );
 
-    // API -> images : Paragraph Mark
+    /**
+     * Returns a paragraph mark image
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/images/paragraphmark/{size}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiIcons($container))->generateParagraphMarkIcon($request, $response);
-        })
-        ->setName("api.images.charactergap");
-
+        }
+    );
 }
 
 function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
+    /**
+     * Searches for a keyword
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post("/search/keyword",
         function (Request $request, Response $response) use ($container) {
             return (new ApiSearch($container))->search($request, $response);
-        })
-        ->setName('search.keyword');
+        }
+    );
 
+    /**
+     * Searches in transcriptions
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->any("/search/transcriptions",
         function (Request $request, Response $response) use ($container) {
             return (new ApiSearch($container))->getTranscriptionTitles($request, $response);
-        })
-        ->setName('search.titles');
+        }
+    );
 
+    /**
+     * Returns a list of transcribers
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->any("/search/transcribers",
         function (Request $request, Response $response) use ($container) {
             return (new ApiSearch($container))->getTranscribers($request, $response);
-        })
-        ->setName('search.transcribers');
+        }
+    );
 
+    /**
+     * Returns a list of edition titles
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->any("/search/editions",
         function (Request $request, Response $response) use ($container) {
             return (new ApiSearch($container))->getEditionTitles($request, $response);
-        })
-        ->setName('search.editions');
+        }
+    );
 
+    /**
+     * Returns a list of editors
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->any("/search/editors",
         function (Request $request, Response $response) use ($container) {
             return (new ApiSearch($container))->getEditors($request, $response);
-        })
-        ->setName('search.editors');
+        }
+    );
 
 }
 
 function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
-    // TRANSCRIPTIONS
 
-    // get pages transcribed by user
+    /**
+     * Returns transcribed pages by user
+     *
+     * TODO: change parameter userTid to userId, docPageData to something more meaningful
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/transcriptions/byUser/{userTid}/docPageData",
         function (Request $request, Response $response) use ($container) {
             return (new ApiUsers($container))->getTranscribedPages($request, $response);
-        })
-        ->setName('api.transcriptions.byUser.docPageData');
+        }
+    );
 
-    //  getElements
+    /**
+     * Returns the transcription for a given document, page and column
+     *
+     * TODO: shouldn't this be by pageId and column?
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/transcriptions/{document}/{page}/{column}/get",
         function (Request $request, Response $response) use ($container) {
             return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
-        })
-        ->setName('api.transcriptions.getData');
+        }
+    );
 
-    //   getElements (with version Id)
-    // TODO: merge this with previous
+
+    /**
+     * Returns a transcription by pageId and column and version
+     *
+     * TODO: merge with previous route
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/transcriptions/{document}/{page}/{column}/get/version/{version}",
         function (Request $request, Response $response) use ($container) {
             return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
-        })
-        ->setName('api.transcriptions.getData.withVersion');
+        }
+    );
 
-    // updateColumnElements
+    /**
+     * Updates/saves a transcription
+     *
+     * TODO: change handler name to saveTranscription or something like that, updateElements is not good
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->post("/transcriptions/{document}/{page}/{column}/update",
         function (Request $request, Response $response) use ($container) {
             return (new ApiElements($container))->updateElementsByDocPageCol($request, $response);
-        })
-        ->setName('api.transcriptions.update');
+        }
+    );
 }
 
 function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
 
-    // WORKS
+    /**
+     * Returns all works with transcriptions in the system
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->get("/works/all",
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiWorks($container))->allWorksData($request, $response);
+        }
+    );
 
-    $group->get("/works/all", function (Request $request, Response $response) use ($container) {
-       return (new ApiWorks($container))->allWorksData($request, $response);
-    });
-
-    // API -> work: get work info
+    /**
+     * Returns legacy work information
+     *
+     * TODO: get rid of this (Issue #323)
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/work/{workId}/old-info",
         function (Request $request, Response $response) use ($container) {
             return (new ApiWorks($container))->getWorkInfoOld($request, $response);
-        })
-        ->setName('api.work.info');
+        }
+    );
 
+    /**
+     * Get work data
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/work/{workId}/data",
         function (Request $request, Response $response) use ($container) {
             return (new ApiWorks($container))->getWorkData($request, $response);
-        })
-        ->setName('api.work.data');
+        }
+    );
 
+    /**
+     * Returns witnesses by work and chunk number
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/work/{workId}/chunk/{chunkNumber}/witnesses", function (Request $request, Response $response) use ($container) {
         return (new ApiWitness($container))->getWitnessesForChunk($request, $response);
-    })->setName("api.work.witnesses");
+    }
+    );
+
+    /**
+     * Returns collation tables (and editions) by work and chunk number
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/work/{workId}/chunk/{chunkNumber}/ctables", function (Request $request, Response $response) use ($container) {
         return (new ApiWitness($container))->getCollationTablesForChunk($request, $response);
-    })->setName("api.work.ctables");
+    }
+    );
 
-
-
+    /**
+     * Returns chunks with transcription by work
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/work/{workId}/chunksWithTranscription",
         function (Request $request, Response $response) use ($container) {
             return (new ApiWorks($container))->getChunksWithTranscription($request, $response);
-        })
-        ->setName('api.work.chunksWithTranscription');
+        }
+    );
 
-
-    // AUTHORS
-
+    /**
+     * Returns authors for a work
+     *
+     * TODO: is this necessary? What is an author here?
+     *
+     * API Inventory:
+     *    Method: GET
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
     $group->get("/works/authors", function (Request $request, Response $response) use ($container) {
         return (new ApiWorks($container))->getAuthorList($request, $response);
-    })
-        ->setName('api.works.authors');
+    }
+    );
 }
 
 function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
 
-    // TYPESETTING
-
-    $group->post('/typeset/pdf',
+    /**
+     * Typesets a document into a PDF
+     *
+     * TODO: rename to 'typeset/toPDF'
+     *
+     * API Inventory:
+     *    Method: POST
+     *    Authentication: user token
+     *    Uses action: no
+     *    PHP Unit Test: no
+     *    PHP Input Schema: TBD
+     *    PHP Output Schema: TBD
+     *    ApiClient Method: TBD
+     */
+    $group->post('/typeset/raw',
         function (Request $request, Response $response) use ($container) {
             return (new ApiTypesetPdf($container))->generatePDF($request, $response);
-        })
-        ->setName('api.typeset.pdf');
+        }
+    );
 }
 
 function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container): void
@@ -850,29 +1811,5 @@ function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container
 
     $app->get('/app-settings', function (Request $request, Response $response) use ($container) {
         return (new SiteSettings($container))->getSiteSettings($request, $response);
-    });
-}
-
-function createSiteDevRoutes(App $app, ContainerInterface $container): void
-{
-
-    $app->group("/dev", function (RouteCollectorProxy $group) use ($container) {
-        $group->get('/metadata-editor/{id}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteMetadataEditor($container))->metadataEditorPage($request, $response);
-            })
-            ->setName('metadata-editor');
-
-        $group->get("/php-info", function (Request $request, Response $response) {
-            ob_start();
-            phpinfo();
-            $info = ob_get_contents();
-            ob_end_clean();
-            $response->getBody()->write($info);
-            return $response;
-        });
-
-    })->add(function (Request $request, RequestHandlerInterface $handler) use ($container) {
-        return (new Authenticator($container))->authenticateSiteRequest($request, $handler);
     });
 }

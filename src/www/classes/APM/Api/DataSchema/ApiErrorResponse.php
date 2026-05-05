@@ -4,9 +4,9 @@ namespace APM\Api\DataSchema;
 
 use APM\ToolBox\HttpStatus;
 
-final class ApiErrorResponse
+final class ApiErrorResponse extends ApiResponse
 {
-    public string $status = 'Error';
+    public string $result = ApiResponse::ResultError;
     public string $message = '';
     public int $httpStatus = HttpStatus::INTERNAL_SERVER_ERROR;
 

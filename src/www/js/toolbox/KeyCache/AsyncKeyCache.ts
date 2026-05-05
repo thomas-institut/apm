@@ -80,6 +80,12 @@ export class AsyncKeyCache {
     return `${this.prefix}${key}`;
   }
 
+  public async flushCache() : Promise<void> {
+    for (const key of await this.getKeys()) {
+      await this.delete(key);
+    }
+  }
+
   /**
    * Retrieves an item from the cache.
    *

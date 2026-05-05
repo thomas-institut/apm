@@ -282,7 +282,6 @@ interface UserManagerInterface extends LoggerAwareInterface
      * @param int $userId
      * @param string $password
      * @return bool
-     * @throws UserNotFoundException
      */
     public function verifyPassword(int $userId, string $password) : bool;
 

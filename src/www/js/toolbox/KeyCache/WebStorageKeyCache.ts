@@ -17,6 +17,10 @@ export class WebStorageKeyCache extends KeyCache {
     this.storage = type === 'session' ? window.sessionStorage : window.localStorage;
   }
 
+  flushCache(): void {
+    this.storage.clear();
+  }
+
   storeItemObject(key: string, itemObject: InternalCacheObject): void {
     this.storage.setItem(this.getRealKey(key), JSON.stringify(itemObject));
   }

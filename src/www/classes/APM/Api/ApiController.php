@@ -26,7 +26,6 @@ use APM\SystemProfiler;
 use APM\System\ApmContainerKey;
 use APM\ToolBox\HttpStatus;
 use Exception;
-use PHPUnit\Framework\Attributes\CodeCoverageIgnore;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -42,14 +41,6 @@ use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\EntitySystem\Tid;
 
-use OpenApi\Attributes as OA;
-
-#[OA\Info(
-    version: '1.0',
-    description: "Internal API for APM's frontend",
-    title: 'APM API'
-)
-]
 abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 {
 
@@ -96,6 +87,8 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected int $apiUserId;
     protected bool $devMode;
 
+    protected ApmResponseFactory $responseFactory;
+
 
     /**
      * ApiController constructor.
@@ -116,11 +109,13 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->apiCallName = self::CLASS_NAME . ":generic";
 
        $this->devMode = $this->systemManager->getConfig()['devMode'] ?? false;
-//       $this->logger->debug('API : dev mode is ' . ($this->devMode ? 'on' : 'off'));
+
+       $this->responseFactory = new ApmResponseFactory($this->systemManager->getLogger());
     }
     
     protected function setApiCallName(string $name) : void {
         $this->apiCallName  = $name;
+        $this->responseFactory->withApiCallName($name);
     }
 
     /**
@@ -138,7 +133,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @param string $msg
      * @param array $data
      */
-    #[CodeCoverageIgnore] protected function debug(string $msg, array $data=[]): void
+    protected function debug(string $msg, array $data=[]): void
     {
         if ($this->debugMode){
             $this->logger->debug($msg, $data);
@@ -164,6 +159,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      * @param bool $errorIfEmpty
      * @param bool $useRawData
      * @return Response|array
+     * @deprecated use specialized parsers instead
      */
     protected function checkAndGetInputData(Request  $request,
                                             Response $response, array $requiredFields, bool $errorIfEmpty = false, bool $useRawData = false): array|Response
@@ -209,66 +205,26 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
         return $inputData;
     }
 
-
-    protected function error(Response $response, string $errorMsg, int $httpStatus = HttpStatus::INTERNAL_SERVER_ERROR): Response
-    {
-        return $this->responseWithJson($response, new ApiErrorResponse($errorMsg, $httpStatus), $httpStatus);
+    /**
+     * @deprecated use responseFactory methods instead
+     */
+    protected function responseWithJson(ResponseInterface $response, mixed $data, int $status = HttpStatus::SUCCESS) : ResponseInterface {
+        return $this->responseFactory->responseWithJson($response, $data, $status);
     }
 
-    protected function internalServerError(Response $response, string $errorMsg = ''): Response
-    {
-        $msg = $errorMsg === '' ? 'Internal server error' : 'Internal server error: ' . $errorMsg;
-        return $this->error($response, $msg);
+
+    /**
+     * @deprecated use responseFactory methods instead
+     */
+    protected function responseWithText(Response $response, string $text, int $status= HttpStatus::SUCCESS) : ResponseInterface {
+        return $this->responseFactory->responseWithText($response, $text, $status);
     }
 
     /**
-     * @param Response $response
-     * @param mixed $data
-     * @param int $status
-     * @return Response
+     * @deprecated use responseFactory methods instead
      */
-    protected function responseWithJson(ResponseInterface $response, mixed $data, int $status = 200) : ResponseInterface {
-        $payload = json_encode($data);
-        return $this->responseWithRawJson($response, $payload, $status);
-    }
-
-    /**
-     * @param Response $response
-     * @param string $json
-     * @param int $status
-     * @return Response
-     */
-    protected function responseWithRawJson(ResponseInterface $response, string $json, int $status = 200) : ResponseInterface {
-        $this->logProfilers("Response with JSON ready");
-        $response->getBody()->write($json);
-//        if ($this->devMode) {
-//            $this->logger->debug("Allowing CORS for $this->apiCallName: $json");
-//            $response = $response->withHeader('Access-Control-Allow-Origin', '*');
-//        }
-        return $response
-            ->withHeader('Content-Type', 'application/json')
-            ->withStatus($status);
-    }
-
-    protected function responseWithText(Response $response, string $text, int $status=200) : Response {
-        $lapName = $text === '' ? 'Response ready' : 'Response with text ready';
-        $this->logProfilers($lapName);
-        if ($text !== '') {
-            $response->getBody()->write($text);
-        }
-        return $response->withStatus($status);
-    }
-
     protected function responseWithStatus(Response $response, int $status) : Response{
         return $this->responseWithText($response, '', $status);
-    }
-
-    protected function logProfilers(string $endLapName): void
-    {
-        SystemProfiler::lap($endLapName);
-        $this->logger->debug(
-            sprintf("API PROFILER %s Finished in %.3f ms", $this->apiCallName, SystemProfiler::getTotalTimeInMs()),
-            SystemProfiler::getLaps());
     }
 
     protected function logException(Exception $e, $msg): void

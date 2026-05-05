@@ -4,7 +4,7 @@ namespace APM\Api\DataSchema;
 
 use stdClass;
 
-class ApiCollationTable_auto
+class ApiCollationTableAuto
 {
     public string $type;
     public array $collationEngineDetails;

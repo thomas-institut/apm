@@ -5,7 +5,7 @@ namespace APM\Api\DataSchema;
 /**
  * Data returned by the collationTable versionInfo API call
  */
-class ApiCollationTable_versionInfo
+class ApiCollationTableVersionInfo
 {
     public int $tableId;
     public string $type;

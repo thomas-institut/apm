@@ -47,7 +47,7 @@ export class IndexedDbKeyCache extends AsyncKeyCache {
         resolve(true);
       };
       DBOpenRequest.onupgradeneeded = (event) => {
-        console.log(`Upgrading database from version ${event.oldVersion} to version ${event.newVersion}`);
+        //console.log(`Upgrading database from version ${event.oldVersion} to version ${event.newVersion}`);
         this.db = DBOpenRequest.result;
         const store = this.db.createObjectStore(this.storeName, {keyPath: 'key'});
         store.createIndex('value', 'value', {unique: false});

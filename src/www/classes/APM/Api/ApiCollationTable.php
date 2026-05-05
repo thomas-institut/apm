@@ -21,9 +21,9 @@
 namespace APM\Api;
 
 
-use APM\Api\DataSchema\ApiCollationTable_auto;
+use APM\Api\DataSchema\ApiCollationTableAuto;
 use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
-use APM\Api\DataSchema\ApiCollationTable_versionInfo;
+use APM\Api\DataSchema\ApiCollationTableVersionInfo;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
 use APM\Core\Collation\CollationTable;
@@ -67,7 +67,6 @@ class ApiCollationTable extends ApiController
     const int ERROR_INVALID_LANGUAGE = 2004;
     const int ERROR_INVALID_COLLATION_TABLE_ID = 2005;
     const int ERROR_COLLATION_TABLE_DOES_NOT_EXIST = 2006;
-
     const int ERROR_CANNOT_CONVERT = 6001;
 
 
@@ -129,7 +128,7 @@ class ApiCollationTable extends ApiController
         }
 
         $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
-        $data = new ApiCollationTable_versionInfo();
+        $data = new ApiCollationTableVersionInfo();
         $data->tableId = $tableId;
         $data->type = $ctInfo->type;
         $data->title = $ctInfo->title;
@@ -500,7 +499,7 @@ class ApiCollationTable extends ApiController
         $collationEngineDetails['cached'] = false;
         $collationEngineDetails['totalDuration'] =  intval(SystemProfiler::getCurrentTotalTimeInMs())/1000;
 
-        $responseData2 = new ApiCollationTable_auto();
+        $responseData2 = new ApiCollationTableAuto();
         $responseData2->type = 'auto';
         $responseData2->collationEngineDetails = $collationEngineDetails;
         $responseData2->collationTable = $standardData;
@@ -520,7 +519,8 @@ class ApiCollationTable extends ApiController
         }
         $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $lang]);
 
-        return $this->responseWithRawJson($response, $jsonToCache);
+
+        return $this->responseFactory->responseWithRawJson($response, $jsonToCache, HttpStatus::SUCCESS);
     }
 
     public function save(Request $request, Response $response): Response

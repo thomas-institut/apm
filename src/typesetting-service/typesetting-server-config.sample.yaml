@@ -1,0 +1,11 @@
+#
+# Configuration for typesetting server
+#
+#  (paths must be given in terms of the server/container that runs the server)
+#
+
+typesettingServer:
+  port: 4711
+  pdfRenderer: /usr/bin/python3 /opt/apm/typesetting-service/pdf-renderer.py
+  tmpDir: /var/apm/typesetting-tmp
+  logFile: /var/apm/logs/typesetting-service/server.log

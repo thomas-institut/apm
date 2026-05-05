@@ -24,14 +24,14 @@ console.log(`Config file is ${process.argv[2]}`);
 
 const config = await readConfig(process.argv[2]);
 
-if (config.typesettingService === undefined) {
-  config.typesettingService = {};
+if (config.typesettingServer === undefined) {
+  config.typesettingServer = {};
 }
 
-const PORT: number = config.typesettingService['port'] ?? 4711;
-const PdfRenderer: string = config.typesettingService['pdfRenderer'] ?? `/usr/bin/python3 /opt/apm/typesetting-service/pdf-renderer.py`;
-const TmpDir: string = config.typesettingService['tmpDir'] ?? '/var/apm/typesetting-tmp';
-const LogFile: string = config.typesettingService['logFile'] ?? '/var/apm/logs/typesetting-service/server.log';
+const PORT: number = config.typesettingServer['port'] ?? 4711;
+const PdfRenderer: string = config.typesettingServer['pdfRenderer'] ?? `/usr/bin/python3 /opt/apm/typesetting-service/pdf-renderer.py`;
+const TmpDir: string = config.typesettingServer['tmpDir'] ?? '/var/apm/typesetting-tmp';
+const LogFile: string = config.typesettingServer['logFile'] ?? '/var/apm/logs/typesetting-service/server.log';
 
 console.log(`  Port: ${PORT}`);
 console.log(`  PdfRenderer: ${PdfRenderer}`);
@@ -69,7 +69,7 @@ typesettingServer.post('/api/typeset', async (req, res) => {
     res.json({error: true, errorMsg: "No JSON in input"});
   }
   let inputId = data.id ?? getRandomId();
-  logIt(`Typeset ${inputId}: Start`);
+  logIt(`${inputId}: Start`);
 
   let outputType = req.query.output ?? 'pdf';
   let processingTime = 0;
@@ -77,16 +77,16 @@ typesettingServer.post('/api/typeset', async (req, res) => {
 
   let outputData = await processInputJson(data);
   if (outputData.error) {
-    logIt(`Typeset ${inputId}: Error typesetting: ${outputData.errorMsg}`);
+    logIt(`${inputId}: Error typesetting: ${outputData.errorMsg}`);
     res.status(401).json({error: true, errorMsg: outputData.errorMsg});
     return;
   } else {
     // @ts-ignore
     processingTime += Math.round(outputData.stats.processingTime);
-    logIt(`Typeset ${inputId}: Typesetting done in ${processingTime} ms`);
+    logIt(`${inputId}: Typesetting done in ${processingTime} ms`);
   }
   if (outputType === 'json') {
-    logIt(`Typeset ${inputId}: Sending JSON out`);
+    logIt(`${inputId}: Sending JSON out`);
     res.json(outputData);
     return;
   }
@@ -95,8 +95,9 @@ typesettingServer.post('/api/typeset', async (req, res) => {
 
   let start = hrtime.bigint();
   let pdfRendererInput = JSON.stringify(outputData.output);
+  const pdfRendererInputInKb = Math.round(pdfRendererInput.length / 1024);
 
-  logIt(`Typeset ${inputId}: Sending JSON to PdfRenderer, size is ${pdfRendererInput.length} bytes`);
+  logIt(`${inputId}: Sending JSON to PdfRenderer, size is ${pdfRendererInputInKb}K`);
 
 
   let pdfRendererCmdParts = PdfRenderer.split(' ');
@@ -117,7 +118,7 @@ typesettingServer.post('/api/typeset', async (req, res) => {
 
   pdfRendererProcess.on('close', async (code) => {
     if (code !== 0) {
-      logIt(`Typeset ${inputId}: ERROR - PdfRenderer exited with code ${code}`);
+      logIt(`${inputId}: ERROR - PdfRenderer exited with code ${code}`);
       if (!res.headersSent) {
         res.status(500).send("Internal Server Error: PdfRenderer returned with error");
       }
@@ -127,25 +128,25 @@ typesettingServer.post('/api/typeset', async (req, res) => {
       const fileStats = await stat(pdfRendererOutputFileName);
       const fileSizeInKB = Math.round(fileStats.size / 1024);
 
-      logIt(`Typeset ${inputId}: PDF generated successfully in ${durationInMs} ms, file size is ${fileSizeInKB}K`);
+      logIt(`${inputId}: PDF generated successfully in ${durationInMs} ms, file size is ${fileSizeInKB}K`);
       processingTime += durationInMs;
       start = hrtime.bigint();
       res.sendFile(pdfRendererOutputFileName, async (err) => {
         if (err) {
-          logIt(`Typeset ${inputId}: ERROR sending file '${pdfRendererOutputFileName}': ${err}`);
+          logIt(`${inputId}: ERROR sending file '${pdfRendererOutputFileName}': ${err}`);
           res.status(500).send("Internal Server Error: could not send generated PDF File");
         } else {
           // all good
           try {
             await unlink(pdfRendererOutputFileName);
           } catch (err) {
-            logIt(`Typeset ${inputId}: WARNING could not delete tmp PDF file '${pdfRendererOutputFileName}'`);
+            logIt(`${inputId}: WARNING could not delete tmp PDF file '${pdfRendererOutputFileName}'`);
           }
           let end = hrtime.bigint();
           let durationInMs = Math.round(Number(end - start) / 1000000);
           processingTime += durationInMs;
-          logIt(`Typeset ${inputId}: PDF sent successfully in ${durationInMs} ms`);
-          logIt(`Typeset ${inputId}: Total processing time = ${processingTime} ms`);
+          logIt(`${inputId}: PDF sent successfully in ${durationInMs} ms`);
+          logIt(`${inputId}: Total processing time = ${processingTime} ms`);
         }
       });
 
@@ -153,7 +154,7 @@ typesettingServer.post('/api/typeset', async (req, res) => {
   });
 
   pdfRendererProcess.on('error', () => {
-    logIt(`Typeset ${inputId}: ERROR - Failed to start PdfRenderer process`);
+    logIt(`${inputId}: ERROR - Failed to start PdfRenderer process`);
     if (!res.headersSent) {
       res.status(500).send("Internal Server Error: could not start PDF renderer process");
     }
@@ -188,7 +189,7 @@ function logLines(data: any, inputId: string, name: string): void {
   lines.forEach((line) => {
     line = line.trim();
     if (line !== '') {
-      logIt(`Typeset ${inputId}: ${name}  ${line}`);
+      logIt(`${inputId}: ${name}  ${line}`);
     }
   });
 }

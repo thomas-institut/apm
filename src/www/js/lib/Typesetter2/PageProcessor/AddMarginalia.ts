@@ -72,7 +72,7 @@ export class AddMarginalia extends PageProcessor {
         return;
       }
       let pageMarginalia: PageMarginalia[] = page.getMetadata(MetadataKey.PageMarginalia) as PageMarginalia[];
-      console.log(`Page marginalia`, pageMarginalia);
+      // console.log(`Page marginalia`, pageMarginalia);
       if (pageMarginalia.length === 0) {
         resolve(page);
         return;

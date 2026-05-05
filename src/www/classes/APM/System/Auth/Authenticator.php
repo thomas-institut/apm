@@ -69,9 +69,6 @@ class Authenticator
 {
 
 
-    const string LOGIN_PAGE_SIGNATURE = 'Login-8gRSSm23HPdStrEid5Wi';
-
-
     /**
      * @var ContainerInterface
      */
@@ -208,14 +205,6 @@ class Authenticator
             $this->logger->debug('Redirecting to ' . $loginUrl);
             return $response->withHeader('Location', $loginUrl)->withStatus(302);
         }
-    }
-
-    protected function responseWithJson(ResponseInterface $response, mixed $data, int $status = 200): ResponseInterface
-    {
-        $response->getBody()->write(json_encode($data));
-        return $response
-            ->withHeader('Content-Type', 'application/json')
-            ->withStatus($status);
     }
 
     public function apiLogin(ServerRequestInterface $request, ResponseInterface $response): ResponseInterface

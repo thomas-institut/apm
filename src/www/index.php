@@ -224,10 +224,6 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
             function (Request $request, Response $response) use ($container) {
                 return (new SiteReact($container))->ReactMain($request, $response);
             });
-//            function (Request $request, Response $response) use ($container) {
-//                return (new SiteDocuments($container))->defineDocPages($request, $response);
-//            })
-//            ->setName('doc.definedocpages');
 
         // show document
         $group->get('/doc/{id}[/{params:.*}]',

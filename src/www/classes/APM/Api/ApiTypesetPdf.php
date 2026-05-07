@@ -50,7 +50,7 @@ class ApiTypesetPdf extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function generatePDF(Request $request, Response $response) : Response {
+    public function toPdf(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $inputJson = $request->getBody()->getContents();

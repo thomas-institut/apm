@@ -112,7 +112,7 @@ class ApiTypesetPdf extends ApiController
         if ($this->saveStringToFile($fileToDownload, $pdfString)){
             SystemProfiler::lap('Ready to send PDF');
             $data = new ApiTypesetPdfResponse();
-            $data->result = 'OK';
+            $data->result = ApiResponse::ResultSuccess;
             $data->url = $url;
             $data->cached = false;
             $data->typesetterProcessingTime = SystemProfiler::getTotalTimeInMs();

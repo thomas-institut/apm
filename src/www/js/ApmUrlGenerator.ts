@@ -346,7 +346,7 @@ export class ApmUrlGenerator {
   }
 
   apiTypesetPdf() {
-    return this.apiBase + '/typeset/pdf';
+    return this.apiBase + '/typeset/toPdf';
   }
 
 

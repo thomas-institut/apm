@@ -1779,8 +1779,6 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterfa
     /**
      * Typesets a document into a PDF
      *
-     * TODO: rename to 'typeset/toPDF'
-     *
      * API Inventory:
      *    Method: POST
      *    Authentication: user token
@@ -1790,11 +1788,7 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterfa
      *    PHP Output Schema: TBD
      *    ApiClient Method: TBD
      */
-    $group->post('/typeset/raw',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiTypesetPdf($container))->generatePDF($request, $response);
-        }
-    );
+    $group->post('/typeset/toPdf', [ ApiTypesetPdf::class, 'toPdf']);
 }
 
 function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container): void

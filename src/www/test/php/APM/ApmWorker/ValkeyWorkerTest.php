@@ -6,6 +6,7 @@ use APM\ApmWorker\ValkeyWorker;
 use APM\System\ApmSystemManager;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\Job\ValkeyJobQueueManager;
+use APM\System\SystemManager;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PDOException;
@@ -124,7 +125,7 @@ class ValkeyWorkerTest extends TestCase
     {
         $handler = new class implements JobHandlerInterface {
             public bool $called = false;
-            public function run(\APM\System\SystemManager $sm, array $payload, string $jobName): bool {
+            public function run(SystemManager $sm, array $payload, string $jobName): bool {
                 $this->called = true;
                 return true;
             }

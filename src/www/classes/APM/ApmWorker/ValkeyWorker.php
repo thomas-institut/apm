@@ -16,7 +16,7 @@ class ValkeyWorker
 
     const int MinDbResetConnectionIntervalInMinutes = 5;
     const int DefaultMaxJobs = 100;
-    const int MinMaxJobs = 5;
+    const int MinMaxJobs = 1;
     const int DefaultMicroSecondsToSleep = 500000;
     const int DefaultDbConnectionResetIntervalInMinutes = 360;
     private ApmSystemManager $systemManager;

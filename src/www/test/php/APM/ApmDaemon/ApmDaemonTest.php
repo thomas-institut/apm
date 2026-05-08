@@ -36,8 +36,6 @@ class ApmDaemonTest extends TestCase
         // Use reflection to call the private method
         $reflection = new ReflectionClass(ApmDaemon::class);
         $method = $reflection->getMethod('runJobQueueRecovery');
-        $method->setAccessible(true);
-
         $method->invoke($daemon);
     }
 
@@ -63,7 +61,6 @@ class ApmDaemonTest extends TestCase
 
         $reflection = new ReflectionClass(ApmDaemon::class);
         $method = $reflection->getMethod('runJobQueueRecovery');
-        $method->setAccessible(true);
 
         $method->invoke($daemon);
         $method->invoke($daemon); // Second call should be skipped due to interval

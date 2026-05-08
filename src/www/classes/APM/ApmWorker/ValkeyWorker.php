@@ -5,6 +5,7 @@ namespace APM\ApmWorker;
 use APM\System\ApmSystemManager;
 use APM\System\Job\ValkeyJobQueueManager;
 use Monolog\Logger;
+use PDOException;
 use Throwable;
 
 /**
@@ -12,6 +13,12 @@ use Throwable;
  */
 class ValkeyWorker
 {
+
+    const int MinDbResetConnectionIntervalInMinutes = 5;
+    const int DefaultMaxJobs = 100;
+    const int MinMaxJobs = 5;
+    const int DefaultMicroSecondsToSleep = 500000;
+    const int DefaultDbConnectionResetIntervalInMinutes = 360;
     private ApmSystemManager $systemManager;
     private int $instanceId;
     private Logger $logger;
@@ -22,18 +29,33 @@ class ValkeyWorker
     private int $microSecondsToSleep;
     private int $lastRecoveryTime = 0;
     private int $recoveryInterval = 300; // 5 minutes
+    private int $lastDbConnectionResetTime = 0;
+    private int $dbConnectionResetIntervalInSeconds;
 
-    public function __construct(ApmSystemManager $systemManager, int $instanceId, int $maxJobs = 100, int $microSecondsToSleep = 500000)
+    /**
+     * @param ApmSystemManager $systemManager
+     * @param int $instanceId
+     * @param int $maxJobs
+     * @param int $microSecondsToSleep
+     * @param int $dbConnectionResetIntervalInMinutes
+     */
+    public function __construct(
+        ApmSystemManager $systemManager,
+        int $instanceId,
+        int $maxJobs = self::DefaultMaxJobs,
+        int $dbConnectionResetIntervalInMinutes = self::DefaultDbConnectionResetIntervalInMinutes,
+        int $microSecondsToSleep = self::DefaultMicroSecondsToSleep,
+    )
     {
         $this->systemManager = $systemManager;
         $this->instanceId = $instanceId;
-        $this->maxJobs = $maxJobs;
+        $this->maxJobs = max(self::MinMaxJobs, $maxJobs );
         $this->microSecondsToSleep = $microSecondsToSleep;
+        $this->dbConnectionResetIntervalInSeconds = max(self::MinDbResetConnectionIntervalInMinutes, $dbConnectionResetIntervalInMinutes) * 60;
         $this->workerId = gethostname() . ':' . getmypid() . ':' . $instanceId;
-
-
         $logger = $systemManager->getLogger();
         $this->logger = $logger->withName(sprintf("WORKER_%02d", $instanceId));
+        $this->lastDbConnectionResetTime = time();
     }
 
     /**
@@ -44,6 +66,8 @@ class ValkeyWorker
         $this->logger->info("Worker $this->instanceId starting", [
             'worker_id' => $this->workerId,
             'max_jobs' => $this->maxJobs,
+            'microsecs_to_sleep' => $this->microSecondsToSleep,
+            'db_connection_reset_interval' => $this->dbConnectionResetIntervalInSeconds / 60,
             'instance_id' => $this->instanceId
         ]);
 
@@ -59,6 +83,7 @@ class ValkeyWorker
         while (!$this->stopRequested && $this->jobsProcessed < $this->maxJobs) {
             try {
                 $this->checkRecovery($jobManager);
+                $this->checkDbConnectionResetInterval();
 
                 $job = $jobManager->fetchJob($this->workerId);
                 if ($job) {
@@ -127,6 +152,21 @@ class ValkeyWorker
     }
 
     /**
+     * Periodically resets DB connection and DB-dependent managers.
+     *
+     * @return void
+     */
+    private function checkDbConnectionResetInterval(): void
+    {
+        $now = time();
+        if ($now - $this->lastDbConnectionResetTime >= $this->dbConnectionResetIntervalInSeconds) {
+            $this->lastDbConnectionResetTime = $now;
+            $this->logger->info("Resetting DB connection and dependent managers");
+            $this->systemManager->resetDbConnectionAndDependentManagers();
+        }
+    }
+
+    /**
      * Processes a single job.
      *
      * @param ValkeyJobQueueManager $jobManager
@@ -147,16 +187,69 @@ class ValkeyWorker
             return;
         }
 
-        try {
-            $handler->run($this->systemManager, $data['payload'], $jobName);
-            $jobManager->finishJob($signature);
-            $this->logger->info("Job $jobName finished successfully", ['signature' => $signature]);
-        } catch (Throwable $e) {
-            $this->logger->error("Job $jobName failed: " . $e->getMessage(), [
-                'signature' => $signature,
-                'exception' => $e
-            ]);
-            $jobManager->failJob($signature, $e->getMessage(), true);
+        $wasRetriedAfterMysqlGoneAway = false;
+        while (true) {
+            try {
+                $handler->run($this->systemManager, $data['payload'], $jobName);
+                $jobManager->finishJob($signature);
+                $this->logger->info("Job $jobName finished successfully", ['signature' => $signature]);
+                return;
+            } catch (Throwable $e) {
+                if (!$wasRetriedAfterMysqlGoneAway && $this->isMySqlServerGoneAwayException($e)) {
+                    $wasRetriedAfterMysqlGoneAway = true;
+                    $this->logger->warning("Job $jobName failed with MySQL gone away, resetting managers and retrying once", [
+                        'signature' => $signature,
+                        'exception' => $e
+                    ]);
+                    $this->systemManager->resetDbConnectionAndDependentManagers();
+                    $this->lastDbConnectionResetTime = time();
+                    continue;
+                }
+
+                $this->logger->error("Job $jobName failed: " . $e->getMessage(), [
+                    'signature' => $signature,
+                    'exception' => $e
+                ]);
+                $jobManager->failJob($signature, $e->getMessage(), true);
+                return;
+            }
         }
+    }
+
+    /**
+     * Checks if the exception chain contains a PDO MySQL "server has gone away" error.
+     *
+     * @param Throwable $exception
+     * @return bool
+     */
+    private function isMySqlServerGoneAwayException(Throwable $exception): bool
+    {
+        $currentException = $exception;
+        while ($currentException !== null) {
+            if ($currentException instanceof PDOException && $this->isMySqlServerGoneAwayErrorCode($currentException)) {
+                return true;
+            }
+
+            $currentException = $currentException->getPrevious();
+        }
+
+        return false;
+    }
+
+    /**
+     * Checks if the given PDO exception corresponds to MySQL error 2006.
+     *
+     * @param PDOException $exception
+     * @return bool
+     */
+    private function isMySqlServerGoneAwayErrorCode(PDOException $exception): bool
+    {
+        $code = (string) $exception->getCode();
+        if ($code === '2006') {
+            return true;
+        }
+
+        $message = strtolower($exception->getMessage());
+        return str_contains($message, '2006') && str_contains($message, 'server has gone away');
     }
 }

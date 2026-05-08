@@ -6,6 +6,9 @@ use APM\ApmWorker\ValkeyWorker;
 use APM\System\ApmSystemManager;
 use APM\System\Job\JobHandlerInterface;
 use APM\System\Job\ValkeyJobQueueManager;
+use Monolog\Handler\NullHandler;
+use Monolog\Logger;
+use PDOException;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\NullLogger;
@@ -33,7 +36,7 @@ class ValkeyWorkerTest extends TestCase
 
         $this->systemManager = $this->createStub(ApmSystemManager::class);
         $this->systemManager->method('getJobManager')->willReturn($this->jm);
-        $this->systemManager->method('getLogger')->willReturn(new \Monolog\Logger('test', [new \Monolog\Handler\NullHandler()]));
+        $this->systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
     }
 
     protected function tearDown(): void
@@ -157,5 +160,77 @@ class ValkeyWorkerTest extends TestCase
         $this->assertNotNull($this->valkey->zscore($this->prefix . 'Waiting', $sig));
         // Should NOT be in Processing
         $this->assertEquals(0, $this->valkey->hexists($this->prefix . 'Processing', $sig));
+    }
+
+    public function testProcessJobRetriesOnceOnMySql2006AndFinishes(): void
+    {
+        $handler = $this->createMock(JobHandlerInterface::class);
+        $handler->expects($this->exactly(2))
+            ->method('run')
+            ->willReturnCallback(function () {
+                static $calls = 0;
+                $calls++;
+                if ($calls === 1) {
+                    throw new PDOException('SQLSTATE[HY000]: General error: 2006 MySQL server has gone away', '2006');
+                }
+
+                return true;
+            });
+
+        $jobManager = $this->createMock(ValkeyJobQueueManager::class);
+        $jobManager->expects($this->once())->method('getJobHandler')->with('RetryJob')->willReturn($handler);
+        $jobManager->expects($this->once())->method('finishJob')->with('sig-1');
+        $jobManager->expects($this->never())->method('failJob');
+
+        $systemManager = $this->createMock(ApmSystemManager::class);
+        $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
+        $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
+
+        $worker = new ValkeyWorker($systemManager, 1);
+        $job = ['signature' => 'sig-1', 'data' => ['name' => 'RetryJob', 'payload' => []]];
+
+        $method = new \ReflectionMethod(ValkeyWorker::class, 'processJob');
+        $method->invoke($worker, $jobManager, $job);
+    }
+
+    public function testProcessJobFailsAfterSecondMySql2006Exception(): void
+    {
+        $handler = $this->createMock(JobHandlerInterface::class);
+        $handler->expects($this->exactly(2))
+            ->method('run')
+            ->willThrowException(new PDOException('SQLSTATE[HY000]: General error: 2006 MySQL server has gone away', '2006'));
+
+        $jobManager = $this->createMock(ValkeyJobQueueManager::class);
+        $jobManager->expects($this->once())->method('getJobHandler')->with('FailJob')->willReturn($handler);
+        $jobManager->expects($this->never())->method('finishJob');
+        $jobManager->expects($this->once())
+            ->method('failJob')
+            ->with('sig-2', $this->stringContains('2006'), true);
+
+        $systemManager = $this->createMock(ApmSystemManager::class);
+        $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
+        $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
+
+        $worker = new ValkeyWorker($systemManager, 1);
+        $job = ['signature' => 'sig-2', 'data' => ['name' => 'FailJob', 'payload' => []]];
+
+        $method = new \ReflectionMethod(ValkeyWorker::class, 'processJob');
+        $method->invoke($worker, $jobManager, $job);
+    }
+
+    public function testCheckDbConnectionResetIntervalCallsSystemManagerAtInterval(): void
+    {
+        $systemManager = $this->createMock(ApmSystemManager::class);
+        $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
+        $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
+        $mins = ValkeyWorker::MinDbResetConnectionIntervalInMinutes;
+
+        $worker = new ValkeyWorker($systemManager, 1, 1, 0, $mins);
+
+        $lastResetTimeProperty = new \ReflectionProperty(ValkeyWorker::class, 'lastDbConnectionResetTime');
+        $lastResetTimeProperty->setValue($worker, time() - ($mins * 60 +1));
+
+        $method = new \ReflectionMethod(ValkeyWorker::class, 'checkDbConnectionResetInterval');
+        $method->invoke($worker);
     }
 }

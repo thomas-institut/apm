@@ -16,14 +16,15 @@ class ApmWorkerUtility extends CommandLineUtility
     public function main($argc, $argv): void
     {
         if ($argc < 2) {
-            $this->printErrorMsg("Usage: " . $argv[0] . " <instance_id> [<max_jobs>]");
+            $this->printErrorMsg("Usage: " . $argv[0] . " <instance_id> [<max_jobs>] [<db_reset_interval_in_mins>]");
             exit(1);
         }
 
         $instanceId = (int)$argv[1];
-        $maxJobs = (int)($argv[2] ?? 100);
+        $maxJobs = (int)($argv[2] ?? ValkeyWorker::DefaultMaxJobs);
+        $dbResetInterval = (int)($argv[3] ?? ValkeyWorker::DefaultDbConnectionResetIntervalInMinutes);
 
-        $worker = new ValkeyWorker($this->getSystemManager(), $instanceId, $maxJobs);
+        $worker = new ValkeyWorker($this->getSystemManager(), $instanceId, $maxJobs, $dbResetInterval);
         $worker->run();
     }
 }

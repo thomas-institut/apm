@@ -88,7 +88,7 @@ Example:
 
 - All new UI must be written in React.
 - Use one component per file.
-- Use functional components only.
+- Use functional components only. Follow this pattern: `export default function MyComponent(props: MyComponentProps) { ... }`
 - Use PascalCase for component names.
 - Define props with a typed interface.
 - Prefer existing reusable components before creating new ones.

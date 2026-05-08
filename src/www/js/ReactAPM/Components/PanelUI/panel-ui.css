@@ -1,0 +1,74 @@
+:root {
+    --tab-border-color: #dee2e6;
+    --active-tab-bg-color: #fefefe;
+    --tool-bar-bg-color: #e9ecef;
+}
+
+div.tab-panel {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    height: 100%;
+    overflow: hidden;
+}
+
+.tab-panel-tabs {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    border-bottom: 1px solid var(--tab-border-color);
+}
+
+.tab-panel-tab {
+    cursor: pointer;
+    padding: 0.5rem;
+    border-bottom: none;
+    border-top-left-radius: 0.25rem;
+    border-top-right-radius: 0.25rem;
+    margin-bottom: -1px;
+
+    &.active {
+        border: solid 1px;
+        border-color: var(--tab-border-color) var(--tab-border-color) #fff;
+        background-color: var(--active-tab-bg-color);
+    }
+}
+
+.tab-panel-content {
+    border: 1px solid var(--tab-border-color);
+    border-top: none;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    .tab-panel-content-item {
+        display: none;
+        height: 100%;
+        &.active {
+            display: block;
+        }
+    }
+}
+
+.panel-with-toolbar {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.panel-toolbar {
+
+}
+.panel-content {
+    overflow: auto;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.no-padding {
+    padding: 0;
+}

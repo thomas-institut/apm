@@ -1,62 +1,45 @@
-:root {
-    --standard-padding: 5px;
-}
-
 body {
-    margin: 0;
-    padding: 0;
+    font-size: 11pt;
 }
 .app {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto 1fr;
     height: 100dvh;
+    overflow: hidden;
 }
 
 .header {
-    flex-grow: 0;
-}
-
-.panelContainer {
-    flex-grow: 1;
-    margin: 5px;
-    overflow-y: auto;
-}
-
-.panel {
-
-    /*height: 100%;*/
-    overflow-y: auto;
-}
-
-.simplePanel {
-  padding: var(--standard-padding);
-  border: 1px solid #eee;
-}
-
-
-
-.divider {
-
-}
-
-.toolBar {
+    padding-left: 10px;
+    padding-right: 10px;
     display: flex;
     flex-direction: row;
-    gap: 5px;
-    background-color: #e9edec;
-    padding: 0 var(--standard-padding);
-
+    justify-content: space-between;
+    align-items: center
 }
 
-.toolBar .btn {
-    margin: 3px;
-    color: gray;
-    padding: 0;
-    font-weight: bold;
+.padding-1 {
+    padding: 1rem;
 }
 
-.panelWithToolBarContent {
-    background-color: ivory;
-    padding: var(--standard-padding);
+.border-1 {
+    border: 1px solid silver;
 }
 
+.my-toolbar {
+    background: #f5f5f5;
+    padding: 5px;
+}
+
+
+/*.tab-panel-tab {*/
+/*    padding: 5px 20px;*/
+/*    color: darkgray;*/
+/*    border: none;*/
+
+
+/*    &.active {*/
+/*        color: black;*/
+/*        font-weight: bold;*/
+/*        border-bottom: 2px solid #6a423b;*/
+/*    }*/
+/*}*/

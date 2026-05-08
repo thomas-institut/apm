@@ -1,30 +1,20 @@
-import '../../node_modules/bootstrap/dist/css/bootstrap.css';
+import '../../node_modules/bootstrap5/dist/css/bootstrap.css';
 import './splitPanelsTest.css';
-import SplitPanels from "@/ReactAPM/Components/SplitPanels";
+import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import {createRoot} from "react-dom/client";
 import {useState} from "react";
-import PanelWithToolbar from "@/ReactAPM/Components/PanelWithToolbar";
+import Panel from "@/ReactAPM/Components/PanelUI/Panel";
+import LoremIpsumText from "@/ReactAPM/Components/LoremIpsumText";
+import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
+import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
+import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
+import { Button } from "react-bootstrap";
 
-import {LoremIpsum} from "lorem-ipsum";
 
-const lorem = new LoremIpsum();
-lorem.format = 'html';
-function MyNicePanel() {
-  const toolBar = (<>
-    <button className="btn">A</button>
-    <button className="btn">B</button>
-    <button className="btn">C</button>
-  </>);
-  return (<PanelWithToolbar
-    toolBar={toolBar} toolBarClass="toolBar" panelClass='panelWithToolBarContent'>
-    <p>This is a nice panel.</p>
-    <div dangerouslySetInnerHTML={{__html: lorem.generateParagraphs(10) }}/>
-  </PanelWithToolbar>);
-}
-
-function SplitPanelsTest() {
+export function SplitPanelsTest() {
 
   const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
+  const [activeTab, setActiveTab] = useState('tab1');
 
   const toggleDirection = () => {
     if (direction === 'horizontal') {
@@ -34,41 +24,49 @@ function SplitPanelsTest() {
     }
   };
 
-
-
   const handleResize = (firstRatio: number, secondRatio: number) => {
     console.log("handleResize", firstRatio, secondRatio);
   };
 
-  const firstPanel = <><
-    h1>First Panel</h1>
-    <div dangerouslySetInnerHTML={{__html: lorem.generateParagraphs(10)}}/>
-  </>;
-  const secondPanel = <MyNicePanel/>;
-
   return (<div className="app">
-    <div className="header"
-         style={{
-           paddingLeft: '10px',
-           paddingRight: '10px',
-           display: 'flex',
-           flexDirection: 'row',
-           justifyContent: 'space-between',
-           alignItems: 'center'
-         }}>
+    <div className="header">
       <h1>Split Panels Test</h1>
-      <button className="btn btn-primary" onClick={toggleDirection}>Toggle Direction</button>
+      <Button variant={"outline-primary"} size={"sm"} onClick={toggleDirection}>Toggle Direction</Button>
+
     </div>
-    <SplitPanels
-      direction={direction}
-      containerClass="panelContainer"
-      dividerClass="divider"
-      firstPanel={firstPanel}
-      firstPanelClass="panel simplePanel"
-      secondPanel={secondPanel}
-      secondPanelClass="panel nicePanel"
-      onResize={handleResize}
-    />
+    <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={5} outerMargin={10} onResize={handleResize}>
+      <Panel className={"padding-1 border-1"}>
+        <h3>This is the first panel</h3>
+        <LoremIpsumText paragraphs={20}/>
+      </Panel>
+      <TabPanel activeTabKey={activeTab} onClickTab={(tabKey) => setActiveTab(tabKey)}>
+        <Panel tabKey={'tab1'} tabTitle={'Tab 1'}>
+          <Toolbar className={'my-toolbar'}>Toolbar 1</Toolbar>
+          <PanelContent className={'padding-1'}>
+            <p>This is the second panel</p>
+            <LoremIpsumText paragraphs={20}/>
+          </PanelContent>
+        </Panel>
+        <Panel tabKey={'tab2'} tabTitle={'Tab 2'}>
+          <Toolbar className={'my-toolbar'}>Toolbar 2</Toolbar>
+          <PanelContent className={'padding-1'}>
+            <p>This is the second panel</p>
+            <LoremIpsumText paragraphs={20}/>
+          </PanelContent>
+        </Panel>
+        <Panel tabKey={'tab3'} tabTitle={'Tab 3'}>
+          <Toolbar className={'my-toolbar'}>Toolbar 3</Toolbar>
+          <Panel>
+            <Toolbar className={'my-toolbar'}>A second toolbar</Toolbar>
+            <PanelContent className={'padding-1'}>
+              <p>This is the second panel</p>
+              <LoremIpsumText paragraphs={20}/>
+            </PanelContent>
+          </Panel>
+        </Panel>
+      </TabPanel>
+
+    </SplitPanels>
   </div>);
 }
 

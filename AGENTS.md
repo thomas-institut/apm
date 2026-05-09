@@ -78,6 +78,7 @@ Refer to the following documents for detailed guidelines and policies:
 
 - [General Guidelines](policies/GeneralGuidelines.md)
 - [PHP Development](policies/PHPDevelopment.md)
+- [Typescript Development](policies/TypescriptDevelopment.md)
 - [Frontend Development](policies/FrontendDevelopment.md)
 - [Commit Message Style](policies/CommitMessageStyle.md)
 

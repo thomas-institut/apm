@@ -1,17 +1,6 @@
 # Frontend Development
 
-## TypeScript Rules
-
-- Do not use `any`.
-- Prefer `async`/`await`.
-- Use `Record<string, T>` instead of index-signature object types where applicable.
-- Use camelCase for functions and methods.
-- Use PascalCase for classes, interfaces, types, and constants.
-- If a function or method needs 4 or more parameters, use a typed options object instead.
-
-Example:
-
-- `function foo(options: FooOptions)`
+All new UI must be written in React using Typescript. See [Typescript Development](TypescriptDevelopment.md)
 
 ## React Rules
 
@@ -27,7 +16,10 @@ Example:
 - Remember to only use `ApmApiClient` for backend communication.
 - Check for and fix state update loops.
 
-## Frontend - Backend Communication
+
+## APM 
+
+### Frontend - Backend Communication
 
 - Always use `ApmApiClient` for backend communication from the frontend, never make direct HTTP requests.
 - If any interface or method that is involved with communication with the backend is changed, add or update API
@@ -35,13 +27,13 @@ Example:
   coordination with the user because specific environment variables and data in the test environment may need to be
   added manually.
 
-## Testing Rules
+### Testing Rules
 
-- Vitest tests are located in `src/www/test/js`.
+- Vitest tests are located in `apps/apm/src/www/test/js`.
 - Mirror the source structure in the test structure.
 - Use the `.test` suffix for JS/TS test files.
-- Use the utility script `dev-test-js` to run all JS tests except API client integration. Fix all issues reported.
-- API client integration test code is in `src/www/test/js/Api/ApmApiClient.integration.test.ts`. This test will not run
-  unless the environment variable IT_RUN has a value of 1, which the user should have set in `src/www/.env.it` together
+- Use the utility script `apm-test-js` to run all JS tests except API client integration. Fix all issues reported.
+- API client integration test code is in `apps/apm/src/www/test/js/Api/ApmApiClient.integration.test.ts`. This test will not run
+  unless the environment variable IT_RUN has a value of 1, which the user should have set in `apps/apm/src/www/.env.it` together
   with all the information needed for the test to run. If this file is missing and this test is needed, alert the user
-  and stop; do not try to work around it. Run the test with `cd src/www; npm run api-integration-test`
+  and stop; do not try to work around it. Run the test with `cd apps/apm/src/www; npm run api-integration-test`

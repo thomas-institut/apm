@@ -2,7 +2,7 @@
 # Docker compose file with all services necessary to run APM
 # locally for development.
 #
-# All containers have ../../dev-tmp mapped to /var/apm and ../../../src mapped to /opt/apm.
+# All containers have ${DEV_TMP}/apm mapped to /var/apm and ${APM_SRC} mapped to /opt/apm.
 #
 #  Rafael Nájera
 #
@@ -38,7 +38,7 @@ services:
       - ${REPO_ROOT}/${DEV_TMP}/apm:/var/apm
 
   # Normally, on the first run, the database should be initialized with a working db backup.
-  # Copy the backup file to ../../dev-tmp/share and source it in the container.
+  # Copy the backup file to ${DEV_TMP}/apm/share and source it in the container.
   # It is also possible, of course, to create an empty database and initialize with the SQL scripts in src/db
 
   php:
@@ -66,26 +66,11 @@ services:
   #
   # The configuration should be finished manually the first time the container is started:
   #
+  # 1. Install APM fonts:
+  #    In the host machine, copy the contents of the fontserver to ${DEV_TMP}/apm/apm-fonts
+  #    (the symlink in the container /usr/share/fonts/apm-fonts is already created)
   #
-  # Install node 18
-  #
-  #    nvm install 18
-  #
-  # Install node dependencies
-  #
-  #   cd /opt/apm/typesetting-service
-  #   npm install
-  #
-  # Install python dependencies
-
-  #  pip3 install -r requirements.txt --break-system-packages
-  #
-  # Install APM fonts:
-  #    in the host machine, copy the contents of the fontserver (on TI.one) to ../dev-tmp/apm-fonts
-  #
-  #    in the container:
-  #
-  #    cd /usr/share/fonts; ln -s /var/apm/apm-fonts .
+  # 2. Index data in Typesense (see below)
   #
 
 
@@ -119,4 +104,4 @@ services:
  # This will take a long time the first time!
  #
  #  Use 'check' instead of 'build' in the commands above to check if the index is up to date
- #  (in case some typesense data was in ../../../dev-tmp/typesense-data)
+ #  (in case some typesense data was in ${DEV_TMP}/apm/typesense-data)

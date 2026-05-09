@@ -9,7 +9,7 @@ consistency with the surrounding code and avoid unnecessary refactors.
 
 This repository is a monorepo for two main apps: APM and APE. 
 
-APM is a system that allow users to create manuscripts transcriptions and critical editions.  APE is a presentation
+APM is a system that allows users to create manuscript transcriptions and critical editions.  APE is a presentation
 app for APM generated data.
 
 APM consists of:
@@ -70,7 +70,7 @@ Typesetting service:
 
 Split into separate backend and frontend:
 - Backend: `apps/ape-backend`
-- Fronted: `apps/ape-frontend`
+- Frontend: `apps/ape-frontend`
 
 ## Guidelines and Policies
 

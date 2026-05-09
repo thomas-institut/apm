@@ -38,8 +38,7 @@ Fixes #123
     - `Fixes`
     - `Misc changes`
 - Keep the subject line short:
-    - Aim for **50 characters**
-    - Prefer staying under **72 characters**
+    - Aim for **50 characters** (maximum **72 characters**)
 - Capitalize the first word.
 - Do not end the subject line with a period.
 
@@ -62,10 +61,3 @@ Use the footer for references or special notes.
 
 
 
-## Summary
-
-Default to:
-- one concise imperative subject line
-- optional body when context is useful
-- bullets only when they improve clarity
-- consistent style across the repository

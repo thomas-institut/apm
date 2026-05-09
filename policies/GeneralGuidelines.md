@@ -3,10 +3,7 @@
 ## Core Rules
 
 - Follow the existing structure and naming conventions of the local area.
-- Avoid broad refactors unless explicitly required by the task. This is a project developed and maintained mostly by a
-  single person: new dependencies, new programming languages, new data formats and the like should generally be avoided
-  unless they have a big positive impact in the codebase. If a new dependency or an structural change makes the
-  code and the production environment easier to maintain, make a case of it and put it up for discussion.
+- Avoid broad refactors, new dependencies, or structural changes unless they offer significant maintenance benefits. Propose major changes for discussion first, as the project is maintained by a very small team.
 - Prefer small, safe, task-focused changes.
 - Reuse existing abstractions and components whenever practical.
 - Document intentional exceptions in the task summary.

@@ -7,8 +7,8 @@
 - Prefer `async`/`await`.
 - Use `Record<string, T>` instead of index-signature object types where applicable.
 - Use camelCase for functions and methods.
-- Use PascalCase for classes, interfaces, types, and constants.
-- If a function or method needs 4 or more parameters, use a typed options object instead.
+- Use PascalCase for classes, interfaces, types, and exported constants.
+- Use a typed options object for functions or methods with 4 or more parameters.
 
 Example:
 

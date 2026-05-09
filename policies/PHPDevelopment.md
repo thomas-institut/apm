@@ -12,12 +12,7 @@
 - Use the `Test` suffix for PHP test files.
 - Run PHP tests in the development Docker environment, not on the host machine.
 
-### APM
+## Test Locations and Execution
 
-- PHPUnit tests are located in `apps/apm/src/www/test/php`.
-- Use the utility script `apm-test-php` to run all PHP tests, fix any issue reported (e.g. notices, warnings, etc)
-
-### APE
-
-- PHPUnit test are located in `apps/ape-backend/test`
-
+- **APM**: Tests are in `apps/apm/src/www/test/php`. Use `apm-test-php` to run all tests and fix any issues (notices, warnings, etc.).
+- **APE**: Tests are in `apps/ape-backend/test`.

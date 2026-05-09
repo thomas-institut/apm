@@ -4,7 +4,6 @@ All new UI must be written in React using Typescript. See [Typescript Developmen
 
 ## React Rules
 
-- All new UI must be written in React.
 - Use one component per file.
 - Use functional components only. Follow this pattern: `export default function MyComponent(props: MyComponentProps) { ... }`
 - Use PascalCase for component names.
@@ -13,15 +12,14 @@ All new UI must be written in React using Typescript. See [Typescript Developmen
 - Use `useContext(AppContext)` to access app context.
 - Do not pass context as a prop.
 - Do not pass JSX-producing functions as props; create a component instead.
-- Remember to only use `ApmApiClient` for backend communication.
 - Check for and fix state update loops.
+- **Data Fetching**: Always use `ApmApiClient` for backend communication; never make direct HTTP requests.
 
 
 ## APM 
 
 ### Frontend - Backend Communication
 
-- Always use `ApmApiClient` for backend communication from the frontend, never make direct HTTP requests.
 - If any interface or method that is involved with communication with the backend is changed, add or update API
   client integration tests. Try to make the test run without problems, but be aware that successful testing may require
   coordination with the user because specific environment variables and data in the test environment may need to be

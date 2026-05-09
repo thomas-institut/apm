@@ -23,3 +23,9 @@ WORKDIR /opt/composer
 ADD https://getcomposer.org/download/latest-stable/composer.phar .
 RUN mv composer.phar composer
 RUN chmod a+x composer
+
+COPY entrypoint-php.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint-php.sh
+
+ENTRYPOINT ["entrypoint-php.sh"]
+CMD ["php-fpm"]

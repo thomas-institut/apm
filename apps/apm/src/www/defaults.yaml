@@ -6,7 +6,7 @@
 
 devMode: false
 
-copyrightNotice: '2016-25, <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>'
+copyrightNotice: '2016-26, <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>'
 
 appName: 'APM'
 
@@ -52,8 +52,7 @@ url:
 
 apiTypesetPdfHttpClientTimeOut: 45
 
-# Typesetter service configuration for the backend
-# (the server does not read this file)
+# Typesetting service configuration for the backend
 
 typesettingService:
   host: 'localhost'

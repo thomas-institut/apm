@@ -105,5 +105,39 @@ describe('LemmaData', () => {
             to: 'word3'
         });
     });
+    it('should process Hebrew lemmaText and remove inner quotation marks from the first word', () => {
+        const result = getLemmaData('', 'ה"ספר וגו׳', 'he');
+        expect(result).toEqual({type: 'full', text: 'הספר וגו׳', numWords: 2});
+    });
+
+    it('should remove all types of inner quotation marks from the first word in Hebrew', () => {
+        const result1 = getLemmaData('', "ה'ספר", 'he');
+        expect(result1.text).toBe('הספר');
+
+        const result2 = getLemmaData('', 'ה”ספר', 'he');
+        expect(result2.text).toBe('הספר');
+
+        const result3 = getLemmaData('', 'ה’ספר', 'he');
+        expect(result3.text).toBe('הספר');
+
+        const result4 = getLemmaData('', 'ה“ספר', 'he');
+        expect(result4.text).toBe('הספר');
+
+        const result5 = getLemmaData('', 'ה‘ספר', 'he');
+        expect(result5.text).toBe('הספר');
+    });
+
+    it('should not remove quotation marks that are not in the first word in Hebrew', () => {
+        const result = getLemmaData('', 'הספר ה"זה', 'he');
+        expect(result.text).toBe('הספר ה"זה');
+    });
+
+    it('should not remove leading or trailing quotation marks in Hebrew (only inner ones)', () => {
+        const result1 = getLemmaData('', '"ספר"', 'he');
+        expect(result1.text).toBe('"ספר"');
+
+        const result2 = getLemmaData('', "'ספר'", 'he');
+        expect(result2.text).toBe("'ספר'");
+    });
   });
 });

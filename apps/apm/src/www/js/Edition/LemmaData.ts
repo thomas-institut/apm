@@ -89,7 +89,19 @@ function processLemmaTextLatin(lemmaText: string): string {
 }
 
 function processLemmaTextHebrew(lemmaText: string): string {
-  return lemmaText;
+  const words = lemmaText.split(' ');
+  if (words.length === 0 || words[0].length <= 2) {
+    return lemmaText;
+  }
+
+  const firstWord = words[0];
+  const start = firstWord[0];
+  const end = firstWord[firstWord.length - 1];
+  const middle = firstWord.substring(1, firstWord.length - 1);
+  const processedMiddle = middle.replace(/["'“”‘’]/g, '');
+  words[0] = start + processedMiddle + end;
+
+  return words.join(' ');
 }
 
 function processLemmaTextArabic(lemmaText: string): string {

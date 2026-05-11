@@ -1086,6 +1086,27 @@ export class ApparatusPanel extends PanelWithToolbar {
 
     const entries: VNode[] = [];
 
+    // collect all tags from all entries and display them above the apparatus
+    const allTags = [...new Set(
+      this.apparatus.entries.flatMap(e => e.tags && e.tags.length > 0 ? e.tags : [])
+    )];
+    if (allTags.length > 0) {
+      const tagNodes: VNode[] = allTags.map(tag =>
+        h('span.apparatus-tag', {style: {
+          display: 'inline-block',
+          fontSize: '0.75em',
+          background: '#e8e8e8',
+          border: '1px solid #bbb',
+          borderRadius: '3px',
+          padding: '0 4px',
+          marginRight: '3px',
+          verticalAlign: 'middle',
+          color: '#444'
+        }}, tag)
+      );
+      entries.push(h('div.apparatus-tags-header', {style: {marginBottom: '4px'}}, tagNodes));
+    }
+
     this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
       let currentLine = "__UNDEFINED__";
       try {

@@ -118,6 +118,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   private newEntryMainTextFrom: number;
   private newEntryMainTextTo: number;
   private apparatusEntryFormIsVisible: boolean = false;
+  private activeTagFilters: Set<string> = new Set();
   private preLemmaToggle!: MultiToggle;
   private customPreLemmaTextInput!: JQuery<HTMLElement>;
   private lemmaToggle!: MultiToggle;
@@ -1091,19 +1092,71 @@ export class ApparatusPanel extends PanelWithToolbar {
       this.apparatus.entries.flatMap(e => e.tags && e.tags.length > 0 ? e.tags : [])
     )];
     if (allTags.length > 0) {
-      const tagNodes: VNode[] = allTags.map(tag =>
-        h('span.apparatus-tag', {style: {
-          display: 'inline-block',
-          fontSize: '0.75em',
-          background: '#e8e8e8',
-          border: '1px solid #bbb',
-          borderRadius: '3px',
-          padding: '0 4px',
-          marginRight: '3px',
-          verticalAlign: 'middle',
-          color: '#444'
-        }}, tag)
-      );
+      const tagNodes: VNode[] = allTags.map(tag => {
+        const entriesWithTag = this.apparatus.entries
+          .map((e, i) => ({ e, i }))
+          .filter(({ e }) => e.tags && e.tags.includes(tag))
+          .map(({ i }) => i);
+        return h('span.apparatus-tag', {
+          style: {
+            display: 'inline-block',
+            fontSize: '0.9em',
+            background: '#e8d5f5',
+            border: '1px solid #b89fd4',
+            borderRadius: '3px',
+            padding: '1px 7px',
+            marginRight: '4px',
+            verticalAlign: 'middle',
+            color: '#5a3a7a',
+            cursor: 'pointer'
+          },
+          on: {
+            mouseenter: () => {
+              entriesWithTag.forEach(i => {
+                const container = $(this.containerSelector);
+                container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-hover');
+                this.options.hoverMainText(i, true);
+                $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-hover');
+              });
+            },
+            mouseleave: () => {
+              entriesWithTag.forEach(i => {
+                const container = $(this.containerSelector);
+                container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-hover');
+                this.options.hoverMainText(i, false);
+                $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-hover');
+              });
+            },
+            click: () => {
+              const container = $(this.containerSelector);
+              const alreadyActive = this.activeTagFilters.has(tag);
+              if (alreadyActive) {
+                // deactivate this tag
+                this.activeTagFilters.delete(tag);
+                container.find(`.apparatus-tags-header span.apparatus-tag`).filter((_, el) => $(el).text() === tag).removeClass('apparatus-tag-active');
+                entriesWithTag.forEach(i => {
+                  // only remove highlights if no other active tag covers this entry
+                  const stillCovered = [...this.activeTagFilters].some(t =>
+                    this.apparatus.entries[i].tags && this.apparatus.entries[i].tags.includes(t)
+                  );
+                  if (!stillCovered) {
+                    container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-selected');
+                    $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-selected');
+                  }
+                });
+              } else {
+                // activate this tag
+                this.activeTagFilters.add(tag);
+                container.find(`.apparatus-tags-header span.apparatus-tag`).filter((_, el) => $(el).text() === tag).addClass('apparatus-tag-active');
+                entriesWithTag.forEach(i => {
+                  container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-selected');
+                  $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-selected');
+                });
+              }
+            }
+          }
+        }, tag);
+      });
       entries.push(h('div.apparatus-tags-header', {style: {marginBottom: '4px'}}, tagNodes));
     }
 

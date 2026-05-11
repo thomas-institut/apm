@@ -364,6 +364,46 @@ div.main-text p.paragraph-empty {
     background: var(--darker-text-highlight-color);
 }
 
+.main-text-tag-hover {
+    background: #e8d5f5;
+}
+
+.main-text-hover.main-text-tag-hover {
+    background: var(--darker-text-highlight-color);
+}
+
+.main-text-hover.main-text-tag-selected {
+    background: var(--darker-text-highlight-color);
+}
+
+.token-highlighted.main-text-tag-hover {
+    background: #f6f669 !important;
+}
+
+.token-highlighted.main-text-tag-selected {
+    background: #f6f669 !important;
+}
+
+.lemma-tag-hover {
+    background: #e8d5f5;
+}
+
+.lemma-selected.lemma-tag-hover {
+    background: #bddeea !important;
+}
+
+.lemma-selected.lemma-tag-selected {
+    background: #bddeea !important;
+}
+
+.main-text-tag-selected {
+    background: #e8d5f5;
+}
+
+.lemma-tag-selected {
+    background: #e8d5f5;
+}
+
 
 h1.lemma {
     font-size: 2em;
@@ -500,6 +540,12 @@ th.selected.highlight {
 
 .lemma-hover {
     background: #e7e1e1;
+}
+
+.apparatus-tag-active {
+    background: #b89fd4 !important;
+    color: #fff !important;
+    border-color: #7c5a9e !important;
 }
 
 .sub-entry-disabled {

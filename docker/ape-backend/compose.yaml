@@ -46,6 +46,7 @@ services:
       dockerfile: dev-php.Dockerfile
     volumes:
       - ${REPO_ROOT}/${APE_SRC}:/opt/ape-backend
+      - ${REPO_ROOT}/${SHARED_PHP_SRC}:/opt/shared-php
       - ${REPO_ROOT}/${DEV_TMP}/ape-backend:/var/ape-backend
     depends_on:
       - mysql

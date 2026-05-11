@@ -16,6 +16,10 @@
       "url": "../shared-php"
     }
   ],
+  "scripts" : {
+    "test": "./vendor/bin/phpunit --display-all-issues",
+    "test:coverage": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --display-all-issues --coverage-filter classes --coverage-text --coverage-html build/coverage"
+  },
   "require": {
     "php": "^8.3",
     "ext-yaml": "*",

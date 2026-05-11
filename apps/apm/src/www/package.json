@@ -1,6 +1,6 @@
 {
   "name": "apm-ti",
-  "version": "v1.2.6",
+  "version": "v1.2.7",
   "description": "Averroes Project Manager",
   "directories": {
     "test": "test"

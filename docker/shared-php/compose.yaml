@@ -1,0 +1,6 @@
+services:
+  shared-php:
+    build: .
+    image: shared-php
+    volumes:
+      - ../../apps/shared-php:/app

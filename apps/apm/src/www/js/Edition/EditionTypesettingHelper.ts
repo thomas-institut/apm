@@ -59,7 +59,7 @@ import {FmtText, fromCompactFmtText, fromString, getPlainText} from "../lib/FmtT
 import {Marginalia} from "../lib/Typesetter2/BasicTypesetter.js";
 import {HyphenationLanguage} from "../lib/Typesetter2/Hyphenator/Hyphenator.js";
 import {ItemArray} from "../lib/Typesetter2/ItemArray.js";
-import {getLemmaData} from "@/Edition/LemmaData";
+import {getLemmaData} from "./LemmaData.js";
 
 export const MaxLineCount = 10000;
 const enDash = '\u2013';

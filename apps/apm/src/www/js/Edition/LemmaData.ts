@@ -1,4 +1,5 @@
-import {CompactFmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
+// noinspection ES6PreferShortImport
+import {CompactFmtText, fromCompactFmtText, getPlainText} from "../lib/FmtText/FmtText.js";
 
 export interface LemmaData {
   type: 'full' | 'shortened' | 'custom',

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace ThomasInstitut\Lib\ConfigLoader;
+namespace ThomasInstitut\ConfigLoader;
 use InvalidArgumentException;
 
 class ConfigLoader

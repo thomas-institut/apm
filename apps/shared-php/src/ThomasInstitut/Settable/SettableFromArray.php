@@ -1,6 +1,6 @@
 <?php
 
-namespace ThomasInstitut\Lib\Settable;
+namespace ThomasInstitut\Settable;
 
 interface SettableFromArray
 {

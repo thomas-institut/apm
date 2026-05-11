@@ -5,7 +5,7 @@ namespace Test\ThomasInstitut\ConfigLoader;
 
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use ThomasInstitut\Lib\ConfigLoader\ConfigLoader;
+use ThomasInstitut\ConfigLoader\ConfigLoader;
 
 /**
  * Unit tests for ConfigLoader

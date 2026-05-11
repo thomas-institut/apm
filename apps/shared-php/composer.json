@@ -19,7 +19,7 @@
   },
   "autoload": {
     "psr-4": {
-      "ThomasInstitut\\Lib\\": "src/ThomasInstitut/"
+      "ThomasInstitut\\": "src/ThomasInstitut/"
     }
   },
   "autoload-dev": {

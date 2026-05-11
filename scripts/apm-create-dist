@@ -41,16 +41,17 @@ if [[ $BASE_DIR != /* ]]; then
   exit 1
 fi
 
-APM_SRC_BASE=../apps/apm/src
+SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+APM_SRC_BASE="$SCRIPT_DIR/../apps/apm/src"
 TMP=/tmp
 DIST_NAME=apm-$VERSION
-DIST_DIR=../dist
+DIST_DIR="$SCRIPT_DIR/../dist"
 CUR_DIR=$(pwd)
 TMP_DIR=$TMP/$DIST_NAME
 TAR_NAME=$DIST_NAME.tar.gz
 
-NPM_BUILD_FRONTEND="cd $APM_SRC_BASE/www; npm run build -- --base=$BASE_DIR/dist;cd ../.."
-NPM_BUILD_TYPESETTING="cd $APM_SRC_BASE/typesetting-service; npm run build; cd ../.."
+NPM_BUILD_FRONTEND="cd \"$APM_SRC_BASE/www\"; npm run build -- --base=$BASE_DIR/dist; cd \"$SCRIPT_DIR\""
+NPM_BUILD_TYPESETTING="cd \"$APM_SRC_BASE/typesetting-service\"; npm run build; cd \"$SCRIPT_DIR\""
 
 echo Creating temporary directory
 if [ -d "$TMP_DIR" ]
@@ -115,6 +116,6 @@ fi
 
 tar cfz "$TAR_NAME" "$DIST_NAME"
 rm -fr "$DIST_NAME"
-mv "$TAR_NAME" "$CUR_DIR"/$DIST_DIR/
+mv "$TAR_NAME" "$DIST_DIR"/
 
 cd "$CUR_DIR" || exit

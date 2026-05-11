@@ -25,7 +25,6 @@ import {TextBox} from '../TextBox.js';
 import {TypesetterPage} from "../TypesetterPage.js";
 import {TypesetterDocument} from "../TypesetterDocument.js";
 import {TypesetterItem} from "../TypesetterItem.js";
-import {Hyphen} from "@/lib/Typesetter2/Hyphenator/HyphenateTextBoxes";
 
 export class TypesetterRenderer {
 
@@ -190,8 +189,8 @@ export class TypesetterRenderer {
    * @param {number}_y
    */
   renderPenalty(_penaltyItem: Penalty, _x: number, _y: number) {
-    // normally nothing to do, but who knows what
-    // specific renderers may come up with!
+    // This should not happen actually, but it's not a problem
+    console.warn(`Penalty found at x=${_x}, y=${_y}`, _penaltyItem);
   }
 
   /**

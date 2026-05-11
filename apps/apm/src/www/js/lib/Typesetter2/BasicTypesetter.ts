@@ -776,7 +776,7 @@ export class BasicTypesetter extends Typesetter2 {
         }
       }
       return item;
-    });
+    }).filter(item => !(item instanceof Penalty));
     verticalList.setList(adjustedItems);
 
     let page = new TypesetterPage(this.options.pageWidth, this.options.pageHeight, [verticalList]);

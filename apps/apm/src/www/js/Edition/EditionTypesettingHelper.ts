@@ -59,6 +59,7 @@ import {FmtText, fromCompactFmtText, fromString, getPlainText} from "../lib/FmtT
 import {Marginalia} from "../lib/Typesetter2/BasicTypesetter.js";
 import {HyphenationLanguage} from "../lib/Typesetter2/Hyphenator/Hyphenator.js";
 import {ItemArray} from "../lib/Typesetter2/ItemArray.js";
+import {getLemmaData} from "@/Edition/LemmaData";
 
 export const MaxLineCount = 10000;
 const enDash = '\u2013';
@@ -653,31 +654,31 @@ export class EditionTypesettingHelper {
 
   async getTsItemsForLemma(entry: ApparatusEntryInterface): Promise<TypesetterItem[]> {
     let tsItems = [];
-    let lemmaComponents = ApparatusUtil.getLemmaComponents(entry.lemma, entry.lemmaText);
+    let lemmaData = getLemmaData(entry.lemma, entry.lemmaText, this.edition.lang);
 
-    switch (lemmaComponents.type) {
+    switch (lemmaData.type) {
       case 'custom':
         // custom lemma
-        tsItems = await this.getTsItemsForString(lemmaComponents.text, 'apparatus', 'detect');
+        tsItems = await this.getTsItemsForString(lemmaData.text, 'apparatus', 'detect');
         return tsItems;
 
       case 'full':
         // e.g., word1 word2 word3]
-        tsItems.push(...await this.getTsItemsForString(lemmaComponents.text, 'apparatus', 'detect'));
+        tsItems.push(...await this.getTsItemsForString(lemmaData.text, 'apparatus', 'detect'));
         tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from, entry.to));
         return tsItems;
 
       case 'shortened':
         // e.g. word1...wordN]
-        tsItems.push(...await this.getTsItemsForString(lemmaComponents.from ?? '', 'apparatus', 'detect'));
+        tsItems.push(...await this.getTsItemsForString(lemmaData.from ?? '', 'apparatus', 'detect'));
         tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.from));
-        tsItems.push(...await this.getTsItemsForString(lemmaComponents.separator ?? '', 'apparatus', 'detect'));
-        tsItems.push(...await this.getTsItemsForString(lemmaComponents.to ?? '', 'apparatus', 'detect'));
+        tsItems.push(...await this.getTsItemsForString(lemmaData.separator ?? '', 'apparatus', 'detect'));
+        tsItems.push(...await this.getTsItemsForString(lemmaData.to ?? '', 'apparatus', 'detect'));
         tsItems.push(...await this.getTsItemsForLemmaOccurrenceNumber(entry.to));
         return tsItems;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`);
+        console.warn(`Unknown lemma component type '${lemmaData.type}'`);
         return await this.getTsItemsForString('Lemma???', 'apparatus', 'detect');
     }
   }

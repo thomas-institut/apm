@@ -30,6 +30,7 @@ import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {WitnessDataItemInterface} from "@/CtData/CtDataInterface";
 import {h, VNode} from 'snabbdom';
+import {getLemmaData} from "@/Edition/LemmaData";
 
 
 
@@ -712,9 +713,9 @@ export class ApparatusCommon {
 
   static getLemmaHtml(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
 
-    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText);
+    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
 
-    let lemmaText = trimWhiteSpace(lemmaComponents.text);
+    let lemmaText = trimWhiteSpace(lemmaData.text);
 
 
 
@@ -723,22 +724,22 @@ export class ApparatusCommon {
       lemmaText = '&nbsp;|&nbsp;';
     }
 
-    switch (lemmaComponents.type) {
+    switch (lemmaData.type) {
       case 'custom':
         if (lemmaText === '') {
-          console.warn(`Lemma text is empty for custom lemma`, apparatusEntry, lemmaComponents);
+          console.warn(`Lemma text is empty for custom lemma`, apparatusEntry, lemmaData);
           lemmaText = `<span class="text-danger">???_ReportBug_654</span>`;
         }
         return lemmaText;
 
       case 'full':
         if (lemmaText === '') {
-          console.warn(`Lemma text is empty for full lemma`, apparatusEntry, lemmaComponents);
+          console.warn(`Lemma text is empty for full lemma`, apparatusEntry, lemmaData);
           lemmaText = `<span class="text-danger">???_ReportBug_478</span>`;
           throw new Error('Lemma text cannot be empty for full lemma → Bug 478');
         }
         let lemmaNumberString = '';
-        if (lemmaComponents.numWords === 1) {
+        if (lemmaData.numWords === 1) {
           let occurrenceInLine = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);
           let numberOfOccurrencesInLine = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens);
           if (numberOfOccurrencesInLine > 1) {
@@ -760,10 +761,10 @@ export class ApparatusCommon {
         if (numberOfOccurrencesInLineTo > 1) {
           lemmaNumberStringTo = `<sup>${this.getNumberString(occurrenceInLineTo, lang)}</sup>`;
         }
-        return `${lemmaComponents.from}${lemmaNumberStringFrom}${lemmaComponents.separator}${lemmaComponents.to}${lemmaNumberStringTo}`;
+        return `${lemmaData.from}${lemmaNumberStringFrom}${lemmaData.separator}${lemmaData.to}${lemmaNumberStringTo}`;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`);
+        console.warn(`Unknown lemma component type '${lemmaData.type}'`);
         return 'ERROR';
     }
   }
@@ -778,30 +779,30 @@ export class ApparatusCommon {
    */
   static getLemmaVNode(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): (VNode | string)[] {
 
-    let lemmaComponents = ApparatusUtil.getLemmaComponents(apparatusEntry.lemma, apparatusEntry.lemmaText);
+    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
 
-    let lemmaText = trimWhiteSpace(lemmaComponents.text);
+    let lemmaText = trimWhiteSpace(lemmaData.text);
 
     if (lemmaText === '|') {
       // marker
       lemmaText = '\u00A0|\u00A0';
     }
 
-    switch (lemmaComponents.type) {
+    switch (lemmaData.type) {
       case 'custom':
         if (lemmaText === '') {
-          console.warn(`Lemma text is empty for custom lemma`, apparatusEntry, lemmaComponents);
+          console.warn(`Lemma text is empty for custom lemma`, apparatusEntry, lemmaData);
           return [h('span.text-danger', '???_ReportBug_654')];
         }
         return [lemmaText];
 
       case 'full':
         if (lemmaText === '') {
-          console.warn(`Lemma text is empty for full lemma`, apparatusEntry, lemmaComponents);
+          console.warn(`Lemma text is empty for full lemma`, apparatusEntry, lemmaData);
           return [h('span.text-danger', '???_ReportBug_478')];
         }
         let nodes: (VNode | string)[] = [lemmaText];
-        if (lemmaComponents.numWords === 1) {
+        if (lemmaData.numWords === 1) {
           let occurrenceInLine = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);
           let numberOfOccurrencesInLine = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens);
           if (numberOfOccurrencesInLine > 1) {
@@ -811,14 +812,14 @@ export class ApparatusCommon {
         return nodes;
 
       case 'shortened':
-        let resNodes: (VNode | string)[] = [lemmaComponents.from ?? ''];
+        let resNodes: (VNode | string)[] = [lemmaData.from ?? ''];
         let occurrenceInLineFrom = this.getOccurrenceInLine(apparatusEntry.from, mainTextTypesettingInfo);
         let numberOfOccurrencesInLineFrom = this.getTotalOccurrencesInLine(apparatusEntry.from, mainTextTypesettingInfo.tokens);
         if (numberOfOccurrencesInLineFrom > 1) {
           resNodes.push(h('sup', this.getNumberString(occurrenceInLineFrom, lang)));
         }
-        resNodes.push(lemmaComponents.separator ?? '');
-        resNodes.push(lemmaComponents.to ?? '');
+        resNodes.push(lemmaData.separator ?? '');
+        resNodes.push(lemmaData.to ?? '');
         let occurrenceInLineTo = this.getOccurrenceInLine(apparatusEntry.to, mainTextTypesettingInfo);
         let numberOfOccurrencesInLineTo = this.getTotalOccurrencesInLine(apparatusEntry.to, mainTextTypesettingInfo.tokens);
         if (numberOfOccurrencesInLineTo > 1) {
@@ -827,7 +828,7 @@ export class ApparatusCommon {
         return resNodes;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaComponents.type}'`);
+        console.warn(`Unknown lemma component type '${lemmaData.type}'`);
         return ['ERROR'];
     }
   }

@@ -713,7 +713,7 @@ export class ApparatusCommon {
 
   static getLemmaHtml(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
 
-    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText);
+    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
 
     let lemmaText = trimWhiteSpace(lemmaData.text);
 
@@ -779,7 +779,7 @@ export class ApparatusCommon {
    */
   static getLemmaVNode(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): (VNode | string)[] {
 
-    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText);
+    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
 
     let lemmaText = trimWhiteSpace(lemmaData.text);
 

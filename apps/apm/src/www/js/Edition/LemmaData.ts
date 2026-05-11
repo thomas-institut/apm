@@ -9,10 +9,14 @@ export interface LemmaData {
   numWords?: number
 }
 
+const LatinAbbreviations: Record<string, string> = {
+  'etc': 'etc.'
+}
+
 
 const enDash = String.fromCodePoint(0x2013);
 
-export function getLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: string): LemmaData {
+export function getLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: string, langCode: string = ''): LemmaData {
   let separator = '';
   let custom = false;
   const theLemma = getPlainText(fromCompactFmtText(apparatusEntryLemma));
@@ -36,9 +40,9 @@ export function getLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: str
   if (custom) {
     return {type: 'custom', text: getPlainText(fromCompactFmtText(apparatusEntryLemma))};
   }
-  // filter out punctuation from the last word, which should never happen after version 1.0,
-  // but there's still some old cases in the data (see issue #294)
-  const theLemmaText = lemmaText.replace(/[.,;!?)\]]$/, '');
+  // Language-specific processing
+  const theLemmaText = processLemmaText(lemmaText, langCode);
+
   let lemmaTextWords = theLemmaText.split(' ');
   // if lemmaText is short,
   if (lemmaTextWords.length <= 3) {
@@ -53,4 +57,41 @@ export function getLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: str
     separator: separator,
     to: lemmaTextWords[lemmaTextWords.length - 1],
   };
+}
+
+
+/**
+ * Applies language-specific processing to lemma text.
+ */
+function processLemmaText(lemmaText: string, langCode: string): string {
+
+  // filter out punctuation from the last word, which should never happen after version 1.0,
+  // but there's still some old cases in the data (see issue #294)
+  lemmaText = lemmaText.replace(/[.,;!?)\]]$/, '');
+
+  switch (langCode) {
+    case 'la':
+      return processLemmaTextLatin(lemmaText);
+
+    case 'he':
+      return processLemmaTextHebrew(lemmaText);
+
+    case 'ar':
+      return processLemmaTextArabic(lemmaText);
+
+    default:
+      return lemmaText;
+  }
+}
+
+function processLemmaTextLatin(lemmaText: string): string {
+  return lemmaText.split(' ').map(word => LatinAbbreviations[word] ?? word).join(' ');
+}
+
+function processLemmaTextHebrew(lemmaText: string): string {
+  return lemmaText;
+}
+
+function processLemmaTextArabic(lemmaText: string): string {
+  return lemmaText;
 }

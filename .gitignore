@@ -31,7 +31,6 @@ src/python/.idea
 .DS_Store
 **/public/config.js
 /src/www/test/php/*config.php
-/src/www/test/php/.phpunit.cache/
 .run/**
 /dev-logs/**
 /dev-tmp/
@@ -40,3 +39,4 @@ app-settings.json
 /src/www/public/
 .env.it
 .~lock*
+.phpunit.cache/

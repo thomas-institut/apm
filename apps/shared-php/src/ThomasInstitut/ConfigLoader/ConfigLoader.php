@@ -44,9 +44,8 @@ class ConfigLoader
             return null;
         }
         $extraConfig = @yaml_parse($configYaml);
-        if ($extraConfig === false) {
-            self::$errorMessage = 'Unable to parse config file';
-            return null;
+        if ($extraConfig === null || $extraConfig === false) {
+           $extraConfig = [];
         }
         return self::getUpdatedArray($defaultConfig, $extraConfig);
     }

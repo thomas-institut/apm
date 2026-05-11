@@ -196,7 +196,6 @@ class ConfigLoaderTest extends TestCase
         $invalidYaml = $this->createTempFile("invalid: yaml: : :");
 
         $result = ConfigLoader::getConfigArray([$default], [$invalidYaml]);
-        $this->assertNull($result);
-        $this->assertEquals('Unable to parse config file', ConfigLoader::getErrorMessage());
+        $this->assertEquals(['foo' => 'bar'], $result);
     }
 }

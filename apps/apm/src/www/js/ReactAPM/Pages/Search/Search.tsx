@@ -328,7 +328,7 @@ export default function SearchPage() {
 
     const newEntries: any[] = [];
     rawData.forEach((match: any) => {
-      // console.log(match);
+      console.log(match);
       const link = corpus === 'transcriptions' ? urlGen.sitePageView(match.docID, match.seq, match.column) : urlGen.siteCollationTableEdit(match.table_id);
       match.passage_tokenized.forEach((p: any, j: number) => {
         storedData.current.numDisplayedPassages++;
@@ -710,12 +710,14 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
       });
 
       data.push({
+        chunk: doc.chunk,
         column: doc.column,
         corpus: corpus,
         creator: doc.creator,
         docID: doc.docID,
         foliation: doc.foliation,
         seq: doc.seq,
+        table_id: doc.table_id,
         keywordDistance: keywordDistance,
         lemmata: lemmata,
         lemmatize: lemmatize,

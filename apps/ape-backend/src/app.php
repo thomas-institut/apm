@@ -15,15 +15,13 @@ use ThomasInstitut\Settable\MissingRequiredValueException;
 use ThomasInstitut\Settable\WrongValueTypeException;
 use ThomasInstitut\StandardApi\RouteBuilder;
 
-// Load and start profiler right away
-require_once __DIR__ . '/../vendor/thomas-institut/shared-php/src/ThomasInstitut/Profiler/SystemProfiler.php';
-SystemProfiler::start();
 
-// Autoload dependencies
 require_once __DIR__ . '/../vendor/autoload.php';
 
+SystemProfiler::start();
+
 // Load the route definitions
-$apiRoutesSpec = require __DIR__ . '/api-routes-definition.php';
+$apiRoutesSpec = require __DIR__ . '/api-routes-spec.php';
 
 
 

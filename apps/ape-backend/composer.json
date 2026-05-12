@@ -18,7 +18,7 @@
   ],
   "scripts" : {
     "test": "./vendor/bin/phpunit --display-all-issues",
-    "test:coverage": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --display-all-issues --coverage-filter src --coverage-text --coverage-html build/coverage"
+    "test:coverage": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --display-all-issues --coverage-filter src/ThomasInstitut --coverage-text --coverage-html build/coverage"
   },
   "require": {
     "php": "^8.3",

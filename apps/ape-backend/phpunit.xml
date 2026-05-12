@@ -6,7 +6,10 @@
          cacheDirectory=".phpunit.cache">
     <testsuites>
         <testsuite name="Unit">
-            <directory>test</directory>
+            <directory>test/ThomasInstitut</directory>
+        </testsuite>
+        <testsuite name="Integration">
+            <directory>test/Integration</directory>
         </testsuite>
     </testsuites>
 </phpunit>

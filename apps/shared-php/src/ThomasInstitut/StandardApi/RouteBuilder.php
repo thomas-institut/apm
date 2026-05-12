@@ -4,6 +4,7 @@ namespace ThomasInstitut\StandardApi;
 
 use InvalidArgumentException;
 use Slim\Interfaces\RouteCollectorInterface;
+use Slim\Interfaces\RouteCollectorProxyInterface;
 
 class RouteBuilder
 {
@@ -17,11 +18,11 @@ class RouteBuilder
      * [1] => Path (e.g., /api/users/{id})
      * [2] => [Class name, Method name]
      *
-     * @param RouteCollectorInterface $routeCollector
+     * @param RouteCollectorInterface|RouteCollectorProxyInterface $routeCollector
      * @param array<array{0: string, 1: string, 2: array{0: string, 1: string}}> $tupleArray
      * @return void
      */
-    static public function build(RouteCollectorInterface $routeCollector, array $tupleArray): void
+    static public function build(RouteCollectorInterface|RouteCollectorProxyInterface $routeCollector, array $tupleArray): void
     {
         $collectorValidMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
         $tupleValidMethods = array_values($collectorValidMethods);
@@ -72,7 +73,7 @@ class RouteBuilder
             }
             if ($method === '*' || $method === 'ANY') {
                 $methods = self::AnyMethods;
-             } else {
+            } else {
                 $methods = [$method];
             }
 

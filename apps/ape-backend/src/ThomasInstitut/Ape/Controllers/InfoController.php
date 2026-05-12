@@ -3,30 +3,25 @@
 namespace ThomasInstitut\Ape\Controllers;
 
 use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
-use Psr\Log\LoggerInterface;
+use ThomasInstitut\Ape\Actions\GetServerInfo;
+use ThomasInstitut\Ape\ApiSchema\GetServerInfoResponse;
+use ThomasInstitut\Ape\Config\SystemConfig;
 
-class InfoController implements LoggerAwareInterface
+class InfoController extends ApiController
 {
-    use LoggerAwareTrait;
-
     /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function __construct(ContainerInterface $container)
+    public function getServerInfo(Request $request, Response $response): Response
     {
-        $this->logger = $container->get(LoggerInterface::class);
-    }
-
-    public function hello(Request $request, Response $response): Response
-    {
-        $response->getBody()->write("Hello world!");
-        return $response;
+        $action = new GetServerInfo($this->container->get(SystemConfig::class));
+        $serverInfo = $action->execute();
+        $serverInfoResponse = new GetServerInfoResponse();
+        $serverInfoResponse->serverInfo = $serverInfo;
+        return $this->responseFactory->success($response, $serverInfoResponse);
     }
 }

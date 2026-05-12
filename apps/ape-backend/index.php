@@ -6,10 +6,18 @@ use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use Slim\Factory\AppFactory;
 use ThomasInstitut\Ape\Config\SystemConfig;
+use ThomasInstitut\Ape\Controllers\InfoController;
 use ThomasInstitut\ConfigLoader\ConfigLoader;
 use ThomasInstitut\Profiler\SystemProfiler;
 use ThomasInstitut\Settable\MissingRequiredValueException;
 use ThomasInstitut\Settable\WrongValueTypeException;
+use ThomasInstitut\StandardApi\RouteBuilder;
+
+
+$apiDefinition = [
+    ['GET', '/api/info', [InfoController::class, 'getServerInfo']]
+];
+
 
 // Load and start profiler right away
 require __DIR__ . '/vendor/thomas-institut/shared-php/src/ThomasInstitut/Profiler/SystemProfiler.php';
@@ -29,9 +37,8 @@ $container->set(LoggerInterface::class, $logger);
 
 AppFactory::setContainer($container);
 $app = AppFactory::create();
-
-
-print "APE is running. Version: {$systemConfig->version->title} ({$systemConfig->version->date})";
+RouteBuilder::build($app, $apiDefinition);
+$app->run();
 
 function loadConfig(): SystemConfig
 {
@@ -50,12 +57,14 @@ function loadConfig(): SystemConfig
 
     return $systemConfig;
 }
+
 function buildLogger(SystemConfig $systemConfig): Logger
 {
     $logger = new Logger($systemConfig->log->name);
     $logger->pushHandler(new StreamHandler($systemConfig->log->path));
     return $logger;
 }
+
 #[NoReturn]
 function exitWithErrorMessage(string $msg): void
 {

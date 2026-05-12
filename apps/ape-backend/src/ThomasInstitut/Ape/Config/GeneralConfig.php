@@ -9,8 +9,7 @@ class GeneralConfig implements SettableFromArray
 {
     use FromFlatArrayTrait;
 
+    public string $name = 'APE Backend';
     public bool $devMode = true;
     public string $subDir = '';
-
-
 }

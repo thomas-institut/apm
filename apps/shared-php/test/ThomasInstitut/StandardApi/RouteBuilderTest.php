@@ -24,10 +24,10 @@ class RouteBuilderTest extends TestCase
         $app = AppFactory::create();
         $routeCollector = $app->getRouteCollector();
         $tuples = [
-            ['GET', '/test/{id}', DummyController::class, 'index'],
-            ['post', '/other', DummyController::class, 'index2'],
-            ['any', '/anyone', DummyController::class, 'index3'],
-            ['*', '/anytwo', DummyController::class, 'index4'],
+            ['GET', '/test/{id}', [DummyController::class, 'index']],
+            ['post', '/other', [DummyController::class, 'index2']],
+            ['any', '/anyone', [DummyController::class, 'index3']],
+            ['*', '/anytwo', [DummyController::class, 'index4']],
         ];
         RouteBuilder::build($routeCollector, $tuples);
         $routes = array_values($routeCollector->getRoutes());
@@ -45,10 +45,52 @@ class RouteBuilderTest extends TestCase
         $this->assertEquals($tuples[2][1], $routes[2]->getPattern());
         $this->assertEquals([DummyController::class, 'index3'], $routes[2]->getCallable());
 
-//
-//        $this->assertEquals(RouteBuilder::AnyMethods, $routes[3]->getMethods());
-//        $this->assertEquals($tuples[3][1], $routes[3]->getPattern());
-//        $this->assertEquals([DummyController::class, 'index4'], $routes[3]->getCallable());
+
+        $this->assertEquals(RouteBuilder::AnyMethods, $routes[3]->getMethods());
+        $this->assertEquals($tuples[3][1], $routes[3]->getPattern());
+        $this->assertEquals([DummyController::class, 'index4'], $routes[3]->getCallable());
+    }
+
+    public function testBuildInvalidMethodString(): void
+    {
+        $routeCollector = $this->createMock(RouteCollectorInterface::class);
+        $routeCollector->expects($this->never())->method('map');
+        $tuples = [
+            ['', '/test', [DummyController::class, 'index']]
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('In tuple 0, index 0 is not a valid method string');
+
+        RouteBuilder::build($routeCollector, $tuples);
+    }
+
+    public function testBuildInvalidCallableArray(): void
+    {
+        $routeCollector = $this->createMock(RouteCollectorInterface::class);
+        $routeCollector->expects($this->never())->method('map');
+        $tuples = [
+            ['GET', '/test', [DummyController::class]]
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('In tuple 0, index 2 must be an array of [className, methodName]');
+
+        RouteBuilder::build($routeCollector, $tuples);
+    }
+
+    public function testBuildEmptyCallableString(): void
+    {
+        $routeCollector = $this->createMock(RouteCollectorInterface::class);
+        $routeCollector->expects($this->never())->method('map');
+        $tuples = [
+            ['GET', '/test', [DummyController::class, '']]
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage('In tuple 0, index 2[1] is empty');
+
+        RouteBuilder::build($routeCollector, $tuples);
     }
 
     public function testBuildInvalidCount(): void
@@ -56,11 +98,11 @@ class RouteBuilderTest extends TestCase
         $routeCollector = $this->createMock(RouteCollectorInterface::class);
         $routeCollector->expects($this->never())->method('map');
         $tuples = [
-            ['GET', '/test', DummyController::class]
+            ['GET', '/test']
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Tuple 0 does not have 4 elements');
+        $this->expectExceptionMessage('Tuple 0 does not have 3 elements');
 
         RouteBuilder::build($routeCollector, $tuples);
     }
@@ -70,11 +112,11 @@ class RouteBuilderTest extends TestCase
         $routeCollector = $this->createMock(RouteCollectorInterface::class);
         $routeCollector->expects($this->never())->method('map');
         $tuples = [
-            ['GET', '/test', DummyController::class, 123]
+            ['GET', '/test', [DummyController::class, 123]]
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('In tuple 0, index 3 is not a string');
+        $this->expectExceptionMessage('In tuple 0, index 2[1] is not a string');
 
         RouteBuilder::build($routeCollector, $tuples);
     }
@@ -84,11 +126,11 @@ class RouteBuilderTest extends TestCase
         $routeCollector = $this->createMock(RouteCollectorInterface::class);
         $routeCollector->expects($this->never())->method('map');
         $tuples = [
-            ['GET', '', DummyController::class, 'index']
+            ['GET', '', [DummyController::class, 'index']]
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('In tuple 0, index 1 is empty');
+        $this->expectExceptionMessage('In tuple 0, index 1 is not a valid path string');
 
         RouteBuilder::build($routeCollector, $tuples);
     }
@@ -98,7 +140,7 @@ class RouteBuilderTest extends TestCase
         $routeCollector = $this->createMock(RouteCollectorInterface::class);
         $routeCollector->expects($this->never())->method('map');
         $tuples = [
-            ['GET', '/test', 'NonExistentClass', 'index']
+            ['GET', '/test', ['NonExistentClass', 'index']]
         ];
 
         $this->expectException(InvalidArgumentException::class);
@@ -112,11 +154,11 @@ class RouteBuilderTest extends TestCase
         $routeCollector = $this->createMock(RouteCollectorInterface::class);
         $routeCollector->expects($this->never())->method('map');
         $tuples = [
-            ['GET', '/test', DummyController::class, 'nonExistentMethod']
+            ['GET', '/test', [DummyController::class, 'nonExistentMethod']]
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('In tuple 0, method does not exist: ThomasInstitut\StandardApi\DummyController::nonExistentMethod');
+        $this->expectExceptionMessage('In tuple 0, class method does not exist: ThomasInstitut\StandardApi\DummyController::nonExistentMethod');
 
         RouteBuilder::build($routeCollector, $tuples);
     }
@@ -126,11 +168,11 @@ class RouteBuilderTest extends TestCase
         $routeCollector = $this->createMock(RouteCollectorInterface::class);
         $routeCollector->expects($this->never())->method('map');
         $tuples = [
-            ['INVALID', '/test', DummyController::class, 'index']
+            ['INVALID', '/test', [DummyController::class, 'index']]
         ];
 
         $this->expectException(InvalidArgumentException::class);
-        $this->expectExceptionMessage('Invalid method: INVALID');
+        $this->expectExceptionMessage('In tuple 0, invalid method: INVALID');
 
         RouteBuilder::build($routeCollector, $tuples);
     }

@@ -12,14 +12,13 @@ class RouteBuilder
     /**
      * Build routes from a tuple array.
      *
-     * Each tuple is an array of 4 elements:
+     * Each tuple is an array of 3 elements:
      * [0] => HTTP method (GET, POST, PUT, PATCH, DELETE, OPTIONS)
-     * [1] => Path
-     * [2] => Class name
-     * [3] => Method name
+     * [1] => Path (e.g., /api/users/{id})
+     * [2] => [Class name, Method name]
      *
      * @param RouteCollectorInterface $routeCollector
-     * @param array<array{0: string, 1: string, 2: string, 3: string}> $tupleArray
+     * @param array<array{0: string, 1: string, 2: array{0: string, 1: string}}> $tupleArray
      * @return void
      */
     static public function build(RouteCollectorInterface $routeCollector, array $tupleArray): void
@@ -31,29 +30,45 @@ class RouteBuilder
 
 
         foreach ($tupleArray as $tupleIndex => $tuple) {
-            if (count($tuple) !== 4) {
-                throw new InvalidArgumentException("Tuple $tupleIndex does not have 4 elements: " . implode(", ", $tuple));
+            if (count($tuple) !== 3) {
+                throw new InvalidArgumentException("Tuple $tupleIndex does not have 3 elements: " . json_encode($tuple));
             }
-            foreach ($tuple as $index => $t) {
+
+            if (!is_string($tuple[0]) || strlen($tuple[0]) === 0) {
+                throw new InvalidArgumentException("In tuple $tupleIndex, index 0 is not a valid method string");
+            }
+
+            if (!is_string($tuple[1]) || strlen($tuple[1]) === 0) {
+                throw new InvalidArgumentException("In tuple $tupleIndex, index 1 is not a valid path string");
+            }
+
+            if (!is_array($tuple[2]) || count($tuple[2]) !== 2) {
+                throw new InvalidArgumentException("In tuple $tupleIndex, index 2 must be an array of [className, methodName]");
+            }
+
+            foreach ($tuple[2] as $index => $t) {
                 if (!is_string($t)) {
-                    throw new InvalidArgumentException("In tuple $tupleIndex, index $index is not a string: $t");
+                    throw new InvalidArgumentException("In tuple $tupleIndex, index 2[$index] is not a string");
                 }
                 if (strlen($t) === 0) {
-                    throw new InvalidArgumentException("In tuple $tupleIndex, index $index is empty");
+                    throw new InvalidArgumentException("In tuple $tupleIndex, index 2[$index] is empty");
                 }
             }
-            [$method, $path, $className, $methodName] = $tuple;
+
+            [$method, $path, $callable] = $tuple;
+            [$className, $methodName] = $callable;
+
             if (!class_exists($className)) {
                 throw new InvalidArgumentException("In tuple $tupleIndex, class does not exist: $className");
             }
 
             if (!method_exists($className, $methodName)) {
-                throw new InvalidArgumentException("In tuple $tupleIndex, method does not exist: $className::$methodName");
+                throw new InvalidArgumentException("In tuple $tupleIndex, class method does not exist: $className::$methodName");
             }
 
             $method = strtoupper($method);
             if (!in_array($method, $tupleValidMethods)) {
-                throw new InvalidArgumentException("Invalid method: $method");
+                throw new InvalidArgumentException("In tuple $tupleIndex, invalid method: $method");
             }
             if ($method === '*' || $method === 'ANY') {
                 $methods = self::AnyMethods;

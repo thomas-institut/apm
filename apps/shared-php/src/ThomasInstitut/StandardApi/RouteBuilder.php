@@ -1,0 +1,68 @@
+<?php
+
+namespace ThomasInstitut\StandardApi;
+
+use InvalidArgumentException;
+use Slim\Interfaces\RouteCollectorInterface;
+
+class RouteBuilder
+{
+    const array AnyMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+
+    /**
+     * Build routes from a tuple array.
+     *
+     * Each tuple is an array of 4 elements:
+     * [0] => HTTP method (GET, POST, PUT, PATCH, DELETE, OPTIONS)
+     * [1] => Path
+     * [2] => Class name
+     * [3] => Method name
+     *
+     * @param RouteCollectorInterface $routeCollector
+     * @param array<array{0: string, 1: string, 2: string, 3: string}> $tupleArray
+     * @return void
+     */
+    static public function build(RouteCollectorInterface $routeCollector, array $tupleArray): void
+    {
+        $collectorValidMethods = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'];
+        $tupleValidMethods = array_values($collectorValidMethods);
+        $tupleValidMethods[] = 'ANY';
+        $tupleValidMethods[] = '*';
+
+
+        foreach ($tupleArray as $tupleIndex => $tuple) {
+            if (count($tuple) !== 4) {
+                throw new InvalidArgumentException("Tuple $tupleIndex does not have 4 elements: " . implode(", ", $tuple));
+            }
+            foreach ($tuple as $index => $t) {
+                if (!is_string($t)) {
+                    throw new InvalidArgumentException("In tuple $tupleIndex, index $index is not a string: $t");
+                }
+                if (strlen($t) === 0) {
+                    throw new InvalidArgumentException("In tuple $tupleIndex, index $index is empty");
+                }
+            }
+            [$method, $path, $className, $methodName] = $tuple;
+            if (!class_exists($className)) {
+                throw new InvalidArgumentException("In tuple $tupleIndex, class does not exist: $className");
+            }
+
+            if (!method_exists($className, $methodName)) {
+                throw new InvalidArgumentException("In tuple $tupleIndex, method does not exist: $className::$methodName");
+            }
+
+            $method = strtoupper($method);
+            if (!in_array($method, $tupleValidMethods)) {
+                throw new InvalidArgumentException("Invalid method: $method");
+            }
+            if ($method === '*' || $method === 'ANY') {
+                $methods = self::AnyMethods;
+             } else {
+                $methods = [$method];
+            }
+
+            $routeCollector->map($methods, $path, [$className, $methodName]);
+        }
+    }
+
+}

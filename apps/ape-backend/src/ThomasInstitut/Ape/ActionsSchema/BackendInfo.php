@@ -2,7 +2,7 @@
 
 namespace ThomasInstitut\Ape\ActionsSchema;
 
-final class ServerInfo
+final class BackendInfo
 {
     public string $name;
     public string $version;

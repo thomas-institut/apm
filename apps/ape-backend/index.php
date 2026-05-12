@@ -15,7 +15,7 @@ use ThomasInstitut\StandardApi\RouteBuilder;
 
 
 $apiDefinition = [
-    ['GET', '/api/info', [InfoController::class, 'getServerInfo']]
+    ['GET', '/api/info', [InfoController::class, 'getBackendInfo']]
 ];
 
 

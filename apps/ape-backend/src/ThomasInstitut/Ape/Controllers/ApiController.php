@@ -17,6 +17,7 @@ class ApiController implements LoggerAwareInterface
 
     protected ContainerInterface $container;
     protected ApiResponseFactory $responseFactory;
+    protected string $apiCallName = '';
 
     public function __construct(ContainerInterface $container)
     {
@@ -27,5 +28,10 @@ class ApiController implements LoggerAwareInterface
             $this->logger = new NullLogger();
         }
         $this->responseFactory = new ApiResponseFactory($this->logger);
+    }
+    public function setApiCallName(string $name): void
+    {
+        $this->apiCallName = $name;
+        $this->responseFactory->withApiCallName($name);
     }
 }

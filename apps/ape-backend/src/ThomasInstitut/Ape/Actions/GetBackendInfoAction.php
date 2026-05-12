@@ -2,18 +2,18 @@
 
 namespace ThomasInstitut\Ape\Actions;
 
-use ThomasInstitut\Ape\ActionsSchema\ServerInfo;
+use ThomasInstitut\Ape\ActionsSchema\BackendInfo;
 use ThomasInstitut\Ape\Config\SystemConfig;
 
-readonly class GetServerInfo
+readonly class GetBackendInfoAction
 {
     public function __construct(private SystemConfig $systemConfig)
     {
     }
 
-    public function execute(): ServerInfo
+    public function execute(): BackendInfo
     {
-        $serverInfo = new ServerInfo();
+        $serverInfo = new BackendInfo();
         $serverInfo->name = $this->systemConfig->general->name;
         $serverInfo->version = $this->systemConfig->version->title;
         $serverInfo->versionDate = $this->systemConfig->version->date;

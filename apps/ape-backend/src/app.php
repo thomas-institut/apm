@@ -83,7 +83,15 @@ $container->set(LoggerInterface::class, $logger);
 
 AppFactory::setContainer($container);
 $app = AppFactory::create();
+if ($systemConfig->general->subDir !== '') {
+    $app->setBasePath('/' . $systemConfig->general->subDir);
+}
 RouteBuilder::build($app, $apiRoutesSpec);
+
+//$routes = $app->getRouteCollector()->getRoutes();
+//foreach ($routes as $route) {
+//    $logger->debug("Route: {$route->getPattern()}");
+//}
 
 $errorMiddleware = $app->addErrorMiddleware(false, true, true, $logger);
 $errorMiddleware->setDefaultErrorHandler(function (

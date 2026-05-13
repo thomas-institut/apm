@@ -12,7 +12,7 @@ export interface ApiClientResponse<T> {
 
 export class ApiClient {
 
-  private baseUrl: string = 'http://localhost:9999/api/';
+  private baseUrl: string = 'http://localhost:9999/api';
 
   withBaseUrl(baseUrl: string): ApiClient {
     this.baseUrl = baseUrl;
@@ -20,7 +20,7 @@ export class ApiClient {
   }
 
   async getBackendInfo(): Promise<ApiClientResponse<BackendInfo>> {
-    const url = this.baseUrl + 'info';
+    const url = this.baseUrl + '/info';
     const clientResponse: ApiClientResponse<BackendInfo> = {
       result: 'Success',
       timestamp: -1,

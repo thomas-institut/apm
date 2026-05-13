@@ -43,7 +43,7 @@ CUR_DIR=$(pwd)
 TMP_DIR=$TMP/$DIST_NAME
 TAR_NAME=$DIST_NAME.tar.gz
 
-NPM_BUILD_FRONTEND="npm run build -w ape-frontend -- --base=$BASE_DIR/dist"
+NPM_BUILD_FRONTEND="npm run build -w ape-frontend -- --base=$BASE_DIR"
 
 echo Creating temporary directory
 if [ -d "$TMP_DIR" ]

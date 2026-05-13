@@ -39,7 +39,7 @@ echo Copying files to temporary directory
 #cp -R "$SRC_BASE_DIR"/bin "$TMP_DIR"
 
 cp -R "$SRC_BASE_DIR"/src "$TMP_DIR"
-cp -R "$SRC_BASE_DIR"/vendor "$TMP_DIR"
+cp -L -R "$SRC_BASE_DIR"/vendor "$TMP_DIR"
 cp "$SRC_BASE_DIR"/composer.json "$TMP_DIR"
 cp "$SRC_BASE_DIR"/composer.lock "$TMP_DIR"
 cp "$SRC_BASE_DIR"/version.yaml "$TMP_DIR"
@@ -56,7 +56,7 @@ then
 fi
 
 tar cfz "$TAR_NAME" "$DIST_NAME"
-#rm -fr "$DIST_NAME"
+rm -fr "$DIST_NAME"
 
 cd "$CUR_DIR" || exit
 mv "$TMP/$TAR_NAME" "$DIST_DIR"/

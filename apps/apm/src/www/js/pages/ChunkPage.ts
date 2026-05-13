@@ -33,6 +33,7 @@ import {WorkData} from "@/Api/DataSchema/ApiWorks";
 import {LanguageInfoObject} from "@/Api/DataSchema/LanguageInfo";
 import {ApiPresetsQuery} from "@/Api/DataSchema/ApiPresets";
 import {AutomaticCollationSettings} from "@/Api/DataSchema/ApiCollationTable";
+import 'datatables.net-dt/css/jquery.dataTables.min.css';
 
 const convertToEditionIcon = '<i class="fas fa-file-alt"></i>';
 const showWitnessInfoIcon = '<i class="fas fa-cogs"></i>';

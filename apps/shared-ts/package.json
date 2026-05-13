@@ -1,0 +1,19 @@
+{
+  "name": "@shared/ts",
+  "version": "1.0.0",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6",
+    "@vitejs/plugin-react": "^6.0",
+    "fake-indexeddb": "^6.1.0",
+    "happy-dom": "20.9",
+    "lorem-ipsum": "^2.0.8",
+    "standard": "^17.0.0",
+    "typescript": "^6",
+    "vite": "^8.0",
+    "vite-tsconfig-paths": "^6.1",
+    "vitest": "^4.1"
+  }
+}

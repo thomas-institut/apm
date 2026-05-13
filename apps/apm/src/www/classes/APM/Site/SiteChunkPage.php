@@ -194,7 +194,7 @@ class SiteChunkPage extends SiteController
             ],
             [],
             [
-                '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css',
+//                '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css',
                 'witness.css',
                 'act-settingsform.css',
                 'chunkpage.css'

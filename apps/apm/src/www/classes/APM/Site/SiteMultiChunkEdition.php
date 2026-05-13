@@ -21,8 +21,6 @@ class SiteMultiChunkEdition extends SiteController
             [
                 'editionId' => $new ? -1 : intval($request->getAttribute('editionId'))
             ],
-            [],
-            [ '../node_modules/datatables.net-dt/css/jquery.dataTables.min.css']
         );
     }
 }

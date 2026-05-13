@@ -4,7 +4,7 @@ import {AppConfig} from "@/main";
 import "./app.css";
 import {QueryClient, useQuery} from "@tanstack/react-query";
 import {BackendInfo} from "@/Api/Schema/GetBackendInfo";
-import {randomString} from "@shared/RandomString";
+import {randomString} from "@shared/ts";
 
 interface AppProps {
   config: AppConfig;

@@ -16,6 +16,7 @@
   "author": "Rafael Nájera <rafael.najera@uni-koeln.de>",
   "license": "GPL-3.0-or-later",
   "dependencies": {
+    "@shared/ts": "*",
     "@tanstack/react-query": "^5.100",
     "react": "^19.2",
     "react-dom": "^19.2",

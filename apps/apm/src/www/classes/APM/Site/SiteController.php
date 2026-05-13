@@ -358,17 +358,19 @@ END;
 
         $baseUrl = $this->getBaseUrl();
 
+        $prefix = $this->config['devMode'] ? 'public' : 'dist';
+
         $cssItems = [];
-        $cssItems[] = 'node_modules/bootstrap/dist/css/bootstrap.css';
-        $cssItems[] = 'node_modules/bootstrap-icons/font/bootstrap-icons.css';
+        $cssItems[] = "$prefix/legacy/bootstrap.css";
+        $cssItems[] = "$prefix/legacy/bootstrap-icons.css";
         $cssItems[] = 'css/styles.css';
         foreach ($extraCss as $css) {
             $cssItems[] = "css/$css";
         }
 
         $jsItems = [];
-        $jsItems[] = 'node_modules/jquery/dist/jquery.min.js';
-        $jsItems[] = 'node_modules/bootstrap/dist/js/bootstrap.bundle.min.js';
+        $jsItems[] = "$prefix/legacy/jquery.min.js";
+        $jsItems[] = "$prefix/legacy/bootstrap.bundle.min.js";
         $jsItems = [...$jsItems, ...$extraJss];
 
         $cssHtml = implode("\n", array_map(function ($cssItem) use ($baseUrl) {

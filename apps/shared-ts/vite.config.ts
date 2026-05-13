@@ -5,9 +5,7 @@ import {resolve} from 'path';
 import react from '@vitejs/plugin-react';
 
 export default defineConfig({
-  server: {
-    port: 5180
-  },
+
   plugins: [react({})],
   build: {
     outDir: 'dist',
@@ -16,7 +14,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         // Main
-        Main: resolve(__dirname, 'index.html'),
+        Main: resolve(__dirname, './src/index.ts'),
       },
       output: {
         entryFileNames: '[name]-[hash].js',

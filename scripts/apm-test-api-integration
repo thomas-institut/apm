@@ -1,3 +1,2 @@
 #!/bin/bash
-cd apps/apm/src/www || exit
-npm run api-integration-test
+npm run api-integration-test -w apm-frontend

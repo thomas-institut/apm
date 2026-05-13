@@ -1,0 +1,9 @@
+{
+  "name": "ap-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/ape-frontend",
+    "apps/apm/src/www",
+    "apps/shared-ts"
+  ]
+}

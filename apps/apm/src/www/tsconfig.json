@@ -26,7 +26,8 @@
     "skipLibCheck": true,
     /* Skip type checking all .d.ts files. */
     "allowJs": true,
-    "jsx": "react-jsx"
+    "jsx": "react-jsx",
+    "types": ["vite/client"]
   },
   "exclude": ["dist/**/*"]
 }

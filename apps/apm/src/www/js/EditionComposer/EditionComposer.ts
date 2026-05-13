@@ -17,6 +17,7 @@
  */
 
 import './EditionComposer.css';
+import 'quill/dist/quill.core.css'
 
 // defaults
 import {defaultLanguageDefinition, LanguageDefinition} from '@/defaults/languages';
@@ -495,6 +496,7 @@ export class EditionComposer extends ApmPage {
     this.saveButtonPopoverContent = 'TBD';
     this.saveButtonPopoverTitle = 'TBD';
     this.saveButton = $('#save-button');
+    // @ts-ignore
     this.saveButton.popover({
       trigger: 'hover', placement: 'left', html: true, title: () => {
         return this.saveButtonPopoverTitle;
@@ -509,6 +511,7 @@ export class EditionComposer extends ApmPage {
     this.errorButton = $('#error-button');
     this.errorButtonPopoverContent = 'TBD';
     this.errorButtonPopoverTitle = 'Error';
+    // @ts-ignore
     this.errorButton.popover({
       trigger: 'hover', placement: 'left', html: true, title: () => {
         return this.errorButtonPopoverTitle;
@@ -576,6 +579,7 @@ export class EditionComposer extends ApmPage {
   editApparatusEntry(apparatusIndex: number, mainTextFrom: number, mainTextTo: number) {
     console.log(`Got request to edit apparatus entry in apparatus ${this.edition.apparatuses[apparatusIndex].type}, from ${mainTextFrom} to ${mainTextTo}`);
     this.apparatusPanels[apparatusIndex].editApparatusEntry(mainTextFrom, mainTextTo, true);
+    // @ts-ignore
     $(`#apparatus-${apparatusIndex}-tab`).tab('show');
   }
 
@@ -750,6 +754,7 @@ export class EditionComposer extends ApmPage {
       if (changes.length !== 0) {
         this.saving = true;
         this.unsavedChanges = true;
+        // @ts-ignore
         this.saveButton.popover('hide');
         this.saveButton.html(this.icons.busy);
         this.saveButtonPopoverContent = 'Saving...';

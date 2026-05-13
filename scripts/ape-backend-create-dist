@@ -1,0 +1,64 @@
+#!/bin/bash
+#
+# ape-backend-create-dist.bash
+#
+# Creates a distribution tar file for ape-backend
+#
+# Author: Rafael Nájera <rafael.najera@uni-koeln.de>
+#
+
+
+USAGE="USAGE: ape-backend-create-dist <version>  [--mac]"
+
+if (("$#" < 1)) ; then
+   echo "$USAGE"
+   exit
+fi
+
+VERSION=$1
+MAC=$2
+
+SRC_BASE_DIR="apps/ape-backend"
+TMP=/tmp
+DIST_NAME=ape-backend-$VERSION
+DIST_DIR="dist"
+CUR_DIR=$(pwd)
+TMP_DIR=$TMP/$DIST_NAME
+TAR_NAME=$DIST_NAME.tar.gz
+
+echo Creating temporary directory
+if [ -d "$TMP_DIR" ]
+then
+  rm -fr "$TMP_DIR" || exit
+fi
+
+mkdir "$TMP_DIR" || exit
+
+echo Copying files to temporary directory
+#cp -R "$SRC_BASE_DIR"/db "$TMP_DIR"
+#cp -R "$SRC_BASE_DIR"/bin "$TMP_DIR"
+
+cp -R "$SRC_BASE_DIR"/src "$TMP_DIR"
+cp -L -R "$SRC_BASE_DIR"/vendor "$TMP_DIR"
+cp "$SRC_BASE_DIR"/composer.json "$TMP_DIR"
+cp "$SRC_BASE_DIR"/composer.lock "$TMP_DIR"
+cp "$SRC_BASE_DIR"/version.yaml "$TMP_DIR"
+#cp "$SRC_BASE_DIR"/defaults.yaml "$TMP_DIR"
+#cp "$SRC_BASE_DIR"/config.sample.yaml "$TMP_DIR"
+cp "$SRC_BASE_DIR"/index.php "$TMP_DIR"
+
+cd "$TMP" || exit
+echo "Creating tar file $DIST_DIR/$TAR_NAME"
+if [ "$MAC" = "--mac" ]
+then
+  COPYFILE_DISABLE=1; export COPYFILE_DISABLE
+  COPY_EXTENDED_ATTRIBUTES_DISABLE=1; export COPY_EXTENDED_ATTRIBUTES_DISABLE
+fi
+
+tar cfz "$TAR_NAME" "$DIST_NAME"
+rm -fr "$DIST_NAME"
+
+cd "$CUR_DIR" || exit
+mv "$TMP/$TAR_NAME" "$DIST_DIR"/
+
+

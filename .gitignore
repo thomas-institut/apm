@@ -40,3 +40,4 @@ app-settings.json
 .env.it
 .~lock*
 .phpunit.cache/
+.env.dist*

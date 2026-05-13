@@ -1,0 +1,87 @@
+#!/bin/bash
+#
+# ape-frontend-create-dist.bash
+#
+# Creates a distribution tar file for ape-frontend
+#
+# Author: Rafael Nájera <rafael.najera@uni-koeln.de>
+#
+
+
+USAGE="USAGE: ape-frontend-create-dist <version> <base dir, e.g. '/dare' or ''> [--mac]"
+
+if (("$#" < 2)) ; then
+   echo "$USAGE"
+   exit
+fi
+
+VERSION=$1
+BASE_DIR=$2
+MAC=$3
+
+if [[ $BASE_DIR != /* ]]; then
+  echo "Error: base dir must start with '/', $BASE_DIR given " >&2
+  exit 1
+fi
+
+if [ -z "$API_URL" ]; then
+  echo "Error: API_URL environment variable is not set or empty" >&2
+  exit 1
+fi
+
+if [ -z "$APP_NAME" ]; then
+  echo "Error: APP_NAME environment variable is not set or empty" >&2
+  exit 1
+fi
+
+
+SRC_BASE_DIR="apps/ape-frontend"
+TMP=/tmp
+DIST_NAME=ape-frontend-$VERSION
+DIST_DIR="dist"
+CUR_DIR=$(pwd)
+TMP_DIR=$TMP/$DIST_NAME
+TAR_NAME=$DIST_NAME.tar.gz
+
+NPM_BUILD_FRONTEND="npm run build -w ape-frontend -- --base=$BASE_DIR/dist"
+
+echo Creating temporary directory
+if [ -d "$TMP_DIR" ]
+then
+  rm -fr "$TMP_DIR" || exit
+fi
+
+mkdir "$TMP_DIR" || exit
+
+APP_CONFIG="window.APP_CONFIG = { apiBaseUrl: '$API_URL', appName: '$APP_NAME' };"
+
+echo Building frontend JS for production with base dir \'"$BASE_DIR"\'
+echo - "$APP_CONFIG"
+eval "$NPM_BUILD_FRONTEND"
+
+echo Copying files to temporary directory
+cp -R "$SRC_BASE_DIR"/dist/* "$TMP_DIR"
+
+
+
+
+
+# Replace window.APP_CONFIG in $TMP_DIR/index.html to $APP_CONFIG
+sed -i.bak "s|window.APP_CONFIG = .*|$APP_CONFIG|" "$TMP_DIR/index.html" && rm "$TMP_DIR/index.html.bak"
+
+cd "$TMP" || exit
+
+
+echo "Creating tar file $DIST_DIR/$TAR_NAME"
+if [ "$MAC" = "--mac" ]
+then
+  COPYFILE_DISABLE=1; export COPYFILE_DISABLE
+  COPY_EXTENDED_ATTRIBUTES_DISABLE=1; export COPY_EXTENDED_ATTRIBUTES_DISABLE
+fi
+
+tar cfz "$TAR_NAME" "$DIST_NAME"
+#rm -fr "$DIST_NAME"
+
+cd "$CUR_DIR" || exit
+mv "$TMP/$TAR_NAME" "$DIST_DIR"/
+

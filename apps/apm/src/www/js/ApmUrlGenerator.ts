@@ -42,9 +42,6 @@ export class ApmUrlGenerator {
     return this.base;
   }
 
-  siteDashboard(): string {
-    return `${this.base}/dashboard`;
-  }
 
   siteLogout(): string {
     return `${this.base}/logout`;
@@ -119,9 +116,6 @@ export class ApmUrlGenerator {
     return this.base + '/works';
   }
 
-  siteUsers() {
-    return this.base + '/users';
-  }
 
   siteSearch() {
     return this.base + '/search';
@@ -129,10 +123,6 @@ export class ApmUrlGenerator {
 
   siteHelp() {
     return this.base + '/help';
-  }
-
-  siteSearchNew() {
-    return this.base + '/searchnew';
   }
 
   sitePerson(id: any) {
@@ -179,16 +169,13 @@ export class ApmUrlGenerator {
     return `${this.base}/chunk-edition/new/${workId}/${chunkNumber}/${lang}`;
   }
 
-  siteEditCollationTableBeta(tableId: number) {
-    return this.base + '/collation-table/edit/' + tableId + '/beta';
-  }
 
   siteBlankThumbnail() {
     return `${this.base}/images/thumbnail-blank.png`;
   }
 
   siteOpenSeadragonIconsPrefix() {
-    return `${this.base}/node_modules/openseadragon/build/openseadragon/images/`;
+    return `${this.base}/images/openseadragon/`;
   }
 
   /**
@@ -212,10 +199,6 @@ export class ApmUrlGenerator {
 
   siteAdminEntity(tid: number) {
     return `${this.base}/entity/${tid}/admin`;
-  }
-
-  siteDevMetadataEditor(tid: number) {
-    return `${this.base}/dev/metadata-editor/${tid}`;
   }
 
   images() {
@@ -291,10 +274,6 @@ export class ApmUrlGenerator {
 
   apiUpdatePageSettings(pageId: number) {
     return this.apiBase + '/page/' + pageId + '/update';
-  }
-
-  openSeaDragonImagePrefix() {
-    return this.base + '/node_modules/openseadragon/build/openseadragon/images/';
   }
 
   apiCreateUser(personId: number) {

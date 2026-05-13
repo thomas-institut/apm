@@ -344,6 +344,7 @@ export class DocPage extends NormalPage {
   }
 
   showTab(tabId: string) {
+    // @ts-ignore
     $(`.btn-${tabId}`).tab('show').focus();
   }
 

@@ -77,7 +77,7 @@ export class PageViewer extends ApmPage {
 
       let osdOptions = {
         id: 'osd-pane',
-        prefixUrl: urlGen.openSeaDragonImagePrefix(),
+        prefixUrl: urlGen.siteOpenSeadragonIconsPrefix(),
         minZoomLevel: 0.4,
         maxZoomLevel: 5,
         showRotationControl: true,

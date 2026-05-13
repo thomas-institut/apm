@@ -65,6 +65,7 @@ export default defineConfig({
     projects: ['test/js'],
   },
   resolve: {
+    tsconfigPaths: true,
     alias: {
       '@': resolve(__dirname, './js'),
     }

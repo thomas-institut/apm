@@ -17,7 +17,7 @@
 #  along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 #
-# apm-createdist.bash
+# apm-create-dist.bash
 #
 # Creates a distribution tar file for apm 
 #
@@ -25,7 +25,7 @@
 #
 
 
-USAGE="USAGE: apm-createdist <version> <base dir, e.g. '/apm' or ''> [--mac]"
+USAGE="USAGE: apm-create-dist <version> <base dir, e.g. '/apm' or ''> [--mac]"
 
 if (("$#" < 2)) ; then
    echo "$USAGE"
@@ -50,7 +50,7 @@ CUR_DIR=$(pwd)
 TMP_DIR=$TMP/$DIST_NAME
 TAR_NAME=$DIST_NAME.tar.gz
 
-NPM_BUILD_FRONTEND="cd \"$APM_SRC_BASE/www\"; npm run build -- --base=$BASE_DIR/dist; cd \"$SCRIPT_DIR\""
+NPM_BUILD_FRONTEND="npm run build -w apm-frontend -- --base=$BASE_DIR/dist"
 NPM_BUILD_TYPESETTING="cd \"$APM_SRC_BASE/typesetting-service\"; npm run build; cd \"$SCRIPT_DIR\""
 
 echo Creating temporary directory
@@ -68,35 +68,26 @@ echo Building typesetting service JS for production
 eval "$NPM_BUILD_TYPESETTING"
 
 echo Copying files to temporary directory
-cp -R $APM_SRC_BASE/typesetting-service "$TMP_DIR"
-cp -R $APM_SRC_BASE/db "$TMP_DIR"
-cp -R $APM_SRC_BASE/bin "$TMP_DIR"
+cp -R "$APM_SRC_BASE"/typesetting-service "$TMP_DIR"
+cp -R "$APM_SRC_BASE"/db "$TMP_DIR"
+cp -R "$APM_SRC_BASE"/bin "$TMP_DIR"
 mkdir "$TMP_DIR"/www || exit
 
-cp -R $APM_SRC_BASE/www/classes "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/css "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/images "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/hyphenation "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/fonts "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/templates "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/utilities "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/vendor "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/node_modules "$TMP_DIR"/www
-cp -R $APM_SRC_BASE/www/dist "$TMP_DIR"/www
+cp -R "$APM_SRC_BASE"/www/classes "$TMP_DIR"/www
+cp -R "$APM_SRC_BASE"/www/css "$TMP_DIR"/www
+cp -R "$APM_SRC_BASE"/www/images "$TMP_DIR"/www
+cp -R "$APM_SRC_BASE"/www/fonts "$TMP_DIR"/www
+cp -R "$APM_SRC_BASE"/www/templates "$TMP_DIR"/www
+cp -R "$APM_SRC_BASE"/www/utilities "$TMP_DIR"/www
+cp -R "$APM_SRC_BASE"/www/vendor "$TMP_DIR"/www
+cp -R "$APM_SRC_BASE"/www/dist "$TMP_DIR"/www
 
-cp $APM_SRC_BASE/www/composer.json "$TMP_DIR"/www
-cp $APM_SRC_BASE/www/composer.lock "$TMP_DIR"/www
-cp $APM_SRC_BASE/www/package.json "$TMP_DIR"/www
-cp $APM_SRC_BASE/www/package-lock.json "$TMP_DIR"/www
-cp $APM_SRC_BASE/www/version.yaml "$TMP_DIR"/www
-cp $APM_SRC_BASE/www/defaults.yaml "$TMP_DIR"/www
-cp $APM_SRC_BASE/www/config.sample.yaml "$TMP_DIR"/www
-cp $APM_SRC_BASE/www/index.php "$TMP_DIR"/www
-
-cp -R $APM_SRC_BASE/www/js "$TMP_DIR"/www
-rm -fr "$TMP_DIR"/www/js/istanbul
-rm -f "$TMP_DIR"/www/js/Makefile
-rm -f "$TMP_DIR"/www/js/.eslintrc.json
+cp "$APM_SRC_BASE"/www/composer.json "$TMP_DIR"/www
+cp "$APM_SRC_BASE"/www/composer.lock "$TMP_DIR"/www
+cp "$APM_SRC_BASE"/www/version.yaml "$TMP_DIR"/www
+cp "$APM_SRC_BASE"/www/defaults.yaml "$TMP_DIR"/www
+cp "$APM_SRC_BASE"/www/config.sample.yaml "$TMP_DIR"/www
+cp "$APM_SRC_BASE"/www/index.php "$TMP_DIR"/www
 
 mkdir "$TMP_DIR"/www/downloads
 chmod a+w "$TMP_DIR"/www/downloads
@@ -115,7 +106,7 @@ then
 fi
 
 tar cfz "$TAR_NAME" "$DIST_NAME"
-rm -fr "$DIST_NAME"
+#rm -fr "$DIST_NAME"
 mv "$TAR_NAME" "$DIST_DIR"/
 
 cd "$CUR_DIR" || exit

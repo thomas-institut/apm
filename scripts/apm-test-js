@@ -1,3 +1,2 @@
 #!/bin/bash
-cd apps/apm/src/www || exit
-npm run test
+npm run test -w apm-frontend

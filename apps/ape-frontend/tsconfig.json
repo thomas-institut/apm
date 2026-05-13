@@ -9,9 +9,8 @@
     "moduleResolution": "nodenext",
     "outDir": "./dist",
     "paths": {
-      "@/*": [
-        "./src/*"
-      ]
+      "@/*": ["./src/*"],
+      "@shared/*": ["../shared-ts/src/*"]
     },
     "lib": [
       "ES2021",

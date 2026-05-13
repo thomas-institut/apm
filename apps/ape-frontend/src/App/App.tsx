@@ -4,6 +4,7 @@ import {AppConfig} from "@/main";
 import "./app.css";
 import {QueryClient, useQuery} from "@tanstack/react-query";
 import {BackendInfo} from "@/Api/Schema/GetBackendInfo";
+import {randomString} from "@shared/RandomString";
 
 interface AppProps {
   config: AppConfig;
@@ -38,6 +39,7 @@ export function App({config}: AppProps) {
   const appContent = (backendInfo: BackendInfo|null) => (<>
       <h1>App</h1>
       <div>The frontend says 'Hello world!'</div>
+    <div>This is a random string: {randomString()}</div>
     { backendInfo && <div>{backendInfo.name} {backendInfo.version} ({backendInfo.versionDate})</div>}
     { backendInfo === null && <div>Backend info: not available</div>}
     </>);

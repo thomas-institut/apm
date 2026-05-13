@@ -3,11 +3,13 @@ import {createRoot} from 'react-dom/client';
 import {App} from '@/App/App';
 
 export interface AppConfig {
-  baseUrl?: string;
+  apiBaseUrl?: string;
+  appName?: string;
 }
 
 const config: AppConfig = (window as any).APP_CONFIG || {
-  baseUrl: null
+  apiBaseUrl: null,
+  appName: 'APE'
 };
 
 const rootElement = document.getElementById('root');

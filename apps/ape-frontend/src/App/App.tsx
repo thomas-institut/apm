@@ -15,8 +15,8 @@ export function App({config}: AppProps) {
   const queryClient = new QueryClient();
 
   const apiClient = useRef<ApiClient | null>(null);
-  if (!apiClient.current && config.baseUrl) {
-    apiClient.current = new ApiClient().withBaseUrl(config.baseUrl);
+  if (!apiClient.current && config.apiBaseUrl) {
+    apiClient.current = new ApiClient().withBaseUrl(config.apiBaseUrl);
   }
 
   const getBackendInfoResult = useQuery({
@@ -38,7 +38,7 @@ export function App({config}: AppProps) {
 
   const appContent = (backendInfo: BackendInfo|null) => (<>
       <h1>App</h1>
-      <div>The frontend says 'Hello world!'</div>
+      <div>The frontend for {config.appName} says 'Hello world!'</div>
     <div>This is a random string: {randomString()}</div>
     { backendInfo && <div>{backendInfo.name} {backendInfo.version} ({backendInfo.versionDate})</div>}
     { backendInfo === null && <div>Backend info: not available</div>}

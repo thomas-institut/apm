@@ -31,6 +31,7 @@ use APM\System\ApmImageType;
 use APM\System\ApmSystemManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
 use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\HttpStatus;
@@ -81,7 +82,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
     public function __construct(ContainerInterface $ci)
     {
         $this->container = $ci;
-        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
+        $this->systemManager = $ci->get(SystemManager::class);
         $this->config = $this->systemManager->getConfig();
         $this->logger = $this->systemManager->getLogger();
         $this->router = $this->systemManager->getRouter();

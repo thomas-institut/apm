@@ -25,58 +25,55 @@ use APM\Site\SitePeople;
 use APM\Site\SiteReact;
 use APM\Site\SiteSettings;
 use APM\System\ApmContainerKey;
-use APM\System\ApmSystemManager;
 use APM\System\Auth\Authenticator;
-use APM\SystemConfig;
+use APM\System\Config\ApmSystemConfig;
+use APM\System\Factories\ApmSystemManagerFactory;
+use APM\System\Factories\LoggerFactory;
+use APM\System\Factories\SystemConfigFactory;
+use APM\System\SystemManager;
+use APM\SystemConfigArray;
 use JetBrains\PhpStorm\NoReturn;
-use Monolog\Handler\ErrorLogHandler;
-use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use Slim\App;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\TwigMiddleware;
 use ThomasInstitut\Profiler\SystemProfiler;
 use Twig\Error\LoaderError;
+use function DI\factory;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
 error_reporting(E_ERROR | E_PARSE | E_NOTICE);
 
-// autoload
-
 SystemProfiler::start();
 
-$config = SystemConfig::get();
+$config = SystemConfigArray::get();
 if (!is_array($config)) {
     exitWithErrorMessage($config);
 }
-// Set up logger
-$logger = new Logger('APM');
-$logger->pushHandler(new ErrorLogHandler());
-
-// Build System Manager
-$systemManager = new ApmSystemManager($config);
-if ($systemManager->fatalErrorOccurred()) {
-    exitWithErrorMessage($systemManager->getErrorMessage());
-}
-
-// Build container
 
 $builder  = new DI\ContainerBuilder();
 
 
 
+$builder->addDefinitions([
+    ApmContainerKey::CONFIG_ARRAY => $config,
+    ApmSystemConfig::class => factory([ SystemConfigFactory::class, 'create' ]),
+    LoggerInterface::class => factory([ LoggerFactory::class, 'create']),
+    SystemManager::class => factory([ ApmSystemManagerFactory::class, 'create' ]),
+]);
 
 try {
     $container = $builder->build();
-} catch (\Exception $e) {
-    exitWithErrorMessage("Can't build container: " . $e->getMessage() . "");
+} catch (Exception $e) {
+    exitWithErrorMessage("Can't build container: " . $e->getMessage());
 }
-$container->set(ApmContainerKey::SYSTEM_MANAGER, $systemManager);
+
 $container->set(ApmContainerKey::SITE_USER_ID, -1); // set by authenticator
 $container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
 
@@ -92,6 +89,8 @@ if ($subDir !== '') {
 
 $app->addErrorMiddleware(true, true, true);
 $router = $app->getRouteCollector()->getRouteParser();
+
+$systemManager = $container->get(SystemManager::class);
 $systemManager->setRouter($router);
 
 try {
@@ -288,7 +287,7 @@ function createApiAuthenticatedRoutes(App $app, ContainerInterface $container): 
         // edition
         createApiEditionRoutes($group, $container);
         // typeset
-        createApiTypesettingRoutes($group, $container);
+        createApiTypesettingRoutes($group);
         // admin
         createApiAdminRoutes($group, $container);
 
@@ -1764,7 +1763,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
     );
 }
 
-function createApiTypesettingRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiTypesettingRoutes(RouteCollectorProxy $group): void
 {
 
     /**

@@ -25,7 +25,7 @@ use APM\CommandLine\DataGrabber\GrabData;
 
 require __DIR__ . '/../www/vendor/autoload.php';
 
-$config = SystemConfig::get();
+$config = SystemConfigArray::get();
 if (!is_array($config)) {
     print "ERROR: $config\n";
     exit(1);

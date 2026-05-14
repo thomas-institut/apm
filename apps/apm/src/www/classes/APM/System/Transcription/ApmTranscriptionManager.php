@@ -62,7 +62,7 @@ use APM\System\Transcription\TxText\Unclear;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
-use APM\SystemProfiler;
+use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\ArraySort;
 use APM\ToolBox\MyersDiff;
 use Exception;

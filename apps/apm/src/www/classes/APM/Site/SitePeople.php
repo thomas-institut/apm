@@ -6,7 +6,7 @@ use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
-use APM\SystemProfiler;
+use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;

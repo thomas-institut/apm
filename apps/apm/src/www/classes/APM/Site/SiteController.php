@@ -32,7 +32,7 @@ use APM\System\ApmSystemManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
-use APM\SystemProfiler;
+use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;

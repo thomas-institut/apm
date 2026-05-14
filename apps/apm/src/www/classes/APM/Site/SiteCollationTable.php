@@ -34,7 +34,7 @@ use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
-use APM\SystemProfiler;
+use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;

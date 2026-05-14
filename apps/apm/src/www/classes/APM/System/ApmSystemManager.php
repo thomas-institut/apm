@@ -72,11 +72,7 @@ use APM\System\Work\EntitySystemWorkManager;
 use APM\System\Work\WorkManager;
 use APM\ToolBox\BaseUrlDetector;
 use Exception;
-use Monolog\Handler\ErrorLogHandler;
-use Monolog\Handler\StreamHandler;
-use Monolog\Level;
 use Monolog\Logger;
-use Monolog\Processor\WebProcessor;
 use PDO;
 use PDOException;
 use Psr\Container\ContainerExceptionInterface;
@@ -99,7 +95,6 @@ use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
-use Twig\Error\LoaderError;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
 
@@ -159,7 +154,7 @@ class ApmSystemManager extends SystemManager {
     private array $tableNames;
     private array $imageSources;
     private LoggerInterface $logger;
-    private RouteParserInterface $router;
+//    private RouteParserInterface $router;
 
     //
     // Components
@@ -172,7 +167,7 @@ class ApmSystemManager extends SystemManager {
     private ?ApmTranscriptionManager $transcriptionManager = null;
     private ?ApmCollationTableManager $collationTableManager = null;
     private ?ApmMultiChunkEditionManager $multiChunkEditionManager = null;
-    private ?Twig $twig = null;
+//    private ?Twig $twig = null;
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?ApmUserManager $userManager = null;
     private ?PersonManagerInterface $personManager = null;
@@ -190,7 +185,10 @@ class ApmSystemManager extends SystemManager {
     private ?TypesenseSearchManager $searchManager = null;
 
 
-
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function __construct(ContainerInterface $ci) {
         parent::__construct($ci);
         $config = $this->getSanitizedConfigArray($this->config);
@@ -202,21 +200,16 @@ class ApmSystemManager extends SystemManager {
             $this->setError($msg, self::ERROR_CONFIG_ARRAY_IS_NOT_VALID);
             return;
         }
-//        parent::__construct($config);
 
         if ($this->fatalErrorOccurred()) {
             return; // @codeCoverageIgnore
         }
-
 
         $this->logger = $this->ci->get(LoggerInterface::class);
         // Dump configuration warnings in the log
         foreach($this->config[ApmConfigParameter::WARNINGS] as $warning) {
             $this->logger->debug($warning);
         }
-
-        // Set timezone
-        date_default_timezone_set($this->config['defaultTimeZone']);
 
         // Create table names
         $this->tableNames = $this->createTableNames($this->config['dbTablePrefix']);

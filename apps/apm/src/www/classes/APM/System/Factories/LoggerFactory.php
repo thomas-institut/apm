@@ -3,12 +3,15 @@
 namespace APM\System\Factories;
 
 use APM\System\Config\ApmSystemConfig;
+use Exception;
 use Monolog\Handler\ErrorLogHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
 use Monolog\Processor\WebProcessor;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
 class LoggerFactory
 {
@@ -32,7 +35,7 @@ class LoggerFactory
         try {
             $logStream = new StreamHandler($config->log->fileName,
                 $loggerLevel);
-        } catch (\Exception) { // @codeCoverageIgnore
+        } catch (Exception) { // @codeCoverageIgnore
             return $logger;  // @codeCoverageIgnore
         }
         $logger->pushHandler($logStream);
@@ -48,12 +51,26 @@ class LoggerFactory
         return $logger;
     }
 
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     */
     public static function createForCli(ContainerInterface $ci): Logger
     {
 
         $config = $ci->get(ApmSystemConfig::class);
+        $loggerLevel = Level::Info;
+        if ($config->log->includeDebugInfo) {
+            $loggerLevel = Level::Debug;
+        }
         $logger = new Logger($config->log->appName . '.CLI');
-
+        try {
+            $logStream = new StreamHandler($config->log->fileName,
+                $loggerLevel);
+        } catch (Exception) { // @codeCoverageIgnore
+            return $logger;  // @codeCoverageIgnore
+        }
+        $logger->pushHandler($logStream);
 
         $processUser = $ci->get('processUserInfoArray');
         $cmd = $ci->get('cmd');

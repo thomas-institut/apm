@@ -86,6 +86,9 @@ $app = new App(new ResponseFactory(), $container);
 
 $systemConfig = $container->get(ApmSystemConfig::class);
 
+// Set timezone
+date_default_timezone_set($systemConfig->general->defaultTimeZone);
+
 // setup app's basePath if necessary
 $subDir = $systemConfig->general->subDir;
 

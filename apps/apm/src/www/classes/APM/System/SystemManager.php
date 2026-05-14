@@ -39,6 +39,7 @@ use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use Monolog\Logger;
+use Psr\Container\ContainerInterface;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
@@ -77,10 +78,13 @@ abstract class SystemManager implements ErrorReporter {
     /** @var array */
     protected array $config;
 
+    protected ContainerInterface $ci;
 
-    public function __construct(array $config) {
+
+    public function __construct(ContainerInterface $ci) {
         $this->resetError();
-        $this->config = $config;
+        $this->ci = $ci;
+        $this->config = $ci->get(ApmContainerKey::CONFIG_ARRAY);
     }
     
     public function fatalErrorOccurred() : bool {

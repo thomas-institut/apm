@@ -20,11 +20,24 @@
 
 namespace APM\CommandLine;
 
+use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
+use APM\System\Config\ApmSystemConfig;
+use APM\System\Factories\LoggerFactory;
+use APM\System\Factories\SystemConfigFactory;
+use APM\System\Factories\TwigFactory;
+use APM\System\SystemManager;
+use DI\ContainerBuilder;
+use Exception;
 use JetBrains\PhpStorm\NoReturn;
 use PDO;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
+use Slim\Views\Twig;
+use function DI\autowire;
+use function DI\factory;
 
 /**
  * Description of CommandLineUtility
@@ -37,19 +50,30 @@ abstract class CommandLineUtility {
     protected array $config;
 
 
-    private ?ApmSystemManager $systemManager;
+//    private ?ApmSystemManager $systemManager;
     protected array $processUserInfoArray;
 
     protected int $argc;
     protected array $argv;
     protected int $pid;
 
+    protected ContainerInterface $container;
 
+
+    /**
+     * @param array $config
+     * @param int $argc
+     * @param array $argv
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws Exception
+     */
     public function __construct(array $config, int $argc, array $argv) {
-
         $this->config = $config;
-        $this->processUserInfoArray = posix_getpwuid(posix_geteuid());
-        $this->pid = posix_getpid();
+        $this->buildContainer();
+
+        $this->processUserInfoArray = $this->container->get('processUserInfoArray');
+        $this->pid = $this->container->get('pid');
         $this->argc = $argc;
         $this->argv = $argv;
 
@@ -60,31 +84,51 @@ abstract class CommandLineUtility {
             $this->printErrorMsg("Sorry, you don't have permission to run this command\n");
             exit(1);
         }
-        $this->systemManager = null;
-        $this->logger = new NullLogger();
+//        $this->systemManager = null;
+        $this->logger = $this->container->get(LoggerInterface::class);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function buildContainer() : void{
+        $builder = new ContainerBuilder();
+        $builder->addDefinitions([
+            ApmContainerKey::CONFIG_ARRAY => $this->config,
+            ApmSystemConfig::class => factory([SystemConfigFactory::class, 'create']),
+            LoggerInterface::class => factory([LoggerFactory::class, 'createForCli']),
+            Twig::class => factory([TwigFactory::class, 'create']),
+            SystemManager::class => autowire(ApmSystemManager::class),
+            'processUserInfoArray' => posix_getpwuid(posix_geteuid()),
+            'cmd' => $this->argv[0] ?? 'cmd_not_in_argv',
+            'pid' => posix_getpid(),
+        ]);
+        $this->container = $builder->build();
     }
 
     public function getSystemManager() : ApmSystemManager {
 
-        if ($this->systemManager === null) {
-            $systemManager = new ApmSystemManager($this->config);
-            $this->systemManager = $systemManager;
-            if ($systemManager->fatalErrorOccurred()) {
-                $this->printErrorMsg($systemManager->getErrorMessage());
-                exit(1);
-            }
-            $this->logger = $systemManager->getLogger()->withName('CMD');
-            $processUser = $this->processUserInfoArray;
-            $cmd = $this->argv[0] ?? 'cmd_not_in_argv';
-            $this->logger->pushProcessor(
-                function ($record) use($processUser, $cmd) {
-                    $record['extra']['unixUser'] = $processUser['name'];
-                    $record['extra']['pid'] = $this->pid;
-                    $record['extra']['cmd'] = $cmd;
-                    return $record;
-                });
-        }
-        return $this->systemManager;
+        return $this->container->get(SystemManager::class);
+
+//        if ($this->systemManager === null) {
+//            $systemManager = new ApmSystemManager($this->config);
+//            $this->systemManager = $systemManager;
+//            if ($systemManager->fatalErrorOccurred()) {
+//                $this->printErrorMsg($systemManager->getErrorMessage());
+//                exit(1);
+//            }
+//            $this->logger = $systemManager->getLogger()->withName('CMD');
+//            $processUser = $this->processUserInfoArray;
+//            $cmd = $this->argv[0] ?? 'cmd_not_in_argv';
+//            $this->logger->pushProcessor(
+//                function ($record) use($processUser, $cmd) {
+//                    $record['extra']['unixUser'] = $processUser['name'];
+//                    $record['extra']['pid'] = $this->pid;
+//                    $record['extra']['cmd'] = $cmd;
+//                    return $record;
+//                });
+//        }
+//        return $this->systemManager;
     }
 
     protected function getDbConn() : PDO {

@@ -25,11 +25,12 @@ use APM\Site\SitePeople;
 use APM\Site\SiteReact;
 use APM\Site\SiteSettings;
 use APM\System\ApmContainerKey;
+use APM\System\ApmSystemManager;
 use APM\System\Auth\Authenticator;
 use APM\System\Config\ApmSystemConfig;
-use APM\System\Factories\ApmSystemManagerFactory;
 use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\SystemConfigFactory;
+use APM\System\Factories\TwigFactory;
 use APM\System\SystemManager;
 use APM\SystemConfigArray;
 use JetBrains\PhpStorm\NoReturn;
@@ -39,10 +40,13 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Server\RequestHandlerInterface;
 use Psr\Log\LoggerInterface;
 use Slim\App;
+use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
+use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
 use ThomasInstitut\Profiler\SystemProfiler;
+use function DI\autowire;
 use function DI\factory;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -56,15 +60,16 @@ if (!is_array($config)) {
     exitWithErrorMessage($config);
 }
 
-$builder  = new DI\ContainerBuilder();
-
-
+$builder = new DI\ContainerBuilder();
 
 $builder->addDefinitions([
     ApmContainerKey::CONFIG_ARRAY => $config,
-    ApmSystemConfig::class => factory([ SystemConfigFactory::class, 'create' ]),
-    LoggerInterface::class => factory([ LoggerFactory::class, 'create']),
-    SystemManager::class => factory([ ApmSystemManagerFactory::class, 'create' ]),
+    ApmContainerKey::SITE_USER_ID => -1, // set by authenticator
+    ApmContainerKey::API_USER_ID => -1, // set by authenticator
+    ApmSystemConfig::class => factory([SystemConfigFactory::class, 'create']),
+    LoggerInterface::class => factory([LoggerFactory::class, 'create']),
+    Twig::class => factory([TwigFactory::class, 'create']),
+    SystemManager::class => autowire(ApmSystemManager::class),
 ]);
 
 try {
@@ -73,8 +78,8 @@ try {
     exitWithErrorMessage("Can't build container: " . $e->getMessage());
 }
 
-$container->set(ApmContainerKey::SITE_USER_ID, -1); // set by authenticator
-$container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
+//$container->set(ApmContainerKey::SITE_USER_ID, -1); // set by authenticator
+//$container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
 
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
@@ -91,10 +96,11 @@ if ($subDir !== '') {
 $app->addErrorMiddleware(true, true, true);
 $router = $app->getRouteCollector()->getRouteParser();
 
-$systemManager = $container->get(SystemManager::class);
-$systemManager->setRouter($router);
+$container->set(RouteParserInterface::class, $router);
+//$systemManager = $container->get(SystemManager::class);
+//$systemManager->setRouter($router);
 
-$app->add(new TwigMiddleware($systemManager->getTwig(), $router, $app->getBasePath()));
+$app->add(new TwigMiddleware($container->get(Twig::class), $router, $app->getBasePath()));
 
 
 // Create routes
@@ -1772,7 +1778,7 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group): void
      *    PHP Output Schema: TBD
      *    ApiClient Method: TBD
      */
-    $group->post('/typeset/toPdf', [ ApiTypesetPdf::class, 'toPdf']);
+    $group->post('/typeset/toPdf', [ApiTypesetPdf::class, 'toPdf']);
 }
 
 function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container): void

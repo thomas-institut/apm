@@ -48,6 +48,7 @@ services:
       dockerfile: dev-php.Dockerfile
     volumes:
       - ${REPO_ROOT}/${APM_SRC}:/opt/apm
+      - ${REPO_ROOT}/${SHARED_PHP_SRC}:/opt/shared-php
       - ${REPO_ROOT}/${DEV_TMP}/apm:/var/apm
     depends_on:
       - mysql

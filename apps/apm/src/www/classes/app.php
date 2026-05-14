@@ -43,7 +43,6 @@ use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\TwigMiddleware;
 use ThomasInstitut\Profiler\SystemProfiler;
-use Twig\Error\LoaderError;
 use function DI\factory;
 
 require_once __DIR__ . '/../vendor/autoload.php';
@@ -80,8 +79,10 @@ $container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
 
+$systemConfig = $container->get(ApmSystemConfig::class);
+
 // setup app's basePath if necessary
-$subDir = $config['subDir'];
+$subDir = $systemConfig->general->subDir;
 
 if ($subDir !== '') {
     $app->setBasePath("/$subDir");
@@ -93,12 +94,7 @@ $router = $app->getRouteCollector()->getRouteParser();
 $systemManager = $container->get(SystemManager::class);
 $systemManager->setRouter($router);
 
-try {
-    $app->add(new TwigMiddleware($systemManager->getTwig(), $router, $app->getBasePath()));
-} catch (LoaderError $e) {
-    $systemManager->getLogger()->error("Loader error exception, aborting", ['msg' => $e->getMessage()]);
-    exitWithErrorMessage("Could not set up application, please report to administrators");
-}
+$app->add(new TwigMiddleware($systemManager->getTwig(), $router, $app->getBasePath()));
 
 
 // Create routes
@@ -107,8 +103,6 @@ createApiUnauthenticatedRoutes($app, $container);
 createSiteUnauthenticatedRoutes($app, $container);
 createSiteRoutes($app, $container); // must be the last
 
-
-// RUN!!
 SystemProfiler::lap('Ready');
 return $app;
 

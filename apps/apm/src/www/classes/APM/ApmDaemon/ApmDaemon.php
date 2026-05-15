@@ -90,7 +90,7 @@ class ApmDaemon extends CommandLineUtility
 
     private function scheduleCacheRebuildJobs(): void
     {
-        $jobManager = $this->getSystemManager()->getJobManager();
+        $jobManager = $this->getSystemManager()->getJobQueueManager();
         $cache = $this->getSystemManager()->getSystemDataCache();
 
         $tasks = [
@@ -130,7 +130,7 @@ class ApmDaemon extends CommandLineUtility
             return;
         }
 
-        $jobManager = $this->getSystemManager()->getJobManager();
+        $jobManager = $this->getSystemManager()->getJobQueueManager();
         if ($jobManager instanceof ValkeyJobQueueManager) {
             $this->logger->info("Running Job Queue Recovery check");
             $recovered = $jobManager->runRecovery(self::JOB_TIMEOUT);

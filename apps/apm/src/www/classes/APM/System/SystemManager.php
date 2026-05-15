@@ -162,7 +162,7 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getRouter() : RouteParserInterface;
     abstract public function getNormalizerManager() : NormalizerManager;
     abstract public function getEditionSourceManager(): EditionSourceManager;
-    abstract public function getJobManager() : JobQueueManagerInterface;
+    abstract public function getJobQueueManager() : JobQueueManagerInterface;
     abstract public function getUserManager() : UserManagerInterface;
     abstract public function getPersonManager() : PersonManagerInterface;
     abstract public function getWorkManager() : WorkManager;

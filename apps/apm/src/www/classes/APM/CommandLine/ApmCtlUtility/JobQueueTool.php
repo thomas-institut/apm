@@ -150,7 +150,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
     private function rescheduleJob(string $jobId): bool
     {
-        $result = $this->getSystemManager()->getJobManager()->rescheduleJob($jobId);
+        $result = $this->getSystemManager()->getJobQueueManager()->rescheduleJob($jobId);
         if ($result === '') {
             $this->printErrorMsg("Job $jobId does not exist");
             return false;
@@ -176,7 +176,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         }
 
         foreach ($statesToList as $state) {
-            $jobs = $this->getSystemManager()->getJobManager()->getJobsByState($state);
+            $jobs = $this->getSystemManager()->getJobQueueManager()->getJobsByState($state);
             $countJobs = count($jobs);
             printf("%s, %d job(s)", $state, $countJobs);
             if ($countJobs === 0) {
@@ -199,7 +199,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
     private function info(): void
     {
-        $jm = $this->getSystemManager()->getJobManager();
+        $jm = $this->getSystemManager()->getJobQueueManager();
 
         $counts = $jm->getJobCountsByState();
 
@@ -229,7 +229,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
      */
     private function stats(): void
     {
-        $jm = $this->getSystemManager()->getJobManager();
+        $jm = $this->getSystemManager()->getJobQueueManager();
         $jobStats = $jm->getJobStats();
 
         if ($jobStats->isEmpty()) {
@@ -258,7 +258,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
      */
     private function resetStats(): void
     {
-        $this->getSystemManager()->getJobManager()->resetJobStats();
+        $this->getSystemManager()->getJobQueueManager()->resetJobStats();
         print "Job statistics reset successfully.\n";
     }
 
@@ -267,7 +267,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
      */
     private function test(): void
     {
-        $jm = $this->getSystemManager()->getJobManager();
+        $jm = $this->getSystemManager()->getJobQueueManager();
 
         $testId = random_int(1000, 9999);
 
@@ -278,12 +278,12 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
     private function process(): void
     {
-        $this->getSystemManager()->getJobManager()->process();
+        $this->getSystemManager()->getJobQueueManager()->process();
     }
 
     private function clean(): void
     {
-        $this->getSystemManager()->getJobManager()->cleanQueue();
+        $this->getSystemManager()->getJobQueueManager()->cleanQueue();
     }
 
     public function getCommand(): string

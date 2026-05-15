@@ -142,18 +142,10 @@ class ApmSystemManager extends SystemManager {
     
     const array REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
 
-//    private array $serverLoggerFields = [
-//        'method' => 'REQUEST_METHOD',
-//        'url'         => 'REQUEST_URI',
-//        'ip'          => 'REMOTE_ADDR',
-//        'referrer'    => 'HTTP_REFERER',
-//    ];
-//
     /** @var string[] */
     private array $tableNames;
     private array $imageSources;
     private LoggerInterface $logger;
-//    private RouteParserInterface $router;
 
     //
     // Components
@@ -166,7 +158,6 @@ class ApmSystemManager extends SystemManager {
     private ?ApmTranscriptionManager $transcriptionManager = null;
     private ?ApmCollationTableManager $collationTableManager = null;
     private ?ApmMultiChunkEditionManager $multiChunkEditionManager = null;
-//    private ?Twig $twig = null;
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?ApmUserManager $userManager = null;
     private ?PersonManagerInterface $personManager = null;
@@ -709,7 +700,7 @@ class ApmSystemManager extends SystemManager {
     {
         parent::onTranscriptionUpdated($userTid, $docId, $pageNumber, $columnNumber);
 
-        $jobManager = $this->getJobManager();
+        $jobManager = $this->getJobQueueManager();
 
         $siteWorkUpdateCacheJobPayload = [
             'type' => 'transcription',
@@ -731,14 +722,14 @@ class ApmSystemManager extends SystemManager {
 
     public function onUpdatePageSettings(int $userTid, int $pageId) : void {
         parent::onUpdatePageSettings($userTid, $pageId);
-        $this->getJobManager()->scheduleJob(ApiUsersUpdateTranscribedPagesData::class,
+        $this->getJobQueueManager()->scheduleJob(ApiUsersUpdateTranscribedPagesData::class,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
     }
 
     public function onCollationTableSaved(int $userTid, int $ctId): void
     {
         parent::onCollationTableSaved($userTid, $ctId);
-        $jobManager = $this->getJobManager();
+        $jobManager = $this->getJobQueueManager();
         $jobManager->scheduleJob(ApiUsersUpdateCtDataForUser::class,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
         $jobManager->scheduleJob(ApiSearchUpdateEditionsIndex::class,
@@ -750,7 +741,7 @@ class ApmSystemManager extends SystemManager {
     public function onDocumentDeleted(int $userTid, int $docId): void
     {
         parent::onDocumentDeleted($userTid, $docId);
-        $this->getJobManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
             '', [ $docId],0, 3, 20);
 
     }
@@ -783,20 +774,20 @@ class ApmSystemManager extends SystemManager {
         parent::onPersonDataChanged($personTid);
         $part = ApiPeople::onPersonDataChanged($personTid, $this->getEntitySystem(), $this->getSystemDataCache(), $this->logger);
         $this->logger->debug("Invalidated ApiPeople data cache, part $part");
-        $this->getJobManager()->scheduleJob(UpdateAllPeopleDataCache::class, '', [], 0, 3, 20);
+        $this->getJobQueueManager()->scheduleJob(UpdateAllPeopleDataCache::class, '', [], 0, 3, 20);
     }
 
     public function onDocumentUpdated(int $userTid, int $docId): void
     {
         parent::onDocumentUpdated($userTid, $docId);
-        $this->getJobManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
             '', [$docId],0, 3, 20);
     }
 
     public function onDocumentAdded(int $userTid, int $docId): void
     {
         parent::onDocumentAdded($userTid, $docId);
-        $this->getJobManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
             '', [ $docId],0, 3, 20);
     }
 
@@ -867,7 +858,7 @@ class ApmSystemManager extends SystemManager {
         return $this->workManager;
     }
 
-    public function getJobManager(): JobQueueManagerInterface
+    public function getJobQueueManager(): JobQueueManagerInterface
     {
         $logger = $this->logger;
         if ($logger instanceof Logger) {

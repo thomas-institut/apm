@@ -84,7 +84,6 @@ abstract class CommandLineUtility {
             $this->printErrorMsg("Sorry, you don't have permission to run this command\n");
             exit(1);
         }
-//        $this->systemManager = null;
         $this->logger = $this->container->get(LoggerInterface::class);
     }
 
@@ -100,35 +99,19 @@ abstract class CommandLineUtility {
             Twig::class => factory([TwigFactory::class, 'create']),
             SystemManager::class => autowire(ApmSystemManager::class),
             'processUserInfoArray' => posix_getpwuid(posix_geteuid()),
-            'cmd' => $this->argv[0] ?? 'cmd_not_in_argv',
+            'cmd' => $this->argv[0] ?? '',
             'pid' => posix_getpid(),
         ]);
         $this->container = $builder->build();
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getSystemManager() : ApmSystemManager {
 
         return $this->container->get(SystemManager::class);
-
-//        if ($this->systemManager === null) {
-//            $systemManager = new ApmSystemManager($this->config);
-//            $this->systemManager = $systemManager;
-//            if ($systemManager->fatalErrorOccurred()) {
-//                $this->printErrorMsg($systemManager->getErrorMessage());
-//                exit(1);
-//            }
-//            $this->logger = $systemManager->getLogger()->withName('CMD');
-//            $processUser = $this->processUserInfoArray;
-//            $cmd = $this->argv[0] ?? 'cmd_not_in_argv';
-//            $this->logger->pushProcessor(
-//                function ($record) use($processUser, $cmd) {
-//                    $record['extra']['unixUser'] = $processUser['name'];
-//                    $record['extra']['pid'] = $this->pid;
-//                    $record['extra']['cmd'] = $cmd;
-//                    return $record;
-//                });
-//        }
-//        return $this->systemManager;
     }
 
     protected function getDbConn() : PDO {

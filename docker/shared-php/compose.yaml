@@ -1,6 +1,14 @@
+name: shared-php
+
 services:
   shared-php:
+    container_name: shared-php-php
     build: .
     image: shared-php
     volumes:
       - ../../apps/shared-php:/app
+
+  valkey:
+    container_name: shared-php-valkey
+    image: valkey/valkey:8.1-alpine
+    command: valkey-server --save 60 1 --loglevel warning

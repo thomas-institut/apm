@@ -12,6 +12,7 @@ use ReflectionClass;
 
 class ApmDaemonTest extends TestCase
 {
+    private array $configMock = [ 'version' =>  [ 'version' => '1.0.0', 'versionDate' => '2023-01-01', 'jsAppCacheDataId' => '1234567890'], 'log' => ['inStdErr' => false]];
     public function testRunJobQueueRecoveryCallsManager(): void
     {
         $jobManager = $this->createMock(ValkeyJobQueueManager::class);
@@ -24,7 +25,8 @@ class ApmDaemonTest extends TestCase
         $systemManager->method('getJobManager')->willReturn($jobManager);
         $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
 
-        $config = ['authorizedCommandLineUsers' => [posix_getpwuid(posix_geteuid())['name']]];
+        $config = $this->configMock;
+        $config['authorizedCommandLineUsers']  = [posix_getpwuid(posix_geteuid())['name']];
         
         $daemon = $this->getMockBuilder(ApmDaemon::class)
             ->setConstructorArgs([$config, 0, []])
@@ -50,7 +52,8 @@ class ApmDaemonTest extends TestCase
         $systemManager->method('getJobManager')->willReturn($jobManager);
         $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
 
-        $config = ['authorizedCommandLineUsers' => [posix_getpwuid(posix_geteuid())['name']]];
+        $config = $this->configMock;
+        $config['authorizedCommandLineUsers']  = [posix_getpwuid(posix_geteuid())['name']];
 
         $daemon = $this->getMockBuilder(ApmDaemon::class)
             ->setConstructorArgs([$config, 0, []])

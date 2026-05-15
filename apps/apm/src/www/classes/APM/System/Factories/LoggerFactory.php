@@ -32,13 +32,15 @@ class LoggerFactory
 
         $logger = new Logger($config->log->appName);
 
-        try {
-            $logStream = new StreamHandler($config->log->fileName,
-                $loggerLevel);
-        } catch (Exception) { // @codeCoverageIgnore
-            return $logger;  // @codeCoverageIgnore
+        if ($config->log->fileName !== '') {
+            try {
+                $logStream = new StreamHandler($config->log->fileName,
+                    $loggerLevel);
+            } catch (Exception) { // @codeCoverageIgnore
+                return $logger;  // @codeCoverageIgnore
+            }
+            $logger->pushHandler($logStream);
         }
-        $logger->pushHandler($logStream);
 
         if ($config->log->inPhpErrorHandler) {
             // Cannot set this in testing, so, let's ignore it
@@ -57,23 +59,26 @@ class LoggerFactory
      */
     public static function createForCli(ContainerInterface $ci): Logger
     {
-
         $config = $ci->get(ApmSystemConfig::class);
         $loggerLevel = Level::Info;
         if ($config->log->includeDebugInfo) {
             $loggerLevel = Level::Debug;
         }
         $logger = new Logger($config->log->appName . '.CLI');
-        try {
-            $logStream = new StreamHandler($config->log->fileName,
-                $loggerLevel);
-        } catch (Exception) { // @codeCoverageIgnore
-            return $logger;  // @codeCoverageIgnore
+        if ($config->log->fileName !== '') {
+            try {
+                $logStream = new StreamHandler($config->log->fileName,
+                    $loggerLevel);
+            } catch (Exception) { // @codeCoverageIgnore
+                return $logger;  // @codeCoverageIgnore
+            }
+            $logger->pushHandler($logStream);
         }
-        $logger->pushHandler($logStream);
 
-        $stdErrLog = new ErrorLogHandler(); // @codeCoverageIgnore
-        $logger->pushHandler($stdErrLog); // @codeCoverageIgnore
+        if ($config->log->inStdErr) {
+            $stdErrLog = new ErrorLogHandler();
+            $logger->pushHandler($stdErrLog);
+        }
 
         $processUser = $ci->get('processUserInfoArray');
         $cmd = $ci->get('cmd');

@@ -53,7 +53,7 @@ class ValkeyWorkerTest extends TestCase
     public function testFetchJob(): void
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
         $this->jm->scheduleJob('TestJob', 'Desc', ['foo' => 'bar']);
 
         $workerId = 'test-worker';
@@ -83,7 +83,7 @@ class ValkeyWorkerTest extends TestCase
     public function testFailJobWithRetry(): void
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
         $sig = $this->jm->scheduleJob('TestJob', 'Desc', [], 0, 3);
 
         // Mock it being in processing (fetchJob usually does this)
@@ -108,7 +108,7 @@ class ValkeyWorkerTest extends TestCase
     public function testFailJobToDeadLetter(): void
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
         $sig = $this->jm->scheduleJob('TestJob', 'Desc', [], 0, 1);
 
         $this->jm->failJob($sig, "Fatal error", true);
@@ -133,7 +133,7 @@ class ValkeyWorkerTest extends TestCase
             public function minTimeBetweenSchedules(): int { return 0; }
         };
 
-        $this->jm->registerJob('UniqueJob', $handler);
+        $this->jm->registerJobHandler('UniqueJob', $handler);
         // Use -1 to ensure it's ready even if microtime precision is weird
         $this->jm->scheduleJob('UniqueJob', 'Desc', ['id' => 123], -1);
 

@@ -5,6 +5,7 @@ namespace ThomasInstitut\JobQueue;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
+use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
 
 class ValkeyJobQueueManagerTest extends TestCase
@@ -36,25 +37,74 @@ class ValkeyJobQueueManagerTest extends TestCase
     protected function tearDown(): void
     {
         if (isset($this->valkey)) {
-            $keys = $this->valkey->keys($this->prefix . '*');
-            if (!empty($keys)) {
-                $this->valkey->del($keys);
+            try {
+                $keys = $this->valkey->keys($this->prefix . '*');
+                if (!empty($keys)) {
+                    $this->valkey->del($keys);
+                }
+            } catch (Exception $e) {
+                // Ignore errors during teardown if valkey is not available
             }
         }
     }
 
-    public function testRegisterJob()
+    public function testR1RegisterJobHandler()
     {
+        $valkey = $this->createStub(Client::class);
+        $jm = new ValkeyJobQueueManager($valkey, new NullLogger(), $this->prefix);
+
         $handler = $this->createStub(JobHandlerInterface::class);
-        $result = $this->jm->registerJob('', $handler);
+        $result = $jm->registerJobHandler('', $handler);
         $this->assertFalse($result);
-        $this->assertNull($this->jm->getJobHandler('anything'));
+        $this->assertNull($jm->getJobHandler('anything'));
+
+        $jm->registerJobHandler('TestJob', $handler);
+        $this->assertSame($handler, $jm->getJobHandler('TestJob'));
+    }
+
+    public function testR2ContainerIntegration()
+    {
+        $valkey = $this->createStub(Client::class);
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $container = $this->createMock(ContainerInterface::class);
+
+        $container->expects($this->atLeast(1))
+            ->method('has')
+            ->willReturnMap([
+                ['LazyJob', true],
+                ['InvalidJob', true],
+            ]);
+
+        $container->expects($this->atLeast(1))
+            ->method('get')
+            ->willReturnMap([
+                ['LazyJob', $handler],
+                ['InvalidJob', new \stdClass()],
+            ]);
+
+        $jm = new ValkeyJobQueueManager($valkey, new NullLogger(), $this->prefix, $container);
+
+        // Register as lazy
+        $jm->registerJobHandler('LazyJob', null);
+        $jm->registerJobHandler('InvalidJob', null);
+
+
+        // First call should fetch from container
+        $retrievedHandler = $jm->getJobHandler('LazyJob');
+        $this->assertSame($handler, $retrievedHandler);
+
+        // Second call should use cached version (container->get should not be called again)
+        $retrievedHandler2 = $jm->getJobHandler('LazyJob');
+        $this->assertSame($handler, $retrievedHandler2);
+
+        // Test invalid job handler from container
+        $this->assertNull($jm->getJobHandler('InvalidJob'));
     }
 
     public function testT1BasicScheduling()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $payload = ['foo' => 'bar'];
         $sig = $this->jm->scheduleJob('NonRegisteredTestJob', 'Description', $payload);
@@ -80,7 +130,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testT2Coalescing()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $payload = ['id' => 1];
         $sig1 = $this->jm->scheduleJob('TestJob', 'Coalesce', $payload, 10);
@@ -102,7 +152,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testT4SignatureStability()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $sig1 = $this->jm->scheduleJob('TestJob', 'Desc', ['id' => 1]);
         $sig2 = $this->jm->scheduleJob('TestJob', 'Desc', ['id' => 1]);
@@ -117,7 +167,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testRescheduleJob()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $sig = $this->jm->scheduleJob('TestJob', 'Desc', ['id' => 1], 100);
         $score1 = floatval($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig));
@@ -152,7 +202,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testGetJobCountsAndState()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $sig1 = $this->jm->scheduleJob('TestJob', 'J1', ['id' => 1]);
         $sig2 = $this->jm->scheduleJob('TestJob', 'J2', ['id' => 2]);
@@ -179,7 +229,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testGetJobsByState()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $payload1 = ['id' => 1];
         $payload2 = ['id' => 2];
@@ -237,7 +287,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testIsJobActive()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $name = 'TestJob';
         $desc = 'Description';
@@ -263,7 +313,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testFetchJob()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $payload = ['id' => 'fetch-me'];
         $sig = $this->jm->scheduleJob('TestJob', 'Desc', $payload);
@@ -304,7 +354,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testJobStats()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $sig1 = $this->jm->scheduleJob('TestJob', 'J1', ['id' => 1]);
         $sig2 = $this->jm->scheduleJob('TestJob', 'J2', ['id' => 2]);
@@ -337,7 +387,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testFailJob()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $payload = ['id' => 'fail-me'];
         $sig = $this->jm->scheduleJob('TestJob', 'Desc', $payload, 0, 3, 10);
@@ -388,7 +438,7 @@ class ValkeyJobQueueManagerTest extends TestCase
     public function testRunRecovery()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
 
         $now = microtime(true);
 

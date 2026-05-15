@@ -13,10 +13,10 @@ abstract class JobQueueManager
     /**
      * Registers a job of the given name with the given JobHandlerInterface
      * @param string $name
-     * @param JobHandlerInterface $job
+     * @param JobHandlerInterface|null $job
      * @return bool
      */
-    abstract public function registerJob(string $name, JobHandlerInterface $job): bool;
+    abstract public function registerJobHandler(string $name, ?JobHandlerInterface $job): bool;
 
     /**
      * Schedules a new job

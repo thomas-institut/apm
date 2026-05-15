@@ -5,12 +5,12 @@ namespace APM\Jobs;
 use APM\Site\SiteWorks;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
-use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TxText\ChunkMark;
 use APM\ToolBox\ArrayComp;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
 
 class SiteWorksUpdateDataCache implements JobHandlerInterface
 {

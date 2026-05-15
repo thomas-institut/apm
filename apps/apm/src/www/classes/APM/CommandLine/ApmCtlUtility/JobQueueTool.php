@@ -4,7 +4,7 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\CommandLine\CommandLineUtility;
 use APM\Jobs\ApmJobName;
-use APM\System\Job\ScheduledJobState;
+use ThomasInstitut\JobQueue\ScheduledJobState;
 
 
 class JobQueueTool extends CommandLineUtility implements AdminUtility

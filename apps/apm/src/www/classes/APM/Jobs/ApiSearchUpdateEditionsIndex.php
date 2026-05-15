@@ -3,8 +3,8 @@
 namespace APM\Jobs;
 
 use APM\CommandLine\IndexManager;
-use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
 use Throwable;
 
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface

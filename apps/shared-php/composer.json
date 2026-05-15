@@ -22,7 +22,8 @@
     "php-di/php-di": "^7.1",
     "slim/psr7": "^1.8",
     "ext-pdo": "*",
-    "ext-posix": "*"
+    "ext-posix": "*",
+    "ext-pcntl": "*"
   },
   "require-dev": {
     "phpunit/phpunit": "^12.5"

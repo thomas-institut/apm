@@ -6,10 +6,10 @@ use APM\CommandLine\IndexManager;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
-use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 use Http\Client\Exception;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
 use Typesense\Exceptions\TypesenseClientError;
 
 class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface

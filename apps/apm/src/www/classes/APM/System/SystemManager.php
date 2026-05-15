@@ -29,7 +29,6 @@ use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Document\DocumentManager;
-use APM\System\Job\JobQueueManager;
 use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
@@ -46,6 +45,7 @@ use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
+use ThomasInstitut\JobQueue\JobQueueManager;
 use Typesense\Client;
 
 /**

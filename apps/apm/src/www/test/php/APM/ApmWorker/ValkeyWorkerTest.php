@@ -4,8 +4,6 @@ namespace APM\Test\ApmWorker;
 
 use APM\ApmWorker\ValkeyWorker;
 use APM\System\ApmSystemManager;
-use APM\System\Job\JobHandlerInterface;
-use APM\System\Job\ValkeyJobQueueManager;
 use APM\System\SystemManager;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
@@ -13,6 +11,8 @@ use PDOException;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\NullLogger;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ValkeyWorkerTest extends TestCase
 {

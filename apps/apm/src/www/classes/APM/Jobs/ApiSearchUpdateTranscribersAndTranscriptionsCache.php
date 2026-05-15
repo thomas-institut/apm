@@ -3,8 +3,8 @@
 namespace APM\Jobs;
 
 use APM\Api\ApiSearch;
-use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
 
 class ApiSearchUpdateTranscribersAndTranscriptionsCache implements JobHandlerInterface
 

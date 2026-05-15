@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\System\Job;
+namespace ThomasInstitut\JobQueue;
 
 use Predis\Client;
 use Predis\Transaction\MultiExec;

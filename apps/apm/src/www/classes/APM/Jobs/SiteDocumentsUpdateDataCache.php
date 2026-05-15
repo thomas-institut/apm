@@ -3,8 +3,8 @@
 namespace APM\Jobs;
 
 use APM\Site\SiteDocuments;
-use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
 
 class SiteDocumentsUpdateDataCache implements JobHandlerInterface
 {

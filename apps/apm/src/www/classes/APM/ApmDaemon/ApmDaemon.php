@@ -7,9 +7,9 @@ use APM\Jobs\ApmJobName;
 use APM\Site\SiteDocuments;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
-use APM\System\Job\ValkeyJobQueueManager;
 use Monolog\Logger;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
 class ApmDaemon extends CommandLineUtility

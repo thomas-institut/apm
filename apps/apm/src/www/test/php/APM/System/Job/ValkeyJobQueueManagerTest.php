@@ -2,13 +2,13 @@
 
 namespace APM\Test\System\Job;
 
-use APM\System\Job\JobHandlerInterface;
-use APM\System\Job\ScheduledJobState;
-use APM\System\Job\ValkeyJobQueueManager;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\NullLogger;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
+use ThomasInstitut\JobQueue\ScheduledJobState;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ValkeyJobQueueManagerTest extends TestCase
 {

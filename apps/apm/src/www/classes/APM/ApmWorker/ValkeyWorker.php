@@ -3,9 +3,9 @@
 namespace APM\ApmWorker;
 
 use APM\System\ApmSystemManager;
-use APM\System\Job\ValkeyJobQueueManager;
 use Monolog\Logger;
 use PDOException;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
 /**

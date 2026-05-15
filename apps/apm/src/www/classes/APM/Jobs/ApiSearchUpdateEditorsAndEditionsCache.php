@@ -10,13 +10,14 @@ use Throwable;
 class ApiSearchUpdateEditorsAndEditionsCache implements JobHandlerInterface
 
 {
+    public function __construct(private SystemManager $sm) {}
 
-    public function run(SystemManager $sm, array $payload, string $jobName): bool
+    public function run(array $payload, string $jobName): bool
     {
         try {
-            return ApiSearch::updateDataCache($sm, 'editions',  $sm->getLogger());
+            return ApiSearch::updateDataCache($this->sm, 'editions',  $this->sm->getLogger());
         } catch (Throwable $e) {
-            $sm->getLogger()->error("Error updating editors and editions cache: " . $e->getMessage());
+            $this->sm->getLogger()->error("Error updating editors and editions cache: " . $e->getMessage());
             return false;
         }
     }

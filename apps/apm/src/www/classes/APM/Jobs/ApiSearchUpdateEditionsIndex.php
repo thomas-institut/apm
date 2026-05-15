@@ -9,10 +9,11 @@ use Throwable;
 
 class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
+    public function __construct(private SystemManager $sm) {}
 
-    public function run(SystemManager $sm, array $payload, string $jobName): bool
+    public function run(array $payload, string $jobName): bool
     {
-        $config = $sm->getConfig();
+        $config = $this->sm->getConfig();
 
         // Fetch data from payload
         $table_id = $payload[0];
@@ -24,7 +25,7 @@ class ApiSearchUpdateEditionsIndex extends ApiSearchUpdateTypesenseIndex impleme
             $im->updateOrAddItem($table_id);
             return true;
         } catch (Throwable $e) {
-            $sm->getLogger()->error("Error updating editions index for table $table_id: " . $e->getMessage());
+            $this->sm->getLogger()->error("Error updating editions index for table $table_id: " . $e->getMessage());
             return false;
         }
     }

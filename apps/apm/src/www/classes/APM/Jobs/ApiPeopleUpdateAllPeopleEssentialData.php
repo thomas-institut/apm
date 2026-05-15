@@ -8,10 +8,11 @@ use ThomasInstitut\JobQueue\JobHandlerInterface;
 
 class ApiPeopleUpdateAllPeopleEssentialData implements JobHandlerInterface
 {
+    public function __construct(private SystemManager $sm) {}
 
-    public function run(SystemManager $sm, array $payload, string $jobName): bool
+    public function run(array $payload, string $jobName): bool
     {
-        return ApiPeople::updateCachedAllPeopleDataForPeoplePage($sm);
+        return ApiPeople::updateCachedAllPeopleDataForPeoplePage($this->sm);
     }
 
     public function mustBeUnique(): bool

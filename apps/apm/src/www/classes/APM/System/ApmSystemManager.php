@@ -889,15 +889,15 @@ class ApmSystemManager extends SystemManager {
     private function registerSystemJobs() : void
     {
         $this->jobManager->registerJobHandler(ApmJobName::NULL_JOB, new NullJobHandler());
-        $this->jobManager->registerJobHandler(ApmJobName::SITE_WORKS_UPDATE_CACHE, new SiteWorksUpdateDataCache());
-        $this->jobManager->registerJobHandler(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache());
-        $this->jobManager->registerJobHandler(ApmJobName::API_PEOPLE_UPDATE_CACHE, new ApiPeopleUpdateAllPeopleEssentialData());
-        $this->jobManager->registerJobHandler(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
-        $this->jobManager->registerJobHandler(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
-        $this->jobManager->registerJobHandler(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTranscriptionsCache());
-        $this->jobManager->registerJobHandler(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX, new ApiSearchUpdateTranscriptionsIndex());
-        $this->jobManager->registerJobHandler(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE, new ApiSearchUpdateEditorsAndEditionsCache());
-        $this->jobManager->registerJobHandler(ApmJobName::API_SEARCH_UPDATE_EDITIONS_INDEX, new ApiSearchUpdateEditionsIndex());
+        $this->jobManager->registerJobHandler(ApmJobName::SITE_WORKS_UPDATE_CACHE, new SiteWorksUpdateDataCache($this));
+        $this->jobManager->registerJobHandler(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache($this));
+        $this->jobManager->registerJobHandler(ApmJobName::API_PEOPLE_UPDATE_CACHE, new ApiPeopleUpdateAllPeopleEssentialData($this));
+        $this->jobManager->registerJobHandler(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData($this));
+        $this->jobManager->registerJobHandler(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser($this));
+        $this->jobManager->registerJobHandler(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTranscriptionsCache($this));
+        $this->jobManager->registerJobHandler(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX, new ApiSearchUpdateTranscriptionsIndex($this));
+        $this->jobManager->registerJobHandler(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE, new ApiSearchUpdateEditorsAndEditionsCache($this));
+        $this->jobManager->registerJobHandler(ApmJobName::API_SEARCH_UPDATE_EDITIONS_INDEX, new ApiSearchUpdateEditionsIndex($this));
     }
 
     public function getEntitySystem(): ApmEntitySystemInterface

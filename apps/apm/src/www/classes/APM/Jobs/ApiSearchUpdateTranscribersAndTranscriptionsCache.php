@@ -9,12 +9,14 @@ use ThomasInstitut\JobQueue\JobHandlerInterface;
 class ApiSearchUpdateTranscribersAndTranscriptionsCache implements JobHandlerInterface
 
 {
+    public function __construct(private SystemManager $sm) {}
+
     /**
      * @throws \Throwable
      */
-    public function run(SystemManager $sm, array $payload, string $jobName): bool
+    public function run(array $payload, string $jobName): bool
     {
-        return ApiSearch::updateDataCache($sm, 'transcriptions', $sm->getLogger());
+        return ApiSearch::updateDataCache($this->sm, 'transcriptions', $this->sm->getLogger());
     }
 
     public function mustBeUnique(): bool

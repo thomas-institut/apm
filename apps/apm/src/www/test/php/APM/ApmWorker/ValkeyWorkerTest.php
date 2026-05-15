@@ -125,7 +125,7 @@ class ValkeyWorkerTest extends TestCase
     {
         $handler = new class implements JobHandlerInterface {
             public bool $called = false;
-            public function run(SystemManager $sm, array $payload, string $jobName): bool {
+            public function run(array $payload, string $jobName): bool {
                 $this->called = true;
                 return true;
             }

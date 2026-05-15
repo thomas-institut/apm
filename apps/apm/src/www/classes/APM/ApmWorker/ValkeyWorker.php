@@ -190,7 +190,7 @@ class ValkeyWorker
         $wasRetriedAfterMysqlGoneAway = false;
         while (true) {
             try {
-                $handler->run($this->systemManager, $data['payload'], $jobName);
+                $handler->run($data['payload'], $jobName);
                 $jobManager->finishJob($signature);
                 $this->logger->info("Job $jobName finished successfully", ['signature' => $signature]);
                 return;

@@ -14,8 +14,9 @@ use Typesense\Exceptions\TypesenseClientError;
 
 class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex implements JobHandlerInterface
 {
+    public function __construct(private SystemManager $sm) {}
+
     /**
-     * @param SystemManager $sm
      * @param array $payload
      * @return bool
      * @throws DocumentNotFoundException
@@ -23,16 +24,16 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex i
      * @throws Exception
      * @throws TypesenseClientError
      */
-    public function run(SystemManager $sm, array $payload, string $jobName): bool
+    public function run(array $payload, string $jobName): bool
     {
 
-        $config = $sm->getConfig();
+        $config = $this->sm->getConfig();
 
         // Fetch data from payload
         $docId = $payload['doc_id'];
         $page = $payload['page'];
         $col = $payload['col'];
-        $pageId = $sm->getDocumentManager()->getPageIdByDocPage($docId, $page);
+        $pageId = $this->sm->getDocumentManager()->getPageIdByDocPage($docId, $page);
 
         $im = new IndexManager($config, 0, []);
         $im->setIndexNamePrefix('transcriptions');
@@ -42,7 +43,7 @@ class ApiSearchUpdateTranscriptionsIndex extends ApiSearchUpdateTypesenseIndex i
             $im->updateOrAddItem($pageId, $col);
             return true;
         } catch (EntityDoesNotExistException|DocumentNotFoundException|PageNotFoundException|InvalidTimeStringException $e) {
-            $sm->getLogger()->error("Error updating transcription index for page $pageId col $col: " . $e->getMessage());
+            $this->sm->getLogger()->error("Error updating transcription index for page $pageId col $col: " . $e->getMessage());
             return false;
         }
     }

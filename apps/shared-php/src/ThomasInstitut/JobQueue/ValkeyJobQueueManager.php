@@ -82,9 +82,9 @@ class ValkeyJobQueueManager extends JobQueueManager
 
         try {
             $scheduledAt = TimeString::fromTimeStamp($now);
-        } catch (InvalidTimeZoneException $e) {
-            $this->logger->error($e->getMessage());
-            throw new RuntimeException("Failed to create TimeString from timestamp", 0, $e);
+        } catch (InvalidTimeZoneException $e) { // @codeCoverageIgnore
+            $this->logger->error($e->getMessage()); // @codeCoverageIgnore
+            throw new RuntimeException("Failed to create TimeString from timestamp", 0, $e); // @codeCoverageIgnore
         }
 
         $jobData = [
@@ -143,7 +143,7 @@ class ValkeyJobQueueManager extends JobQueueManager
     public function process(): void
     {
         // processing must be done by external workers
-        $this->logger->warning("process() called on ValkeyJobQueueManager. Use external workers instead.");
+        $this->logger->warning("process() called on ValkeyJobQueueManager. Use external workers instead."); // @codeCoverageIgnore
     }
 
     public function cleanQueue(): void
@@ -379,7 +379,7 @@ LUA;
         foreach ($stats as $key => $count) {
             $parts = explode(':', $key);
             if (count($parts) !== 2) {
-                continue;
+                continue; // @codeCoverageIgnore
             }
             [$type, $date] = $parts;
             $parsedStats[$date][$type] = (int)$count;

@@ -12,16 +12,16 @@ class NullJobHandler implements JobHandlerInterface
 
     public function run(SystemManager $sm, array $payload, string $jobName): bool
     {
-       return $payload['returnValue'] ?? false;
+       return $payload['returnValue'] ?? false; // @codeCoverageIgnore
     }
 
     public function mustBeUnique(): bool
     {
-       return true;
+       return true; // @codeCoverageIgnore
     }
 
     public function minTimeBetweenSchedules(): int
     {
-        return 0;
+        return 0; // @codeCoverageIgnore
     }
 }

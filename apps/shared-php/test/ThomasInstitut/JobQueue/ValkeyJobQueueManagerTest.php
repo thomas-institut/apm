@@ -43,12 +43,23 @@ class ValkeyJobQueueManagerTest extends TestCase
         }
     }
 
+    public function testRegisterJob()
+    {
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $result = $this->jm->registerJob('', $handler);
+        $this->assertFalse($result);
+        $this->assertNull($this->jm->getJobHandler('anything'));
+    }
+
     public function testT1BasicScheduling()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
         $this->jm->registerJob('TestJob', $handler);
 
         $payload = ['foo' => 'bar'];
+        $sig = $this->jm->scheduleJob('NonRegisteredTestJob', 'Description', $payload);
+        $this->assertEmpty($sig);
+
         $sig = $this->jm->scheduleJob('TestJob', 'Description', $payload);
 
         $this->assertNotEmpty($sig);
@@ -116,6 +127,26 @@ class ValkeyJobQueueManagerTest extends TestCase
 
         $score2 = floatval($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig));
         $this->assertLessThan($score1, $score2);
+
+        // Test coverage for: if (!$data) { return ''; }
+        $this->assertEquals('', $this->jm->rescheduleJob('non-existent-id', 10));
+
+        // Test coverage for: if ($maxAttempts !== -1)
+        $this->jm->rescheduleJob($sig, 10, 5);
+        $data = json_decode($this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig), true);
+        $this->assertEquals(5, $data['max_attempts']);
+
+        // Test coverage for: if ($secondBetweenRetries !== -1)
+        $this->jm->rescheduleJob($sig, 10, -1, 30);
+        $data = json_decode($this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig), true);
+        $this->assertEquals(30, $data['secs_between_retries']);
+        
+        // Verify attempts reset
+        $data['attempts'] = 3;
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig, json_encode($data));
+        $this->jm->rescheduleJob($sig, 10);
+        $data = json_decode($this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig), true);
+        $this->assertEquals(0, $data['attempts']);
     }
 
     public function testGetJobCountsAndState()
@@ -143,6 +174,55 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_DEAD, $sig2, $data);
         $counts = $this->jm->getJobCountsByState();
         $this->assertEquals(1, $counts[ScheduledJobState::ERROR]);
+    }
+
+    public function testGetJobsByState()
+    {
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $this->jm->registerJob('TestJob', $handler);
+
+        $payload1 = ['id' => 1];
+        $payload2 = ['id' => 2];
+        $payload3 = ['id' => 3];
+
+        $sig1 = $this->jm->scheduleJob('TestJob', 'J1', $payload1);
+        $sig2 = $this->jm->scheduleJob('TestJob', 'J2', $payload2);
+        $sig3 = $this->jm->scheduleJob('TestJob', 'J3', $payload3);
+
+        // 1. Test WAITING
+        $waitingJobs = $this->jm->getJobsByState(ScheduledJobState::WAITING);
+        $this->assertCount(3, $waitingJobs);
+        $this->assertEquals($sig1, $waitingJobs[0]['id']);
+        $this->assertEquals(ScheduledJobState::WAITING, $waitingJobs[0]['state']);
+        $this->assertEquals($payload1, $waitingJobs[0]['payload']);
+
+        // 2. Test RUNNING
+        // Move sig2 to processing manually (simulating a worker taking it)
+        $this->valkey->zrem($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig2);
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig2, json_encode(['worker' => 'w1', 'started' => time()]));
+
+        $runningJobs = $this->jm->getJobsByState(ScheduledJobState::RUNNING);
+        $this->assertCount(1, $runningJobs);
+        $this->assertEquals($sig2, $runningJobs[0]['id']);
+        $this->assertEquals(ScheduledJobState::RUNNING, $runningJobs[0]['state']);
+        $this->assertEquals($payload2, $runningJobs[0]['payload']);
+
+        // 3. Test ERROR
+        // Move sig3 to dead letter manually
+        $this->valkey->zrem($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig3);
+        $data3 = $this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig3);
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_DEAD, $sig3, $data3);
+
+        $errorJobs = $this->jm->getJobsByState(ScheduledJobState::ERROR);
+        $this->assertCount(1, $errorJobs);
+        $this->assertEquals($sig3, $errorJobs[0]['id']);
+        $this->assertEquals(ScheduledJobState::ERROR, $errorJobs[0]['state']);
+        $this->assertEquals($payload3, $errorJobs[0]['payload']);
+
+        // Re-verify WAITING (only sig1 should remain)
+        $waitingJobs = $this->jm->getJobsByState(ScheduledJobState::WAITING);
+        $this->assertCount(1, $waitingJobs);
+        $this->assertEquals($sig1, $waitingJobs[0]['id']);
     }
 
     public function testCleanQueue()
@@ -180,6 +260,47 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->assertFalse($this->jm->isJobActive($name, $desc, $payload));
     }
 
+    public function testFetchJob()
+    {
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $this->jm->registerJob('TestJob', $handler);
+
+        $payload = ['id' => 'fetch-me'];
+        $sig = $this->jm->scheduleJob('TestJob', 'Desc', $payload);
+
+        // 1. Fetch job that is ready
+        $workerId = 'worker-1';
+        $job = $this->jm->fetchJob($workerId);
+
+        $this->assertNotNull($job, 'Job should not be null');
+        $this->assertEquals($sig, $job['signature']);
+        $this->assertEquals($payload, $job['data']['payload']);
+
+        // Verify it was moved to processing
+        $this->assertNull($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig));
+        
+        $processingKey = $this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING;
+        $this->assertEquals(1, $this->valkey->hexists($processingKey, $sig), "Job $sig should exist in processing hash $processingKey");
+        
+        $procData = json_decode($this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig), true);
+        $this->assertEquals($workerId, $procData['worker_id']);
+
+        // 2. Fetch when no job is ready (queue empty)
+        $this->assertNull($this->jm->fetchJob($workerId));
+
+        // 3. Fetch when job is scheduled for future
+        $futurePayload = ['id' => 'future-job'];
+        $this->jm->scheduleJob('TestJob', 'Future', $futurePayload, 100);
+        $this->assertNull($this->jm->fetchJob($workerId));
+
+        // 4. Fetch when job exists in waiting but data is missing
+        $brokenSig = 'broken-sig';
+        $this->valkey->zadd($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, [$brokenSig => microtime(true) - 10]);
+        $this->assertNull($this->jm->fetchJob($workerId));
+        // Verify it was removed from waiting
+        $this->assertNull($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $brokenSig));
+    }
+
     public function testJobStats()
     {
         $handler = $this->createStub(JobHandlerInterface::class);
@@ -211,5 +332,108 @@ class ValkeyJobQueueManagerTest extends TestCase
         // Reset stats
         $this->jm->resetJobStats();
         $this->assertTrue($this->jm->getJobStats()->isEmpty());
+    }
+
+    public function testFailJob()
+    {
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $this->jm->registerJob('TestJob', $handler);
+
+        $payload = ['id' => 'fail-me'];
+        $sig = $this->jm->scheduleJob('TestJob', 'Desc', $payload, 0, 3, 10);
+
+        // Fetch it so it's in processing
+        $this->jm->fetchJob('worker-1');
+
+        // 1. Fail with retry=true (attempts < max_attempts)
+        $this->jm->failJob($sig, "First error", true);
+
+        // Verify it was moved back to waiting (with delay)
+        $this->assertEquals(0, $this->valkey->hexists($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig));
+        $score = $this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig);
+        $this->assertNotNull($score);
+        
+        $data = json_decode($this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig), true);
+        $this->assertEquals(1, $data['attempts']);
+        $this->assertEquals("First error", $data['last_error']);
+
+        // 2. Fetch again and fail with retry=false
+        $this->jm->fetchJob('worker-1');
+        $this->jm->failJob($sig, "Second error", false);
+
+        // Verify it moved to Dead Letter
+        $this->assertNull($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig));
+        $this->assertNull($this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DATA, $sig));
+        $this->assertEquals(0, $this->valkey->hexists($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig));
+        
+        $deadData = json_decode($this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DEAD, $sig), true);
+        $this->assertNotNull($deadData);
+        $this->assertEquals(2, $deadData['attempts']);
+        $this->assertEquals("Second error", $deadData['last_error']);
+
+        // 3. Max attempts reached
+        $sig2 = $this->jm->scheduleJob('TestJob', 'MaxAttempts', ['id' => 2], 0, 1);
+        $this->jm->fetchJob('worker-1');
+        $this->jm->failJob($sig2, "Final error", true); // retry=true but max_attempts is 1
+
+        $this->assertNotNull($this->valkey->hget($this->prefix . ValkeyJobQueueManager::SUFFIX_DEAD, $sig2));
+
+        // 4. Missing data
+        $brokenSig = 'broken-sig';
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $brokenSig, json_encode(['worker_id' => 'w1']));
+        $this->jm->failJob($brokenSig, "No data error", true);
+        $this->assertEquals(0, $this->valkey->hexists($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $brokenSig));
+    }
+
+    public function testRunRecovery()
+    {
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $this->jm->registerJob('TestJob', $handler);
+
+        $now = microtime(true);
+
+        // 1. Job that should NOT be recovered (recent)
+        $sig1 = $this->jm->scheduleJob('TestJob', 'Recent', ['id' => 1]);
+        $this->jm->fetchJob('worker-1');
+        // Manually update started_at to be very recent
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig1, json_encode([
+            'worker_id' => 'worker-1',
+            'started_at' => $now - 10 // 10 seconds ago
+        ]));
+
+        // 2. Job that SHOULD be recovered (timed out)
+        $sig2 = $this->jm->scheduleJob('TestJob', 'TimedOut', ['id' => 2]);
+        $this->jm->fetchJob('worker-2');
+        // Manually update started_at to be long ago
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig2, json_encode([
+            'worker_id' => 'worker-2',
+            'started_at' => $now - 2000 // 2000 seconds ago (default timeout is 1800)
+        ]));
+
+        // Run recovery
+        $recoveredCount = $this->jm->runRecovery(1800);
+
+        $this->assertEquals(1, $recoveredCount);
+
+        // Verify sig1 is still in processing
+        $this->assertEquals(1, $this->valkey->hexists($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig1));
+        $this->assertNull($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig1));
+
+        // Verify sig2 was moved to waiting
+        $this->assertEquals(0, $this->valkey->hexists($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig2));
+        $this->assertNotNull($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig2));
+
+        // 3. Custom timeout
+        $sig3 = $this->jm->scheduleJob('TestJob', 'CustomTimeout', ['id' => 3]);
+        $this->jm->fetchJob('worker-3');
+        $this->valkey->hset($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig3, json_encode([
+            'worker_id' => 'worker-3',
+            'started_at' => $now - 100
+        ]));
+
+        $recoveredCount = $this->jm->runRecovery(50); // Recovery with 50s timeout
+        $this->assertEquals(1, $recoveredCount);
+        $this->assertEquals(0, $this->valkey->hexists($this->prefix . ValkeyJobQueueManager::SUFFIX_PROCESSING, $sig3));
+        $this->assertNotNull($this->valkey->zscore($this->prefix . ValkeyJobQueueManager::SUFFIX_WAITING, $sig3));
     }
 }

@@ -29,9 +29,8 @@ class ApmContainerKey
 {
 
 
-    const SYSTEM_MANAGER = 'systemManager';
-    const SITE_USER_ID = 'siteUserId';
-    const USER_DATA = 'userData';
-    const API_USER_ID = 'apiUserId';
+    const string CONFIG_ARRAY = 'configArray';
+    const string SITE_USER_ID = 'siteUserId';
+    const string API_USER_ID = 'apiUserId';
 
 }

@@ -4,7 +4,7 @@ namespace APM\Api;
 
 use APM\Api\DataSchema\ApiErrorResponse;
 use APM\Api\DataSchema\ApiResponse;
-use APM\SystemProfiler;
+use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;

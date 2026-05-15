@@ -29,23 +29,11 @@ final class AppSettings
         $settings->showLanguageSelector = $config['siteShowLanguageSelector'];
         $settings->copyrightNotice = $config['copyrightNotice'];
         $settings->appName = $config['appName'];
-        $settings->appVersion = $config['version'];
-        $settings->versionDate = $config['versionDate'];
-        $settings->versionExtra = $config['versionExtra'];
-        $settings->cacheDataId = $config['jsAppCacheDataId'];
+        $settings->appVersion = $config['version']['version'];
+        $settings->versionDate = $config['version']['versionDate'];
+        $settings->versionExtra = $config['version']['versionExtra'];
+        $settings->cacheDataId = $config['version']['jsAppCacheDataId'];
         return $settings;
 
-//        return [
-//            '_info' => "Auto generated $now",
-//            'baseUrl' => BaseUrlDetector::detectBaseUrl($config['subDir']),
-//            'devMode' => $config['devMode'],
-//            'showLanguageSelector' => $config['siteShowLanguageSelector'],
-//            'copyrightNotice' => $config['copyrightNotice'],
-//            'appName' => $config['appName'],
-//            'appVersion' => $config['version'],
-//            'versionDate' => $config['versionDate'],
-//            'versionExtra' => $config['versionExtra'],
-//            'cacheDataId' => $config['jsAppCacheDataId']
-//        ];
     }
 }

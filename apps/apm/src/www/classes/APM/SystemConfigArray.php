@@ -4,7 +4,7 @@ namespace APM;
 
 use APM\System\ConfigLoader;
 
-class SystemConfig
+class SystemConfigArray
 {
 
 

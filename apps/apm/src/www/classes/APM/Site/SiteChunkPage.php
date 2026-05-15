@@ -34,7 +34,7 @@ use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
-use APM\SystemProfiler;
+use ThomasInstitut\Profiler\SystemProfiler;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;

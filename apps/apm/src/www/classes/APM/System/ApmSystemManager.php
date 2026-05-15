@@ -72,13 +72,13 @@ use APM\System\Work\EntitySystemWorkManager;
 use APM\System\Work\WorkManager;
 use APM\ToolBox\BaseUrlDetector;
 use Exception;
-use Monolog\Handler\ErrorLogHandler;
-use Monolog\Handler\StreamHandler;
-use Monolog\Level;
 use Monolog\Logger;
-use Monolog\Processor\WebProcessor;
 use PDO;
 use PDOException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
@@ -95,7 +95,6 @@ use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
-use Twig\Error\LoaderError;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
 
@@ -144,18 +143,18 @@ class ApmSystemManager extends SystemManager {
     
     const array REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
 
-    private array $serverLoggerFields = [
-        'method' => 'REQUEST_METHOD',
-        'url'         => 'REQUEST_URI',
-        'ip'          => 'REMOTE_ADDR',
-        'referrer'    => 'HTTP_REFERER',
-    ];
-    
+//    private array $serverLoggerFields = [
+//        'method' => 'REQUEST_METHOD',
+//        'url'         => 'REQUEST_URI',
+//        'ip'          => 'REMOTE_ADDR',
+//        'referrer'    => 'HTTP_REFERER',
+//    ];
+//
     /** @var string[] */
     private array $tableNames;
     private array $imageSources;
-    private Logger $logger;
-    private RouteParserInterface $router;
+    private LoggerInterface $logger;
+//    private RouteParserInterface $router;
 
     //
     // Components
@@ -168,7 +167,7 @@ class ApmSystemManager extends SystemManager {
     private ?ApmTranscriptionManager $transcriptionManager = null;
     private ?ApmCollationTableManager $collationTableManager = null;
     private ?ApmMultiChunkEditionManager $multiChunkEditionManager = null;
-    private ?Twig $twig = null;
+//    private ?Twig $twig = null;
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?ApmUserManager $userManager = null;
     private ?PersonManagerInterface $personManager = null;
@@ -186,9 +185,13 @@ class ApmSystemManager extends SystemManager {
     private ?TypesenseSearchManager $searchManager = null;
 
 
-
-    public function __construct(array $configArray) {
-        $config = $this->getSanitizedConfigArray($configArray);
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function __construct(ContainerInterface $ci) {
+        parent::__construct($ci);
+        $config = $this->getSanitizedConfigArray($this->config);
         if ($config[ApmConfigParameter::ERROR]) {
             $msg = "Configuration file is not valid:\n";
             foreach($config[ApmConfigParameter::ERROR_MESSAGES] as $errorMsg) {
@@ -197,20 +200,16 @@ class ApmSystemManager extends SystemManager {
             $this->setError($msg, self::ERROR_CONFIG_ARRAY_IS_NOT_VALID);
             return;
         }
-        parent::__construct($config);
-        
+
         if ($this->fatalErrorOccurred()) {
             return; // @codeCoverageIgnore
         }
 
-        $this->logger = $this->createLogger();
+        $this->logger = $this->ci->get(LoggerInterface::class);
         // Dump configuration warnings in the log
-        foreach($this->config[ApmConfigParameter::WARNINGS] as $warning) {
+        foreach($config[ApmConfigParameter::WARNINGS] as $warning) {
             $this->logger->debug($warning);
         }
-
-        // Set timezone
-        date_default_timezone_set($this->config['defaultTimeZone']);
 
         // Create table names
         $this->tableNames = $this->createTableNames($this->config['dbTablePrefix']);
@@ -391,34 +390,34 @@ class ApmSystemManager extends SystemManager {
         return $this->tableNames;
     }
 
-    protected function createLogger(): Logger
-    {
-        $loggerLevel = Level::Info;
-        if ($this->config['log']['includeDebugInfo'] ) {
-            $loggerLevel = Level::Debug;
-        }
-        
-        $logger = new Logger($this->config['log']['appName']);
-
-        try {
-            $logStream = new StreamHandler($this->config['log']['fileName'],
-                $loggerLevel);
-        } catch (Exception) { // @codeCoverageIgnore
-            // TODO: Handle errors properly!
-            return $logger;  // @codeCoverageIgnore
-        }
-        $logger->pushHandler($logStream);
-        
-        if ($this->config['log']['inPhpErrorHandler']) {
-            // Cannot set this in testing, so, let's ignore it
-            $phpLog = new ErrorLogHandler(); // @codeCoverageIgnore
-            $logger->pushHandler($phpLog); // @codeCoverageIgnore
-        }
-        
-        $logger->pushProcessor(new WebProcessor(null,$this->serverLoggerFields));
-        
-        return $logger;
-    }
+//    protected function createLogger(): Logger
+//    {
+//        $loggerLevel = Level::Info;
+//        if ($this->config['log']['includeDebugInfo'] ) {
+//            $loggerLevel = Level::Debug;
+//        }
+//
+//        $logger = new Logger($this->config['log']['appName']);
+//
+//        try {
+//            $logStream = new StreamHandler($this->config['log']['fileName'],
+//                $loggerLevel);
+//        } catch (Exception) { // @codeCoverageIgnore
+//            // TODO: Handle errors properly!
+//            return $logger;  // @codeCoverageIgnore
+//        }
+//        $logger->pushHandler($logStream);
+//
+//        if ($this->config['log']['inPhpErrorHandler']) {
+//            // Cannot set this in testing, so, let's ignore it
+//            $phpLog = new ErrorLogHandler(); // @codeCoverageIgnore
+//            $logger->pushHandler($phpLog); // @codeCoverageIgnore
+//        }
+//
+//        $logger->pushProcessor(new WebProcessor(null,$this->serverLoggerFields));
+//
+//        return $logger;
+//    }
 
     protected function isDatabaseInitialized(): bool
     {
@@ -591,14 +590,20 @@ class ApmSystemManager extends SystemManager {
 
     /**
      * @return Twig
-     * @throws LoaderError
      */
     public function getTwig(): Twig
     {
-        if ($this->twig === null) {
-            $this->twig = Twig::create('templates');
+        try {
+            return $this->ci->get(Twig::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            // should never happen
+            $this->logger->error("Could not get twig", ['exception' => $e]);
+            throw new RuntimeException("Could not get twig", 0, $e);
         }
-        return $this->twig;
+//        if ($this->twig === null) {
+//            $this->twig = Twig::create('templates');
+//        }
+//        return $this->twig;
     }
 
     public function getNormalizerManager(): NormalizerManager
@@ -666,12 +671,19 @@ class ApmSystemManager extends SystemManager {
 
     public function setRouter(RouteParserInterface $router): void
     {
-        $this->router = $router;
+//        $this->router = $router;
     }
 
     public function getRouter(): RouteParserInterface
     {
-        return $this->router;
+        try {
+            return $this->ci->get(RouteParserInterface::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            // should never happen
+            $this->logger->error("Could not get router", ['exception' => $e]);
+            throw new RuntimeException("Could not get router", 0, $e);
+        }
+//        return $this->router;
     }
 
     public function getMultiChunkEditionManager(): MultiChunkEditionManager

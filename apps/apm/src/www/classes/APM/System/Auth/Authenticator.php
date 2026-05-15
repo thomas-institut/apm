@@ -107,7 +107,7 @@ class Authenticator
     public function __construct(ContainerInterface $ci)
     {
         $this->container = $ci;
-        $this->systemManager = $ci->get(ApmContainerKey::SYSTEM_MANAGER);
+        $this->systemManager = $ci->get(SystemManager::class);
         $this->router = $this->systemManager->getRouter();
         $this->userManager = $this->systemManager->getUserManager();
         $this->logger = $this->systemManager->getLogger()->withName('AUTH');

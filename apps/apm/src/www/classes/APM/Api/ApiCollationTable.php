@@ -35,7 +35,6 @@ use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
-use APM\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use APM\ToolBox\SiglumGenerator;
 use Exception;
@@ -45,6 +44,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\Profiler\SystemProfiler;
 use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\ToolBox\DataCacheToolBox;
 
@@ -415,7 +415,7 @@ class ApiCollationTable extends ApiController
                         ]);
                     } else {
                         $responseData['collationEngineDetails']['cached'] = true;
-                        $responseData['collationEngineDetails']['cachedRunTime'] = intval(SystemProfiler::getCurrentTotalTimeInMs());
+                        $responseData['collationEngineDetails']['cachedRunTime'] = intval(SystemProfiler::getTotalTimeInMs());
                         $responseData['collationEngineDetails']['cachedTimestamp'] = time();
                         return $this->responseWithJson($response, $responseData);
                     }
@@ -497,7 +497,7 @@ class ApiCollationTable extends ApiController
 
         $collationEngineDetails = get_object_vars($collationEngine->getRunDetails());
         $collationEngineDetails['cached'] = false;
-        $collationEngineDetails['totalDuration'] =  intval(SystemProfiler::getCurrentTotalTimeInMs())/1000;
+        $collationEngineDetails['totalDuration'] =  intval(SystemProfiler::getTotalTimeInMs())/1000;
 
         $responseData2 = new ApiCollationTableAuto();
         $responseData2->type = 'auto';

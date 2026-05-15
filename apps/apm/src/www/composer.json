@@ -11,6 +11,12 @@
         "test": "./vendor/bin/phpunit test/php --display-all-issues",
         "test:coverage": "XDEBUG_MODE=coverage ./vendor/bin/phpunit test/php --display-all-issues --coverage-filter classes --coverage-text --coverage-html build/coverage"
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../shared-php"
+        }
+    ],
     "require": {
         "php": "^8.3",
         "ext-pdo": "*",
@@ -24,9 +30,11 @@
         "ext-yaml": "*",
         "ext-gd": "*",
         "ext-iconv": "*",
+        "thomas-institut/shared-php": "*",
         "psr/log": "^3.0",
         "slim/slim": "^4.3",
         "slim/psr7": "^1.6",
+        "php-di/php-di": "^7.1",
         "slim/twig-view": "^3.3.0",
         "dflydev/fig-cookies": "^v3.0.0",
         "predis/predis": "^v3.0",

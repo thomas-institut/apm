@@ -72,6 +72,9 @@ class LoggerFactory
         }
         $logger->pushHandler($logStream);
 
+        $stdErrLog = new ErrorLogHandler(); // @codeCoverageIgnore
+        $logger->pushHandler($stdErrLog); // @codeCoverageIgnore
+
         $processUser = $ci->get('processUserInfoArray');
         $cmd = $ci->get('cmd');
         $pid = $ci->get('pid');

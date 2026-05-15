@@ -4,14 +4,13 @@ namespace APM\System\Factories;
 
 use APM\System\ApmContainerKey;
 use APM\System\Config\ApmSystemConfig;
-use APM\SystemConfigArray;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\Settable\MissingRequiredValueException;
 use ThomasInstitut\Settable\WrongValueTypeException;
 
-class SystemConfigFactory
+class ApmSystemConfigFactory
 {
     /**
      * @throws NotFoundExceptionInterface

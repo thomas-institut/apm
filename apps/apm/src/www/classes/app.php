@@ -29,7 +29,7 @@ use APM\System\ApmSystemManager;
 use APM\System\Auth\Authenticator;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Factories\LoggerFactory;
-use APM\System\Factories\SystemConfigFactory;
+use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\TwigFactory;
 use APM\System\SystemManager;
 use APM\SystemConfigArray;
@@ -66,7 +66,7 @@ $builder->addDefinitions([
     ApmContainerKey::CONFIG_ARRAY => $config,
     ApmContainerKey::SITE_USER_ID => -1, // set by authenticator
     ApmContainerKey::API_USER_ID => -1, // set by authenticator
-    ApmSystemConfig::class => factory([SystemConfigFactory::class, 'create']),
+    ApmSystemConfig::class => factory([ApmSystemConfigFactory::class, 'create']),
     LoggerInterface::class => factory([LoggerFactory::class, 'create']),
     Twig::class => factory([TwigFactory::class, 'create']),
     SystemManager::class => autowire(ApmSystemManager::class),
@@ -78,16 +78,12 @@ try {
     exitWithErrorMessage("Can't build container: " . $e->getMessage());
 }
 
-//$container->set(ApmContainerKey::SITE_USER_ID, -1); // set by authenticator
-//$container->set(ApmContainerKey::API_USER_ID, -1); // set by authenticator
-
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
 
 $systemConfig = $container->get(ApmSystemConfig::class);
-
 // Set timezone
-date_default_timezone_set($systemConfig->general->defaultTimeZone);
+date_default_timezone_set($systemConfig->general->defaultTimezone);
 
 // setup app's basePath if necessary
 $subDir = $systemConfig->general->subDir;

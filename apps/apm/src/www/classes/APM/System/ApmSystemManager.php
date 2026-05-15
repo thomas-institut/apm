@@ -207,7 +207,7 @@ class ApmSystemManager extends SystemManager {
 
         $this->logger = $this->ci->get(LoggerInterface::class);
         // Dump configuration warnings in the log
-        foreach($this->config[ApmConfigParameter::WARNINGS] as $warning) {
+        foreach($config[ApmConfigParameter::WARNINGS] as $warning) {
             $this->logger->debug($warning);
         }
 

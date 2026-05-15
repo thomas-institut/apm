@@ -24,7 +24,7 @@ use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Factories\LoggerFactory;
-use APM\System\Factories\SystemConfigFactory;
+use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\TwigFactory;
 use APM\System\SystemManager;
 use DI\ContainerBuilder;
@@ -95,7 +95,7 @@ abstract class CommandLineUtility {
         $builder = new ContainerBuilder();
         $builder->addDefinitions([
             ApmContainerKey::CONFIG_ARRAY => $this->config,
-            ApmSystemConfig::class => factory([SystemConfigFactory::class, 'create']),
+            ApmSystemConfig::class => factory([ApmSystemConfigFactory::class, 'create']),
             LoggerInterface::class => factory([LoggerFactory::class, 'createForCli']),
             Twig::class => factory([TwigFactory::class, 'create']),
             SystemManager::class => autowire(ApmSystemManager::class),

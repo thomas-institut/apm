@@ -111,6 +111,49 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->assertNull($jm->getJobHandler('ExceptionJob'));
     }
 
+    public function testStrictModeAndLazyRegistration()
+    {
+        $handler = $this->createStub(JobHandlerInterface::class);
+        $container = $this->createStub(ContainerInterface::class);
+
+        $container->method('has')->willReturnMap([
+            ['LazyJob', true],
+            ['UnknownJob', false],
+        ]);
+        $container->method('get')->willReturnMap([
+            ['LazyJob', $handler],
+        ]);
+
+        $jm = new ValkeyJobQueueManager($this->valkey, new NullLogger(), $this->prefix, $container);
+
+        // DEFAULT: Strict mode OFF
+        // Should be able to schedule non-registered job if in container
+        $sig = $jm->scheduleJob('LazyJob', 'desc', []);
+        $this->assertNotEmpty($sig);
+        $this->assertSame($handler, $jm->getJobHandler('LazyJob'));
+
+        // Should NOT be able to schedule if not in container and not registered
+        $sig2 = $jm->scheduleJob('UnknownJob', 'desc', []);
+        $this->assertEmpty($sig2);
+
+        // NEW MANAGER FOR STRICT MODE TEST
+        $jmStrict = new ValkeyJobQueueManager($this->valkey, new NullLogger(), $this->prefix, $container);
+        $jmStrict->setStrictMode(true);
+        
+        // Should NOT be able to schedule even if in container
+        $sig3 = $jmStrict->scheduleJob('LazyJob', 'desc 2', []);
+        $this->assertEmpty($sig3, "Should NOT schedule LazyJob in strict mode if not registered");
+        
+        // getJobHandler should return null for non-registered even if in container
+        $this->assertNull($jmStrict->getJobHandler('LazyJob'), "getJobHandler should return null for non-registered in strict mode");
+
+        // Manually registering should still work in strict mode
+        $jmStrict->registerJobHandler('LazyJob', $handler);
+        $sig4 = $jmStrict->scheduleJob('LazyJob', 'desc 3', []);
+        $this->assertNotEmpty($sig4);
+        $this->assertSame($handler, $jmStrict->getJobHandler('LazyJob'));
+    }
+
     public function testT1BasicScheduling()
     {
         $handler = $this->createStub(JobHandlerInterface::class);

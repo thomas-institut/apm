@@ -45,7 +45,7 @@ use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use Typesense\Client;
 
 /**
@@ -162,7 +162,7 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getRouter() : RouteParserInterface;
     abstract public function getNormalizerManager() : NormalizerManager;
     abstract public function getEditionSourceManager(): EditionSourceManager;
-    abstract public function getJobManager() : JobQueueManager;
+    abstract public function getJobManager() : JobQueueManagerInterface;
     abstract public function getUserManager() : UserManagerInterface;
     abstract public function getPersonManager() : PersonManagerInterface;
     abstract public function getWorkManager() : WorkManager;

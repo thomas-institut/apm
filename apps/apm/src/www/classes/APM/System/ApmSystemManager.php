@@ -90,7 +90,7 @@ use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
 use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\NullJobHandler;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
@@ -170,7 +170,7 @@ class ApmSystemManager extends SystemManager {
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?ApmUserManager $userManager = null;
     private ?PersonManagerInterface $personManager = null;
-    private ?JobQueueManager $jobManager = null;
+    private ?JobQueueManagerInterface $jobManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
     private ?WorkManager $workManager = null;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem = null;
@@ -867,7 +867,7 @@ class ApmSystemManager extends SystemManager {
         return $this->workManager;
     }
 
-    public function getJobManager(): JobQueueManager
+    public function getJobManager(): JobQueueManagerInterface
     {
         $logger = $this->logger;
         if ($logger instanceof Logger) {
@@ -880,23 +880,8 @@ class ApmSystemManager extends SystemManager {
                 ValkeyJobQueueManager::DEFAULT_PREFIX,
                 $this->ci
             );
-            $this->registerSystemJobs();
         }
         return $this->jobManager;
-    }
-
-    private function registerSystemJobs() : void
-    {
-        $this->jobManager->registerJobHandler(NullJobHandler::class, null);
-        $this->jobManager->registerJobHandler(UpdateWorksCache::class, null);
-        $this->jobManager->registerJobHandler(SiteDocumentsUpdateDataCache::class, null);
-        $this->jobManager->registerJobHandler(UpdateAllPeopleDataCache::class, null);
-        $this->jobManager->registerJobHandler(ApiUsersUpdateTranscribedPagesData::class, null);
-        $this->jobManager->registerJobHandler(ApiUsersUpdateCtDataForUser::class, null);
-        $this->jobManager->registerJobHandler(ApiSearchUpdateTranscribersAndTranscriptionsCache::class, null);
-        $this->jobManager->registerJobHandler(ApiSearchUpdateTranscriptionsIndex::class, null);
-        $this->jobManager->registerJobHandler(ApiSearchUpdateEditorsAndEditionsCache::class, null);
-        $this->jobManager->registerJobHandler(ApiSearchUpdateEditionsIndex::class, null);
     }
 
     public function getEntitySystem(): ApmEntitySystemInterface

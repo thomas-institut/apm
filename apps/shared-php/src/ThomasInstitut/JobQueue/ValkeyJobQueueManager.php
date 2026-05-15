@@ -15,13 +15,14 @@ use ThomasInstitut\TimeString\TimeString;
 /**
  * Valkey-based job queue manager
  */
-class ValkeyJobQueueManager extends JobQueueManager
+class ValkeyJobQueueManager implements JobQueueManagerInterface
 {
     private Client $valkey;
     private LoggerInterface $logger;
     private ?ContainerInterface $container;
     private string $prefix;
     private array $registeredJobs = [];
+    private bool $strictMode = false;
 
     private string $keyWaiting;
     private string $keyData;
@@ -50,6 +51,22 @@ class ValkeyJobQueueManager extends JobQueueManager
         $this->keyStats = $this->prefix . self::SUFFIX_STATS;
     }
 
+    public function setStrictMode(bool $strictMode): void
+    {
+        $this->strictMode = $strictMode;
+    }
+
+    private function isRegistered(string $name): bool
+    {
+        if (array_key_exists($name, $this->registeredJobs)) {
+            return true;
+        }
+        if (!$this->strictMode && $this->container !== null) {
+            return $this->container->has($name);
+        }
+        return false;
+    }
+
     public function registerJobHandler(string $name, ?JobHandlerInterface $job): bool
     {
         if ($name === '') {
@@ -61,11 +78,11 @@ class ValkeyJobQueueManager extends JobQueueManager
 
     public function getJobHandler(string $name): ?JobHandlerInterface
     {
-        if (!array_key_exists($name, $this->registeredJobs)) {
+        if ($this->strictMode && !array_key_exists($name, $this->registeredJobs)) {
             return null;
         }
 
-        if ($this->registeredJobs[$name] !== null) {
+        if (array_key_exists($name, $this->registeredJobs) && $this->registeredJobs[$name] !== null) {
             return $this->registeredJobs[$name];
         }
 
@@ -89,11 +106,6 @@ class ValkeyJobQueueManager extends JobQueueManager
     {
         $id = $name . $description . json_encode($payload);
         return hash('md2', $id);
-    }
-
-    private function isRegistered(string $name): bool
-    {
-        return $name !== '' && array_key_exists($name, $this->registeredJobs);
     }
 
     public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): string

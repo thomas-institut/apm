@@ -4,7 +4,9 @@ namespace ThomasInstitut\JobQueue;
 
 use Predis\Client;
 use Predis\Transaction\MultiExec;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
@@ -68,13 +70,16 @@ class ValkeyJobQueueManager extends JobQueueManager
         }
 
         if ($this->container !== null && $this->container->has($name)) {
-            $handler = $this->container->get($name);
-            if ($handler instanceof JobHandlerInterface) {
-                $this->registeredJobs[$name] = $handler;
-                return $handler;
+            try {
+                $handler = $this->container->get($name);
+                if ($handler instanceof JobHandlerInterface) {
+                    $this->registeredJobs[$name] = $handler;
+                    return $handler;
+                }
+                $this->logger->error("Job handler '$name' retrieved from container does not implement JobHandlerInterface");
+            } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+                $this->logger->error("Failed to retrieve job handler '$name' from container");
             }
-
-            $this->logger->error("Job handler '$name' retrieved from container does not implement JobHandlerInterface");
         }
 
         return null;

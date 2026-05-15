@@ -5,8 +5,10 @@ namespace ThomasInstitut\JobQueue;
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Log\NullLogger;
+use stdClass;
 
 class ValkeyJobQueueManagerTest extends TestCase
 {
@@ -42,7 +44,7 @@ class ValkeyJobQueueManagerTest extends TestCase
                 if (!empty($keys)) {
                     $this->valkey->del($keys);
                 }
-            } catch (Exception $e) {
+            } catch (Exception) {
                 // Ignore errors during teardown if valkey is not available
             }
         }
@@ -73,20 +75,25 @@ class ValkeyJobQueueManagerTest extends TestCase
             ->willReturnMap([
                 ['LazyJob', true],
                 ['InvalidJob', true],
+                ['ExceptionJob', true],
             ]);
 
         $container->expects($this->atLeast(1))
             ->method('get')
-            ->willReturnMap([
-                ['LazyJob', $handler],
-                ['InvalidJob', new \stdClass()],
-            ]);
+            ->willReturnCallback(function($name) use ($handler) {
+                if ($name === 'LazyJob') return $handler;
+                if ($name === 'InvalidJob') return new stdClass();
+                if ($name === 'ExceptionJob') {
+                    throw new class('Container error') extends Exception implements ContainerExceptionInterface {};
+                }
+                return null;
+            });
 
         $jm = new ValkeyJobQueueManager($valkey, new NullLogger(), $this->prefix, $container);
 
-        // Register as lazy
         $jm->registerJobHandler('LazyJob', null);
         $jm->registerJobHandler('InvalidJob', null);
+        $jm->registerJobHandler('ExceptionJob', null);
 
 
         // First call should fetch from container
@@ -99,6 +106,9 @@ class ValkeyJobQueueManagerTest extends TestCase
 
         // Test invalid job handler from container
         $this->assertNull($jm->getJobHandler('InvalidJob'));
+
+        // Test exception from container
+        $this->assertNull($jm->getJobHandler('ExceptionJob'));
     }
 
     public function testT1BasicScheduling()
@@ -422,7 +432,7 @@ class ValkeyJobQueueManagerTest extends TestCase
         $this->assertEquals("Second error", $deadData['last_error']);
 
         // 3. Max attempts reached
-        $sig2 = $this->jm->scheduleJob('TestJob', 'MaxAttempts', ['id' => 2], 0, 1);
+        $sig2 = $this->jm->scheduleJob('TestJob', 'MaxAttempts', ['id' => 2]);
         $this->jm->fetchJob('worker-1');
         $this->jm->failJob($sig2, "Final error", true); // retry=true but max_attempts is 1
 
@@ -461,7 +471,7 @@ class ValkeyJobQueueManagerTest extends TestCase
         ]));
 
         // Run recovery
-        $recoveredCount = $this->jm->runRecovery(1800);
+        $recoveredCount = $this->jm->runRecovery();
 
         $this->assertEquals(1, $recoveredCount);
 

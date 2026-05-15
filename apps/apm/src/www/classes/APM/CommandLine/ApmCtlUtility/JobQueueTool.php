@@ -3,7 +3,8 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\CommandLine\CommandLineUtility;
-use APM\Jobs\ApmJobName;
+use Random\RandomException;
+use ThomasInstitut\JobQueue\NullJobHandler;
 use ThomasInstitut\JobQueue\ScheduledJobState;
 
 
@@ -261,12 +262,17 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         print "Job statistics reset successfully.\n";
     }
 
+    /**
+     * @throws RandomException
+     */
     private function test(): void
     {
         $jm = $this->getSystemManager()->getJobManager();
 
+        $testId = random_int(1000, 9999);
+
         for ($i = 0; $i < self::NUM_TEST_JOBS; $i++) {
-            $jm->scheduleJob(ApmJobName::NULL_JOB, "No. $i", ['returnValue' => ($i % 2) === 0], $i, $i + 1, 4 * ($i + 1));
+            $jm->scheduleJob(NullJobHandler::class, "Test $testId job $i", ['returnValue' => ($i % 2) === 0], $i, $i + 1, 4 * ($i + 1));
         }
     }
 

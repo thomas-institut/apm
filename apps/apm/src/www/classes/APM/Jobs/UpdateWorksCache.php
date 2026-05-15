@@ -9,35 +9,44 @@ use APM\System\SystemManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TxText\ChunkMark;
 use APM\ToolBox\ArrayComp;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-class SiteWorksUpdateDataCache implements JobHandlerInterface
+readonly class UpdateWorksCache implements JobHandlerInterface
 {
-    public function __construct(private SystemManager $sm) {}
+    public function __construct(private ContainerInterface $ci) {}
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function run(array $payload, string $jobName): bool
     {
 
+        $sm = $this->ci->get(SystemManager::class);
+
         if (isset($payload['type']) && $payload['type'] == 'transcription'){
             // check that the updated transcription actually updates anything regarding works
-            $vm = $this->sm->getTranscriptionManager()->getColumnVersionManager();
+            $vm = $sm->getTranscriptionManager()->getColumnVersionManager();
             $docId = $payload['docId'] ?? null;
             $pageNumber = $payload['pageNumber'] ?? null;
             $columnNumber = $payload['columnNumber'] ?? null;
 
             if ($docId === null || $pageNumber === null || $columnNumber === null){
-                $this->sm->getLogger()->error("Incorrect payload for job '$jobName': invalid transcription data", $payload);
+                $sm->getLogger()->error("Incorrect payload for job '$jobName': invalid transcription data", $payload);
                 return false;
             }
 
             try {
-                $pageInfo  = $this->sm->getTranscriptionManager()->getPageInfoByDocPage($docId, $pageNumber);
+                $pageInfo  = $sm->getTranscriptionManager()->getPageInfoByDocPage($docId, $pageNumber);
                 $versions = $vm->getColumnVersionInfoByPageCol($pageInfo->pageId, $columnNumber, 2);
 
                 $transcriptions = [];
                 foreach ($versions as $version){
-                    $transcriptions[] = $this->sm->getTranscriptionManager()->getColumnElementsByPageId(
+                    $transcriptions[] = $sm->getTranscriptionManager()->getColumnElementsByPageId(
                         $version->pageId,
                         $columnNumber,
                         $version->timeFrom
@@ -46,7 +55,7 @@ class SiteWorksUpdateDataCache implements JobHandlerInterface
                 $works = count($transcriptions) !== 0 ? $this->getWorksMentioned($transcriptions[0]) : [];
                 if (count($transcriptions) === 1 && count($works) === 0){
                     // nothing to do!
-                    $this->sm->getLogger()->debug(
+                    $sm->getLogger()->debug(
                         "Job '$jobName': no works referenced in new transcription for $docId:$pageNumber:$columnNumber, nothing to do");
                     return true;
                 }
@@ -54,21 +63,21 @@ class SiteWorksUpdateDataCache implements JobHandlerInterface
 
                 if (ArrayComp::areEqual($works, $worksNew)){
                     // nothing to do!
-                    $this->sm->getLogger()->debug(
+                    $sm->getLogger()->debug(
                         "Job '$jobName': no work related changes found in updated transcription for $docId:$pageNumber:$columnNumber, nothing to do");
                     return true;
                 }
             } catch (DocumentNotFoundException|PageNotFoundException $e) {
                 // report the error and return
-                $this->sm->getLogger()->error("Incorrect payload for job '$jobName': " . $e->getMessage());
+                $sm->getLogger()->error("Incorrect payload for job '$jobName': " . $e->getMessage());
                 return false;
             } catch (InvalidTimeStringException $e) {
                 // should never happen
-                $this->sm->getLogger()->error("Invalid time string for job '$jobName': " . $e->getMessage());
+                $sm->getLogger()->error("Invalid time string for job '$jobName': " . $e->getMessage());
                 return false;
             }
         }
-        return SiteWorks::updateCachedWorkData($this->sm);
+        return SiteWorks::updateCachedWorkData($sm);
     }
 
 

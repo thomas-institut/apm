@@ -3,7 +3,9 @@
 namespace APM\ApmDaemon;
 
 use APM\CommandLine\CommandLineUtility;
-use APM\Jobs\ApmJobName;
+use APM\Jobs\UpdateAllPeopleDataCache;
+use APM\Jobs\SiteDocumentsUpdateDataCache;
+use APM\Jobs\UpdateWorksCache;
 use APM\Site\SiteDocuments;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
@@ -94,17 +96,17 @@ class ApmDaemon extends CommandLineUtility
         $tasks = [
             [
                 'key' => SiteWorks::WORK_DATA_CACHE_KEY,
-                'jobName' => ApmJobName::SITE_WORKS_UPDATE_CACHE,
+                'jobName' => UpdateWorksCache::class,
                 'payload' => []
             ],
             [
                 'key' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
-                'jobName' => ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+                'jobName' => SiteDocumentsUpdateDataCache::class,
                 'payload' => []
             ],
             [
                 'key' => CacheKey::ApiPeople_PeoplePageData_All,
-                'jobName' => ApmJobName::API_PEOPLE_UPDATE_CACHE,
+                'jobName' => UpdateAllPeopleDataCache::class,
                 'payload' => []
             ],
         ];

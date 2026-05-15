@@ -6,7 +6,7 @@ use APM\Site\SiteDocuments;
 use APM\System\SystemManager;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-class SiteDocumentsUpdateDataCache implements JobHandlerInterface
+readonly class SiteDocumentsUpdateDataCache implements JobHandlerInterface
 {
     public function __construct(private SystemManager $sm) {}
 

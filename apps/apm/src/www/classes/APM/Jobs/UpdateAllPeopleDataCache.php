@@ -6,7 +6,7 @@ use APM\Api\ApiPeople;
 use APM\System\SystemManager;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-class ApiPeopleUpdateAllPeopleEssentialData implements JobHandlerInterface
+readonly class UpdateAllPeopleDataCache implements JobHandlerInterface
 {
     public function __construct(private SystemManager $sm) {}
 

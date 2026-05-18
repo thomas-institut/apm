@@ -11,6 +11,7 @@ export class TagEditor {
     const optionsDefinition = {
       containerSelector: {type: 'string', required: true},
       idPrefix: { type: 'string', default: 'tag-editor'},
+      mode: {type: 'string', required: true},
       inputFormId: {type: 'string', required: false, default: 'nil'},
       tags: {type: 'array', required: false, default: []},
       getTagHints: { type: 'function', default: async () => {
@@ -20,7 +21,10 @@ export class TagEditor {
       saveTags: { type: 'function', default: async (tags) => {
           console.log(`Tags [${tags.join(', ')}] would be saved now`)
         } },
-      mode: {type: 'string', required: true}
+      onTagClick: { type: 'function', default: () => {
+      } },
+      onTagHover: { type: 'function', default: () => {
+      } },
     }
 
     const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "TagEditor"});
@@ -30,23 +34,18 @@ export class TagEditor {
     // console.log(this.options)
 
     this.idPrefix = this.options.idPrefix;
+    this.activeTags = new Set();
 
-
-
-    switch (this.options.mode) {
-      case 'edit':
-        this.setupEditMode();
-        break
-
-      case 'show':
-        this.setupShowMode();
-        break
-    }
+    this.render()
   }
 
   setTags(tags) {
     console.log(`Setting tags: [ ${tags.join(', ')}]`)
     this.options.tags = [...tags];
+    this.render()
+  }
+
+  render() {
     switch (this.options.mode) {
       case 'edit':
         this.setupEditMode();
@@ -56,7 +55,6 @@ export class TagEditor {
         this.setupShowMode();
         break
     }
-
   }
 
   setupEditMode() {
@@ -73,36 +71,70 @@ export class TagEditor {
     this.showGivenTagsInShowMode()
   }
 
+  getOrderedTags() {
+    let tags = [...this.options.tags]
+    tags.sort()
+    return tags
+  }
+
+  getDefaultTagTextStyle() {
+    return {
+      display: 'inline-block',
+      fontSize: '0.9em',
+      background: '#e8d5f5',
+      border: '1px solid #b89fd4',
+      borderRadius: '3px',
+      padding: '1px 7px',
+      marginRight: '4px',
+      verticalAlign: 'middle',
+      color: '#5a3a7a',
+      cursor: 'pointer'
+    };
+  }
+
+  getActiveTagTextStyle() {
+    return {
+      background: '#b89fd4',
+      border: '1px solid #7c5a9e',
+      color: '#fff'
+    };
+  }
+
+  isActiveTag(tag) {
+    return this.activeTags.has(tag);
+  }
+
+  setActiveTag(tag, active) {
+    if (active) {
+      this.activeTags.add(tag);
+      return;
+    }
+    this.activeTags.delete(tag);
+  }
+
   buildStructureOfTagEditor() {
-    $(this.options.containerSelector).html(`
-            <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">
+    let inputHtml = ''
+    if (this.options.mode === 'edit') {
+      inputHtml = `
                 <li class="tagAdd taglist">
                     <input list="${this.idPrefix}-list-of-tags" class="tag-input" id="${this.idPrefix}-search-field" placeholder="+">
                     <datalist id="${this.idPrefix}-list-of-tags"></datalist>
-                </li>
+                </li>`
+    }
+    $(this.options.containerSelector).html(`
+            <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">${inputHtml}
            </ul>`)
   }
 
   showGivenTagsInShowMode () {
-    for (let tag of this.options.tags.sort().reverse()) {
-      let valueForTagId = tag.replace(/ /g, "_")
-      $(`#${this.idPrefix}-tag-list`).prepend(`
-               <li class="addedTag" value=${valueForTagId}><span class="tag-text">${tag}</span>
-               </li>`)
+    for (let tag of this.getOrderedTags()) {
+      this._appendTagItem(tag, false)
     }
   }
 
   showGivenTagsInEditMode () {
-    for (let tag of this.options.tags.sort().reverse()) {
-      let valueForTagId = tag.replace(/ /g, "_")
-      let tagId = `${this.idPrefix}-${valueForTagId}-id`
-
-      $(`#${this.idPrefix}-tag-list`).prepend(`
-               <li class="addedTag" value=${valueForTagId}><span class="tag-text">${tag}</span>
-               <span class="tagRemove" id=${tagId}><sup>x</sup></span>
-               <input type="hidden" name="tags[]">
-               </li>`)
-      this.makeRemoveTagEvent(tagId)
+    for (let tag of this.getOrderedTags()) {
+      this._appendTagItem(tag, true)
     }
   }
 
@@ -124,6 +156,49 @@ export class TagEditor {
       thisObject.options.tags.splice(index, 1);
       thisObject.options.saveTags(thisObject.options.tags)
       $(this).parent().remove()
+    })
+  }
+
+  _appendTagItem(tag, includeRemoveButton) {
+    let valueForTagId = tag.replace(/ /g, "_")
+    let tagItemId = `${this.idPrefix}-${valueForTagId}-item`
+    let tagRemoveId = `${this.idPrefix}-${valueForTagId}-id`
+    let tagTextStyle = {...this.getDefaultTagTextStyle()}
+    if (this.isActiveTag(tag)) {
+      tagTextStyle = {...tagTextStyle, ...this.getActiveTagTextStyle()}
+    }
+    let removeButtonHtml = ''
+    let hiddenInputHtml = ''
+    if (includeRemoveButton) {
+      removeButtonHtml = `<span class="tagRemove" id="${tagRemoveId}"><sup>x</sup></span>`
+      hiddenInputHtml = '<input type="hidden" name="tags[]">'
+    }
+    $(`#${this.idPrefix}-tag-list`)['append'](`
+               <li class="addedTag" id="${tagItemId}" value=${valueForTagId}><span class="tag-text">${tag}</span>
+               ${removeButtonHtml}
+               ${hiddenInputHtml}
+               </li>`)
+    $(`#${tagItemId} span.tag-text`).css(tagTextStyle)
+    if (includeRemoveButton) {
+      this.makeRemoveTagEvent(tagRemoveId)
+      return
+    }
+    this.makeTagHoverAndClickEvents(tagItemId, tag)
+  }
+
+  makeTagHoverAndClickEvents(tagItemId, tag) {
+    let selector = `#${tagItemId}`
+    $(selector).on('click', (event) => {
+      const active = !this.isActiveTag(tag)
+      this.setActiveTag(tag, active)
+      this._applyTagTextStyle(tagItemId, tag)
+      this.options.onTagClick(tag, active, event)
+    })
+    $(selector).on('mouseenter', (event) => {
+      this.options.onTagHover(tag, true, event)
+    })
+    $(selector).on('mouseleave', (event) => {
+      this.options.onTagHover(tag, false, event)
     })
   }
 
@@ -186,6 +261,14 @@ export class TagEditor {
     tags.forEach((tag) => {
       $(`#${this.idPrefix}-list-of-tags`).append(`<option value="${tag}">${tag}</option>`)
     })
+  }
+
+  _applyTagTextStyle(tagItemId, tag) {
+    let tagTextStyle = {...this.getDefaultTagTextStyle()}
+    if (this.isActiveTag(tag)) {
+      tagTextStyle = {...tagTextStyle, ...this.getActiveTagTextStyle()}
+    }
+    $(`#${tagItemId} span.tag-text`).css(tagTextStyle)
   }
 
   getTags() {

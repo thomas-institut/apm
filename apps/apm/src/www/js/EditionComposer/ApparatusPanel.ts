@@ -130,6 +130,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   private updateButton!: JQuery<HTMLElement>;
   private cancelButton!: JQuery<HTMLElement>;
   private tagEditor!: TagEditor;
+  private apparatusTagEditor!: TagEditor | null;
   private subEntryEditors: SubEntryEditorsArray = [];
   private useCtColNumbers: boolean = false;
   private mainTextTypesettingInfo: MainTextTypesettingInfo | null = null;
@@ -203,6 +204,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.entryFormState = entryFormStateNotInitialized;
     this.newEntryMainTextFrom = -1;
     this.newEntryMainTextTo = -1;
+    this.apparatusTagEditor = null;
     //this.debug = this.options.debug
     this.debug = true;
   }
@@ -722,6 +724,98 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.fitDivs();
   }
 
+  private getApparatusTags(): string[] {
+    return [...new Set(
+      this.apparatus.entries.flatMap(e => e.tags && e.tags.length > 0 ? e.tags : [])
+    )];
+  }
+
+  private getEntriesWithTag(tag: string): number[] {
+    return this.apparatus.entries
+    .map((e, i) => ({e, i}))
+    .filter(({e}) => e.tags && e.tags.includes(tag))
+    .map(({i}) => i);
+  }
+
+  private onApparatusTagHover(tag: string, active: boolean, event: MouseEvent) {
+
+    const entriesWithTag = this.getEntriesWithTag(tag);
+
+    // tag hover
+    entriesWithTag.forEach(i => {
+      const container = $(this.containerSelector);
+      container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-hover');
+      $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-hover');
+    });
+
+    // tag dehover
+    if (!active) {
+      entriesWithTag.forEach(i => {
+        const container = $(this.containerSelector);
+        container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-hover');
+        $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-hover');
+      });
+      return;
+    }
+
+  }
+
+  private onApparatusTagClick(tag: string, active: boolean, event: MouseEvent) {
+
+    // prevent removal of lemma selection
+    event.preventDefault();
+    event.stopPropagation();
+
+    const container = $(this.containerSelector);
+    const entriesWithTag = this.getEntriesWithTag(tag);
+
+    // tag activation
+    if (active) {
+      this.activeTagFilters.add(tag);
+      entriesWithTag.forEach(i => {
+        container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-selected');
+        $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-selected');
+      });
+
+    // tag deactivation
+    } else {
+      this.activeTagFilters.delete(tag);
+      entriesWithTag.forEach(i => {
+
+        const activatedFromOtherTag = [...this.activeTagFilters].some(t =>
+          this.apparatus.entries[i].tags && this.apparatus.entries[i].tags.includes(t)
+        );
+
+        if (!activatedFromOtherTag) {
+          container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-selected');
+          $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-selected');
+        }
+
+      });
+    }
+  }
+
+  private setupApparatusTagEditor() {
+
+    const containerSelector = `${this.containerSelector} div.apparatus-tags`;
+    const tags = this.getApparatusTags();
+
+    if (this.apparatusTagEditor === null) {
+      this.apparatusTagEditor = new TagEditor({
+        containerSelector,
+        idPrefix: `apparatus-tags-${this.options.apparatusIndex}`,
+        tags: tags,
+        mode: 'show',
+        onTagHover: this.onApparatusTagHover.bind(this),
+        onTagClick: this.onApparatusTagClick.bind(this),
+      });
+
+      return;
+    }
+
+    this.apparatusTagEditor.setTags(tags);
+  }
+
   updateApparatus(mainTextTypesettingInfo: MainTextTypesettingInfo | null) {
     if (mainTextTypesettingInfo !== null) {
       this.mainTextTypesettingInfo = mainTextTypesettingInfo;
@@ -737,6 +831,8 @@ export class ApparatusPanel extends PanelWithToolbar {
       }
       this.apparatusVNode = newVNode;
     }
+
+    this.setupApparatusTagEditor();
 
     this._setUpEventHandlers();
 
@@ -1086,79 +1182,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     }
 
     const entries: VNode[] = [];
-
-    // tags
-    const allTags = [...new Set(
-      this.apparatus.entries.flatMap(e => e.tags && e.tags.length > 0 ? e.tags : [])
-    )];
-    if (allTags.length > 0) {
-      const tagNodes: VNode[] = allTags.map(tag => {
-        const entriesWithTag = this.apparatus.entries
-          .map((e, i) => ({ e, i }))
-          .filter(({ e }) => e.tags && e.tags.includes(tag))
-          .map(({ i }) => i);
-        return h('span.apparatus-tag', {
-          style: {
-            display: 'inline-block',
-            fontSize: '0.9em',
-            background: '#e8d5f5',
-            border: '1px solid #b89fd4',
-            borderRadius: '3px',
-            padding: '1px 7px',
-            marginRight: '4px',
-            verticalAlign: 'middle',
-            color: '#5a3a7a',
-            cursor: 'pointer'
-          },
-          on: {
-            mouseenter: () => {
-              entriesWithTag.forEach(i => {
-                const container = $(this.containerSelector);
-                container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-hover');
-                $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-hover');
-              });
-            },
-            mouseleave: () => {
-              entriesWithTag.forEach(i => {
-                const container = $(this.containerSelector);
-                container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-hover');
-                $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-hover');
-              });
-            },
-            click: (ev: MouseEvent) => {
-              ev.preventDefault();
-              ev.stopPropagation();
-              const container = $(this.containerSelector);
-              const alreadyActive = this.activeTagFilters.has(tag);
-              if (alreadyActive) {
-                // deactivate this tag
-                this.activeTagFilters.delete(tag);
-                container.find(`.apparatus-tags-header span.apparatus-tag`).filter((_, el) => $(el).text() === tag).removeClass('apparatus-tag-active');
-                entriesWithTag.forEach(i => {
-                  // only remove highlights if no other active tag covers this entry
-                  const stillCovered = [...this.activeTagFilters].some(t =>
-                    this.apparatus.entries[i].tags && this.apparatus.entries[i].tags.includes(t)
-                  );
-                  if (!stillCovered) {
-                    container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass(['lemma-tag-selected', 'lemma-tag-hover']);
-                    $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass(['main-text-tag-selected', 'main-text-tag-hover']);
-                  }
-                });
-              } else {
-                // activate this tag
-                this.activeTagFilters.add(tag);
-                container.find(`.apparatus-tags-header span.apparatus-tag`).filter((_, el) => $(el).text() === tag).addClass('apparatus-tag-active');
-                entriesWithTag.forEach(i => {
-                  container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-selected');
-                  $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-selected');
-                });
-              }
-            }
-          }
-        }, tag);
-      });
-      entries.push(h('div.apparatus-tags-header', {style: {marginBottom: '4px'}}, tagNodes));
-    }
+    entries.push(h('div.apparatus-tags', {style: {marginBottom: '4px'}}));
 
     this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
       let currentLine = "__UNDEFINED__";

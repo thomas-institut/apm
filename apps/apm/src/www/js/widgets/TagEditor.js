@@ -78,25 +78,19 @@ export class TagEditor {
   }
 
   getDefaultTagTextStyle() {
+    const palette = this.getTagColorPalette('__default__')
     return {
       display: 'inline-block',
+      backgroundColor: palette.chipBackground,
       fontSize: '0.9em',
-      background: '#e8d5f5',
-      border: '1px solid #b89fd4',
+      border: `1px solid ${palette.chipBorder}`,
       borderRadius: '3px',
-      padding: '1px 7px',
-      marginRight: '4px',
+      padding: '3px 5px',
+      marginInlineEnd: '1px',
+      lineHeight: '1.05',
       verticalAlign: 'middle',
-      color: '#5a3a7a',
+      color: palette.chipText,
       cursor: 'pointer'
-    };
-  }
-
-  getActiveTagTextStyle() {
-    return {
-      background: '#b89fd4',
-      border: '1px solid #7c5a9e',
-      color: '#fff'
     };
   }
 
@@ -163,9 +157,20 @@ export class TagEditor {
     let valueForTagId = tag.replace(/ /g, "_")
     let tagItemId = `${this.idPrefix}-${valueForTagId}-item`
     let tagRemoveId = `${this.idPrefix}-${valueForTagId}-id`
-    let tagTextStyle = {...this.getDefaultTagTextStyle()}
+    const palette = this.getTagColorPalette(tag)
+    let tagTextStyle = {
+      ...this.getDefaultTagTextStyle(),
+      backgroundColor: palette.chipBackground,
+      border: `1px solid ${palette.chipBorder}`,
+      color: palette.chipText
+    }
     if (this.isActiveTag(tag)) {
-      tagTextStyle = {...tagTextStyle, ...this.getActiveTagTextStyle()}
+      tagTextStyle = {
+        ...tagTextStyle,
+        backgroundColor: palette.chipActiveBackground,
+        border: `1px solid ${palette.chipActiveBorder}`,
+        color: palette.chipActiveText
+      }
     }
     let removeButtonHtml = ''
     let hiddenInputHtml = ''
@@ -178,6 +183,14 @@ export class TagEditor {
                ${removeButtonHtml}
                ${hiddenInputHtml}
                </li>`)
+    $(`#${tagItemId}`).css({
+      display: 'inline-flex',
+      alignItems: 'center',
+      lineHeight: includeRemoveButton ? '1.25em' : '1.05em',
+      marginInlineEnd: includeRemoveButton ? '0.35em' : '0.25em',
+      verticalAlign: 'middle',
+      whiteSpace: 'nowrap'
+    })
     $(`#${tagItemId} span.tag-text`).css(tagTextStyle)
     if (includeRemoveButton) {
       this.makeRemoveTagEvent(tagRemoveId)
@@ -225,6 +238,14 @@ export class TagEditor {
             +'<input type="hidden" value="' + value +
             '" name="tags[]"></li>'
           ).insertBefore(`${thisObject.options.containerSelector} .tagAdd`)
+          $(`${thisObject.options.containerSelector} .addedTag`).css({
+            display: 'inline-flex',
+            alignItems: 'center',
+            lineHeight: '1.25em',
+            marginInlineEnd: '0.35em',
+            verticalAlign: 'middle',
+            whiteSpace: 'nowrap'
+          })
 
           thisObject.makeRemoveTagEvent(tagId)
           thisObject.options.tags.push(value)
@@ -264,12 +285,74 @@ export class TagEditor {
   }
 
   _applyTagTextStyle(tagItemId, tag) {
-    let tagTextStyle = {...this.getDefaultTagTextStyle()}
+    const palette = this.getTagColorPalette(tag)
+    let tagTextStyle = {
+      ...this.getDefaultTagTextStyle(),
+      backgroundColor: palette.chipBackground,
+      border: `1px solid ${palette.chipBorder}`,
+      color: palette.chipText
+    }
     if (this.isActiveTag(tag)) {
-      tagTextStyle = {...tagTextStyle, ...this.getActiveTagTextStyle()}
+      tagTextStyle = {
+        ...tagTextStyle,
+        backgroundColor: palette.chipActiveBackground,
+        border: `1px solid ${palette.chipActiveBorder}`,
+        color: palette.chipActiveText
+      }
     }
     $(`#${tagItemId} span.tag-text`).css(tagTextStyle)
   }
+
+
+hashStringToHue(string) {
+    let hash = 0
+    for (let i = 0; i < string.length; i++) {
+      hash = ((hash << 5) - hash) + string.charCodeAt(i)
+      hash |= 0
+    }
+    return Math.abs(hash) % 360
+  }
+
+getTagColorPalette(tag) {
+    const hash = this.hashStringToHue(tag)
+    const hue = 12 + (hash % 120)
+    const saturation = 72 + ((hash >>> 3) % 8)
+    const lightness = 84 + ((hash >>> 6) % 4)
+    const activeLightness = Math.max(74, lightness - 8)
+    const borderSaturation = Math.max(42, saturation - 26)
+    const borderLightness = Math.max(56, lightness - 16)
+    const activeBorderLightness = Math.max(48, activeLightness - 16)
+    return {
+      chipBackground: `hsl(${hue} ${saturation}% ${lightness}%)`,
+      chipBorder: `hsl(${hue} ${borderSaturation}% ${borderLightness}%)`,
+      chipText: 'black',
+      chipActiveBackground: `hsl(${hue} ${saturation}% ${activeLightness}%)`,
+      chipActiveBorder: 'black',
+      chipActiveText: 'black',
+      highlightBackground: `hsl(${hue} ${Math.max(74, saturation)}% ${lightness}%)`
+    }
+  }
+
+getTagColor(tags) {
+    const uniqueTags = [...new Set(tags)];
+    if (uniqueTags.length === 0) {
+      return '';
+    }
+
+    const colors = uniqueTags.map(tag => this.getTagColorPalette(tag).highlightBackground);
+    if (colors.length === 1) {
+      return colors[0];
+    }
+
+    const segmentWidth = 100 / colors.length;
+    const segments = colors.map((color, index) => {
+      const start = index * segmentWidth;
+      const end = (index + 1) * segmentWidth;
+      return `${color} ${start}% ${end}%`;
+    });
+    return `linear-gradient(90deg, ${segments.join(', ')})`;
+  }
+
 
   getTags() {
     //this.removeTagsFromOptions()

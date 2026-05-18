@@ -4,7 +4,13 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import $ from 'jquery';
-import {TagEditor} from '@/widgets/TagEditor';
+import {TagEditor, getTagBackgroundForTags, getTagColorPalette} from '@/widgets/TagEditor';
+
+function extractHue(hslColor: string): number {
+  const match = hslColor.match(/hsl\((\d+)/);
+  expect(match).not.toBeNull();
+  return Number(match?.[1]);
+}
 
 describe('TagEditor', () => {
   beforeEach(() => {
@@ -39,12 +45,14 @@ describe('TagEditor', () => {
       .find((el) => el.textContent?.includes('alpha')) as HTMLElement;
     expect(alphaTag).toBeDefined();
     const alphaText = alphaTag.querySelector('.tag-text') as HTMLElement;
-    const initialBackground = alphaText.style.background;
+    const initialStyle = alphaText.getAttribute('style') ?? '';
+    expect(alphaTag.style.lineHeight).toBe('1.05em');
+    expect(alphaText.style.padding).toBe('0px 5px');
 
     $(alphaTag).trigger('mouseenter');
     $(alphaTag).trigger('mouseleave');
     $(alphaTag).trigger('click');
-    expect(alphaText.style.background).not.toBe(initialBackground);
+    expect(alphaText.getAttribute('style') ?? '').not.toBe(initialStyle);
 
     expect(onHover).toHaveBeenNthCalledWith(1, 'alpha', true, expect.any(Object));
     expect(onHover).toHaveBeenNthCalledWith(2, 'alpha', false, expect.any(Object));
@@ -52,6 +60,20 @@ describe('TagEditor', () => {
 
     $(alphaTag).trigger('click');
     expect(onClick).toHaveBeenNthCalledWith(2, 'alpha', false, expect.any(Object));
-    expect(alphaText.style.background).toBe(initialBackground);
+  });
+
+  it('builds deterministic tag colors and split backgrounds', () => {
+    const alphaPalette = getTagColorPalette('alpha');
+    const betaPalette = getTagColorPalette('beta');
+
+    expect(alphaPalette.highlightBackground).not.toBe(betaPalette.highlightBackground);
+    expect(extractHue(alphaPalette.highlightBackground)).toBeGreaterThanOrEqual(12);
+    expect(extractHue(alphaPalette.highlightBackground)).toBeLessThanOrEqual(131);
+    expect(extractHue(betaPalette.highlightBackground)).toBeGreaterThanOrEqual(12);
+    expect(extractHue(betaPalette.highlightBackground)).toBeLessThanOrEqual(131);
+    expect(getTagBackgroundForTags(['alpha'])).toBe(alphaPalette.highlightBackground);
+    expect(getTagBackgroundForTags(['alpha', 'beta'])).toContain('linear-gradient');
+    expect(getTagBackgroundForTags(['alpha', 'beta'])).toContain(alphaPalette.highlightBackground);
+    expect(getTagBackgroundForTags(['alpha', 'beta'])).toContain(betaPalette.highlightBackground);
   });
 });

@@ -737,27 +737,44 @@ export class ApparatusPanel extends PanelWithToolbar {
     .map(({i}) => i);
   }
 
-  private onApparatusTagHover(tag: string, active: boolean, event: MouseEvent) {
+  private getActiveTags(entryIndex: number, hoveredTag: string | null = null): string[] {
+    
+    const entryTags = this.apparatus.entries[entryIndex].tags ?? [];
+    const activeTags = entryTags.filter(tag => this.activeTagFilters.has(tag));
+    
+    if (hoveredTag !== null && entryTags.includes(hoveredTag) && !activeTags.includes(hoveredTag)) {
+      return [...activeTags, hoveredTag];
+    }
+    
+    return activeTags;
+  }
 
-    const entriesWithTag = this.getEntriesWithTag(tag);
-
-    // tag hover
-    entriesWithTag.forEach(i => {
-      const container = $(this.containerSelector);
-      container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-hover');
-      $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-hover');
-    });
-
-    // tag dehover
-    if (!active) {
-      entriesWithTag.forEach(i => {
-        const container = $(this.containerSelector);
-        container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-hover');
-        $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-hover');
-      });
+  private highlightEntryByIndex(entryIndex: number, hoveredTag: string | null = null) {
+    
+    const background = this.apparatusTagEditor?.getTagColor(this.getActiveTags(entryIndex, hoveredTag));
+    const lemma = $(this.containerSelector).find(`.lemma-${this.options.apparatusIndex}-${entryIndex}`);
+    const mainTextEntry = $(`.entry-index-${this.options.apparatusIndex}-${entryIndex}`);
+    
+    if (background === '') {
+      lemma.css('background', '');
+      mainTextEntry.css('background', '');
       return;
     }
 
+      // @ts-ignore
+      lemma.css('background', background);
+      // @ts-ignore
+      mainTextEntry.css('background', background);
+
+  }
+
+  private onApparatusTagHover(tag: string, active: boolean, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    const entriesWithTag = this.getEntriesWithTag(tag);
+    entriesWithTag.forEach(i => {
+      this.highlightEntryByIndex(i, active ? tag : null);
+    });
   }
 
   private onApparatusTagClick(tag: string, active: boolean, event: MouseEvent) {
@@ -766,31 +783,20 @@ export class ApparatusPanel extends PanelWithToolbar {
     event.preventDefault();
     event.stopPropagation();
 
-    const container = $(this.containerSelector);
     const entriesWithTag = this.getEntriesWithTag(tag);
 
     // tag activation
     if (active) {
       this.activeTagFilters.add(tag);
       entriesWithTag.forEach(i => {
-        container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-selected');
-        $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-selected');
+        this.highlightEntryByIndex(i);
       });
 
     // tag deactivation
     } else {
       this.activeTagFilters.delete(tag);
       entriesWithTag.forEach(i => {
-
-        const activatedFromOtherTag = [...this.activeTagFilters].some(t =>
-          this.apparatus.entries[i].tags && this.apparatus.entries[i].tags.includes(t)
-        );
-
-        if (!activatedFromOtherTag) {
-          container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-selected');
-          $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-selected');
-        }
-
+        this.highlightEntryByIndex(i);
       });
     }
   }

@@ -1140,8 +1140,8 @@ export class ApparatusPanel extends PanelWithToolbar {
                     this.apparatus.entries[i].tags && this.apparatus.entries[i].tags.includes(t)
                   );
                   if (!stillCovered) {
-                    container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-selected');
-                    $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-selected');
+                    container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass(['lemma-tag-selected', 'lemma-tag-hover']);
+                    $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass(['main-text-tag-selected', 'main-text-tag-hover']);
                   }
                 });
               } else {

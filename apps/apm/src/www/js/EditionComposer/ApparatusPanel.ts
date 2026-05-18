@@ -1115,7 +1115,6 @@ export class ApparatusPanel extends PanelWithToolbar {
               entriesWithTag.forEach(i => {
                 const container = $(this.containerSelector);
                 container.find(`.lemma-${this.options.apparatusIndex}-${i}`).addClass('lemma-tag-hover');
-                this.options.hoverMainText(i, true);
                 $(`.entry-index-${this.options.apparatusIndex}-${i}`).addClass('main-text-tag-hover');
               });
             },

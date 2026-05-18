@@ -1087,7 +1087,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
     const entries: VNode[] = [];
 
-    // collect all tags from all entries and display them above the apparatus
+    // tags
     const allTags = [...new Set(
       this.apparatus.entries.flatMap(e => e.tags && e.tags.length > 0 ? e.tags : [])
     )];
@@ -1122,11 +1122,12 @@ export class ApparatusPanel extends PanelWithToolbar {
               entriesWithTag.forEach(i => {
                 const container = $(this.containerSelector);
                 container.find(`.lemma-${this.options.apparatusIndex}-${i}`).removeClass('lemma-tag-hover');
-                this.options.hoverMainText(i, false);
                 $(`.entry-index-${this.options.apparatusIndex}-${i}`).removeClass('main-text-tag-hover');
               });
             },
-            click: () => {
+            click: (ev: MouseEvent) => {
+              ev.preventDefault();
+              ev.stopPropagation();
               const container = $(this.containerSelector);
               const alreadyActive = this.activeTagFilters.has(tag);
               if (alreadyActive) {

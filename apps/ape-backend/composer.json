@@ -26,7 +26,7 @@
     "thomas-institut/shared-php": "*",
     "slim/slim": "^4.15",
     "thomas-institut/datatable" : "^2.0",
-    "thomas-institut/timestring" : "^v2.1",
+    "thomas-institut/timestring" : "^v1.3",
     "monolog/monolog": "^3.10",
     "php-di/php-di": "^7.1",
     "slim/psr7": "^1.8"

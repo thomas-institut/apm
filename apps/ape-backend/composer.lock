@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "31cd4dd96936ec683ac1668cfae3e659",
+    "content-hash": "b6ec0d58899d281b7ce8a70714015423",
     "packages": [
         {
             "name": "fig/http-message-util",
@@ -403,6 +403,69 @@
                 }
             ],
             "time": "2025-08-16T11:10:48+00:00"
+        },
+        {
+            "name": "predis/predis",
+            "version": "v3.4.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/predis/predis.git",
+                "reference": "2033429520d8997a7815a2485f56abe6d2d0e075"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/predis/predis/zipball/2033429520d8997a7815a2485f56abe6d2d0e075",
+                "reference": "2033429520d8997a7815a2485f56abe6d2d0e075",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^7.2 || ^8.0",
+                "psr/http-message": "^1.0|^2.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.3",
+                "phpstan/phpstan": "^1.9",
+                "phpunit/phpcov": "^6.0 || ^8.0",
+                "phpunit/phpunit": "^8.0 || ~9.4.4"
+            },
+            "suggest": {
+                "ext-relay": "Faster connection with in-memory caching (>=0.6.2)"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "Predis\\": "src/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Till Krüss",
+                    "homepage": "https://till.im",
+                    "role": "Maintainer"
+                }
+            ],
+            "description": "A flexible and feature-complete Redis/Valkey client for PHP.",
+            "homepage": "http://github.com/predis/predis",
+            "keywords": [
+                "nosql",
+                "predis",
+                "redis"
+            ],
+            "support": {
+                "issues": "https://github.com/predis/predis/issues",
+                "source": "https://github.com/predis/predis/tree/v3.4.2"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/sponsors/tillkruss",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-03-09T20:33:04+00:00"
         },
         {
             "name": "psr/container",
@@ -1020,15 +1083,24 @@
         },
         {
             "name": "thomas-institut/shared-php",
-            "version": "0.1.0",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "../shared-php",
-                "reference": "9d5b49675be18fedd781bb01ea109e4df74b3a55"
+                "reference": "8dd8006c861b60b9d5e813b4af6d5796d557e875"
             },
             "require": {
+                "ext-pcntl": "*",
+                "ext-pdo": "*",
+                "ext-posix": "*",
                 "ext-yaml": "*",
-                "php": "^8.3"
+                "monolog/monolog": "^3.10",
+                "php": "^8.3",
+                "php-di/php-di": "^7.1",
+                "predis/predis": "^v3.0",
+                "slim/psr7": "^1.8",
+                "slim/slim": "^4.15",
+                "thomas-institut/timestring": "^v1.3"
             },
             "require-dev": {
                 "phpunit/phpunit": "^12.5"
@@ -1058,29 +1130,29 @@
             ],
             "description": "Shared PHP library for Thomas Institut",
             "transport-options": {
+                "symlink": false,
                 "relative": true
             }
         },
         {
             "name": "thomas-institut/timestring",
-            "version": "v2.1.1",
+            "version": "v1.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thomas-institut/timestring.git",
-                "reference": "5ad65c0595ca5ea00a6c084fdf869be34bc6f459"
+                "reference": "5868dc0c1893cd080477a8e55a93b2a66099f3e6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thomas-institut/timestring/zipball/5ad65c0595ca5ea00a6c084fdf869be34bc6f459",
-                "reference": "5ad65c0595ca5ea00a6c084fdf869be34bc6f459",
+                "url": "https://api.github.com/repos/thomas-institut/timestring/zipball/5868dc0c1893cd080477a8e55a93b2a66099f3e6",
+                "reference": "5868dc0c1893cd080477a8e55a93b2a66099f3e6",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.3"
+                "php": ">=8.1"
             },
             "require-dev": {
-                "phpunit/phpunit": "^12.1",
-                "squizlabs/php_codesniffer": "^3.12"
+                "phpunit/phpunit": "^10.5.7"
             },
             "type": "library",
             "autoload": {
@@ -1098,15 +1170,15 @@
                     "email": "rafael.najera@uni-koeln.de"
                 }
             ],
-            "description": "A class to deal with MySQL datetime strings with microseconds",
+            "description": "Dealing with MySql datetime strings with microseconds",
             "keywords": [
                 "data"
             ],
             "support": {
                 "issues": "https://github.com/thomas-institut/timestring/issues",
-                "source": "https://github.com/thomas-institut/timestring/tree/v2.1.1"
+                "source": "https://github.com/thomas-institut/timestring/tree/v1.3"
             },
-            "time": "2025-04-22T09:12:13+00:00"
+            "time": "2024-01-22T11:17:48+00:00"
         }
     ],
     "packages-dev": [
@@ -1693,16 +1765,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.5.24",
+            "version": "12.5.25",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "d75dd30597caa80e72fad2ef7904601a30ef1046"
+                "reference": "792c2980442dfce319226b88fa845b8b6de3b333"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/d75dd30597caa80e72fad2ef7904601a30ef1046",
-                "reference": "d75dd30597caa80e72fad2ef7904601a30ef1046",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/792c2980442dfce319226b88fa845b8b6de3b333",
+                "reference": "792c2980442dfce319226b88fa845b8b6de3b333",
                 "shasum": ""
             },
             "require": {
@@ -1771,7 +1843,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.24"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.25"
             },
             "funding": [
                 {
@@ -1779,27 +1851,27 @@
                     "type": "other"
                 }
             ],
-            "time": "2026-05-01T04:21:04+00:00"
+            "time": "2026-05-13T03:56:57+00:00"
         },
         {
             "name": "sebastian/cli-parser",
-            "version": "4.2.0",
+            "version": "4.2.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/cli-parser.git",
-                "reference": "90f41072d220e5c40df6e8635f5dafba2d9d4d04"
+                "reference": "7d05781b13f7dec9043a629a21d086ed74582a15"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/cli-parser/zipball/90f41072d220e5c40df6e8635f5dafba2d9d4d04",
-                "reference": "90f41072d220e5c40df6e8635f5dafba2d9d4d04",
+                "url": "https://api.github.com/repos/sebastianbergmann/cli-parser/zipball/7d05781b13f7dec9043a629a21d086ed74582a15",
+                "reference": "7d05781b13f7dec9043a629a21d086ed74582a15",
                 "shasum": ""
             },
             "require": {
                 "php": ">=8.3"
             },
             "require-dev": {
-                "phpunit/phpunit": "^12.0"
+                "phpunit/phpunit": "^12.5.25"
             },
             "type": "library",
             "extra": {
@@ -1828,7 +1900,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/cli-parser/issues",
                 "security": "https://github.com/sebastianbergmann/cli-parser/security/policy",
-                "source": "https://github.com/sebastianbergmann/cli-parser/tree/4.2.0"
+                "source": "https://github.com/sebastianbergmann/cli-parser/tree/4.2.1"
             },
             "funding": [
                 {
@@ -1848,7 +1920,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-09-14T09:36:45+00:00"
+            "time": "2026-05-17T05:29:34+00:00"
         },
         {
             "name": "sebastian/comparator",
@@ -2783,7 +2855,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "thomas-institut/shared-php": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

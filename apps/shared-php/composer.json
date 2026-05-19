@@ -1,7 +1,6 @@
 {
   "name": "thomas-institut/shared-php",
   "description": "Shared PHP library for Thomas Institut",
-  "version": "0.1.0",
   "minimum-stability": "stable",
   "license": "GPL-3.0-or-later",
   "authors": [

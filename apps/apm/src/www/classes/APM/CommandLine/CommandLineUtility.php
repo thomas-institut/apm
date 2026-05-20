@@ -118,7 +118,7 @@ abstract class CommandLineUtility {
         return $this->getSystemManager()->getDbConnection();
     }
     
-    #[NoReturn] public function run(): void
+    #[NoReturn] public function run(): void // @phpstan-ignore attribute.notFound
     {
         $result = $this->main($this->argc, $this->argv);
         $status = $result ? 0 : 1;

@@ -16,7 +16,6 @@ use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiUsers;
 use APM\Api\ApiWitness;
 use APM\Api\ApiWorks;
-use APM\Jobs\UpdateWorksCache;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
@@ -46,7 +45,6 @@ use Slim\Psr7\Factory\ResponseFactory;
 use Slim\Routing\RouteCollectorProxy;
 use Slim\Views\Twig;
 use Slim\Views\TwigMiddleware;
-use ThomasInstitut\JobQueue\NullJobHandler;
 use ThomasInstitut\Profiler\SystemProfiler;
 use function DI\autowire;
 use function DI\factory;
@@ -117,7 +115,7 @@ return $app;
  * Exits with an error message
  * @param string $msg
  */
-#[NoReturn]
+#[NoReturn]  // @phpstan-ignore attribute.notFound
 function exitWithErrorMessage(string $msg): void
 {
     http_response_code(500);

@@ -61,7 +61,7 @@ if (!function_exists('buildLogger')) {
 }
 
 if (!function_exists('exitWithErrorMessage')) {
-    #[NoReturn]
+    #[NoReturn] // @phpstan-ignore-line
     function exitWithErrorMessage(string $msg): void
     {
         http_response_code(500);

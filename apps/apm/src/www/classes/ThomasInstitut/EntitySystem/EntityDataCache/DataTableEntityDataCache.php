@@ -4,11 +4,11 @@ namespace ThomasInstitut\EntitySystem\EntityDataCache;
 
 use Closure;
 use Psr\Log\LoggerAwareTrait;
+use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
-use ThomasInstitut\DataTable\InvalidRowForUpdate;
-use ThomasInstitut\DataTable\NullLogger;
-use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\EntityData;
 
 /**

@@ -43,7 +43,7 @@
         "dflydev/fig-cookies": "^v3.0.0",
         "predis/predis": "^v3.0",
         "rafaelnajera/xmlmatcher": "^0.4",
-        "thomas-institut/datatable" : "^2.0.2",
+        "thomas-institut/datatable" : "^3.0.2",
         "thomas-institut/timestring" : "^v1.3",
         "thomas-institut/datacache": "^v1.0.1",
         "monolog/monolog": "^3.0",

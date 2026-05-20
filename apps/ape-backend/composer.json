@@ -29,7 +29,7 @@
     "ext-yaml": "*",
     "thomas-institut/shared-php": "dev-main",
     "slim/slim": "^4.15",
-    "thomas-institut/datatable" : "^2.0",
+    "thomas-institut/datatable" : "^3.0.2",
     "thomas-institut/timestring" : "^v1.3",
     "monolog/monolog": "^3.10",
     "php-di/php-di": "^7.1",

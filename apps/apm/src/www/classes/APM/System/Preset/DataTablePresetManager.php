@@ -24,7 +24,7 @@ use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
 use Exception;
 use InvalidArgumentException;
-use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
 
 /**
  * An implementation of a PresetManager using a DataTable as the underlying storage.

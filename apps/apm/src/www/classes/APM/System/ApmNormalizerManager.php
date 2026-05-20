@@ -27,9 +27,9 @@ use RuntimeException;
 use ThomasInstitut\DataTable\InMemoryDataTable;
 use APM\Core\Token\Normalizer\WitnessTokenNormalizer;
 use APM\Core\Token\Normalizer\CompositeNormalizer;
-use ThomasInstitut\DataTable\InvalidRowForUpdate;
-use ThomasInstitut\DataTable\RowAlreadyExists;
-use ThomasInstitut\DataTable\RowDoesNotExist;
+use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
+use ThomasInstitut\DataTable\Exception\RowDoesNotExist;
 
 const FIELD_NAME = 'name';
 const FIELD_LANG = 'lang';

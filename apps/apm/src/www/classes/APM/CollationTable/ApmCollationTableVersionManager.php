@@ -25,8 +25,8 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
-use ThomasInstitut\DataTable\InvalidRowForUpdate;
-use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApmCollationTableVersionManager extends CollationTableVersionManager implements LoggerAwareInterface

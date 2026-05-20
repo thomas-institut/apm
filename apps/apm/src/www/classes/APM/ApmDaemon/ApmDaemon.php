@@ -3,13 +3,15 @@
 namespace APM\ApmDaemon;
 
 use APM\CommandLine\CommandLineUtility;
-use APM\Jobs\ApmJobName;
+use APM\Jobs\UpdateAllPeopleDataCache;
+use APM\Jobs\SiteDocumentsUpdateDataCache;
+use APM\Jobs\UpdateWorksCache;
 use APM\Site\SiteDocuments;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
-use APM\System\Job\ValkeyJobQueueManager;
 use Monolog\Logger;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
 class ApmDaemon extends CommandLineUtility
@@ -88,23 +90,23 @@ class ApmDaemon extends CommandLineUtility
 
     private function scheduleCacheRebuildJobs(): void
     {
-        $jobManager = $this->getSystemManager()->getJobManager();
+        $jobManager = $this->getSystemManager()->getJobQueueManager();
         $cache = $this->getSystemManager()->getSystemDataCache();
 
         $tasks = [
             [
                 'key' => SiteWorks::WORK_DATA_CACHE_KEY,
-                'jobName' => ApmJobName::SITE_WORKS_UPDATE_CACHE,
+                'jobName' => UpdateWorksCache::class,
                 'payload' => []
             ],
             [
                 'key' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
-                'jobName' => ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+                'jobName' => SiteDocumentsUpdateDataCache::class,
                 'payload' => []
             ],
             [
                 'key' => CacheKey::ApiPeople_PeoplePageData_All,
-                'jobName' => ApmJobName::API_PEOPLE_UPDATE_CACHE,
+                'jobName' => UpdateAllPeopleDataCache::class,
                 'payload' => []
             ],
         ];
@@ -128,7 +130,7 @@ class ApmDaemon extends CommandLineUtility
             return;
         }
 
-        $jobManager = $this->getSystemManager()->getJobManager();
+        $jobManager = $this->getSystemManager()->getJobQueueManager();
         if ($jobManager instanceof ValkeyJobQueueManager) {
             $this->logger->info("Running Job Queue Recovery check");
             $recovered = $jobManager->runRecovery(self::JOB_TIMEOUT);

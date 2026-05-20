@@ -9,6 +9,9 @@ RUN apt-get update && apt-get upgrade -y && apt-get install -y \
     git \
     && rm -rf /var/lib/apt/lists/*
 
+RUN docker-php-ext-configure pcntl --enable-pcntl \
+  && docker-php-ext-install pcntl;
+
 # Install PHP extensions
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
 RUN install-php-extensions yaml xdebug
@@ -21,4 +24,4 @@ RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local
 
 WORKDIR /app
 
-CMD ["php", "-a"]
+CMD ["tail", "-f", "/dev/null"]

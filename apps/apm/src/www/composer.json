@@ -14,7 +14,10 @@
     "repositories": [
         {
             "type": "path",
-            "url": "../../shared-php"
+            "url": "../../shared-php",
+            "options": {
+                "symlink": false
+            }
         }
     ],
     "require": {
@@ -30,7 +33,7 @@
         "ext-yaml": "*",
         "ext-gd": "*",
         "ext-iconv": "*",
-        "thomas-institut/shared-php": "*",
+        "thomas-institut/shared-php": "dev-main#0cd6acb1aa453e65c8b16a2df11085fe41f44b86",
         "psr/log": "^3.0",
         "slim/slim": "^4.3",
         "slim/psr7": "^1.6",

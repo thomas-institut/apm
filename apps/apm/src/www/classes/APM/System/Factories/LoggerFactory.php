@@ -23,8 +23,8 @@ class LoggerFactory
         'referrer' => 'HTTP_REFERER',
     ];
 
-    public static function create(ApmSystemConfig $config): Logger
-    {
+
+    private static function createBasicLogger(ApmSystemConfig $config): Logger {
         $loggerLevel = Level::Info;
         if ($config->log->includeDebugInfo) {
             $loggerLevel = Level::Debug;
@@ -41,6 +41,12 @@ class LoggerFactory
             }
             $logger->pushHandler($logStream);
         }
+        return $logger;
+    }
+
+    public static function create(ApmSystemConfig $config): Logger
+    {
+        $logger = self::createBasicLogger($config);
 
         if ($config->log->inPhpErrorHandler) {
             // Cannot set this in testing, so, let's ignore it
@@ -60,20 +66,7 @@ class LoggerFactory
     public static function createForCli(ContainerInterface $ci): Logger
     {
         $config = $ci->get(ApmSystemConfig::class);
-        $loggerLevel = Level::Info;
-        if ($config->log->includeDebugInfo) {
-            $loggerLevel = Level::Debug;
-        }
-        $logger = new Logger($config->log->appName . '.CLI');
-        if ($config->log->fileName !== '') {
-            try {
-                $logStream = new StreamHandler($config->log->fileName,
-                    $loggerLevel);
-            } catch (Exception) { // @codeCoverageIgnore
-                return $logger;  // @codeCoverageIgnore
-            }
-            $logger->pushHandler($logStream);
-        }
+        $logger = self::createBasicLogger($config)->withName($config->log->appName . '.CLI');
 
         if ($config->log->inStdErr) {
             $stdErrLog = new ErrorLogHandler();
@@ -87,7 +80,9 @@ class LoggerFactory
             function ($record) use ($processUser, $cmd, $pid) {
                 $record['extra']['unixUser'] = $processUser['name'];
                 $record['extra']['pid'] = $pid;
-                $record['extra']['cmd'] = $cmd;
+                if (isset($cmd) && $cmd !== '') {
+                    $record['extra']['cmd'] = $cmd;
+                }
                 return $record;
             });
         return $logger;

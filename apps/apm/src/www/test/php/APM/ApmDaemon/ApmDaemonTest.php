@@ -4,11 +4,11 @@ namespace APM\Test\ApmDaemon;
 
 use APM\ApmDaemon\ApmDaemon;
 use APM\System\ApmSystemManager;
-use APM\System\Job\ValkeyJobQueueManager;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
 use ReflectionClass;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ApmDaemonTest extends TestCase
 {
@@ -22,7 +22,7 @@ class ApmDaemonTest extends TestCase
             ->willReturn(5);
 
         $systemManager = $this->createStub(ApmSystemManager::class);
-        $systemManager->method('getJobManager')->willReturn($jobManager);
+        $systemManager->method('getJobQueueManager')->willReturn($jobManager);
         $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
 
         $config = $this->configMock;
@@ -49,7 +49,7 @@ class ApmDaemonTest extends TestCase
             ->willReturn(0);
 
         $systemManager = $this->createStub(ApmSystemManager::class);
-        $systemManager->method('getJobManager')->willReturn($jobManager);
+        $systemManager->method('getJobQueueManager')->willReturn($jobManager);
         $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
 
         $config = $this->configMock;

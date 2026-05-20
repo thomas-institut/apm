@@ -1,9 +1,12 @@
 <?php
 
-namespace APM\System\Job;
+namespace ThomasInstitut\JobQueue;
 
 use Predis\Client;
 use Predis\Transaction\MultiExec;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
@@ -12,12 +15,14 @@ use ThomasInstitut\TimeString\TimeString;
 /**
  * Valkey-based job queue manager
  */
-class ValkeyJobQueueManager extends JobQueueManager
+class ValkeyJobQueueManager implements JobQueueManagerInterface
 {
     private Client $valkey;
     private LoggerInterface $logger;
+    private ?ContainerInterface $container;
     private string $prefix;
     private array $registeredJobs = [];
+    private bool $strictMode = false;
 
     private string $keyWaiting;
     private string $keyData;
@@ -32,11 +37,12 @@ class ValkeyJobQueueManager extends JobQueueManager
     public const string SUFFIX_DEAD = 'Dead';
     public const string SUFFIX_STATS = 'Stats';
 
-    public function __construct(Client $valkey, LoggerInterface $logger, string $prefix = self::DEFAULT_PREFIX)
+    public function __construct(Client $valkey, LoggerInterface $logger, string $prefix = self::DEFAULT_PREFIX, ?ContainerInterface $container = null)
     {
         $this->valkey = $valkey;
         $this->logger = $logger;
         $this->prefix = $prefix;
+        $this->container = $container;
 
         $this->keyWaiting = $this->prefix . self::SUFFIX_WAITING;
         $this->keyData = $this->prefix . self::SUFFIX_DATA;
@@ -45,7 +51,23 @@ class ValkeyJobQueueManager extends JobQueueManager
         $this->keyStats = $this->prefix . self::SUFFIX_STATS;
     }
 
-    public function registerJob(string $name, JobHandlerInterface $job): bool
+    public function setStrictMode(bool $strictMode): void
+    {
+        $this->strictMode = $strictMode;
+    }
+
+    private function isRegistered(string $name): bool
+    {
+        if (array_key_exists($name, $this->registeredJobs)) {
+            return true;
+        }
+        if (!$this->strictMode && $this->container !== null) {
+            return $this->container->has($name);
+        }
+        return false;
+    }
+
+    public function registerJobHandler(string $name, ?JobHandlerInterface $job): bool
     {
         if ($name === '') {
             return false;
@@ -56,18 +78,34 @@ class ValkeyJobQueueManager extends JobQueueManager
 
     public function getJobHandler(string $name): ?JobHandlerInterface
     {
-        return $this->registeredJobs[$name] ?? null;
+        if ($this->strictMode && !array_key_exists($name, $this->registeredJobs)) {
+            return null;
+        }
+
+        if (array_key_exists($name, $this->registeredJobs) && $this->registeredJobs[$name] !== null) {
+            return $this->registeredJobs[$name];
+        }
+
+        if ($this->container !== null && $this->container->has($name)) {
+            try {
+                $handler = $this->container->get($name);
+                if ($handler instanceof JobHandlerInterface) {
+                    $this->registeredJobs[$name] = $handler;
+                    return $handler;
+                }
+                $this->logger->error("Job handler '$name' retrieved from container does not implement JobHandlerInterface");
+            } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+                $this->logger->error("Failed to retrieve job handler '$name' from container");
+            }
+        }
+
+        return null;
     }
 
     private function getJobSignature(string $name, string $description, array $payload): string
     {
         $id = $name . $description . json_encode($payload);
         return hash('md2', $id);
-    }
-
-    private function isRegistered(string $name): bool
-    {
-        return $name !== '' && isset($this->registeredJobs[$name]);
     }
 
     public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): string
@@ -82,9 +120,9 @@ class ValkeyJobQueueManager extends JobQueueManager
 
         try {
             $scheduledAt = TimeString::fromTimeStamp($now);
-        } catch (InvalidTimeZoneException $e) {
-            $this->logger->error($e->getMessage());
-            throw new RuntimeException("Failed to create TimeString from timestamp", 0, $e);
+        } catch (InvalidTimeZoneException $e) { // @codeCoverageIgnore
+            $this->logger->error($e->getMessage()); // @codeCoverageIgnore
+            throw new RuntimeException("Failed to create TimeString from timestamp", 0, $e); // @codeCoverageIgnore
         }
 
         $jobData = [
@@ -143,7 +181,7 @@ class ValkeyJobQueueManager extends JobQueueManager
     public function process(): void
     {
         // processing must be done by external workers
-        $this->logger->warning("process() called on ValkeyJobQueueManager. Use external workers instead.");
+        $this->logger->warning("process() called on ValkeyJobQueueManager. Use external workers instead."); // @codeCoverageIgnore
     }
 
     public function cleanQueue(): void
@@ -379,7 +417,7 @@ LUA;
         foreach ($stats as $key => $count) {
             $parts = explode(':', $key);
             if (count($parts) !== 2) {
-                continue;
+                continue; // @codeCoverageIgnore
             }
             [$type, $date] = $parts;
             $parsedStats[$date][$type] = (int)$count;

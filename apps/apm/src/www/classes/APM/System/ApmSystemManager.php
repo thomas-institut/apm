@@ -37,25 +37,21 @@ use APM\EntitySystem\ApmEntitySystem;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\Jobs\ApiPeopleUpdateAllPeopleEssentialData;
+use APM\Jobs\UpdateAllPeopleDataCache;
 use APM\Jobs\ApiSearchUpdateEditionsIndex;
 use APM\Jobs\ApiSearchUpdateEditorsAndEditionsCache;
 use APM\Jobs\ApiSearchUpdateTranscribersAndTranscriptionsCache;
 use APM\Jobs\ApiSearchUpdateTranscriptionsIndex;
 use APM\Jobs\ApiUsersUpdateCtDataForUser;
 use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
-use APM\Jobs\ApmJobName;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
-use APM\Jobs\SiteWorksUpdateDataCache;
+use APM\Jobs\UpdateWorksCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Document\ApmDocumentManager;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
-use APM\System\Job\JobQueueManager;
-use APM\System\Job\NullJobHandler;
-use APM\System\Job\ValkeyJobQueueManager;
 use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Lemmatizer\UdPipeLemmatizer;
 use APM\System\Person\EntitySystemPersonManager;
@@ -94,6 +90,9 @@ use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
 use ThomasInstitut\EntitySystem\StatementStorage;
 use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\EntitySystem\TypeStorageConfig;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
+use ThomasInstitut\JobQueue\NullJobHandler;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
@@ -143,18 +142,10 @@ class ApmSystemManager extends SystemManager {
     
     const array REQUIRED_CONFIG_VARIABLES_DB = [ 'host', 'db', 'user', 'pwd'];
 
-//    private array $serverLoggerFields = [
-//        'method' => 'REQUEST_METHOD',
-//        'url'         => 'REQUEST_URI',
-//        'ip'          => 'REMOTE_ADDR',
-//        'referrer'    => 'HTTP_REFERER',
-//    ];
-//
     /** @var string[] */
     private array $tableNames;
     private array $imageSources;
     private LoggerInterface $logger;
-//    private RouteParserInterface $router;
 
     //
     // Components
@@ -167,11 +158,10 @@ class ApmSystemManager extends SystemManager {
     private ?ApmTranscriptionManager $transcriptionManager = null;
     private ?ApmCollationTableManager $collationTableManager = null;
     private ?ApmMultiChunkEditionManager $multiChunkEditionManager = null;
-//    private ?Twig $twig = null;
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?ApmUserManager $userManager = null;
     private ?PersonManagerInterface $personManager = null;
-    private ?JobQueueManager $jobManager = null;
+    private ?JobQueueManagerInterface $jobManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
     private ?WorkManager $workManager = null;
     private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem = null;
@@ -710,7 +700,7 @@ class ApmSystemManager extends SystemManager {
     {
         parent::onTranscriptionUpdated($userTid, $docId, $pageNumber, $columnNumber);
 
-        $jobManager = $this->getJobManager();
+        $jobManager = $this->getJobQueueManager();
 
         $siteWorkUpdateCacheJobPayload = [
             'type' => 'transcription',
@@ -718,40 +708,40 @@ class ApmSystemManager extends SystemManager {
             'pageNumber' => $pageNumber,
             'columnNumber' => $columnNumber
         ];
-        $jobManager->scheduleJob(ApmJobName::SITE_WORKS_UPDATE_CACHE,
+        $jobManager->scheduleJob(UpdateWorksCache::class,
             '', $siteWorkUpdateCacheJobPayload,0, 3, 20);
-        $jobManager->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+        $jobManager->scheduleJob(SiteDocumentsUpdateDataCache::class,
             '',[$docId],0, 3, 20);
-        $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
+        $jobManager->scheduleJob(ApiUsersUpdateTranscribedPagesData::class,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
-        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX,
+        $jobManager->scheduleJob(ApiSearchUpdateTranscriptionsIndex::class,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber],0, 3, 20);
-        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE,
+        $jobManager->scheduleJob(ApiSearchUpdateTranscribersAndTranscriptionsCache::class,
             '', [], 0, 3, 20);
     }
 
     public function onUpdatePageSettings(int $userTid, int $pageId) : void {
         parent::onUpdatePageSettings($userTid, $pageId);
-        $this->getJobManager()->scheduleJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE,
+        $this->getJobQueueManager()->scheduleJob(ApiUsersUpdateTranscribedPagesData::class,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
     }
 
     public function onCollationTableSaved(int $userTid, int $ctId): void
     {
         parent::onCollationTableSaved($userTid, $ctId);
-        $jobManager = $this->getJobManager();
-        $jobManager->scheduleJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE,
+        $jobManager = $this->getJobQueueManager();
+        $jobManager->scheduleJob(ApiUsersUpdateCtDataForUser::class,
             "User $userTid", ['userTid' => $userTid],0, 3, 20);
-        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_INDEX,
+        $jobManager->scheduleJob(ApiSearchUpdateEditionsIndex::class,
             '', [$ctId],0, 3, 20);
-        $jobManager->scheduleJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE,
+        $jobManager->scheduleJob(ApiSearchUpdateTranscribersAndTranscriptionsCache::class,
             '', [],0, 3, 20);
     }
 
     public function onDocumentDeleted(int $userTid, int $docId): void
     {
         parent::onDocumentDeleted($userTid, $docId);
-        $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
             '', [ $docId],0, 3, 20);
 
     }
@@ -784,20 +774,20 @@ class ApmSystemManager extends SystemManager {
         parent::onPersonDataChanged($personTid);
         $part = ApiPeople::onPersonDataChanged($personTid, $this->getEntitySystem(), $this->getSystemDataCache(), $this->logger);
         $this->logger->debug("Invalidated ApiPeople data cache, part $part");
-        $this->getJobManager()->scheduleJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, '', [], 0, 3, 20);
+        $this->getJobQueueManager()->scheduleJob(UpdateAllPeopleDataCache::class, '', [], 0, 3, 20);
     }
 
     public function onDocumentUpdated(int $userTid, int $docId): void
     {
         parent::onDocumentUpdated($userTid, $docId);
-        $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
             '', [$docId],0, 3, 20);
     }
 
     public function onDocumentAdded(int $userTid, int $docId): void
     {
         parent::onDocumentAdded($userTid, $docId);
-        $this->getJobManager()->scheduleJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE,
+        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
             '', [ $docId],0, 3, 20);
     }
 
@@ -868,27 +858,21 @@ class ApmSystemManager extends SystemManager {
         return $this->workManager;
     }
 
-    public function getJobManager(): JobQueueManager
+    public function getJobQueueManager(): JobQueueManagerInterface
     {
+        $logger = $this->logger;
+        if ($logger instanceof Logger) {
+            $logger = $logger->withName("JOB_QUEUE");
+        }
         if ($this->jobManager === null) {
-            $this->jobManager = new ValkeyJobQueueManager($this->createValkeyClient(), $this->logger->withName('JOB_QUEUE'));
-            $this->registerSystemJobs();
+            $this->jobManager = new ValkeyJobQueueManager(
+                $this->createValkeyClient(),
+                $logger,
+                ValkeyJobQueueManager::DEFAULT_PREFIX,
+                $this->ci
+            );
         }
         return $this->jobManager;
-    }
-
-    private function registerSystemJobs() : void
-    {
-        $this->jobManager->registerJob(ApmJobName::NULL_JOB, new NullJobHandler());
-        $this->jobManager->registerJob(ApmJobName::SITE_WORKS_UPDATE_CACHE, new SiteWorksUpdateDataCache());
-        $this->jobManager->registerJob(ApmJobName::SITE_DOCUMENTS_UPDATE_DATA_CACHE, new SiteDocumentsUpdateDataCache());
-        $this->jobManager->registerJob(ApmJobName::API_PEOPLE_UPDATE_CACHE, new ApiPeopleUpdateAllPeopleEssentialData());
-        $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_TRANSCRIBED_PAGES_CACHE, new ApiUsersUpdateTranscribedPagesData());
-        $this->jobManager->registerJob(ApmJobName::API_USERS_UPDATE_CT_INFO_CACHE, new ApiUsersUpdateCtDataForUser());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIBERS_AND_TITLES_CACHE, new ApiSearchUpdateTranscribersAndTranscriptionsCache());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_TRANSCRIPTIONS_INDEX, new ApiSearchUpdateTranscriptionsIndex());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITORS_AND_TITLES_CACHE, new ApiSearchUpdateEditorsAndEditionsCache());
-        $this->jobManager->registerJob(ApmJobName::API_SEARCH_UPDATE_EDITIONS_INDEX, new ApiSearchUpdateEditionsIndex());
     }
 
     public function getEntitySystem(): ApmEntitySystemInterface

@@ -517,7 +517,7 @@ class ApiCollationTable extends ApiController
             $cache->set($cacheKey, $stringToCache);
 
         }
-        $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $lang]);
+        $this->info("Automatic Collation Table generated", ['workId'=>$workId, 'chunk' => $chunkNumber, 'lang' => $language]);
 
 
         return $this->responseFactory->responseWithRawJson($response, $jsonToCache, HttpStatus::SUCCESS);

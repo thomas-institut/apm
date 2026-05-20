@@ -277,7 +277,7 @@ TXT;
         $pageId = $pageInfo->pageId;
         $docId = $pageInfo->docId;
 
-        if (!$this->printTranscriptionInfo($pageInfo,$column, 1)) { // "!" added by lukas, correct?
+        if (!$this->printTranscriptionInfo($pageInfo,$column)) { // "!" added by lukas, correct?
             if ($this->userRespondsYes("Are you sure you want to delete this transcription?")) {
                 $tableNames = $this->getSystemManager()->getTableNames();
                 $dbConn = $this->getDbConn();

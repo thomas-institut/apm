@@ -1,0 +1,11 @@
+parameters:
+    level: 1
+    paths:
+        - classes
+        - test/php
+    excludePaths:
+        - classes/APM/CommandLine/DareDataImporter.php
+        - classes/APM/CommandLine/IndexManager.php
+    treatPhpDocTypesAsCertain: false
+    earlyTerminatingFunctionCalls:
+        - exitWithErrorMessage

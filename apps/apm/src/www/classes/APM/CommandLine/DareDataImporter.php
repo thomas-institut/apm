@@ -23,6 +23,9 @@ namespace APM\CommandLine;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidEntityTypeException;
+use APM\EntitySystem\Exception\InvalidObjectException;
+use APM\EntitySystem\Exception\InvalidStatementException;
+use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\Schema\Languages;
 use GuzzleHttp\Client as HttpClient;
@@ -146,8 +149,7 @@ class DareDataImporter extends CommandLineUtility
                     print("The second argument can only be 'v' for verbose. You will find some help via 'entitymanager -h'.\n");
                     break;
                 }
-                $result = $this->buildBibliography($verbose);
-                print_r($result);
+                $this->buildBibliography($verbose);
                 break;
 
             case 'addSignatures':
@@ -244,9 +246,9 @@ END;
      * @param $verbose
      * @param int $creatorTid
      * @return void
-     * @throws \APM\EntitySystem\Exception\InvalidObjectException
-     * @throws \APM\EntitySystem\Exception\InvalidStatementException
-     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     * @throws InvalidObjectException
+     * @throws InvalidStatementException
+     * @throws InvalidSubjectException
      */
     private function buildInstitutions ($verbose=false, int $creatorTid=-1)
     {
@@ -342,9 +344,9 @@ END;
      * @param int $creatorTid
      * @return void
      * @throws EntityDoesNotExistException
-     * @throws \APM\EntitySystem\Exception\InvalidObjectException
-     * @throws \APM\EntitySystem\Exception\InvalidStatementException
-     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     * @throws InvalidObjectException
+     * @throws InvalidStatementException
+     * @throws InvalidSubjectException
      */
     private function buildLocations(bool $verbose=false, int $creatorTid = -1): void
     {
@@ -560,9 +562,9 @@ END;
      * @param $verbose
      * @param int $creatorTid
      * @return int[]
-     * @throws \APM\EntitySystem\Exception\InvalidObjectException
-     * @throws \APM\EntitySystem\Exception\InvalidStatementException
-     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     * @throws InvalidObjectException
+     * @throws InvalidStatementException
+     * @throws InvalidSubjectException
      */
     private function buildDocuments($verbose=false, int $creatorTid=-1): array
     {
@@ -1533,9 +1535,9 @@ END;
      * @param bool $addSortName whether to add a sort name statement
      * @return array
      * @throws EntityDoesNotExistException
-     * @throws \APM\EntitySystem\Exception\InvalidObjectException
-     * @throws \APM\EntitySystem\Exception\InvalidStatementException
-     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     * @throws InvalidObjectException
+     * @throws InvalidStatementException
+     * @throws InvalidSubjectException
      */
     private function createEntityOfType(int $type, string $name, string $locatedIn='', bool $checkExisting=true, int $creatorTid = -1, bool $addSortName = false): array
     {
@@ -1835,9 +1837,9 @@ SPARQL;
      * @param int $creatorTid
      * @param bool $verbose
      * @return void
-     * @throws \APM\EntitySystem\Exception\InvalidObjectException
-     * @throws \APM\EntitySystem\Exception\InvalidStatementException
-     * @throws \APM\EntitySystem\Exception\InvalidSubjectException
+     * @throws InvalidObjectException
+     * @throws InvalidStatementException
+     * @throws InvalidSubjectException
      */
     private function addAltNamesToEntity(string $name, mixed $tid, int $entityType, int $creatorTid = -1, bool $verbose=true): void
     {

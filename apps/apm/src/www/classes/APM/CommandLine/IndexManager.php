@@ -32,7 +32,7 @@ use APM\System\Transcription\TxText\Item;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\DateTimeFormat;
 use Exception;
-use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use Typesense\Exceptions\TypesenseClientError;
 
 /**

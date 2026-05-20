@@ -24,10 +24,8 @@ use APM\System\ApmMySqlTableName;
 use PDO;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use ThomasInstitut\DataTable\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\DataTable\RowAlreadyExists;
-use ThomasInstitut\DataTable\RowDoesNotExist;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
 use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\ToolBox\MySqlHelper;
 
@@ -153,8 +151,6 @@ class EdNoteManager {
     }
 
     /**
-     * @throws RowDoesNotExist
-     * @throws InvalidRowForUpdate
      */
     public function updateNote(EditorialNote $note) : void {
         $this->edNotesDataTable->updateRow([
@@ -171,8 +167,6 @@ class EdNoteManager {
     /**
      * @param EditorialNote[] $edNotes
      * @return void
-     * @throws InvalidRowForUpdate
-     * @throws RowDoesNotExist
      */
     public function updateNotesFromArray(array $edNotes): void
     {

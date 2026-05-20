@@ -23,8 +23,8 @@ namespace APM\System;
 //use RuntimeException;
 use ThomasInstitut\DataTable\DataTable;
 use ThomasInstitut\DataTable\InMemoryDataTable;
-//use ThomasInstitut\DataTable\InvalidRowForUpdate;
-//use ThomasInstitut\DataTable\RowAlreadyExists;
+//use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
+//use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
 //use ThomasInstitut\DataTable\RowDoesNotExist;
 
 /**

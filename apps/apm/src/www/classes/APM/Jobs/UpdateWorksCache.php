@@ -12,7 +12,7 @@ use APM\ToolBox\ArrayComp;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 
 readonly class UpdateWorksCache implements JobHandlerInterface

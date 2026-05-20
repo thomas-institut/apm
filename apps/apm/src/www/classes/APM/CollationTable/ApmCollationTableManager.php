@@ -25,9 +25,15 @@ use PDO;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
-use ThomasInstitut\DataTable\DataTableResultsPdoIterator;
-use ThomasInstitut\DataTable\InvalidWhereClauseException;
+use Random\RandomException;
+use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\Exception\InvalidRowUpdateTime;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
+use ThomasInstitut\DataTable\Exception\InvalidWhereClauseException;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
+use ThomasInstitut\DataTable\Exception\RowDoesNotExist;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\DataTable\ResultsIterator\PdoResultsIterator;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 use ThomasInstitut\TimeString\TimeString;
@@ -107,6 +113,11 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     }
 
 
+    /**
+     * @throws InvalidTimeStringException
+     * @throws RowAlreadyExists
+     * @throws RandomException
+     */
     public function saveNewCollationTable(array $collationTableData, CollationTableVersionInfo $versionInfo) : int
     {
         $time = TimeString::now();
@@ -122,6 +133,13 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $collationTableId;
     }
 
+    /**
+     * @throws InvalidRowUpdateTime
+     * @throws InvalidRowForUpdate
+     * @throws InvalidTimeStringException
+     * @throws RowDoesNotExist
+     * @throws RandomException
+     */
     public function saveCollationTable(int $collationTableId, array $collationTableData, CollationTableVersionInfo $versionInfo) : void
     {
         $time = TimeString::now();
@@ -132,6 +150,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         $this->versionManager->registerNewCollationTableVersion($collationTableId, $versionInfo);
     }
 
+    /**
+     * @throws RandomException
+     */
     protected function getDbRowFromCollationData(array $collationTableData, $compress = false, $allowSingleWitness = false): array
     {
 
@@ -237,7 +258,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     }
 
 
-
+    /**
+     * @throws InvalidWhereClauseException
+     */
     public function getCollationTableIdsForChunk(string $chunkId, string $timeString): array
     {
 
@@ -289,7 +312,7 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
                 '',
                 "getCollationTableInfo");
 
-            $rows = new DataTableResultsPdoIterator($result, 'id');
+            $rows = new PdoResultsIterator($result, 'id');
 
 //            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
         } else {
@@ -304,6 +327,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     }
 
 
+    /**
+     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
+     */
     public function checkDataConsistency($ids = []) : array {
         if (!is_a($this->ctTable, MySqlUnitemporalDataTable::class)) {
             return [];
@@ -311,6 +337,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $this->ctTable->checkConsistency($ids);
     }
 
+    /**
+     * @throws InvalidWhereClauseException
+     */
     public function getCollationTableStoredVersionsInfo(int $id): array
     {
         $returnArray = [];

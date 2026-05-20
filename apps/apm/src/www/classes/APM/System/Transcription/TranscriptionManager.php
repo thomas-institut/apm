@@ -27,7 +27,7 @@ use APM\System\Transcription\ColumnElement\Element;
 use APM\System\WitnessInfo;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
-use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 

@@ -8,7 +8,7 @@ use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\SystemManager;
 use Http\Client\Exception;
-use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 use Typesense\Exceptions\TypesenseClientError;
 

@@ -32,7 +32,7 @@ use Exception;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
-use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
 

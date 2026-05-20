@@ -3,10 +3,10 @@
 namespace ThomasInstitut\EntitySystem;
 
 
+use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
-use ThomasInstitut\DataTable\NullLogger;
 use ThomasInstitut\EntitySystem\EntityDataCache\EntityNotInCacheException;
 use ThomasInstitut\EntitySystem\Exception\EntityDoesNotExistException;
 use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;

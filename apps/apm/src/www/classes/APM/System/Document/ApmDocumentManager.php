@@ -24,8 +24,8 @@ use RuntimeException;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\DataTable;
-use ThomasInstitut\DataTable\InvalidRowForUpdate;
-use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\EntityData;
 
 class ApmDocumentManager implements DocumentManager, LoggerAwareInterface

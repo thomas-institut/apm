@@ -24,7 +24,7 @@ use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\DataTable;
-use ThomasInstitut\DataTable\RowAlreadyExists;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
 use ThomasInstitut\EntitySystem\EntityData;
 use ThomasInstitut\EntitySystem\EntitySystem;
 use ThomasInstitut\EntitySystem\StatementData;

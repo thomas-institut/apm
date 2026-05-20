@@ -10,6 +10,7 @@ use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
 use APM\Api\ApiPresets;
+use APM\Api\ApiPublication;
 use APM\Api\ApiSearch;
 use APM\Api\ApiSystem;
 use APM\Api\ApiTypesetPdf;
@@ -252,6 +253,8 @@ function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container)
         $group->post('/login', function (Request $request, Response $response) use ($container) {
             return (new Authenticator($container))->apiLogin($request, $response);
         });
+
+        createApiPublicationRoutes($group);
     });
 }
 
@@ -1294,6 +1297,14 @@ function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $
             return (new ApiPresets($container))->savePreset($request, $response);
         }
     );
+}
+
+
+function createApiPublicationRoutes(RouteCollectorProxy $group): void
+{
+    $prefix = '/publication';
+    $group->get($prefix . '/list', [ ApiPublication::class, 'list' ]);
+    $group->get($prefix . '/{id}/get', [ ApiPublication::class, 'get' ]);
 }
 
 /**

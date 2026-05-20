@@ -105,6 +105,12 @@ class ApmResponseFactory implements LoggerAwareInterface
         return $this->error($response, $msg);
     }
 
+    public function notFound(ResponseInterface $response, string $errorMsg = ''): ResponseInterface
+    {
+        $msg = $errorMsg === '' ? 'Not found' : 'Not found: ' . $errorMsg;
+        return $this->error($response, $msg, HttpStatus::NOT_FOUND);
+    }
+
     public function unauthorized(ResponseInterface $response, string $errorMsg = ''): ResponseInterface
     {
         $msg = $errorMsg === '' ? 'Unauthorized' : 'Unauthorized: ' . $errorMsg;

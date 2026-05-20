@@ -1,0 +1,52 @@
+<?php
+
+namespace APM\Api;
+
+use APM\Api\DataSchema\ApiPublicationGetResponse;
+use APM\Api\DataSchema\ApiPublicationListResponse;
+use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+
+class ApiPublication extends ApiController
+{
+    const array validIds = [12340001, 12340002, 12340003];
+
+    public function list(Request $request, Response $response) : Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $apiResponse = new ApiPublicationListResponse();
+        $apiResponse->result = DataSchema\ApiResponse::ResultSuccess;
+        $apiResponse->publications = self::validIds;
+
+        return $this->responseFactory->success($response, $apiResponse);
+    }
+
+    public function get(Request $request, Response $response) : Response
+    {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
+        $requestedId = $request->getAttribute('id', null);
+        if ($requestedId === null) {
+            return $this->responseFactory->badRequest($response, 'No publication id provided');
+        }
+        $id = intval($requestedId);
+        if ($id < 1000000) {
+            return $this->responseFactory->badRequest($response, 'Invalid publication id provided');
+        }
+
+        if (!in_array($id, self::validIds)) {
+            return $this->responseFactory->notFound($response, "Publication id $id not found");
+        }
+
+        $publicationData = [
+            'id' => $id,
+            'type' => 'test',
+            'title' => 'Test Publication',
+            'description' => 'Test Publication Description',
+        ];
+        $apiResponse = new ApiPublicationGetResponse();
+        $apiResponse->result = DataSchema\ApiResponse::ResultSuccess;
+        $apiResponse->publicationData  = $publicationData;
+        return $this->responseFactory->success($response, $apiResponse);
+    }
+}

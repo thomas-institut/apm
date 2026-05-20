@@ -1,6 +1,6 @@
 {
   "name": "apm-ti-node",
-  "version": "1.0.1",
+  "version": "1.2.9",
   "type": "module",
   "scripts": {
     "build": "rm -fr dist; tsc"

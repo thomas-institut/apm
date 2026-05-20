@@ -1,7 +1,7 @@
 {
   "name": "thomas-institut/ape-backend",
   "description": "description",
-  "version": "0.1.0",
+  "version": "1.2.9",
   "minimum-stability": "stable",
   "license": "GPL-3.0-or-later",
   "authors": [
@@ -26,7 +26,7 @@
   "require": {
     "php": "^8.3",
     "ext-yaml": "*",
-    "thomas-institut/shared-php": "dev-main#8dd8006c861b60b9d5e813b4af6d5796d557e875",
+    "thomas-institut/shared-php": "dev-main",
     "slim/slim": "^4.15",
     "thomas-institut/datatable" : "^2.0",
     "thomas-institut/timestring" : "^v1.3",

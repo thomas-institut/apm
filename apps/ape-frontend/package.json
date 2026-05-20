@@ -1,6 +1,6 @@
 {
   "name": "ape-frontend",
-  "version": "0.0.1",
+  "version": "1.2.9",
   "description": "APE Frontend",
   "directories": {
     "test": "test"

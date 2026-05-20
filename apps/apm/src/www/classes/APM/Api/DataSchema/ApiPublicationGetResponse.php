@@ -2,6 +2,8 @@
 
 namespace APM\Api\DataSchema;
 
+use ThomasInstitut\StandardApi\ApiResponse;
+
 class ApiPublicationGetResponse extends ApiResponse
 {
 

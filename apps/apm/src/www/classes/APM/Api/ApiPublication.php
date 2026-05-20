@@ -6,6 +6,7 @@ use APM\Api\DataSchema\ApiPublicationGetResponse;
 use APM\Api\DataSchema\ApiPublicationListResponse;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use ThomasInstitut\StandardApi\ApiResponse;
 
 class ApiPublication extends ApiController
 {
@@ -15,7 +16,7 @@ class ApiPublication extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $apiResponse = new ApiPublicationListResponse();
-        $apiResponse->result = DataSchema\ApiResponse::ResultSuccess;
+        $apiResponse->result = ApiResponse::ResultSuccess;
         $apiResponse->publications = self::validIds;
 
         return $this->responseFactory->success($response, $apiResponse);
@@ -25,7 +26,7 @@ class ApiPublication extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-        $requestedId = $request->getAttribute('id', null);
+        $requestedId = $request->getAttribute('id');
         if ($requestedId === null) {
             return $this->responseFactory->badRequest($response, 'No publication id provided');
         }
@@ -45,7 +46,7 @@ class ApiPublication extends ApiController
             'description' => 'Test Publication Description',
         ];
         $apiResponse = new ApiPublicationGetResponse();
-        $apiResponse->result = DataSchema\ApiResponse::ResultSuccess;
+        $apiResponse->result = ApiResponse::ResultSuccess;
         $apiResponse->publicationData  = $publicationData;
         return $this->responseFactory->success($response, $apiResponse);
     }

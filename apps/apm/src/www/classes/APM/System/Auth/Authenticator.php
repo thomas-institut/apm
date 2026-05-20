@@ -32,10 +32,8 @@
 
 namespace APM\System\Auth;
 
-use APM\Api\ApmResponseFactory;
 use APM\Api\DataSchema\ApiLoginRequest;
 use APM\Api\DataSchema\ApiLoginResponse;
-use APM\Api\DataSchema\ApiResponse;
 use APM\System\ApmContainerKey;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
@@ -58,8 +56,10 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Random\RandomException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response;
-use Slim\Views\Twig;
+//use Slim\Views\Twig;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\StandardApi\ApiResponse;
+use ThomasInstitut\StandardApi\ApiResponseFactory;
 
 /**
  * Middleware class for site authentication
@@ -87,16 +87,16 @@ class Authenticator
     private string $secret = '1256106427895916503';
     private bool $debugMode;
 
-    private bool $devMode;
+//    private bool $devMode;
 
     //Constructor
 
 
-    private Twig $view;
+//    private Twig $view;
     private SystemManager $systemManager;
     private UserManagerInterface $userManager;
 
-    private ApmResponseFactory $responseFactory;
+    private ApiResponseFactory $responseFactory;
 
     /**
      * Authenticator constructor.
@@ -111,12 +111,12 @@ class Authenticator
         $this->router = $this->systemManager->getRouter();
         $this->userManager = $this->systemManager->getUserManager();
         $this->logger = $this->systemManager->getLogger()->withName('AUTH');
-        $this->view = $this->systemManager->getTwig();
+//        $this->view = $this->systemManager->getTwig();
         $this->apiLogger = $this->logger->withName('AUTH-API');
         $this->siteLogger = $this->logger->withName('AUTH-SITE');
         $this->debugMode = false;
-        $this->devMode = $this->systemManager->getConfig()['devMode'] ?? false;
-        $this->responseFactory = new ApmResponseFactory($this->apiLogger);
+//        $this->devMode = $this->systemManager->getConfig()['devMode'] ?? false;
+        $this->responseFactory = new ApiResponseFactory($this->apiLogger);
     }
 
 

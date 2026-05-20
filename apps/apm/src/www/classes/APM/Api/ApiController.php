@@ -22,7 +22,6 @@ namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
 use APM\System\ApmContainerKey;
-use APM\ToolBox\HttpStatus;
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -38,6 +37,8 @@ use Slim\Interfaces\RouteParserInterface;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\Http\HttpStatus;
+use ThomasInstitut\StandardApi\ApiResponseFactory;
 
 abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 {
@@ -85,7 +86,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected int $apiUserId;
     protected bool $devMode;
 
-    protected ApmResponseFactory $responseFactory;
+    protected ApiResponseFactory $responseFactory;
 
 
     /**
@@ -108,7 +109,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
        $this->devMode = $this->systemManager->getConfig()['devMode'] ?? false;
 
-       $this->responseFactory = new ApmResponseFactory($this->systemManager->getLogger());
+       $this->responseFactory = new ApiResponseFactory($this->systemManager->getLogger());
     }
     
     protected function setApiCallName(string $name) : void {

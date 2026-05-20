@@ -2,7 +2,6 @@
 
 namespace APM\Test\System\Auth;
 
-use APM\Api\ApmResponseFactory;
 use APM\Api\DataSchema\ApiLoginRequest;
 use APM\System\Auth\Authenticator;
 use APM\System\User\UserManagerInterface;
@@ -17,6 +16,7 @@ use ReflectionProperty;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Response;
+use ThomasInstitut\StandardApi\ApiResponseFactory;
 
 /**
  * @internal
@@ -121,7 +121,7 @@ class AuthenticatorTest extends TestCase
         $this->setProperty($authenticator, 'siteLogger', $logger);
         $this->setProperty($authenticator, 'apiLogger', $logger);
         $this->setProperty($authenticator, 'userManager', $userManager);
-        $this->setProperty($authenticator, 'responseFactory', new ApmResponseFactory());
+        $this->setProperty($authenticator, 'responseFactory', new ApiResponseFactory());
 
 
 

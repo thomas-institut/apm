@@ -125,4 +125,10 @@ class ApiResponseFactory implements LoggerAwareInterface
         $msg = $errorMsg === '' ? 'Bad request' : 'Bad request: ' . $errorMsg;
         return $this->error($response, $msg, HttpStatus::BAD_REQUEST);
     }
+
+    public function notFound(ResponseInterface $response, string $errorMsg = ''): ResponseInterface
+    {
+        $msg = $errorMsg === '' ? 'Not found' : 'Not found: ' . $errorMsg;
+        return $this->error($response, $msg, HttpStatus::NOT_FOUND);
+    }
 }

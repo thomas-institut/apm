@@ -19,7 +19,6 @@
 
 namespace APM\Api;
 
-use APM\Api\DataSchema\ApiResponse;
 use APM\Api\DataSchema\ApiTypesetPdfResponse;
 use APM\ToolBox\HttpStatus;
 use GuzzleHttp\Client;
@@ -27,6 +26,7 @@ use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\Profiler\SystemProfiler;
+use ThomasInstitut\StandardApi\ApiResponse;
 
 class ApiTypesetPdf extends ApiController
 {

@@ -3,7 +3,7 @@
 /.gitattributes     export-ignore
 /.github            export-ignore
 /.gitignore         export-ignore
-/.php.unit.cache    export-ignore
+/.php.unitcache    export-ignore
 /.composer.lock     export-ignore
 /README.md          export-ignore
 /AGENTS.md          export-ignore

@@ -10,8 +10,7 @@ numbers, corresponding to a particular commit in the main branch.
 **Make sure the code is clean n the local development environment**:
 
 * Pull and checkout the main branch from github.
-* Update the shared-php dependency in `composer.json` to the latest commit hash.
-* Run `composer update shared-php` to make sure the local branch has the latest shared-php code.
+* Run `composer update thomas-institut/shared-php` to make sure the local branch has the latest shared-php code.
     * Optionally, run `composer update` to update all dependencies.
 * Run `npm run build` or `npm run build-dev` for apm, apm-typesetting and ape-backend. Make all three build without
   issues.

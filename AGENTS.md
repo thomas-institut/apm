@@ -7,7 +7,7 @@ consistency with the surrounding code and avoid unnecessary refactors.
 
 ## Project Summary
 
-This repository is a monorepo for two main apps: APM and APE. 
+This repository is a monorepo for two main apps, APM and APE, and shared PHP and TS code. 
 
 APM is a system that allows users to create manuscript transcriptions and critical editions.  APE is a presentation
 app for APM generated data.
@@ -57,6 +57,7 @@ Frontend and backend are served by PHP app:
 - CLI utilities: `src/www/classes/APM/CommandLine`
 - Utility scripts: `src/www/utilities`
 
+
 Frontend code:
 
 - JavaScript/TypeScript code: `src/www/js`
@@ -71,6 +72,12 @@ Typesetting service:
 Split into separate backend and frontend:
 - Backend: `apps/ape-backend`
 - Frontend: `apps/ape-frontend`
+
+### Shared PHP
+
+A collection of PHP classes for use both in APM and APE. They're meant to be tested separately using its own development 
+environment. Use `scripts/share-php-composer` and `scripts/share-php-test` for composer and testing.
+
 
 ## Guidelines and Policies
 

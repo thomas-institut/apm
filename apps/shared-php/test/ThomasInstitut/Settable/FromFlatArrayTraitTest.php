@@ -45,6 +45,7 @@ class FromFlatArrayTraitTest extends TestCase
         $this->assertEquals('default', $configObject::$staticProp);
         $this->assertEquals('default', $configObject->getProtectedProp());
         $this->assertEquals('default', $configObject->getPrivateProp());
+        // @phpstan-ignore function.impossibleType
         $this->assertFalse(property_exists($configObject, 'nonExistentProp'));
     }
 
@@ -160,15 +161,17 @@ class FromFlatArrayTraitTest extends TestCase
 
         $this->assertEquals(1.5, $configObject->floatProp);
         $this->assertEquals([1, 2, 3], $configObject->arrayProp);
-        $this->assertIsObject($configObject->objectProp);
+        $this->assertIsObject($configObject->objectProp); // @phpstan-ignore method.alreadyNarrowedType
         $this->assertEquals('anything', $configObject->mixedProp);
-        $this->assertFalse($configObject->falseProp);
+        $this->assertFalse($configObject->falseProp); // @phpstan-ignore method.impossibleType
+        // @phpstan-ignore method.alreadyNarrowedType
         $this->assertTrue($configObject->trueProp);
         $this->assertInstanceOf(\stdClass::class, $configObject->instanceProp);
 
         // Test float accepting int
         $configObject->fromArray([...$data, 'floatProp' => 10]);
         $this->assertEquals(10, $configObject->floatProp);
+        // @phpstan-ignore method.alreadyNarrowedType
         $this->assertIsFloat($configObject->floatProp); // in PHP if property is float, it stays float
     }
 
@@ -210,6 +213,7 @@ class FromFlatArrayTraitTest extends TestCase
         };
 
         $configObject->fromArray(['nullProp' => null]);
+        // @phpstan-ignore method.alreadyNarrowedType
         $this->assertNull($configObject->nullProp);
 
         $this->expectException(WrongValueTypeException::class);

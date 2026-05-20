@@ -11,6 +11,7 @@
   ],
   "scripts" : {
     "test": "./vendor/bin/phpunit --display-all-issues",
+    "phpstan": "./vendor/bin/phpstan analyse",
     "test:coverage": "XDEBUG_MODE=coverage ./vendor/bin/phpunit --display-all-issues --coverage-filter src --coverage-text --coverage-html build/coverage"
   },
   "require": {
@@ -27,7 +28,8 @@
     "thomas-institut/timestring" : "^v1.3"
   },
   "require-dev": {
-    "phpunit/phpunit": "^12.5"
+    "phpunit/phpunit": "^12.5",
+    "phpstan/phpstan": "^2.1"
   },
   "autoload": {
     "psr-4": {

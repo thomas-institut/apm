@@ -3,9 +3,14 @@
 namespace APM\ApmWorker;
 
 use APM\System\ApmSystemManager;
-use APM\System\Job\ValkeyJobQueueManager;
+use APM\System\SystemManager;
 use Monolog\Logger;
 use PDOException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Log\LoggerInterface;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
 /**
@@ -21,7 +26,7 @@ class ValkeyWorker
     const int DefaultDbConnectionResetIntervalInMinutes = 360;
     private ApmSystemManager $systemManager;
     private int $instanceId;
-    private Logger $logger;
+    private LoggerInterface $logger;
     private bool $stopRequested = false;
     private int $jobsProcessed = 0;
     private int $maxJobs;
@@ -33,28 +38,33 @@ class ValkeyWorker
     private int $dbConnectionResetIntervalInSeconds;
 
     /**
-     * @param ApmSystemManager $systemManager
+     * @param ContainerInterface $ci
      * @param int $instanceId
      * @param int $maxJobs
-     * @param int $microSecondsToSleep
      * @param int $dbConnectionResetIntervalInMinutes
+     * @param int $microSecondsToSleep
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function __construct(
-        ApmSystemManager $systemManager,
+        ContainerInterface $ci,
         int $instanceId,
         int $maxJobs = self::DefaultMaxJobs,
         int $dbConnectionResetIntervalInMinutes = self::DefaultDbConnectionResetIntervalInMinutes,
         int $microSecondsToSleep = self::DefaultMicroSecondsToSleep,
     )
     {
-        $this->systemManager = $systemManager;
+        $this->systemManager = $ci->get(SystemManager::class);
         $this->instanceId = $instanceId;
         $this->maxJobs = max(self::MinMaxJobs, $maxJobs );
         $this->microSecondsToSleep = $microSecondsToSleep;
         $this->dbConnectionResetIntervalInSeconds = max(self::MinDbResetConnectionIntervalInMinutes, $dbConnectionResetIntervalInMinutes) * 60;
         $this->workerId = gethostname() . ':' . getmypid() . ':' . $instanceId;
-        $logger = $systemManager->getLogger();
-        $this->logger = $logger->withName(sprintf("WORKER_%02d", $instanceId));
+        $this->logger = $ci->get(LoggerInterface::class);
+        if ($this->logger instanceof Logger) {
+            $this->logger = $this->logger->withName(sprintf("WORKER_%02d", $instanceId));
+        }
+
         $this->lastDbConnectionResetTime = time();
     }
 
@@ -73,7 +83,7 @@ class ValkeyWorker
 
         $this->setupSignals();
 
-        $jobManager = $this->systemManager->getJobManager();
+        $jobManager = $this->systemManager->getJobQueueManager();
         // this check would be needed if we ever support other job managers
 //        if (!($jobManager instanceof ValkeyJobQueueManager)) {
 //            $this->logger->error("Job manager is not ValkeyJobQueueManager, exiting");
@@ -190,7 +200,7 @@ class ValkeyWorker
         $wasRetriedAfterMysqlGoneAway = false;
         while (true) {
             try {
-                $handler->run($this->systemManager, $data['payload'], $jobName);
+                $handler->run($data['payload'], $jobName);
                 $jobManager->finishJob($signature);
                 $this->logger->info("Job $jobName finished successfully", ['signature' => $signature]);
                 return;

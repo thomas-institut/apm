@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\System\Job;
+namespace ThomasInstitut\JobQueue;
 
 /**
  * Statistics for jobs on a specific date.

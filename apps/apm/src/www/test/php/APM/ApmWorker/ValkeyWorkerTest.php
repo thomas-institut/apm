@@ -4,15 +4,17 @@ namespace APM\Test\ApmWorker;
 
 use APM\ApmWorker\ValkeyWorker;
 use APM\System\ApmSystemManager;
-use APM\System\Job\JobHandlerInterface;
-use APM\System\Job\ValkeyJobQueueManager;
 use APM\System\SystemManager;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
+use Psr\Container\ContainerInterface;
+use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
+use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ValkeyWorkerTest extends TestCase
 {
@@ -20,6 +22,7 @@ class ValkeyWorkerTest extends TestCase
     private ValkeyJobQueueManager $jm;
     private string $prefix;
     private ApmSystemManager $systemManager;
+    private ContainerInterface $ci;
 
     protected function setUp(): void
     {
@@ -36,8 +39,14 @@ class ValkeyWorkerTest extends TestCase
         $this->jm = new ValkeyJobQueueManager($this->valkey, new NullLogger(), $this->prefix);
 
         $this->systemManager = $this->createStub(ApmSystemManager::class);
-        $this->systemManager->method('getJobManager')->willReturn($this->jm);
+        $this->systemManager->method('getJobQueueManager')->willReturn($this->jm);
         $this->systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
+
+        $this->ci = $this->createStub(ContainerInterface::class);
+        $this->ci->method('get')->willReturnMap([
+            [SystemManager::class, $this->systemManager],
+            [LoggerInterface::class, new Logger('test', [new NullHandler()])],
+        ]);
     }
 
     protected function tearDown(): void
@@ -53,7 +62,7 @@ class ValkeyWorkerTest extends TestCase
     public function testFetchJob(): void
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
         $this->jm->scheduleJob('TestJob', 'Desc', ['foo' => 'bar']);
 
         $workerId = 'test-worker';
@@ -83,7 +92,7 @@ class ValkeyWorkerTest extends TestCase
     public function testFailJobWithRetry(): void
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
         $sig = $this->jm->scheduleJob('TestJob', 'Desc', [], 0, 3);
 
         // Mock it being in processing (fetchJob usually does this)
@@ -108,7 +117,7 @@ class ValkeyWorkerTest extends TestCase
     public function testFailJobToDeadLetter(): void
     {
         $handler = $this->createStub(JobHandlerInterface::class);
-        $this->jm->registerJob('TestJob', $handler);
+        $this->jm->registerJobHandler('TestJob', $handler);
         $sig = $this->jm->scheduleJob('TestJob', 'Desc', [], 0, 1);
 
         $this->jm->failJob($sig, "Fatal error", true);
@@ -125,7 +134,7 @@ class ValkeyWorkerTest extends TestCase
     {
         $handler = new class implements JobHandlerInterface {
             public bool $called = false;
-            public function run(SystemManager $sm, array $payload, string $jobName): bool {
+            public function run(array $payload, string $jobName): bool {
                 $this->called = true;
                 return true;
             }
@@ -133,11 +142,11 @@ class ValkeyWorkerTest extends TestCase
             public function minTimeBetweenSchedules(): int { return 0; }
         };
 
-        $this->jm->registerJob('UniqueJob', $handler);
+        $this->jm->registerJobHandler('UniqueJob', $handler);
         // Use -1 to ensure it's ready even if microtime precision is weird
         $this->jm->scheduleJob('UniqueJob', 'Desc', ['id' => 123], -1);
 
-        $worker = new ValkeyWorker($this->systemManager, 1, 1, 0); 
+        $worker = new ValkeyWorker($this->ci, 1, 1, 0); 
         $worker->run();
 
         $this->assertTrue($handler->called);
@@ -187,7 +196,13 @@ class ValkeyWorkerTest extends TestCase
         $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
         $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
 
-        $worker = new ValkeyWorker($systemManager, 1);
+        $ci = $this->createStub(ContainerInterface::class);
+        $ci->method('get')->willReturnMap([
+            [SystemManager::class, $systemManager],
+            [LoggerInterface::class, $systemManager->getLogger()],
+        ]);
+
+        $worker = new ValkeyWorker($ci, 1);
         $job = ['signature' => 'sig-1', 'data' => ['name' => 'RetryJob', 'payload' => []]];
 
         $method = new \ReflectionMethod(ValkeyWorker::class, 'processJob');
@@ -212,7 +227,13 @@ class ValkeyWorkerTest extends TestCase
         $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
         $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
 
-        $worker = new ValkeyWorker($systemManager, 1);
+        $ci = $this->createStub(ContainerInterface::class);
+        $ci->method('get')->willReturnMap([
+            [SystemManager::class, $systemManager],
+            [LoggerInterface::class, $systemManager->getLogger()],
+        ]);
+
+        $worker = new ValkeyWorker($ci, 1);
         $job = ['signature' => 'sig-2', 'data' => ['name' => 'FailJob', 'payload' => []]];
 
         $method = new \ReflectionMethod(ValkeyWorker::class, 'processJob');
@@ -224,9 +245,14 @@ class ValkeyWorkerTest extends TestCase
         $systemManager = $this->createMock(ApmSystemManager::class);
         $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
         $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
+        $ci = $this->createStub(ContainerInterface::class);
+        $ci->method('get')->willReturnMap([
+            [SystemManager::class, $systemManager],
+            [LoggerInterface::class, $systemManager->getLogger()],
+        ]);
         $mins = ValkeyWorker::MinDbResetConnectionIntervalInMinutes;
 
-        $worker = new ValkeyWorker($systemManager, 1, 1, 0, $mins);
+        $worker = new ValkeyWorker($ci, 1, 1, 0, $mins);
 
         $lastResetTimeProperty = new \ReflectionProperty(ValkeyWorker::class, 'lastDbConnectionResetTime');
         $lastResetTimeProperty->setValue($worker, time() - ($mins * 60 +1));

@@ -3,18 +3,19 @@
 namespace APM\Jobs;
 
 use APM\Api\ApiUsers;
-use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
 
 class ApiUsersUpdateTranscribedPagesData implements JobHandlerInterface
 {
+    public function __construct(private SystemManager $sm) {}
 
-    public function run(SystemManager $sm, array $payload, string $jobName): bool
+    public function run(array $payload, string $jobName): bool
     {
         if (!isset($payload['userTid'])) {
             return false;
         }
-        return ApiUsers::updateTranscribedPagesData($sm, $payload['userTid']);
+        return ApiUsers::updateTranscribedPagesData($this->sm, $payload['userTid']);
     }
 
     public function mustBeUnique(): bool

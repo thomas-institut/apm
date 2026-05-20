@@ -1,2 +1,2 @@
 #!/bin/bash
-docker compose -f docker/shared-php/compose.yaml run --rm shared-php composer "$@"
+docker exec -it -w /app shared-php-php composer "$@"

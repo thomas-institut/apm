@@ -1,22 +1,22 @@
 <?php
 
-namespace APM\System\Job;
+namespace ThomasInstitut\JobQueue;
 
 /**
  * Parent class of job manager
  *
  * A job manager registers, schedules and process jobs
  */
-abstract class JobQueueManager
+interface JobQueueManagerInterface
 {
 
     /**
      * Registers a job of the given name with the given JobHandlerInterface
      * @param string $name
-     * @param JobHandlerInterface $job
+     * @param JobHandlerInterface|null $job
      * @return bool
      */
-    abstract public function registerJob(string $name, JobHandlerInterface $job): bool;
+    public function registerJobHandler(string $name, ?JobHandlerInterface $job): bool;
 
     /**
      * Schedules a new job
@@ -33,7 +33,7 @@ abstract class JobQueueManager
      * @return string
      */
 
-    abstract public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): string;
+    public function scheduleJob(string $name, string $description, array $payload, int $secondsToWait = 0, int $maxAttempts = 1, int $secondBetweenRetries = 5): string;
 
 
     /**
@@ -45,19 +45,19 @@ abstract class JobQueueManager
      * @param int $secondBetweenRetries if not -1, changes the job's secondBetweenRetries value
      * @return string
      */
-    abstract public function rescheduleJob(string $jobId, int $secondsToWait = 0, int $maxAttempts = -1, int $secondBetweenRetries = -1): string;
+    public function rescheduleJob(string $jobId, int $secondsToWait = 0, int $maxAttempts = -1, int $secondBetweenRetries = -1): string;
 
     /**
      * Process the current job queue: runs all pending jobs
      * @return void
      */
-    abstract public function process(): void;
+    public function process(): void;
 
     /**
      * Removes all finished jobs from the queue
      * @return void
      */
-    abstract public function cleanQueue(): void;
+    public function cleanQueue(): void;
 
 
     /**
@@ -65,14 +65,14 @@ abstract class JobQueueManager
      *  [ 'waiting' => someInt, 'running' => someInt, .... ]
      * @return array
      */
-    abstract public function getJobCountsByState(): array;
+    public function getJobCountsByState(): array;
 
     /**
      * Returns job information for jobs with the given state
      * @param string $state
      * @return array
      */
-    abstract public function getJobsByState(string $state): array;
+    public function getJobsByState(string $state): array;
 
     /**
      * Returns true if a job with the given name and payload is already scheduled (waiting or running)
@@ -82,17 +82,17 @@ abstract class JobQueueManager
      * @param array $payload
      * @return bool
      */
-    abstract public function isJobActive(string $name, string $description, array $payload): bool;
+    public function isJobActive(string $name, string $description, array $payload): bool;
 
     /**
      * Returns statistics about completed and failed jobs per day
      * @return JobStats
      */
-    abstract public function getJobStats(): JobStats;
+    public function getJobStats(): JobStats;
 
     /**
      * Resets all job statistics
      * @return void
      */
-    abstract public function resetJobStats(): void;
+    public function resetJobStats(): void;
 }

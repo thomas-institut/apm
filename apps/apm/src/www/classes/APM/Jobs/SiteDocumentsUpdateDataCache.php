@@ -3,15 +3,16 @@
 namespace APM\Jobs;
 
 use APM\Site\SiteDocuments;
-use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-class SiteDocumentsUpdateDataCache implements JobHandlerInterface
+readonly class SiteDocumentsUpdateDataCache implements JobHandlerInterface
 {
+    public function __construct(private SystemManager $sm) {}
 
-    public function run(SystemManager $sm, array $payload, string $jobName): bool
+    public function run(array $payload, string $jobName): bool
     {
-       return SiteDocuments::updateDataCache($sm, $payload);
+       return SiteDocuments::updateDataCache($this->sm, $payload);
     }
 
     public function mustBeUnique(): bool

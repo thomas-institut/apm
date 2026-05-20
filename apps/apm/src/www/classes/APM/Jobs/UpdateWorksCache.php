@@ -5,17 +5,28 @@ namespace APM\Jobs;
 use APM\Site\SiteWorks;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
-use APM\System\Job\JobHandlerInterface;
 use APM\System\SystemManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TxText\ChunkMark;
 use APM\ToolBox\ArrayComp;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataTable\InvalidTimeStringException;
+use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-class SiteWorksUpdateDataCache implements JobHandlerInterface
+readonly class UpdateWorksCache implements JobHandlerInterface
 {
-    public function run(SystemManager $sm, array $payload, string $jobName): bool
+    public function __construct(private ContainerInterface $ci) {}
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function run(array $payload, string $jobName): bool
     {
+
+        $sm = $this->ci->get(SystemManager::class);
 
         if (isset($payload['type']) && $payload['type'] == 'transcription'){
             // check that the updated transcription actually updates anything regarding works

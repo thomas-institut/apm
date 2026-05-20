@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "98d410a4914f65ecab15fbcfcbc73fe3",
+    "content-hash": "22fb58238d2df9acdc7ed2efb286de11",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -2978,7 +2978,7 @@
         },
         {
             "name": "thomas-institut/shared-php",
-            "version": "0.1.0",
+            "version": "dev-main",
             "dist": {
                 "type": "path",
                 "url": "../../shared-php",
@@ -2991,8 +2991,10 @@
                 "monolog/monolog": "^3.10",
                 "php": "^8.3",
                 "php-di/php-di": "^7.1",
+                "predis/predis": "^v3.0",
                 "slim/psr7": "^1.8",
-                "slim/slim": "^4.15"
+                "slim/slim": "^4.15",
+                "thomas-institut/timestring": "^v1.3"
             },
             "require-dev": {
                 "phpunit/phpunit": "^12.5"
@@ -3022,6 +3024,7 @@
             ],
             "description": "Shared PHP library for Thomas Institut",
             "transport-options": {
+                "symlink": false,
                 "relative": true
             }
         },
@@ -4931,7 +4934,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "thomas-institut/shared-php": 20
+    },
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

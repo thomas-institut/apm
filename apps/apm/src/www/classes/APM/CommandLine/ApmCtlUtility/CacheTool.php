@@ -127,9 +127,9 @@ class CacheTool extends CommandLineUtility implements AdminUtility
         }
 
         if ($this->argv[2] === 'all') {
-            foreach ($caches as $cache) {
+            foreach ($caches as $cacheName => $cache) {
                 $cache->flush();
-                $msg = "Cache flushed: " . $cache->getName();
+                $msg = "Cache flushed: " . $cacheName;
                 $this->logger->info($msg);
                 print $msg . "\n";
             }

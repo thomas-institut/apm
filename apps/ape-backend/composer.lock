@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "b6ec0d58899d281b7ce8a70714015423",
+    "content-hash": "7788aff1be44d05cfa49f0e9c45ee890",
     "packages": [
         {
             "name": "fig/http-message-util",
@@ -1087,20 +1087,17 @@
             "dist": {
                 "type": "path",
                 "url": "../shared-php",
-                "reference": "8dd8006c861b60b9d5e813b4af6d5796d557e875"
+                "reference": "3aa72d7ec2f40e38fd60f3c8fae7cd6943938383"
             },
             "require": {
-                "ext-pcntl": "*",
                 "ext-pdo": "*",
                 "ext-posix": "*",
                 "ext-yaml": "*",
                 "monolog/monolog": "^3.10",
                 "php": "^8.3",
                 "php-di/php-di": "^7.1",
-                "predis/predis": "^v3.0",
                 "slim/psr7": "^1.8",
-                "slim/slim": "^4.15",
-                "thomas-institut/timestring": "^v1.3"
+                "slim/slim": "^4.15"
             },
             "require-dev": {
                 "phpunit/phpunit": "^12.5"

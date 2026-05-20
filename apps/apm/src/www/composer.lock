@@ -2982,10 +2982,9 @@
             "dist": {
                 "type": "path",
                 "url": "../../shared-php",
-                "reference": "0cd6acb1aa453e65c8b16a2df11085fe41f44b86"
+                "reference": "3aa72d7ec2f40e38fd60f3c8fae7cd6943938383"
             },
             "require": {
-                "ext-pcntl": "*",
                 "ext-pdo": "*",
                 "ext-posix": "*",
                 "ext-yaml": "*",

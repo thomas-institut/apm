@@ -9,23 +9,18 @@ use Slim\Exception\HttpException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Factory\AppFactory;
 use ThomasInstitut\Ape\Config\SystemConfig;
-use ThomasInstitut\ConfigLoader\ConfigLoader;
 use ThomasInstitut\Profiler\SystemProfiler;
 use ThomasInstitut\Settable\MissingRequiredValueException;
 use ThomasInstitut\Settable\WrongValueTypeException;
 use ThomasInstitut\StandardApi\RouteBuilder;
 
-
 require_once __DIR__ . '/../vendor/autoload.php';
-require_once __DIR__ . '/loadConfig.php';
 
 SystemProfiler::start();
 
+require_once __DIR__ . '/loadConfig.php';
 // Load the route definitions
 $apiRoutesSpec = require __DIR__ . '/api-routes-spec.php';
-
-
-
 
 if (!function_exists('buildLogger')) {
     function buildLogger(SystemConfig $systemConfig): Logger
@@ -34,7 +29,6 @@ if (!function_exists('buildLogger')) {
         $logger->pushHandler(new StreamHandler($systemConfig->log->path));
         return $logger;
     }
-
 }
 
 if (!function_exists('exitWithErrorMessage')) {
@@ -50,7 +44,11 @@ if (!function_exists('exitWithErrorMessage')) {
 }
 
 // Create the system config and logger
-$systemConfig = loadConfig();
+try {
+    $systemConfig = loadConfig();
+} catch (MissingRequiredValueException|WrongValueTypeException|RuntimeException $e) {
+    exitWithErrorMessage($e->getMessage());
+}
 $logger = buildLogger($systemConfig);
 
 // Create the DI container

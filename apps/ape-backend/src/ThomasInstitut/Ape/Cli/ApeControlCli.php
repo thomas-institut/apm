@@ -10,6 +10,8 @@ use DI\NotFoundException;
 use ThomasInstitut\Ape\Config\SystemConfig;
 use ThomasInstitut\Ape\Factories\ApmApiClientFactory;
 use ThomasInstitut\ApmPublicationApi\PublicationApiClient;
+use ThomasInstitut\Settable\MissingRequiredValueException;
+use ThomasInstitut\Settable\WrongValueTypeException;
 use function DI\autowire;
 use function DI\factory;
 
@@ -26,7 +28,12 @@ class ApeControlCli
     public function __construct()
     {
         $this->container = new Container();
-        $this->container->set(SystemConfig::class, loadConfig());
+        try {
+            $this->container->set(SystemConfig::class, loadConfig());
+        } catch (MissingRequiredValueException|WrongValueTypeException $e) {
+            print("Error: Invalid config file: " . $e->getMessage() . "\n");
+            exit(1);
+        }
         $this->container->set(PublicationApiClient::class, factory([ ApmApiClientFactory::class, 'create']));
         $this->registerCommand('query-apm', QueryApmCliCommand::class);
         $this->registerCommand('info', InfoCliCommand::class);

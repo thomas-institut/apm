@@ -8,7 +8,7 @@ use ThomasInstitut\StandardApi\ApiResponse;
 class PublicationApiListResponse extends ApiResponse
 {
     /**
-     * @var int[]
+     * @var ApmPublicationListing[]
      */
     public array $publications = [];
 }

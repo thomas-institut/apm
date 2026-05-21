@@ -17,7 +17,7 @@
             "type": "path",
             "url": "../../shared-php",
             "options": {
-                "symlink": false
+                "symlink": true
             }
         }
     ],
@@ -34,7 +34,7 @@
         "ext-yaml": "*",
         "ext-gd": "*",
         "ext-iconv": "*",
-        "thomas-institut/shared-php": "dev-main",
+        "thomas-institut/shared-php": "*",
         "psr/log": "^3.0",
         "slim/slim": "^4.3",
         "slim/psr7": "^1.6",

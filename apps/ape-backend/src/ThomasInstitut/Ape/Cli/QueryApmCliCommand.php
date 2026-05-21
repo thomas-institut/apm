@@ -44,7 +44,7 @@ readonly class QueryApmCliCommand implements CommandInterface
             }
 
             foreach ($apiResponse->publications as $index => $publication) {
-                printf("%2d: %s\n", $index+1, $publication);
+                printf("%2d: %4d %s %s\n", $index+1, $publication->id, $publication->type, $publication->title);
             }
             return new CommandResult(true);
 

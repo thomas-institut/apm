@@ -15,7 +15,7 @@
       "type": "path",
       "url": "../shared-php",
       "options": {
-        "symlink": false
+        "symlink": true
       }
     }
   ],
@@ -27,7 +27,7 @@
   "require": {
     "php": "^8.3",
     "ext-yaml": "*",
-    "thomas-institut/shared-php": "dev-main",
+    "thomas-institut/shared-php": "*",
     "slim/slim": "^4.15",
     "thomas-institut/datatable" : "^3.0.2",
     "thomas-institut/timestring" : "^v1.3",

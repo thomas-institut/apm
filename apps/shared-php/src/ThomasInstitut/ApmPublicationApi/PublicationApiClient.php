@@ -4,6 +4,8 @@ namespace ThomasInstitut\ApmPublicationApi;
 
 use GuzzleHttp\Client as GuzzleClient;
 use GuzzleHttp\Exception\GuzzleException;
+use ThomasInstitut\Settable\MissingRequiredValueException;
+use ThomasInstitut\Settable\WrongValueTypeException;
 use ThomasInstitut\StandardApi\ApiResponse;
 use ThomasInstitut\StandardApi\ErrorResponse;
 
@@ -29,13 +31,22 @@ readonly class PublicationApiClient
             $apiResponse = new PublicationApiListResponse();
             $apiResponse->result = $data['result'] ?? ApiResponse::ResultUndefined;
             $apiResponse->timeStamp = $data['timeStamp'] ?? -1;
-            $apiResponse->publications = $data['publications'] ?? [];
+            $apiResponse->publications = [];
+            if (!isset($data['publications'])) {
+                return new ErrorResponse("Invalid response from server: no publication array");
+            }
+            foreach( $data['publications'] as $publication) {
+                $pubObject = new ApmPublicationListing();
+                $pubObject->fromArray($publication);
+                $apiResponse->publications[] = $pubObject;
+            }
             return $apiResponse;
         } catch (GuzzleException $e) {
             // TODO: add http status from exception
             return new ErrorResponse( "Guzzle error: " . $e->getMessage());
+        } catch (MissingRequiredValueException|WrongValueTypeException $e) {
+            return new ErrorResponse("Server response is invalid: " . $e->getMessage());
         }
-
     }
 
 

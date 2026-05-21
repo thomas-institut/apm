@@ -3,29 +3,40 @@
 namespace APM\Api;
 
 
-
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use ThomasInstitut\StandardApi\ApiResponse;
-use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
+use RuntimeException;
+use ThomasInstitut\ApmPublicationApi\ApmPublicationListing;
 use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
+use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
+use ThomasInstitut\Settable\MissingRequiredValueException;
+use ThomasInstitut\Settable\WrongValueTypeException;
+use ThomasInstitut\StandardApi\ApiResponse;
 
 
 class ApiPublication extends ApiController
 {
-    const array validIds = [12340001, 12340002, 12340003];
 
-    public function list(Request $request, Response $response) : Response
+    /**
+     * @var array<ApmPublicationListing>|null
+     */
+    private ?array $mockPublications = null;
+
+    /**
+     * @throws MissingRequiredValueException
+     * @throws WrongValueTypeException
+     */
+    public function list(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $apiResponse = new PublicationApiListResponse();
         $apiResponse->result = ApiResponse::ResultSuccess;
-        $apiResponse->publications = self::validIds;
+        $apiResponse->publications = $this->getMockUpPublicationListings();
 
         return $this->responseFactory->success($response, $apiResponse);
     }
 
-    public function get(Request $request, Response $response) : Response
+    public function get(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
@@ -34,23 +45,41 @@ class ApiPublication extends ApiController
             return $this->responseFactory->badRequest($response, 'No publication id provided');
         }
         $id = intval($requestedId);
-        if ($id < 1000000) {
-            return $this->responseFactory->badRequest($response, 'Invalid publication id provided');
-        }
 
-        if (!in_array($id, self::validIds)) {
-            return $this->responseFactory->notFound($response, "Publication id $id not found");
+        foreach ($this->getMockUpPublicationListings() as $publicationListing) {
+            if ($publicationListing->id === $id) {
+                $apiResponse = new PublicationApiGetResponse();
+                $apiResponse->result = ApiResponse::ResultSuccess;
+                $apiResponse->publicationData = get_object_vars($publicationListing);
+                return $this->responseFactory->success($response, $apiResponse);
+            }
         }
+        return $this->responseFactory->notFound($response, "Publication $id not found");
+    }
 
-        $publicationData = [
-            'id' => $id,
-            'type' => 'test',
-            'title' => 'Test Publication',
-            'description' => 'Test Publication Description',
+
+    private function getMockUpPublicationListings(): array
+    {
+        $data = [
+            ['type' => 'test', 'id' => 82837192, 'versionTimeString' => '2026-01-20 15:23:20.123456', 'title' => 'Test Publication', 'description' => 'This is a test publication'],
+            ['type' => 'test', 'id' => 63188123, 'versionTimeString' => '2026-01-20 15:23:20.123456', 'title' => 'Another Publication', 'description' => 'Another test publication'],
+            ['type' => 'test', 'id' => 34234330, 'versionTimeString' => '2026-01-20 15:23:20.123456', 'title' => 'Yet Another Publication', 'description' => 'Yet another test publication']
         ];
-        $apiResponse = new PublicationApiGetResponse();
-        $apiResponse->result = ApiResponse::ResultSuccess;
-        $apiResponse->publicationData  = $publicationData;
-        return $this->responseFactory->success($response, $apiResponse);
+
+        if ($this->mockPublications === null) {
+            $pubListings = [];
+            foreach ($data as $pub) {
+                try {
+                    $listing = new ApmPublicationListing();
+                    $listing->fromArray($pub);
+                    $pubListings[] = $listing;
+                } catch (MissingRequiredValueException|WrongValueTypeException) {
+                    throw new RuntimeException("Could not create publication listing from array");
+                }
+            }
+            $this->mockPublications = $pubListings;
+        }
+        return $this->mockPublications;
+
     }
 }

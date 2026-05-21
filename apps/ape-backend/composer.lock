@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "7404504146a029e5a0792ef6c31dd1f5",
+    "content-hash": "2e57e9ec7c13a6488fdbe942086f5162",
     "packages": [
         {
             "name": "fig/http-message-util",
@@ -1535,11 +1535,11 @@
         },
         {
             "name": "thomas-institut/shared-php",
-            "version": "dev-main",
+            "version": "1.0.0",
             "dist": {
                 "type": "path",
                 "url": "../shared-php",
-                "reference": "0dba331a83170b836f4bb35eefcdcab3abe03edd"
+                "reference": "c7549fa251d5d72fea617539f926aa4c81c8d608"
             },
             "require": {
                 "ext-pcntl": "*",
@@ -1587,7 +1587,7 @@
             ],
             "description": "Shared PHP library for Thomas Institut",
             "transport-options": {
-                "symlink": false,
+                "symlink": true,
                 "relative": true
             }
         },
@@ -3377,9 +3377,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "thomas-institut/shared-php": 20
-    },
+    "stability-flags": {},
     "prefer-stable": false,
     "prefer-lowest": false,
     "platform": {

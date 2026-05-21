@@ -1,10 +1,10 @@
 <?php
 
-namespace APM\Api\DataSchema;
+namespace ThomasInstitut\ApmPublicationApi;
 
 use ThomasInstitut\StandardApi\ApiResponse;
 
-class ApiPublicationGetResponse extends ApiResponse
+class PublicationApiGetResponse extends ApiResponse
 {
 
     /**

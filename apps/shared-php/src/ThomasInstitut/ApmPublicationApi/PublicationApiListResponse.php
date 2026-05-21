@@ -1,11 +1,11 @@
 <?php
 
-namespace APM\Api\DataSchema;
+namespace ThomasInstitut\ApmPublicationApi;
 
 
 use ThomasInstitut\StandardApi\ApiResponse;
 
-class ApiPublicationListResponse extends ApiResponse
+class PublicationApiListResponse extends ApiResponse
 {
     /**
      * @var int[]

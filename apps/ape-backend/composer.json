@@ -33,7 +33,8 @@
     "thomas-institut/timestring" : "^v1.3",
     "monolog/monolog": "^3.10",
     "php-di/php-di": "^7.1",
-    "slim/psr7": "^1.8"
+    "slim/psr7": "^1.8",
+    "guzzlehttp/guzzle": "^7.9"
   },
   "require-dev": {
     "phpunit/phpunit": "^12.5",

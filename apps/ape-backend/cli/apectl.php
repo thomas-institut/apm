@@ -1,0 +1,5 @@
+<?php
+
+require_once __DIR__ . '/../vendor/autoload.php';
+
+return (new ThomasInstitut\Ape\Cli\ApeControlCli())->run($argc, $argv);

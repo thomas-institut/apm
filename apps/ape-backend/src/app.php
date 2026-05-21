@@ -17,6 +17,7 @@ use ThomasInstitut\StandardApi\RouteBuilder;
 
 
 require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/loadConfig.php';
 
 SystemProfiler::start();
 
@@ -25,30 +26,6 @@ $apiRoutesSpec = require __DIR__ . '/api-routes-spec.php';
 
 
 
-if (!function_exists('loadConfig')) {
-    function loadConfig(): SystemConfig
-    {
-        $baseDir = __DIR__ . '/..';
-        $configArray = ConfigLoader::getConfigArray(
-            [$baseDir . '/version.yaml'],
-            [$baseDir . '/config.yaml', '/etc/ti/ape-config.yaml']
-        );
-
-        if ($configArray === null) {
-            exitWithErrorMessage(ConfigLoader::getErrorMessage());
-        }
-
-        $systemConfig = new SystemConfig();
-        try {
-            $systemConfig->fromArray($configArray);
-        } catch (MissingRequiredValueException|WrongValueTypeException $e) {
-            exitWithErrorMessage($e->getMessage());
-        }
-
-        return $systemConfig;
-    }
-
-}
 
 if (!function_exists('buildLogger')) {
     function buildLogger(SystemConfig $systemConfig): Logger
@@ -80,8 +57,8 @@ $logger = buildLogger($systemConfig);
 $container = new DI\Container();
 $container->set(SystemConfig::class, $systemConfig);
 $container->set(LoggerInterface::class, $logger);
-
 AppFactory::setContainer($container);
+
 $app = AppFactory::create();
 if ($systemConfig->general->subDir !== '') {
     $app->setBasePath('/' . $systemConfig->general->subDir);

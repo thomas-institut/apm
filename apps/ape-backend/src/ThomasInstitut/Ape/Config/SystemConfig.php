@@ -11,6 +11,7 @@ class SystemConfig implements SettableFromArray
     public LogConfig $log;
     public VersionConfig $version;
     public GeneralConfig $general;
+    public ApmConfig $apm;
 
 
     public function fromArray(array $config): void
@@ -18,6 +19,7 @@ class SystemConfig implements SettableFromArray
         $sections = [
             'log' => LogConfig::class,
             'version' => VersionConfig::class,
+            'apm' => ApmConfig::class,
         ];
 
         $this->general = new GeneralConfig();

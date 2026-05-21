@@ -2,11 +2,14 @@
 
 namespace APM\Api;
 
-use APM\Api\DataSchema\ApiPublicationGetResponse;
-use APM\Api\DataSchema\ApiPublicationListResponse;
+
+
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\StandardApi\ApiResponse;
+use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
+use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
+
 
 class ApiPublication extends ApiController
 {
@@ -15,7 +18,7 @@ class ApiPublication extends ApiController
     public function list(Request $request, Response $response) : Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $apiResponse = new ApiPublicationListResponse();
+        $apiResponse = new PublicationApiListResponse();
         $apiResponse->result = ApiResponse::ResultSuccess;
         $apiResponse->publications = self::validIds;
 
@@ -45,7 +48,7 @@ class ApiPublication extends ApiController
             'title' => 'Test Publication',
             'description' => 'Test Publication Description',
         ];
-        $apiResponse = new ApiPublicationGetResponse();
+        $apiResponse = new PublicationApiGetResponse();
         $apiResponse->result = ApiResponse::ResultSuccess;
         $apiResponse->publicationData  = $publicationData;
         return $this->responseFactory->success($response, $apiResponse);

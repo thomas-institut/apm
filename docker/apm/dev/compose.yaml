@@ -19,6 +19,7 @@ services:
       - "8888:80"
     volumes:
       - ${REPO_ROOT}/${APM_SRC}:/opt/apm
+      - ${REPO_ROOT}/${SHARED_PHP_SRC}:/opt/shared-php
       - ./nginx-dev.conf:/etc/nginx/conf.d/default.conf:ro
       - ${REPO_ROOT}/${DEV_TMP}/apm/logs/nginx:/var/log/nginx
       - ${REPO_ROOT}/${DEV_TMP}/apm:/var/apm

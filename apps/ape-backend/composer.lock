@@ -4,8 +4,85 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "2e57e9ec7c13a6488fdbe942086f5162",
+    "content-hash": "7fcb85b06ab57e8b7b2e2139f699d5ec",
     "packages": [
+        {
+            "name": "cuyz/valinor",
+            "version": "2.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/CuyZ/Valinor.git",
+                "reference": "3b0afa3a287ed7f3a69aab223726cf1139454c34"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/CuyZ/Valinor/zipball/3b0afa3a287ed7f3a69aab223726cf1139454c34",
+                "reference": "3b0afa3a287ed7f3a69aab223726cf1139454c34",
+                "shasum": ""
+            },
+            "require": {
+                "php": "~8.2.0 || ~8.3.0 || ~8.4.0 || ~8.5.0"
+            },
+            "conflict": {
+                "phpstan/phpstan": "<1.0 || >= 3.0",
+                "vimeo/psalm": "<5.0 || >=7.0"
+            },
+            "require-dev": {
+                "friendsofphp/php-cs-fixer": "^3.91",
+                "infection/infection": "^0.32",
+                "marcocesarato/php-conventional-changelog": "^1.12",
+                "mikey179/vfsstream": "^1.6.10",
+                "phpbench/phpbench": "^1.3",
+                "phpstan/phpstan": "^2.0",
+                "phpstan/phpstan-phpunit": "^2.0",
+                "phpstan/phpstan-strict-rules": "^2.0",
+                "phpunit/phpunit": "^11.5",
+                "psr/http-message": "^2.0",
+                "rector/rector": "^2.0",
+                "vimeo/psalm": "^6.0"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "CuyZ\\Valinor\\": "src"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "Romain Canon",
+                    "email": "romain.hydrocanon@gmail.com",
+                    "homepage": "https://github.com/romm"
+                }
+            ],
+            "description": "Dependency free PHP library that helps to map any input into a strongly-typed structure.",
+            "homepage": "https://github.com/CuyZ/Valinor",
+            "keywords": [
+                "array",
+                "conversion",
+                "hydrator",
+                "json",
+                "mapper",
+                "mapping",
+                "object",
+                "tree",
+                "yaml"
+            ],
+            "support": {
+                "issues": "https://github.com/CuyZ/Valinor/issues",
+                "source": "https://github.com/CuyZ/Valinor/tree/2.4.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/romm",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-03-23T17:38:05+00:00"
+        },
         {
             "name": "fig/http-message-util",
             "version": "1.1.5",
@@ -1295,16 +1372,16 @@
         },
         {
             "name": "slim/slim",
-            "version": "4.15.1",
+            "version": "4.15.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/slimphp/Slim.git",
-                "reference": "887893516557506f254d950425ce7f5387a26970"
+                "reference": "e12cb05ca2a14e8f459d019e87a31dc915b80470"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/slimphp/Slim/zipball/887893516557506f254d950425ce7f5387a26970",
-                "reference": "887893516557506f254d950425ce7f5387a26970",
+                "url": "https://api.github.com/repos/slimphp/Slim/zipball/e12cb05ca2a14e8f459d019e87a31dc915b80470",
+                "reference": "e12cb05ca2a14e8f459d019e87a31dc915b80470",
                 "shasum": ""
             },
             "require": {
@@ -1407,7 +1484,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2025-11-21T12:23:44+00:00"
+            "time": "2026-05-22T08:00:12+00:00"
         },
         {
             "name": "symfony/deprecation-contracts",
@@ -1481,6 +1558,55 @@
             "time": "2026-04-13T15:52:40+00:00"
         },
         {
+            "name": "thomas-institut/apm-publication-api",
+            "version": "0.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thomas-institut/apm-publication-api.git",
+                "reference": "66497c6310c38bf5ad1053540607f5edb2da0c5b"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thomas-institut/apm-publication-api/zipball/66497c6310c38bf5ad1053540607f5edb2da0c5b",
+                "reference": "66497c6310c38bf5ad1053540607f5edb2da0c5b",
+                "shasum": ""
+            },
+            "require": {
+                "cuyz/valinor": "^2.4",
+                "php": "^8.3",
+                "psr/http-client": "^1.0 ",
+                "psr/http-factory": "^1.0",
+                "thomas-institut/standard-api": "1.0.0"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.5",
+                "rector/rector": "^2.4"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ThomasInstitut\\": "src/ThomasInstitut/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Rafael Nájera",
+                    "email": "rafael.najera@uni-koeln.de"
+                }
+            ],
+            "description": "Definition and client for APM's publication API",
+            "support": {
+                "issues": "https://github.com/thomas-institut/apm-publication-api/issues",
+                "source": "https://github.com/thomas-institut/apm-publication-api/tree/0.0.2"
+            },
+            "time": "2026-05-22T17:52:15+00:00"
+        },
+        {
             "name": "thomas-institut/datatable",
             "version": "3.0.2",
             "source": {
@@ -1534,25 +1660,31 @@
             "time": "2026-05-19T10:30:18+00:00"
         },
         {
-            "name": "thomas-institut/shared-php",
-            "version": "1.0.0",
+            "name": "thomas-institut/php-backend-common",
+            "version": "0.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thomas-institut/php-backend-common.git",
+                "reference": "42d98f8b65696b8b6f403f88e6cf7b986ed8924a"
+            },
             "dist": {
-                "type": "path",
-                "url": "../shared-php",
-                "reference": "c7549fa251d5d72fea617539f926aa4c81c8d608"
+                "type": "zip",
+                "url": "https://api.github.com/repos/thomas-institut/php-backend-common/zipball/42d98f8b65696b8b6f403f88e6cf7b986ed8924a",
+                "reference": "42d98f8b65696b8b6f403f88e6cf7b986ed8924a",
+                "shasum": ""
             },
             "require": {
                 "ext-pcntl": "*",
                 "ext-pdo": "*",
                 "ext-posix": "*",
                 "ext-yaml": "*",
-                "guzzlehttp/guzzle": "^7.9",
                 "monolog/monolog": "^3.10",
                 "php": "^8.3",
                 "php-di/php-di": "^7.1",
                 "predis/predis": "^v3.0",
                 "slim/psr7": "^1.8",
                 "slim/slim": "^4.15",
+                "thomas-institut/standard-api": "^v1.0",
                 "thomas-institut/timestring": "^v1.3"
             },
             "require-dev": {
@@ -1565,17 +1697,7 @@
                     "ThomasInstitut\\": "src/ThomasInstitut/"
                 }
             },
-            "scripts": {
-                "test": [
-                    "./vendor/bin/phpunit --display-all-issues"
-                ],
-                "phpstan": [
-                    "./vendor/bin/phpstan analyse"
-                ],
-                "test:coverage": [
-                    "XDEBUG_MODE=coverage ./vendor/bin/phpunit --display-all-issues --coverage-filter src --coverage-text --coverage-html build/coverage"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "GPL-3.0-or-later"
             ],
@@ -1585,11 +1707,56 @@
                     "email": "rafael.najera@uni-koeln.de"
                 }
             ],
-            "description": "Shared PHP library for Thomas Institut",
-            "transport-options": {
-                "symlink": true,
-                "relative": true
-            }
+            "description": "Backend-related PHP classes for Thomas Institut",
+            "support": {
+                "issues": "https://github.com/thomas-institut/php-backend-common/issues",
+                "source": "https://github.com/thomas-institut/php-backend-common/tree/0.0.2"
+            },
+            "time": "2026-05-22T17:57:16+00:00"
+        },
+        {
+            "name": "thomas-institut/standard-api",
+            "version": "1.0.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/thomas-institut/standard-api.git",
+                "reference": "b92815d3ced27b1e5765aa3670917c3393a43f23"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/thomas-institut/standard-api/zipball/b92815d3ced27b1e5765aa3670917c3393a43f23",
+                "reference": "b92815d3ced27b1e5765aa3670917c3393a43f23",
+                "shasum": ""
+            },
+            "require": {
+                "php": "^8.3"
+            },
+            "require-dev": {
+                "phpstan/phpstan": "^2.1",
+                "phpunit/phpunit": "^12.5"
+            },
+            "type": "library",
+            "autoload": {
+                "psr-4": {
+                    "ThomasInstitut\\": "src/ThomasInstitut/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "GPL-3.0-or-later"
+            ],
+            "authors": [
+                {
+                    "name": "Rafael Nájera",
+                    "email": "rafael.najera@uni-koeln.de"
+                }
+            ],
+            "description": "Standard API responses for use in Thomas-Institut projects",
+            "support": {
+                "issues": "https://github.com/thomas-institut/standard-api/issues",
+                "source": "https://github.com/thomas-institut/standard-api/tree/1.0.0"
+            },
+            "time": "2026-05-22T12:30:22+00:00"
         },
         {
             "name": "thomas-institut/timestring",
@@ -2275,16 +2442,16 @@
         },
         {
             "name": "phpunit/phpunit",
-            "version": "12.5.25",
+            "version": "12.5.26",
             "source": {
                 "type": "git",
                 "url": "https://github.com/sebastianbergmann/phpunit.git",
-                "reference": "792c2980442dfce319226b88fa845b8b6de3b333"
+                "reference": "e78c9ad74f73fd3642a23e65ace83746dc8df26d"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/792c2980442dfce319226b88fa845b8b6de3b333",
-                "reference": "792c2980442dfce319226b88fa845b8b6de3b333",
+                "url": "https://api.github.com/repos/sebastianbergmann/phpunit/zipball/e78c9ad74f73fd3642a23e65ace83746dc8df26d",
+                "reference": "e78c9ad74f73fd3642a23e65ace83746dc8df26d",
                 "shasum": ""
             },
             "require": {
@@ -2303,15 +2470,15 @@
                 "phpunit/php-invoker": "^6.0.0",
                 "phpunit/php-text-template": "^5.0.0",
                 "phpunit/php-timer": "^8.0.0",
-                "sebastian/cli-parser": "^4.2.0",
-                "sebastian/comparator": "^7.1.6",
+                "sebastian/cli-parser": "^4.2.1",
+                "sebastian/comparator": "^7.1.8",
                 "sebastian/diff": "^7.0.0",
-                "sebastian/environment": "^8.1.0",
-                "sebastian/exporter": "^7.0.2",
+                "sebastian/environment": "^8.1.1",
+                "sebastian/exporter": "^7.0.3",
                 "sebastian/global-state": "^8.0.2",
                 "sebastian/object-enumerator": "^7.0.0",
                 "sebastian/recursion-context": "^7.0.1",
-                "sebastian/type": "^6.0.3",
+                "sebastian/type": "^6.0.4",
                 "sebastian/version": "^6.0.0",
                 "staabm/side-effects-detector": "^1.0.5"
             },
@@ -2353,7 +2520,7 @@
             "support": {
                 "issues": "https://github.com/sebastianbergmann/phpunit/issues",
                 "security": "https://github.com/sebastianbergmann/phpunit/security/policy",
-                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.25"
+                "source": "https://github.com/sebastianbergmann/phpunit/tree/12.5.26"
             },
             "funding": [
                 {
@@ -2361,7 +2528,7 @@
                     "type": "other"
                 }
             ],
-            "time": "2026-05-13T03:56:57+00:00"
+            "time": "2026-05-21T12:36:53+00:00"
         },
         {
             "name": "sebastian/cli-parser",

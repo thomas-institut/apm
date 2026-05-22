@@ -6,9 +6,13 @@ namespace APM\Api;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
-use ThomasInstitut\ApmPublicationApi\ApmPublicationListing;
+
+use ThomasInstitut\ApmPublicationApi\PublicationData;
+use ThomasInstitut\ApmPublicationApi\PublicationListing;
 use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
+use ThomasInstitut\ApmPublicationApi\PublicationType;
+use ThomasInstitut\ApmPublicationApi\TextPublicationData;
 use ThomasInstitut\Settable\MissingRequiredValueException;
 use ThomasInstitut\Settable\WrongValueTypeException;
 use ThomasInstitut\StandardApi\ApiResponse;
@@ -16,22 +20,19 @@ use ThomasInstitut\StandardApi\ApiResponse;
 
 class ApiPublication extends ApiController
 {
-
     /**
-     * @var array<ApmPublicationListing>|null
+     * @var PublicationData[]|null
      */
-    private ?array $mockPublications = null;
+    private ?array $mockPublicationData = null;
 
     /**
-     * @throws MissingRequiredValueException
-     * @throws WrongValueTypeException
      */
     public function list(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $apiResponse = new PublicationApiListResponse();
         $apiResponse->result = ApiResponse::ResultSuccess;
-        $apiResponse->publications = $this->getMockUpPublicationListings();
+        $apiResponse->publications = $this->getMockPublicationListings();
 
         return $this->responseFactory->success($response, $apiResponse);
     }
@@ -46,40 +47,69 @@ class ApiPublication extends ApiController
         }
         $id = intval($requestedId);
 
-        foreach ($this->getMockUpPublicationListings() as $publicationListing) {
-            if ($publicationListing->id === $id) {
+        foreach ($this->getMockPublicationListings() as $publicationData) {
+            if ($publicationData->id === $id) {
                 $apiResponse = new PublicationApiGetResponse();
                 $apiResponse->result = ApiResponse::ResultSuccess;
-                $apiResponse->publicationData = get_object_vars($publicationListing);
+                $apiResponse->publicationData = $publicationData;
                 return $this->responseFactory->success($response, $apiResponse);
             }
         }
         return $this->responseFactory->notFound($response, "Publication $id not found");
     }
 
-
-    private function getMockUpPublicationListings(): array
-    {
-        $data = [
-            ['type' => 'test', 'id' => 82837192, 'versionTimeString' => '2026-01-20 15:23:20.123456', 'title' => 'Test Publication', 'description' => 'This is a test publication'],
-            ['type' => 'test', 'id' => 63188123, 'versionTimeString' => '2026-01-20 15:23:20.123456', 'title' => 'Another Publication', 'description' => 'Another test publication'],
-            ['type' => 'test', 'id' => 34234330, 'versionTimeString' => '2026-01-20 15:23:20.123456', 'title' => 'Yet Another Publication', 'description' => 'Yet another test publication']
+    private function getMockData() : array {
+        return [
+            [
+                'type' => PublicationType::Text,
+                'id' => 82837192,
+                'versionTimeString' => '2026-01-20 15:23:20.123456',
+                'title' => 'Test Publication',
+                'description' => 'This is a test publication',
+                'text' => 'This is a very nice publication with a lot of text.'
+            ],
+            [
+                'type' =>  PublicationType::Text,
+                'id' => 63188123,
+                'versionTimeString' => '2026-01-20 15:23:20.123456',
+                'title' => 'Another Publication',
+                'description' => 'Another test publication',
+                'text' => 'This is another publication with a lot of text.'
+            ],
+            [
+                'type' =>  PublicationType::Text,
+                'id' => 34234330,
+                'versionTimeString' => '2026-01-20 15:23:20.123456',
+                'title' => 'Yet Another Publication',
+                'description' => 'Yet another test publication',
+                'text' => 'This is yet another publication with a lot of text.'
+            ]
         ];
+    }
 
-        if ($this->mockPublications === null) {
+
+    /**
+     * @return PublicationListing[]
+     */
+    private function getMockPublicationListings(): array
+    {
+       $data = $this->getMockData();
+
+        if ($this->mockPublicationData === null) {
             $pubListings = [];
-            foreach ($data as $pub) {
+            foreach ($data as $pubData) {
                 try {
-                    $listing = new ApmPublicationListing();
-                    $listing->fromArray($pub);
-                    $pubListings[] = $listing;
+                    if ($pubData['type'] === PublicationType::Text) {
+                        $textPubData = new TextPublicationData();
+                        $textPubData->fromArray($pubData);
+                    }
+
                 } catch (MissingRequiredValueException|WrongValueTypeException) {
                     throw new RuntimeException("Could not create publication listing from array");
                 }
             }
-            $this->mockPublications = $pubListings;
+            $this->mockPublicationData = $pubListings;
         }
-        return $this->mockPublications;
-
+        return $this->mockPublicationData;
     }
 }

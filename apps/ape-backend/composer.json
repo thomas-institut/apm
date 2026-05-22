@@ -10,15 +10,6 @@
       "email": "rafael.najera@uni-koeln.de"
     }
   ],
-  "repositories": [
-    {
-      "type": "path",
-      "url": "../shared-php",
-      "options": {
-        "symlink": true
-      }
-    }
-  ],
   "scripts" : {
     "test": "./vendor/bin/phpunit --display-all-issues",
     "phpstan": "./vendor/bin/phpstan analyse",
@@ -27,10 +18,12 @@
   "require": {
     "php": "^8.3",
     "ext-yaml": "*",
-    "thomas-institut/shared-php": "*",
-    "slim/slim": "^4.15",
+    "thomas-institut/php-backend-common": "0.0.2",
+    "thomas-institut/standard-api": "^1.0.0",
+    "thomas-institut/apm-publication-api": "0.0.2",
     "thomas-institut/datatable" : "^3.0.2",
     "thomas-institut/timestring" : "^v1.3",
+    "slim/slim": "^4.15",
     "monolog/monolog": "^3.10",
     "php-di/php-di": "^7.1",
     "slim/psr7": "^1.8",

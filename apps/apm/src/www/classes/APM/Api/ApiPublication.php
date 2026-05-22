@@ -13,8 +13,8 @@ use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TextPublicationData;
-use ThomasInstitut\Settable\MissingRequiredValueException;
-use ThomasInstitut\Settable\WrongValueTypeException;
+use CuyZ\Valinor\MapperBuilder;
+use CuyZ\Valinor\Mapper\MappingError;
 
 
 class ApiPublication extends ApiController
@@ -23,6 +23,8 @@ class ApiPublication extends ApiController
      * @var PublicationData[]|null
      */
     private ?array $mockPublicationData = null;
+
+    private ?array $mockPublicationListings = null;
 
     /**
      */
@@ -45,7 +47,7 @@ class ApiPublication extends ApiController
         }
         $id = intval($requestedId);
 
-        foreach ($this->getMockPublicationListings() as $publicationData) {
+        foreach ($this->getMockPublicationData() as $publicationData) {
             if ($publicationData->id === $id) {
                 $apiResponse = new PublicationApiGetResponse();
                 $apiResponse->publicationData = $publicationData;
@@ -86,27 +88,50 @@ class ApiPublication extends ApiController
 
 
     /**
+     * @return PublicationData[]
+     */
+    private function getMockPublicationData(): array
+    {
+        $data = $this->getMockData();
+
+        if ($this->mockPublicationData === null) {
+            $pubDataArray = [];
+            $mapper = (new MapperBuilder())->allowSuperfluousKeys()->mapper();
+            foreach ($data as $pubData) {
+                try {
+                    if ($pubData['type'] === PublicationType::Text) {
+                        $pubDataArray[] = $mapper->map(TextPublicationData::class, $pubData);
+                    }
+                } catch (MappingError $e) {
+                    throw new RuntimeException("Could not create publication data from array", 0, $e);
+                }
+            }
+            $this->mockPublicationData = $pubDataArray;
+        }
+        return $this->mockPublicationData;
+    }
+
+    /**
      * @return PublicationListing[]
      */
     private function getMockPublicationListings(): array
     {
-       $data = $this->getMockData();
+        $data = $this->getMockData();
 
-        if ($this->mockPublicationData === null) {
-            $pubListings = [];
+        if ($this->mockPublicationListings === null) {
+            $publicationListings = [];
+            $mapper = (new MapperBuilder())->allowSuperfluousKeys()->mapper();
             foreach ($data as $pubData) {
                 try {
                     if ($pubData['type'] === PublicationType::Text) {
-                        $textPubData = new TextPublicationData();
-                        $textPubData->fromArray($pubData);
+                        $publicationListings[] = $mapper->map(PublicationListing::class, $pubData);
                     }
-
-                } catch (MissingRequiredValueException|WrongValueTypeException) {
-                    throw new RuntimeException("Could not create publication listing from array");
+                } catch (MappingError $e) {
+                    throw new RuntimeException("Could not create publication listings from array", 0, $e);
                 }
             }
-            $this->mockPublicationData = $pubListings;
+            $this->mockPublicationListings = $publicationListings;
         }
-        return $this->mockPublicationData;
+        return $this->mockPublicationListings;
     }
 }

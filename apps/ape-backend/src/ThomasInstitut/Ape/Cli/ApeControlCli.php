@@ -7,6 +7,11 @@ require_once __DIR__ . '/../../../loadConfig.php';
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
+use Monolog\Handler\ErrorLogHandler;
+use Monolog\Handler\StreamHandler;
+use Monolog\Level;
+use Monolog\Logger;
+use Psr\Log\LoggerInterface;
 use ThomasInstitut\Ape\Config\SystemConfig;
 use ThomasInstitut\Ape\Factories\ApmApiClientFactory;
 use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
@@ -33,6 +38,9 @@ class ApeControlCli
             print("Error: Invalid config file: " . $e->getMessage() . "\n");
             exit(1);
         }
+        $logger = new Logger('CLI');
+        $logger->pushHandler(new StreamHandler('php://stdout', Level::Debug));
+        $this->container->set(LoggerInterface::class, $logger);
         $this->container->set(PublicationApiClient::class, factory([ ApmApiClientFactory::class, 'create']));
         $this->registerCommand('query-apm', QueryApmCliCommand::class);
         $this->registerCommand('info', InfoCliCommand::class);

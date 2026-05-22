@@ -16,7 +16,7 @@ use ReflectionProperty;
 use Slim\Psr7\Factory\ServerRequestFactory;
 use Slim\Psr7\Factory\StreamFactory;
 use Slim\Psr7\Response;
-use ThomasInstitut\StandardApi\ApiResponseFactory;
+use ThomasInstitut\ApiResponseFactory\ApiResponseFactory;
 
 /**
  * @internal

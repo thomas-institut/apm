@@ -2,9 +2,9 @@
 
 namespace APM\Api\DataSchema;
 
-use ThomasInstitut\StandardApi\ApiResponse;
+use ThomasInstitut\StandardApi\SuccessResponse;
 
-final class ApiTypesetPdfResponse extends ApiResponse
+final class ApiTypesetPdfResponse extends SuccessResponse
 {
     public bool $cached = true;
     public string $url = '';

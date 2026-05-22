@@ -82,7 +82,12 @@ try {
 // Setup Slim App
 $app = new App(new ResponseFactory(), $container);
 
-$systemConfig = $container->get(ApmSystemConfig::class);
+try {
+    $systemConfig = $container->get(ApmSystemConfig::class);
+} catch (Exception $e) {
+    exitWithErrorMessage("Configuration error: " . $e->getMessage());
+}
+
 // Set timezone
 date_default_timezone_set($systemConfig->general->defaultTimezone);
 

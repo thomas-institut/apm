@@ -3,10 +3,10 @@
 namespace APM\Api\DataSchema;
 
 use ThomasInstitut\StandardApi\ApiResponse;
+use ThomasInstitut\StandardApi\SuccessResponse;
 
-final class ApiLoginResponse extends ApiResponse
+final class ApiLoginResponse extends SuccessResponse
 {
-    public string $result = ApiResponse::ResultSuccess;
     public string $message = '';
     public string $token = '';
     public int $ttl = -1;

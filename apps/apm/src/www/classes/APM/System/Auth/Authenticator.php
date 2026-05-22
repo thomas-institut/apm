@@ -56,10 +56,9 @@ use Psr\Http\Server\RequestHandlerInterface;
 use Random\RandomException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response;
-//use Slim\Views\Twig;
+use ThomasInstitut\ApiResponseFactory\ApiResponseFactory;
 use ThomasInstitut\EntitySystem\Tid;
-use ThomasInstitut\StandardApi\ApiResponse;
-use ThomasInstitut\StandardApi\ApiResponseFactory;
+use ThomasInstitut\StandardApi\ApiResult;
 
 /**
  * Middleware class for site authentication
@@ -275,7 +274,7 @@ class Authenticator
 
                 $response = FigResponseCookies::set($response, $cookie);
                 $data = new ApiLoginResponse();
-                $data->result =  ApiResponse::ResultSuccess;
+                $data->result =  ApiResult::Success;
                 $data->message = 'Login successful';
                 $data->token = $fullToken;
                 $data->ttl = $rememberMe === 'on' ? 30 * 24 * 3600 : 24 * 3600;

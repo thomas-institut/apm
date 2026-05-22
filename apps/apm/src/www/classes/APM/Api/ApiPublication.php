@@ -15,7 +15,6 @@ use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TextPublicationData;
 use ThomasInstitut\Settable\MissingRequiredValueException;
 use ThomasInstitut\Settable\WrongValueTypeException;
-use ThomasInstitut\StandardApi\ApiResponse;
 
 
 class ApiPublication extends ApiController
@@ -31,7 +30,6 @@ class ApiPublication extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $apiResponse = new PublicationApiListResponse();
-        $apiResponse->result = ApiResponse::ResultSuccess;
         $apiResponse->publications = $this->getMockPublicationListings();
 
         return $this->responseFactory->success($response, $apiResponse);
@@ -50,7 +48,6 @@ class ApiPublication extends ApiController
         foreach ($this->getMockPublicationListings() as $publicationData) {
             if ($publicationData->id === $id) {
                 $apiResponse = new PublicationApiGetResponse();
-                $apiResponse->result = ApiResponse::ResultSuccess;
                 $apiResponse->publicationData = $publicationData;
                 return $this->responseFactory->success($response, $apiResponse);
             }

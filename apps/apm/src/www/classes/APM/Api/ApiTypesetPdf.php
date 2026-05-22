@@ -26,7 +26,6 @@ use GuzzleHttp\Exception\GuzzleException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\Profiler\SystemProfiler;
-use ThomasInstitut\StandardApi\ApiResponse;
 
 class ApiTypesetPdf extends ApiController
 {
@@ -67,8 +66,7 @@ class ApiTypesetPdf extends ApiController
             if (file_exists($fileToDownload) && filesize($fileToDownload) > self::MIN_VALID_PDF_FILE_SIZE) {
                 $this->logger->debug("GeneratePDF: PDF already exists in cache, returning it");
                 $data = new ApiTypesetPdfResponse();
-                $data->result = ApiResponse::ResultSuccess;
-                $data->url = $url;
+                  $data->url = $url;
                 $data->cached = true;
                 $data->typesetterProcessingTime = SystemProfiler::getTotalTimeInMs();
                 return $this->responseFactory->success($response, $data);
@@ -112,7 +110,6 @@ class ApiTypesetPdf extends ApiController
         if ($this->saveStringToFile($fileToDownload, $pdfString)){
             SystemProfiler::lap('Ready to send PDF');
             $data = new ApiTypesetPdfResponse();
-            $data->result = ApiResponse::ResultSuccess;
             $data->url = $url;
             $data->cached = false;
             $data->typesetterProcessingTime = SystemProfiler::getTotalTimeInMs();

@@ -70,21 +70,26 @@ abstract class CommandLineUtility {
      */
     public function __construct(array $config, int $argc, array $argv) {
         $this->config = $config;
-        $this->buildContainer();
+        try {
+            $this->buildContainer();
 
-        $this->processUserInfoArray = $this->container->get('processUserInfoArray');
-        $this->pid = $this->container->get('pid');
-        $this->argc = $argc;
-        $this->argv = $argv;
+            $this->processUserInfoArray = $this->container->get('processUserInfoArray');
+            $this->pid = $this->container->get('pid');
+            $this->argc = $argc;
+            $this->argv = $argv;
 
-        $authorizedUsers = $config['authorizedCommandLineUsers'] ?? [];
-        $authorizedUsers[] = 'root';
+            $authorizedUsers = $config['authorizedCommandLineUsers'] ?? [];
+            $authorizedUsers[] = 'root';
 
-        if (!in_array($this->processUserInfoArray['name'], $authorizedUsers)) {
-            $this->printErrorMsg("Sorry, you don't have permission to run this command\n");
+            if (!in_array($this->processUserInfoArray['name'], $authorizedUsers)) {
+                $this->printErrorMsg("Sorry, you don't have permission to run this command\n");
+                exit(1);
+            }
+            $this->logger = $this->container->get(LoggerInterface::class);
+        } catch (Exception $e) {
+            $this->printErrorMsg("Configuration error: " . $e->getMessage() . "\n");
             exit(1);
         }
-        $this->logger = $this->container->get(LoggerInterface::class);
     }
 
     /**

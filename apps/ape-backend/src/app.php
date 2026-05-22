@@ -10,9 +10,8 @@ use Slim\Exception\HttpNotFoundException;
 use Slim\Factory\AppFactory;
 use ThomasInstitut\Ape\Config\SystemConfig;
 use ThomasInstitut\Profiler\SystemProfiler;
-use ThomasInstitut\Settable\MissingRequiredValueException;
-use ThomasInstitut\Settable\WrongValueTypeException;
-use ThomasInstitut\StandardApi\RouteBuilder;
+use ThomasInstitut\RouteBuilder\RouteBuilder;
+use CuyZ\Valinor\Mapper\MappingError;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -46,7 +45,7 @@ if (!function_exists('exitWithErrorMessage')) {
 // Create the system config and logger
 try {
     $systemConfig = loadConfig();
-} catch (MissingRequiredValueException|WrongValueTypeException|RuntimeException $e) {
+} catch (MappingError|RuntimeException $e) {
     exitWithErrorMessage($e->getMessage());
 }
 $logger = buildLogger($systemConfig);

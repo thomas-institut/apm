@@ -2,14 +2,8 @@
 
 namespace ThomasInstitut\Ape\Config;
 
-use ThomasInstitut\Settable\FromFlatArrayTrait;
-use ThomasInstitut\Settable\SettableFromArray;
-
-class VersionConfig implements SettableFromArray
+class VersionConfig
 {
-
-   use FromFlatArrayTrait;
-
    public string $title;
    public string $date;
 }

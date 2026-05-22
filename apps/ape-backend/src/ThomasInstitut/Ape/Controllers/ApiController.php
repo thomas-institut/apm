@@ -9,7 +9,7 @@ use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
-use ThomasInstitut\StandardApi\ApiResponseFactory;
+use ThomasInstitut\ApiResponseFactory\ApiResponseFactory;
 
 class ApiController implements LoggerAwareInterface
 {

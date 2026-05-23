@@ -2,11 +2,13 @@
 
 namespace ThomasInstitut\Ape\Factories;
 
-use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
 use GuzzleHttp\Client;
 use GuzzleHttp\Psr7\HttpFactory;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\Ape\Config\SystemConfig;
 use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
@@ -14,10 +16,12 @@ use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 class ApmApiClientFactory
 {
     /**
-     * @throws DependencyException
-     * @throws NotFoundException
+     * @param ContainerInterface $ci
+     * @return PublicationApiClient
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    public static function create(Container $ci): PublicationApiClient
+    public static function create(ContainerInterface $ci): PublicationApiClient
     {
         $systemConfig = $ci->get(SystemConfig::class);
         $logger = null;

@@ -11,10 +11,12 @@ use Monolog\Handler\ErrorLogHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
+use Predis\Client;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\Ape\Config\SystemConfig;
 use ThomasInstitut\Ape\Factories\ApmApiClientFactory;
 use ThomasInstitut\Ape\Factories\PublicationManagerFactory;
+use ThomasInstitut\Ape\Factories\ValkeyClientFactory;
 use ThomasInstitut\Ape\Managers\PublicationManager;
 use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 use CuyZ\Valinor\Mapper\MappingError;
@@ -43,10 +45,12 @@ class ApeControlCli
         $logger = new Logger('CLI');
         $logger->pushHandler(new StreamHandler('php://stdout', Level::Debug));
         $this->container->set(LoggerInterface::class, $logger);
+        $this->container->set(Client::class, factory([ValkeyClientFactory::class, 'create']));
         $this->container->set(PublicationApiClient::class, factory([ ApmApiClientFactory::class, 'create']));
         $this->container->set(PublicationManager::class, factory([PublicationManagerFactory::class, 'create']));
 
         $this->registerCommand('query-apm', QueryApmCliCommand::class);
+        $this->registerCommand('publication', PublicationCliCommand::class);
         $this->registerCommand('info', InfoCliCommand::class);
     }
 

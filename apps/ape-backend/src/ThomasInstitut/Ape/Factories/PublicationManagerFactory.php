@@ -7,6 +7,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\Ape\Managers\PublicationManager;
 use ThomasInstitut\Ape\Managers\ValkeyPublicationManager;
+use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 
 class PublicationManagerFactory
 {
@@ -15,7 +16,7 @@ class PublicationManagerFactory
     {
         $valkeyClient = $ci->get(Client::class);
         $logger = $ci->get(LoggerInterface::class);
-        $apiClient = $ci->get(ApmApiClientFactory::class);
+        $apiClient = $ci->get(PublicationApiClient::class);
 
         return new ValkeyPublicationManager($valkeyClient, $apiClient, $logger);
     }

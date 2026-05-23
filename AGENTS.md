@@ -69,8 +69,21 @@ Typesetting service:
 ### APE
 
 Split into separate backend and frontend:
-- Backend: `apps/ape-backend`
-- Frontend: `apps/ape-frontend`
+
+#### Backend
+
+Root folder: `apps/ape-backend`
+
+(paths below given in relation to APE backend root folder)
+
+- `cli`: control scripts
+- `src`: PHP code
+- `test`: test code
+
+
+#### Frontend
+
+Root folder: `apps/ape-frontend`
 
 ## Guidelines and Policies
 

@@ -1,17 +1,20 @@
 <?php
 
+use CuyZ\Valinor\Mapper\MappingError;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Psr\Log\LoggerInterface;
+use Predis\Client;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Factory\AppFactory;
 use ThomasInstitut\Ape\Config\SystemConfig;
+use ThomasInstitut\Ape\Factories\ValkeyClientFactory;
 use ThomasInstitut\Profiler\SystemProfiler;
 use ThomasInstitut\RouteBuilder\RouteBuilder;
-use CuyZ\Valinor\Mapper\MappingError;
+use function DI\factory;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
@@ -51,9 +54,18 @@ try {
 $logger = buildLogger($systemConfig);
 
 // Create the DI container
-$container = new DI\Container();
-$container->set(SystemConfig::class, $systemConfig);
-$container->set(LoggerInterface::class, $logger);
+$builder = new DI\ContainerBuilder();
+$builder->addDefinitions([
+    SystemConfig::class => $systemConfig,
+    LoggerInterface::class => $logger,
+    Client::class => factory([ValkeyClientFactory::class, 'create']),
+]);
+
+try {
+    $container = $builder->build();
+} catch (Exception $e) {
+    exitWithErrorMessage("Can't build container: " . $e->getMessage());
+}
 AppFactory::setContainer($container);
 
 $app = AppFactory::create();
@@ -62,24 +74,19 @@ if ($systemConfig->general->subDir !== '') {
 }
 RouteBuilder::build($app, $apiRoutesSpec);
 
-//$routes = $app->getRouteCollector()->getRoutes();
-//foreach ($routes as $route) {
-//    $logger->debug("Route: {$route->getPattern()}");
-//}
-
 $errorMiddleware = $app->addErrorMiddleware(false, true, true, $logger);
 $errorMiddleware->setDefaultErrorHandler(function (
     ServerRequestInterface $request,
-    Throwable $exception,
-    bool $displayErrorDetails,
-    bool $logErrors
+    Throwable              $exception,
+    bool                   $displayErrorDetails,
+    bool                   $logErrors
 ) use ($app, $logger) {
 
     $statusCode = 500;
     $logMessage = 'Slim found an error';
     $errorType = 'other';
     $logTrace = false;
-    $errorId = strtoupper(base_convert((string) time(), 10, 36));
+    $errorId = strtoupper(base_convert((string)time(), 10, 36));
 
 
     if ($exception instanceof HttpNotFoundException) {
@@ -92,7 +99,7 @@ $errorMiddleware->setDefaultErrorHandler(function (
         case 'notFound':
             $statusCode = 404;
             $logMessage = 'Endpoint not found';
-            $logDetails  = [
+            $logDetails = [
                 'path' => $request->getUri()->getPath(),
             ];
             break;

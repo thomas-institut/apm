@@ -18,12 +18,14 @@ interface PublicationManager
      * Return the publication data for a given publication id
      * @param int $publicationId
      * @return PublicationData
+     * @throws PublicationNotFoundException
      */
     public function getPublicationData(int $publicationId): PublicationData;
 
     /**
      * Queries the APM for new publications and updates the system accordingly.
      * @return void
+     * @throws ApmCommunicationProblemException
      */
     public function updateFromApm() : void;
 

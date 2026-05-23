@@ -2,27 +2,106 @@
 
 namespace ThomasInstitut\Ape\Managers;
 
+use Exception;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 
 class ValkeyPublicationManager implements PublicationManager
 {
+    private const string KEY_LISTINGS = 'publications:listings';
+    private const string KEY_DATA_PREFIX = 'publication:data:';
 
-    public function __construct(private Client, private PublicationApiClient $publicationApiClient, private LoggerInterface $logger)
+    public function __construct(
+        private readonly Client               $valkey,
+        private readonly PublicationApiClient $publicationApiClient,
+        private readonly LoggerInterface $logger
+    ) {
+    }
 
     public function getPublicationListings(): array
     {
-        // TODO: Implement getPublicationListings() method.
+        $data = $this->valkey->get(self::KEY_LISTINGS);
+        if (!$data) {
+            return [];
+        }
+
+        return unserialize($data);
     }
 
     public function getPublicationData(int $publicationId): PublicationData
     {
-        // TODO: Implement getPublicationData() method.
+        $data = $this->valkey->get(self::KEY_DATA_PREFIX . $publicationId);
+        if (!$data) {
+            throw new PublicationNotFoundException("Publication with ID $publicationId not found in Valkey.");
+        }
+
+        return unserialize($data);
     }
 
     public function updateFromApm(): void
     {
-        // TODO: Implement updateFromApm() method.
+        try {
+            $apiResponse = $this->publicationApiClient->list();
+            $apmListings = $apiResponse->publications;
+
+            $localListings = $this->getPublicationListings();
+            $localListingsById = [];
+            foreach ($localListings as $listing) {
+                $localListingsById[$listing->id] = $listing;
+            }
+
+            $newListings = [];
+            $apmIds = [];
+
+            foreach ($apmListings as $apmListing) {
+                $id = $apmListing->id;
+                $apmIds[] = $id;
+                $localListing = $localListingsById[$id] ?? null;
+
+                $needsDataUpdate = false;
+                $needsListingUpdate = false;
+
+                if (!$localListing || $localListing->versionTimeString !== $apmListing->versionTimeString) {
+                    $needsDataUpdate = true;
+                    $needsListingUpdate = true;
+                } elseif ($localListing->title !== $apmListing->title || $localListing->description !== $apmListing->description) {
+                    $needsListingUpdate = true;
+                }
+
+                if ($needsDataUpdate) {
+                    try {
+                        $dataResponse = $this->publicationApiClient->get($id);
+                        $this->valkey->set(self::KEY_DATA_PREFIX . $id, serialize($dataResponse->publicationData));
+                    } catch (Exception $e) {
+                        $this->logger->error("Error fetching data for publication $id: " . $e->getMessage());
+                        throw new ApmCommunicationProblemException("Error fetching data for publication $id", 0, $e);
+                    }
+                }
+
+                if ($needsListingUpdate || $needsDataUpdate) {
+                    $newListings[] = $apmListing;
+                } else {
+                    $newListings[] = $localListing;
+                }
+            }
+
+            // Remove publications no longer in APM
+            $localIds = array_keys($localListingsById);
+            $idsToRemove = array_diff($localIds, $apmIds);
+            foreach ($idsToRemove as $idToRemove) {
+                $this->valkey->del([self::KEY_DATA_PREFIX . $idToRemove]);
+            }
+
+            $this->valkey->set(self::KEY_LISTINGS, serialize($newListings));
+
+        } catch (Exception $e) {
+            if (!($e instanceof ApmCommunicationProblemException)) {
+                $this->logger->error("Error updating from APM: " . $e->getMessage());
+                throw new ApmCommunicationProblemException("Error updating from APM", 0, $e);
+            }
+            throw $e;
+        }
     }
 }

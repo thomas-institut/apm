@@ -73,4 +73,36 @@ class PublicationCliCommandTest extends TestCase
         $this->assertTrue($result->success);
         $this->assertStringContainsString('Successfully updated from APM', $output);
     }
+
+    public function testRunInfo()
+    {
+        $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
+
+        $this->manager->method('getPublicationListings')->willReturn([new PublicationListing(), new PublicationListing()]);
+        $this->manager->method('getLastUpdateTimestamp')->willReturn(1716474540); // 2024-05-23 14:29:00 UTC approximately
+
+        ob_start();
+        $result = $this->command->run(1, ['info']);
+        $output = ob_get_clean();
+
+        $this->assertTrue($result->success);
+        $this->assertStringContainsString('Number of publications: 2', $output);
+        $this->assertStringContainsString('Last update: 23.05.2024 14:29:00', $output);
+    }
+
+    public function testRunInfoNever()
+    {
+        $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
+
+        $this->manager->method('getPublicationListings')->willReturn([]);
+        $this->manager->method('getLastUpdateTimestamp')->willReturn(0);
+
+        ob_start();
+        $result = $this->command->run(1, ['info']);
+        $output = ob_get_clean();
+
+        $this->assertTrue($result->success);
+        $this->assertStringContainsString('Number of publications: 0', $output);
+        $this->assertStringContainsString('Last update: never', $output);
+    }
 }

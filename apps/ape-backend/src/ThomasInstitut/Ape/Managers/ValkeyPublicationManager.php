@@ -12,6 +12,7 @@ class ValkeyPublicationManager implements PublicationManager
 {
     private const string KEY_LISTINGS = 'publications:listings';
     private const string KEY_DATA_PREFIX = 'publication:data:';
+    private const string KEY_LAST_UPDATE = 'publications:lastUpdate';
 
     public function __construct(
         private readonly Client               $valkey,
@@ -38,6 +39,11 @@ class ValkeyPublicationManager implements PublicationManager
         }
 
         return unserialize($data);
+    }
+
+    public function getLastUpdateTimestamp(): int
+    {
+        return (int)$this->valkey->get(self::KEY_LAST_UPDATE);
     }
 
     public function updateFromApm(): void
@@ -95,6 +101,7 @@ class ValkeyPublicationManager implements PublicationManager
             }
 
             $this->valkey->set(self::KEY_LISTINGS, serialize($newListings));
+            $this->valkey->set(self::KEY_LAST_UPDATE, time());
 
         } catch (Exception $e) {
             if (!($e instanceof ApmCommunicationProblemException)) {

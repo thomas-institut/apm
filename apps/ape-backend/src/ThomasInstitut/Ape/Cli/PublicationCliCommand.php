@@ -25,6 +25,7 @@ readonly class PublicationCliCommand implements CommandInterface
             'list' => $this->list(),
             'get' => $this->get($argv[1] ?? null),
             'update' => $this->update(),
+            'info' => $this->info(),
             default => new CommandResult(false, "Invalid command", true),
         };
     }
@@ -85,12 +86,32 @@ readonly class PublicationCliCommand implements CommandInterface
         }
     }
 
+    private function info(): CommandResult
+    {
+        try {
+            /** @var PublicationManager $manager */
+            $manager = $this->container->get(PublicationManager::class);
+            $publications = $manager->getPublicationListings();
+            $lastUpdate = $manager->getLastUpdateTimestamp();
+
+            $lastUpdateStr = $lastUpdate === 0 ? 'never' : date('d.m.Y H:i:s', $lastUpdate);
+
+            printf("Number of publications: %d\n", count($publications));
+            printf("Last update: %s\n", $lastUpdateStr);
+
+            return new CommandResult(true);
+        } catch (DependencyException | NotFoundException) {
+            return new CommandResult(false, "Publication manager not available");
+        }
+    }
+
     public static function getUsage(): array
     {
         return [
             "list: returns all available publications",
             "get <id>: returns publication data for given id",
-            "update: updates publications from APM"
+            "update: updates publications from APM",
+            "info: returns information about the publications"
         ];
     }
 

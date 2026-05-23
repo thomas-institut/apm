@@ -72,6 +72,27 @@ class ValkeyPublicationManagerTest extends TestCase
         $this->manager->getPublicationData(1);
     }
 
+    public function testGetLastUpdateTimestampReturnsZeroWhenNoData()
+    {
+        $this->valkey->expects($this->once())
+            ->method('get')
+            ->with('publications:lastUpdate')
+            ->willReturn(null);
+
+        $this->assertEquals(0, $this->manager->getLastUpdateTimestamp());
+    }
+
+    public function testGetLastUpdateTimestampReturnsValueFromValkey()
+    {
+        $timestamp = 1621773840;
+        $this->valkey->expects($this->once())
+            ->method('get')
+            ->with('publications:lastUpdate')
+            ->willReturn((string)$timestamp);
+
+        $this->assertEquals($timestamp, $this->manager->getLastUpdateTimestamp());
+    }
+
     /**
      * @throws ApmCommunicationProblemException
      */
@@ -108,16 +129,19 @@ class ValkeyPublicationManagerTest extends TestCase
             ->with(1)
             ->willReturn($getResponse);
 
-        $this->valkey->expects($this->exactly(2))
+        $this->valkey->expects($this->exactly(3))
             ->method('set')
             ->willReturnCallback(function ($key, $value) use ($data, $listing) {
                 static $count = 0;
                 if ($count === 0) {
                     $this->assertEquals('publication:data:1', $key);
                     $this->assertEquals(serialize($data), $value);
-                } else {
+                } elseif ($count === 1) {
                     $this->assertEquals('publications:listings', $key);
                     $this->assertEquals(serialize([$listing]), $value);
+                } else {
+                    $this->assertEquals('publications:lastUpdate', $key);
+                    $this->assertIsNumeric($value);
                 }
                 $count++;
                 return null;
@@ -149,9 +173,20 @@ class ValkeyPublicationManagerTest extends TestCase
             ->method('del')
             ->with(['publication:data:1']);
 
-        $this->valkey->expects($this->once())
+        $this->valkey->expects($this->exactly(2))
             ->method('set')
-            ->with('publications:listings', serialize([]));
+            ->willReturnCallback(function ($key, $value) {
+                static $count = 0;
+                if ($count === 0) {
+                    $this->assertEquals('publications:listings', $key);
+                    $this->assertEquals(serialize([]), $value);
+                } else {
+                    $this->assertEquals('publications:lastUpdate', $key);
+                    $this->assertIsNumeric($value);
+                }
+                $count++;
+                return null;
+            });
 
         $this->manager->updateFromApm();
     }

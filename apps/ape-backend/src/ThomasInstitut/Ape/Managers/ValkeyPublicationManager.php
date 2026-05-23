@@ -3,7 +3,7 @@
 namespace ThomasInstitut\Ape\Managers;
 
 use Exception;
-use Predis\Client;
+use Predis\ClientInterface;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
@@ -15,15 +15,15 @@ class ValkeyPublicationManager implements PublicationManager
     private const string KEY_LAST_UPDATE = 'publications:lastUpdate';
 
     public function __construct(
-        private readonly Client               $valkey,
+        private readonly ClientInterface      $valkeyClient,
         private readonly PublicationApiClient $publicationApiClient,
-        private readonly LoggerInterface $logger
+        private readonly LoggerInterface      $logger
     ) {
     }
 
     public function getPublicationListings(): array
     {
-        $data = $this->valkey->get(self::KEY_LISTINGS);
+        $data = $this->valkeyClient->get(self::KEY_LISTINGS);
         if (!$data) {
             return [];
         }
@@ -33,7 +33,7 @@ class ValkeyPublicationManager implements PublicationManager
 
     public function getPublicationData(int $publicationId): PublicationData
     {
-        $data = $this->valkey->get(self::KEY_DATA_PREFIX . $publicationId);
+        $data = $this->valkeyClient->get(self::KEY_DATA_PREFIX . $publicationId);
         if (!$data) {
             throw new PublicationNotFoundException("Publication with ID $publicationId not found in Valkey.");
         }
@@ -43,7 +43,7 @@ class ValkeyPublicationManager implements PublicationManager
 
     public function getLastUpdateTimestamp(): int
     {
-        return (int)$this->valkey->get(self::KEY_LAST_UPDATE);
+        return (int)$this->valkeyClient->get(self::KEY_LAST_UPDATE);
     }
 
     public function updateFromApm(): void
@@ -79,7 +79,7 @@ class ValkeyPublicationManager implements PublicationManager
                 if ($needsDataUpdate) {
                     try {
                         $dataResponse = $this->publicationApiClient->get($id);
-                        $this->valkey->set(self::KEY_DATA_PREFIX . $id, serialize($dataResponse->publicationData));
+                        $this->valkeyClient->set(self::KEY_DATA_PREFIX . $id, serialize($dataResponse->publicationData));
                     } catch (Exception $e) {
                         $this->logger->error("Error fetching data for publication $id: " . $e->getMessage());
                         throw new ApmCommunicationProblemException("Error fetching data for publication $id", 0, $e);
@@ -97,11 +97,11 @@ class ValkeyPublicationManager implements PublicationManager
             $localIds = array_keys($localListingsById);
             $idsToRemove = array_diff($localIds, $apmIds);
             foreach ($idsToRemove as $idToRemove) {
-                $this->valkey->del([self::KEY_DATA_PREFIX . $idToRemove]);
+                $this->valkeyClient->del([self::KEY_DATA_PREFIX . $idToRemove]);
             }
 
-            $this->valkey->set(self::KEY_LISTINGS, serialize($newListings));
-            $this->valkey->set(self::KEY_LAST_UPDATE, time());
+            $this->valkeyClient->set(self::KEY_LISTINGS, serialize($newListings));
+            $this->valkeyClient->set(self::KEY_LAST_UPDATE, time());
 
         } catch (Exception $e) {
             if (!($e instanceof ApmCommunicationProblemException)) {

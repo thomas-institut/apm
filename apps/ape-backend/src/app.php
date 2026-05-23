@@ -4,7 +4,7 @@ use CuyZ\Valinor\Mapper\MappingError;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Predis\Client;
+use Predis\ClientInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpException;
@@ -62,7 +62,7 @@ $builder = new DI\ContainerBuilder();
 $builder->addDefinitions([
     SystemConfig::class => $systemConfig,
     LoggerInterface::class => $logger,
-    Client::class => factory([ValkeyClientFactory::class, 'create']),
+    ClientInterface::class => factory([ValkeyClientFactory::class, 'create']),
     PublicationApiClient::class =>factory([ ApmApiClientFactory::class, 'create']),
     PublicationManager::class => factory([PublicationManagerFactory::class, 'create']),
 ]);

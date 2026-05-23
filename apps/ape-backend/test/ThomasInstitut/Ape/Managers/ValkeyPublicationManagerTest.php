@@ -3,6 +3,7 @@
 namespace ThomasInstitut\Ape\Managers;
 
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
@@ -14,30 +15,31 @@ use ThomasInstitut\ApmPublicationApi\TextPublicationData;
 
 class PredisClientMock extends Client
 {
-    public function get(string $key): mixed { return null; }
-    public function set(string $key, mixed $value): mixed { return null; }
+    public function get(string $key): mixed
+    { return null; }
+    public function set(string $key, mixed $value): mixed
+    { return null; }
     public function del(array|string $keyOrKeys): int { return 0; }
 }
 
 #[AllowMockObjectsWithoutExpectations]
 class ValkeyPublicationManagerTest extends TestCase
 {
-    private $valkey;
-    private $apiClient;
-    private $logger;
-    private $manager;
+    private PredisClientMock&MockObject $valkeyClient;
+    private  PublicationApiClient&MockObject $apiClient;
+    private ValkeyPublicationManager $manager;
 
     protected function setUp(): void
     {
-        $this->valkey = $this->createMock(PredisClientMock::class);
+        $this->valkeyClient = $this->createMock(PredisClientMock::class);
         $this->apiClient = $this->createMock(PublicationApiClient::class);
-        $this->logger = $this->createStub(LoggerInterface::class);
-        $this->manager = new ValkeyPublicationManager($this->valkey, $this->apiClient, $this->logger);
+        $logger = $this->createStub(LoggerInterface::class);
+        $this->manager = new ValkeyPublicationManager($this->valkeyClient, $this->apiClient, $logger);
     }
 
     public function testGetPublicationListingsReturnsEmptyArrayWhenNoData()
     {
-        $this->valkey->expects($this->once())
+        $this->valkeyClient->expects($this->once())
             ->method('get')
             ->with('publications:listings')
             ->willReturn(null);
@@ -50,7 +52,7 @@ class ValkeyPublicationManagerTest extends TestCase
         $listings = [new PublicationListing()];
         $listings[0]->id = 1;
 
-        $this->valkey->expects($this->once())
+        $this->valkeyClient->expects($this->once())
             ->method('get')
             ->with('publications:listings')
             ->willReturn(serialize($listings));
@@ -63,7 +65,7 @@ class ValkeyPublicationManagerTest extends TestCase
 
     public function testGetPublicationDataThrowsExceptionWhenNotFound()
     {
-        $this->valkey->expects($this->once())
+        $this->valkeyClient->expects($this->once())
             ->method('get')
             ->with('publication:data:1')
             ->willReturn(null);
@@ -74,7 +76,7 @@ class ValkeyPublicationManagerTest extends TestCase
 
     public function testGetLastUpdateTimestampReturnsZeroWhenNoData()
     {
-        $this->valkey->expects($this->once())
+        $this->valkeyClient->expects($this->once())
             ->method('get')
             ->with('publications:lastUpdate')
             ->willReturn(null);
@@ -85,7 +87,7 @@ class ValkeyPublicationManagerTest extends TestCase
     public function testGetLastUpdateTimestampReturnsValueFromValkey()
     {
         $timestamp = 1621773840;
-        $this->valkey->expects($this->once())
+        $this->valkeyClient->expects($this->once())
             ->method('get')
             ->with('publications:lastUpdate')
             ->willReturn((string)$timestamp);
@@ -112,7 +114,7 @@ class ValkeyPublicationManagerTest extends TestCase
             ->willReturn($listResponse);
 
         // Initially empty local listings
-        $this->valkey->method('get')
+        $this->valkeyClient->method('get')
             ->willReturnMap([
                 ['publications:listings', null]
             ]);
@@ -129,7 +131,7 @@ class ValkeyPublicationManagerTest extends TestCase
             ->with(1)
             ->willReturn($getResponse);
 
-        $this->valkey->expects($this->exactly(3))
+        $this->valkeyClient->expects($this->exactly(3))
             ->method('set')
             ->willReturnCallback(function ($key, $value) use ($data, $listing) {
                 static $count = 0;
@@ -165,15 +167,15 @@ class ValkeyPublicationManagerTest extends TestCase
         $oldListing = new PublicationListing();
         $oldListing->id = 1;
 
-        $this->valkey->method('get')
+        $this->valkeyClient->method('get')
             ->with('publications:listings')
             ->willReturn(serialize([$oldListing]));
 
-        $this->valkey->expects($this->once())
+        $this->valkeyClient->expects($this->once())
             ->method('del')
             ->with(['publication:data:1']);
 
-        $this->valkey->expects($this->exactly(2))
+        $this->valkeyClient->expects($this->exactly(2))
             ->method('set')
             ->willReturnCallback(function ($key, $value) {
                 static $count = 0;

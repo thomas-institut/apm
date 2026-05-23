@@ -3,6 +3,8 @@
 namespace ThomasInstitut\Ape\Cli;
 
 use DI\Container;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ThomasInstitut\Ape\Managers\PublicationManager;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
@@ -10,7 +12,7 @@ use ThomasInstitut\ApmPublicationApi\PublicationListing;
 
 class PublicationCliCommandTest extends TestCase
 {
-    private $container;
+    private Container&MockObject $container;
     private $manager;
     private $command;
 
@@ -21,6 +23,7 @@ class PublicationCliCommandTest extends TestCase
         $this->command = new PublicationCliCommand($this->container);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testRunList()
     {
         $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
@@ -42,6 +45,7 @@ class PublicationCliCommandTest extends TestCase
         $this->assertStringContainsString(' 1:    1 type1 title1', $output);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testRunGet()
     {
         $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
@@ -74,6 +78,7 @@ class PublicationCliCommandTest extends TestCase
         $this->assertStringContainsString('Successfully updated from APM', $output);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testRunInfo()
     {
         $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
@@ -90,6 +95,7 @@ class PublicationCliCommandTest extends TestCase
         $this->assertStringContainsString('Last update: 23.05.2024 14:29:00', $output);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testRunInfoNever()
     {
         $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);

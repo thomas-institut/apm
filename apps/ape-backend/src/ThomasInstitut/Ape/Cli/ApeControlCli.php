@@ -7,11 +7,10 @@ require_once __DIR__ . '/../../../loadConfig.php';
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
-use Monolog\Handler\ErrorLogHandler;
 use Monolog\Handler\StreamHandler;
 use Monolog\Level;
 use Monolog\Logger;
-use Predis\Client;
+use Predis\ClientInterface;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\Ape\Config\SystemConfig;
 use ThomasInstitut\Ape\Factories\ApmApiClientFactory;
@@ -45,7 +44,7 @@ class ApeControlCli
         $logger = new Logger('CLI');
         $logger->pushHandler(new StreamHandler('php://stdout', Level::Debug));
         $this->container->set(LoggerInterface::class, $logger);
-        $this->container->set(Client::class, factory([ValkeyClientFactory::class, 'create']));
+        $this->container->set(ClientInterface::class, factory([ValkeyClientFactory::class, 'create']));
         $this->container->set(PublicationApiClient::class, factory([ ApmApiClientFactory::class, 'create']));
         $this->container->set(PublicationManager::class, factory([PublicationManagerFactory::class, 'create']));
 

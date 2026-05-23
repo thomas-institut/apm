@@ -12,7 +12,9 @@ use Slim\Exception\HttpNotFoundException;
 use Slim\Factory\AppFactory;
 use ThomasInstitut\Ape\Config\SystemConfig;
 use ThomasInstitut\Ape\Factories\ApmApiClientFactory;
+use ThomasInstitut\Ape\Factories\PublicationManagerFactory;
 use ThomasInstitut\Ape\Factories\ValkeyClientFactory;
+use ThomasInstitut\Ape\Managers\PublicationManager;
 use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 use ThomasInstitut\Profiler\SystemProfiler;
 use ThomasInstitut\RouteBuilder\RouteBuilder;
@@ -61,7 +63,8 @@ $builder->addDefinitions([
     SystemConfig::class => $systemConfig,
     LoggerInterface::class => $logger,
     Client::class => factory([ValkeyClientFactory::class, 'create']),
-    PublicationApiClient::class =>factory([ ApmApiClientFactory::class, 'create'])
+    PublicationApiClient::class =>factory([ ApmApiClientFactory::class, 'create']),
+    PublicationManager::class => factory([PublicationManagerFactory::class, 'create']),
 ]);
 
 try {

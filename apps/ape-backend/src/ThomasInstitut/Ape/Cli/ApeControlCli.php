@@ -14,6 +14,8 @@ use Monolog\Logger;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\Ape\Config\SystemConfig;
 use ThomasInstitut\Ape\Factories\ApmApiClientFactory;
+use ThomasInstitut\Ape\Factories\PublicationManagerFactory;
+use ThomasInstitut\Ape\Managers\PublicationManager;
 use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 use CuyZ\Valinor\Mapper\MappingError;
 use function DI\autowire;
@@ -42,6 +44,8 @@ class ApeControlCli
         $logger->pushHandler(new StreamHandler('php://stdout', Level::Debug));
         $this->container->set(LoggerInterface::class, $logger);
         $this->container->set(PublicationApiClient::class, factory([ ApmApiClientFactory::class, 'create']));
+        $this->container->set(PublicationManager::class, factory([PublicationManagerFactory::class, 'create']));
+
         $this->registerCommand('query-apm', QueryApmCliCommand::class);
         $this->registerCommand('info', InfoCliCommand::class);
     }

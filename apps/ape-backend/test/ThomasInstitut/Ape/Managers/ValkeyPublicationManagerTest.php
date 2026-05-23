@@ -5,7 +5,7 @@ namespace ThomasInstitut\Ape\Managers;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
-use Predis\Client;
+use Predis\ClientInterface;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
@@ -13,25 +13,25 @@ use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
 use ThomasInstitut\ApmPublicationApi\TextPublicationData;
 
-class PredisClientMock extends Client
+interface PredisClientMethodsInterface extends ClientInterface
 {
-    public function get(string $key): mixed
-    { return null; }
-    public function set(string $key, mixed $value): mixed
-    { return null; }
-    public function del(array|string $keyOrKeys): int { return 0; }
+    public function get(string $key): mixed;
+
+    public function set(string $key, mixed $value): mixed;
+
+    public function del(array|string $keyOrKeys): int;
 }
 
 #[AllowMockObjectsWithoutExpectations]
 class ValkeyPublicationManagerTest extends TestCase
 {
-    private PredisClientMock&MockObject $valkeyClient;
+    private PredisClientMethodsInterface&MockObject $valkeyClient;
     private  PublicationApiClient&MockObject $apiClient;
     private ValkeyPublicationManager $manager;
 
     protected function setUp(): void
     {
-        $this->valkeyClient = $this->createMock(PredisClientMock::class);
+        $this->valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
         $this->apiClient = $this->createMock(PublicationApiClient::class);
         $logger = $this->createStub(LoggerInterface::class);
         $this->manager = new ValkeyPublicationManager($this->valkeyClient, $this->apiClient, $logger);

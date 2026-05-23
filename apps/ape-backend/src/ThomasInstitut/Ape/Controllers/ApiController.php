@@ -34,4 +34,10 @@ class ApiController implements LoggerAwareInterface
         $this->apiCallName = $name;
         $this->responseFactory->withApiCallName($name);
     }
+
+    public function setApiCallNameFromClassFunction(string $className, string $functionName): void
+    {
+        $className = array_slice(explode('\\', $className), -1, 1);
+        $this->setApiCallName(implode(':', [$className[0], $functionName]));
+    }
 }

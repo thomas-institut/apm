@@ -19,8 +19,7 @@ class InfoController extends ApiController
      */
     public function getBackendInfo(Request $request, Response $response): Response
     {
-        $this->setApiCallName(__FUNCTION__);
-        SystemProfiler::lap('Setup Ready');
+        $this->setApiCallNameFromClassFunction(__CLASS__, __FUNCTION__);
         $action = new GetBackendInfoAction($this->container->get(SystemConfig::class));
         $backendInfo = $action->execute();
         SystemProfiler::lap('Server Info Ready');

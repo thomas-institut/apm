@@ -29,4 +29,14 @@ interface PublicationManager
      */
     public function updateFromApm() : void;
 
+
+    /**
+     * Returns the last time the publications were updated.
+     *
+     * If the system has never been updated, this will return 0.
+     *
+     * @return int
+     */
+    public function getLastUpdateTimestamp() : int;
+
 }

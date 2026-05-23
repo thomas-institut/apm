@@ -3,9 +3,9 @@
 namespace ThomasInstitut\Ape\ApiSchema;
 
 use ThomasInstitut\Ape\ActionsSchema\BackendInfo;
-use ThomasInstitut\StandardApi\ApiResponse;
+use ThomasInstitut\StandardApi\SuccessResponse;
 
-class GetBackendInfoApiResponse extends ApiResponse
+class GetBackendInfoApiResponse extends SuccessResponse
 {
     public BackendInfo $backendInfo;
 }

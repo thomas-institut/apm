@@ -4,7 +4,7 @@ namespace ThomasInstitut\Ape\Factories;
 
 use Predis\Client;
 use Psr\Container\ContainerInterface;
-use Psr\Log\LoggerInterface;
+//use Psr\Log\LoggerInterface;
 use ThomasInstitut\Ape\Config\SystemConfig;
 
 class ValkeyClientFactory

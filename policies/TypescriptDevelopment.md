@@ -1,6 +1,5 @@
 # Typescript Development 
 
-
 ## Rules
 
 - Do not use `any`.

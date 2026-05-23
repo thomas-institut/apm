@@ -7,7 +7,7 @@ consistency with the surrounding code and avoid unnecessary refactors.
 
 ## Project Summary
 
-This repository is a monorepo for two main apps, APM and APE, and shared PHP and TS code. 
+This repository is a monorepo for two main apps, APM and APE, and shared TS code. 
 
 APM is a system that allows users to create manuscript transcriptions and critical editions.  APE is a presentation
 app for APM generated data.
@@ -30,16 +30,15 @@ Infrastructure used by the project:
 
 ## Development Environment
 
-Development services run in Docker containers
+Development services run in Docker containers. Agents must use PHP from the containers, not the local PHP.
 
 ## Repository Layout
 
-- `apps`: apps and shared PHP and TS libraries
+- `apps`: apps and shared TS libraries
 - `docker`: Docker container generation for development
 - `docs`: various general documentation files and files related to specific issues from Github Issues. Use only if instructed to do so.
 - `policies`: code policies
 - `scripts`: various scripts for testing and distribution tar file creation
-
 
 ### APM
 
@@ -72,12 +71,6 @@ Typesetting service:
 Split into separate backend and frontend:
 - Backend: `apps/ape-backend`
 - Frontend: `apps/ape-frontend`
-
-### Shared PHP
-
-A collection of PHP classes for use both in APM and APE. They're meant to be tested separately using its own development 
-environment. Use `scripts/share-php-composer` and `scripts/share-php-test` for composer and testing.
-
 
 ## Guidelines and Policies
 

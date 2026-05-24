@@ -3,112 +3,368 @@
 namespace ThomasInstitut\Ape\Cli;
 
 use DI\Container;
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
+use DI\DependencyException;
+use DI\NotFoundException;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
+use ThomasInstitut\Ape\Managers\ApmCommunicationProblemException;
 use ThomasInstitut\Ape\Managers\PublicationManager;
-use ThomasInstitut\ApmPublicationApi\PublicationData;
+use ThomasInstitut\Ape\Managers\PublicationNotFoundException;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
+use ThomasInstitut\ApmPublicationApi\TextPublicationData;
 
+/**
+ * @covers \ThomasInstitut\Ape\Cli\PublicationCliCommand
+ */
 class PublicationCliCommandTest extends TestCase
 {
-    private Container&MockObject $container;
-    private $manager;
-    private $command;
-
-    protected function setUp(): void
+    /**
+     * Tests that run() fails when no subcommand is given.
+     */
+    public function testRunReturnsFailureWhenNoCommandIsGiven(): void
     {
-        $this->container = $this->createMock(Container::class);
-        $this->manager = $this->createMock(PublicationManager::class);
-        $this->command = new PublicationCliCommand($this->container);
+        $command = new PublicationCliCommand($this->createStub(Container::class));
+
+        $result = $command->run(0, []);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('No command given', $result->message);
+        $this->assertTrue($result->printUsage);
     }
 
-    #[AllowMockObjectsWithoutExpectations]
-    public function testRunList()
+    /**
+     * Tests that run() fails for an invalid subcommand.
+     */
+    public function testRunReturnsFailureForInvalidCommand(): void
     {
-        $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
+        $command = new PublicationCliCommand($this->createStub(Container::class));
 
-        $pub1 = new PublicationListing();
-        $pub1->id = 1;
-        $pub1->type = 'type1';
-        $pub1->title = 'title1';
+        $result = $command->run(1, ['bogus']);
 
-        $this->manager->method('getPublicationListings')->willReturn([$pub1]);
-
-        ob_start();
-        $result = $this->command->run(1, ['list']);
-        $output = ob_get_clean();
-
-        $this->assertTrue($result->success);
-        // printf("%2d: %4d %s %s\n", $index + 1, $publication->id, $publication->type, $publication->title);
-        // " 1:    1 type1 title1\n"
-        $this->assertStringContainsString(' 1:    1 type1 title1', $output);
+        $this->assertFalse($result->success);
+        $this->assertSame('Invalid command', $result->message);
+        $this->assertTrue($result->printUsage);
     }
 
-    #[AllowMockObjectsWithoutExpectations]
-    public function testRunGet()
+    /**
+     * Tests that list() prints available publications.
+     */
+    public function testRunListPrintsPublicationRows(): void
     {
-        $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
+        $manager = $this->createMock(PublicationManager::class);
+        $publication = $this->createListing(1);
+        $publication->type = 'type1';
+        $publication->title = 'title1';
 
-        // PublicationData is abstract, but we can mock it
-        $pubData = $this->createMock(PublicationData::class);
-        $pubData->id = 123;
+        $manager->expects($this->once())
+            ->method('getPublicationListings')
+            ->willReturn([$publication]);
 
-        $this->manager->method('getPublicationData')->with(123)->willReturn($pubData);
+        $command = new PublicationCliCommand($this->createContainerReturningManager($manager));
+        $output = $this->captureRun($command, 1, ['list']);
 
-        ob_start();
-        $result = $this->command->run(2, ['get', '123']);
-        $output = ob_get_clean();
-
-        $this->assertTrue($result->success);
-        $this->assertStringContainsString('123', $output);
+        $this->assertTrue($output['result']->success);
+        $this->assertStringContainsString(' 1:    1 type1 title1', $output['stdout']);
     }
 
-    public function testRunUpdate()
+    /**
+     * Tests that list() reports when no publications are available.
+     */
+    public function testRunListPrintsNoPublicationsFoundWhenListIsEmpty(): void
     {
-        $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
+        $manager = $this->createMock(PublicationManager::class);
+        $manager->expects($this->once())
+            ->method('getPublicationListings')
+            ->willReturn([]);
 
-        $this->manager->expects($this->once())->method('updateFromApm');
+        $command = new PublicationCliCommand($this->createContainerReturningManager($manager));
+        $output = $this->captureRun($command, 1, ['list']);
 
-        ob_start();
-        $result = $this->command->run(1, ['update']);
-        $output = ob_get_clean();
-
-        $this->assertTrue($result->success);
-        $this->assertStringContainsString('Successfully updated from APM', $output);
+        $this->assertTrue($output['result']->success);
+        $this->assertStringContainsString('No publications found', $output['stdout']);
     }
 
-    #[AllowMockObjectsWithoutExpectations]
-    public function testRunInfo()
+    /**
+     * Tests that list() fails when the publication manager is unavailable.
+     */
+    public function testRunListReturnsFailureWhenManagerIsUnavailable(): void
     {
-        $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
+        $command = new PublicationCliCommand(
+            $this->createContainerThrowingForManager(new NotFoundException('missing manager'))
+        );
 
-        $this->manager->method('getPublicationListings')->willReturn([new PublicationListing(), new PublicationListing()]);
-        $this->manager->method('getLastUpdateTimestamp')->willReturn(1716474540); // 2024-05-23 14:29:00 UTC approximately
+        $result = $command->run(1, ['list']);
 
-        ob_start();
-        $result = $this->command->run(1, ['info']);
-        $output = ob_get_clean();
-
-        $this->assertTrue($result->success);
-        $this->assertStringContainsString('Number of publications: 2', $output);
-        $this->assertStringContainsString('Last update: 23.05.2024 14:29:00', $output);
+        $this->assertFalse($result->success);
+        $this->assertSame('Publication manager not available', $result->message);
+        $this->assertFalse($result->printUsage);
     }
 
-    #[AllowMockObjectsWithoutExpectations]
-    public function testRunInfoNever()
+    /**
+     * Tests that get() prints the requested publication data.
+     */
+    public function testRunGetPrintsPublicationData(): void
     {
-        $this->container->method('get')->with(PublicationManager::class)->willReturn($this->manager);
+        $manager = $this->createMock(PublicationManager::class);
+        $publicationData = $this->createPublicationData(123);
 
-        $this->manager->method('getPublicationListings')->willReturn([]);
-        $this->manager->method('getLastUpdateTimestamp')->willReturn(0);
+        $manager->expects($this->once())
+            ->method('getPublicationData')
+            ->with(123)
+            ->willReturn($publicationData);
 
+        $command = new PublicationCliCommand($this->createContainerReturningManager($manager));
+        $output = $this->captureRun($command, 2, ['get', '123']);
+
+        $this->assertTrue($output['result']->success);
+        $this->assertStringContainsString('123', $output['stdout']);
+        $this->assertStringContainsString('Text of publication 123', $output['stdout']);
+    }
+
+    /**
+     * Tests that get() fails when no publication id is given.
+     */
+    public function testRunGetReturnsFailureWhenIdIsMissing(): void
+    {
+        $command = new PublicationCliCommand($this->createStub(Container::class));
+
+        $result = $command->run(1, ['get']);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('No publication id given', $result->message);
+        $this->assertTrue($result->printUsage);
+    }
+
+    /**
+     * Tests that get() fails when the publication id is invalid.
+     */
+    public function testRunGetReturnsFailureWhenIdIsInvalid(): void
+    {
+        $command = new PublicationCliCommand($this->createStub(Container::class));
+
+        $result = $command->run(2, ['get', 'not-a-number']);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('Invalid publication id', $result->message);
+        $this->assertTrue($result->printUsage);
+    }
+
+    /**
+     * Tests that get() fails when the publication manager is unavailable.
+     */
+    public function testRunGetReturnsFailureWhenManagerIsUnavailable(): void
+    {
+        $command = new PublicationCliCommand(
+            $this->createContainerThrowingForManager(new DependencyException('missing manager'))
+        );
+
+        $result = $command->run(2, ['get', '123']);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('Publication manager not available', $result->message);
+        $this->assertTrue($result->printUsage);
+    }
+
+    /**
+     * Tests that get() fails when the publication does not exist.
+     */
+    public function testRunGetReturnsFailureWhenPublicationIsNotFound(): void
+    {
+        $manager = $this->createMock(PublicationManager::class);
+        $manager->expects($this->once())
+            ->method('getPublicationData')
+            ->with(123)
+            ->willThrowException(new PublicationNotFoundException('missing'));
+
+        $command = new PublicationCliCommand($this->createContainerReturningManager($manager));
+        $result = $command->run(2, ['get', '123']);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('Publication not found', $result->message);
+        $this->assertFalse($result->printUsage);
+    }
+
+    /**
+     * Tests that update() triggers a publication refresh.
+     */
+    public function testRunUpdate(): void
+    {
+        $manager = $this->createMock(PublicationManager::class);
+        $manager->expects($this->once())
+            ->method('updateFromApm');
+
+        $command = new PublicationCliCommand($this->createContainerReturningManager($manager));
+        $output = $this->captureRun($command, 1, ['update']);
+
+        $this->assertTrue($output['result']->success);
+        $this->assertStringContainsString('Successfully updated from APM', $output['stdout']);
+    }
+
+    /**
+     * Tests that update() fails when the publication manager is unavailable.
+     */
+    public function testRunUpdateReturnsFailureWhenManagerIsUnavailable(): void
+    {
+        $command = new PublicationCliCommand(
+            $this->createContainerThrowingForManager(new NotFoundException('missing manager'))
+        );
+
+        $result = $command->run(1, ['update']);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('Publication manager not available', $result->message);
+        $this->assertFalse($result->printUsage);
+    }
+
+    /**
+     * Tests that update() reports APM communication problems.
+     */
+    public function testRunUpdateReturnsFailureForApmCommunicationProblems(): void
+    {
+        $manager = $this->createMock(PublicationManager::class);
+        $manager->expects($this->once())
+            ->method('updateFromApm')
+            ->willThrowException(new ApmCommunicationProblemException('timeout'));
+
+        $command = new PublicationCliCommand($this->createContainerReturningManager($manager));
+        $result = $command->run(1, ['update']);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('Communication problem with APM: timeout', $result->message);
+        $this->assertFalse($result->printUsage);
+    }
+
+    /**
+     * Tests that info() prints publication count and formatted timestamp.
+     */
+    public function testRunInfo(): void
+    {
+        $manager = $this->createMock(PublicationManager::class);
+        $manager->expects($this->once())
+            ->method('getPublicationListings')
+            ->willReturn([new PublicationListing(), new PublicationListing()]);
+        $manager->expects($this->once())
+            ->method('getLastUpdateTimestamp')
+            ->willReturn(1716474540);
+
+        $command = new PublicationCliCommand($this->createContainerReturningManager($manager));
+        $output = $this->captureRun($command, 1, ['info']);
+
+        $this->assertTrue($output['result']->success);
+        $this->assertStringContainsString('Number of publications: 2', $output['stdout']);
+        $this->assertStringContainsString('Last update: 23.05.2024 14:29:00', $output['stdout']);
+    }
+
+    /**
+     * Tests that info() prints 'never' when the system has not been updated yet.
+     */
+    public function testRunInfoNever(): void
+    {
+        $manager = $this->createMock(PublicationManager::class);
+        $manager->expects($this->once())
+            ->method('getPublicationListings')
+            ->willReturn([]);
+        $manager->expects($this->once())
+            ->method('getLastUpdateTimestamp')
+            ->willReturn(0);
+
+        $command = new PublicationCliCommand($this->createContainerReturningManager($manager));
+        $output = $this->captureRun($command, 1, ['info']);
+
+        $this->assertTrue($output['result']->success);
+        $this->assertStringContainsString('Number of publications: 0', $output['stdout']);
+        $this->assertStringContainsString('Last update: never', $output['stdout']);
+    }
+
+    /**
+     * Tests that info() fails when the publication manager is unavailable.
+     */
+    public function testRunInfoReturnsFailureWhenManagerIsUnavailable(): void
+    {
+        $command = new PublicationCliCommand(
+            $this->createContainerThrowingForManager(new DependencyException('missing manager'))
+        );
+
+        $result = $command->run(1, ['info']);
+
+        $this->assertFalse($result->success);
+        $this->assertSame('Publication manager not available', $result->message);
+        $this->assertFalse($result->printUsage);
+    }
+
+    /**
+     * Creates a container that returns the given publication manager.
+     */
+    private function createContainerReturningManager(PublicationManager $manager): Container
+    {
+        $container = $this->createMock(Container::class);
+        $container->expects($this->once())
+            ->method('get')
+            ->with(PublicationManager::class)
+            ->willReturn($manager);
+
+        return $container;
+    }
+
+    /**
+     * Creates a container that throws when the publication manager is requested.
+     */
+    private function createContainerThrowingForManager(\Throwable $exception): Container
+    {
+        $container = $this->createMock(Container::class);
+        $container->expects($this->once())
+            ->method('get')
+            ->with(PublicationManager::class)
+            ->willThrowException($exception);
+
+        return $container;
+    }
+
+    /**
+     * Captures stdout while running the command.
+     *
+     * @return array{result: CommandResult, stdout: string}
+     */
+    private function captureRun(PublicationCliCommand $command, int $argc, array $argv): array
+    {
         ob_start();
-        $result = $this->command->run(1, ['info']);
-        $output = ob_get_clean();
+        $result = $command->run($argc, $argv);
+        $stdout = ob_get_clean();
 
-        $this->assertTrue($result->success);
-        $this->assertStringContainsString('Number of publications: 0', $output);
-        $this->assertStringContainsString('Last update: never', $output);
+        return [
+            'result' => $result,
+            'stdout' => $stdout,
+        ];
+    }
+
+    /**
+     * Creates a publication listing with initialized fields.
+     */
+    private function createListing(int $id): PublicationListing
+    {
+        $listing = new PublicationListing();
+        $listing->id = $id;
+        $listing->type = 'edition';
+        $listing->versionTimeString = '2026-05-24 10:00:00.000000';
+        $listing->title = "Publication $id";
+        $listing->description = "Description $id";
+
+        return $listing;
+    }
+
+    /**
+     * Creates publication data with initialized fields.
+     */
+    private function createPublicationData(int $id): TextPublicationData
+    {
+        $publicationData = new TextPublicationData();
+        $publicationData->id = $id;
+        $publicationData->type = 'text';
+        $publicationData->versionTimeString = '2026-05-24 10:00:00.000000';
+        $publicationData->title = "Publication $id";
+        $publicationData->description = "Description $id";
+        $publicationData->text = "Text of publication $id";
+
+        return $publicationData;
     }
 }

@@ -2,7 +2,6 @@
 
 namespace ThomasInstitut\Ape\Managers;
 
-use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\ClientInterface;
@@ -13,183 +12,598 @@ use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
 use ThomasInstitut\ApmPublicationApi\TextPublicationData;
 
+/**
+ * Test-specific interface exposing the Valkey methods used by the manager.
+ */
 interface PredisClientMethodsInterface extends ClientInterface
 {
+    /**
+     * Gets a value from Valkey.
+     */
     public function get(string $key): mixed;
 
+    /**
+     * Sets a value in Valkey.
+     */
     public function set(string $key, mixed $value): mixed;
 
+    /**
+     * Deletes one or more keys from Valkey.
+     */
     public function del(array|string $keyOrKeys): int;
 }
 
-#[AllowMockObjectsWithoutExpectations]
+/**
+ * @covers \ThomasInstitut\Ape\Managers\ValkeyPublicationManager
+ */
 class ValkeyPublicationManagerTest extends TestCase
 {
-    private PredisClientMethodsInterface&MockObject $valkeyClient;
-    private  PublicationApiClient&MockObject $apiClient;
-    private ValkeyPublicationManager $manager;
-
-    protected function setUp(): void
+    /**
+     * Tests that getPublicationListings() returns an empty array when no data is present.
+     */
+    public function testGetPublicationListingsReturnsEmptyArrayWhenNoData(): void
     {
-        $this->valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
-        $this->apiClient = $this->createMock(PublicationApiClient::class);
-        $logger = $this->createStub(LoggerInterface::class);
-        $this->manager = new ValkeyPublicationManager($this->valkeyClient, $this->apiClient, $logger);
-    }
-
-    public function testGetPublicationListingsReturnsEmptyArrayWhenNoData()
-    {
-        $this->valkeyClient->expects($this->once())
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $valkeyClient->expects($this->once())
             ->method('get')
             ->with('publications:listings')
             ->willReturn(null);
 
-        $this->assertEquals([], $this->manager->getPublicationListings());
+        $manager = $this->createManager($valkeyClient);
+
+        $this->assertSame([], $manager->getPublicationListings());
     }
 
-    public function testGetPublicationListingsReturnsUnserializedData()
+    /**
+     * Tests that getPublicationListings() unserializes the stored publication listings.
+     */
+    public function testGetPublicationListingsReturnsUnserializedData(): void
     {
-        $listings = [new PublicationListing()];
-        $listings[0]->id = 1;
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $listings = [$this->createListing(1)];
 
-        $this->valkeyClient->expects($this->once())
+        $valkeyClient->expects($this->once())
             ->method('get')
             ->with('publications:listings')
             ->willReturn(serialize($listings));
 
-        $result = $this->manager->getPublicationListings();
+        $manager = $this->createManager($valkeyClient);
+        $result = $manager->getPublicationListings();
+
         $this->assertCount(1, $result);
         $this->assertInstanceOf(PublicationListing::class, $result[0]);
-        $this->assertEquals(1, $result[0]->id);
+        $this->assertSame(1, $result[0]->id);
+        $this->assertSame('Publication 1', $result[0]->title);
     }
 
-    public function testGetPublicationDataThrowsExceptionWhenNotFound()
+    /**
+     * Tests that getPublicationData() returns the unserialized publication data.
+     */
+    public function testGetPublicationDataReturnsUnserializedData(): void
     {
-        $this->valkeyClient->expects($this->once())
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $publicationData = $this->createPublicationData(7);
+
+        $valkeyClient->expects($this->once())
+            ->method('get')
+            ->with('publication:data:7')
+            ->willReturn(serialize($publicationData));
+
+        $manager = $this->createManager($valkeyClient);
+        $result = $manager->getPublicationData(7);
+
+        $this->assertInstanceOf(TextPublicationData::class, $result);
+        $this->assertSame(7, $result->id);
+        $this->assertSame('Text of publication 7', $result->text);
+    }
+
+    /**
+     * Tests that getPublicationData() throws when the publication is not present.
+     */
+    public function testGetPublicationDataThrowsExceptionWhenNotFound(): void
+    {
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $valkeyClient->expects($this->once())
             ->method('get')
             ->with('publication:data:1')
             ->willReturn(null);
 
+        $manager = $this->createManager($valkeyClient);
+
         $this->expectException(PublicationNotFoundException::class);
-        $this->manager->getPublicationData(1);
+        $manager->getPublicationData(1);
     }
 
-    public function testGetLastUpdateTimestampReturnsZeroWhenNoData()
+    /**
+     * Tests that getLastUpdateTimestamp() returns zero when no timestamp is present.
+     */
+    public function testGetLastUpdateTimestampReturnsZeroWhenNoData(): void
     {
-        $this->valkeyClient->expects($this->once())
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $valkeyClient->expects($this->once())
             ->method('get')
             ->with('publications:lastUpdate')
             ->willReturn(null);
 
-        $this->assertEquals(0, $this->manager->getLastUpdateTimestamp());
+        $manager = $this->createManager($valkeyClient);
+
+        $this->assertSame(0, $manager->getLastUpdateTimestamp());
     }
 
-    public function testGetLastUpdateTimestampReturnsValueFromValkey()
+    /**
+     * Tests that getLastUpdateTimestamp() returns the integer timestamp from Valkey.
+     */
+    public function testGetLastUpdateTimestampReturnsValueFromValkey(): void
     {
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
         $timestamp = 1621773840;
-        $this->valkeyClient->expects($this->once())
+        $valkeyClient->expects($this->once())
             ->method('get')
             ->with('publications:lastUpdate')
             ->willReturn((string)$timestamp);
 
-        $this->assertEquals($timestamp, $this->manager->getLastUpdateTimestamp());
+        $manager = $this->createManager($valkeyClient);
+
+        $this->assertSame($timestamp, $manager->getLastUpdateTimestamp());
     }
 
     /**
+     * Tests that updateFromApm() fetches and stores a new publication.
+     *
      * @throws ApmCommunicationProblemException
      */
-    public function testUpdateFromApmHandlesNewPublication()
+    public function testUpdateFromApmHandlesNewPublication(): void
     {
-        $listing = new PublicationListing();
-        $listing->id = 1;
-        $listing->versionTimeString = '2023-01-01';
-        $listing->title = 'Title';
-        $listing->description = 'Desc';
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $apiClient = $this->createMock(PublicationApiClient::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $manager = $this->createManager($valkeyClient, $apiClient, $logger);
 
+        $listing = $this->createListing(1);
         $listResponse = new PublicationApiListResponse();
         $listResponse->publications = [$listing];
 
-        $this->apiClient->expects($this->once())
+        $apiClient->expects($this->once())
             ->method('list')
             ->willReturn($listResponse);
 
-        // Initially empty local listings
-        $this->valkeyClient->method('get')
-            ->willReturnMap([
-                ['publications:listings', null]
-            ]);
+        $valkeyClient->expects($this->once())
+            ->method('get')
+            ->with('publications:listings')
+            ->willReturn(null);
 
-        $data = new TextPublicationData();
-        $data->id = 1;
-        $data->text = 'Content';
-
+        $data = $this->createPublicationData(1);
         $getResponse = new PublicationApiGetResponse();
         $getResponse->publicationData = $data;
 
-        $this->apiClient->expects($this->once())
+        $apiClient->expects($this->once())
             ->method('get')
             ->with(1)
             ->willReturn($getResponse);
 
-        $this->valkeyClient->expects($this->exactly(3))
+        $valkeyClient->expects($this->never())
+            ->method('del');
+
+        $valkeyClient->expects($this->exactly(3))
             ->method('set')
-            ->willReturnCallback(function ($key, $value) use ($data, $listing) {
+            ->willReturnCallback(function (string $key, mixed $value) use ($data, $listing): mixed {
                 static $count = 0;
                 if ($count === 0) {
-                    $this->assertEquals('publication:data:1', $key);
-                    $this->assertEquals(serialize($data), $value);
+                    $this->assertSame('publication:data:1', $key);
+                    $this->assertSame(serialize($data), $value);
                 } elseif ($count === 1) {
-                    $this->assertEquals('publications:listings', $key);
-                    $this->assertEquals(serialize([$listing]), $value);
+                    $this->assertSame('publications:listings', $key);
+                    $this->assertSame(serialize([$listing]), $value);
                 } else {
-                    $this->assertEquals('publications:lastUpdate', $key);
+                    $this->assertSame('publications:lastUpdate', $key);
                     $this->assertIsNumeric($value);
                 }
                 $count++;
                 return null;
             });
 
-        $this->manager->updateFromApm();
+        $logger->expects($this->never())
+            ->method('error');
+
+        $manager->updateFromApm();
     }
 
     /**
+     * Tests that updateFromApm() keeps unchanged publications without refetching their data.
+     *
      * @throws ApmCommunicationProblemException
      */
-    public function testUpdateFromApmHandlesRemoval()
+    public function testUpdateFromApmKeepsUnchangedPublicationWithoutRefetchingData(): void
     {
-        $listResponse = new PublicationApiListResponse();
-        $listResponse->publications = []; // APM is empty
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $apiClient = $this->createMock(PublicationApiClient::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $manager = $this->createManager($valkeyClient, $apiClient, $logger);
 
-        $this->apiClient->expects($this->once())
+        $localListing = $this->createListing(2);
+        $apmListing = $this->createListing(2);
+        $listResponse = new PublicationApiListResponse();
+        $listResponse->publications = [$apmListing];
+
+        $apiClient->expects($this->once())
             ->method('list')
             ->willReturn($listResponse);
+        $apiClient->expects($this->never())
+            ->method('get');
 
-        $oldListing = new PublicationListing();
-        $oldListing->id = 1;
-
-        $this->valkeyClient->method('get')
+        $valkeyClient->expects($this->once())
+            ->method('get')
             ->with('publications:listings')
-            ->willReturn(serialize([$oldListing]));
+            ->willReturn(serialize([$localListing]));
+        $valkeyClient->expects($this->never())
+            ->method('del');
 
-        $this->valkeyClient->expects($this->once())
-            ->method('del')
-            ->with(['publication:data:1']);
-
-        $this->valkeyClient->expects($this->exactly(2))
+        $valkeyClient->expects($this->exactly(2))
             ->method('set')
-            ->willReturnCallback(function ($key, $value) {
+            ->willReturnCallback(function (string $key, mixed $value) use ($localListing): mixed {
                 static $count = 0;
                 if ($count === 0) {
-                    $this->assertEquals('publications:listings', $key);
-                    $this->assertEquals(serialize([]), $value);
+                    $this->assertSame('publications:listings', $key);
+                    $this->assertSame(serialize([$localListing]), $value);
                 } else {
-                    $this->assertEquals('publications:lastUpdate', $key);
+                    $this->assertSame('publications:lastUpdate', $key);
                     $this->assertIsNumeric($value);
                 }
                 $count++;
                 return null;
             });
 
-        $this->manager->updateFromApm();
+        $logger->expects($this->never())
+            ->method('error');
+
+        $manager->updateFromApm();
+    }
+
+    /**
+     * Tests that updateFromApm() refreshes cached data when the publication version changes.
+     *
+     * @throws ApmCommunicationProblemException
+     */
+    public function testUpdateFromApmRefetchesDataWhenPublicationVersionChanges(): void
+    {
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $apiClient = $this->createMock(PublicationApiClient::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $manager = $this->createManager($valkeyClient, $apiClient, $logger);
+
+        $localListing = $this->createListing(3, '2026-05-24 10:00:00.000000', 'Old title', 'Old description');
+        $apmListing = $this->createListing(3, '2026-05-25 10:00:00.000000', 'New title', 'New description');
+        $listResponse = new PublicationApiListResponse();
+        $listResponse->publications = [$apmListing];
+
+        $publicationData = $this->createPublicationData(3);
+        $getResponse = new PublicationApiGetResponse();
+        $getResponse->publicationData = $publicationData;
+
+        $apiClient->expects($this->once())
+            ->method('list')
+            ->willReturn($listResponse);
+        $apiClient->expects($this->once())
+            ->method('get')
+            ->with(3)
+            ->willReturn($getResponse);
+
+        $valkeyClient->expects($this->once())
+            ->method('get')
+            ->with('publications:listings')
+            ->willReturn(serialize([$localListing]));
+        $valkeyClient->expects($this->never())
+            ->method('del');
+
+        $valkeyClient->expects($this->exactly(3))
+            ->method('set')
+            ->willReturnCallback(function (string $key, mixed $value) use ($publicationData, $apmListing): mixed {
+                static $count = 0;
+                if ($count === 0) {
+                    $this->assertSame('publication:data:3', $key);
+                    $this->assertSame(serialize($publicationData), $value);
+                } elseif ($count === 1) {
+                    $this->assertSame('publications:listings', $key);
+                    $this->assertSame(serialize([$apmListing]), $value);
+                } else {
+                    $this->assertSame('publications:lastUpdate', $key);
+                    $this->assertIsNumeric($value);
+                }
+                $count++;
+                return null;
+            });
+
+        $logger->expects($this->never())
+            ->method('error');
+
+        $manager->updateFromApm();
+    }
+
+    /**
+     * Tests that updateFromApm() updates listings when only metadata changes.
+     *
+     * @throws ApmCommunicationProblemException
+     */
+    public function testUpdateFromApmUpdatesListingWithoutRefetchingDataWhenOnlyMetadataChanges(): void
+    {
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $apiClient = $this->createMock(PublicationApiClient::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $manager = $this->createManager($valkeyClient, $apiClient, $logger);
+
+        $localListing = $this->createListing(3, '2026-05-24 10:00:00.000000', 'Old title', 'Old description');
+        $apmListing = $this->createListing(3, '2026-05-24 10:00:00.000000', 'New title', 'New description');
+        $listResponse = new PublicationApiListResponse();
+        $listResponse->publications = [$apmListing];
+
+        $apiClient->expects($this->once())
+            ->method('list')
+            ->willReturn($listResponse);
+        $apiClient->expects($this->never())
+            ->method('get');
+
+        $valkeyClient->expects($this->once())
+            ->method('get')
+            ->with('publications:listings')
+            ->willReturn(serialize([$localListing]));
+        $valkeyClient->expects($this->never())
+            ->method('del');
+
+        $valkeyClient->expects($this->exactly(2))
+            ->method('set')
+            ->willReturnCallback(function (string $key, mixed $value) use ($apmListing): mixed {
+                static $count = 0;
+                if ($count === 0) {
+                    $this->assertSame('publications:listings', $key);
+                    $this->assertSame(serialize([$apmListing]), $value);
+                } else {
+                    $this->assertSame('publications:lastUpdate', $key);
+                    $this->assertIsNumeric($value);
+                }
+                $count++;
+                return null;
+            });
+
+        $logger->expects($this->never())
+            ->method('error');
+
+        $manager->updateFromApm();
+    }
+
+    /**
+     * Tests that updateFromApm() removes publications no longer present in APM.
+     *
+     * @throws ApmCommunicationProblemException
+     */
+    public function testUpdateFromApmHandlesRemoval(): void
+    {
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $apiClient = $this->createMock(PublicationApiClient::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $manager = $this->createManager($valkeyClient, $apiClient, $logger);
+
+        $listResponse = new PublicationApiListResponse();
+        $listResponse->publications = [];
+
+        $apiClient->expects($this->once())
+            ->method('list')
+            ->willReturn($listResponse);
+
+        $oldListing = $this->createListing(1);
+
+        $valkeyClient->expects($this->once())
+            ->method('get')
+            ->with('publications:listings')
+            ->willReturn(serialize([$oldListing]));
+
+        $valkeyClient->expects($this->once())
+            ->method('del')
+            ->with(['publication:data:1']);
+
+        $valkeyClient->expects($this->exactly(2))
+            ->method('set')
+            ->willReturnCallback(function (string $key, mixed $value): mixed {
+                static $count = 0;
+                if ($count === 0) {
+                    $this->assertSame('publications:listings', $key);
+                    $this->assertSame(serialize([]), $value);
+                } else {
+                    $this->assertSame('publications:lastUpdate', $key);
+                    $this->assertIsNumeric($value);
+                }
+                $count++;
+                return null;
+            });
+
+        $logger->expects($this->never())
+            ->method('error');
+
+        $manager->updateFromApm();
+    }
+
+    /**
+     * Tests that updateFromApm() deletes multiple stale publications.
+     *
+     * @throws ApmCommunicationProblemException
+     */
+    public function testUpdateFromApmRemovesMultipleStalePublications(): void
+    {
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $apiClient = $this->createMock(PublicationApiClient::class);
+        $manager = $this->createManager($valkeyClient, $apiClient);
+
+        $listResponse = new PublicationApiListResponse();
+        $listResponse->publications = [];
+
+        $apiClient->expects($this->once())
+            ->method('list')
+            ->willReturn($listResponse);
+
+        $localListings = [$this->createListing(10), $this->createListing(11)];
+        $removedKeys = [];
+
+        $valkeyClient->expects($this->once())
+            ->method('get')
+            ->with('publications:listings')
+            ->willReturn(serialize($localListings));
+
+        $valkeyClient->expects($this->exactly(2))
+            ->method('del')
+            ->willReturnCallback(function (array|string $keyOrKeys) use (&$removedKeys): int {
+                $removedKeys[] = $keyOrKeys;
+                return 1;
+            });
+
+        $valkeyClient->expects($this->exactly(2))
+            ->method('set')
+            ->willReturnCallback(function (string $key, mixed $value): mixed {
+                static $count = 0;
+                if ($count === 0) {
+                    $this->assertSame('publications:listings', $key);
+                    $this->assertSame(serialize([]), $value);
+                } else {
+                    $this->assertSame('publications:lastUpdate', $key);
+                    $this->assertIsNumeric($value);
+                }
+                $count++;
+                return null;
+            });
+
+        $manager->updateFromApm();
+
+        $this->assertSame([
+            ['publication:data:10'],
+            ['publication:data:11'],
+        ], $removedKeys);
+    }
+
+    /**
+     * Tests that updateFromApm() wraps list failures and logs them.
+     */
+    public function testUpdateFromApmWrapsListFailuresAndLogsThem(): void
+    {
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $apiClient = $this->createMock(PublicationApiClient::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $manager = $this->createManager($valkeyClient, $apiClient, $logger);
+        $previous = new \RuntimeException('upstream failed');
+
+        $apiClient->expects($this->once())
+            ->method('list')
+            ->willThrowException($previous);
+
+        $valkeyClient->expects($this->never())
+            ->method('get');
+        $valkeyClient->expects($this->never())
+            ->method('set');
+        $valkeyClient->expects($this->never())
+            ->method('del');
+
+        $logger->expects($this->once())
+            ->method('error')
+            ->with('Error updating from APM: upstream failed');
+
+        try {
+            $manager->updateFromApm();
+            $this->fail('Expected ApmCommunicationProblemException to be thrown.');
+        } catch (ApmCommunicationProblemException $exception) {
+            $this->assertSame('Error updating from APM', $exception->getMessage());
+            $this->assertSame($previous, $exception->getPrevious());
+        }
+    }
+
+    /**
+     * Tests that updateFromApm() wraps publication fetch failures and logs them.
+     */
+    public function testUpdateFromApmWrapsPublicationFetchFailuresAndLogsThem(): void
+    {
+        $valkeyClient = $this->createMock(PredisClientMethodsInterface::class);
+        $apiClient = $this->createMock(PublicationApiClient::class);
+        $logger = $this->createMock(LoggerInterface::class);
+        $manager = $this->createManager($valkeyClient, $apiClient, $logger);
+
+        $listing = $this->createListing(4);
+        $listResponse = new PublicationApiListResponse();
+        $listResponse->publications = [$listing];
+        $previous = new \RuntimeException('detail fetch failed');
+
+        $apiClient->expects($this->once())
+            ->method('list')
+            ->willReturn($listResponse);
+        $apiClient->expects($this->once())
+            ->method('get')
+            ->with(4)
+            ->willThrowException($previous);
+
+        $valkeyClient->expects($this->once())
+            ->method('get')
+            ->with('publications:listings')
+            ->willReturn(null);
+        $valkeyClient->expects($this->never())
+            ->method('set');
+        $valkeyClient->expects($this->never())
+            ->method('del');
+
+        $logger->expects($this->once())
+            ->method('error')
+            ->with('Error fetching data for publication 4: detail fetch failed');
+
+        try {
+            $manager->updateFromApm();
+            $this->fail('Expected ApmCommunicationProblemException to be thrown.');
+        } catch (ApmCommunicationProblemException $exception) {
+            $this->assertSame('Error fetching data for publication 4', $exception->getMessage());
+            $this->assertSame($previous, $exception->getPrevious());
+        }
+    }
+
+    /**
+     * Creates a manager with optional test doubles.
+     */
+    private function createManager(
+        PredisClientMethodsInterface $valkeyClient,
+        ?PublicationApiClient $apiClient = null,
+        ?LoggerInterface $logger = null
+    ): ValkeyPublicationManager {
+        return new ValkeyPublicationManager(
+            $valkeyClient,
+            $apiClient ?? $this->createStub(PublicationApiClient::class),
+            $logger ?? $this->createStub(LoggerInterface::class)
+        );
+    }
+
+    /**
+     * Creates a publication listing with initialized fields.
+     */
+    private function createListing(
+        int $id,
+        string $versionTimeString = '2026-05-24 10:00:00.000000',
+        string $title = '',
+        string $description = ''
+    ): PublicationListing {
+        $listing = new PublicationListing();
+        $listing->id = $id;
+        $listing->type = 'edition';
+        $listing->versionTimeString = $versionTimeString;
+        $listing->title = $title !== '' ? $title : "Publication $id";
+        $listing->description = $description !== '' ? $description : "Description $id";
+
+        return $listing;
+    }
+
+    /**
+     * Creates publication data with initialized fields.
+     */
+    private function createPublicationData(int $id): TextPublicationData
+    {
+        $publicationData = new TextPublicationData();
+        $publicationData->id = $id;
+        $publicationData->type = 'text';
+        $publicationData->versionTimeString = '2026-05-24 10:00:00.000000';
+        $publicationData->title = "Publication $id";
+        $publicationData->description = "Description $id";
+        $publicationData->text = "Text of publication $id";
+
+        return $publicationData;
     }
 }

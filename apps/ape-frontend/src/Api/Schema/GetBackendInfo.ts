@@ -1,14 +1,20 @@
-import {ApiResponse} from "@/Api/Schema/ApiResponse";
+import {ApiSuccessResponse} from "@/Api/Schema/ApiResponse";
 
-
+/**
+ * Mirrors \ThomasInstitut\Ape\ActionsSchema\BackendInfo
+ */
 export interface BackendInfo {
   name: string;
   version: string;
   versionDate: string;
 }
 
-
-export interface GetBackendInfoResponse extends ApiResponse {
-  result: 'Success';
+/**
+ * Mirrors \ThomasInstitut\Ape\ApiSchema\GetBackendInfoApiResponse
+ */
+export interface GetBackendInfoApiResponse extends ApiSuccessResponse {
   backendInfo: BackendInfo;
 }
+
+// Backward-compatible alias used by current client code.
+export type GetBackendInfoResponse = GetBackendInfoApiResponse;

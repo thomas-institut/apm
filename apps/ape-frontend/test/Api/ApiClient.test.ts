@@ -22,14 +22,15 @@ describe('ApiClient', () => {
     vi.restoreAllMocks();
   });
 
-  it('returns backend info for /info', async () => {
+  it('returns backend info for /app/config', async () => {
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
     fetchMock.mockResolvedValue(
       mockJsonResponse({
         result: 'Success',
         timeStamp: 123,
-        backendInfo: {
+        appConfig: {
           name: 'APE backend',
+          shortName: 'APE',
           version: '1.0.0',
           versionDate: '2026-01-01',
         },
@@ -39,13 +40,14 @@ describe('ApiClient', () => {
     const client = new ApiClient().withBaseUrl(baseUrl);
     const response = await client.getAppConfig();
 
-    expect(fetchMock).toHaveBeenCalledWith(`${baseUrl}/info`);
+    expect(fetchMock).toHaveBeenCalledWith(`${baseUrl}/app/config`);
     expect(response).toEqual({
       result: 'Success',
       httpStatus: 200,
       timestamp: 123000,
       data: {
         name: 'APE backend',
+        shortName: 'APE',
         version: '1.0.0',
         versionDate: '2026-01-01',
       },

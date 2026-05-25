@@ -1,4 +1,4 @@
-import {BackendInfo, GetBackendInfoResponse} from "@/Api/Schema/GetBackendInfo";
+import {AppConfig, GetAppConfigApiResponse} from "@/Api/Schema/GetAppConfig";
 import {ApiErrorResponse, ApiResponse} from "@/Api/Schema/ApiResponse";
 import {
   AnyPublicationData,
@@ -25,10 +25,10 @@ export class ApiClient {
     return this;
   }
 
-  async getBackendInfo(): Promise<ApiClientResponse<BackendInfo>> {
-    return this.callApi<GetBackendInfoResponse, BackendInfo>(
-      '/info',
-      (response) => response.backendInfo,
+  async getAppConfig(): Promise<ApiClientResponse<AppConfig>> {
+    return this.callApi<GetAppConfigApiResponse, AppConfig>(
+      '/app/config',
+      (response) => response.appConfig,
     );
   }
 

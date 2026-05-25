@@ -3,8 +3,9 @@ import {ApiSuccessResponse} from "@/Api/Schema/ApiResponse";
 /**
  * Mirrors \ThomasInstitut\Ape\ActionsSchema\BackendInfo
  */
-export interface BackendInfo {
+export interface AppConfig {
   name: string;
+  shortName: string;
   version: string;
   versionDate: string;
 }
@@ -12,9 +13,7 @@ export interface BackendInfo {
 /**
  * Mirrors \ThomasInstitut\Ape\ApiSchema\GetBackendInfoApiResponse
  */
-export interface GetBackendInfoApiResponse extends ApiSuccessResponse {
-  backendInfo: BackendInfo;
+export interface GetAppConfigApiResponse extends ApiSuccessResponse {
+  appConfig: AppConfig;
 }
 
-// Backward-compatible alias used by current client code.
-export type GetBackendInfoResponse = GetBackendInfoApiResponse;

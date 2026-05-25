@@ -1,11 +1,11 @@
-:root {
-    --system-ui: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-}
+/*:root {*/
+/*    --system-ui: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";*/
+/*}*/
 
 
-body {
-    margin: 0;
-    padding: 0.5em;
-    font-family: var(--system-ui), sans-serif;
-}
+/*body {*/
+/*    margin: 0;*/
+/*    padding: 0.5em;*/
+/*    font-family: var(--system-ui), sans-serif;*/
+/*}*/
 

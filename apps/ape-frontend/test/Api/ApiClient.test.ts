@@ -37,7 +37,7 @@ describe('ApiClient', () => {
     );
 
     const client = new ApiClient().withBaseUrl(baseUrl);
-    const response = await client.getBackendInfo();
+    const response = await client.getAppConfig();
 
     expect(fetchMock).toHaveBeenCalledWith(`${baseUrl}/info`);
     expect(response).toEqual({

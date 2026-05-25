@@ -18,15 +18,17 @@
   "dependencies": {
     "@shared/ts": "*",
     "@tanstack/react-query": "^5.100",
+    "bootstrap": "^5.3.8",
     "react": "^19.2",
+    "react-bootstrap": "^3.0.0-beta.5",
     "react-dom": "^19.2",
     "react-router": "^7.15",
     "zustand": "^5.0"
   },
   "devDependencies": {
+    "@types/node": "^25.6",
     "@types/react": "^19.2",
     "@types/react-dom": "^19.2",
-    "@types/node": "^25.6",
     "@vitejs/plugin-react": "^6.0",
     "fake-indexeddb": "^6.2",
     "happy-dom": "^20.9",

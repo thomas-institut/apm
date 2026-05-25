@@ -1,27 +1,27 @@
 import {useRef} from "react";
 import {ApiClient} from "@/Api/ApiClient";
-import {AppConfig} from "@/main";
+import {InlineAppConfig} from "@/main";
 import "./app.css";
 import {QueryClient, useQuery} from "@tanstack/react-query";
-import {BackendInfo} from "@/Api/Schema/GetBackendInfo";
-import {randomString} from "@shared/ts";
+import {AppConfig} from "@/Api/Schema/GetAppConfig";
+import {Container} from "react-bootstrap";
 
 interface AppProps {
-  config: AppConfig;
+  inlineConfig: InlineAppConfig;
 }
 
-export function App({config}: AppProps) {
+export function App({inlineConfig}: AppProps) {
 
   const queryClient = new QueryClient();
 
   const apiClient = useRef<ApiClient | null>(null);
-  if (!apiClient.current && config.apiBaseUrl) {
-    apiClient.current = new ApiClient().withBaseUrl(config.apiBaseUrl);
+  if (!apiClient.current && inlineConfig.apiBaseUrl) {
+    apiClient.current = new ApiClient().withBaseUrl(inlineConfig.apiBaseUrl);
   }
 
-  const getBackendInfoResult = useQuery({
-    queryKey: ['getBackendInfo'], queryFn: async () => {
-      const clientResponse = await apiClient.current?.getBackendInfo();
+  const getAppConfigResult = useQuery({
+    queryKey: ['getAppConfig'], queryFn: async () => {
+      const clientResponse = await apiClient.current?.getAppConfig();
       if (!clientResponse) {
         return null;
       }
@@ -36,21 +36,21 @@ export function App({config}: AppProps) {
     }, enabled: !!apiClient.current,
   }, queryClient);
 
-  const appContent = (backendInfo: BackendInfo|null) => (<>
-      <h1>App</h1>
-      <div>The frontend for {config.appName} says 'Hello world!'</div>
-    <div>This is a random string: {randomString()}</div>
-    { backendInfo && <div>{backendInfo.name} {backendInfo.version} ({backendInfo.versionDate})</div>}
-    { backendInfo === null && <div>Backend info: not available</div>}
-    </>);
 
-  if (getBackendInfoResult.isLoading) {
-    return appContent(null);
+  if (getAppConfigResult.isLoading) {
+    return <Container>Loading...</Container>;
   }
 
-  if (getBackendInfoResult.error) {
-    return appContent(null);
+  if (getAppConfigResult.error) {
+    return <Container><span className="text-danger">Could not load app config from server</span></Container>;
   }
-  return appContent(getBackendInfoResult.data || null);
+
+  const appConfig: AppConfig = getAppConfigResult.data!;
+
+  return <Container>App content will be here... { `${appConfig.name}, ${appConfig.version} (${appConfig.versionDate})` }</Container>
+
+
+
+
 
 }

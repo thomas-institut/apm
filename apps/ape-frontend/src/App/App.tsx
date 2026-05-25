@@ -7,6 +7,8 @@ import {AppConfig} from "@/Api/Schema/GetAppConfig";
 import {Breadcrumb, Container} from "react-bootstrap";
 import NormalPageLayout from "@/ui/NormalPageLayout";
 import {BrowserRouter, Link, Route, Routes} from "react-router";
+import {Home} from "@/App/Home";
+import {Info} from "@/App/Info";
 
 interface AppProps {
     inlineConfig: InlineAppConfig
@@ -75,18 +77,8 @@ export function App({inlineConfig}: AppProps) {
             <BrowserRouter>
                 <NormalPageLayout>
                     <Routes>
-                        <Route path="/" element={<div>Home page will be here</div>}/>
-                        <Route path="/info" element={
-                            <>
-                                <Breadcrumb>
-                                    <Breadcrumb.Item linkAs={Link} linkProps={{to: "/"}}>Home</Breadcrumb.Item>
-                                    <Breadcrumb.Item active>Info</Breadcrumb.Item>
-                                </Breadcrumb>
-                                <div>
-                                    This is {appConfig.name}, {appConfig.version} ({appConfig.versionDate})
-                                </div>
-                            </>
-                        }/>
+                        <Route path="/" element={<Home/>}/>
+                        <Route path="/info" element={<Info/>}/>
                     </Routes>
                 </NormalPageLayout>
             </BrowserRouter>

@@ -1,15 +1,16 @@
 import {createContext, useRef} from "react";
 import {ApiClient} from "@/Api/ApiClient";
 import {InlineAppConfig} from "@/main";
-import "./app.css";
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import {AppConfig} from "@/Api/Schema/GetAppConfig";
 import {Container} from "react-bootstrap";
 import NormalPageLayout from "@/ui/NormalPageLayout";
 import {BrowserRouter, Route, Routes} from "react-router";
 import {Home} from "@/App/Home";
-import {Info} from "@/App/Info";
+import {About} from "@/App/About";
 import {PublicationPage} from "@/App/PublicationPage";
+
+import "./app.css";
 
 interface AppProps {
     inlineConfig: InlineAppConfig
@@ -79,7 +80,7 @@ export function App({inlineConfig}: AppProps) {
                 <NormalPageLayout>
                     <Routes>
                         <Route path="/" element={<Home/>}/>
-                        <Route path="/info" element={<Info/>}/>
+                        <Route path="/about" element={<About/>}/>
                         <Route path="/publication/:id" element={<PublicationPage/>}/>
                     </Routes>
                 </NormalPageLayout>

@@ -33,26 +33,31 @@ export function Home() {
   const publications = publicationListingsQuery.data || [];
 
 
-  return (
-    <Row xs={1} md={2} lg={3} className="g-4">
-      {publications.map((publication) => (
-        <Col key={publication.id}>
-          <Card className="h-100">
-            <Card.Body>
-              <Card.Title>{publication.title}</Card.Title>
-              <Card.Subtitle className="mb-2 text-muted">
-                {publication.type} (ID: {publication.id})
-              </Card.Subtitle>
-              <Card.Text>
-                {publication.description}
-              </Card.Text>
-              <Link to={`/publication/${publication.id}`} className="btn btn-primary">
-                View Publication
-              </Link>
-            </Card.Body>
-          </Card>
-        </Col>
-      ))}
-    </Row>
+  return (<div className={'home'}>
+      <h1>{context.appConfig?.name}</h1>
+      <p>These are the digital publications from the <a href={"https://averroes.uni-koeln.de"}>Averroes Project</a></p>
+      <Row xs={1} md={2} lg={3} className="g-4">
+        {publications.map((publication) => (
+          <Col key={publication.id}>
+            <Card className="h-100">
+              <Card.Body>
+                <Card.Title>{publication.title}</Card.Title>
+                <Card.Subtitle className="mb-2 text-muted">
+                  {publication.type} (ID: {publication.id})
+                </Card.Subtitle>
+                <Card.Text>
+                  {publication.description}
+                </Card.Text>
+                <Link to={`/publication/${publication.id}`} className="btn btn-sm btn-secondary">
+                  View Publication
+                </Link>
+              </Card.Body>
+            </Card>
+          </Col>
+        ))}
+      </Row>
+    </div>
+
+
   );
 }

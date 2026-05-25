@@ -11,7 +11,7 @@ interface NormalPageProps {
 export default function NormalPageLayout(props: NormalPageProps) {
 
   return (
-    <Container>
+    <Container style={{width: '100%', maxWidth: '100%'}}>
       <NormalPageTopBar/>
       <div className={props.contentClassName ?? ''}>
         {props.children}

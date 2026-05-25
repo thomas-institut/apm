@@ -1,14 +1,23 @@
-import {useRef} from "react";
+import {createContext, useRef} from "react";
 import {ApiClient} from "@/Api/ApiClient";
 import {InlineAppConfig} from "@/main";
 import "./app.css";
-import {QueryClient, useQuery} from "@tanstack/react-query";
+import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import {AppConfig} from "@/Api/Schema/GetAppConfig";
 import {Container} from "react-bootstrap";
+import NormalPageLayout from "@/ui/NormalPageLayout";
 
 interface AppProps {
-  inlineConfig: InlineAppConfig;
+  inlineConfig: InlineAppConfig
 }
+
+export interface ApeContextProps {
+  apiClient?: ApiClient;
+  appConfig?: AppConfig;
+}
+
+export const ApeContext = createContext<ApeContextProps>({});
+
 
 export function App({inlineConfig}: AppProps) {
 
@@ -45,12 +54,25 @@ export function App({inlineConfig}: AppProps) {
     return <Container><span className="text-danger">Could not load app config from server</span></Container>;
   }
 
-  const appConfig: AppConfig = getAppConfigResult.data!;
+  if (getAppConfigResult.data === null || getAppConfigResult.data === undefined) {
+    return <Container><span className="text-danger">Could not load app config from server</span></Container>;
+  }
+  const appConfig = getAppConfigResult.data;
 
-  return <Container>App content will be here... { `${appConfig.name}, ${appConfig.version} (${appConfig.versionDate})` }</Container>
+  if (apiClient.current === null) {
+    return <Container><span className="text-danger">Error loading app</span></Container>;
+  }
 
+  document.title = `${appConfig.shortName}`;
 
+  const context: ApeContextProps = {
+    apiClient: apiClient.current, appConfig,
+  }
 
-
-
+  return (<ApeContext value={context}>
+    <QueryClientProvider client={queryClient}>
+      <NormalPageLayout>App content will be
+        here... {`${appConfig.name}, ${appConfig.version} (${appConfig.versionDate})`}</NormalPageLayout>
+    </QueryClientProvider>
+  </ApeContext>)
 }

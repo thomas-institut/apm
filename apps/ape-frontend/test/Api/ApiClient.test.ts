@@ -90,6 +90,46 @@ describe('ApiClient', () => {
     expect(response.httpStatus).toBe(0);
   });
 
+  it('returns publication listings on success', async () => {
+    const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
+    const mockListings = [
+      { id: 1, type: 'edition', title: 'Test Edition', description: 'Desc', versionTimeString: '2023-01-01' }
+    ];
+    fetchMock.mockResolvedValue(
+      mockJsonResponse({
+        result: 'Success',
+        timeStamp: 111,
+        publications: mockListings,
+      }),
+    );
+
+    const client = new ApiClient().withBaseUrl(baseUrl);
+    const response = await client.getPublicationListings();
+
+    expect(fetchMock).toHaveBeenCalledWith(`${baseUrl}/publication/list`);
+    expect(response.result).toBe('Success');
+    expect(response.data).toEqual(mockListings);
+  });
+
+  it('returns publication data on success', async () => {
+    const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
+    const mockData = { id: 1, type: 'edition', title: 'Test Edition', description: 'Desc', versionTimeString: '2023-01-01' };
+    fetchMock.mockResolvedValue(
+      mockJsonResponse({
+        result: 'Success',
+        timeStamp: 222,
+        publicationData: mockData,
+      }),
+    );
+
+    const client = new ApiClient().withBaseUrl(baseUrl);
+    const response = await client.getPublicationData(1);
+
+    expect(fetchMock).toHaveBeenCalledWith(`${baseUrl}/publication/1/get`);
+    expect(response.result).toBe('Success');
+    expect(response.data).toEqual(mockData);
+  });
+
   it('returns publication last update value', async () => {
     const fetchMock = fetch as unknown as ReturnType<typeof vi.fn>;
     fetchMock.mockResolvedValue(

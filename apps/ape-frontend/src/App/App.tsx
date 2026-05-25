@@ -4,11 +4,12 @@ import {InlineAppConfig} from "@/main";
 import "./app.css";
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import {AppConfig} from "@/Api/Schema/GetAppConfig";
-import {Breadcrumb, Container} from "react-bootstrap";
+import {Container} from "react-bootstrap";
 import NormalPageLayout from "@/ui/NormalPageLayout";
-import {BrowserRouter, Link, Route, Routes} from "react-router";
+import {BrowserRouter, Route, Routes} from "react-router";
 import {Home} from "@/App/Home";
 import {Info} from "@/App/Info";
+import {PublicationPage} from "@/App/PublicationPage";
 
 interface AppProps {
     inlineConfig: InlineAppConfig
@@ -79,6 +80,7 @@ export function App({inlineConfig}: AppProps) {
                     <Routes>
                         <Route path="/" element={<Home/>}/>
                         <Route path="/info" element={<Info/>}/>
+                        <Route path="/publication/:id" element={<PublicationPage/>}/>
                     </Routes>
                 </NormalPageLayout>
             </BrowserRouter>

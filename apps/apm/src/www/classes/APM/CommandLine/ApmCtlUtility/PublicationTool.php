@@ -4,17 +4,14 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\Actions\GetTranscriptionDataForDocument;
 use APM\CommandLine\CommandLineUtility;
-use APM\System\Document\Exception\DocumentNotFoundException;
-use APM\System\Document\Exception\PageNotFoundException;
-use APM\System\LanguageManager;
 use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\PublicationManager\ResourceNotFoundException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
-use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 
 class PublicationTool extends CommandLineUtility implements AdminUtility
 {
@@ -31,7 +28,8 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
     {
        $options = [
            'list' => 'prints current publications',
-           'remove <id>' => 'removes a publication by id',
+           'add <type> <id> [version]' => 'adds a publication of type <type> for resource id <id> (version is a timestring and is optional, defaults to the current version)',
+           'del <id>' => 'removes a publication by id',
            'show <id>' => 'shows a publication by id',
            'preview <type> <id>' => 'shows a preview of a publication by id'
             ];
@@ -49,18 +47,60 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
 
         return match ($option) {
             'list' => $this->list(),
-            'remove' => $this->remove((int)$argv[2]),
+            'add' => $this->add($argv[2], (int)$argv[3], $argv[4] ?? 'current'),
+            'del' => $this->remove((int)$argv[2]),
             'show' => $this->show((int)$argv[2]),
             'preview' => $this->preview($argv[2], (int)$argv[3]),
             default => 1,
         };
     }
 
+    private function add(string $type, int $resourceId, string $version = 'current') : int {
+        if ($resourceId <= 0) {
+            print "Error: resource id must be greater than 0\n";
+            return 1;
+        }
+        if ($type === 'tx' || $type === 'tx-full' ) {
+            $type = PublicationType::Transcription;
+        }
+        if ($type !== PublicationType::Transcription) {
+            print "Sorry, only transcription publications are supported at this time\n";
+            return 1;
+        }
+        try {
+            /** @var PublicationManagerInterface $pm */
+            $pm = $this->container->get(PublicationManagerInterface::class);
+            $data = $pm->createPublication($type, $resourceId, $version);
+            print "Publication $data->id created\n";
+            return 0;
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+            print "Error initializing system\n";
+            return 1;
+        } catch (ResourceNotFoundException $e) {
+            print "Error: resource not found" . $e->getMessage() . "\n";
+            return 1;
+        }
+    }
+
 
     private function list() : int {
-        print "List publications\n";
-        print "Not implemented yet\n";
-        return 0;
+        try {
+            /** @var PublicationManagerInterface $pm */
+            $pm = $this->container->get(PublicationManagerInterface::class);
+            $listings = $pm->list();
+            if (count($listings) === 0) {
+                print "No publications found\n";
+                return 0;
+            }
+            print "Current Publications\n";
+            foreach ($listings as $listing) {
+                print " - $listing->id  $listing->type  $listing->title $listing->versionTimeString\n";
+            }
+            return 0;
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+            print "Error initializing system\n";
+            return 1;
+        }
     }
 
     private function remove(int $pubId) : int {
@@ -68,9 +108,18 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             print "Error: publication id must be greater than 0\n";
             return 1;
         }
-        print "Remove publication $pubId\n";
-        print "Not implemented yet\n";
-        return 0;
+        try {
+            /** @var PublicationManagerInterface $pm */
+            $pm = $this->container->get(PublicationManagerInterface::class);
+            $pm->deletePublication($pubId);
+            return 0;
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+            print "Error initializing system\n";
+            return 1;
+        } catch (PublicationNotFoundException) {
+            print "Error: publication not found\n";
+            return 1;
+        }
     }
 
     private function show(int $pubId) : int {
@@ -78,14 +127,30 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             print "Error: publication id must be greater than 0\n";
             return 1;
         }
-        print "Show publication $pubId\n";
-        print "Not implemented yet\n";
-        return 0;
+        try {
+            /** @var PublicationManagerInterface $pm */
+            $pm = $this->container->get(PublicationManagerInterface::class);
+            $data = $pm->getPublication($pubId);
+            if ($data->type === PublicationType::Transcription) {
+                /** @var TranscriptionData $data */
+                $this->printTranscriptionData($data);
+            } else {
+                print "Publication $pubId is of type '$data->type': Sorry, only transcription publications are supported at this time\n";
+                return 1;
+            }
+            return 0;
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+            print "Error initializing system\n";
+            return 1;
+        } catch (PublicationNotFoundException) {
+            print "Error: publication not found\n";
+            return 1;
+        }
     }
 
 
-    private function preview(string $type, int $id) : int {
-        if ($id <= 0) {
+    private function preview(string $type, int $resourceId) : int {
+        if ($resourceId <= 0) {
             print "Error: resource id must be greater than 0\n";
             return 1;
         }
@@ -101,7 +166,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         try {
             $ci = $this->container;
             $action = new GetTranscriptionDataForDocument($ci->get(PublicationManagerInterface::class));
-            $data = $action->getTranscriptionDataForDocument($id);
+            $data = $action->getTranscriptionDataForDocument($resourceId);
             $this->printTranscriptionData($data);
             return 0;
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {

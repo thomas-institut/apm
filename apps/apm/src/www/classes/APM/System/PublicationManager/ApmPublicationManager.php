@@ -23,10 +23,10 @@ use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 class ApmPublicationManager implements PublicationManagerInterface
 {
 
-    public function __construct(private DocumentManager      $dm,
-                                private TranscriptionManager $tm,
-                                private LanguageManager      $lm,
-                                private array                $imageSources)
+    public function __construct(private readonly DocumentManager      $dm,
+                                private readonly TranscriptionManager $tm,
+                                private readonly LanguageManager      $lm,
+                                private readonly array                $imageSources)
     {
 
     }

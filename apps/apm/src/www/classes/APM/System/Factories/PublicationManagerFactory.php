@@ -1,0 +1,27 @@
+<?php
+
+namespace APM\System\Factories;
+
+use APM\System\LanguageManager;
+use APM\System\PublicationManager\ApmPublicationManager;
+use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\SystemManager;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
+
+class PublicationManagerFactory
+{
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public static function create(ContainerInterface $ci): PublicationManagerInterface
+    {
+        /** @var SystemManager $sm */
+        $sm = $ci->get(SystemManager::class);
+        /** @var LanguageManager $lm */
+        $lm = $ci->get(LanguageManager::class);
+        return new ApmPublicationManager($sm->getDocumentManager(), $sm->getTranscriptionManager(), $lm, $sm->getImageSources() );
+    }
+}

@@ -29,9 +29,13 @@ use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
 use APM\System\Auth\Authenticator;
 use APM\System\Config\ApmSystemConfig;
+use APM\System\Factories\LanguageManagerFactory;
 use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\ApmSystemConfigFactory;
+use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TwigFactory;
+use APM\System\LanguageManager;
+use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\SystemManager;
 use APM\SystemConfigArray;
 use JetBrains\PhpStorm\NoReturn;
@@ -71,6 +75,8 @@ $builder->addDefinitions([
     LoggerInterface::class => factory([LoggerFactory::class, 'create']),
     Twig::class => factory([TwigFactory::class, 'create']),
     SystemManager::class => autowire(ApmSystemManager::class),
+    LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
+    PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
 ]);
 
 try {
@@ -91,7 +97,7 @@ try {
 // Set timezone
 date_default_timezone_set($systemConfig->general->defaultTimezone);
 
-// setup app's basePath if necessary
+// set up app's basePath if necessary
 $subDir = $systemConfig->general->subDir;
 
 if ($subDir !== '') {

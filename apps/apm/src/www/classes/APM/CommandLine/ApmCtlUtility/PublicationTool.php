@@ -3,13 +3,16 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\Actions\GetTranscriptionDataForDocument;
-use APM\Api\Action\PageUpdateDefinition;
 use APM\CommandLine\CommandLineUtility;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\LanguageManager;
+use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\ResourceNotFoundException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
+use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 
@@ -86,21 +89,28 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             print "Error: resource id must be greater than 0\n";
             return 1;
         }
-        if ($type === 'tx' || $type === 'tx-full' || $type === 'transcription') {
-            $type = 'transcription';
+        if ($type === 'tx' || $type === 'tx-full' ) {
+            $type = PublicationType::Transcription;
         }
+
+        if ($type !== PublicationType::Transcription) {
+            print "Sorry, only transcription publications are supported at this time\n";
+            return 1;
+        }
+
         try {
-            $action = new GetTranscriptionDataForDocument($this->getSystemManager()->getDocumentManager(), $this->getSystemManager()->getTranscriptionManager());
+            $ci = $this->container;
+            $action = new GetTranscriptionDataForDocument($ci->get(PublicationManagerInterface::class));
             $data = $action->getTranscriptionDataForDocument($id);
             $this->printTranscriptionData($data);
             return 0;
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
             print "Error initializing system\n";
             return 1;
-        } catch (DocumentNotFoundException|PageNotFoundException $e) {
+        } catch (ResourceNotFoundException $e) {
             print "Error: resource not found" . $e->getMessage() . "\n";
             return 1;
-        } catch (InvalidTimeStringException|RuntimeException $e) {
+        } catch (RuntimeException $e) {
             print "Error: Run time error: " . $e->getMessage() . "\n";
             return 1;
         }
@@ -109,10 +119,16 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
     private function printTranscriptionData(TranscriptionData $data) : void {
         $linesToPrint = [];
         $linesToPrint[] =  sprintf("Document %d: %s", $data->id, $data->title);
-        $linesToPrint[] = sprintf("(%d pages)", count($data->pages));
+        $linesToPrint[] = sprintf("(%s, %d pages)", $data->languageCode, count($data->pages));
         $linesToPrint[] = " ";
         foreach ($data->pages as $page) {
-            $linesToPrint[] = sprintf("Page %d, foliation: %s\n", $page->pageNumber, $page->foliation);
+            $linesToPrint[] = sprintf("Page %d", $page->pageNumber);
+            $linesToPrint[] = " ";
+            $linesToPrint[] = sprintf("  %-10s  %s", "Text page", $page->isTextPage ? "Yes" : "No");
+            $linesToPrint[] = sprintf("  %-10s  '%s'", "Foliation", $page->foliation);
+            $linesToPrint[] = sprintf("  %-10s  '%s'", "Image", $page->imageUrl);
+            $linesToPrint[] = sprintf("  %-10s  '%s'", "Thumbnail", $page->thumbnailUrl);
+            $linesToPrint[] = " ";
             if (count($page->columns) === 0) {
                 $linesToPrint[] = "  No transcription\n";
             }
@@ -128,6 +144,4 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         }
         print implode("\n", $linesToPrint);
     }
-
-
 }

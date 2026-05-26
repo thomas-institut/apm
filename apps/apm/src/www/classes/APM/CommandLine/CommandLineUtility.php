@@ -23,9 +23,13 @@ namespace APM\CommandLine;
 use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
 use APM\System\Config\ApmSystemConfig;
+use APM\System\Factories\LanguageManagerFactory;
 use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\ApmSystemConfigFactory;
+use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TwigFactory;
+use APM\System\LanguageManager;
+use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\SystemManager;
 use DI\ContainerBuilder;
 use Exception;
@@ -103,6 +107,8 @@ abstract class CommandLineUtility {
             LoggerInterface::class => factory([LoggerFactory::class, 'createForCli']),
             Twig::class => factory([TwigFactory::class, 'create']),
             SystemManager::class => autowire(ApmSystemManager::class),
+            LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
+            PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
             'processUserInfoArray' => posix_getpwuid(posix_geteuid()),
             'cmd' => $this->argv[0] ?? '',
             'pid' => posix_getpid(),
@@ -119,6 +125,10 @@ abstract class CommandLineUtility {
         return $this->container->get(SystemManager::class);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     protected function getDbConn() : PDO {
         return $this->getSystemManager()->getDbConnection();
     }
@@ -133,11 +143,6 @@ abstract class CommandLineUtility {
     protected function printErrorMsg($msg): void
     {
         $this->printStdErr("ERROR: $msg \n");
-    }
-    
-    protected function printWarningMsg($msg): void
-    {
-        $this->printStdErr("WARNING: $msg \n");
     }
 
     protected function printStdErr($str): void

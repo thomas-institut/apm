@@ -29,6 +29,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
        $options = [
            'list' => 'prints current publications',
            'add <type> <id> [version]' => 'adds a publication of type <type> for resource id <id> (version is a timestring and is optional, defaults to the current version)',
+           'update <id> [version]' => 'updates a publication by id (version is a timestring and is optional, defaults to the current version)',
            'del <id>' => 'removes a publication by id',
            'show <id>' => 'shows a publication by id',
            'preview <type> <id>' => 'shows a preview of a publication by id'
@@ -48,6 +49,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         return match ($option) {
             'list' => $this->list(),
             'add' => $this->add($argv[2], (int)$argv[3], $argv[4] ?? 'current'),
+            'update' => $this->update((int)$argv[2], $argv[3] ?? 'current'),
             'del' => $this->remove((int)$argv[2]),
             'show' => $this->show((int)$argv[2]),
             'preview' => $this->preview($argv[2], (int)$argv[3]),
@@ -55,7 +57,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         };
     }
 
-    private function add(string $type, int $resourceId, string $version = 'current') : int {
+    private function add(string $type, int $resourceId, string $version) : int {
         if ($resourceId <= 0) {
             print "Error: resource id must be greater than 0\n";
             return 1;
@@ -78,6 +80,25 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         } catch (ResourceNotFoundException $e) {
             print "Error: resource not found" . $e->getMessage() . "\n";
+            return 1;
+        }
+    }
+
+    private function update(int $pubId, string $version) : int {
+        if ($pubId <= 0) {
+            print "Error: publication id must be greater than 0\n";
+        }
+        try {
+            /** @var PublicationManagerInterface $pm */
+            $pm = $this->container->get(PublicationManagerInterface::class);
+            $pm->updatePublication($pubId, $version);
+            print "Publication $pubId updated\n";
+            return 0;
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+            print "Error initializing system\n";
+            return 1;
+        } catch (PublicationNotFoundException) {
+            print "Error: publication not found\n";
             return 1;
         }
     }

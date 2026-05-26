@@ -33,6 +33,7 @@ interface PublicationManagerInterface
      * @param string $version a Timestring or 'current'
      * @return void
      * @throws PublicationNotFoundException
+     * @throws ResourceNotFoundException
      * @throws InvalidVersionException
      */
     public function updatePublication(int $id, string $version = 'current'): void;

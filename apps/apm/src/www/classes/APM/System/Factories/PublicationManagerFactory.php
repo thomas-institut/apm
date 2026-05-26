@@ -6,6 +6,7 @@ use APM\System\LanguageManager;
 use APM\System\PublicationManager\ApmPublicationManager;
 use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\SystemManager;
+use Predis\Client;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -22,6 +23,7 @@ class PublicationManagerFactory
         $sm = $ci->get(SystemManager::class);
         /** @var LanguageManager $lm */
         $lm = $ci->get(LanguageManager::class);
-        return new ApmPublicationManager($sm->getDocumentManager(), $sm->getTranscriptionManager(), $lm, $sm->getImageSources() );
+        $valkeyClient = $ci->get(Client::class);
+        return new ApmPublicationManager($sm->getDocumentManager(), $sm->getTranscriptionManager(), $lm, $sm->getImageSources(), $valkeyClient);
     }
 }

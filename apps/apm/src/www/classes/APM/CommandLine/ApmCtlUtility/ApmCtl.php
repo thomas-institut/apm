@@ -16,8 +16,8 @@ class ApmCtl extends AdminUtilityManager
             new UserTool($config, $this->commandArgc, $this->commandArgv),
             new TranscriptionTool($config, $this->commandArgc, $this->commandArgv),
             new DocTool($config, $this->commandArgc, $this->commandArgv),
+            new PublicationTool($config, $this->commandArgc, $this->commandArgv),
         ];
         $this->setCommands($utilities);
     }
-
 }

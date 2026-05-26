@@ -28,6 +28,7 @@ use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TwigFactory;
+use APM\System\Factories\ValkeyClientFactory;
 use APM\System\LanguageManager;
 use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\SystemManager;
@@ -35,6 +36,7 @@ use DI\ContainerBuilder;
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
 use PDO;
+use Predis\Client;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -109,6 +111,7 @@ abstract class CommandLineUtility {
             SystemManager::class => autowire(ApmSystemManager::class),
             LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
             PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
+            Client::class => factory([ValkeyClientFactory::class, 'create']),
             'processUserInfoArray' => posix_getpwuid(posix_geteuid()),
             'cmd' => $this->argv[0] ?? '',
             'pid' => posix_getpid(),

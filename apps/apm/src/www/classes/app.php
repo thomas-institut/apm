@@ -34,11 +34,13 @@ use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TwigFactory;
+use APM\System\Factories\ValkeyClientFactory;
 use APM\System\LanguageManager;
 use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\SystemManager;
 use APM\SystemConfigArray;
 use JetBrains\PhpStorm\NoReturn;
+use Predis\Client;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -77,6 +79,7 @@ $builder->addDefinitions([
     SystemManager::class => autowire(ApmSystemManager::class),
     LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
     PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
+    Client::class => factory([ValkeyClientFactory::class, 'create']),
 ]);
 
 try {

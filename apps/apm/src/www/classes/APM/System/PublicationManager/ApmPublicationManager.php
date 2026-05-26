@@ -12,6 +12,7 @@ use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\Transcription\TxText\ChunkMark;
 use APM\System\Transcription\TxText\Item;
+use Predis\Client;
 use RuntimeException;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
@@ -23,10 +24,13 @@ use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 class ApmPublicationManager implements PublicationManagerInterface
 {
 
+    private const string valkeyPrefix = 'APM:PublicationManager:';
     public function __construct(private readonly DocumentManager      $dm,
                                 private readonly TranscriptionManager $tm,
                                 private readonly LanguageManager      $lm,
-                                private readonly array                $imageSources)
+                                private readonly array                $imageSources,
+                                private readonly Client               $valkeyClient
+    )
     {
 
     }

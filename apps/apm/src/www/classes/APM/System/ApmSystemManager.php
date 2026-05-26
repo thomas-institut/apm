@@ -336,8 +336,6 @@ class ApmSystemManager extends SystemManager {
         return $dbh;
     }
 
-
-
     public function getPresetsManager() : PresetManager {
         if ($this->presetsManager === null) {
             // Set up PresetsManager
@@ -533,19 +531,11 @@ class ApmSystemManager extends SystemManager {
     }
 
     private function createValkeyClient() : \Predis\Client {
-        $valkeyHost = '127.0.0.1';
-        if (isset($this->config['valkey_host'])) {
-            $valkeyHost = $this->config['valkey_host'];
+        try {
+            return $this->ci->get(\Predis\Client::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Could not get valkey client", 0, $e);
         }
-        $valkeyPort = '6379';
-        if (isset($this->config['valkey_port'])) {
-            $valkeyPort = $this->config['valkey_port'];
-        }
-        return new \Predis\Client([
-            'scheme' => 'tcp',
-            'host' => $valkeyHost,
-            'port' => $valkeyPort
-        ]);
     }
 
     public function getMemDataCache(): DataCache

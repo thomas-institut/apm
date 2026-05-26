@@ -22,6 +22,7 @@ use ThomasInstitut\ApmPublicationApi\TranscriptionColumn;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
 use ThomasInstitut\ApmPublicationApi\TranscriptionPage;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
+use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
 
 class ApmPublicationManager implements PublicationManagerInterface
@@ -43,16 +44,14 @@ class ApmPublicationManager implements PublicationManagerInterface
         $ids = $this->valkeyClient->smembers(self::valkeyPrefix . 'pubs');
         $listings = [];
         foreach ($ids as $id) {
-            $data = $this->valkeyClient->get(self::valkeyPrefix . 'pub:' . $id);
-            if ($data) {
-                /** @var PublicationData $pubData */
-                $pubData = unserialize($data);
+            $pubFields = $this->valkeyClient->hgetall(self::valkeyPrefix . 'pub:' . $id);
+            if ($pubFields) {
                 $listing = new PublicationListing();
-                $listing->id = $pubData->id;
-                $listing->type = $pubData->type;
-                $listing->title = $pubData->title;
-                $listing->versionTimeString = $pubData->versionTimeString;
-                $listing->description = $pubData->description ?? '';
+                $listing->id = (int)$id;
+                $listing->type = $pubFields['type'];
+                $listing->title = $pubFields['title'];
+                $listing->versionTimeString = $pubFields['versionTimeString'];
+                $listing->description = $pubFields['description'] ?? '';
                 $listings[] = $listing;
             }
         }
@@ -61,7 +60,7 @@ class ApmPublicationManager implements PublicationManagerInterface
 
     public function getPublication(int $id): PublicationData
     {
-        $data = $this->valkeyClient->get(self::valkeyPrefix . 'pub:' . $id);
+        $data = $this->valkeyClient->hget(self::valkeyPrefix . 'pub:' . $id, 'data');
         if (!$data) {
             throw new PublicationNotFoundException("Publication with ID $id not found");
         }
@@ -71,18 +70,21 @@ class ApmPublicationManager implements PublicationManagerInterface
     public function updatePublication(int $id, string $version = 'current'): void
     {
         $pubKey = self::valkeyPrefix . 'pub:' . $id;
-        $existingDataStr = $this->valkeyClient->get($pubKey);
-        if (!$existingDataStr) {
+        $pubFields = $this->valkeyClient->hgetall($pubKey);
+        if (!$pubFields) {
             throw new PublicationNotFoundException("Publication with ID $id not found");
         }
-        /** @var PublicationData $existingData */
-        $existingData = unserialize($existingDataStr);
-        $type = $existingData->type;
+        $type = $pubFields['type'];
+        $resourceId = (int)$pubFields['resourceId'];
 
         if ($type === PublicationType::Transcription) {
             try {
-                $data = $this->getTranscriptionDataForDocument($id, $version);
-                $this->valkeyClient->set($pubKey, serialize($data));
+                $data = $this->getTranscriptionDataForDocument($resourceId, $version);
+                $data->id = $id;
+                $this->valkeyClient->hset($pubKey, 'data', serialize($data));
+                $this->valkeyClient->hset($pubKey, 'title', $data->title);
+                $this->valkeyClient->hset($pubKey, 'versionTimeString', $data->versionTimeString);
+                $this->valkeyClient->hset($pubKey, 'description', $data->description ?? '');
             } catch (DocumentNotFoundException|PageNotFoundException $e) {
                 throw new ResourceNotFoundException("Resource not found: " . $e->getMessage(), 0, $e);
             } catch (InvalidTimeStringException $e) {
@@ -110,12 +112,21 @@ class ApmPublicationManager implements PublicationManagerInterface
         if ($type === PublicationType::Transcription) {
             try {
                 $data = $this->getTranscriptionDataForDocument($resourceId, $version);
+                $id = Tid::generateUnique();
+                $data->id = $id;
                 if ($dryRun) {
                     return $data;
                 }
-                $id = $data->id;
-                $this->valkeyClient->transaction(function ($tx) use ($id, $data) {
-                    $tx->set(self::valkeyPrefix . 'pub:' . $id, serialize($data));
+
+                $this->valkeyClient->transaction(function ($tx) use ($id, $data, $type, $resourceId) {
+                    $pubKey = self::valkeyPrefix . 'pub:' . $id;
+                    $tx->hset($pubKey, 'data', serialize($data));
+                    $tx->hset($pubKey, 'type', $type);
+                    $tx->hset($pubKey, 'resourceId', (string)$resourceId);
+                    $tx->hset($pubKey, 'title', $data->title);
+                    $tx->hset($pubKey, 'versionTimeString', $data->versionTimeString);
+                    $tx->hset($pubKey, 'description', $data->description ?? '');
+
                     $tx->sadd(self::valkeyPrefix . 'pubs', [$id]);
                 });
 
@@ -153,6 +164,8 @@ class ApmPublicationManager implements PublicationManagerInterface
         $data->languageCode = $this->lm->getLanguageCode($docInfo->language) ?? '';
         $data->versionTimeString = $version;
         $data->description = '';
+
+        // TODO: determine the last version before the requested version, this is the actual time the data changed
 
         $pages = [];
         foreach ($docInfo->pageIds as $pageId) {

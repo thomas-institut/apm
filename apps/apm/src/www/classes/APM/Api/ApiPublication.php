@@ -3,28 +3,25 @@
 namespace APM\Api;
 
 
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use RuntimeException;
 
-use ThomasInstitut\ApmPublicationApi\PublicationData;
-use ThomasInstitut\ApmPublicationApi\PublicationListing;
 use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
-use ThomasInstitut\ApmPublicationApi\PublicationType;
-use ThomasInstitut\ApmPublicationApi\TextPublicationData;
-use CuyZ\Valinor\MapperBuilder;
-use CuyZ\Valinor\Mapper\MappingError;
+use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationNotFoundException;
 
 
 class ApiPublication extends ApiController
 {
-    /**
-     * @var PublicationData[]|null
-     */
-    private ?array $mockPublicationData = null;
+    private PublicationManagerInterface $publicationManager;
 
-    private ?array $mockPublicationListings = null;
+    public function __construct(ContainerInterface $ci)
+    {
+        parent::__construct($ci);
+        $this->publicationManager = $ci->get(PublicationManagerInterface::class);
+    }
 
     /**
      */
@@ -32,7 +29,7 @@ class ApiPublication extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $apiResponse = new PublicationApiListResponse();
-        $apiResponse->publications = $this->getMockPublicationListings();
+        $apiResponse->publications = $this->publicationManager->list();
 
         return $this->responseFactory->success($response, $apiResponse);
     }
@@ -47,91 +44,13 @@ class ApiPublication extends ApiController
         }
         $id = intval($requestedId);
 
-        foreach ($this->getMockPublicationData() as $publicationData) {
-            if ($publicationData->id === $id) {
-                $apiResponse = new PublicationApiGetResponse();
-                $apiResponse->publicationData = $publicationData;
-                return $this->responseFactory->success($response, $apiResponse);
-            }
+        try {
+            $apiResponse = new PublicationApiGetResponse();
+            $apiResponse->publicationData = $this->publicationManager->getPublication($id);
+            return $this->responseFactory->success($response, $apiResponse);
+        } catch (PublicationNotFoundException) {
+            return $this->responseFactory->notFound($response, "Publication $id not found");
         }
-        return $this->responseFactory->notFound($response, "Publication $id not found");
     }
 
-    private function getMockData() : array {
-        return [
-            [
-                'type' => PublicationType::Text,
-                'id' => 82837192,
-                'versionTimeString' => '2026-01-20 15:23:20.123456',
-                'title' => 'Test Publication',
-                'description' => 'This is a test publication',
-                'text' => 'This is a very nice publication with a lot of text.'
-            ],
-            [
-                'type' =>  PublicationType::Text,
-                'id' => 63188123,
-                'versionTimeString' => '2026-01-20 15:23:20.123456',
-                'title' => 'Another Publication',
-                'description' => 'Another test publication',
-                'text' => 'This is another publication with a lot of text.'
-            ],
-            [
-                'type' =>  PublicationType::Text,
-                'id' => 34234330,
-                'versionTimeString' => '2026-01-20 15:23:20.123456',
-                'title' => 'Yet Another Publication',
-                'description' => 'Yet another test publication',
-                'text' => 'This is yet another publication with a lot of text.'
-            ]
-        ];
-    }
-
-
-    /**
-     * @return PublicationData[]
-     */
-    private function getMockPublicationData(): array
-    {
-        $data = $this->getMockData();
-
-        if ($this->mockPublicationData === null) {
-            $pubDataArray = [];
-            $mapper = (new MapperBuilder())->allowSuperfluousKeys()->mapper();
-            foreach ($data as $pubData) {
-                try {
-                    if ($pubData['type'] === PublicationType::Text) {
-                        $pubDataArray[] = $mapper->map(TextPublicationData::class, $pubData);
-                    }
-                } catch (MappingError $e) {
-                    throw new RuntimeException("Could not create publication data from array", 0, $e);
-                }
-            }
-            $this->mockPublicationData = $pubDataArray;
-        }
-        return $this->mockPublicationData;
-    }
-
-    /**
-     * @return PublicationListing[]
-     */
-    private function getMockPublicationListings(): array
-    {
-        $data = $this->getMockData();
-
-        if ($this->mockPublicationListings === null) {
-            $publicationListings = [];
-            $mapper = (new MapperBuilder())->allowSuperfluousKeys()->mapper();
-            foreach ($data as $pubData) {
-                try {
-                    if ($pubData['type'] === PublicationType::Text) {
-                        $publicationListings[] = $mapper->map(PublicationListing::class, $pubData);
-                    }
-                } catch (MappingError $e) {
-                    throw new RuntimeException("Could not create publication listings from array", 0, $e);
-                }
-            }
-            $this->mockPublicationListings = $publicationListings;
-        }
-        return $this->mockPublicationListings;
-    }
 }

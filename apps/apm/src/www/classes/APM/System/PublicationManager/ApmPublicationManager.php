@@ -29,6 +29,7 @@ class ApmPublicationManager implements PublicationManagerInterface
 {
 
     private const string valkeyPrefix = 'APM:PublicationManager:';
+
     public function __construct(private readonly DocumentManager      $dm,
                                 private readonly TranscriptionManager $tm,
                                 private readonly LanguageManager      $lm,
@@ -107,6 +108,16 @@ class ApmPublicationManager implements PublicationManagerInterface
         });
     }
 
+    private function getDocTypeString(int $type): string
+    {
+        return match ($type) {
+            Entity::DocTypeManuscript => 'Manuscript',
+            Entity::DocTypeIncunabulum => 'Incunabulum',
+            Entity::DocTypePrint => 'Print',
+            default => 'Unknown'
+        };
+    }
+
     public function createPublication(string $type, int $resourceId, string $version = 'current', bool $dryRun = false): PublicationData
     {
         if ($type === PublicationType::Transcription) {
@@ -146,7 +157,7 @@ class ApmPublicationManager implements PublicationManagerInterface
      * @throws PageNotFoundException
      * @throws InvalidTimeStringException
      */
-    private  function getTranscriptionDataForDocument(int $docId, string $version = 'current'): TranscriptionData
+    private function getTranscriptionDataForDocument(int $docId, string $version = 'current'): TranscriptionData
     {
         $docInfo = $this->dm->getDocInfo($docId, true);
         if ($version === 'current') {
@@ -162,6 +173,8 @@ class ApmPublicationManager implements PublicationManagerInterface
         $data->type = PublicationType::Transcription;
         $data->title = $docInfo->title;
         $data->languageCode = $this->lm->getLanguageCode($docInfo->language) ?? '';
+        $data->documentName = $docInfo->title;
+        $data->docType = $this->getDocTypeString($docInfo->type);
         $data->versionTimeString = $version;
         $data->description = '';
 

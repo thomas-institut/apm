@@ -213,24 +213,33 @@ class ApmPublicationManager implements PublicationManagerInterface
         foreach ($elements as $element) {
             if ($element->type === Element::LINE) {
                 foreach ($element->items as $item) {
-                    if ($item->type === Item::CHUNK_MARK) {
-                        /** @var ChunkMark $item */
-                        $segment = $item->getChunkSegment();
-                        $startMark = 'Start ';
-                        $endMark = '';
-                        if ($item->getType() === ChunkMark::CHUNK_END) {
-                            $startMark = '';
-                            $endMark = ' end';
-                        }
-                        if ($segment === 1) {
-                            $text .= sprintf("[%s%s-%d%s]", $startMark, $item->getDareId(), $item->getChunkNumber(), $endMark);
-                        } else {
-                            $text .= sprintf("[%s%s-%d-%d%s]", $startMark, $item->getDareId(), $item->getChunkNumber(), $segment, $endMark);
-                        }
-                    } else {
-                        $text .= $item->theText;
+                    switch($item->type) {
+                        case Item::CHUNK_MARK:
+                            /** @var ChunkMark $item */
+                            $segment = $item->getChunkSegment();
+                            $startMark = 'Start ';
+                            $endMark = '';
+                            if ($item->getType() === ChunkMark::CHUNK_END) {
+                                $startMark = '';
+                                $endMark = ' end';
+                            }
+                            if ($segment === 1) {
+                                $text .= sprintf("[%s%s-%d%s]", $startMark, $item->getDareId(), $item->getChunkNumber(), $endMark);
+                            } else {
+                                $text .= sprintf("[%s%s-%d-%d%s]", $startMark, $item->getDareId(), $item->getChunkNumber(), $segment, $endMark);
+                            }
+                            break;
+
+
+                        case Item::NO_WORD_BREAK:
+                            $text .= '-';
+                            break;
+
+                        default:
+                            $text .= $item->theText;
                     }
                 }
+                $text .= "\n";
             }
         }
         return trim($text);

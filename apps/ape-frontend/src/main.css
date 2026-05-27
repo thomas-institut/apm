@@ -1,6 +1,30 @@
 /*@import url('https://fonts.googleapis.com/css2?family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap');*/
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&display=swap');
+@import url(https://averroes.uni-koeln.de/fonts/css/all.css);
 :root {
   --bs-body-font-family: "DM Sans", sans-serif;
   --bs-body-font-size: 11pt;
+}
+
+.text-he {
+  direction: rtl;
+  font-family:  "Noto Sans", sans-serif;
+}
+
+.text-ar {
+  direction: rtl;
+  font-family: "Noto Naskh Arabic", "Noto Sans", sans-serif;
+  font-size: 1.2em;
+}
+
+.txPage {
+  margin-top: 2em;
+  line-height: 1;
+}
+
+.txLine {
+  margin-bottom: 0.5em;
+}
+.txPage h1 {
+  font-size: 2em;
 }

@@ -46,6 +46,7 @@ export interface TranscriptionPage {
   foliation: string;
   pageNumber: number;
   imageUrl: string;
+  thumbnailUrl: string;
   columns: TranscriptionColumn[];
 }
 
@@ -56,6 +57,7 @@ export interface TranscriptionData extends PublicationData {
   type: 'transcription';
   documentName: string;
   docType: string;
+  languageCode: string;
   pages: TranscriptionPage[];
 }
 

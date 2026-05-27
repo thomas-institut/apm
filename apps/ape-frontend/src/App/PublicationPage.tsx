@@ -1,11 +1,13 @@
-import {useParams, Link} from "react-router";
+import {Link, useParams} from "react-router";
 import {useContext} from "react";
 import {ApeContext} from "@/App/App";
 import {useQuery} from "@tanstack/react-query";
-import {Breadcrumb, ListGroup} from "react-bootstrap";
+import {Breadcrumb} from "react-bootstrap";
+import {TextPublicationData, TranscriptionData} from "@/Api/Schema/ApiPublication";
+import {TranscriptionViewer} from "@/ui/TranscriptionViewer/TranscriptionViewer";
 
 export function PublicationPage() {
-  const {id} = useParams<{id: string}>();
+  const {id} = useParams<{ id: string }>();
   const context = useContext(ApeContext);
   const apiClient = context.apiClient;
 
@@ -32,11 +34,15 @@ export function PublicationPage() {
     return <div>Error: {publicationQuery.error.message}</div>;
   }
 
-  const publication = publicationQuery.data;
+  let publication = publicationQuery.data;
 
   if (!publication) {
     return <div>Publication not found</div>;
   }
+
+  const transcriptionData  = publication as TranscriptionData;
+  const textPublicationData = publication as TextPublicationData;
+
 
   return (
     <>
@@ -44,14 +50,13 @@ export function PublicationPage() {
         <Breadcrumb.Item linkAs={Link} linkProps={{to: "/"}}>Home</Breadcrumb.Item>
         <Breadcrumb.Item active>{publication.title}</Breadcrumb.Item>
       </Breadcrumb>
-      <h3>Publication Details</h3>
-      <ListGroup>
-        {Object.entries(publication).map(([key, value]) => (
-          <ListGroup.Item key={key}>
-            <strong>{key}:</strong> {typeof value === 'object' ? JSON.stringify(value) : String(value)}
-          </ListGroup.Item>
-        ))}
-      </ListGroup>
+      <h1>{publication.title}</h1>
+      <p>{publication.description}</p>
+      <p>Type: {publication.type}</p>
+      <p>Version: {publication.versionTimeString}</p>
+      { publication.type === 'transcription' && <p>Language: {transcriptionData.languageCode}</p>}
+      { publication.type === 'text' && <div>{textPublicationData.text}</div> }
+      { publication.type === 'transcription' && <TranscriptionViewer viewerType={'singlePageText'} data={transcriptionData} />}
     </>
   );
 }

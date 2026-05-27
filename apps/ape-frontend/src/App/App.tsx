@@ -4,7 +4,6 @@ import {InlineAppConfig} from "@/main";
 import {QueryClient, QueryClientProvider, useQuery} from "@tanstack/react-query";
 import {AppConfig} from "@/Api/Schema/GetAppConfig";
 import {Container} from "react-bootstrap";
-import NormalPageLayout from "@/ui/NormalPageLayout";
 import {BrowserRouter, Route, Routes} from "react-router";
 import {Home} from "@/App/Home";
 import {About} from "@/App/About";
@@ -77,13 +76,11 @@ export function App({inlineConfig}: AppProps) {
     return (<ApeContext value={context}>
         <QueryClientProvider client={queryClient}>
             <BrowserRouter>
-                <NormalPageLayout>
                     <Routes>
                         <Route path="/" element={<Home/>}/>
                         <Route path="/about" element={<About/>}/>
                         <Route path="/publication/:id" element={<PublicationPage/>}/>
                     </Routes>
-                </NormalPageLayout>
             </BrowserRouter>
         </QueryClientProvider>
     </ApeContext>)

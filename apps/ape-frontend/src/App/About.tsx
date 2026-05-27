@@ -1,7 +1,6 @@
-import {Breadcrumb} from "react-bootstrap";
-import {Link} from "react-router";
 import {useContext} from "react";
 import {ApeContext} from "@/App/App";
+import PageLayout from "@/ui/ApeUx/PageLayout";
 
 
 export function About() {
@@ -11,16 +10,8 @@ export function About() {
     return <></>;
   }
 
-  return  <>
-    <Breadcrumb>
-      <Breadcrumb.Item linkAs={Link} linkProps={{to: "/"}}>Home</Breadcrumb.Item>
-      <Breadcrumb.Item active>About</Breadcrumb.Item>
-    </Breadcrumb>
-    <div>
-      <h1>About</h1>
-      <p>
-      This is {appConfig.name}, powered by APE version {appConfig.version} ({appConfig.versionDate})
-      </p>
-    </div>
-  </>
+  return <PageLayout>
+    <h1>About</h1>
+    <p>This is {appConfig.name}, powered by APE version {appConfig.version} ({appConfig.versionDate})</p>
+  </PageLayout>;
 }

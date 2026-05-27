@@ -3,6 +3,7 @@ import {ApeContext} from "@/App/App";
 import {useQuery} from "@tanstack/react-query";
 import {Card, Col, Row} from "react-bootstrap";
 import {Link} from "react-router";
+import PageLayout from "@/ui/ApeUx/PageLayout";
 
 
 export function Home() {
@@ -22,42 +23,47 @@ export function Home() {
     enabled: !!apiClient,
   });
 
+  let actualContent = null;
+
   if (publicationListingsQuery.isLoading) {
-    return <div>Loading publications...</div>;
+    actualContent = <div>Loading publications...</div>;
   }
 
   if (publicationListingsQuery.isError) {
-    return <div>Error: {publicationListingsQuery.error.message}</div>;
+    actualContent = <div>Error: {publicationListingsQuery.error.message}</div>;
   }
 
   const publications = publicationListingsQuery.data || [];
 
+  actualContent = (
+    <Row xs={1} md={2} lg={3} className="g-4">
+      {publications.map((publication) => (
+        <Col key={publication.id}>
+          <Card className="h-100">
+            <Card.Body>
+              <Card.Title>{publication.title}</Card.Title>
+              <Card.Subtitle className="mb-2 text-muted">
+                {publication.type} (ID: {publication.id})
+              </Card.Subtitle>
+              <Card.Text>
+                {publication.description}
+              </Card.Text>
+              <Link to={`/publication/${publication.id}`} className="btn btn-sm btn-secondary">
+                View Publication
+              </Link>
+            </Card.Body>
+          </Card>
+        </Col>
+      ))}
+    </Row>
+  )
 
-  return (<div className={'home'}>
-      <h1>{context.appConfig?.name}</h1>
+
+
+  return (<PageLayout>
+      <h1>Welcome</h1>
       <p>These are the digital publications from the <a href={"https://averroes.uni-koeln.de"}>Averroes Project</a></p>
-      <Row xs={1} md={2} lg={3} className="g-4">
-        {publications.map((publication) => (
-          <Col key={publication.id}>
-            <Card className="h-100">
-              <Card.Body>
-                <Card.Title>{publication.title}</Card.Title>
-                <Card.Subtitle className="mb-2 text-muted">
-                  {publication.type} (ID: {publication.id})
-                </Card.Subtitle>
-                <Card.Text>
-                  {publication.description}
-                </Card.Text>
-                <Link to={`/publication/${publication.id}`} className="btn btn-sm btn-secondary">
-                  View Publication
-                </Link>
-              </Card.Body>
-            </Card>
-          </Col>
-        ))}
-      </Row>
-    </div>
-
-
+      {actualContent}
+    </PageLayout>
   );
 }

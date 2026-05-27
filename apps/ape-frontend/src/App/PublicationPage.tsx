@@ -5,6 +5,7 @@ import {useQuery} from "@tanstack/react-query";
 import {Breadcrumb} from "react-bootstrap";
 import {TextPublicationData, TranscriptionData} from "@/Api/Schema/ApiPublication";
 import {TranscriptionViewer} from "@/ui/TranscriptionViewer/TranscriptionViewer";
+import PageLayout from "@/ui/ApeUx/PageLayout";
 
 export function PublicationPage() {
   const {id} = useParams<{ id: string }>();
@@ -45,18 +46,13 @@ export function PublicationPage() {
 
 
   return (
-    <>
-      <Breadcrumb>
-        <Breadcrumb.Item linkAs={Link} linkProps={{to: "/"}}>Home</Breadcrumb.Item>
-        <Breadcrumb.Item active>{publication.title}</Breadcrumb.Item>
-      </Breadcrumb>
-      <h1>{publication.title}</h1>
+    <PageLayout topBarCenterItems={<h1>{publication.title}</h1>}>
       <p>{publication.description}</p>
       <p>Type: {publication.type}</p>
       <p>Version: {publication.versionTimeString}</p>
       { publication.type === 'transcription' && <p>Language: {transcriptionData.languageCode}</p>}
       { publication.type === 'text' && <div>{textPublicationData.text}</div> }
       { publication.type === 'transcription' && <TranscriptionViewer viewerType={'singlePageText'} data={transcriptionData} />}
-    </>
+    </PageLayout>
   );
 }

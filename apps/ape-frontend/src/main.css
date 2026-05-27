@@ -6,6 +6,18 @@
   --bs-body-font-size: 11pt;
 }
 
+html, body {
+  height: 100%;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+}
+
+#root {
+  height: 100%;
+  overflow: hidden;
+}
+
 .text-he {
   direction: rtl;
   font-family:  "Noto Sans", sans-serif;

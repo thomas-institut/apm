@@ -61,6 +61,16 @@ export interface TranscriptionData extends PublicationData {
   pages: TranscriptionPage[];
 }
 
+export function getTranscribedPages(transcriptionData: TranscriptionData) {
+  const isTranscriptionEmpty = (page: TranscriptionPage) => {
+    if (page.columns.length === 0) {
+      return true;
+    }
+    return page.columns.every(col => col.transcriptionText.trim() === '');
+  }
+  return transcriptionData.pages.filter(page => !isTranscriptionEmpty(page));
+}
+
 /**
  * API can return any concrete PublicationData subtype.
  */
@@ -80,6 +90,19 @@ export interface PublicationApiGetResponse extends ApiSuccessResponse {
   publicationData: AnyPublicationData;
 }
 
-// Backward-compatible aliases.
-export type PublicationListingResponse = PublicationApiListResponse;
-export type PublicationDataResponse = PublicationApiGetResponse;
+
+export function pubTypeName(code: string) {
+  switch (code) {
+    case 'text': return 'Text';
+    case 'transcription': return 'Transcription';
+    default: return code;
+  }
+}
+
+export function docTypeName(docType: string) {
+  switch (docType) {
+    case 'manuscript': return 'Manuscript';
+    case 'print': return 'Print';
+    default: return docType;
+  }
+}

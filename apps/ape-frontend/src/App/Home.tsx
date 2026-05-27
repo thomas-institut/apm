@@ -10,6 +10,9 @@ export function Home() {
 
   const context = useContext(ApeContext);
   const apiClient = context.apiClient;
+  const appShortName = context.appConfig?.shortName ?? 'APE';
+
+  document.title = `${appShortName}: Home`;
 
   const publicationListingsQuery = useQuery({
     queryKey: ['publicationListings'],

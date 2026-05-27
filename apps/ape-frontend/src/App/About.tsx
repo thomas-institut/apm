@@ -6,6 +6,10 @@ import PageLayout from "@/ui/ApeUx/PageLayout";
 export function About() {
   const context = useContext(ApeContext);
   const appConfig = context.appConfig;
+
+  const appShortName = context.appConfig?.shortName ?? 'APE';
+
+  document.title = `${appShortName}: About`;
   if (!appConfig) {
     return <></>;
   }

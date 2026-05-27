@@ -1,8 +1,11 @@
 
+:root {
+  --page-top-bar-color: #121212;
+}
 .pageLayout {
   display: grid;
   grid-template-rows: auto 1fr;
-  padding: 0.5rem;
+  padding: 0.75rem;
   height: 100%;
   box-sizing: border-box;
   overflow: hidden;
@@ -11,15 +14,16 @@
 .pageTopBar {
   overflow: hidden;
   display: grid;
-  height: 40px;
-  grid-template-columns: max-content 1fr 1fr;
+  /*height: 40px;*/
+  grid-template-columns: max-content 1fr max-content;
   gap: 1em;
-  border-bottom: 1px solid #ddd;
-  margin-bottom: 0.5rem;
+  color: var(--page-top-bar-color);
+  /*border-bottom: 1px solid #ddd;*/
+  margin-bottom: 1rem;
   align-items: center;
 
   a, a:visited{
-    color: #333;
+    color:var(--page-top-bar-color);
     text-decoration: none;
   }
 }
@@ -28,8 +32,6 @@
   overflow-y: auto;
   min-height: 0;
 }
-
-
 
 .pageTopBar h1 {
   font-size: 1.5em;
@@ -42,14 +44,14 @@
   flex-direction: row;
   align-items: center;
   gap: 1em;
-  margin-right: 3em;
 }
 
 .centerArea {
   display: flex;
   flex-direction: row;
-  align-items: initial;
-  justify-content: left;
+  align-items: center;
+  justify-content: center;
+  gap: 1em;
 }
 
 
@@ -57,5 +59,6 @@
   display: flex;
   flex-direction: row;
   align-items: center;
+  justify-content: flex-end;
   gap: 1em;
 }

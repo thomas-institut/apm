@@ -10,6 +10,7 @@ import {About} from "@/App/About";
 import {PublicationPage} from "@/App/PublicationPage";
 
 import "./app.css";
+import PageLayout from "@/ui/ApeUx/PageLayout";
 
 interface AppProps {
     inlineConfig: InlineAppConfig

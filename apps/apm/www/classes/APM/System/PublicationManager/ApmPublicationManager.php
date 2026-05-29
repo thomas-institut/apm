@@ -174,7 +174,7 @@ class ApmPublicationManager implements PublicationManagerInterface
         $data->title = $docInfo->title;
         $data->languageCode = $this->lm->getLanguageCode($docInfo->language) ?? '';
         $data->documentName = $docInfo->title;
-        $data->docType = $this->getDocTypeString($docInfo->type);
+        $data->docType = $this->getDocTypeString($docInfo->type ?? -1);
         $data->versionTimeString = $version;
         $data->description = '';
 

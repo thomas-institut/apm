@@ -17,13 +17,12 @@
  *  
  */
 
-namespace ThomasInstitut\Test\DataCache;
+namespace ThomasInstitut\ValkeyDataCache;
 
 use Exception;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use ThomasInstitut\DataCache\Reference\DataCacheReferenceTest;
-use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 
 
 class ValkeyDataCacheTest extends TestCase

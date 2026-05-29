@@ -1,15 +1,12 @@
 <?php
 
-namespace Test\APM\System\PublicationManager;
+namespace APM\System\PublicationManager;
 
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Document\DocInfo;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\PageInfo;
 use APM\System\LanguageManager;
-use APM\System\PublicationManager\ApmPublicationManager;
-use APM\System\PublicationManager\PublicationNotFoundException;
-use APM\System\PublicationManager\ResourceNotFoundException;
 use APM\System\Transcription\TranscriptionManager;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;

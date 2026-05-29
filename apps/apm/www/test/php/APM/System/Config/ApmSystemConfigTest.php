@@ -1,8 +1,7 @@
 <?php
 
-namespace APM\Test\System\Config;
+namespace APM\System\Config;
 
-use APM\System\Config\ApmSystemConfig;
 use CuyZ\Valinor\Mapper\MappingError;
 use CuyZ\Valinor\MapperBuilder;
 use PHPUnit\Framework\TestCase;

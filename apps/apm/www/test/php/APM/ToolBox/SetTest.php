@@ -18,10 +18,9 @@
  *  
  */
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
 use PHPUnit\Framework\TestCase;
-use APM\ToolBox\Set;
 
 
 /**

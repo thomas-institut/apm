@@ -18,13 +18,9 @@
  *  
  */
 
-namespace APM\Test\Core\Token;
+namespace APM\Core\Token;
 
-use APM\Core\Token\TokenType;
 use PHPUnit\Framework\TestCase;
-
-use APM\Core\Token\StringTokenizer;
-use APM\Core\Token\StringToken;
 
 /**
  * Description of testWitness

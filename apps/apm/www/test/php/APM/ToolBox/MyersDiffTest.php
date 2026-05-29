@@ -18,10 +18,9 @@
  *  
  */
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
 use APM\System\Transcription\TxText\Text;
-use APM\ToolBox\MyersDiff;
 use PHPUnit\Framework\TestCase;
 
 

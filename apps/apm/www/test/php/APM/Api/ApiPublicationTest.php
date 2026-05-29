@@ -1,8 +1,7 @@
 <?php
 
-namespace Test\APM\Api;
+namespace APM\Api;
 
-use APM\Api\ApiPublication;
 use APM\System\ApmContainerKey;
 use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\PublicationManager\PublicationNotFoundException;
@@ -16,11 +15,8 @@ use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response as SlimResponse;
-use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
-use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
-use ThomasInstitut\ApiResponseFactory\ApiResponseFactory;
 
 class ApiPublicationTest extends TestCase
 {

@@ -17,10 +17,9 @@
  *  
  */
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
 
-use APM\ToolBox\FullName;
 use PHPUnit\Framework\TestCase;
 
 class FullNameTest extends TestCase

@@ -1,8 +1,7 @@
 <?php
 
-namespace APM\Test\ApmWorker;
+namespace APM\ApmWorker;
 
-use APM\ApmWorker\ValkeyWorker;
 use APM\System\ApmSystemManager;
 use APM\System\SystemManager;
 use Monolog\Handler\NullHandler;

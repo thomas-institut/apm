@@ -17,12 +17,11 @@
  *  
  */
 
-namespace APM\Test\Core\Witness;
+namespace APM\Core\Witness;
 
 use APM\Core\Token\TokenType;
 use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\Transcription\DatabaseItemStream;
-
 use PHPUnit\Framework\TestCase;
 use RuntimeException;
 use ThomasInstitut\TimeString\TimeString;

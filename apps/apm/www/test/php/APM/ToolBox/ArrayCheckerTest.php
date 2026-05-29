@@ -18,9 +18,8 @@
  *
  */
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
-use APM\ToolBox\ArrayChecker;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 

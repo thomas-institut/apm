@@ -60,9 +60,13 @@
   "autoload": {
     "psr-4": {
       "APM\\": "classes/APM",
-      "ThomasInstitut\\": "classes/ThomasInstitut",
-      "APM\\Test\\": "test/php/APM",
-      "ThomasInstitut\\Test\\": "test/php/ThomasInstitut"
+      "ThomasInstitut\\": "classes/ThomasInstitut"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "APM\\": "test/php/APM",
+      "ThomasInstitut\\": "test/php/ThomasInstitut"
     }
   }
 }

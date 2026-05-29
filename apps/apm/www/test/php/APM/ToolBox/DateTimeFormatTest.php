@@ -1,8 +1,7 @@
 <?php
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
-use APM\ToolBox\DateTimeFormat;
 use PHPUnit\Framework\TestCase;
 use function PHPUnit\Framework\assertEquals;
 

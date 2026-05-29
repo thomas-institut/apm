@@ -1,14 +1,10 @@
 <?php
 
-namespace APM\Test\System;
+namespace APM\System;
 
 use APM\EntitySystem\ApmEntitySystem;
 use APM\CollationTable\ApmCollationTableManager;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
-use APM\System\ApmNormalizerManager;
-use APM\System\ApmSystemManager;
-use APM\System\EntitySystemEditionSourceManager;
-use APM\System\SettingsManager;
 use APM\System\Document\ApmDocumentManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\DataTablePresetManager;

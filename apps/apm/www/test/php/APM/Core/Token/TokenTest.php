@@ -17,14 +17,11 @@
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *  
  */
-namespace APM\Test\Core\Token;
+namespace APM\Core\Token;
 
 
-use APM\Core\Token\TokenType;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-
-use APM\Core\Token\Token;
 
 /**
  * Token class  test

@@ -1,9 +1,8 @@
 <?php
 
-namespace APM\Test\System\Auth;
+namespace APM\System\Auth;
 
 use APM\Api\DataSchema\ApiLoginRequest;
-use APM\System\Auth\Authenticator;
 use APM\System\User\UserManagerInterface;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;

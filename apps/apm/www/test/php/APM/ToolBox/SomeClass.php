@@ -17,12 +17,11 @@
  *  
  */
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
 /**
  * Class SomeClass
  * A class to test ArraySort
- * @package APM\Test
  */
 class SomeClass
 {

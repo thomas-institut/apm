@@ -17,10 +17,9 @@
  *  
  */
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
 
-use APM\ToolBox\StringType;
 use PHPUnit\Framework\TestCase;
 
 class StringTypeTest extends TestCase

@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Test\Core;
+namespace APM\Core;
 
 
 use APM\System\Transcription\TxText\Abbreviation;

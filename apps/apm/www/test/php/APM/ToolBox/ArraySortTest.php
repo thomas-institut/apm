@@ -17,10 +17,8 @@
  *  
  */
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
-
-use APM\ToolBox\ArraySort;
 use PHPUnit\Framework\TestCase;
 
 

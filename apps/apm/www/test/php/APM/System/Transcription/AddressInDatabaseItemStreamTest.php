@@ -17,9 +17,8 @@
  *  
  */
 
-namespace APM\Test\System\Transcription;
+namespace APM\System\Transcription;
 
-use APM\System\Transcription\AddressInDatabaseItemStream;
 use APM\System\Transcription\ColumnElement\Element;
 use PHPUnit\Framework\TestCase;
 

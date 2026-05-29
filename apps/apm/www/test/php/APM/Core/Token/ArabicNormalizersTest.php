@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\Test\Core\Token;
+namespace APM\Core\Token;
 
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use PHPUnit\Framework\TestCase;

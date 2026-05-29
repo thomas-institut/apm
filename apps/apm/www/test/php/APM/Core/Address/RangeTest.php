@@ -18,12 +18,11 @@
  *  
  */
 
-namespace APM\Test\Core\Address;
+namespace APM\Core\Address;
 
-use APM\Core\Address\IntRange;
-use APM\Core\Address\Point;
-use APM\Core\Address\PointRange;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
+use RangeException;
 
 
 /**
@@ -47,7 +46,7 @@ class RangeTest extends TestCase {
         $exceptionRaised1 = false;
         try {
             new IntRange(10,0);
-        } catch (\RangeException $ex) {
+        } catch (RangeException) {
             $exceptionRaised1 = true;
         }
         $this->assertTrue($exceptionRaised1);
@@ -58,7 +57,7 @@ class RangeTest extends TestCase {
         $exceptionRaised2 = false;
         try {
             IntRange::RangeFromStartEnd(1, 0);
-        } catch (\RangeException) {
+        } catch (RangeException) {
             $exceptionRaised2 = true;
         }
         $this->assertTrue($exceptionRaised2);
@@ -90,7 +89,7 @@ class RangeTest extends TestCase {
         try {
             // bad first argument
             $p3 = new PointRange(1.23, $p1);
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException $ex) {
             $exceptionThrown = true;
         }
         $this->assertTrue($exceptionThrown);
@@ -99,7 +98,7 @@ class RangeTest extends TestCase {
         try {
             // bad second argument
             $p3 = new PointRange($p1, 'string');
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException $ex) {
             $exceptionThrown = true;
         }
         $this->assertTrue($exceptionThrown);
@@ -109,7 +108,7 @@ class RangeTest extends TestCase {
         try {
             // points of different number of dimensions
             $p3 = new PointRange($p1, $p4);
-        } catch (\InvalidArgumentException $ex) {
+        } catch (InvalidArgumentException $ex) {
             $exceptionThrown = true;
         }
         $this->assertTrue($exceptionThrown);

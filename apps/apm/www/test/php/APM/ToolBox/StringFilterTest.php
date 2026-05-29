@@ -17,10 +17,9 @@
  *  
  */
 
-namespace APM\Test\ToolBox;
+namespace APM\ToolBox;
 
 
-use APM\ToolBox\StringFilter;
 use PHPUnit\Framework\TestCase;
 
 class StringFilterTest extends TestCase

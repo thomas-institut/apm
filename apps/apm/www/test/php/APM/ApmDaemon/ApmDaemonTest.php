@@ -1,8 +1,7 @@
 <?php
 
-namespace APM\Test\ApmDaemon;
+namespace APM\ApmDaemon;
 
-use APM\ApmDaemon\ApmDaemon;
 use APM\System\ApmSystemManager;
 use Monolog\Handler\NullHandler;
 use Monolog\Logger;

@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Test\Core\Address;
+namespace APM\Core\Address;
 
 
 
@@ -26,8 +26,6 @@ use InvalidArgumentException;
 use LogicException;
 use OutOfBoundsException;
 use PHPUnit\Framework\TestCase;
-use APM\Core\Address\Point;
-use APM\Core\Address\Address;
 
 /**
  * Description of VectorTest

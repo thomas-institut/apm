@@ -1,12 +1,11 @@
 <?php
 
 
-namespace APM\Test\System;
+namespace APM\System;
 
 
 use APM\Core\Token\Token;
 use APM\Core\Token\TokenType;
-use APM\System\ApmNormalizerManager;
 use PHPUnit\Framework\TestCase;
 
 require "AddStringNormalizer.php";

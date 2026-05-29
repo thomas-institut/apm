@@ -27,10 +27,10 @@ RUN pip3 install PyGObject simplejson==3.18.0 --break-system-packages
 # Create font symlink
 RUN mkdir -p /usr/share/fonts && ln -s /var/apm/apm-fonts /usr/share/fonts/apm-fonts
 
-COPY entrypoint-typesetting.sh /usr/local/bin/
-RUN chmod +x /usr/local/bin/entrypoint-typesetting.sh
+COPY entrypoint-node.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint-node.sh
 
-ENTRYPOINT ["entrypoint-typesetting.sh"]
+ENTRYPOINT ["entrypoint-node.sh"]
 CMD ["tail", "-f", "/dev/null"]
 
 

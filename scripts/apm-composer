@@ -1,2 +1,2 @@
 #!/bin/bash
-docker exec -w /opt/apm/src/www php /opt/composer/composer "$@"
+docker exec -w /opt/apm/www apm-php /opt/composer/composer "$@"

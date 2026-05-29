@@ -1,2 +1,2 @@
 #!/bin/bash
-docker exec -w /opt/apm/www php /opt/composer/composer run-script test
+./scripts/apm-composer test

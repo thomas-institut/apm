@@ -281,7 +281,7 @@ input.tag-input {
 
 ul.tag-editor-tags-ul {
     list-style-type: none;
-    padding-left: 0;
+    padding: 0;
 }
 
 div.aei-form ul.tag-editor-tags-ul {
@@ -291,7 +291,7 @@ div.aei-form ul.tag-editor-tags-ul {
 ul.tag-editor-tags-ul li {
     display: inline;
     line-height: 2.5em;
-    margin-right: 0.5em;
+    margin-inline-end: 0.5em;
 }
 
 span.tag-text {

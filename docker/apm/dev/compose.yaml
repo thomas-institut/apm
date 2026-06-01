@@ -53,10 +53,10 @@ services:
       - mysql
 
   node:
-    container_name: apm-node
+    container_name: apm-node24
     build:
       context: .
-      dockerfile: dev-node.Dockerfile
+      dockerfile: dev-node24.Dockerfile
     ports:
       - "4711:4711"
     volumes:

@@ -20,6 +20,7 @@
 // @ts-ignore
 import GI from 'node-gtk/lib/index.js';
 import {PangoMeasurements, PangoMeasurer} from './PangoMeasurer.js';
+// @ts-ignore
 import {Typesetter2} from '../www/js/lib/Typesetter2/Typesetter2.js';
 import {TextBox} from '../www/js/lib/Typesetter2/TextBox.js';
 

@@ -17,6 +17,7 @@
  */
 
 
+// @ts-ignore
 import {TextBoxMeasurer} from '../www/js/lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
 import {TextBox} from "../www/js/lib/Typesetter2/TextBox.js";
 

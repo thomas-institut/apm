@@ -3,7 +3,8 @@
   "version": "1.2.9",
   "type": "module",
   "scripts": {
-    "build": "rm -fr dist; tsc"
+    "build": "rm -fr dist; tsc",
+    "tsc:version": "tsc --version"
   },
   "prettier": {
     "singleQuote": true,
@@ -15,12 +16,15 @@
   "dependencies": {
     "@thomas-inst/optionschecker": "^1.1.4",
     "body-parser": "^2.2.0",
-    "express": "^5.1.0",
-    "node-gtk": "0.14.0",
-    "yaml": "2.8.3"
+    "express": "^5.2",
+    "node-gtk": "^1.0.0",
+    "yaml": "^2.9.0"
   },
   "devDependencies": {
-    "@types/express": "^5.0.3",
+    "@types/express": "^5.0.6",
     "typescript": "^5.9.2"
+  },
+  "allowScripts": {
+    "node-gtk@1.0.0": true
   }
 }

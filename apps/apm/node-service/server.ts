@@ -161,9 +161,40 @@ typesettingServer.post('/api/typeset', async (req, res) => {
   });
 });
 
-typesettingServer.listen(PORT, () => {
+const httpServer = typesettingServer.listen(PORT, () => {
   logIt(`Server is listening at http://localhost:${PORT}`);
 });
+
+// Ensure the port is released promptly when the process is stopped.
+// Without an explicit shutdown, lingering keep-alive connections can keep
+// the socket bound, causing EADDRINUSE on the next start.
+function shutdown(signal: string) {
+  logIt(`Received ${signal}, shutting down...`);
+  // Stop accepting new connections.
+  httpServer.close((err) => {
+    if (err) {
+      logIt(`Error while closing server: ${err}`);
+      process.exit(1);
+    }
+    logIt(`Server closed cleanly`);
+    process.exit(0);
+  });
+  // Force-close any idle/keep-alive connections so close() can complete.
+  // Available on Node >= 18.2.
+  // @ts-ignore
+  if (typeof httpServer.closeAllConnections === 'function') {
+    // @ts-ignore
+    httpServer.closeAllConnections();
+  }
+  // Safety net: if shutdown hangs, exit forcefully.
+  setTimeout(() => {
+    logIt(`Shutdown timed out, forcing exit`);
+    process.exit(1);
+  }, 5000).unref();
+}
+
+process.on('SIGTERM', () => shutdown('SIGTERM'));
+process.on('SIGINT', () => shutdown('SIGINT'));
 
 
 function logIt(msg: string) {

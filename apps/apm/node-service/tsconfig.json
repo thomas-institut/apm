@@ -9,5 +9,12 @@
     "skipLibCheck": true,
     "outDir": "./dist",
     "allowJs": true
-  }
+  },
+  "include": [
+    "**/*.ts",
+  ],
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
 }

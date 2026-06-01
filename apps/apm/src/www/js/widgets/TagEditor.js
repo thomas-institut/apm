@@ -62,6 +62,7 @@ export class TagEditor {
     this.options.getTagHints().then( (tags) => {
       this.fillDatalistWithTags(tags)
       this.showGivenTagsInEditMode()
+      this.appendAddTagField()
       this.setupEvents()
     })
   }
@@ -85,7 +86,7 @@ export class TagEditor {
       fontSize: '0.9em',
       border: `1px solid ${palette.chipBorder}`,
       borderRadius: '3px',
-      padding: '3px 5px',
+      padding: '2px 5px',
       marginInlineEnd: '1px',
       lineHeight: '1.05',
       verticalAlign: 'middle',
@@ -107,16 +108,8 @@ export class TagEditor {
   }
 
   buildStructureOfTagEditor() {
-    let inputHtml = ''
-    if (this.options.mode === 'edit') {
-      inputHtml = `
-                <li class="tagAdd taglist">
-                    <input list="${this.idPrefix}-list-of-tags" class="tag-input" id="${this.idPrefix}-search-field" placeholder="+">
-                    <datalist id="${this.idPrefix}-list-of-tags"></datalist>
-                </li>`
-    }
     $(this.options.containerSelector).html(`
-            <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">${inputHtml}
+            <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">
            </ul>`)
   }
 
@@ -130,6 +123,17 @@ export class TagEditor {
     for (let tag of this.getOrderedTags()) {
       this._appendTagItem(tag, true)
     }
+  }
+
+  appendAddTagField() {
+    if (this.options.mode !== 'edit') {
+      return
+    }
+    $(`#${this.idPrefix}-tag-list`).append(`
+                <li class="tagAdd taglist">
+                    <input list="${this.idPrefix}-list-of-tags" class="tag-input" id="${this.idPrefix}-search-field" placeholder="+">
+                    <datalist id="${this.idPrefix}-list-of-tags"></datalist>
+                </li>`)
   }
 
   setupEvents() {

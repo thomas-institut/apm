@@ -4,7 +4,7 @@
 
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import $ from 'jquery';
-import {TagEditor, getTagBackgroundForTags, getTagColorPalette} from '@/widgets/TagEditor';
+import {TagEditor} from '@/widgets/TagEditor';
 
 function extractHue(hslColor: string): number {
   const match = hslColor.match(/hsl\((\d+)/);
@@ -47,7 +47,7 @@ describe('TagEditor', () => {
     const alphaText = alphaTag.querySelector('.tag-text') as HTMLElement;
     const initialStyle = alphaText.getAttribute('style') ?? '';
     expect(alphaTag.style.lineHeight).toBe('1.05em');
-    expect(alphaText.style.padding).toBe('0px 5px');
+    expect(alphaText.style.padding).toBe('2px 5px');
 
     $(alphaTag).trigger('mouseenter');
     $(alphaTag).trigger('mouseleave');
@@ -63,18 +63,37 @@ describe('TagEditor', () => {
   });
 
   it('builds deterministic tag colors and split backgrounds', () => {
-    const alphaPalette = getTagColorPalette('alpha');
-    const betaPalette = getTagColorPalette('beta');
+    const editor = Object.create(TagEditor.prototype) as TagEditor;
+    const alphaPalette = editor.getTagColorPalette('alpha');
+    const betaPalette = editor.getTagColorPalette('beta');
 
     expect(alphaPalette.highlightBackground).not.toBe(betaPalette.highlightBackground);
     expect(extractHue(alphaPalette.highlightBackground)).toBeGreaterThanOrEqual(12);
     expect(extractHue(alphaPalette.highlightBackground)).toBeLessThanOrEqual(131);
     expect(extractHue(betaPalette.highlightBackground)).toBeGreaterThanOrEqual(12);
     expect(extractHue(betaPalette.highlightBackground)).toBeLessThanOrEqual(131);
-    expect(getTagBackgroundForTags(['alpha'])).toBe(alphaPalette.highlightBackground);
-    expect(getTagBackgroundForTags(['alpha', 'beta'])).toContain('linear-gradient');
-    expect(getTagBackgroundForTags(['alpha', 'beta'])).toContain(alphaPalette.highlightBackground);
-    expect(getTagBackgroundForTags(['alpha', 'beta'])).toContain(betaPalette.highlightBackground);
+    expect(editor.getTagColor(['alpha'])).toBe(alphaPalette.highlightBackground);
+    expect(editor.getTagColor(['alpha', 'beta'])).toContain('linear-gradient');
+    expect(editor.getTagColor(['alpha', 'beta'])).toContain(alphaPalette.highlightBackground);
+    expect(editor.getTagColor(['alpha', 'beta'])).toContain(betaPalette.highlightBackground);
+  });
+
+  it('renders the add tag field after existing tags in edit mode', async () => {
+    new TagEditor({
+      containerSelector: '#root',
+      idPrefix: 'tag-edit',
+      tags: ['beta', 'alpha'],
+      mode: 'edit',
+      getTagHints: async () => [],
+      saveTags: async () => undefined
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const tagList = document.querySelector('#tag-edit-tag-list');
+    expect(tagList).toBeDefined();
+    expect(tagList?.lastElementChild?.classList.contains('tagAdd')).toBe(true);
   });
 
   it('applies the individual palette when adding a tag in edit mode', async () => {
@@ -98,6 +117,7 @@ describe('TagEditor', () => {
 
     const tagText = document.querySelector('#tag-edit-alpha-item .tag-text') as HTMLElement;
     expect(tagText).toBeDefined();
-    expect(tagText.getAttribute('style') ?? '').toContain(getTagColorPalette('alpha').chipBackground);
+    const editor = Object.create(TagEditor.prototype) as TagEditor;
+    expect(tagText.getAttribute('style') ?? '').toContain(editor.getTagColorPalette('alpha').chipBackground);
   });
 });

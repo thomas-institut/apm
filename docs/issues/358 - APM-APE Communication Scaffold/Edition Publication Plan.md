@@ -46,6 +46,9 @@ Make sure both apm and apm-node-service build and run correctly before moving on
 
 That is, move all communication with the node service to a single place. Add tests for this.
 
+
+> **DONE**: _01 Jun 2026, 12:59_
+
 ## 2. Define basic EditionPublicationData in apm-publication-api
 
 It is basically EditionInterface, but need to make sure it does not have any internal APM reference whatsoever. Later we

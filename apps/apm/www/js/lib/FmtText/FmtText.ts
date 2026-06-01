@@ -33,17 +33,17 @@ export interface FmtTextTextToken {
   type: 'text';
   text: string;
   /**
-   * The font style, for example 'normal' or 'italic'.
+   * The font style, for example, 'normal' or 'italic'.
    * If empty or undefined, the typesetter will use the default font style.
    */
   fontStyle?: string;
   /**
-   * The font weight, for example 'normal' or 'bold'.
+   * The font weight, for example, 'normal' or 'bold'.
    * If empty or undefined, the typesetter will use the default font weight.
    */
   fontWeight?: string;
   /**
-   * The text's vertical alignment, for example 'baseline', 'subscript' or 'superscript'.
+   * The text's vertical alignment, for example, 'baseline', 'subscript' or 'superscript'.
    * if empty or undefined, the typesetter will use the default vertical alignment.
    */
   verticalAlign?: string;
@@ -54,7 +54,7 @@ export interface FmtTextTextToken {
    */
   fontSize?: number;
   /**
-   * Space separated list of strings representing display classes defined in a typesetter.
+   * Space-separated list of strings representing display classes defined in a typesetter.
    */
   classList?: string;
   /*
@@ -80,7 +80,7 @@ export interface FmtTextGlueToken {
 
   type: 'glue';
   /**
-   * A string that a typesetter may interpret as a style or kind of space, for example 'normal' or 'em',
+   * A string that a typesetter may interpret as a style or kind of space, for example, 'normal' or 'em',
    * in case a width is not specified.
    */
   space?: string;
@@ -107,20 +107,20 @@ export interface FmtTextGlueToken {
 }
 
 /**
- * A  mark, for example an icon, a symbol, a paragraph break, etc.
+ * A  mark, for example, an icon, a symbol, a paragraph break, etc.
  *
  * The typesetter may or may not display anything.
  */
 export interface FmtTextMarkToken {
   type: 'mark';
   /**
-   * The type of the mark, for example 'paragraph', 'footnote', 'icon', 'symbol', etc..
+   * The type of the mark, for example, 'paragraph', 'footnote', 'icon', 'symbol', etc.
    */
   markType: string;
   /**
    * The mark's style.
    *
-   * For example a paragraph mark may have a style like 'h1' or 'h2'. An icon
+   * For example, a paragraph mark may have a style like 'h1' or 'h2'. An icon
    * might have a style like 'icon-1' or 'icon-2'.
    */
   style?: string;
@@ -318,7 +318,7 @@ export function getNormalizedToken<T extends FmtTextToken>(token: T): T {
 }
 
 /**
- * Normalizes a FmtText by removing all empty properties from all tokens.
+ * Normalizes an FmtText by removing all empty properties from all tokens.
  *
  * The result is a new FmtText object with exactly the same number of tokens as the input.
  * @param fmtText

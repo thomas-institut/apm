@@ -801,9 +801,27 @@ export class ApparatusPanel extends PanelWithToolbar {
     }
   }
 
+  private clearActiveTagBasedHighlights() {
+    const activeTags = [...this.activeTagFilters];
+
+    // deactivate active tags
+    activeTags.forEach((tag) => {
+      this.apparatusTagEditor?.setActiveTag(tag, false);
+      const tagItemId = `${this.apparatusTagEditor?.idPrefix}-${tag.replace(/ /g, "_")}-item`;
+      (this.apparatusTagEditor as any)._applyTagTextStyle(tagItemId, tag);
+    });
+  
+    // remove tag based highlights in apparatus and main text
+    this.activeTagFilters.clear();
+    this.apparatus.entries.forEach((_entry, index) => {
+      this.highlightEntryByIndex(index);
+    });
+  }
+
   private setupApparatusTagEditor() {
 
     const containerSelector = `${this.containerSelector} div.apparatus-tags`;
+    $('.apparatus-tags').hide();
     const tags = this.getApparatusTags();
 
     if (this.apparatusTagEditor === null) {
@@ -879,7 +897,10 @@ export class ApparatusPanel extends PanelWithToolbar {
                   </div>
                </div>
             </div>
-            <div class="panel-toolbar-group"><span id="line-column-numbers-toggle"></span></div>`;
+            <div class="panel-toolbar-group">
+                <span id="line-column-numbers-toggle" style="margin-right: 10px"></span>
+                <span id="show-tags-toggle"></span>
+            </div>`;
   }
 
   _setUpEventHandlers() {
@@ -1037,9 +1058,29 @@ export class ApparatusPanel extends PanelWithToolbar {
       offPopoverText: 'Click to use collation table column numbers for apparatus entries',
       initialValue: this.useCtColNumbers
     });
+
+    const tagsToggle = new NiceToggle({
+      containerSelector: `${this.containerSelector} #show-tags-toggle`,
+      title: 'Show Tags: ',
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      onPopoverText: 'Click to hide tags for apparatus entries',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to show tags for apparatus entries',
+      initialValue: false
+    });
+
     lineColumnNumbersToggle.on(toggleEvent, (ev: any) => {
       this.useCtColNumbers = ev.detail.toggleStatus;
       this.updateApparatus(this.mainTextTypesettingInfo);
+    });
+
+    tagsToggle.on(toggleEvent, (ev: any) => {
+      $('.apparatus-tags').toggle()
+
+      this.clearActiveTagBasedHighlights()
+      this.apparatus.entries.forEach((_entry, index) => {
+        this.highlightEntryByIndex(index);
+      });
     });
   }
 

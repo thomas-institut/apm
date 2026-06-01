@@ -25,15 +25,15 @@ class NodeServiceClient
     public function generatePdf(array $inputData) : string {
         $client = $this->getGuzzleClient();
         try {
-            $typesettingServiceResponse = $client->post('/api/typeset', ['body' => json_encode($inputData)]);
+            $nodeService = $client->post('/api/typeset', ['body' => json_encode($inputData)]);
         } catch (GuzzleException $e) {
             throw new CouldNotContactServiceException("Could not contact node service: " . $e->getMessage());
         }
 
-        if ($typesettingServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {
-            throw new NodeServiceFailedException("Node service failed with code " . $typesettingServiceResponse->getStatusCode());
+        if ($nodeService->getStatusCode() !== HttpStatus::SUCCESS) {
+            throw new NodeServiceFailedException("Node service failed with code " . $nodeService->getStatusCode());
         }
-        $pdfString =  $typesettingServiceResponse->getBody()->getContents();
+        $pdfString =  $nodeService->getBody()->getContents();
 
         if (strlen($pdfString) < self::MIN_VALID_PDF_FILE_SIZE) {
             throw new InvalidNodeServiceResponseException("Node service returned empty or very small PDF");

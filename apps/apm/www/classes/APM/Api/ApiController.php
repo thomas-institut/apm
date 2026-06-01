@@ -80,7 +80,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     protected array $languages;
     protected RouteParserInterface $router;
 
-    private ContainerInterface $container;
+    protected ContainerInterface $container;
     protected bool $debugMode;
     protected string $apiCallName;
     protected int $apiUserId;

@@ -20,12 +20,14 @@
 
 namespace APM\CommandLine;
 
+use APM\NodeService\NodeServiceClient;
 use APM\System\ApmContainerKey;
 use APM\System\ApmSystemManager;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Factories\LanguageManagerFactory;
 use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\ApmSystemConfigFactory;
+use APM\System\Factories\NodeServiceClientFactory;
 use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TwigFactory;
 use APM\System\Factories\ValkeyClientFactory;
@@ -112,6 +114,7 @@ abstract class CommandLineUtility {
             LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
             PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
             Client::class => factory([ValkeyClientFactory::class, 'create']),
+            NodeServiceClient::class => factory([NodeServiceClientFactory::class, 'create']),
             'processUserInfoArray' => posix_getpwuid(posix_geteuid()),
             'cmd' => $this->argv[0] ?? '',
             'pid' => posix_getpid(),

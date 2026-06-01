@@ -20,9 +20,15 @@
 namespace APM\Api;
 
 use APM\Api\DataSchema\ApiTypesetPdfResponse;
+use APM\NodeService\CouldNotContactServiceException;
+use APM\NodeService\InvalidNodeServiceResponseException;
+use APM\NodeService\NodeServiceClient;
+use APM\NodeService\NodeServiceFailedException;
 use APM\ToolBox\HttpStatus;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use ThomasInstitut\Profiler\SystemProfiler;
@@ -75,36 +81,50 @@ class ApiTypesetPdf extends ApiController
 
         $inputData = json_decode($inputJson, true);
         $inputData['id'] = $requestId;
-        $serviceUrl = sprintf(
-                "http://%s:%s/api/typeset",
-                $this->systemManager->getConfig()['typesettingService']['host'],
-                $this->systemManager->getConfig()['typesettingService']['port'],
-        );
-
-        $guzzleClient = new Client([
-            'base_uri' => $serviceUrl,
-            'timeout'  => $this->systemManager->getConfig()['apiTypesetPdfHttpClientTimeOut'],
-            'headers' => [ 'Content-Type' => 'application/json' ]
-        ]);
 
         try {
-            $typesettingServiceResponse = $guzzleClient->post('', ['body' => json_encode($inputData)]);
-        } catch (GuzzleException $e) {
+            /** @var NodeServiceClient $nodeServiceClient */
+            $nodeServiceClient = $this->container->get(NodeServiceClient::class);
+            $pdfString = $nodeServiceClient->generatePdf($inputData);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             $this->logger->error("$this->apiCallName: " . $e->getMessage());
-            return $this->responseFactory->internalServerError($response, 'Could not contact typesetting service');
+            return $this->responseFactory->internalServerError($response, 'Configuration error: node service client not available');
+        } catch (CouldNotContactServiceException|NodeServiceFailedException|InvalidNodeServiceResponseException $e) {
+            $this->logger->error("$this->apiCallName: " . $e->getMessage());
+            return $this->responseFactory->internalServerError($response, 'Node service error');
         }
 
-        if ($typesettingServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {
-            $this->logger->error("$this->apiCallName: Typesetting service failed with code " . $typesettingServiceResponse->getBody());
-            return $this->responseFactory->internalServerError($response, "Typesetting service failed");
-        }
 
-        $pdfString =  $typesettingServiceResponse->getBody();
-
-        if (strlen($pdfString) < self::MIN_VALID_PDF_FILE_SIZE) {
-            $this->logger->error("$this->apiCallName: Typesetting service returned empty or very small PDF");
-            return $this->responseFactory->internalServerError($response, "Typesetting service returned invalid PDF");
-        }
+//        $serviceUrl = sprintf(
+//                "http://%s:%s/api/typeset",
+//                $this->systemManager->getConfig()['typesettingService']['host'],
+//                $this->systemManager->getConfig()['typesettingService']['port'],
+//        );
+//
+//        $guzzleClient = new Client([
+//            'base_uri' => $serviceUrl,
+//            'timeout'  => $this->systemManager->getConfig()['apiTypesetPdfHttpClientTimeOut'],
+//            'headers' => [ 'Content-Type' => 'application/json' ]
+//        ]);
+//
+//        try {
+//            $typesettingServiceResponse = $guzzleClient->post('', ['body' => json_encode($inputData)]);
+//        } catch (GuzzleException $e) {
+//            $this->logger->error("$this->apiCallName: " . $e->getMessage());
+//            return $this->responseFactory->internalServerError($response, 'Could not contact typesetting service');
+//        }
+//
+//        if ($typesettingServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {
+//            $this->logger->error("$this->apiCallName: Typesetting service failed with code " . $typesettingServiceResponse->getBody());
+//            return $this->responseFactory->internalServerError($response, "Typesetting service failed");
+//        }
+//
+//        $pdfString =  $typesettingServiceResponse->getBody();
+//
+//        if (strlen($pdfString) < self::MIN_VALID_PDF_FILE_SIZE) {
+//            $this->logger->error("$this->apiCallName: Typesetting service returned empty or very small PDF");
+//            return $this->responseFactory->internalServerError($response, "Typesetting service returned invalid PDF");
+//        }
 
         $this->logger->debug("$this->apiCallName: PDF generated in $url");
         if ($this->saveStringToFile($fileToDownload, $pdfString)){

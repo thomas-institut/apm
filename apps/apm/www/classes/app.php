@@ -17,6 +17,7 @@ use APM\Api\ApiTypesetPdf;
 use APM\Api\ApiUsers;
 use APM\Api\ApiWitness;
 use APM\Api\ApiWorks;
+use APM\NodeService\NodeServiceClient;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
@@ -32,6 +33,7 @@ use APM\System\Config\ApmSystemConfig;
 use APM\System\Factories\LanguageManagerFactory;
 use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\ApmSystemConfigFactory;
+use APM\System\Factories\NodeServiceClientFactory;
 use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TwigFactory;
 use APM\System\Factories\ValkeyClientFactory;
@@ -80,6 +82,7 @@ $builder->addDefinitions([
     LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
     PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
     Client::class => factory([ValkeyClientFactory::class, 'create']),
+    NodeServiceClient::class => factory([NodeServiceClientFactory::class, 'create']),
 ]);
 
 try {

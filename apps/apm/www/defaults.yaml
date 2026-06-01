@@ -50,6 +50,11 @@ url:
   thomasInstitut:   "https://www.thomasinstitut.uni-koeln.de/"
 
 
+nodeService:
+  url: 'http://localhost:4711'
+  httpTimeout: 45
+
+
 apiTypesetPdfHttpClientTimeOut: 45
 
 # Typesetting service configuration for the backend

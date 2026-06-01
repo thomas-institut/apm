@@ -16,7 +16,6 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import * as FmtTextTokenType from '../FmtTextTokenType.js';
 import * as FontStyle from '../FontStyle.js';
 import * as FontWeight from '../FontWeight.js';
@@ -25,23 +24,35 @@ import * as VerticalAlign from '../VerticalAlign.js';
 import {FmtTextRenderer} from './FmtTextRenderer.js';
 import {FmtText} from "../FmtText.js";
 
+export interface HtmlRendererOptions {
+  plainMode?: boolean;
+  tokenClasses?: string[];
+  tokenIndexClassPrefix?: string;
+  textClasses?: string[];
+  glueClasses?: string[];
+}
 
 export class HtmlRenderer extends FmtTextRenderer {
-  private options: any;
+  private options: Required<HtmlRendererOptions>;
 
-  constructor(options = {}) {
+  constructor(options: HtmlRendererOptions = {}) {
     super();
-    let optionsSpec = {
-      plainMode: {type: 'boolean', default: false},
-      tokenClasses: {type: 'array', default: ['token']},
-      tokenIndexClassPrefix: {type: 'string', default: 'token-'},
-      textClasses: {type: 'array', default: ['text']},
-      glueClasses: {type: 'array', default: ['glue']}
+    // let optionsSpec = {
+    //   plainMode: {type: 'boolean', default: false},
+    //   tokenClasses: {type: 'array', default: ['token']},
+    //   tokenIndexClassPrefix: {type: 'string', default: 'token-'},
+    //   textClasses: {type: 'array', default: ['text']},
+    //   glueClasses: {type: 'array', default: ['glue']}
+    // };
+    // let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Html Renderer'});
+    // this.options = oc.getCleanOptions(options);
+    this.options = {
+      plainMode: options.plainMode ?? false,
+      tokenClasses: options.tokenClasses ?? ['token'],
+      tokenIndexClassPrefix: options.tokenIndexClassPrefix ?? 'token-',
+      textClasses: options.textClasses ?? ['text'],
+      glueClasses: options.glueClasses ?? ['glue']
     };
-
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Html Renderer'});
-
-    this.options = oc.getCleanOptions(options);
     if (this.options.plainMode) {
       this.options.tokenClasses = [];
       this.options.tokenIndexClassPrefix = '';

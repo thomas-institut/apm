@@ -21,10 +21,8 @@
 import * as FmtTokenType from '../FmtTextTokenType.js';
 import * as VerticalAlign from '../VerticalAlign.js';
 import * as DefaultStyleSheet from '../../../lib/Typesetter2/Style/DefaultStyleSheet.js';
-
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {Glue} from '../../../lib/Typesetter2/Glue.js';
-import {StyleSheet} from '../../../lib/Typesetter2/Style/StyleSheet.js';
+import {StyleSheet, StyleSheetDefinition} from '../../../lib/Typesetter2/Style/StyleSheet.js';
 import {TextBoxMeasurer} from '../../../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
 import {AsyncFmtTextRenderer} from './AsyncFmtTextRenderer.js';
 import * as FontStyle from '../FontStyle.js';
@@ -34,22 +32,28 @@ import {ObjectFactory} from '../../../lib/Typesetter2/ObjectFactory.js';
 import {TypesetterItem} from "../../../lib/Typesetter2/TypesetterItem.js";
 import {FmtText} from "../FmtText.js";
 
+export interface Typesetter2StyleSheetTokenRendererOptions {
+  styleSheet: StyleSheetDefinition;
+  textBoxMeasurer: TextBoxMeasurer;
+  defaultTextDirection: string;
+  debug?: boolean;
+}
+
 export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
-  private options: any;
+  private options: Required<Typesetter2StyleSheetTokenRendererOptions>;
   private ss: StyleSheet;
 
-  constructor(options = {}) {
+  constructor(options: Typesetter2StyleSheetTokenRendererOptions) {
     super();
-    let optionsSpec = {
-      styleSheet: {type: 'object', default: DefaultStyleSheet.defaultStyleSheet},
-      textBoxMeasurer: {type: 'object', objectClass: TextBoxMeasurer},
-      defaultTextDirection: {type: 'string'},
-      debug: {type: 'boolean', default: true}
-    };
 
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Typesetter2 Renderer'});
+    this.options = {
+      styleSheet: options.styleSheet ?? DefaultStyleSheet.defaultStyleSheet,
+      textBoxMeasurer: options.textBoxMeasurer,
+      defaultTextDirection: options.defaultTextDirection,
+      debug: options.debug ?? true
+    }
 
-    this.options = oc.getCleanOptions(options);
+    // this.options = oc.getCleanOptions(options);
     this.ss = new StyleSheet(this.options.styleSheet);
 
   }

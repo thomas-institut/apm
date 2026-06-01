@@ -14,7 +14,6 @@
     "maxLineLength": 80
   },
   "dependencies": {
-    "@thomas-inst/optionschecker": "^1.1.4",
     "body-parser": "^2.2.0",
     "express": "^5.2",
     "node-gtk": "^1.0.0",

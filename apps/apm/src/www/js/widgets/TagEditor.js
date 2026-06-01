@@ -227,7 +227,6 @@ export class TagEditor {
           thisObject.makeRemoveTagEvent(tagId)
           thisObject.options.tags.push(value)
           thisObject.options.saveTags(thisObject.options.tags).then ( () => {
-            // console.log(`Tag ${value} added`)
             $(this).val('')
           })
         }

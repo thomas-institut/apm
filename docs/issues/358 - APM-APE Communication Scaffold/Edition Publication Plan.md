@@ -27,15 +27,20 @@ It involves updating the docker container, the scripts, and the global NPM confi
 
 After doing this, APM and APE should work as they do now.
 
+> **DONE**: *29 May 2026*
+
 ### Refactor typesetting service in preparation for new API entry points
 
-Make it a new app: `apm-node-service`
+~~Make it a new app: `apm-node-service`~~
 
-Move the TS code shared between it and APM's frontend to yet another new app `shared-node-ts` (or something like that).
+~~Move the TS code shared between it and APM's frontend to yet another new app `shared-node-ts` (or something like that).~~
 This is also a good time to reach 90%+ test coverage on this code, but it might be too much work at this point.
 Might be worthwhile creating an issue in GitHub so that it doesn't fall through the cracks.
 
 Make sure both apm and apm-node-service build and run correctly before moving on.
+
+> Won't make it a new service for now because it needs to share configuration files and constants. Issue #386 was
+> created to make the service independent (*01 Jun 2026*)
 
 ### Formalize a NodeServiceApiClient in APM
 

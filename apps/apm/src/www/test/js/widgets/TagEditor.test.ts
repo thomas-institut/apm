@@ -76,4 +76,28 @@ describe('TagEditor', () => {
     expect(getTagBackgroundForTags(['alpha', 'beta'])).toContain(alphaPalette.highlightBackground);
     expect(getTagBackgroundForTags(['alpha', 'beta'])).toContain(betaPalette.highlightBackground);
   });
+
+  it('applies the individual palette when adding a tag in edit mode', async () => {
+    new TagEditor({
+      containerSelector: '#root',
+      idPrefix: 'tag-edit',
+      tags: [],
+      mode: 'edit',
+      getTagHints: async () => [],
+      saveTags: async () => undefined
+    });
+
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const input = document.querySelector('#tag-edit-search-field') as HTMLInputElement;
+    expect(input).toBeDefined();
+
+    input.value = 'alpha';
+    $(input).trigger($.Event('keypress', { which: 13 }));
+
+    const tagText = document.querySelector('#tag-edit-alpha-item .tag-text') as HTMLElement;
+    expect(tagText).toBeDefined();
+    expect(tagText.getAttribute('style') ?? '').toContain(getTagColorPalette('alpha').chipBackground);
+  });
 });

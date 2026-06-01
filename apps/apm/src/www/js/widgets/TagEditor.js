@@ -157,21 +157,7 @@ export class TagEditor {
     let valueForTagId = tag.replace(/ /g, "_")
     let tagItemId = `${this.idPrefix}-${valueForTagId}-item`
     let tagRemoveId = `${this.idPrefix}-${valueForTagId}-id`
-    const palette = this.getTagColorPalette(tag)
-    let tagTextStyle = {
-      ...this.getDefaultTagTextStyle(),
-      backgroundColor: palette.chipBackground,
-      border: `1px solid ${palette.chipBorder}`,
-      color: palette.chipText
-    }
-    if (this.isActiveTag(tag)) {
-      tagTextStyle = {
-        ...tagTextStyle,
-        backgroundColor: palette.chipActiveBackground,
-        border: `1px solid ${palette.chipActiveBorder}`,
-        color: palette.chipActiveText
-      }
-    }
+    let tagTextStyle = this.getTagTextStyle(tag)
     let removeButtonHtml = ''
     let hiddenInputHtml = ''
     if (includeRemoveButton) {
@@ -231,22 +217,9 @@ export class TagEditor {
         let valueForTagId = value.replace(/ /g, "_")
 
         if (value !== '' && thisObject.isTagValid(value) && thisObject.options.tags.includes(value) === false) {
+          thisObject._appendTagItem(value, true)
+          $(`#${thisObject.idPrefix}-${valueForTagId}-item`).insertBefore(`${thisObject.options.containerSelector} .tagAdd`)
           let tagId = `${thisObject.idPrefix}-${valueForTagId}-id`
-          $(`<li class="addedTag" value="${value}"><span class="tag-text">${value}</span> `   +
-            `<span class="tagRemove" id="${tagId}">` +
-            '<sup>x</sup></span>'
-            +'<input type="hidden" value="' + value +
-            '" name="tags[]"></li>'
-          ).insertBefore(`${thisObject.options.containerSelector} .tagAdd`)
-          $(`${thisObject.options.containerSelector} .addedTag`).css({
-            display: 'inline-flex',
-            alignItems: 'center',
-            lineHeight: '1.25em',
-            marginInlineEnd: '0.35em',
-            verticalAlign: 'middle',
-            whiteSpace: 'nowrap'
-          })
-
           thisObject.makeRemoveTagEvent(tagId)
           thisObject.options.tags.push(value)
           thisObject.options.saveTags(thisObject.options.tags).then ( () => {
@@ -285,6 +258,10 @@ export class TagEditor {
   }
 
   _applyTagTextStyle(tagItemId, tag) {
+    $(`#${tagItemId} span.tag-text`).css(this.getTagTextStyle(tag))
+  }
+
+  getTagTextStyle(tag) {
     const palette = this.getTagColorPalette(tag)
     let tagTextStyle = {
       ...this.getDefaultTagTextStyle(),
@@ -300,7 +277,7 @@ export class TagEditor {
         color: palette.chipActiveText
       }
     }
-    $(`#${tagItemId} span.tag-text`).css(tagTextStyle)
+    return tagTextStyle
   }
 
 
@@ -315,19 +292,19 @@ hashStringToHue(string) {
 
 getTagColorPalette(tag) {
     const hash = this.hashStringToHue(tag)
-    const hue = 12 + (hash % 120)
-    const saturation = 72 + ((hash >>> 3) % 8)
+    const hue = (hash % 240)
+    const saturation = 90 + ((hash >>> 3) % 8)
     const lightness = 84 + ((hash >>> 6) % 4)
-    const activeLightness = Math.max(74, lightness - 8)
+    const activeLightness = Math.max(74, lightness - 10)
     const borderSaturation = Math.max(42, saturation - 26)
     const borderLightness = Math.max(56, lightness - 16)
-    const activeBorderLightness = Math.max(48, activeLightness - 16)
+    const activeBorderLightness = Math.max(48, activeLightness - 40)
     return {
       chipBackground: `hsl(${hue} ${saturation}% ${lightness}%)`,
       chipBorder: `hsl(${hue} ${borderSaturation}% ${borderLightness}%)`,
       chipText: 'black',
       chipActiveBackground: `hsl(${hue} ${saturation}% ${activeLightness}%)`,
-      chipActiveBorder: 'black',
+      chipActiveBorder:  `hsl(${hue} ${borderSaturation}% ${activeBorderLightness}%)`,
       chipActiveText: 'black',
       highlightBackground: `hsl(${hue} ${Math.max(74, saturation)}% ${lightness}%)`
     }

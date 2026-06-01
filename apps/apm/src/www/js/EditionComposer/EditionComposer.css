@@ -351,8 +351,9 @@ div.main-text p.paragraph-empty {
 }
 
 .token-highlighted {
-    background: #f6f669 !important;
+    background: hsl(55 100% 50%) !important;
 }
+
 .token-highlighted.token-selected {
     background: #8cb484;
 }
@@ -360,6 +361,8 @@ div.main-text p.paragraph-empty {
 .main-text-apparatus-highlight {
     background: var(--light-text-highlight-color);
 }
+
+
 .token-in-app:hover, .main-text-hover {
     background: var(--darker-text-highlight-color);
 }
@@ -495,7 +498,7 @@ th.selected.highlight {
 }
 
 .lemma-selected {
-    background: #bddeea;
+    background: hsl(55 100% 50%) !important;
 }
 
 .lemma-hover {

@@ -293,7 +293,7 @@ hashStringToHue(string) {
 getTagColorPalette(tag) {
     const hash = this.hashStringToHue(tag)
     const hue = (hash % 240)
-    const saturation = 90 + ((hash >>> 3) % 8)
+    const saturation = 80 + ((hash >>> 3) % 8)
     const lightness = 84 + ((hash >>> 6) % 4)
     const activeLightness = Math.max(74, lightness - 10)
     const borderSaturation = Math.max(42, saturation - 26)

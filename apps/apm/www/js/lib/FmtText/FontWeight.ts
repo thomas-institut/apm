@@ -16,5 +16,5 @@
  *
  */
 
-export const NORMAL = '';
-export const BOLD = 'bold';
+export const FONT_WEIGHT_NORMAL = '';
+export const FONT_WEIGHT_BOLD = 'bold';

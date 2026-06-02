@@ -33,7 +33,7 @@ import {LanguageDetector} from '../toolbox/LanguageDetector.js';
 import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.js';
 import {ObjectFactory} from '../lib/Typesetter2/ObjectFactory.js';
 import {uniq} from '../lib/ToolBox/ArrayUtil.js';
-import {Typesetter2StyleSheetTokenRenderer} from '../lib/FmtText/Renderer/Typesetter2StyleSheetTokenRenderer.js';
+import {Typesetter2StyleSheetTokenRenderer} from '../lib/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.js';
 import {NumeralSystems} from '../toolbox/NumeralSystems.js';
 import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';

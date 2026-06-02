@@ -16,7 +16,7 @@
  *
  */
 
-export const EMPTY = 'empty';
-export const TEXT = 'text';
-export const GLUE = 'glue';
-export const MARK = 'mark';
+export const TOKEN_TYPE_EMPTY = 'empty';
+export const TOKEN_TYPE_TEXT = 'text';
+export const TOKEN_TYPE_GLUE = 'glue';
+export const TOKEN_TYPE_MARK = 'mark';

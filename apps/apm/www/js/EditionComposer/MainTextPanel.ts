@@ -1846,11 +1846,11 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
       if (fmtTextToken.type === 'empty') {
         return;
       }
-      if (fmtTextToken.type === FmtTexTokenType.GLUE) {
+      if (fmtTextToken.type === FmtTexTokenType.TOKEN_TYPE_GLUE) {
         witnessTokens.push((new WitnessToken()).setWhitespace());
         return;
       }
-      if (fmtTextToken.type === FmtTexTokenType.MARK) {
+      if (fmtTextToken.type === FmtTexTokenType.TOKEN_TYPE_MARK) {
         // only paragraphs recognized for now
         if (fmtTextToken.markType === 'par') {
           let style = EditionWitnessParagraphStyle.NORMAL;
@@ -2006,7 +2006,7 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
           break;
 
         case EditionMainTextTokenType.PARAGRAPH_END:
-          fmtText.push(newMarkToken(MarkType.PARAGRAPH, token.style));
+          fmtText.push(newMarkToken(MarkType.MARK_TYPE_PARAGRAPH, token.style));
       }
     });
     return getCleanFmtText(fmtText);

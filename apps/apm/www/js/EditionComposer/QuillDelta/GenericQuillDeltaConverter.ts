@@ -67,15 +67,15 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
           let headerStyle = '';
           switch (ops.attributes.header) {
             case 1:
-              headerStyle = ParagraphStyle.HEADING1;
+              headerStyle = ParagraphStyle.PAR_STYLE_H1;
               break;
 
             case 2:
-              headerStyle = ParagraphStyle.HEADING2;
+              headerStyle = ParagraphStyle.PAR_STYLE_H2;
               break;
 
             case 3:
-              headerStyle = ParagraphStyle.HEADING3;
+              headerStyle = ParagraphStyle.PAR_STYLE_H3;
               break;
           }
           return [newParagraphMark(headerStyle)];
@@ -110,17 +110,17 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
               continue;
             }
             if (ops.attributes.bold) {
-              fmtTextToken.fontWeight = FontWeight.BOLD;
+              fmtTextToken.fontWeight = FontWeight.FONT_WEIGHT_BOLD;
             }
             if (ops.attributes.italic) {
-              fmtTextToken.fontStyle = FontStyle.ITALIC;
+              fmtTextToken.fontStyle = FontStyle.FONT_STYLE_ITALIC;
             }
             if (ops.attributes.small) {
-              fmtTextToken.fontSize = FontSize.SMALL;
+              fmtTextToken.fontSize = FontSize.FONT_SIZE_SMALL;
             }
             if (ops.attributes.superscript) {
-              fmtTextToken.fontSize = FontSize.SUPERSCRIPT;
-              fmtTextToken.verticalAlign = VerticalAlign.SUPERSCRIPT;
+              fmtTextToken.fontSize = FontSize.FONT_SIZE_SUPERSCRIPT;
+              fmtTextToken.verticalAlign = VerticalAlign.VALIGN_SUPERSCRIPT;
             }
             let attributesToIgnore = ['bold', 'italic', 'small', 'superscript'];
             let attrKeys = Object.keys(ops.attributes);

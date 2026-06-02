@@ -16,6 +16,6 @@
  *
  */
 
-export const BASELINE = '';
-export const SUBSCRIPT = 'subscript';
-export const SUPERSCRIPT = 'superscript';
+export const VALIGN_BASELINE = '';
+export const VALIGN_SUBSCRIPT = 'subscript';
+export const VALIGN_SUPERSCRIPT = 'superscript';

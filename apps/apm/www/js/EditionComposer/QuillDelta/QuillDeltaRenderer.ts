@@ -72,28 +72,28 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
    */
   render(fmtText: FmtText, _lang = ''): QuillDelta {
     let deltaOps = fmtText.map((fmtTextToken): QuillDeltaInsertOp => {
-      if (fmtTextToken.type === FmtTextTokenType.EMPTY) {
+      if (fmtTextToken.type === FmtTextTokenType.TOKEN_TYPE_EMPTY) {
         return {insert: ''};
       }
-      if (fmtTextToken.type === FmtTextTokenType.GLUE) {
+      if (fmtTextToken.type === FmtTextTokenType.TOKEN_TYPE_GLUE) {
         let attr = deepCopy(this.options.defaultGlueAttrObject);
         return {insert: ' ', attributes: attr};
       }
 
-      if (fmtTextToken.type === FmtTextTokenType.MARK) {
+      if (fmtTextToken.type === FmtTextTokenType.TOKEN_TYPE_MARK) {
         switch (fmtTextToken.markType) {
-          case MarkType.PARAGRAPH:
+          case MarkType.MARK_TYPE_PARAGRAPH:
             let attributes: any = {};
             switch (fmtTextToken.style) {
-              case ParagraphStyle.HEADING1:
+              case ParagraphStyle.PAR_STYLE_H1:
                 attributes.header = 1;
                 break;
 
-              case ParagraphStyle.HEADING2:
+              case ParagraphStyle.PAR_STYLE_H2:
                 attributes.header = 2;
                 break;
 
-              case ParagraphStyle.HEADING3:
+              case ParagraphStyle.PAR_STYLE_H3:
                 attributes.header = 3;
                 break;
             }
@@ -111,17 +111,17 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
       let quillDeltaAttributeObject = deepCopy(this.options.defaultTextAttrObject);
       // console.log(`Using default text attr object`)
       // console.log(attr)
-      if (fmtTextToken.fontStyle === FontStyle.ITALIC) {
+      if (fmtTextToken.fontStyle === FontStyle.FONT_STYLE_ITALIC) {
         quillDeltaAttributeObject.italic = true;
       }
-      if (fmtTextToken.fontWeight === FontWeight.BOLD) {
+      if (fmtTextToken.fontWeight === FontWeight.FONT_WEIGHT_BOLD) {
         quillDeltaAttributeObject.bold = true;
       }
 
-      if ((fmtTextToken.fontSize ?? 1) < FontSize.NORMAL) {
+      if ((fmtTextToken.fontSize ?? 1) < FontSize.FONT_SIZE_DEFAULT) {
         // fontsize is a numeric value, but for Quill we only have a 'small' attribute
         switch (fmtTextToken.verticalAlign) {
-          case VerticalAlign.SUPERSCRIPT:
+          case VerticalAlign.VALIGN_SUPERSCRIPT:
             quillDeltaAttributeObject.superscript = true;
             break;
           default:

@@ -18,19 +18,19 @@
  *
  */
 
-import * as FmtTokenType from '../FmtTextTokenType.js';
-import * as VerticalAlign from '../VerticalAlign.js';
-import * as DefaultStyleSheet from '../../../lib/Typesetter2/Style/DefaultStyleSheet.js';
-import {Glue} from '../../../lib/Typesetter2/Glue.js';
-import {StyleSheet, StyleSheetDefinition} from '../../../lib/Typesetter2/Style/StyleSheet.js';
-import {TextBoxMeasurer} from '../../../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
-import {AsyncFmtTextRenderer} from './AsyncFmtTextRenderer.js';
-import * as FontStyle from '../FontStyle.js';
-import * as FontWeight from '../FontWeight.js';
-import {TextBox} from '../../../lib/Typesetter2/TextBox.js';
-import {ObjectFactory} from '../../../lib/Typesetter2/ObjectFactory.js';
-import {TypesetterItem} from "../../../lib/Typesetter2/TypesetterItem.js";
-import {FmtText} from "../FmtText.js";
+import * as DefaultStyleSheet from './Typesetter2/Style/DefaultStyleSheet.js';
+import {Glue} from './Typesetter2/Glue.js';
+import {StyleSheet, StyleSheetDefinition} from './Typesetter2/Style/StyleSheet.js';
+import {TextBoxMeasurer} from './Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
+import {AsyncFmtTextRenderer} from './FmtText/Renderer/AsyncFmtTextRenderer.js';
+import {TextBox} from './Typesetter2/TextBox.js';
+import {ObjectFactory} from './Typesetter2/ObjectFactory.js';
+import {TypesetterItem} from "./Typesetter2/TypesetterItem.js";
+import {FmtText} from "./FmtText/FmtText.js";
+import {FONT_STYLE_ITALIC} from "./FmtText/FontStyle.js";
+import {FONT_WEIGHT_BOLD} from "./FmtText/FontWeight.js";
+import {TOKEN_TYPE_EMPTY, TOKEN_TYPE_GLUE, TOKEN_TYPE_TEXT} from "./FmtText/FmtTextTokenType.js";
+import {VALIGN_BASELINE, VALIGN_SUBSCRIPT, VALIGN_SUPERSCRIPT} from "./FmtText/VerticalAlign.js";
 
 export interface Typesetter2StyleSheetTokenRendererOptions {
   styleSheet: StyleSheetDefinition;
@@ -64,11 +64,11 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
       let items = [];
       for (let tokenIndex = 0; tokenIndex < fmtText.length; tokenIndex++) {
         let token = fmtText[tokenIndex];
-        if (token.type === FmtTokenType.EMPTY) {
+        if (token.type === TOKEN_TYPE_EMPTY) {
           continue;
         }
         switch (token.type) {
-          case FmtTokenType.GLUE:
+          case TOKEN_TYPE_GLUE:
             let glueItem = await this.ss.apply(new Glue(), styleNames) as Glue;
             // token.space  controls glue, if it is a string other than '' then
             // glue should be set according to the named style given by it. However, this is not
@@ -81,26 +81,26 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             items.push(glueItem);
             break;
 
-          case FmtTokenType.TEXT:
+          case TOKEN_TYPE_TEXT:
             let textBox = await this.ss.apply((new TextBox().setText(token.text)), styleNames);
 
-            if (token.fontStyle === FontStyle.ITALIC) {
+            if (token.fontStyle === FONT_STYLE_ITALIC) {
               textBox.setFontStyle('italic');
             }
-            if (token.fontWeight === FontWeight.BOLD) {
+            if (token.fontWeight === FONT_WEIGHT_BOLD) {
               textBox.setFontWeight('bold');
             }
-            if ((token.fontSize ?? 1) < 1 && (token.verticalAlign === undefined || token.verticalAlign === VerticalAlign.BASELINE)) {
+            if ((token.fontSize ?? 1) < 1 && (token.verticalAlign === undefined || token.verticalAlign === VALIGN_BASELINE)) {
               // console.log(`Setting font size ${token.fontSize}`)
               textBox.setFontSize(textBox.getFontSize() * (token.fontSize ?? 1));
               // console.log(textBox)
             }
-            if (token.verticalAlign === VerticalAlign.SUPERSCRIPT) {
+            if (token.verticalAlign === VALIGN_SUPERSCRIPT) {
               // console.log(`Setting superscript`)
               textBox = await this.ss.apply(textBox, 'superscript');
               // console.log(textBox)
             }
-            if (token.verticalAlign === VerticalAlign.SUBSCRIPT) {
+            if (token.verticalAlign === VALIGN_SUBSCRIPT) {
               textBox = await this.ss.apply(textBox, 'subscript');
             }
             // apply classes

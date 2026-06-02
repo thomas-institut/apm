@@ -16,5 +16,5 @@
  *
  */
 
-export const PARAGRAPH = 'par';
-export const SECTION = 'section';
+export const MARK_TYPE_PARAGRAPH = 'par';
+export const MARK_TYPE_SECTION = 'section';

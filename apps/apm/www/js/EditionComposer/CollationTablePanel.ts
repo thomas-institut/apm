@@ -1393,7 +1393,7 @@ function fmtTextChangePlainText(fmtText: FmtText, newPlainText: string): FmtText
     return fromString(newPlainText);
   }
   let textTokens = fmtText.filter((token) => {
-    return token.type === FmtTextTokenType.TEXT;
+    return token.type === FmtTextTokenType.TOKEN_TYPE_TEXT;
   });
   if (textTokens.length === 0) {
     // no text

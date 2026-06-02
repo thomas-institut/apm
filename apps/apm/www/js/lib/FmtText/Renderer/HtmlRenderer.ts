@@ -37,15 +37,6 @@ export class HtmlRenderer extends FmtTextRenderer {
 
   constructor(options: HtmlRendererOptions = {}) {
     super();
-    // let optionsSpec = {
-    //   plainMode: {type: 'boolean', default: false},
-    //   tokenClasses: {type: 'array', default: ['token']},
-    //   tokenIndexClassPrefix: {type: 'string', default: 'token-'},
-    //   textClasses: {type: 'array', default: ['text']},
-    //   glueClasses: {type: 'array', default: ['glue']}
-    // };
-    // let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'FmtText Html Renderer'});
-    // this.options = oc.getCleanOptions(options);
     this.options = {
       plainMode: options.plainMode ?? false,
       tokenClasses: options.tokenClasses ?? ['token'],
@@ -66,7 +57,7 @@ export class HtmlRenderer extends FmtTextRenderer {
       let tokenClasses = this.options.tokenClasses;
       let classes = [];
       switch (t.type) {
-        case FmtTextTokenType.GLUE:
+        case FmtTextTokenType.TOKEN_TYPE_GLUE:
           tokenClasses = tokenClasses.concat(this.options.glueClasses);
           classes = getClassArrayForToken(this.options.tokenIndexClassPrefix, i, tokenClasses);
           if (classes.length === 0) {
@@ -74,7 +65,7 @@ export class HtmlRenderer extends FmtTextRenderer {
           }
           return `<span class="${classes.join(' ')}"> </span>`;
 
-        case FmtTextTokenType.TEXT :
+        case FmtTextTokenType.TOKEN_TYPE_TEXT :
           tokenClasses = tokenClasses.concat(this.options.textClasses);
           classes = getClassArrayForToken(this.options.tokenIndexClassPrefix, i, tokenClasses);
           let spanStart = '';
@@ -88,19 +79,19 @@ export class HtmlRenderer extends FmtTextRenderer {
             return `<b class="sigla">${t.text}</b>`;
           }
           let textWrappers = [];
-          if (t.fontStyle === FontStyle.ITALIC) {
+          if (t.fontStyle === FontStyle.FONT_STYLE_ITALIC) {
             textWrappers.push('i');
           }
-          if (t.fontWeight === FontWeight.BOLD) {
+          if (t.fontWeight === FontWeight.FONT_WEIGHT_BOLD) {
             textWrappers.push('b');
           }
-          if (t.verticalAlign === VerticalAlign.SUPERSCRIPT) {
+          if (t.verticalAlign === VerticalAlign.VALIGN_SUPERSCRIPT) {
             textWrappers.push('sup');
           }
-          if (t.verticalAlign === VerticalAlign.SUBSCRIPT) {
+          if (t.verticalAlign === VerticalAlign.VALIGN_SUBSCRIPT) {
             textWrappers.push('sub');
           }
-          if (t.fontSize === FontSize.SMALL && (t.verticalAlign === undefined || t.verticalAlign === VerticalAlign.BASELINE)) {
+          if (t.fontSize === FontSize.FONT_SIZE_SMALL && (t.verticalAlign === undefined || t.verticalAlign === VerticalAlign.VALIGN_BASELINE)) {
             textWrappers.push('small');
           }
           let startWrappers = '';
@@ -114,9 +105,7 @@ export class HtmlRenderer extends FmtTextRenderer {
           return `${spanStart}${startWrappers}${t.text}${endWrappers}${spanEnd}`;
       }
     }).join('');
-
   }
-
 }
 
 /**

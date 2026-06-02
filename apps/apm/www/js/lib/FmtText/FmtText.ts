@@ -171,8 +171,8 @@ export function newMarkToken(markType: string, style: string = ''): FmtTextMarkT
   return token;
 }
 
-export function newParagraphMark(style = ParagraphStyle.NORMAL): FmtTextMarkToken {
-  return newMarkToken(MarkType.PARAGRAPH, style);
+export function newParagraphMark(style = ParagraphStyle.PAR_STYLE_NORMAL): FmtTextMarkToken {
+  return newMarkToken(MarkType.MARK_TYPE_PARAGRAPH, style);
 }
 
 

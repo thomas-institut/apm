@@ -29,7 +29,7 @@ import {MultiToggle} from '@/widgets/MultiToggle';
 import {ApparatusCommon, MainTextTypesettingInfo} from './ApparatusCommon';
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType.js';
 import {Edition} from '@/Edition/Edition';
-import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
+import {HtmlRenderer, MARK_TYPE_PARAGRAPH, TOKEN_TYPE_GLUE, TOKEN_TYPE_MARK} from '@thomas-inst/fmt-text';
 import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
 import {arraysAreEqual, numericSort, varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import {CtData} from '@/CtData/CtData';
@@ -40,8 +40,6 @@ import {AsyncMyersDiff} from '@/toolbox/MyersDiff/AysncMyersDiff';
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark';
 import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle';
-import * as FmtTexTokenType from '@/lib/FmtText/FmtTextTokenType.js';
-import * as MarkType from '@/lib/FmtText/MarkType.js';
 
 import {WitnessToken} from '@/Witness/WitnessToken';
 import {CollapsePanel} from '@/widgets/CollapsePanel';
@@ -64,7 +62,7 @@ import {
   getPlainText,
   newGlueToken,
   newMarkToken
-} from "@/lib/FmtText/FmtText";
+} from "@thomas-inst/fmt-text";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {Apparatus} from "@/Edition/Apparatus";
 
@@ -1264,6 +1262,7 @@ export class MainTextPanel extends PanelWithToolbar {
       this.verbose && console.log(`Selection ${from} to ${to}, '${entryText}'`);
 
       this.options.editApparatusEntry(appIndex, from, to);
+      // @ts-ignore
       this._eleAddEntryDropdownButton().dropdown('hide');
 
     };
@@ -1290,6 +1289,7 @@ export class MainTextPanel extends PanelWithToolbar {
    */
   removeApparatusPopovers() {
     this.getTokensWithApparatusEntry().forEach((tokenIndex) => {
+      // @ts-ignore
       $(`${this.containerSelector} span.main-text-token-${tokenIndex}`).popover('dispose');
     });
   }
@@ -1306,6 +1306,7 @@ export class MainTextPanel extends PanelWithToolbar {
         return;
       }
       let mainTextToken = this.edition.mainText[tokenIndex];
+      // @ts-ignore
       element.popover('dispose').popover({
         content: () => {
           return this.getApparatusPopoverContent(tokenIndex, entries as [number, number][]);
@@ -1472,6 +1473,7 @@ export class MainTextPanel extends PanelWithToolbar {
       switch (this.currentEditMode) {
         case EDIT_MODE_APPARATUS:
           // this.verbose && console.log(`Mouse down on main text ${tokenIndex} token in apparatus edit mode`)
+          // @ts-ignore
           $(ev.target).popover('hide');
           this._setSelection(tokenIndex, tokenIndex);
           this.tokenIndexOne = tokenIndex;
@@ -1660,12 +1662,14 @@ export class MainTextPanel extends PanelWithToolbar {
       switch (this.currentEditMode) {
         case EDIT_MODE_OFF:
           this.hoverEntriesInApparatusPanels($(ev.target), false);
+          // @ts-ignore
           $(ev.target.closest('.main-text-token')).popover('hide');
           break;
 
         case EDIT_MODE_APPARATUS:
           ev.stopPropagation();
           this.hoverEntriesInApparatusPanels($(ev.target), false);
+          // @ts-ignore
           $(ev.target.closest('.main-text-token')).popover('hide');
           this.cursorInToken = false;
           break;
@@ -1846,11 +1850,11 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
       if (fmtTextToken.type === 'empty') {
         return;
       }
-      if (fmtTextToken.type === FmtTexTokenType.TOKEN_TYPE_GLUE) {
+      if (fmtTextToken.type === TOKEN_TYPE_GLUE) {
         witnessTokens.push((new WitnessToken()).setWhitespace());
         return;
       }
-      if (fmtTextToken.type === FmtTexTokenType.TOKEN_TYPE_MARK) {
+      if (fmtTextToken.type === TOKEN_TYPE_MARK) {
         // only paragraphs recognized for now
         if (fmtTextToken.markType === 'par') {
           let style = EditionWitnessParagraphStyle.NORMAL;
@@ -2006,7 +2010,7 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
           break;
 
         case EditionMainTextTokenType.PARAGRAPH_END:
-          fmtText.push(newMarkToken(MarkType.MARK_TYPE_PARAGRAPH, token.style));
+          fmtText.push(newMarkToken(MARK_TYPE_PARAGRAPH, token.style));
       }
     });
     return getCleanFmtText(fmtText);

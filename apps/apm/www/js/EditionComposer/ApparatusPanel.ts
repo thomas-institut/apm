@@ -48,7 +48,7 @@ import {
 } from "@/CtData/CtDataInterface";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
-import {CompactFmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
 import {NiceToggle, toggleEvent} from "@/widgets/NiceToggle";
 import {attributesModule, classModule, eventListenersModule, h, init, propsModule, styleModule, VNode} from 'snabbdom';
 
@@ -697,6 +697,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       if (this.currentSelectedEntryIndex !== -1) {
         this._selectLemma(-1);
       }
+      // @ts-ignore
       this._getAddEntryDropdownButton().dropdown('hide');
     };
   }
@@ -1706,6 +1707,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       let entryToEdit = this.buildEntryToEdit(this.currentSelectedEntryIndex);
       console.log(entryToEdit);
       this.options.editApparatusEntry(appIndex, entryToEdit.from, entryToEdit.to);
+      // @ts-ignore
       this._getAddEntryDropdownButton().dropdown('hide');
     };
   }

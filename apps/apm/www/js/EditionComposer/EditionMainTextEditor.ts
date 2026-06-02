@@ -26,7 +26,7 @@ import Superscript from './QuillBlots/Superscript';
 import NumberingLabel from './QuillBlots/NumberingLabel';
 import {QuillDeltaRenderer} from './QuillDelta/QuillDeltaRenderer';
 import {GenericQuillDeltaConverter} from './QuillDelta/GenericQuillDeltaConverter';
-import {CompactFmtText, fromCompactFmtText} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, fromCompactFmtText} from "@thomas-inst/fmt-text";
 import {QuillRange} from "@/lib/types/Quill";
 
 

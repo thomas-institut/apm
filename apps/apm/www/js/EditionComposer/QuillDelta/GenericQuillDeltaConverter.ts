@@ -18,14 +18,22 @@
 
 import {QuillDeltaConverter, QuillDeltaConverterOptions} from './QuillDeltaConverter';
 import {varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
-import * as FontWeight from '@/lib/FmtText/FontWeight.js';
-import * as FontStyle from '@/lib/FmtText/FontStyle.js';
-import * as FontSize from '@/lib/FmtText/FontSize.js';
-import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.js';
-import * as ParagraphStyle from '@/lib/FmtText/ParagraphStyle.js';
 import {rTrimNewlineCharacters} from '@/toolbox/Util';
 import {QuillDelta} from "@/lib/types/Quill";
-import {FmtText, fromString, getNormalizedFmtText, newParagraphMark} from "@/lib/FmtText/FmtText";
+import {
+  FmtText,
+  FONT_SIZE_SMALL,
+  FONT_SIZE_SUPERSCRIPT,
+  FONT_STYLE_ITALIC,
+  FONT_WEIGHT_BOLD,
+  fromString,
+  getNormalizedFmtText,
+  newParagraphMark,
+  PAR_STYLE_H1,
+  PAR_STYLE_H2,
+  PAR_STYLE_H3,
+  VALIGN_SUPERSCRIPT
+} from "@thomas-inst/fmt-text";
 
 
 type AttrToClassTranslator = (attributeValue: any, currentClassList: string) => string
@@ -67,15 +75,15 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
           let headerStyle = '';
           switch (ops.attributes.header) {
             case 1:
-              headerStyle = ParagraphStyle.PAR_STYLE_H1;
+              headerStyle = PAR_STYLE_H1;
               break;
 
             case 2:
-              headerStyle = ParagraphStyle.PAR_STYLE_H2;
+              headerStyle = PAR_STYLE_H2;
               break;
 
             case 3:
-              headerStyle = ParagraphStyle.PAR_STYLE_H3;
+              headerStyle = PAR_STYLE_H3;
               break;
           }
           return [newParagraphMark(headerStyle)];
@@ -110,17 +118,17 @@ export class GenericQuillDeltaConverter extends QuillDeltaConverter {
               continue;
             }
             if (ops.attributes.bold) {
-              fmtTextToken.fontWeight = FontWeight.FONT_WEIGHT_BOLD;
+              fmtTextToken.fontWeight = FONT_WEIGHT_BOLD;
             }
             if (ops.attributes.italic) {
-              fmtTextToken.fontStyle = FontStyle.FONT_STYLE_ITALIC;
+              fmtTextToken.fontStyle = FONT_STYLE_ITALIC;
             }
             if (ops.attributes.small) {
-              fmtTextToken.fontSize = FontSize.FONT_SIZE_SMALL;
+              fmtTextToken.fontSize = FONT_SIZE_SMALL;
             }
             if (ops.attributes.superscript) {
-              fmtTextToken.fontSize = FontSize.FONT_SIZE_SUPERSCRIPT;
-              fmtTextToken.verticalAlign = VerticalAlign.VALIGN_SUPERSCRIPT;
+              fmtTextToken.fontSize = FONT_SIZE_SUPERSCRIPT;
+              fmtTextToken.verticalAlign = VALIGN_SUPERSCRIPT;
             }
             let attributesToIgnore = ['bold', 'italic', 'small', 'superscript'];
             let attrKeys = Object.keys(ops.attributes);

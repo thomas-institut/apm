@@ -58,7 +58,7 @@ import {FULL_TX} from '@/Witness/WitnessTokenClass';
 import {CtData} from '@/CtData/CtData';
 import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser';
 import {capitalizeFirstLetter} from '@/toolbox/Util';
-import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
+import {HtmlRenderer} from '@thomas-inst/fmt-text';
 import {Punctuation} from '@/defaults/Punctuation';
 import {ToolbarCharacter, toolbarCharactersDefinition,} from '@/EditionComposer/ToolbarCharactersDefinition';
 import {SimpleConfirmDialog} from '@/pages/common/SimpleConfirmDialog';
@@ -70,8 +70,8 @@ import {
   WitnessTokenInterface
 } from "@/CtData/CtDataInterface";
 
-import {FmtText, fromString, getPlainText} from "@/lib/FmtText/FmtText";
-import * as FmtTextTokenType from "@/lib/FmtText/FmtTextTokenType";
+import {FmtText, fromString, getPlainText} from "@thomas-inst/fmt-text";
+import * as FmtTextTokenType from "@thomas-inst/fmt-text/FmtTextTokenType";
 import {deepCopy} from "@/toolbox/Util";
 import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
@@ -432,6 +432,7 @@ export class CollationTablePanel extends PanelWithToolbar {
         return;
       }
       this.options.editApparatusEntry(appIndex, this.selectedColumnsFrom, this.selectedColumnsTo);
+      // @ts-ignore
       $('#ct-panel-add-entry-dropdown').dropdown('hide');
     };
   }
@@ -489,6 +490,7 @@ export class CollationTablePanel extends PanelWithToolbar {
       let statusSpan = $(`${modalSelector} .status-span`);
 
       cancelButton.on('click', () => {
+        // @ts-ignore
         $(modalSelector).modal('hide');
       });
 
@@ -528,13 +530,16 @@ export class CollationTablePanel extends PanelWithToolbar {
         submitButton.show();
         cancelButton.show();
         statusSpan.html('');
+        // @ts-ignore
         $(modalSelector).modal('hide');
       });
 
 
+      // @ts-ignore
       $(modalSelector).modal({
         backdrop: 'static', keyboard: false, show: false
       });
+      // @ts-ignore
       $(modalSelector).modal('show');
     };
   }
@@ -718,6 +723,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     // hide popovers before moving cells
     this.tableEditor.on(CellPreShiftEvent, (data: any) => {
       for (const selector of data.detail.selectors) {
+        // @ts-ignore
         $(selector).popover('hide');
       }
     });
@@ -1344,6 +1350,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   genOnEnterCellEditMode() {
     return (row: number, col: number) => {
       this.verbose && console.log(`Enter cell edit ${row}:${col}`);
+      // @ts-ignore
       $(this.tableEditor.getTdSelector(row, col)).popover('hide').popover('disable');
       return true;
     };
@@ -1352,6 +1359,7 @@ export class CollationTablePanel extends PanelWithToolbar {
   genOnLeaveCellEditMode() {
     return (row: number, col: number) => {
       this.verbose && console.log(`Leave cell edit ${row}:${col}`);
+      // @ts-ignore
       $(this.tableEditor.getTdSelector(row, col)).popover('enable');
       this.restoreHiddenPopovers();
     };
@@ -1370,10 +1378,12 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   private popoversTurnOff() {
     this.popoversAreOn = false;
+    // @ts-ignore
     $(this.getContentAreaSelector()).popover('dispose');
   }
 
   private popoversSetup() {
+    // @ts-ignore
     $(this.getContentAreaSelector()).popover({
       trigger: "hover",
       selector: '.withpopover',

@@ -2,7 +2,7 @@
 
 
 import {MetadataInterface} from "../Edition/EditionInterface.js";
-import {CompactFmtText, FmtText} from "../lib/FmtText/FmtText";
+import {CompactFmtText, FmtText} from "@thomas-inst/fmt-text";
 
 export interface CtDataInterface {
   lang: string;

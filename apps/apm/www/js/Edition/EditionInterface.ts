@@ -1,7 +1,7 @@
 // noinspection ES6PreferShortImport
 
 import {FoliationChangeInfoInterface} from "./FoliationChangeInfoInterface.js";
-import {CompactFmtText, FmtText} from "../lib/FmtText/FmtText.js";
+import {CompactFmtText, FmtText} from "@thomas-inst/fmt-text";
 import {SiglaGroupInterface, WitnessDataItemInterface} from "../CtData/CtDataInterface.js";
 
 export interface EditionInterface {

@@ -4,7 +4,7 @@ import * as SubEntryType from './SubEntryType.js';
 import {numericFieldSort} from '../lib/ToolBox/ArrayUtil.js';
 import {ApparatusSubEntry} from './ApparatusSubEntry.js';
 import {ApparatusEntryInterface, cloneMetadata, MetadataInterface} from "./EditionInterface.js";
-import {CompactFmtText} from "../lib/FmtText/FmtText.js";
+import {CompactFmtText} from "@thomas-inst/fmt-text";
 
 
 export class ApparatusEntry implements ApparatusEntryInterface {

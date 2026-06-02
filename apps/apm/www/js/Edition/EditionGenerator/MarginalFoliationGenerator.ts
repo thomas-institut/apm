@@ -7,7 +7,7 @@ import {NumeralSystems} from '@/toolbox/NumeralSystems';
 import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
 import {MainTextToken} from "../MainTextToken";
-import {FmtText, fromString} from "@/lib/FmtText/FmtText.js";
+import {FmtText, fromString} from "@thomas-inst/fmt-text";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
 

@@ -16,17 +16,17 @@
  *
  */
 
-import {FmtTextRenderer} from '@/lib/FmtText/Renderer/FmtTextRenderer';
-import * as FmtTextTokenType from '@/lib/FmtText/FmtTextTokenType.js';
-import * as FontStyle from '@/lib/FmtText/FontStyle.js';
-import * as FontSize from '@/lib/FmtText/FontSize.js';
-import * as FontWeight from '@/lib/FmtText/FontWeight.js';
-import * as VerticalAlign from '@/lib/FmtText/VerticalAlign.js';
-import * as MarkType from '@/lib/FmtText/MarkType.js';
-import * as ParagraphStyle from '@/lib/FmtText/ParagraphStyle.js';
+import {FmtTextRenderer} from '@thomas-inst/fmt-text/FmtTextRenderer';
 import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {deepCopy} from '@/toolbox/Util';
-import {FmtText} from "@/lib/FmtText/FmtText.js";
+import {
+  FmtText, FONT_SIZE_DEFAULT, FONT_STYLE_ITALIC, FONT_WEIGHT_BOLD,
+  MARK_TYPE_PARAGRAPH,
+  PAR_STYLE_H1, PAR_STYLE_H2, PAR_STYLE_H3,
+  TOKEN_TYPE_EMPTY,
+  TOKEN_TYPE_GLUE,
+  TOKEN_TYPE_MARK, VALIGN_SUPERSCRIPT
+} from "@thomas-inst/fmt-text";
 import {QuillDelta, QuillDeltaInsertOp} from "@/lib/types/Quill";
 
 
@@ -72,28 +72,28 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
    */
   render(fmtText: FmtText, _lang = ''): QuillDelta {
     let deltaOps = fmtText.map((fmtTextToken): QuillDeltaInsertOp => {
-      if (fmtTextToken.type === FmtTextTokenType.TOKEN_TYPE_EMPTY) {
+      if (fmtTextToken.type === TOKEN_TYPE_EMPTY) {
         return {insert: ''};
       }
-      if (fmtTextToken.type === FmtTextTokenType.TOKEN_TYPE_GLUE) {
+      if (fmtTextToken.type === TOKEN_TYPE_GLUE) {
         let attr = deepCopy(this.options.defaultGlueAttrObject);
         return {insert: ' ', attributes: attr};
       }
 
-      if (fmtTextToken.type === FmtTextTokenType.TOKEN_TYPE_MARK) {
+      if (fmtTextToken.type === TOKEN_TYPE_MARK) {
         switch (fmtTextToken.markType) {
-          case MarkType.MARK_TYPE_PARAGRAPH:
+          case MARK_TYPE_PARAGRAPH:
             let attributes: any = {};
             switch (fmtTextToken.style) {
-              case ParagraphStyle.PAR_STYLE_H1:
+              case PAR_STYLE_H1:
                 attributes.header = 1;
                 break;
 
-              case ParagraphStyle.PAR_STYLE_H2:
+              case PAR_STYLE_H2:
                 attributes.header = 2;
                 break;
 
-              case ParagraphStyle.PAR_STYLE_H3:
+              case PAR_STYLE_H3:
                 attributes.header = 3;
                 break;
             }
@@ -111,17 +111,17 @@ export class QuillDeltaRenderer extends FmtTextRenderer {
       let quillDeltaAttributeObject = deepCopy(this.options.defaultTextAttrObject);
       // console.log(`Using default text attr object`)
       // console.log(attr)
-      if (fmtTextToken.fontStyle === FontStyle.FONT_STYLE_ITALIC) {
+      if (fmtTextToken.fontStyle === FONT_STYLE_ITALIC) {
         quillDeltaAttributeObject.italic = true;
       }
-      if (fmtTextToken.fontWeight === FontWeight.FONT_WEIGHT_BOLD) {
+      if (fmtTextToken.fontWeight === FONT_WEIGHT_BOLD) {
         quillDeltaAttributeObject.bold = true;
       }
 
-      if ((fmtTextToken.fontSize ?? 1) < FontSize.FONT_SIZE_DEFAULT) {
+      if ((fmtTextToken.fontSize ?? 1) < FONT_SIZE_DEFAULT) {
         // fontsize is a numeric value, but for Quill we only have a 'small' attribute
         switch (fmtTextToken.verticalAlign) {
-          case VerticalAlign.VALIGN_SUPERSCRIPT:
+          case VALIGN_SUPERSCRIPT:
             quillDeltaAttributeObject.superscript = true;
             break;
           default:

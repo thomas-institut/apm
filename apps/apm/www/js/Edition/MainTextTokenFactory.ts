@@ -20,7 +20,7 @@
 
 import {MainTextToken} from './MainTextToken.js';
 import * as EditionMainTextTokenType from './MainTextTokenType.js';
-import {FmtText, fromString, getCleanFmtText, newGlueToken} from "../lib/FmtText/FmtText";
+import {FmtText, fromString, getCleanFmtText, newGlueToken} from "@thomas-inst/fmt-text";
 import {MainTextTokenType} from "@/Edition/EditionInterface";
 
 export class MainTextTokenFactory {

@@ -27,7 +27,7 @@ import Superscript from './QuillBlots/Superscript';
 import Sigla from './QuillBlots/Sigla';
 import {QuillDeltaRenderer} from './QuillDelta/QuillDeltaRenderer';
 import {QuillDelta, QuillRange} from "@/lib/types/Quill";
-import {CompactFmtText, FmtText, fromCompactFmtText, getPlainText} from "@/lib/FmtText/FmtText";
+import {CompactFmtText, FmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
 import {CustomApparatusQuillDeltaConverter} from "@/EditionComposer/QuillDelta/CustomApparatusQuillDeltaConverter";
 
 

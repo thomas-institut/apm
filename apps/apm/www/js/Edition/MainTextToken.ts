@@ -18,7 +18,7 @@
  *
  */
 
-import {FmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
+import {FmtText, fromString, getPlainText} from "@thomas-inst/fmt-text";
 import {MainTextTokenInterface, MainTextTokenType} from "./EditionInterface";
 
 

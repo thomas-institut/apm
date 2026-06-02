@@ -18,7 +18,7 @@
 
 
 import {QuillDelta} from "@/lib/types/Quill";
-import {FmtText} from "@/lib/FmtText/FmtText";
+import {FmtText} from "@thomas-inst/fmt-text";
 
 
 export interface QuillDeltaConverterOptions {

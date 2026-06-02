@@ -22,15 +22,21 @@ import * as DefaultStyleSheet from './Typesetter2/Style/DefaultStyleSheet.js';
 import {Glue} from './Typesetter2/Glue.js';
 import {StyleSheet, StyleSheetDefinition} from './Typesetter2/Style/StyleSheet.js';
 import {TextBoxMeasurer} from './Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
-import {AsyncFmtTextRenderer} from './FmtText/Renderer/AsyncFmtTextRenderer.js';
+import {
+  AsyncFmtTextRenderer,
+  FmtText,
+  FONT_STYLE_ITALIC,
+  FONT_WEIGHT_BOLD,
+  TOKEN_TYPE_EMPTY,
+  TOKEN_TYPE_GLUE,
+  TOKEN_TYPE_TEXT,
+  VALIGN_BASELINE,
+  VALIGN_SUBSCRIPT,
+  VALIGN_SUPERSCRIPT
+} from '@thomas-inst/fmt-text';
 import {TextBox} from './Typesetter2/TextBox.js';
 import {ObjectFactory} from './Typesetter2/ObjectFactory.js';
 import {TypesetterItem} from "./Typesetter2/TypesetterItem.js";
-import {FmtText} from "./FmtText/FmtText.js";
-import {FONT_STYLE_ITALIC} from "./FmtText/FontStyle.js";
-import {FONT_WEIGHT_BOLD} from "./FmtText/FontWeight.js";
-import {TOKEN_TYPE_EMPTY, TOKEN_TYPE_GLUE, TOKEN_TYPE_TEXT} from "./FmtText/FmtTextTokenType.js";
-import {VALIGN_BASELINE, VALIGN_SUBSCRIPT, VALIGN_SUPERSCRIPT} from "./FmtText/VerticalAlign.js";
 
 export interface Typesetter2StyleSheetTokenRendererOptions {
   styleSheet: StyleSheetDefinition;
@@ -51,7 +57,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
       textBoxMeasurer: options.textBoxMeasurer,
       defaultTextDirection: options.defaultTextDirection,
       debug: options.debug ?? true
-    }
+    };
 
     // this.options = oc.getCleanOptions(options);
     this.ss = new StyleSheet(this.options.styleSheet);

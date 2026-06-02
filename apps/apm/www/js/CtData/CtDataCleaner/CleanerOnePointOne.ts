@@ -25,7 +25,7 @@ import {CollationTableConsistencyCleaner} from './CollationTableConsistencyClean
 import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
 import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
 import {CtDataInterface} from "../CtDataInterface";
-import {fromString} from "@/lib/FmtText/FmtText";
+import {fromString} from "@thomas-inst/fmt-text";
 
 export class CleanerOnePointOne extends CtDataCleaner {
   private ctData!: CtDataInterface;

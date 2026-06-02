@@ -19,7 +19,7 @@
 import * as WitnessTokenType from './WitnessTokenType.js';
 import * as NormalizationSource from '../constants/NormalizationSource.js';
 import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
-import {FmtText} from "@/lib/FmtText/FmtText";
+import {FmtText} from "@thomas-inst/fmt-text";
 
 /**
  * A token that can appear in a witness

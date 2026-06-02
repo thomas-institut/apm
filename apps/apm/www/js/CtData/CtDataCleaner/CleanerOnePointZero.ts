@@ -20,7 +20,7 @@ import * as CollationTableType from '../../constants/CollationTableType';
 import {CtData} from '../CtData';
 import {CtDataCleaner} from './CtDataCleaner';
 import {deepCopy} from '@/toolbox/Util';
-import {DEFAULT_GLUE_SPACE} from '@/lib/FmtText/FmtText';
+import {DEFAULT_GLUE_SPACE} from '@thomas-inst/fmt-text';
 import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner';
 import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
 import {EDITION} from '@/constants/CollationTableType';

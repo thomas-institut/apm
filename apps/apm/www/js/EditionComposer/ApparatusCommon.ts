@@ -19,7 +19,7 @@
 
 import * as ApparatusSubEntryType from '../Edition/SubEntryType';
 import {NumeralSystems} from '@/toolbox/NumeralSystems';
-import {HtmlRenderer} from '@/lib/FmtText/Renderer/HtmlRenderer';
+import {HtmlRenderer} from '@thomas-inst/fmt-text';
 import {escapeHtml, trimWhiteSpace} from '@/toolbox/Util';
 import {ApparatusUtil} from '@/Edition/ApparatusUtil';
 import * as MainTextTokenType from '@/Edition/MainTextTokenType';

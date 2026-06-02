@@ -34,7 +34,7 @@ import {WitnessDataItem} from '../WitnessDataItem';
 import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {MainTextToken} from "../MainTextToken.js";
 import {Apparatus} from "@/Edition/Apparatus";
-import {fromString} from "@/lib/FmtText/FmtText";
+import {fromString} from "@thomas-inst/fmt-text";
 import {Matrix} from "@/lib/Matrix";
 import {EMPTY} from "@/Witness/WitnessTokenType";
 

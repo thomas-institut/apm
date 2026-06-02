@@ -17,6 +17,7 @@
     "body-parser": "^2.2.0",
     "express": "^5.2",
     "node-gtk": "^1.0.0",
+    "@thomas-inst/fmt-text" : "1.1.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {

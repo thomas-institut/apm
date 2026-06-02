@@ -55,7 +55,7 @@ import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface}
 import {Dimension} from "../lib/Typesetter2/Dimension.js";
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
-import {FmtText, fromCompactFmtText, fromString, getPlainText} from "../lib/FmtText/FmtText.js";
+import {FmtText, fromCompactFmtText, fromString, getPlainText} from "@thomas-inst/fmt-text";
 import {Marginalia} from "../lib/Typesetter2/BasicTypesetter.js";
 import {HyphenationLanguage} from "../lib/Typesetter2/Hyphenator/Hyphenator.js";
 import {ItemArray} from "../lib/Typesetter2/ItemArray.js";

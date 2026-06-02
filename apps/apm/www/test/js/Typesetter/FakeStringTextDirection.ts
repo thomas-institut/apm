@@ -1,9 +1,9 @@
-import {BidiDisplayOrder, IntrinsicTextDirection} from "@/lib/Typesetter2/Bidi/BidiDisplayOrder";
+import {BidiDisplayOrder, IntrinsicTextDirection} from "@/lib/Typesetter/Bidi/BidiDisplayOrder";
 import {isAllUpperCase, isWhiteSpace} from "@/toolbox/Util";
-import {TypesetterItem} from "@/lib/Typesetter2/TypesetterItem";
-import {TextBox} from "@/lib/Typesetter2/TextBox";
-import {ItemArrayWithBidiOrderInfo} from "@/lib/Typesetter2/LineBreaker/FirstFitLineBreaker";
-import {createItemArrayFromString} from "@/lib/Typesetter2/ItemArrayFromString";
+import {TypesetterItem} from "@/lib/Typesetter/TypesetterItem";
+import {TextBox} from "@/lib/Typesetter/TextBox";
+import {ItemArrayWithBidiOrderInfo} from "@/lib/Typesetter/LineBreaker/FirstFitLineBreaker";
+import {createItemArrayFromString} from "@/lib/Typesetter/ItemArrayFromString";
 
 
 /**

@@ -1,12 +1,12 @@
 import {describe, expect, it} from "vitest";
 import {getFakeBidiOrder, getFakeItemArrayWithBidiInfoFromString} from "./FakeStringTextDirection";
-import {compactItemArray} from "@/lib/Typesetter2/Compactor/CompactItemArray";
-import {TextBox} from "@/lib/Typesetter2/TextBox";
-import {MergedItem, SourceItems} from "@/lib/Typesetter2/MetadataKey";
-import {ObjectFactory} from "@/lib/Typesetter2/ObjectFactory";
-import {TypesetterItem} from "@/lib/Typesetter2/TypesetterItem";
-import {createItemArrayFromString} from "@/lib/Typesetter2/ItemArrayFromString";
-import {ItemArrayWithBidiOrderInfo} from "@/lib/Typesetter2/LineBreaker/FirstFitLineBreaker";
+import {compactItemArray} from "@/lib/Typesetter/Compactor/CompactItemArray";
+import {TextBox} from "@/lib/Typesetter/TextBox";
+import {MergedItem, SourceItems} from "@/lib/Typesetter/MetadataKey";
+import {ObjectFactory} from "@/lib/Typesetter/ObjectFactory";
+import {TypesetterItem} from "@/lib/Typesetter/TypesetterItem";
+import {createItemArrayFromString} from "@/lib/Typesetter/ItemArrayFromString";
+import {ItemArrayWithBidiOrderInfo} from "@/lib/Typesetter/LineBreaker/FirstFitLineBreaker";
 
 interface CompactTestCaseData {
   testStrings: string[];

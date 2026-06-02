@@ -25,10 +25,10 @@ import {TypesetterDocument} from './TypesetterDocument.js';
  */
 
 
-export class Typesetter2 {
+export class Typesetter {
 
   constructor() {
-    if (this.constructor === Typesetter2) {
+    if (this.constructor === Typesetter) {
       throw new Error("Abstract classes cannot be instantiated");
     }
   }

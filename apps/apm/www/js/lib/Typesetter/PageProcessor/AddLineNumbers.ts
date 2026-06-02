@@ -8,7 +8,7 @@ import * as TypesetterItemDirection from '../TypesetterItemDirection.js';
 import {TextBoxFactory} from '../TextBoxFactory.js';
 import {Glue} from '../Glue.js';
 import {TextBoxMeasurer} from '../TextBoxMeasurer/TextBoxMeasurer.js';
-import {Typesetter2} from '../Typesetter2.js';
+import {Typesetter} from '../Typesetter.js';
 import {deepCopy} from '../../../toolbox/Util.js';
 import {TypesetterPage} from "../TypesetterPage.js";
 import {LineNumberData, MainTextLineData} from "../MainTextLineData.js";
@@ -47,7 +47,7 @@ export class AddLineNumbers extends PageProcessor {
       xPosition: 20,
       align: 'right',
       fontFamily: 'FreeSerif',
-      fontSize: Typesetter2.pt2px(10),
+      fontSize: Typesetter.pt2px(10),
       numeralSystem: 'WesternArabic' as NumeralSystem,
       debug: false,
     };

@@ -18,10 +18,10 @@
  *
  */
 
-import * as DefaultStyleSheet from './Typesetter2/Style/DefaultStyleSheet.js';
-import {Glue} from './Typesetter2/Glue.js';
-import {StyleSheet, StyleSheetDefinition} from './Typesetter2/Style/StyleSheet.js';
-import {TextBoxMeasurer} from './Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
+import * as DefaultStyleSheet from '@/lib/Typesetter/Style/DefaultStyleSheet.js';
+import {Glue} from '@/lib/Typesetter/Glue.js';
+import {StyleSheet, StyleSheetDefinition} from '@/lib/Typesetter/Style/StyleSheet.js';
+import {TextBoxMeasurer} from '@/lib/Typesetter/TextBoxMeasurer/TextBoxMeasurer.js';
 import {
   AsyncFmtTextRenderer,
   FmtText,
@@ -34,9 +34,9 @@ import {
   VALIGN_SUBSCRIPT,
   VALIGN_SUPERSCRIPT
 } from '@thomas-inst/fmt-text';
-import {TextBox} from './Typesetter2/TextBox.js';
-import {ObjectFactory} from './Typesetter2/ObjectFactory.js';
-import {TypesetterItem} from "./Typesetter2/TypesetterItem.js";
+import {TextBox} from '@/lib/Typesetter/TextBox.js';
+import {ObjectFactory} from '@/lib/Typesetter/ObjectFactory.js';
+import {TypesetterItem} from "@/lib/Typesetter/TypesetterItem.js";
 
 export interface Typesetter2StyleSheetTokenRendererOptions {
   styleSheet: StyleSheetDefinition;
@@ -122,7 +122,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
             items.push(textBox);
         }
       }
-      // At this point we have a 1 to 1 mapping of the fmtText item into Typesetter2 items,
+      // At this point we have a 1 to 1 mapping of the fmtText item into Typesetter items,
       // we need to split the text boxes so that each initial and final punctuation character gets its own box.
       // This is necessary for the Bidi algorithm to properly work
       let outputItems: TypesetterItem[] = [];

@@ -1,7 +1,7 @@
 // noinspection ES6PreferShortImport
 
 import {trimWhiteSpace} from '../../toolbox/Util.js';
-import {Typesetter2} from './Typesetter2.js';
+import {Typesetter} from './Typesetter.js';
 
 
 export class Dimension {
@@ -43,11 +43,11 @@ export class Dimension {
   }
 
   static str2pt(someVariable: any, emSize = 0, spaceSize = 0) {
-    return Typesetter2.px2pt(this.str2px(someVariable, emSize, spaceSize));
+    return Typesetter.px2pt(this.str2px(someVariable, emSize, spaceSize));
   }
 
   static str2cm(someVariable: any, emSize = 0, spaceSize = 0) {
-    return Typesetter2.px2cm(this.str2px(someVariable, emSize, spaceSize));
+    return Typesetter.px2cm(this.str2px(someVariable, emSize, spaceSize));
   }
 
   /**

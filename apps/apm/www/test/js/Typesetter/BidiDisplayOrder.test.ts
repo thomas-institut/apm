@@ -1,6 +1,6 @@
-import {BidiDisplayOrder, IntrinsicTextDirection} from '@/lib/Typesetter2/Bidi/BidiDisplayOrder'
+import {BidiDisplayOrder, IntrinsicTextDirection} from '@/lib/Typesetter/Bidi/BidiDisplayOrder'
 import { describe, test, expect } from 'vitest'
-import {BidiOrderInfo} from "@/lib/Typesetter2/Bidi/BidiOrderInfo";
+import {BidiOrderInfo} from "@/lib/Typesetter/Bidi/BidiOrderInfo";
 import {getFakeStringTextDirection} from "./FakeStringTextDirection";
 
 

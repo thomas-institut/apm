@@ -1,11 +1,11 @@
-import { Glue } from '@/lib/Typesetter2/Glue'
-import { Penalty } from '@/lib/Typesetter2/Penalty'
-import { ItemList } from '@/lib/Typesetter2/ItemList'
-import {FontConversions} from '@/lib/Typesetter2/FontConversions'
-import { TextBox } from '@/lib/Typesetter2/TextBox'
-import { TextBoxFactory } from '@/lib/Typesetter2/TextBoxFactory'
+import { Glue } from '@/lib/Typesetter/Glue'
+import { Penalty } from '@/lib/Typesetter/Penalty'
+import { ItemList } from '@/lib/Typesetter/ItemList'
+import {FontConversions} from '@/lib/Typesetter/FontConversions'
+import { TextBox } from '@/lib/Typesetter/TextBox'
+import { TextBoxFactory } from '@/lib/Typesetter/TextBoxFactory'
 import { describe, test, expect } from 'vitest'
-import {FontConversionDefinition} from "@/lib/Typesetter2/Style/StyleSheet";
+import {FontConversionDefinition} from "@/lib/Typesetter/Style/StyleSheet";
 
 const emptyFontConversionsDef: FontConversionDefinition[] = []
 const multipleFontConvDef: FontConversionDefinition[] =[

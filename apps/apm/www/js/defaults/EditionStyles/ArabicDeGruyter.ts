@@ -1,6 +1,6 @@
 // noinspection ES6PreferShortImport
 
-import {StyleSheetDefinition} from "../../lib/Typesetter2/Style/StyleSheet.js";
+import {StyleSheetDefinition} from "@/lib/Typesetter/Style/StyleSheet.js";
 export const arabicDeGruyter: StyleSheetDefinition = {
   _metaData: {
     name: 'De Gruyter AdobeArabic',

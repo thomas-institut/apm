@@ -19,46 +19,46 @@
  */
 
 import {MainText} from './MainText.js';
-import {TextBoxMeasurer} from '../lib/Typesetter2/TextBoxMeasurer/TextBoxMeasurer.js';
-import {Box} from '../lib/Typesetter2/Box.js';
-import {ItemList} from '../lib/Typesetter2/ItemList.js';
-import * as TypesetterItemDirection from '../lib/Typesetter2/TypesetterItemDirection.js';
-import * as MetadataKey from '../lib/Typesetter2/MetadataKey.js';
-import * as ListType from '../lib/Typesetter2/ListType.js';
-import {Glue} from '../lib/Typesetter2/Glue.js';
+import {TextBoxMeasurer} from '@/lib/Typesetter/TextBoxMeasurer/TextBoxMeasurer.js';
+import {Box} from '@/lib/Typesetter/Box.js';
+import {ItemList} from '@/lib/Typesetter/ItemList.js';
+import * as TypesetterItemDirection from '@/lib/Typesetter/TypesetterItemDirection.js';
+import * as MetadataKey from '@/lib/Typesetter/MetadataKey.js';
+import * as ListType from '@/lib/Typesetter/ListType.js';
+import {Glue} from '@/lib/Typesetter/Glue.js';
 import * as MainTextTokenType from './MainTextTokenType.js';
-import {TextBox} from '../lib/Typesetter2/TextBox.js';
-import {GoodPointForBreak, InfinitePenalty, Penalty, ReallyGoodPointForBreak} from '../lib/Typesetter2/Penalty.js';
+import {TextBox} from '@/lib/Typesetter/TextBox.js';
+import {GoodPointForBreak, InfinitePenalty, Penalty, ReallyGoodPointForBreak} from '@/lib/Typesetter/Penalty.js';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
 import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.js';
-import {ObjectFactory} from '../lib/Typesetter2/ObjectFactory.js';
+import {ObjectFactory} from '@/lib/Typesetter/ObjectFactory.js';
 import {uniq} from '../lib/ToolBox/ArrayUtil.js';
 import {Typesetter2StyleSheetTokenRenderer} from '../lib/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.js';
 import {NumeralSystems} from '../toolbox/NumeralSystems.js';
-import {TextBoxFactory} from '../lib/Typesetter2/TextBoxFactory.js';
+import {TextBoxFactory} from '@/lib/Typesetter/TextBoxFactory.js';
 import {SiglaGroup} from './SiglaGroup.js';
 import {
   FontConversionDefinition,
   ParagraphStyleDef,
   StyleSheet,
   StyleSheetDefinition
-} from '../lib/Typesetter2/Style/StyleSheet.js';
-import {FontConversions} from '../lib/Typesetter2/FontConversions.js';
+} from '@/lib/Typesetter/Style/StyleSheet.js';
+import {FontConversions} from '@/lib/Typesetter/FontConversions.js';
 import {ItemLineInfo} from './ItemLineInfo.js';
-import {TypesetterItem} from '../lib/Typesetter2/TypesetterItem.js';
+import {TypesetterItem} from '@/lib/Typesetter/TypesetterItem.js';
 import {MARGINALIA} from '../constants/ApparatusType.js';
 import {AUTO_FOLIATION} from './SubEntryType.js';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.js";
 import {ApparatusEntry} from './ApparatusEntry.js';
 import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface} from "./EditionInterface.js";
-import {Dimension} from "../lib/Typesetter2/Dimension.js";
+import {Dimension} from "@/lib/Typesetter/Dimension.js";
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
 import {FmtText, fromCompactFmtText, fromString, getPlainText} from "@thomas-inst/fmt-text";
-import {Marginalia} from "../lib/Typesetter2/BasicTypesetter.js";
-import {HyphenationLanguage} from "../lib/Typesetter2/Hyphenator/Hyphenator.js";
-import {ItemArray} from "../lib/Typesetter2/ItemArray.js";
+import {Marginalia} from "@/lib/Typesetter/BasicTypesetter.js";
+import {HyphenationLanguage} from "@/lib/Typesetter/Hyphenator/Hyphenator.js";
+import {ItemArray} from "@/lib/Typesetter/ItemArray.js";
 import {getLemmaData} from "./LemmaData.js";
 
 export const MaxLineCount = 10000;

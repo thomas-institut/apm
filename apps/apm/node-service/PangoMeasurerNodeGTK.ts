@@ -21,8 +21,8 @@
 import GI from 'node-gtk/lib/index.js';
 import {PangoMeasurements, PangoMeasurer} from './PangoMeasurer.js';
 // @ts-ignore
-import {Typesetter2} from '../www/js/lib/Typesetter2/Typesetter2.js';
-import {TextBox} from '../www/js/lib/Typesetter2/TextBox.js';
+import {Typesetter} from '../www/js/lib/Typesetter/Typesetter.js';
+import {TextBox} from '../www/js/lib/Typesetter/TextBox.js';
 
 const Cairo = GI.require('cairo');
 const Pango = GI.require('Pango');
@@ -61,7 +61,7 @@ export class PangoMeasurerNodeGTK extends PangoMeasurer {
   }
 
   getPangoMeasurements(textBox: TextBox): Promise<PangoMeasurements> {
-    let fontDesc = `${textBox.getFontFamily()} ${textBox.getFontWeight()} ${textBox.getFontStyle()} ${Typesetter2.px2pt(textBox.getFontSize()) * measuringScale}`;
+    let fontDesc = `${textBox.getFontFamily()} ${textBox.getFontWeight()} ${textBox.getFontStyle()} ${Typesetter.px2pt(textBox.getFontSize()) * measuringScale}`;
     let extents = this.measureText(textBox.getText(), fontDesc);
 
     let divisor = Pango.SCALE * measuringScale;

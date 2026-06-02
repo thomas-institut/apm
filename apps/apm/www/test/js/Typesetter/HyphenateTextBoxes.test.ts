@@ -1,10 +1,10 @@
 import {describe, expect, it} from "vitest";
-import {hyphenateTextBoxes} from "@/lib/Typesetter2/Hyphenator/HyphenateTextBoxes";
-import {createItemArrayFromString} from "@/lib/Typesetter2/ItemArrayFromString";
+import {hyphenateTextBoxes} from "@/lib/Typesetter/Hyphenator/HyphenateTextBoxes";
+import {createItemArrayFromString} from "@/lib/Typesetter/ItemArrayFromString";
 import {getFakeBidiOrder, getFakeItemArrayWithBidiInfoFromString} from "./FakeStringTextDirection";
-import {TextBox} from "@/lib/Typesetter2/TextBox";
-import {ItemArrayWithBidiOrderInfo} from "@/lib/Typesetter2/LineBreaker/FirstFitLineBreaker";
-import {Glue} from "@/lib/Typesetter2/Glue";
+import {TextBox} from "@/lib/Typesetter/TextBox";
+import {ItemArrayWithBidiOrderInfo} from "@/lib/Typesetter/LineBreaker/FirstFitLineBreaker";
+import {Glue} from "@/lib/Typesetter/Glue";
 import {isAllUpperCase} from "@/toolbox/Util";
 
 

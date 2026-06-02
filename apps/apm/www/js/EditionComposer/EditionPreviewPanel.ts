@@ -23,10 +23,10 @@ import {ZoomController} from '@/toolbox/ZoomController';
 import {EditionViewerCanvas, EditionViewerCanvasOptions} from '@/Edition/EditionViewerCanvas';
 import {wait} from '@/toolbox/wait';
 import {BasicProfiler} from '@/toolbox/BasicProfiler';
-import {Dimension} from '@/lib/Typesetter2/Dimension';
+import {Dimension} from '@/lib/Typesetter/Dimension';
 import {SystemStyles, SystemStyleSheet} from '@/defaults/EditionStyles/SystemStyleSheet';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
-import {StyleSheet} from "@/lib/Typesetter2/Style/StyleSheet";
+import {StyleSheet} from "@/lib/Typesetter/Style/StyleSheet";
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>', updatePreview: '<i class="bi bi-arrow-counterclockwise"></i>'

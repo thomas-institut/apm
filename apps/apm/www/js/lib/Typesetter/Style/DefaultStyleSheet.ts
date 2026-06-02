@@ -1,4 +1,4 @@
-import {Typesetter2} from '../Typesetter2.js';
+import {Typesetter} from '../Typesetter.js';
 import {StyleSheetDefinition} from "./StyleSheet.js";
 
 export const defaultStyleSheet: StyleSheetDefinition = {
@@ -6,7 +6,7 @@ export const defaultStyleSheet: StyleSheetDefinition = {
     name: 'Default System StyleSheet', description: 'The default system style sheet',
   }, fontConversions: [], specialStrings: [], default: {
     parent: '', text: {
-      fontFamily: 'FreeSerif', fontSize: `${Typesetter2.pt2px(12)}px`, fontStyle: '', fontWeight: '', shiftY: '0'
+      fontFamily: 'FreeSerif', fontSize: `${Typesetter.pt2px(12)}px`, fontStyle: '', fontWeight: '', shiftY: '0'
     }, paragraph: {
       lineSkip: '1.25 em', indent: '0', align: 'justified', spaceBefore: '0', spaceAfter: '0'
     }, glue: {

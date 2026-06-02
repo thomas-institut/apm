@@ -18,7 +18,7 @@
  *
  */
 
-import {Typesetter2} from './Typesetter2.js';
+import {Typesetter} from './Typesetter.js';
 import {ItemList} from './ItemList.js';
 import * as TypesetterItemDirection from './TypesetterItemDirection.js';
 import {Glue} from './Glue.js';
@@ -63,7 +63,7 @@ const AcceptableWidowCount = 3;
 const OrphanPenalty = 3;
 const WidowPenalty = 3;
 const DefaultFontFamily = 'FreeSerif';
-const DefaultFontSize = Typesetter2.pt2px(12);
+const DefaultFontSize = Typesetter.pt2px(12);
 const MaxLinesToLookAhead = 30;
 const InfiniteVerticalBadness = 100000000;
 
@@ -128,7 +128,7 @@ export interface BasicTypesetterOptions {
   debug?: boolean;
 }
 
-export class BasicTypesetter extends Typesetter2 {
+export class BasicTypesetter extends Typesetter {
   private options: Required<BasicTypesetterOptions>;
   private readonly lineWidth: number;
   private readonly textAreaHeight: number;
@@ -167,7 +167,7 @@ export class BasicTypesetter extends Typesetter2 {
       preTypesetApparatuses: async (_apparatuses: ApparatusInterface[]) => {
         return true;
       },
-      textToApparatusGlue: {height: DefaultFontSize, shrink: DefaultFontSize * 0.1, stretch: Typesetter2.cm2px(50)},
+      textToApparatusGlue: {height: DefaultFontSize, shrink: DefaultFontSize * 0.1, stretch: Typesetter.cm2px(50)},
       interApparatusGlue: {height: DefaultFontSize, shrink: 0, stretch: DefaultFontSize * 0.25},
       justify: true,
       debug: false,
@@ -186,7 +186,7 @@ export class BasicTypesetter extends Typesetter2 {
       const pageNumberOptionsDefaults = {
         align: 'center', fontFamily: DefaultFontFamily, fontSize: DefaultFontSize * 0.8, numberStyle: '',
       };
-      const defaultMargin = Typesetter2.cm2px(0.5);
+      const defaultMargin = Typesetter.cm2px(0.5);
       const defaultPosition = 'bottom';
       const pageNumberOptions = {...pageNumberOptionsDefaults, ...this.options.pageNumbersOptions};
       this.addPageOutputProcessor(this.constructAddPageNumberProcessor(pageNumberOptions, defaultMargin, defaultPosition));
@@ -196,7 +196,7 @@ export class BasicTypesetter extends Typesetter2 {
 
     if (this.options.showLineNumbers) {
       const lnOptionsDefaults = {
-        xPosition: this.options.marginLeft + Typesetter2.cm2px(0.5),
+        xPosition: this.options.marginLeft + Typesetter.cm2px(0.5),
         align: 'right',
         fontFamily: DefaultFontFamily,
         fontSize: DefaultFontSize,
@@ -217,7 +217,7 @@ export class BasicTypesetter extends Typesetter2 {
 
     // Marginalia processor
     const AddMarginaliaDefaults: AddMarginaliaOptions = {
-      xPosition: this.options.marginRight + Typesetter2.cm2px(0.5),
+      xPosition: this.options.marginRight + Typesetter.cm2px(0.5),
       defaultTextDirection: 'ltr',
       align: 'left',
       textBoxMeasurer: this.options.textBoxMeasurer,
@@ -247,7 +247,7 @@ export class BasicTypesetter extends Typesetter2 {
    * Adds metadata to each text with the line number within the horizontal list.
    */
   async typesetHorizontalList(list: ItemList): Promise<ItemList> {
-    // Run the list through the Typesetter2 class checks
+    // Run the list through the Typesetter class checks
     let inputList = await super.typesetHorizontalList(list);
 
     let itemArray = inputList.getList();

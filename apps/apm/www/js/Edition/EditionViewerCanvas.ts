@@ -16,19 +16,19 @@
  *
  */
 import {Edition} from './Edition';
-import {CanvasTextBoxMeasurer} from '@/lib/Typesetter2/TextBoxMeasurer/CanvasTextBoxMeasurer';
-import {CanvasRenderer} from '@/lib/Typesetter2/Renderer/CanvasRenderer';
+import {CanvasTextBoxMeasurer} from '@/lib/Typesetter/TextBoxMeasurer/CanvasTextBoxMeasurer';
+import {CanvasRenderer} from '@/lib/Typesetter/Renderer/CanvasRenderer';
 import {BrowserUtilities} from '@/toolbox/BrowserUtilities';
-import {Typesetter2} from '@/lib/Typesetter2/Typesetter2';
+import {Typesetter} from '@/lib/Typesetter/Typesetter';
 import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from './EditionTypesettingHelper.js';
-import {BasicTypesetter, BasicTypesetterOptions} from '@/lib/Typesetter2/BasicTypesetter';
+import {BasicTypesetter, BasicTypesetterOptions} from '@/lib/Typesetter/BasicTypesetter';
 import {isRtl} from '@/toolbox/Util';
 import {BasicProfiler} from '@/toolbox/BasicProfiler';
-import {Dimension} from '@/lib/Typesetter2/Dimension';
-import {StyleSheet} from '@/lib/Typesetter2/Style/StyleSheet';
-import {TypesetterDocument} from "@/lib/Typesetter2/TypesetterDocument";
-import {ItemList} from "@/lib/Typesetter2/ItemList";
-import {MarginaliaAlignDirection} from "@/lib/Typesetter2/PageProcessor/AddMarginalia";
+import {Dimension} from '@/lib/Typesetter/Dimension';
+import {StyleSheet} from '@/lib/Typesetter/Style/StyleSheet';
+import {TypesetterDocument} from "@/lib/Typesetter/TypesetterDocument";
+import {ItemList} from "@/lib/Typesetter/ItemList";
+import {MarginaliaAlignDirection} from "@/lib/Typesetter/PageProcessor/AddMarginalia";
 
 const pageMarginInCanvas = 20;
 
@@ -143,23 +143,23 @@ export class EditionViewerCanvas {
     };
 
     this.geometry = {
-      pageWidth: Typesetter2.cm2px(this.options.pageWidthInCm),
-      pageHeight: Typesetter2.cm2px(this.options.pageHeightInCm),
-      lineWidth: Typesetter2.cm2px(this.options.pageWidthInCm - this.options.marginInCm.left - this.options.marginInCm.right),
-      mainTextLineHeight: Typesetter2.pt2px(this.options.mainTextLineHeightInPts),
-      mainTextFontSize: Typesetter2.pt2px(this.options.mainTextFontSizeInPts),
-      apparatusLineHeight: Typesetter2.pt2px(this.options.apparatusLineHeightInPts),
-      apparatusFontSize: Typesetter2.pt2px(this.options.apparatusFontSizeInPts),
+      pageWidth: Typesetter.cm2px(this.options.pageWidthInCm),
+      pageHeight: Typesetter.cm2px(this.options.pageHeightInCm),
+      lineWidth: Typesetter.cm2px(this.options.pageWidthInCm - this.options.marginInCm.left - this.options.marginInCm.right),
+      mainTextLineHeight: Typesetter.pt2px(this.options.mainTextLineHeightInPts),
+      mainTextFontSize: Typesetter.pt2px(this.options.mainTextFontSizeInPts),
+      apparatusLineHeight: Typesetter.pt2px(this.options.apparatusLineHeightInPts),
+      apparatusFontSize: Typesetter.pt2px(this.options.apparatusFontSizeInPts),
       margin: {
-        top: Typesetter2.cm2px(this.options.marginInCm.top),
-        left: Typesetter2.cm2px(this.options.marginInCm.left),
-        bottom: Typesetter2.cm2px(this.options.marginInCm.bottom),
-        right: Typesetter2.cm2px(this.options.marginInCm.right)
+        top: Typesetter.cm2px(this.options.marginInCm.top),
+        left: Typesetter.cm2px(this.options.marginInCm.left),
+        bottom: Typesetter.cm2px(this.options.marginInCm.bottom),
+        right: Typesetter.cm2px(this.options.marginInCm.right)
       },
-      textToLineNumbers: Typesetter2.cm2px(this.options.textToLineNumbersInCm),
-      textToMarginalia: Typesetter2.cm2px(this.options.textToMarginaliaInCm),
-      textToApparatus: Typesetter2.cm2px(this.options.textToApparatusInCm),
-      interApparatus: Typesetter2.cm2px(this.options.interApparatusInCm),
+      textToLineNumbers: Typesetter.cm2px(this.options.textToLineNumbersInCm),
+      textToMarginalia: Typesetter.cm2px(this.options.textToMarginaliaInCm),
+      textToApparatus: Typesetter.cm2px(this.options.textToApparatusInCm),
+      interApparatus: Typesetter.cm2px(this.options.interApparatusInCm),
       normalSpaceWidthInEms: this.options.normalSpaceWidthInEms
     };
 
@@ -238,7 +238,7 @@ export class EditionViewerCanvas {
         edition: this.edition,
         editionStyleSheet: this.options.editionStyleSheet,
         // defaultFontFamily: this.options.fontFamily,
-        // defaultFontSize: Typesetter2.pt2px(this.options.mainTextFontSizeInPts),
+        // defaultFontSize: Typesetter.pt2px(this.options.mainTextFontSizeInPts),
         textBoxMeasurer: this.canvasMeasurer,
         debug: false
       };
@@ -301,7 +301,7 @@ export class EditionViewerCanvas {
             showLineNumbers: true,
             lineNumbersOptions: {
               fontFamily: this.options.fontFamily,
-              fontSize: Typesetter2.pt2px(this.options.lineNumbersFontSizeInPts),
+              fontSize: Typesetter.pt2px(this.options.lineNumbersFontSizeInPts),
               frequency: 5,
               numeralSystem: this.edition.lang === 'ar' ? 'EasternArabic' : 'WesternArabic',
               align: lineNumbersAlign,

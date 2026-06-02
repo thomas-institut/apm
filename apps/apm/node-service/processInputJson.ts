@@ -1,10 +1,10 @@
-import {ObjectFactory} from '../www/js/lib/Typesetter2/ObjectFactory.js';
+import {ObjectFactory} from '../www/js/lib/Typesetter/ObjectFactory.js';
 import {PangoMeasurerNodeGTK} from './PangoMeasurerNodeGTK.js';
 import {SystemStyleSheet} from '../www/js/defaults/EditionStyles/SystemStyleSheet.js';
-import {BasicTypesetter, BasicTypesetterOptions} from '../www/js/lib/Typesetter2/BasicTypesetter.js';
+import {BasicTypesetter, BasicTypesetterOptions} from '../www/js/lib/Typesetter/BasicTypesetter.js';
 import {hrtime} from 'node:process';
 import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from '../www/js/Edition/EditionTypesettingHelper.js';
-import {ItemList} from "../www/js/lib/Typesetter2/ItemList.js";
+import {ItemList} from "../www/js/lib/Typesetter/ItemList.js";
 import {Edition} from "../www/js/Edition/Edition.js";
 
 /**

@@ -19,47 +19,49 @@
  */
 
 import {MainText} from './MainText.js';
-import {TextBoxMeasurer} from '@/lib/Typesetter/TextBoxMeasurer/TextBoxMeasurer.js';
-import {Box} from '@/lib/Typesetter/Box.js';
-import {ItemList} from '@/lib/Typesetter/ItemList.js';
-import * as TypesetterItemDirection from '@/lib/Typesetter/TypesetterItemDirection.js';
-import * as MetadataKey from '@/lib/Typesetter/MetadataKey.js';
-import * as ListType from '@/lib/Typesetter/ListType.js';
-import {Glue} from '@/lib/Typesetter/Glue.js';
-import * as MainTextTokenType from './MainTextTokenType.js';
-import {TextBox} from '@/lib/Typesetter/TextBox.js';
-import {GoodPointForBreak, InfinitePenalty, Penalty, ReallyGoodPointForBreak} from '@/lib/Typesetter/Penalty.js';
+import {
+  HorizontalItemDirection,
+  LineList, LineNumber, ListType, MainTextOriginalIndex, MergedItem, OriginalText, SourceItems, SplitInSyllablesItem,
+  SyllableIndex, TextBoxMeasurer, TokenForCountingPurposes, TokenOccurrenceInLine,
+  TokenTotalOccurrencesInLine, VerticalItemDirection
+} from '@thomas-inst/typesetter';
+import {Box} from '@thomas-inst/typesetter';
+import {ItemList} from '@thomas-inst/typesetter';
+import {Glue} from '@thomas-inst/typesetter';
+import {TextBox} from '@thomas-inst/typesetter';
+import {GoodPointForBreak, InfinitePenalty, Penalty, ReallyGoodPointForBreak} from '@thomas-inst/typesetter';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
 import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.js';
-import {ObjectFactory} from '@/lib/Typesetter/ObjectFactory.js';
+import {ObjectFactory} from '@thomas-inst/typesetter';
 import {uniq} from '../lib/ToolBox/ArrayUtil.js';
 import {Typesetter2StyleSheetTokenRenderer} from '../lib/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.js';
 import {NumeralSystems} from '../toolbox/NumeralSystems.js';
-import {TextBoxFactory} from '@/lib/Typesetter/TextBoxFactory.js';
+import {TextBoxFactory} from '@thomas-inst/typesetter';
 import {SiglaGroup} from './SiglaGroup.js';
 import {
   FontConversionDefinition,
   ParagraphStyleDef,
   StyleSheet,
   StyleSheetDefinition
-} from '@/lib/Typesetter/Style/StyleSheet.js';
-import {FontConversions} from '@/lib/Typesetter/FontConversions.js';
+} from '@thomas-inst/typesetter';
+import {FontConversions} from '@thomas-inst/typesetter';
 import {ItemLineInfo} from './ItemLineInfo.js';
-import {TypesetterItem} from '@/lib/Typesetter/TypesetterItem.js';
+import {TypesetterItem} from '@thomas-inst/typesetter';
 import {MARGINALIA} from '../constants/ApparatusType.js';
 import {AUTO_FOLIATION} from './SubEntryType.js';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.js";
 import {ApparatusEntry} from './ApparatusEntry.js';
 import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface} from "./EditionInterface.js";
-import {Dimension} from "@/lib/Typesetter/Dimension.js";
+import {Dimension} from '@thomas-inst/typesetter';
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
 import {FmtText, fromCompactFmtText, fromString, getPlainText} from "@thomas-inst/fmt-text";
-import {Marginalia} from "@/lib/Typesetter/BasicTypesetter.js";
-import {HyphenationLanguage} from "@/lib/Typesetter/Hyphenator/Hyphenator.js";
-import {ItemArray} from "@/lib/Typesetter/ItemArray.js";
+import {Marginalia} from '@thomas-inst/typesetter';
+import {HyphenationLanguage} from '@thomas-inst/typesetter';
+import {ItemArray} from '@thomas-inst/typesetter';
 import {getLemmaData} from "./LemmaData.js";
+import {GLUE, NUMBERING_LABEL, TEXT} from "./MainTextTokenType.js";
 
 export const MaxLineCount = 10000;
 const enDash = '\u2013';
@@ -214,7 +216,7 @@ export class EditionTypesettingHelper {
     let mainTextParagraphs = MainText.getParagraphs(this.edition.mainText);
     for (let mainTextParagraphIndex = 0; mainTextParagraphIndex < mainTextParagraphs.length; mainTextParagraphIndex++) {
       let mainTextParagraph = mainTextParagraphs[mainTextParagraphIndex];
-      let paragraphToTypeset = new ItemList(TypesetterItemDirection.HorizontalItemDirection);
+      let paragraphToTypeset = new ItemList(HorizontalItemDirection);
       paragraphToTypeset.setTextDirection(this.textDirection);
       let paragraphStyle = mainTextParagraph.type;
       if (!this.ss.styleExists(paragraphStyle)) {
@@ -224,7 +226,7 @@ export class EditionTypesettingHelper {
       let paragraphStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle(paragraphStyle);
       const spaceBefore = Dimension.getPixelValue(paragraphStyleDef.spaceBefore, 12);
       if (spaceBefore != 0) {
-        verticalItems.push((new Glue(TypesetterItemDirection.VerticalItemDirection)).setHeight(spaceBefore));
+        verticalItems.push((new Glue(VerticalItemDirection)).setHeight(spaceBefore));
       }
       const indent = Dimension.getPixelValue(paragraphStyleDef.indent, 12);
       if (indent !== 0) {
@@ -238,17 +240,17 @@ export class EditionTypesettingHelper {
         let mainTextToken = mainTextParagraph.tokens[tokenIndex];
         let textItems;
         switch (mainTextToken.type) {
-          case MainTextTokenType.GLUE:
+          case GLUE:
             if (paragraphStyle === 'normal' && tokenIndex > mainTextParagraph.tokens.length - 4) {
               // do not leave words hanging!
               paragraphToTypeset.pushItem(this.createPenalty(InfinitePenalty));
             }
             let glue = await this.createGlue(paragraphStyle);
-            glue.addMetadata(MetadataKey.MainTextOriginalIndex, mainTextToken.originalIndex);
+            glue.addMetadata(MainTextOriginalIndex, mainTextToken.originalIndex);
             paragraphToTypeset.pushItem(glue);
             break;
 
-          case MainTextTokenType.NUMBERING_LABEL:
+          case NUMBERING_LABEL:
             textItems = await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle);
             textItems.map((item) => {
               if (isRtl(this.edition.lang)) {
@@ -260,7 +262,7 @@ export class EditionTypesettingHelper {
             paragraphToTypeset.pushItemArray(textItems);
             break;
 
-          case MainTextTokenType.TEXT:
+          case TEXT:
             textItems = [];
 
             const plainText = getPlainText(mainTextToken.fmtText);
@@ -286,7 +288,7 @@ export class EditionTypesettingHelper {
               if (textItems.length > 0) {
                 // tag the first item with the original index, this will be used to associate main text tokens
                 // with their line numbers in order to construct the apparatuses.
-                textItems[firstActualTextTokenIndex].addMetadata(MetadataKey.MainTextOriginalIndex, mainTextToken.originalIndex);
+                textItems[firstActualTextTokenIndex].addMetadata(MainTextOriginalIndex, mainTextToken.originalIndex);
                 // detect text direction for text boxes
                 textItems = textItems.map((item) => {
                   if (item instanceof TextBox) {
@@ -318,10 +320,10 @@ export class EditionTypesettingHelper {
       }
       const spaceAfter = Dimension.getPixelValue(paragraphStyleDef.spaceAfter, 12);
       if (spaceAfter !== 0) {
-        verticalItems.push((new Glue(TypesetterItemDirection.VerticalItemDirection)).setHeight(spaceAfter));
+        verticalItems.push((new Glue(VerticalItemDirection)).setHeight(spaceAfter));
       }
     }
-    let verticalListToTypeset = new ItemList(TypesetterItemDirection.VerticalItemDirection);
+    let verticalListToTypeset = new ItemList(VerticalItemDirection);
     verticalListToTypeset.setList(verticalItems);
     return FontConversions.applyFontConversions(verticalListToTypeset, this.fontConversionDefinitions, this.edition.lang);
   }
@@ -382,7 +384,7 @@ export class EditionTypesettingHelper {
   async generateApparatusVerticalListToTypeset(typesetMainTextVerticalList: ItemList, apparatus: ApparatusInterface, firstLine: number = 1, lastLine: number = MaxLineCount, resetFirstLineNumber: boolean = false): Promise<ItemList> {
 
     let textDirection = getTextDirectionForLang(this.edition.lang);
-    let outputList = new ItemList(TypesetterItemDirection.HorizontalItemDirection);
+    let outputList = new ItemList(HorizontalItemDirection);
     outputList.setTextDirection(textDirection);
 
     if (apparatus.entries.length === 0) {
@@ -818,14 +820,14 @@ export class EditionTypesettingHelper {
    * the item is not the first syllable of a hyphenated item
    */
   constructLineInfoObjectFromItem(item: TypesetterItem, lineNumber: number, isMerged = false): ItemLineInfo | null {
-    if (!item.hasMetadata(MetadataKey.MainTextOriginalIndex)) {
+    if (!item.hasMetadata(MainTextOriginalIndex)) {
       // the item does not correspond to a main text token
       return null;
     }
 
-    const isSplitInSyllables = item.getMetadata(MetadataKey.SplitInSyllablesItem) as boolean ?? false;
+    const isSplitInSyllables = item.getMetadata(SplitInSyllablesItem) as boolean ?? false;
     if (isSplitInSyllables) {
-      const syllableIndex = item.getMetadata(MetadataKey.SyllableIndex) as number ?? 0;
+      const syllableIndex = item.getMetadata(SyllableIndex) as number ?? 0;
       if (syllableIndex !== 0) {
         return null;
       }
@@ -836,28 +838,28 @@ export class EditionTypesettingHelper {
     info.occurrenceInLine = 1;
     info.totalOccurrencesInLine = 1;
     info.text = '';
-    info.mainTextIndex = item.getMetadata(MetadataKey.MainTextOriginalIndex) as number;
+    info.mainTextIndex = item.getMetadata(MainTextOriginalIndex) as number;
 
     if (!isMerged && item instanceof TextBox) {
       if (isSplitInSyllables) {
-        info.text = item.getMetadata(MetadataKey.OriginalText) as string;
+        info.text = item.getMetadata(OriginalText) as string;
       } else {
         info.text = item.getText();
       }
     }
 
     if (isMerged) {
-      info.text = item.getMetadata(MetadataKey.TokenForCountingPurposes) as string;
+      info.text = item.getMetadata(TokenForCountingPurposes) as string;
       info.isMerged = true;
       info.mergedMainTextIndices = this.getMainTextIndicesFromItem(item);
     }
 
-    if (item.hasMetadata(MetadataKey.TokenOccurrenceInLine)) {
-      info.occurrenceInLine = item.getMetadata(MetadataKey.TokenOccurrenceInLine) as number;
+    if (item.hasMetadata(TokenOccurrenceInLine)) {
+      info.occurrenceInLine = item.getMetadata(TokenOccurrenceInLine) as number;
     }
 
-    if (item.hasMetadata(MetadataKey.TokenTotalOccurrencesInLine)) {
-      info.totalOccurrencesInLine = item.getMetadata(MetadataKey.TokenTotalOccurrencesInLine) as number;
+    if (item.hasMetadata(TokenTotalOccurrencesInLine)) {
+      info.totalOccurrencesInLine = item.getMetadata(TokenTotalOccurrencesInLine) as number;
     }
     // some sanity checks
     if (info.occurrenceInLine > info.totalOccurrencesInLine) {
@@ -874,8 +876,8 @@ export class EditionTypesettingHelper {
    * @return {number[]}
    */
   getMainTextIndicesFromItem(item: TypesetterItem): number[] {
-    const isMerged = item.getMetadata(MetadataKey.MergedItem) as boolean ?? false;
-    const index = item.getMetadata(MetadataKey.MainTextOriginalIndex) as number ?? null;
+    const isMerged = item.getMetadata(MergedItem) as boolean ?? false;
+    const index = item.getMetadata(MainTextOriginalIndex) as number ?? null;
     if (index === null) {
       return [];
     }
@@ -885,7 +887,7 @@ export class EditionTypesettingHelper {
     }
 
     let indices: number[] = [];
-    const sourceItems = item.getMetadata(MetadataKey.SourceItems) as object[] ?? [];
+    const sourceItems = item.getMetadata(SourceItems) as object[] ?? [];
     ItemArray.createFromExportObjectsArray(sourceItems).forEach((sourceItem) => {
       indices.push(...this.getMainTextIndicesFromItem(sourceItem));
     });
@@ -985,17 +987,17 @@ export class EditionTypesettingHelper {
     // this.debug && console.log(`Extracting line info from metadata in typeset vertical list`)
     // this.debug && console.log(typesetMainTextVerticalList)
     typesetMainTextVerticalList.getList().forEach((horizontalList) => {
-      if (!horizontalList.hasMetadata(MetadataKey.ListType)) {
+      if (!horizontalList.hasMetadata(ListType)) {
         return;
       }
-      if (horizontalList.getMetadata(MetadataKey.ListType) !== ListType.LineList) {
+      if (horizontalList.getMetadata(ListType) !== LineList) {
         return;
       }
-      if (!horizontalList.hasMetadata(MetadataKey.LineNumber)) {
+      if (!horizontalList.hasMetadata(LineNumber)) {
         this.debug && console.log(`Found line without line number info`);
         return;
       }
-      let lineNumber = horizontalList.getMetadata(MetadataKey.LineNumber) as number;
+      let lineNumber = horizontalList.getMetadata(LineNumber) as number;
       if (horizontalList instanceof ItemList) {
         horizontalList.getList().forEach((item) => {
           let itemInfoArray = this.getLineInfoArrayFromItem(item, lineNumber);
@@ -1013,7 +1015,7 @@ export class EditionTypesettingHelper {
    * Recursively extracts info from merged items
    */
   private getLineInfoArrayFromItem(item: TypesetterItem, lineNumber: number): ItemLineInfo[] {
-    if (!item.hasMetadata(MetadataKey.MergedItem || item.getMetadata(MetadataKey.MergedItem) === false)) {
+    if (!item.hasMetadata(MergedItem || item.getMetadata(MergedItem) === false)) {
       // normal, single item, just get the info if it exists and return
       let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, false);
       if (infoObject === null) {
@@ -1023,7 +1025,7 @@ export class EditionTypesettingHelper {
     }
 
     // merged item
-    if (item.hasMetadata(MetadataKey.TokenOccurrenceInLine)) {
+    if (item.hasMetadata(TokenOccurrenceInLine)) {
       // no need to go down the tree, all info is right here!
       this.debug && console.log(`Item is merged but has info in it`, item.metadata);
       let infoObject = this.constructLineInfoObjectFromItem(item, lineNumber, true);
@@ -1033,7 +1035,7 @@ export class EditionTypesettingHelper {
       return [infoObject];
     }
 
-    if (!item.hasMetadata(MetadataKey.SourceItems)) {
+    if (!item.hasMetadata(SourceItems)) {
       // no data from source items, warn and return an empty array
       console.warn(`Found merged item without source items info`);
       console.warn(item);
@@ -1041,12 +1043,12 @@ export class EditionTypesettingHelper {
     }
     let outputInfoArray: ItemLineInfo[] = [];
     // get the data from each source item
-    const sourceItemExportObjects = item.getMetadata(MetadataKey.SourceItems) as object[];
+    const sourceItemExportObjects = item.getMetadata(SourceItems) as object[];
     sourceItemExportObjects.forEach((sourceItemExport, index) => {
       const sourceItem = ObjectFactory.fromObject(sourceItemExport) as TypesetterItem;
       // source items are never merged items, so we just get the ItemLineInfo directly
       // but just in case:
-      if (sourceItem.hasMetadata(MetadataKey.MergedItem) && sourceItem.getMetadata(MetadataKey.MergedItem) === true) {
+      if (sourceItem.hasMetadata(MergedItem) && sourceItem.getMetadata(MergedItem) === true) {
         console.error(`Found source item that is a merged item. Line number: ${lineNumber}, source item index ${index} `, item);
         throw new Error(`Found merged item in source items metadata`);
       }

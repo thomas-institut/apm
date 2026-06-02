@@ -16,10 +16,7 @@
  *
  */
 
-
-// @ts-ignore
-import {TextBoxMeasurer} from '../www/js/lib/Typesetter/TextBoxMeasurer/TextBoxMeasurer.js';
-import {TextBox} from "../www/js/lib/Typesetter/TextBox.js";
+import {TextBoxMeasurer, TextBox} from "@thomas-inst/typesetter";
 
 
 export interface PangoMeasurements {

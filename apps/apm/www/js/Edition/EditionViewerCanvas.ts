@@ -16,19 +16,20 @@
  *
  */
 import {Edition} from './Edition';
-import {CanvasTextBoxMeasurer} from '@/lib/Typesetter/TextBoxMeasurer/CanvasTextBoxMeasurer';
-import {CanvasRenderer} from '@/lib/Typesetter/Renderer/CanvasRenderer';
+import {CanvasTextBoxMeasurer} from '@/lib/CanvasTextBoxMeasurer';
+import {CanvasRenderer} from '@thomas-inst/typesetter';
 import {BrowserUtilities} from '@/toolbox/BrowserUtilities';
-import {Typesetter} from '@/lib/Typesetter/Typesetter';
+import {Typesetter} from '@thomas-inst/typesetter';
 import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from './EditionTypesettingHelper.js';
-import {BasicTypesetter, BasicTypesetterOptions} from '@/lib/Typesetter/BasicTypesetter';
+import {BasicTypesetter, BasicTypesetterOptions} from '@thomas-inst/typesetter';
 import {isRtl} from '@/toolbox/Util';
 import {BasicProfiler} from '@/toolbox/BasicProfiler';
-import {Dimension} from '@/lib/Typesetter/Dimension';
-import {StyleSheet} from '@/lib/Typesetter/Style/StyleSheet';
-import {TypesetterDocument} from "@/lib/Typesetter/TypesetterDocument";
-import {ItemList} from "@/lib/Typesetter/ItemList";
-import {MarginaliaAlignDirection} from "@/lib/Typesetter/PageProcessor/AddMarginalia";
+import {Dimension} from '@thomas-inst/typesetter';
+import {StyleSheet} from '@thomas-inst/typesetter';
+import {TypesetterDocument} from '@thomas-inst/typesetter';
+import {ItemList} from '@thomas-inst/typesetter';
+import {MarginaliaAlignDirection} from '@thomas-inst/typesetter';
+import {ApparatusInterface} from "@/Edition/EditionInterface";
 
 const pageMarginInCanvas = 20;
 
@@ -85,7 +86,7 @@ export interface EditionViewerCanvasOptions {
 
 interface TypesettingParameters {
   mainTextVerticalListToTypeset: ItemList;
-  typesetterOptions: BasicTypesetterOptions;
+  typesetterOptions: BasicTypesetterOptions<ApparatusInterface>;
   helperOptions: EditionTypesettingHelperOptions;
   extraData: { [p: string]: any;}
 }

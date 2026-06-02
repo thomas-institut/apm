@@ -1,11 +1,14 @@
-import {ObjectFactory} from '../www/js/lib/Typesetter/ObjectFactory.js';
+import {ObjectFactory} from '@thomas-inst/typesetter';
 import {PangoMeasurerNodeGTK} from './PangoMeasurerNodeGTK.js';
+// @ts-ignore
 import {SystemStyleSheet} from '../www/js/defaults/EditionStyles/SystemStyleSheet.js';
-import {BasicTypesetter, BasicTypesetterOptions} from '../www/js/lib/Typesetter/BasicTypesetter.js';
+import {BasicTypesetter, BasicTypesetterOptions} from '@thomas-inst/typesetter';
 import {hrtime} from 'node:process';
+// @ts-ignore
 import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from '../www/js/Edition/EditionTypesettingHelper.js';
-import {ItemList} from "../www/js/lib/Typesetter/ItemList.js";
+import {ItemList} from "@thomas-inst/typesetter";
 import {Edition} from "../www/js/Edition/Edition.js";
+import {ApparatusInterface} from "../www/js/Edition/EditionInterface";
 
 /**
  * Processes an input data object containing a main text
@@ -32,7 +35,7 @@ export interface Stats {
 
 interface InputData {
   mainTextList: any;
-  options: BasicTypesetterOptions;
+  options: BasicTypesetterOptions<ApparatusInterface>;
   helperOptions?: EditionTypesettingHelperOptions;
   extraData?: any;
 }

@@ -20,9 +20,7 @@
 // @ts-ignore
 import GI from 'node-gtk/lib/index.js';
 import {PangoMeasurements, PangoMeasurer} from './PangoMeasurer.js';
-// @ts-ignore
-import {Typesetter} from '../www/js/lib/Typesetter/Typesetter.js';
-import {TextBox} from '../www/js/lib/Typesetter/TextBox.js';
+import {Typesetter, TextBox} from "@thomas-inst/typesetter";
 
 const Cairo = GI.require('cairo');
 const Pango = GI.require('Pango');

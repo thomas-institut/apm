@@ -276,6 +276,7 @@ export class AutomaticCollationTable extends HeaderAndContentPage {
       this.actTitleElement.html(this.editSettingsFormManager.getTitleFromSettings());
     });
 
+    // @ts-ignore
     this.collationTableDiv.popover({
       trigger: 'hover',
       selector: '.withpopover',

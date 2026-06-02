@@ -18,10 +18,9 @@
  *
  */
 
-import * as DefaultStyleSheet from '@/lib/Typesetter/Style/DefaultStyleSheet.js';
-import {Glue} from '@/lib/Typesetter/Glue.js';
-import {StyleSheet, StyleSheetDefinition} from '@/lib/Typesetter/Style/StyleSheet.js';
-import {TextBoxMeasurer} from '@/lib/Typesetter/TextBoxMeasurer/TextBoxMeasurer.js';
+import {defaultStyleSheet, Glue} from '@thomas-inst/typesetter';
+import {StyleSheet, StyleSheetDefinition} from '@thomas-inst/typesetter';
+import {TextBoxMeasurer} from '@thomas-inst/typesetter';
 import {
   AsyncFmtTextRenderer,
   FmtText,
@@ -34,9 +33,9 @@ import {
   VALIGN_SUBSCRIPT,
   VALIGN_SUPERSCRIPT
 } from '@thomas-inst/fmt-text';
-import {TextBox} from '@/lib/Typesetter/TextBox.js';
-import {ObjectFactory} from '@/lib/Typesetter/ObjectFactory.js';
-import {TypesetterItem} from "@/lib/Typesetter/TypesetterItem.js";
+import {TextBox} from '@thomas-inst/typesetter';
+import {ObjectFactory} from '@thomas-inst/typesetter';
+import {TypesetterItem} from "@thomas-inst/typesetter";
 
 export interface Typesetter2StyleSheetTokenRendererOptions {
   styleSheet: StyleSheetDefinition;
@@ -53,7 +52,7 @@ export class Typesetter2StyleSheetTokenRenderer extends AsyncFmtTextRenderer {
     super();
 
     this.options = {
-      styleSheet: options.styleSheet ?? DefaultStyleSheet.defaultStyleSheet,
+      styleSheet: options.styleSheet ?? defaultStyleSheet,
       textBoxMeasurer: options.textBoxMeasurer,
       defaultTextDirection: options.defaultTextDirection,
       debug: options.debug ?? true

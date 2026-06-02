@@ -18,10 +18,10 @@
  *
  */
 
-import {TextBoxMeasurer} from './TextBoxMeasurer.js';
-import {BrowserUtilities} from '../../../toolbox/BrowserUtilities.js';
+import {TextBoxMeasurer} from '@thomas-inst/typesetter';
+import {BrowserUtilities} from '../toolbox/BrowserUtilities.js';
 import {FontBaselineInfo} from './FontBaselineInfo.js';
-import {TextBox} from "../TextBox.js";
+import {TextBox} from "@thomas-inst/typesetter";
 
 
 export class CanvasTextBoxMeasurer extends TextBoxMeasurer {

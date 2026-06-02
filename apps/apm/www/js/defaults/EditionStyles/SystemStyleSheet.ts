@@ -7,7 +7,7 @@ import { defaultArabicEditionStyle } from './Arabic.js'
 import { defaultHebrewEditionStyle } from './Hebrew.js'
 import { hebrewPeetersJournal} from "./Hebrew-Peeters.js";
 
-import {StyleSheet, StyleSheetDefinition} from '@/lib/Typesetter/Style/StyleSheet.js';
+import {StyleSheet, StyleSheetDefinition} from '@thomas-inst/typesetter';
 import { arabicDeGruyter } from './ArabicDeGruyter.js'
 import { arabicDeGruyterAmiri} from './ArabicDeGruyterAmiri.js'
 import { arabicDeGruyterScheherazadeNew } from './ArabicDeGruyterScheherazadeNew.js'

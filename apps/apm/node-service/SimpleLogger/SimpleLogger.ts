@@ -1,8 +1,8 @@
 import * as fs from "node:fs";
+import {LoggerInterface, LogLevel} from "./LoggerInterface";
 
-type LogLevel = 'info' | 'error' | 'debug' | 'warn';
 
-export class SimpleLogger {
+export class SimpleLogger implements LoggerInterface {
 
   private readonly logToConsole: boolean = true;
   private readonly fileName: string = '';
@@ -10,6 +10,18 @@ export class SimpleLogger {
   constructor(fileName = '', logToConsole = true) {
     this.logToConsole = logToConsole;
     this.fileName = fileName;
+  }
+
+  debug(message: string): void {
+    this.log(message, 'debug');
+  }
+
+  warn(message: string): void {
+    this.log(message, 'warn');
+  }
+
+  info(message: string): void {
+    this.log(message, 'info');
   }
 
 
@@ -31,6 +43,10 @@ export class SimpleLogger {
     if (this.fileName !== '') {
       fs.appendFileSync(this.fileName, logLine + '\n');
     }
+  }
+
+  error(message: string): void {
+    this.log(message, 'error');
   }
 
   private getTimeString(): string {

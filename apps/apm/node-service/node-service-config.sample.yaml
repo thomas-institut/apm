@@ -4,8 +4,19 @@
 #  (paths must be given in terms of the server/container that runs the server)
 #
 
-typesettingServer:
+nodeService:
+  # Port to listen on (optional, defaults to 4711)
   port: 4711
-  pdfRenderer: /usr/bin/python3 /opt/apm/typesetting-service/pdf-renderer.py
-  tmpDir: /var/apm/typesetting-tmp
-  logFile: /var/apm/logs/typesetting-service/server.log
+
+  # Temporary directory for intermediate files (REQUIRED)
+  tmpDir: /var/apm/node-service-tmp
+
+  # Log file (REQUIRED)
+  logFile: /var/apm/logs/node-service/server.log
+
+  # Python executable to use (optional, defaults to '/usr/bin/python3')
+  pythonExecutable: /usr/bin/python3
+
+  # Path to PDF renderer (optional, defaults to current directory at execution time)
+  pdfRendererPath: /opt/apm/node-service
+

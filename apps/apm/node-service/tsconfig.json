@@ -1,5 +1,9 @@
 {
   "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "#www-js/*": ["../www/js/*"]
+    },
     "target": "es2024",
     "lib": ["es2024"],
     "module": "es2022",

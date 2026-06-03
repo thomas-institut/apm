@@ -2,6 +2,9 @@
   "name": "apm-node-service",
   "version": "1.2.9",
   "type": "module",
+  "imports": {
+    "#www-js/*": "./dist/www/js/*"
+  },
   "scripts": {
     "build": "rm -fr dist; tsc",
     "tsc:version": "tsc --version"

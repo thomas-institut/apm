@@ -9,7 +9,7 @@ import {Measure} from "./src/Actions/Measure/Measure.js";
 import {Typeset} from "./src/Actions/Typeset/Typeset.js";
 import {GeneratePdf} from "./src/Actions/GeneratePdf/GeneratePdf.js";
 
-const VERSION = '1.2.9-dev-16';
+const VERSION = '1.2.9-dev-17';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;

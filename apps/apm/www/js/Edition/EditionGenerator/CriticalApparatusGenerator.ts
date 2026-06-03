@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -16,27 +18,27 @@
  *
  */
 
-import * as TokenType from '../../Witness/WitnessTokenType';
-import * as WitnessTokenType from '../../Witness/WitnessTokenType';
-import {SequenceWithGroups} from '../SequenceWithGroups';
-import * as SubEntryType from '../SubEntryType';
-import * as ApparatusType from '../../constants/ApparatusType';
-import * as SubEntrySource from '../SubEntrySource';
-import {CtData} from '@/CtData/CtData';
-import {ApparatusTools} from '../ApparatusTools';
-import {ApparatusSubEntry} from '../ApparatusSubEntry';
-import {ApparatusEntry} from '../ApparatusEntry';
+import * as TokenType from '../../Witness/WitnessTokenType.js';
+import * as WitnessTokenType from '../../Witness/WitnessTokenType.js';
+import {SequenceWithGroups} from '../SequenceWithGroups.js';
+import * as SubEntryType from '../SubEntryType.js';
+import * as ApparatusType from '../../constants/ApparatusType.js';
+import * as SubEntrySource from '../SubEntrySource.js';
+import {CtData} from '../../CtData/CtData.js';
+import {ApparatusTools} from '../ApparatusTools.js';
+import {ApparatusSubEntry} from '../ApparatusSubEntry.js';
+import {ApparatusEntry} from '../ApparatusEntry.js';
 
 
-import {Punctuation} from '@/defaults/Punctuation';
+import {Punctuation} from '../../defaults/Punctuation.js';
 
-import {WitnessDataItem} from '../WitnessDataItem';
-import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
+import {WitnessDataItem} from '../WitnessDataItem.js';
+import {CtDataInterface, WitnessTokenInterface} from "../../CtData/CtDataInterface.js";
 import {MainTextToken} from "../MainTextToken.js";
-import {Apparatus} from "@/Edition/Apparatus";
+import {Apparatus} from "../../Edition/Apparatus.js";
 import {fromString} from "@thomas-inst/fmt-text";
-import {Matrix} from "@/lib/Matrix";
-import {EMPTY} from "@/Witness/WitnessTokenType";
+import {Matrix} from "../../lib/Matrix.js";
+import {EMPTY} from "../../Witness/WitnessTokenType.js";
 
 export class CriticalApparatusGenerator {
   protected verbose: boolean;

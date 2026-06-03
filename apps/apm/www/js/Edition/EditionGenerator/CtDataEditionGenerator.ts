@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -17,34 +19,34 @@
  */
 
 import {OptionsChecker} from '@thomas-inst/optionschecker';
-import {CtData} from '@/CtData/CtData';
+import {CtData} from '../../CtData/CtData.js';
 import {
   CtDataInterface,
   CustomApparatusEntryInterface,
   CustomApparatusInterface,
   CustomApparatusSubEntryInterface,
   WitnessTokenInterface
-} from "@/CtData/CtDataInterface";
-import * as ApparatusType from '@/constants/ApparatusType';
+} from "../../CtData/CtDataInterface.js";
+import * as ApparatusType from '../../constants/ApparatusType.js';
 
-import {EditionGenerator} from './EditionGenerator';
-import {CriticalApparatusGenerator} from './CriticalApparatusGenerator';
-import {EditionWitnessInfo} from '../EditionWitnessInfo';
-import {ApparatusTools} from '../ApparatusTools';
-import {ApparatusEntry} from '../ApparatusEntry';
-import {ApparatusSubEntry} from '../ApparatusSubEntry';
-import * as SubEntrySource from '../SubEntrySource';
-import * as SubEntryType from '../SubEntryType';
-import {SiglaGroup} from '../SiglaGroup';
-import {WitnessDataItem} from '../WitnessDataItem';
-import {MarginalFoliationGenerator} from './MarginalFoliationGenerator';
-import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
+import {EditionGenerator} from './EditionGenerator.js';
+import {CriticalApparatusGenerator} from './CriticalApparatusGenerator.js';
+import {EditionWitnessInfo} from '../EditionWitnessInfo.js';
+import {ApparatusTools} from '../ApparatusTools.js';
+import {ApparatusEntry} from '../ApparatusEntry.js';
+import {ApparatusSubEntry} from '../ApparatusSubEntry.js';
+import * as SubEntrySource from '../SubEntrySource.js';
+import * as SubEntryType from '../SubEntryType.js';
+import {SiglaGroup} from '../SiglaGroup.js';
+import {WitnessDataItem} from '../WitnessDataItem.js';
+import {MarginalFoliationGenerator} from './MarginalFoliationGenerator.js';
+import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface.js";
 import {MainTextToken} from "../MainTextToken.js";
-import * as WitnessTokenType from "@/Witness/WitnessTokenType";
+import * as WitnessTokenType from "../../Witness/WitnessTokenType.js";
 import {MainTextTokenFactory} from "../MainTextTokenFactory.js";
 import * as MainTextTokenType from "../MainTextTokenType.js";
-import {Punctuation} from "@/defaults/Punctuation";
-import {Apparatus} from "@/Edition/Apparatus";
+import {Punctuation} from "../../defaults/Punctuation.js";
+import {Apparatus} from "../../Edition/Apparatus.js";
 
 export class CtDataEditionGenerator extends EditionGenerator {
   private options: any;

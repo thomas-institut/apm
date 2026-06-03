@@ -1,5 +1,5 @@
-import {CtDataUpdater} from './CtDataUpdater';
-import {CtDataInterface} from "../CtDataInterface";
+import {CtDataUpdater} from './CtDataUpdater.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 /**
  * Schema 1.4 adds tags to apparatus entries and custom apparatus subentries

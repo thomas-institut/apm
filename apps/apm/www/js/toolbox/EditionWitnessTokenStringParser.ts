@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -16,11 +18,11 @@
  *
  */
 
-import { Punctuation} from '@/defaults/Punctuation'
-import { WitnessToken } from '@/Witness/WitnessToken'
-import { NumeralSystems } from './NumeralSystems'
-import { EditionWitnessToken } from '@/Witness/EditionWitnessToken'
-import { IgnoreIntraWordQuotationMark } from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
+import {Punctuation} from '../defaults/Punctuation.js';
+import {WitnessToken} from '../Witness/WitnessToken.js';
+import {NumeralSystems} from './NumeralSystems.js';
+import {EditionWitnessToken} from '../Witness/EditionWitnessToken.js';
+import {IgnoreIntraWordQuotationMark} from '../normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.js';
 
 export class EditionWitnessTokenStringParser {
 
@@ -32,56 +34,56 @@ export class EditionWitnessTokenStringParser {
    * @param detectIntraWordQuotationMarks
    * @return {WitnessToken[]}
    */
-  static parse (str: string, lang: string, detectNumberingLabels = true, detectIntraWordQuotationMarks = false): WitnessToken[] {
-    let debug = false
+  static parse(str: string, lang: string, detectNumberingLabels = true, detectIntraWordQuotationMarks = false): WitnessToken[] {
+    let debug = false;
     // if (str.includes('...')) {
     //   debug = true;
     // }
-    debug && console.log(`Parsing string '${str}', lang='${lang}'`)
+    debug && console.log(`Parsing string '${str}', lang='${lang}'`);
     // debug && console.trace()
-    let state = 0
-    let tokenArray = []
-    let currentWhiteSpace = ''
-    let currentWordCharacters = []
+    let state = 0;
+    let tokenArray = [];
+    let currentWhiteSpace = '';
+    let currentWordCharacters = [];
     for (let i = 0; i < str.length; i++) {
-      let ch = str.charAt(i)
-      debug && console.log(` - Processing '${ch}', state = ${state}, currentWord =' ${currentWordCharacters.join('')}'`)
+      let ch = str.charAt(i);
+      debug && console.log(` - Processing '${ch}', state = ${state}, currentWord =' ${currentWordCharacters.join('')}'`);
       switch (state) {
         case 0: // accumulating whitespace
           if (this.hasWhiteSpace(ch)) {
-            currentWhiteSpace += ch
+            currentWhiteSpace += ch;
           } else {
             if (currentWhiteSpace !== '') {
-              tokenArray.push( (new WitnessToken()).setWhitespace(currentWhiteSpace))
-              currentWhiteSpace = ''
+              tokenArray.push((new WitnessToken()).setWhitespace(currentWhiteSpace));
+              currentWhiteSpace = '';
             }
-            currentWordCharacters.push(ch)
-            state = 1
+            currentWordCharacters.push(ch);
+            state = 1;
           }
-          break
+          break;
 
         case 1: // accumulating other characters
           if (this.hasWhiteSpace(ch)) {
             if (currentWordCharacters.length !== 0) {
               let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels);
               tokenArray.push(...wordTokens);
-              currentWordCharacters = []
-              state = 0
+              currentWordCharacters = [];
+              state = 0;
             }
           } else {
-            currentWordCharacters.push(ch)
+            currentWordCharacters.push(ch);
           }
       }
     }
-    debug && console.log(`End of input, state = ${state}, currentWord = '${currentWordCharacters.join('')}'`)
+    debug && console.log(`End of input, state = ${state}, currentWord = '${currentWordCharacters.join('')}'`);
     if (currentWordCharacters.length !== 0) {
-      let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels, detectIntraWordQuotationMarks)
+      let wordTokens = this.parseNonWhiteSpaceCharacters(currentWordCharacters, lang, detectNumberingLabels, detectIntraWordQuotationMarks);
 
       tokenArray.push(...wordTokens);
     }
     debug && console.log('Output token array');
     debug && console.log(tokenArray);
-    return tokenArray
+    return tokenArray;
   }
 
   /**
@@ -95,180 +97,180 @@ export class EditionWitnessTokenStringParser {
    * @private
    */
   static parseNonWhiteSpaceCharacters(chars: string[], lang: string, detectNumberingLabels: boolean = true, detectIntraWordQuotationMarks = false) {
-      if (chars.length === 0) {
-      return []
+    if (chars.length === 0) {
+      return [];
     }
-    let word = chars.join('')
-    let methodDebug = false
+    let word = chars.join('');
+    let methodDebug = false;
 
     if (Punctuation.stringIsAllPunctuation(word, lang)) {
       // all punctuation
-      console.log(`Word '${word}' is all punctuation`)
+      console.log(`Word '${word}' is all punctuation`);
       // add one token per punctuation mark
       let punctuationTokens = [];
       for (let i = 0; i < word.length; i++) {
-        punctuationTokens.push( (new WitnessToken()).setPunctuation(word[i]));
+        punctuationTokens.push((new WitnessToken()).setPunctuation(word[i]));
       }
-      return [ ...punctuationTokens];
+      return [...punctuationTokens];
       // return [ (new WitnessToken()).setPunctuation(word)];
     }
     if (detectNumberingLabels && this.isNumberingLabel(word)) {
-      console.log(`Word '${word}' is a numbering label`)
-      return [ (new EditionWitnessToken()).setNumberingLabel(word)]
+      console.log(`Word '${word}' is a numbering label`);
+      return [(new EditionWitnessToken()).setNumberingLabel(word)];
     }
     if (detectIntraWordQuotationMarks) {
-      let norm = new IgnoreIntraWordQuotationMark()
+      let norm = new IgnoreIntraWordQuotationMark();
       if (norm.isApplicable(word, lang)) {
         // console.log(`Applying IgnoreIntraWordQuotationMark to '${word}'`)
-        return norm.normalizeString(word, lang)
+        return norm.normalizeString(word, lang);
       }
     }
     if (Punctuation.stringHasPunctuation(word, lang)) {
       // a mix of punctuation and non-punctuation
-      methodDebug && console.log(`Word '${word}' is a mix of punctuation a non-punctuation`)
-      return this.parseStringWithPunctuation(word, lang)
+      methodDebug && console.log(`Word '${word}' is a mix of punctuation a non-punctuation`);
+      return this.parseStringWithPunctuation(word, lang);
     } else {
       // no punctuation at all
       // console.log(`Word '${word}' has no punctuation at all`
-      return [ (new WitnessToken()).setWord(word)]
+      return [(new WitnessToken()).setWord(word)];
     }
   }
 
-  static parseStringWithPunctuation(theString: string, lang:string) {
+  static parseStringWithPunctuation(theString: string, lang: string) {
     // if (theString.charAt(0) === '<' || theString.charAt(0) === '〈') {
     //   console.log(`Parsing string '${theString}', lang '${lang}'`)
     // }
     // TODO: detect matching square brackets and don't generate punctuation for the closing one
     //  e.g:  'Roma[m]' should be a single word
-    let chars = theString.split('')
-    let state = 0
-    let tokenArray = []
-    let curWord = ''
-    let nPeriods = 0
+    let chars = theString.split('');
+    let state = 0;
+    let tokenArray = [];
+    let curWord = '';
+    let nPeriods = 0;
     for (let i = 0; i < chars.length; i++) {
-      let char = chars[i]
-      let insideWord = i>0 && i < chars.length-1
-      switch(state) {
+      let char = chars[i];
+      let insideWord = i > 0 && i < chars.length - 1;
+      switch (state) {
         case 0: // start
           if (char === '.') {
-            nPeriods = 1
-            state = 2
-            break
+            nPeriods = 1;
+            state = 2;
+            break;
           }
-          if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+          if (Punctuation.characterIsPunctuation(char, lang, insideWord)) {
             // emit punctuation
-            tokenArray.push( (new WitnessToken()).setPunctuation(char))
+            tokenArray.push((new WitnessToken()).setPunctuation(char));
           } else {
             // accumulate word
-            curWord += char
-            state = 1
+            curWord += char;
+            state = 1;
           }
-          break
+          break;
 
         case 1: // accumulating word
           if (char === '.') {
-            state = 3
-            break
+            state = 3;
+            break;
           }
-          if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+          if (Punctuation.characterIsPunctuation(char, lang, insideWord)) {
             // emit word
-            tokenArray.push( (new WitnessToken()).setWord(curWord))
-            curWord = ''
+            tokenArray.push((new WitnessToken()).setWord(curWord));
+            curWord = '';
             // emit punctuation
-            tokenArray.push( (new WitnessToken()).setPunctuation(char))
-            state = 0
+            tokenArray.push((new WitnessToken()).setPunctuation(char));
+            state = 0;
           } else {
-            curWord += char
+            curWord += char;
           }
-          break
+          break;
 
         case 2: // accumulating periods
           if (char === '.') {
-            nPeriods++
-            break
+            nPeriods++;
+            break;
           }
-          if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+          if (Punctuation.characterIsPunctuation(char, lang, insideWord)) {
             // emit periods
-            let periodString = '.'
-            for(let i = 0; i < nPeriods; i++) {
-              tokenArray.push( (new WitnessToken()).setPunctuation(periodString));
+            let periodString = '.';
+            for (let i = 0; i < nPeriods; i++) {
+              tokenArray.push((new WitnessToken()).setPunctuation(periodString));
             }
             // tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
-            nPeriods = 0
+            nPeriods = 0;
             // emit punctuation
-            tokenArray.push( (new WitnessToken()).setPunctuation(char))
-            state = 0
+            tokenArray.push((new WitnessToken()).setPunctuation(char));
+            state = 0;
           } else { // word character
             // emit periods
-            let periodString = '.'
-            for(let i = 0; i < nPeriods; i++) {
-              tokenArray.push( (new WitnessToken()).setPunctuation(periodString));
+            let periodString = '.';
+            for (let i = 0; i < nPeriods; i++) {
+              tokenArray.push((new WitnessToken()).setPunctuation(periodString));
             }
             // tokenArray.push( (new WitnessToken()).setPunctuation(periodString.repeat(nPeriods)))
-            nPeriods = 0
+            nPeriods = 0;
             // accumulate
-            curWord += char
-            state = 1
+            curWord += char;
+            state = 1;
           }
-          break
+          break;
 
         case 3: // period inside a word
           if (char === '.') { // a second period
             // emit word
-            tokenArray.push( (new WitnessToken()).setWord(curWord))
-            curWord = ''
+            tokenArray.push((new WitnessToken()).setWord(curWord));
+            curWord = '';
             // go to state 2, where dots will continue to be accumulated
-            nPeriods = 2
-            state = 2
-            break
+            nPeriods = 2;
+            state = 2;
+            break;
           }
-          if (Punctuation.characterIsPunctuation(char, lang, insideWord )) {
+          if (Punctuation.characterIsPunctuation(char, lang, insideWord)) {
             // emit word
-            tokenArray.push( (new WitnessToken()).setWord(curWord))
-            curWord = ''
+            tokenArray.push((new WitnessToken()).setWord(curWord));
+            curWord = '';
             // emit single period
-            tokenArray.push( (new WitnessToken()).setPunctuation('.'))
-            nPeriods = 0
+            tokenArray.push((new WitnessToken()).setPunctuation('.'));
+            nPeriods = 0;
             // emit punctuation
-            tokenArray.push( (new WitnessToken()).setPunctuation(char))
-            state = 0
+            tokenArray.push((new WitnessToken()).setPunctuation(char));
+            state = 0;
           } else { // word character
             // accumulate dot
-            curWord += '.'
+            curWord += '.';
             // accumulate char
-            curWord += char
-            state = 1
+            curWord += char;
+            state = 1;
           }
-          break
+          break;
       }
     }
     // END
-    switch(state) {
+    switch (state) {
       case 0:
-        break
+        break;
 
       case 1:
         // emit word
-        tokenArray.push( (new WitnessToken()).setWord(curWord))
-        break
+        tokenArray.push((new WitnessToken()).setWord(curWord));
+        break;
 
       case 2:
         // emit periods
-        let periodString = '.'
-        for(let i = 0; i < nPeriods; i++) {
-          tokenArray.push( (new WitnessToken()).setPunctuation(periodString));
+        let periodString = '.';
+        for (let i = 0; i < nPeriods; i++) {
+          tokenArray.push((new WitnessToken()).setPunctuation(periodString));
         }
         // tokenArray.push( (new WitnessToken()).setPunctuation(dotString.repeat(nPeriods)))
-        break
+        break;
 
       case 3:
         // emit word and single dot
-        tokenArray.push( (new WitnessToken()).setWord(curWord))
-        tokenArray.push( (new WitnessToken()).setPunctuation('.'))
-        break
+        tokenArray.push((new WitnessToken()).setWord(curWord));
+        tokenArray.push((new WitnessToken()).setPunctuation('.'));
+        break;
     }
 
-    return tokenArray
+    return tokenArray;
   }
 
   /**
@@ -277,22 +279,22 @@ export class EditionWitnessTokenStringParser {
    * @param str
    */
   static isNumberingLabel(str: string): boolean {
-    let strLength = str.length
+    let strLength = str.length;
     if (strLength < 3) {
-      return false
+      return false;
     }
-    if (str.charAt(0) !== '[' || str.charAt(strLength-1) !== ']') {
+    if (str.charAt(0) !== '[' || str.charAt(strLength - 1) !== ']') {
       //console.log(`Start/End square brackets not found, not a numbering label`)
-      return false
+      return false;
     }
-    let innerStringFields = str.substring(1, strLength-1).split('.')
+    let innerStringFields = str.substring(1, strLength - 1).split('.');
     // console.log(`Inner string fields:`)
     // console.log(innerStringFields)
 
     if (innerStringFields.length === 0) {
-      return false
+      return false;
     }
-    let firstField = innerStringFields[0]
+    let firstField = innerStringFields[0];
 
     // if the first field is a number, assume that the rest are also numbers or
     // appropriate numbering labels. This allows for complex numbering schemes
@@ -307,7 +309,7 @@ export class EditionWitnessTokenStringParser {
    * @return {boolean}
    */
   static isWordToken(text: string, lang: string = ''): boolean {
-    return !this.hasWhiteSpace(text) && !Punctuation.stringHasPunctuation(text, lang)
+    return !this.hasWhiteSpace(text) && !Punctuation.stringHasPunctuation(text, lang);
   }
 
   /**
@@ -317,7 +319,7 @@ export class EditionWitnessTokenStringParser {
    * @private
    */
   static hasWhiteSpace(text: string): boolean {
-    return /\s/.test(text)
+    return /\s/.test(text);
   }
 
 }

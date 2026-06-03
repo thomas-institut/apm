@@ -1,7 +1,9 @@
-import {CtDataUpdater} from './CtDataUpdater';
-import {EDITION} from '@/constants/CollationTableType';
-import {CtDataInterface} from "../CtDataInterface";
-import {FULL_CUSTOM} from "@/Edition/SubEntryType";
+// noinspection ES6PreferShortImport
+
+import {CtDataUpdater} from './CtDataUpdater.js';
+import {EDITION} from '../../constants/CollationTableType.js';
+import {CtDataInterface} from "../CtDataInterface.js";
+import {FULL_CUSTOM} from "../../Edition/SubEntryType.js";
 
 
 export class UpdaterToOnePointTwo extends CtDataUpdater {

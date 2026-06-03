@@ -40,6 +40,7 @@ export interface MainTextTokenInterface {
   fmtText: FmtText;
   editionWitnessTokenIndex: number;
   style: string;
+  lang?: string;
 }
 
 export type MainTextTokenType =

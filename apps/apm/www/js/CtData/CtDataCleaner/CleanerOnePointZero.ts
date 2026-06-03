@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -16,15 +18,16 @@
  *
  */
 
-import * as CollationTableType from '../../constants/CollationTableType';
-import {CtData} from '../CtData';
-import {CtDataCleaner} from './CtDataCleaner';
-import {deepCopy} from '@/toolbox/Util';
+import * as CollationTableType from '../../constants/CollationTableType.js';
+import {CtData} from '../CtData.js';
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {deepCopy} from '../../toolbox/Util.js';
+import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner.js';
+import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner.js';
+import {EDITION} from '../../constants/CollationTableType.js';
+import {CtDataInterface} from "../CtDataInterface.js";
+
 import {DEFAULT_GLUE_SPACE} from '@thomas-inst/fmt-text';
-import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner';
-import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
-import {EDITION} from '@/constants/CollationTableType';
-import {CtDataInterface} from "../CtDataInterface";
 
 export class CleanerOnePointZero extends CtDataCleaner {
   private ctData!: CtDataInterface;

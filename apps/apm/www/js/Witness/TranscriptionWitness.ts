@@ -1,4 +1,6 @@
-import {FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface} from "@/CtData/CtDataInterface";
+// noinspection ES6PreferShortImport
+
+import {FullTxItemInterface, NonTokenItemIndex, WitnessTokenInterface} from "../CtData/CtDataInterface.js";
 
 
 /**

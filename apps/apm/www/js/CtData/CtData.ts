@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -16,31 +18,31 @@
  *
  */
 
-import * as WitnessTokenType from '../Witness/WitnessTokenType';
-import * as TranscriptionTokenType from '../Witness/WitnessTokenType';
-import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
-import * as CollationTableType from '../constants/CollationTableType';
-import {deepCopy} from '@/toolbox/Util';
-import * as NormalizationSource from '../constants/NormalizationSource';
-import * as WitnessType from '../Witness/WitnessTokenClass';
-import {uniq} from '@/lib/ToolBox/ArrayUtil';
+import * as WitnessTokenType from '../Witness/WitnessTokenType.js';
+import * as TranscriptionTokenType from '../Witness/WitnessTokenType.js';
+import {SequenceWithGroups} from '../Edition/SequenceWithGroups.js';
+import * as CollationTableType from '../constants/CollationTableType.js';
+import {deepCopy} from '../toolbox/Util.js';
+import * as NormalizationSource from '../constants/NormalizationSource.js';
+import * as WitnessType from '../Witness/WitnessTokenClass.js';
+import {uniq} from '../lib/ToolBox/ArrayUtil.js';
 
 // cleaners
-import {CleanerZero} from './CtDataCleaner/CleanerZero';
-import {CleanerOnePointZero} from './CtDataCleaner/CleanerOnePointZero';
-import {CleanerOnePointOne} from './CtDataCleaner/CleanerOnePointOne';
+import {CleanerZero} from './CtDataCleaner/CleanerZero.js';
+import {CleanerOnePointZero} from './CtDataCleaner/CleanerOnePointZero.js';
+import {CleanerOnePointOne} from './CtDataCleaner/CleanerOnePointOne.js';
 // updaters
-import {UpdaterToOnePointZero} from './CtDataUpdater/UpdaterToOnePointZero';
-import {UpdaterToOnePointOne} from './CtDataUpdater/UpdaterToOnePointOne';
-import {UpdaterToOnePointTwo} from './CtDataUpdater/UpdaterToOnePointTwo';
-import {CleanerOnePointTwo} from './CtDataCleaner/CleanerOnePointTwo';
-import {UpdaterToOnePointThree} from './CtDataUpdater/UpdaterToOnePointThree';
-import {CleanerOnePointThree} from './CtDataCleaner/CleanerOnePointThree';
-import {CleanerOnePointFour} from './CtDataCleaner/CleanerOnePointFour';
-import {UpdaterToOnePointFour} from './CtDataUpdater/UpdaterToOnePointFour';
-import {UpdaterToOnePointFive} from "./CtDataUpdater/UpdaterToOnePointFive";
-import {CleanerOnePointFive} from "./CtDataCleaner/CleanerOnePointFive";
-import {Punctuation} from '@/defaults/Punctuation';
+import {UpdaterToOnePointZero} from './CtDataUpdater/UpdaterToOnePointZero.js';
+import {UpdaterToOnePointOne} from './CtDataUpdater/UpdaterToOnePointOne.js';
+import {UpdaterToOnePointTwo} from './CtDataUpdater/UpdaterToOnePointTwo.js';
+import {CleanerOnePointTwo} from './CtDataCleaner/CleanerOnePointTwo.js';
+import {UpdaterToOnePointThree} from './CtDataUpdater/UpdaterToOnePointThree.js';
+import {CleanerOnePointThree} from './CtDataCleaner/CleanerOnePointThree.js';
+import {CleanerOnePointFour} from './CtDataCleaner/CleanerOnePointFour.js';
+import {UpdaterToOnePointFour} from './CtDataUpdater/UpdaterToOnePointFour.js';
+import {UpdaterToOnePointFive} from "./CtDataUpdater/UpdaterToOnePointFive.js";
+import {CleanerOnePointFive} from "./CtDataCleaner/CleanerOnePointFive.js";
+import {Punctuation} from '../defaults/Punctuation.js';
 import {
   ColumnInformation,
   CtDataInterface,
@@ -49,10 +51,10 @@ import {
   NonTokenItemIndex,
   WitnessInterface,
   WitnessTokenInterface
-} from "./CtDataInterface";
-import {FULL_TX} from "@/Witness/WitnessType";
-import {NormalizerRegister} from "@/pages/common/NormalizerRegister";
-import {Matrix} from "@/lib/Matrix";
+} from "./CtDataInterface.js";
+import {FULL_TX} from "../Witness/WitnessType.js";
+import {NormalizerRegister} from "../pages/common/NormalizerRegister.js";
+import {Matrix} from "../lib/Matrix.js";
 
 
 /*

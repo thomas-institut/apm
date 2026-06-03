@@ -1,6 +1,9 @@
-import {CtDataCleaner} from './CtDataCleaner';
-import {numericSort} from '@/lib/ToolBox/ArrayUtil';
-import {CtDataInterface} from "../CtDataInterface";
+// noinspection ES6PreferShortImport
+
+
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {numericSort} from '../../lib/ToolBox/ArrayUtil.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 export class SubEntryPositionsConsistencyCleaner extends CtDataCleaner {
 

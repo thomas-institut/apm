@@ -1,11 +1,13 @@
-import {CtDataCleaner} from './CtDataCleaner';
-import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner';
-import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner';
-import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
-import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser';
-import {CtDataInterface, NonTokenItemIndex} from "../CtDataInterface";
-import {getNonTokenItemIndices} from "@/Witness/TranscriptionWitness";
-import {arraysAreEqual} from "@/lib/ToolBox/ArrayUtil";
+// noinspection ES6PreferShortImport
+
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner.js';
+import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner.js';
+import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner.js';
+import {EditionWitnessTokenStringParser} from '../../toolbox/EditionWitnessTokenStringParser.js';
+import {CtDataInterface, NonTokenItemIndex} from "../CtDataInterface.js";
+import {getNonTokenItemIndices} from "../../Witness/TranscriptionWitness.js";
+import {arraysAreEqual} from "../../lib/ToolBox/ArrayUtil.js";
 
 /**
  *

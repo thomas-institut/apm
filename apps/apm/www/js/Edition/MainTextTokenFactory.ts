@@ -21,7 +21,7 @@
 import {MainTextToken} from './MainTextToken.js';
 import * as EditionMainTextTokenType from './MainTextTokenType.js';
 import {FmtText, fromString, getCleanFmtText, newGlueToken} from "@thomas-inst/fmt-text";
-import {MainTextTokenType} from "@/Edition/EditionInterface";
+import {MainTextTokenInterface, MainTextTokenType} from "./EditionInterface.js";
 
 export class MainTextTokenFactory {
 
@@ -74,7 +74,7 @@ export class MainTextTokenFactory {
    *
    * @param {MainTextToken}token
    */
-  static clone(token: MainTextToken) {
+  static clone(token: MainTextTokenInterface) {
     let t = new MainTextToken();
     t.type = token.type;
     t.fmtText = token.fmtText;

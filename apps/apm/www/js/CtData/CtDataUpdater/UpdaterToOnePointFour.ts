@@ -1,6 +1,8 @@
-import {CtDataUpdater} from './CtDataUpdater';
-import {EDITION} from '@/constants/CollationTableType';
-import {CtDataInterface} from "../CtDataInterface";
+// noinspection ES6PreferShortImport
+
+import {CtDataUpdater} from './CtDataUpdater.js';
+import {EDITION} from '../../constants/CollationTableType.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 /**
  * Schema 1.4 adds tags to apparatus entries and custom apparatus subentries

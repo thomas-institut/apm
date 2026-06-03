@@ -1,4 +1,4 @@
-import {MceDataInterface} from "@/MceData/MceDataInterface";
+import {MceDataInterface} from "./MceDataInterface.js";
 
 
 export class MceData {

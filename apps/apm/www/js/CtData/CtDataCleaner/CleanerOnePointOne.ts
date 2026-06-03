@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -16,15 +18,15 @@
  *
  */
 
-import {CtData} from '../CtData';
-import {CtDataCleaner} from './CtDataCleaner';
-//import {FmtTextFactory} from '@/lib/FmtText/FmtTextFactory';
-import {deepCopy} from '@/toolbox/Util';
-import * as CollationTableType from '../../Witness/WitnessTokenClass';
-import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner';
-import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner';
-import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
-import {CtDataInterface} from "../CtDataInterface";
+import {CtData} from '../CtData.js';
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {deepCopy} from '../../toolbox/Util.js';
+import * as CollationTableType from '../../Witness/WitnessTokenClass.js';
+import {CollationTableConsistencyCleaner} from './CollationTableConsistencyCleaner.js';
+import {EditionWitnessReferencesCleaner} from './EditionWitnessReferencesCleaner.js';
+import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner.js';
+import {CtDataInterface} from "../CtDataInterface.js";
+
 import {fromString} from "@thomas-inst/fmt-text";
 
 export class CleanerOnePointOne extends CtDataCleaner {

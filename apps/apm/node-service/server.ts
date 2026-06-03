@@ -4,17 +4,18 @@ import process, {hrtime} from 'node:process';
 import {readFile, unlink} from 'fs/promises';
 import YAML from 'yaml';
 
-import {SimpleLogger} from "#src/SimpleLogger/SimpleLogger.js";
+import {FileAndConsoleLogger} from "#src/util/FileAndConsoleLogger.js";
 import {Measure} from "#src/Actions/Measure/Measure.js";
 import {Typeset} from "#src/Actions/Typeset/Typeset.js";
 import {GeneratePdf} from "#src/Actions/GeneratePdf/GeneratePdf.js";
 import {formatDuration} from "#src/util/formatDuration.js";
+import {GenerateEdition} from "#src/Actions/GenerateEdition/GenerateEdition.js";
 
-const VERSION = '1.2.9-dev-22';
+const VERSION = '1.2.9-dev-23';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;
-const PDF_RENDERER  = 'pdf-renderer.py';
+const PDF_RENDERER = 'pdf-renderer.py';
 const DEFAULT_PYTHON_EXECUTABLE = '/usr/bin/python3';
 
 const serverStartTime = hrtime.bigint();
@@ -23,7 +24,7 @@ if (process.argv.length < 3) {
   console.log(USAGE);
   process.exit(1);
 }
-const logger = new SimpleLogger({ fileName: '', logToConsole: true, useColorInConsole: true});
+const logger = new FileAndConsoleLogger({fileName: '', logToConsole: true, useColorInConsole: true});
 
 logger.log(`This is APM's node service version ${VERSION}`, 'info', true);
 logger.debug(`Config file: ${process.argv[2]}`);
@@ -71,7 +72,6 @@ nodeServiceServer.get('/api/measure', (req, res) => {
     return;
   }
 });
-
 nodeServiceServer.post('/api/typeset', async (req, res) => {
   const callStart = hrtime.bigint();
 
@@ -130,6 +130,31 @@ nodeServiceServer.post('/api/typeset', async (req, res) => {
       logger.info(`${inputId}: Total processing time = ${getDurationInMs(end, callStart)} ms`);
     }
   });
+});
+nodeServiceServer.post('/api/edition/generate', async (req, res) => {
+  let data = req.body;
+  if (data === undefined) {
+    logger.error(`Error typesetting: No JSON in input`);
+    res.json({error: true, errorMsg: "No JSON in input"});
+    return;
+  }
+
+  const action = new GenerateEdition({
+    logger: logger,
+  });
+
+  const generateEditionOutput = await action.execute({
+    mceData: data.mceData,
+    editionId: data.id,
+    chunksCtData: data.chunksCtData,
+  });
+  if (generateEditionOutput.error) {
+    logger.error(`Error typesetting: ${generateEditionOutput.errorMessage}`);
+    res.json({error: true, errorMsg: generateEditionOutput.errorMessage});
+    return;
+  }
+
+  res.json(generateEditionOutput.edition);
 });
 
 const httpServer = nodeServiceServer.listen(Port, () => {

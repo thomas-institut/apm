@@ -1,7 +1,7 @@
-import {CleanerOnePointOne} from './CleanerOnePointOne';
-import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner';
-import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner';
-import {CtDataInterface} from "../CtDataInterface";
+import {CleanerOnePointOne} from './CleanerOnePointOne.js';
+import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner.js';
+import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 export class CleanerOnePointTwo extends CleanerOnePointOne {
 

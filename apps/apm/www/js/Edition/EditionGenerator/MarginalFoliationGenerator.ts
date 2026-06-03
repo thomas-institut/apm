@@ -1,15 +1,17 @@
-import {MARGINALIA} from '@/constants/ApparatusType';
-import {ApparatusSubEntry} from '../ApparatusSubEntry';
-import * as SubEntryType from '../SubEntryType';
-import * as SubEntrySource from '../SubEntrySource';
-import {ApparatusEntry} from '../ApparatusEntry';
-import {NumeralSystems} from '@/toolbox/NumeralSystems';
-import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
-import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface";
-import {MainTextToken} from "../MainTextToken";
+// noinspection ES6PreferShortImport
+
+import {MARGINALIA} from '../../constants/ApparatusType.js';
+import {ApparatusSubEntry} from '../ApparatusSubEntry.js';
+import * as SubEntryType from '../SubEntryType.js';
+import * as SubEntrySource from '../SubEntrySource.js';
+import {ApparatusEntry} from '../ApparatusEntry.js';
+import {NumeralSystems} from '../../toolbox/NumeralSystems.js';
+import {CtDataInterface, FullTxItemInterface, WitnessTokenInterface} from "../../CtData/CtDataInterface.js";
+import {FoliationChangeInfoInterface} from "../FoliationChangeInfoInterface.js";
+import {MainTextToken} from "../MainTextToken.js";
 import {FmtText, fromString} from "@thomas-inst/fmt-text";
-import {WitnessDataItem} from "@/Edition/WitnessDataItem";
-import {Apparatus} from "@/Edition/Apparatus";
+import {WitnessDataItem} from "../../Edition/WitnessDataItem.js";
+import {Apparatus} from "../../Edition/Apparatus.js";
 
 export class MarginalFoliationGenerator {
   private readonly ctData: CtDataInterface;

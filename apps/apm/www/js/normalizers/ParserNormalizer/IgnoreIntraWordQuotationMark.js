@@ -1,9 +1,10 @@
-import * as Util from '../../toolbox/Util.ts'
-import { ParserNormalizer } from '../../Normalizer/ParserNormalizer.mjs'
-import { WitnessToken } from '../../Witness/WitnessToken.ts'
-import * as NormalizationSource from '../../constants/NormalizationSource.ts'
-import { EditionWitnessTokenStringParser } from '../../toolbox/EditionWitnessTokenStringParser.ts'
-import * as WitnessTokenType from '../../Witness/WitnessTokenType.ts'
+// noinspection ES6PreferShortImport
+
+import { ParserNormalizer } from '../../Normalizer/ParserNormalizer.js'
+import { WitnessToken } from '../../Witness/WitnessToken.js'
+import * as NormalizationSource from '../../constants/NormalizationSource.js'
+import { EditionWitnessTokenStringParser } from '../../toolbox/EditionWitnessTokenStringParser.js'
+import * as WitnessTokenType from '../../Witness/WitnessTokenType.js'
 
 export class IgnoreIntraWordQuotationMark extends ParserNormalizer {
 

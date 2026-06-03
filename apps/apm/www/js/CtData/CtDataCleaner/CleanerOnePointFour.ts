@@ -1,8 +1,10 @@
-import {CtDataCleaner} from './CtDataCleaner';
-import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner';
-import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner';
-import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
-import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser.js';
+// noinspection ES6PreferShortImport
+
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner.js';
+import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner.js';
+import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner.js';
+import {EditionWitnessTokenStringParser} from '../../toolbox/EditionWitnessTokenStringParser.js';
 import {CtDataInterface, WitnessInterface} from "../CtDataInterface";
 
 /**

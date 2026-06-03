@@ -1,4 +1,4 @@
-import { IgnoreIntraWordQuotationMark } from '../../js/normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.mjs'
+import { IgnoreIntraWordQuotationMark } from '@/normalizers/ParserNormalizer/IgnoreIntraWordQuotationMark.js'
 import { describe, test, expect } from 'vitest'
 
 const singleQuotationMarkRight = '\u2019'

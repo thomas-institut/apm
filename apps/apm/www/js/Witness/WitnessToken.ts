@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -18,7 +20,7 @@
 
 import * as WitnessTokenType from './WitnessTokenType.js';
 import * as NormalizationSource from '../constants/NormalizationSource.js';
-import {WitnessTokenInterface} from "@/CtData/CtDataInterface";
+import {WitnessTokenInterface} from "../CtData/CtDataInterface.js";
 import {FmtText} from "@thomas-inst/fmt-text";
 
 /**

@@ -1,5 +1,5 @@
-import {CtDataCleaner} from './CtDataCleaner';
-import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface";
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface.js";
 
 
 const ColumnsToLookForwardWhenFixingBadReference = 5;

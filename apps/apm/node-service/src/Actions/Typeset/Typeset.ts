@@ -7,7 +7,8 @@ import {SystemStyleSheet} from '#www-js/defaults/EditionStyles/SystemStyleSheet.
 import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from '#www-js/Edition/EditionTypesettingHelper.js';
 import {Edition} from "#www-js/Edition/Edition.js";
 import {ApparatusInterface} from "#www-js/Edition/EditionInterface.js";
-import {LoggerInterface} from "#src/SimpleLogger/LoggerInterface.js";
+import {LoggerInterface} from "#www-js/lib/Logger/LoggerInterface.js";
+import {Action} from "#src/Actions/Action.js";
 
 const debug = false;
 

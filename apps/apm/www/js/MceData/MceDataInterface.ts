@@ -1,4 +1,6 @@
-import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
+// noinspection ES6PreferShortImport
+
+import {SiglaGroupInterface} from "../CtData/CtDataInterface.js";
 
 
 export interface MceDataInterface {

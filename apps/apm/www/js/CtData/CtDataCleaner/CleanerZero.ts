@@ -1,5 +1,5 @@
-import {CtDataCleaner} from './CtDataCleaner';
-import {CtDataInterface} from "../CtDataInterface";
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 export class CleanerZero extends CtDataCleaner {
 

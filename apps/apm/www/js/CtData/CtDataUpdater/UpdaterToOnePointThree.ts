@@ -1,7 +1,10 @@
-import {CtDataUpdater} from './CtDataUpdater';
-import {EDITION} from '@/constants/CollationTableType';
-import * as ApparatusType from '../../constants/ApparatusType';
-import {CtDataInterface} from "../CtDataInterface";
+// noinspection ES6PreferShortImport
+
+import {CtDataUpdater} from './CtDataUpdater.js';
+import {EDITION} from '../../constants/CollationTableType.js';
+import {CtDataInterface} from "../CtDataInterface.js";
+import * as ApparatusType from '../../constants/ApparatusType.js';
+
 
 /**
  * Schema 1.3 adds a 'marginalia' apparatus to editions

@@ -1,20 +1,20 @@
 import * as fs from "node:fs";
-import {LoggerInterface, LogLevel} from "./LoggerInterface";
+import {LoggerInterface, LogLevel} from "#www-js/lib/Logger/LoggerInterface";
 import kleur from 'kleur';
 
-interface SimpleLoggerOptions {
+interface FileAndConsoleLoggerOptions {
   logToConsole?: boolean;
   useColorInConsole?: boolean;
   fileName?: string;
 }
 
-export class SimpleLogger implements LoggerInterface {
+export class FileAndConsoleLogger implements LoggerInterface {
 
   private readonly logToConsole: boolean;
   private fileName: string;
   private readonly useColor: boolean;
 
-  constructor(options: SimpleLoggerOptions = {}) {
+  constructor(options: FileAndConsoleLoggerOptions = {}) {
     this.logToConsole = options.logToConsole ?? true;
     this.fileName = options.fileName ?? '';
     this.useColor = options.useColorInConsole ?? true;

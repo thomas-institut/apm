@@ -1,5 +1,4 @@
 
-
-interface Action<I, T> {
+export interface Action<I, T> {
    execute(input: I): Promise<T>;
 }

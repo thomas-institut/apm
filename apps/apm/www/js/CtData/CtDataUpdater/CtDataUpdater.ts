@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -16,8 +18,8 @@
  *
  */
 
-import {deepCopy} from '@/toolbox/Util';
-import {CtDataInterface} from "../CtDataInterface";
+import {deepCopy} from '../../toolbox/Util.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 /**
  * Base class for updater process

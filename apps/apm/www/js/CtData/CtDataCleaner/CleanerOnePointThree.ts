@@ -1,8 +1,8 @@
-import {CtDataCleaner} from './CtDataCleaner';
-import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner';
-import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner';
-import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner';
-import {CtDataInterface} from "../CtDataInterface";
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {SubEntryPositionsConsistencyCleaner} from './SubEntryPositionsConsistencyCleaner.js';
+import {ApparatusEntryPositionCleaner} from './ApparatusEntryPositionCleaner.js';
+import {DefaultApparatusesCleaner} from './DefaultApparatusesCleaner.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 /**
  *

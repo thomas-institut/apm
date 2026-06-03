@@ -1,5 +1,7 @@
-import {deepCopy} from '@/toolbox/Util';
-import {CtDataInterface} from "../CtDataInterface";
+// noinspection ES6PreferShortImport
+
+import {deepCopy} from '../../toolbox/Util.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 /**
  * Base class for updater process

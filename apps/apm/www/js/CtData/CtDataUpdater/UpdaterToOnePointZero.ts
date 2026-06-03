@@ -16,10 +16,10 @@
  *
  */
 
-import {CtDataUpdater} from './CtDataUpdater';
-import * as CollationTableType from '../../constants/CollationTableType';
-import {DefaultApparatusesCleaner} from '../CtDataCleaner/DefaultApparatusesCleaner';
-import {CtDataInterface} from "../CtDataInterface";
+import {CtDataUpdater} from './CtDataUpdater.js';
+import * as CollationTableType from '../../constants/CollationTableType.js';
+import {DefaultApparatusesCleaner} from '../CtDataCleaner/DefaultApparatusesCleaner.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 export class UpdaterToOnePointZero extends CtDataUpdater {
 

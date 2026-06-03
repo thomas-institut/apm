@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2021 Universität zu Köln
  *
@@ -16,11 +18,11 @@
  *
  */
 
-import {CtDataCleaner} from './CtDataCleaner';
-import * as TokenClass from '../../constants/CollationTableType';
-import * as TranscriptionTokenType from '../../Witness/WitnessTokenType';
-import {deepCopy} from '@/toolbox/Util';
-import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface";
+import {CtDataCleaner} from './CtDataCleaner.js';
+import * as TokenClass from '../../constants/CollationTableType.js';
+import * as TranscriptionTokenType from '../../Witness/WitnessTokenType.js';
+import {deepCopy} from '../../toolbox/Util.js';
+import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface.js";
 
 export class EditionWitnessReferencesCleaner extends CtDataCleaner {
 

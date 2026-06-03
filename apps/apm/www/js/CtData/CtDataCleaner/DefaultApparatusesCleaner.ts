@@ -1,3 +1,5 @@
+// noinspection ES6PreferShortImport
+
 /*
  *  Copyright (C) 2022 Universität zu Köln
  *
@@ -16,11 +18,11 @@
  *
  */
 
-import * as ApparatusType from '../../constants/ApparatusType';
-import {CtDataCleaner} from './CtDataCleaner';
-import {deepCopy} from '@/toolbox/Util';
-import * as CollationTableType from '@/Witness/WitnessTokenClass';
-import {CtDataInterface} from "../CtDataInterface";
+import * as ApparatusType from '../../constants/ApparatusType.js';
+import {CtDataCleaner} from './CtDataCleaner.js';
+import {deepCopy} from '../../toolbox/Util.js';
+import * as CollationTableType from '../../Witness/WitnessTokenClass.js';
+import {CtDataInterface} from "../CtDataInterface.js";
 
 const defaultApparatus = [ApparatusType.CRITICUS, ApparatusType.FONTIUM, ApparatusType.COMPARATIVUS, ApparatusType.MARGINALIA];
 

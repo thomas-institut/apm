@@ -4,10 +4,10 @@ import process, {hrtime} from 'node:process';
 import {readFile, unlink} from 'fs/promises';
 import YAML from 'yaml';
 
-import {SimpleLogger} from "./src/SimpleLogger/SimpleLogger.js";
-import {Measure} from "./src/Actions/Measure/Measure.js";
-import {Typeset} from "./src/Actions/Typeset/Typeset.js";
-import {GeneratePdf} from "./src/Actions/GeneratePdf/GeneratePdf.js";
+import {SimpleLogger} from "#src/SimpleLogger/SimpleLogger.js";
+import {Measure} from "#src/Actions/Measure/Measure.js";
+import {Typeset} from "#src/Actions/Typeset/Typeset.js";
+import {GeneratePdf} from "#src/Actions/GeneratePdf/GeneratePdf.js";
 
 const VERSION = '1.2.9-dev-17';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;

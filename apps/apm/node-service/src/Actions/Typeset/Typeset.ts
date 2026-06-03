@@ -1,5 +1,5 @@
 import {BasicTypesetter, BasicTypesetterOptions, ItemList, ObjectFactory} from '@thomas-inst/typesetter';
-import {PangoMeasurerNodeGTK} from '../../PangoMeasurer/PangoMeasurerNodeGTK.js';
+import {PangoMeasurerNodeGTK} from '#src/PangoMeasurer/PangoMeasurerNodeGTK.js';
 
 // @ts-ignore
 import {SystemStyleSheet} from '#www-js/defaults/EditionStyles/SystemStyleSheet.js';
@@ -7,7 +7,7 @@ import {SystemStyleSheet} from '#www-js/defaults/EditionStyles/SystemStyleSheet.
 import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from '#www-js/Edition/EditionTypesettingHelper.js';
 import {Edition} from "#www-js/Edition/Edition.js";
 import {ApparatusInterface} from "#www-js/Edition/EditionInterface.js";
-import {LoggerInterface} from "../../SimpleLogger/LoggerInterface.js";
+import {LoggerInterface} from "#src/SimpleLogger/LoggerInterface.js";
 
 const debug = false;
 

@@ -1,7 +1,7 @@
-import {TypesetOutputData} from "../Typeset/Typeset.js";
+import {TypesetOutputData} from "#src/Actions/Typeset/Typeset.js";
 import {spawn} from "node:child_process";
 import {stat} from "fs/promises";
-import {LoggerInterface} from "../../SimpleLogger/LoggerInterface.js";
+import {LoggerInterface} from "#src/SimpleLogger/LoggerInterface.js";
 
 
 interface GeneratePdfOptions {

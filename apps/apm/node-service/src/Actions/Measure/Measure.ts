@@ -1,6 +1,6 @@
 // @ts-ignore
 import GI from 'node-gtk';
-import {PangoMeasurerNodeGTK} from "../../PangoMeasurerNodeGTK.js";
+import {PangoMeasurerNodeGTK} from "../../PangoMeasurer/PangoMeasurerNodeGTK.js";
 
 const Pango = GI.require('Pango');
 

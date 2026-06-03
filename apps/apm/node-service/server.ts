@@ -8,23 +8,25 @@ import {SimpleLogger} from "#src/SimpleLogger/SimpleLogger.js";
 import {Measure} from "#src/Actions/Measure/Measure.js";
 import {Typeset} from "#src/Actions/Typeset/Typeset.js";
 import {GeneratePdf} from "#src/Actions/GeneratePdf/GeneratePdf.js";
+import {formatDuration} from "#src/util/formatDuration.js";
 
-const VERSION = '1.2.9-dev-17';
+const VERSION = '1.2.9-dev-22';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;
 const PDF_RENDERER  = 'pdf-renderer.py';
 const DEFAULT_PYTHON_EXECUTABLE = '/usr/bin/python3';
 
+const serverStartTime = hrtime.bigint();
 
 if (process.argv.length < 3) {
   console.log(USAGE);
   process.exit(1);
 }
+const logger = new SimpleLogger({ fileName: '', logToConsole: true, useColorInConsole: true});
 
-console.log(`This is APM's node service version \x1b[1m${VERSION}\x1b[22m`);
-console.log(`    `);
-console.log(`    Config file: ${process.argv[2]}`);
+logger.log(`This is APM's node service version ${VERSION}`, 'info', true);
+logger.debug(`Config file: ${process.argv[2]}`);
 const config = await readConfig(process.argv[2]);
 
 if (config.nodeService === undefined) {
@@ -48,13 +50,12 @@ if (LogFile === '') {
   process.exit(1);
 }
 
-console.log(`    Port       : ${Port}`);
-console.log(`    LogFile    : ${LogFile}`);
-console.log(`    TmpDir     : ${TmpDir}`);
-console.log(`    PdfRenderer: ${PdfRenderer}`);
-console.log(`    `);
+logger.debug(`Port       : ${Port}`);
+logger.debug(`LogFile    : ${LogFile}`);
+logger.debug(`TmpDir     : ${TmpDir}`);
+logger.debug(`PdfRenderer: ${PdfRenderer}`);
+logger.setFileName(LogFile);
 
-const logger = new SimpleLogger(LogFile);
 const nodeServiceServer = express();
 nodeServiceServer.use(bodyParser.json({limit: '50mb'}));
 
@@ -146,7 +147,9 @@ function shutdown(signal: string) {
       logger.error(`Error while closing server: ${err}`);
       process.exit(1);
     }
-    logger.info(`Server closed cleanly`);
+    const end = hrtime.bigint();
+    const uptime = formatDuration(getDurationInMs(end, serverStartTime));
+    logger.log(`APM's node service closed cleanly. It was up for ${uptime} ::`, 'info', true);
     process.exit(0);
   });
   // Force-close any idle/keep-alive connections so close() can complete.
@@ -158,7 +161,7 @@ function shutdown(signal: string) {
   }
   // Safety net: if shutdown hangs, exit forcefully.
   setTimeout(() => {
-    logger.info(`Shutdown timed out, forcing exit`);
+    logger.warn(`Shutdown timed out, forcing exit`);
     process.exit(1);
   }, 5000).unref();
 }

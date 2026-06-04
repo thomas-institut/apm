@@ -81,6 +81,10 @@ export class EditionWitnessTokenStringParser {
 
       tokenArray.push(...wordTokens);
     }
+
+    tokenArray = tokenArray.map( token => {
+      return new WitnessToken().setFromInterface(token);
+    });
     debug && console.log('Output token array');
     debug && console.log(tokenArray);
     return tokenArray;

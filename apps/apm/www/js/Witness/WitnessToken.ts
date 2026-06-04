@@ -101,4 +101,13 @@ export class WitnessToken implements WitnessTokenInterface{
       normalizationSource: this.normalizationSource
     };
   }
+
+   setFromInterface(w: WitnessTokenInterface): this {
+    this.tokenClass = w.tokenClass;
+    this.tokenType = w.tokenType;
+    this.text = w.text;
+    this.normalizedText = w.normalizedText ?? '';
+    this.normalizationSource = w.normalizationSource ?? NormalizationSource.NONE;
+    return this;
+  }
 }

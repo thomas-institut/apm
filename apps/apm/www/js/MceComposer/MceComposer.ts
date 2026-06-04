@@ -30,12 +30,7 @@ import {EditionPreviewPanel} from '@/EditionComposer/EditionPreviewPanel';
 import {Edition} from '@/Edition/Edition';
 
 import {defaultLanguageDefinition} from '@/defaults/languages';
-import {EditionWitnessInfo} from '@/Edition/EditionWitnessInfo';
-import {MainTextTokenFactory} from '@/Edition/MainTextTokenFactory';
-import {arraysAreEqual, uniq, varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
-import {ApparatusTools} from '@/Edition/ApparatusTools';
-import {ApparatusEntry} from '@/Edition/ApparatusEntry';
-import {ApparatusSubEntry} from '@/Edition/ApparatusSubEntry';
+import {arraysAreEqual, varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import {EditableTextField} from '@/widgets/EditableTextField';
 import {BasicProfiler} from '@/toolbox/BasicProfiler';
 import {urlGen} from '@/pages/common/SiteUrlGen';
@@ -43,11 +38,8 @@ import {ApmPage, ApmPageOptions} from '@/pages/ApmPage';
 import {ApmFormats} from '@/pages/common/ApmFormats';
 import {ChunkInMceData, MceDataInterface, WitnessInMceData} from "@/MceData/MceDataInterface";
 import {CtDataInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
-import {FoliationChangeInfoInterface} from "@/Edition/FoliationChangeInfoInterface";
-import {SiglaGroup} from "@/Edition/SiglaGroup";
-import {Apparatus} from "@/Edition/Apparatus";
-import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
+import {MceDataEditionGenerator} from '@/MceData/MceDataEditionGenerator';
 import 'datatables.net-dt/css/jquery.dataTables.min.css';
 import './MceComposer.css';
 
@@ -733,27 +725,6 @@ export class MceComposer extends ApmPage {
     // });
   }
 
-  /**
-   * Returns the CtData's includeInAutoFoliation array that is needed to include the witnesses
-   * given in the MceData
-   * @return {number[]}
-   * @param {MceDataInterface}mceData
-   * @param {number}chunkIndex
-   */
-  getSingleChunkIncludeInAutoFoliationArray(mceData: MceDataInterface, chunkIndex: number): number[] {
-    // basically, translate the indices in MceData's includeInAutoMarginalFoliation into
-    // indices relative to the chunk's witnesses
-    const chunkWitnessIndices = mceData.chunks[chunkIndex].witnessIndices;
-    if (mceData.includeInAutoMarginalFoliation === undefined) {
-      mceData.includeInAutoMarginalFoliation = [];
-    }
-    return mceData.includeInAutoMarginalFoliation.map((mceWitnessIndex) => {
-      return chunkWitnessIndices.indexOf(mceWitnessIndex);
-    }).filter((index) => {
-      return index !== -1;
-    });
-  }
-
   async loadAllSingleChunkEditions() {
     let numChunks = this.mceData.chunks.length;
     for (let i = 0; i < numChunks; i++) {
@@ -766,208 +737,38 @@ export class MceComposer extends ApmPage {
     }
   }
 
-  /**
-   *
-   * @param {number}chunkIndex
-   * @param {FoliationChangeInfoInterface[]}currentFoliationChanges
-   * @return {Promise<void>}
-   */
-  async regenerateSingleChunkEdition(chunkIndex: number, currentFoliationChanges: FoliationChangeInfoInterface[]): Promise<void> {
-    const chunk = this.mceData.chunks[chunkIndex];
-    if (chunk === undefined) {
-      console.warn(`Attempt to regenerate non-existent chunk ${chunkIndex}`);
-      return;
-    }
-    console.log(`Regenerating single chunk edition for chunk ${chunkIndex} ('${chunk.chunkId}' @ ${chunk.version})`, currentFoliationChanges);
-    const data = await this.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
-
-    let singleChunkCtData = data.ctData;
-
-    singleChunkCtData.includeInAutoMarginalFoliation = this.getSingleChunkIncludeInAutoFoliationArray(this.mceData, chunkIndex);
-    let eg = new CtDataEditionGenerator({
-      ctData: singleChunkCtData, lastFoliationChanges: currentFoliationChanges
-    });
-    let edition;
-    try {
-      edition = eg.generateEdition();
-    } catch (e) {
-      console.error(`Error generating edition`);
-      console.error(e);
-      this.errorDetail = `Error generating edition for table id ${chunk.chunkEditionTableId}, chunk ${chunk.chunkId}`;
-      return;
-    }
-    console.log(`Edition for edition id ${chunk.chunkEditionTableId}`);
-    console.log(edition);
-    this.singleChunkEditions[chunkIndex] = edition;
-  }
-
   async regenerateEdition() {
-
     this.editionPanel.updateLoadingMessage(`Regenerating edition with ${this.mceData.chunks.length} chunks`);
 
-    let profiler = new BasicProfiler('RegenerateEdition', true);
-
+    const profiler = new BasicProfiler('RegenerateEdition', true);
     this.edition = new Edition();
-    this.edition.info = {
-      tableId: -1, singleChunk: false, source: 'multiChunk', editionId: this.editionId, chunkId: '', baseWitnessIndex: 0
-    };
-    this.edition.metadata.infoText = `Multi chunk edition`;
 
-    this.edition.siglaGroups = this.mceData.siglaGroups.map( sgi => SiglaGroup.fromObject(sgi));
-    this.edition.witnesses = this.mceData.witnesses.map((w, i) => {
-      return (new EditionWitnessInfo()).setSiglum(this.mceData.sigla[i]).setTitle(w.title);
+    const generator = new MceDataEditionGenerator({
+      ctDataGetter: async (mceData: MceDataInterface, chunkIndex: number) => {
+        const chunk = mceData.chunks[chunkIndex];
+        const data = await this.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
+        return data.ctData;
+      },
+      singleChunkEditionGetter: async (_mceData: MceDataInterface, chunkIndex: number) => {
+        return this.singleChunkEditions[chunkIndex] ?? null;
+      },
+      singleChunkEditionSaver: async (_mceData: MceDataInterface, chunkIndex: number, edition) => {
+        this.singleChunkEditions[chunkIndex] = new Edition().setFromInterface(edition);
+      }
     });
-    // merge main text
-    let currentMainTextIndexShift = 0;
-    let nextChunkShift = 0;
-    let currentFoliationChanges: FoliationChangeInfoInterface[] = [];
-    if (this.mceData.chunkOrder === undefined) {
-      console.warn(`No chunk order in MceData`);
-      this.mceData.chunkOrder = MceData.getDefaultChunkOrder(this.mceData);
+
+    try {
+      const generatedEdition = await generator.generate(this.mceData, this.editionId);
+      this.edition = new Edition().setFromInterface(generatedEdition);
+      console.log(`New Edition`);
+      console.log(this.edition);
+    } catch (e) {
+      console.error(e);
+      this.errorDetail = e instanceof Error ? e.message : String(e);
+      return;
+    } finally {
+      profiler.stop();
     }
-    for (let chunkOrderIndex = 0; chunkOrderIndex < this.mceData.chunkOrder.length; chunkOrderIndex++) {
-      let chunkIndex = this.mceData.chunkOrder[chunkOrderIndex];
-      if (this.singleChunkEditions[chunkIndex] === undefined || this.singleChunkEditions[chunkIndex] === null) {
-        await this.regenerateSingleChunkEdition(chunkIndex, currentFoliationChanges);
-      }
-      let singleChunkEdition = this.singleChunkEditions[chunkIndex];
-      if (singleChunkEdition === undefined || this.singleChunkEditions[chunkIndex] === null) {
-        console.warn(`Edition for chunk ${chunkIndex} is undefined`);
-        return;
-      }
-      currentFoliationChanges = this.mergeFoliationChanges(currentFoliationChanges, singleChunkEdition.foliationChanges ?? []);
-
-      if (chunkOrderIndex === 0) {
-        this.edition.lang = singleChunkEdition.lang;
-      }
-
-      currentMainTextIndexShift = nextChunkShift;
-
-      // Add main text
-      this.edition.mainText.push(...singleChunkEdition.mainText.map((mainTextToken) => {
-        let newToken = MainTextTokenFactory.clone(mainTextToken);
-        newToken.editionWitnessTokenIndex = mainTextToken.editionWitnessTokenIndex + currentMainTextIndexShift;
-        return newToken;
-      }));
-
-      nextChunkShift += singleChunkEdition.mainText.length;
-      switch (this.mceData.chunks[chunkIndex].break) {
-        case 'paragraph':
-          if (chunkOrderIndex !== this.mceData.chunkOrder.length - 1) {
-            // add a paragraph mark if not the last chunk
-            this.edition.mainText.push(MainTextTokenFactory.createParagraphEnd());
-            nextChunkShift++;
-          }
-          break;
-
-        case '':
-          if (chunkOrderIndex !== this.mceData.chunkOrder.length - 1) {
-            // add a paragraph mark if not the last chunk
-            this.edition.mainText.push(MainTextTokenFactory.createNormalGlue());
-            nextChunkShift++;
-          }
-          break;
-
-        case 'page':
-          // TODO: implement page break
-          break;
-
-        case 'section':
-          // TODO: implement section break
-          break;
-
-        default:
-        // nothing to do!
-      }
-
-      // process apparatuses
-      for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {
-        let singleChunkApparatus = singleChunkEdition.apparatuses[appIndex];
-        let currentApparatus;
-        if (this.edition.apparatuses[appIndex] === undefined) {
-          console.log(`At chunk index ${chunkIndex}, apparatus ${appIndex} is empty, creating empty apparatus`);
-          currentApparatus = ApparatusTools.createEmpty();
-          currentApparatus.type = singleChunkApparatus.type;
-          this.edition.apparatuses.push((new Apparatus()).setFromInterface(currentApparatus));
-        }
-        currentApparatus = this.edition.apparatuses[appIndex];
-
-        let apparatusEntriesToAdd = singleChunkApparatus.entries.map((entry) => {
-          let newEntry = new ApparatusEntry();
-          newEntry.from = entry.from + currentMainTextIndexShift;
-          newEntry.to = entry.to + currentMainTextIndexShift;
-          newEntry.lemma = entry.lemma;
-          newEntry.lemmaText = entry.lemmaText;
-          newEntry.postLemma = entry.postLemma;
-          newEntry.preLemma = entry.preLemma;
-          newEntry.separator = entry.separator;
-          newEntry.subEntries = entry.subEntries.map((subEntry) => {
-            let newSubEntry = new ApparatusSubEntry();
-            newSubEntry.enabled = subEntry.enabled;
-            newSubEntry.fmtText = subEntry.fmtText;
-            newSubEntry.source = subEntry.source;
-            newSubEntry.type = subEntry.type;
-            newSubEntry.keyword = subEntry.keyword;
-            newSubEntry.witnessData = subEntry.witnessData.map( (wd) => {
-                let newWd = new WitnessDataItem()
-                newWd.setHand(wd.hand)
-                newWd.setWitnessIndex(this.mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
-                return newWd
-            });
-            return newSubEntry;
-          });
-          return newEntry;
-        });
-
-        // filter out empty entries
-        apparatusEntriesToAdd = apparatusEntriesToAdd.filter((entry) => {
-          return entry.subEntries.length > 0;
-        });
-
-        currentApparatus.entries.push(...apparatusEntriesToAdd);
-      }
-    }
-
-    profiler.stop();
-    console.log(`New Edition`);
-    console.log(this.edition);
-  }
-
-  /**
-   * Merges previous with current foliation changes making sure that the last foliation changes of
-   * a witness is copied into the result if there are no changes in that witness in the new foliation changes
-   *
-   * @param {FoliationChangeInfoInterface[]}previousFoliationChanges
-   * @param {FoliationChangeInfoInterface[]}currentFoliationChanges
-   * @return {FoliationChangeInfoInterface[]}
-   */
-  mergeFoliationChanges(previousFoliationChanges: FoliationChangeInfoInterface[], currentFoliationChanges: FoliationChangeInfoInterface[]): FoliationChangeInfoInterface[] {
-
-    let indicesInPrevious: number[] = [];
-    previousFoliationChanges.forEach((previousFoliationChange) => {
-      indicesInPrevious.push(previousFoliationChange.witnessIndex);
-    });
-    indicesInPrevious = uniq(indicesInPrevious);
-
-    let indicesInCurrent: number[] = [];
-    currentFoliationChanges.forEach((currentFoliationChange) => {
-      indicesInCurrent.push(currentFoliationChange.witnessIndex);
-    });
-    indicesInCurrent = uniq(indicesInCurrent);
-
-    const mergedChanges = [];
-    indicesInPrevious.forEach((previousWitnessIndex) => {
-      if (indicesInCurrent.indexOf(previousWitnessIndex) === -1) {
-        const changes = previousFoliationChanges.filter((previousFoliationChange) => {
-          return previousFoliationChange.witnessIndex === previousWitnessIndex;
-        });
-        if (changes.length > 0) {
-          mergedChanges.push(changes[changes.length - 1]);
-        }
-      }
-    });
-    mergedChanges.push(...currentFoliationChanges);
-    return mergedChanges;
   }
 
   /**

@@ -42,7 +42,7 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
 
     const start = hrtime.bigint();
 
-    this.logger.info(`${logPrefix} Generating edition publication from MCE data: '${mceData.title}', edition Id ${input.editionId}, lang ${mceData.lang}, ${numChunks} chunks`);
+    this.logger.info(`${logPrefix} Generating edition publication from MCE data: '${mceData.title}', id ${input.editionId}, lang ${mceData.lang}, ${numChunks} chunks`);
     if (numChunks === 0) {
       return {
         edition: this.createEmptyEditionPublicationData(),
@@ -70,12 +70,12 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
     });
 
     try {
-      this.logger.debug(`${logPrefix} Generating MCE Edition ${input.editionId} with ${cleanChunksCtData.length} chunks`);
+      this.logger.debug(`${logPrefix} Generating edition from MCE ${input.editionId} with ${cleanChunksCtData.length} chunks`);
       const editionInterface = await generator.generate(mceData, input.editionId);
-      this.logger.debug(`Edition ${input.editionId} generated successfully, converting to publication`);
+      this.logger.debug(`Edition from MCE ${input.editionId} generated successfully, converting to publication`);
       const publicationData = this.convertEditionToEditionPublicationData(editionInterface, input.publicationId, input.versionString);
       const duration = getDurationInMs(process.hrtime.bigint(), start);
-      this.logger.info(`${logPrefix} Publication ${input.publicationId} data created successfully in ${duration} ms`);
+      this.logger.info(`${logPrefix} Publication data for edition from MCE ${input.editionId} created successfully in ${duration} ms`);
       return {
         edition: publicationData,
         error: false,

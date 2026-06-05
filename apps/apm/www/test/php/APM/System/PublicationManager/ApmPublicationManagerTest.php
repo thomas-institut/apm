@@ -3,15 +3,20 @@
 namespace APM\System\PublicationManager;
 
 use APM\EntitySystem\Schema\Entity;
+use APM\NodeService\NodeServiceClient;
+use APM\CollationTable\CollationTableManager;
 use APM\System\Document\DocInfo;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\PageInfo;
 use APM\System\LanguageManager;
+use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Transcription\TranscriptionManager;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
+use Psr\Log\LoggerInterface;
+use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
@@ -21,6 +26,10 @@ class ApmPublicationManagerTest extends TestCase
     private MockObject&DocumentManager $dm;
     private MockObject&TranscriptionManager $tm;
     private MockObject&LanguageManager $lm;
+    private MockObject&MultiChunkEditionManager $mceManager;
+    private MockObject&CollationTableManager $ctManager;
+    private MockObject&NodeServiceClient $nodeServiceClient;
+    private MockObject&LoggerInterface $logger;
     private MockObject&Client $valkeyClient;
     private ApmPublicationManager $manager;
 
@@ -29,12 +38,20 @@ class ApmPublicationManagerTest extends TestCase
         $this->dm = $this->createMock(DocumentManager::class);
         $this->tm = $this->createMock(TranscriptionManager::class);
         $this->lm = $this->createMock(LanguageManager::class);
+        $this->mceManager = $this->createMock(MultiChunkEditionManager::class);
+        $this->ctManager = $this->createMock(CollationTableManager::class);
+        $this->nodeServiceClient = $this->createMock(NodeServiceClient::class);
+        $this->logger = $this->createMock(LoggerInterface::class);
         $this->valkeyClient = $this->createMock(Client::class);
 
         $this->manager = new ApmPublicationManager(
             $this->dm,
             $this->tm,
             $this->lm,
+            $this->mceManager,
+            $this->ctManager,
+            $this->nodeServiceClient,
+            $this->logger,
             ['source1'],
             $this->valkeyClient
         );
@@ -315,5 +332,130 @@ class ApmPublicationManagerTest extends TestCase
         $updatedData = unserialize($capturedFields['data']);
         $this->assertEquals($pubId, $updatedData->id);
         $this->assertEquals('New Title', $updatedData->title);
+    }
+    /**
+     * @throws ResourceNotFoundException
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testCreateEditionPublication(): void
+    {
+        $mceId = 123;
+        $mceDataInfo = [
+            'validFrom' => '2023-01-01 00:00:00.000000',
+            'mceData' => [
+                'chunks' => [
+                    ['chunkEditionTableId' => 456]
+                ]
+            ]
+        ];
+
+        $this->mceManager->expects($this->once())
+            ->method('getMultiChunkEditionById')
+            ->with($mceId)
+            ->willReturn($mceDataInfo);
+
+        $this->ctManager->expects($this->once())
+            ->method('getCollationTableById')
+            ->with(456)
+            ->willReturn(['some' => 'ct data']);
+
+        $expectedNodeResponse = [
+            'editionId' => $mceId,
+            'title' => 'Edition Title',
+            'versionTimeString' => '2023-01-01 00:00:00.000000',
+            'description' => 'Edition Description'
+        ];
+
+        $this->nodeServiceClient->expects($this->once())
+            ->method('generateEditionPublication')
+            ->willReturn($expectedNodeResponse);
+
+        $capturedPubKey = null;
+        $this->valkeyClient->expects($this->once())
+            ->method('transaction')
+            ->willReturnCallback(function($callback) use (&$capturedPubKey) {
+                $tx = $this->createMock(Client::class);
+                $tx->method('__call')->willReturnCallback(function($method, $args) use (&$capturedPubKey) {
+                    if ($method === 'hset' && $args[1] === 'type') {
+                        $capturedPubKey = $args[0];
+                    }
+                    return null;
+                });
+                $callback($tx);
+            });
+
+        $result = $this->manager->createPublication(PublicationType::Edition, $mceId);
+
+        $this->assertInstanceOf(PublicationData::class, $result);
+        $this->assertEquals('Edition Title', $result->title);
+        $this->assertNotEmpty($result->id);
+        $this->assertEquals('APM:PublicationManager:pub:' . $result->id, $capturedPubKey);
+    }
+
+    /**
+     * @throws PublicationNotFoundException
+     * @throws ResourceNotFoundException
+     */
+    #[AllowMockObjectsWithoutExpectations]
+    public function testUpdateEditionPublication(): void
+    {
+        $pubId = 999;
+        $mceId = 123;
+
+        $this->valkeyClient->method('__call')
+            ->willReturnCallback(function($method, $args) use ($pubId, $mceId) {
+                if ($method === 'hgetall' && $args[0] === 'APM:PublicationManager:pub:' . $pubId) {
+                    return [
+                        'type' => PublicationType::Edition,
+                        'resourceId' => (string)$mceId,
+                        'title' => 'Old Edition Title'
+                    ];
+                }
+                return null;
+            });
+
+        $mceDataInfo = [
+            'validFrom' => '2023-01-01 00:00:00.000000',
+            'mceData' => ['chunks' => []]
+        ];
+
+        $this->mceManager->expects($this->once())
+            ->method('getMultiChunkEditionById')
+            ->with($mceId)
+            ->willReturn($mceDataInfo);
+
+        $updatedNodeResponse = [
+            'title' => 'Updated Edition Title',
+            'versionTimeString' => '2023-01-01 00:00:00.000000',
+            'description' => 'Updated Edition Description'
+        ];
+
+        $this->nodeServiceClient->expects($this->once())
+            ->method('generateEditionPublication')
+            ->willReturn($updatedNodeResponse);
+
+        $capturedFields = [];
+        $this->valkeyClient->method('__call')
+            ->willReturnCallback(function($method, $args) use (&$capturedFields, $pubId, $mceId) {
+                if ($method === 'hgetall' && $args[0] === 'APM:PublicationManager:pub:' . $pubId) {
+                    return [
+                        'type' => PublicationType::Edition,
+                        'resourceId' => (string)$mceId,
+                        'title' => 'Old Edition Title'
+                    ];
+                }
+                if ($method === 'hset') {
+                    $capturedFields[$args[1]] = $args[2];
+                }
+                return null;
+            });
+
+        $this->manager->updatePublication($pubId);
+
+        $this->assertEquals('Updated Edition Title', $capturedFields['title']);
+        $this->assertArrayHasKey('data', $capturedFields);
+        $updatedData = unserialize($capturedFields['data']);
+        $this->assertEquals($pubId, $updatedData['id']);
+        $this->assertEquals('Updated Edition Title', $updatedData['title']);
     }
 }

@@ -2,6 +2,7 @@
 
 namespace APM\System\Factories;
 
+use APM\NodeService\NodeServiceClient;
 use APM\System\LanguageManager;
 use APM\System\PublicationManager\ApmPublicationManager;
 use APM\System\PublicationManager\PublicationManagerInterface;
@@ -10,6 +11,7 @@ use Predis\Client;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
+use Psr\Log\LoggerInterface;
 
 class PublicationManagerFactory
 {
@@ -24,6 +26,19 @@ class PublicationManagerFactory
         /** @var LanguageManager $lm */
         $lm = $ci->get(LanguageManager::class);
         $valkeyClient = $ci->get(Client::class);
-        return new ApmPublicationManager($sm->getDocumentManager(), $sm->getTranscriptionManager(), $lm, $sm->getImageSources(), $valkeyClient);
+        $nodeServiceClient = $ci->get(NodeServiceClient::class);
+        $logger = $ci->get(LoggerInterface::class);
+
+        return new ApmPublicationManager(
+            $sm->getDocumentManager(),
+            $sm->getTranscriptionManager(),
+            $lm,
+            $sm->getMultiChunkEditionManager(),
+            $sm->getCollationTableManager(),
+            $nodeServiceClient,
+            $logger,
+            $sm->getImageSources(),
+            $valkeyClient
+        );
     }
 }

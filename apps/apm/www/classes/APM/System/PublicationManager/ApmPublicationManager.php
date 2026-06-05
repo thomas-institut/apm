@@ -4,16 +4,21 @@ namespace APM\System\PublicationManager;
 
 use APM\EntitySystem\Schema\Entity;
 use APM\System\ApmImageType;
+use APM\NodeService\GenEditionPublicationInputData;
+use APM\NodeService\NodeServiceClient;
+use APM\CollationTable\CollationTableManager;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\LanguageManager;
+use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\Transcription\TxText\ChunkMark;
 use APM\System\Transcription\TxText\Item;
 use InvalidArgumentException;
 use Predis\Client;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
@@ -30,11 +35,15 @@ class ApmPublicationManager implements PublicationManagerInterface
 
     private const string valkeyPrefix = 'APM:PublicationManager:';
 
-    public function __construct(private readonly DocumentManager      $dm,
-                                private readonly TranscriptionManager $tm,
-                                private readonly LanguageManager      $lm,
-                                private readonly array                $imageSources,
-                                private readonly Client               $valkeyClient
+    public function __construct(private readonly DocumentManager          $dm,
+                                private readonly TranscriptionManager     $tm,
+                                private readonly LanguageManager          $lm,
+                                private readonly MultiChunkEditionManager $mceManager,
+                                private readonly CollationTableManager    $ctManager,
+                                private readonly NodeServiceClient        $nodeServiceClient,
+                                private readonly LoggerInterface          $logger,
+                                private readonly array                    $imageSources,
+                                private readonly Client                   $valkeyClient
     )
     {
 
@@ -90,6 +99,17 @@ class ApmPublicationManager implements PublicationManagerInterface
                 throw new ResourceNotFoundException("Resource not found: " . $e->getMessage(), 0, $e);
             } catch (InvalidTimeStringException $e) {
                 throw new RuntimeException("Invalid time string: " . $e->getMessage(), 0, $e);
+            }
+        } elseif ($type === PublicationType::Edition) {
+            try {
+                $data = $this->getEditionDataForMce($resourceId);
+                $data['id'] = $id;
+                $this->valkeyClient->hset($pubKey, 'data', serialize($data));
+                $this->valkeyClient->hset($pubKey, 'title', $data['title']);
+                $this->valkeyClient->hset($pubKey, 'versionTimeString', $data['versionTimeString']);
+                $this->valkeyClient->hset($pubKey, 'description', $data['description'] ?? '');
+            } catch (RuntimeException $e) {
+                throw new ResourceNotFoundException("Error updating edition publication: " . $e->getMessage(), 0, $e);
             }
         } else {
             throw new InvalidArgumentException("Publication type '$type' is not supported for update");
@@ -149,7 +169,81 @@ class ApmPublicationManager implements PublicationManagerInterface
             }
 
         }
+
+        if ($type === PublicationType::Edition) {
+            try {
+                $editionData = $this->getEditionDataForMce($resourceId);
+                // The Node service returns an array that when serialized/unserialized should match
+                // the expected data structure for an Edition publication.
+                // For now, we wrap it in a PublicationData-like structure if needed,
+                // but usually the node service returns the final data.
+                $id = Tid::generateUnique();
+                $editionData['id'] = $id;
+
+                $publicationData = new class($editionData) extends PublicationData {
+                    public array $data;
+                    public function __construct(array $editionData) {
+                        $this->id = $editionData['id'];
+                        $this->type = PublicationType::Edition;
+                        $this->title = $editionData['title'];
+                        $this->versionTimeString = $editionData['versionTimeString'];
+                        $this->description = $editionData['description'] ?? '';
+                        $this->data = $editionData;
+                    }
+                };
+
+                if ($dryRun) {
+                    return $publicationData;
+                }
+
+                $this->valkeyClient->transaction(function ($tx) use ($id, $editionData, $type) {
+                    $pubKey = self::valkeyPrefix . 'pub:' . $id;
+                    $tx->hset($pubKey, 'data', serialize($editionData));
+                    $tx->hset($pubKey, 'type', $type);
+                    $tx->hset($pubKey, 'resourceId', (string)$editionData['editionId']);
+                    $tx->hset($pubKey, 'title', $editionData['title']);
+                    $tx->hset($pubKey, 'versionTimeString', $editionData['versionTimeString']);
+                    $tx->hset($pubKey, 'description', $editionData['description'] ?? '');
+
+                    $tx->sadd(self::valkeyPrefix . 'pubs', [$id]);
+                });
+
+                return $publicationData;
+            } catch (RuntimeException $e) {
+                throw new ResourceNotFoundException("Error creating edition publication: " . $e->getMessage(), 0, $e);
+            }
+        }
+
         throw new InvalidArgumentException("Publication type '$type' is not supported");
+    }
+
+    private function getEditionDataForMce(int $resourceId): array
+    {
+        $inputData = $this->getMceDataForNodeService($resourceId);
+        try {
+            return $this->nodeServiceClient->generateEditionPublication($inputData);
+        } catch (\Exception $e) {
+            throw new RuntimeException("Node service failed: " . $e->getMessage(), 0, $e);
+        }
+    }
+
+    private function getMceDataForNodeService(int $mceId): GenEditionPublicationInputData
+    {
+        $this->logger->debug("Retrieving MCE data for edition ID {$mceId}");
+        $mceDataInfo = $this->mceManager->getMultiChunkEditionById($mceId);
+        $versionString = $mceDataInfo['validFrom'];
+        $mceData = $mceDataInfo['mceData'];
+        $this->logger->debug("Retrieved MCE data for edition ID {$mceId}, version: {$versionString}, chunks count: " . count($mceData['chunks']));
+        $chunksCtData = [];
+
+        foreach ($mceData['chunks'] as $chunkIndex => $chunk) {
+            $singleChunkEditionId = $chunk['chunkEditionTableId'];
+            $this->logger->debug("Retrieving chunk CT data for chunk index {$chunkIndex}, edition ID {$singleChunkEditionId}");
+            $chunkCtData = $this->ctManager->getCollationTableById($singleChunkEditionId);
+            $chunksCtData[$chunkIndex] = $chunkCtData;
+        }
+
+        return new GenEditionPublicationInputData($mceId, $mceData, $versionString, $chunksCtData);
     }
 
     /**

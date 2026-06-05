@@ -4,7 +4,6 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\Actions\GetTranscriptionDataForDocument;
 use APM\CommandLine\CommandLineUtility;
-use APM\NodeService\GenEditionPublicationInputData;
 use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\PublicationManager\ResourceNotFoundException;
@@ -66,8 +65,12 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         if ($type === 'tx' || $type === 'tx-full' ) {
             $type = PublicationType::Transcription;
         }
-        if ($type !== PublicationType::Transcription) {
-            print "Sorry, only transcription publications are supported at this time\n";
+        if ($type === 'ed' || $type === 'edition') {
+            $type = PublicationType::Edition;
+        }
+
+        if ($type !== PublicationType::Transcription && $type !== PublicationType::Edition) {
+            print "Sorry, only transcription and edition publications are supported at this time\n";
             return 1;
         }
         try {
@@ -156,8 +159,10 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             if ($data->type === PublicationType::Transcription) {
                 /** @var TranscriptionData $data */
                 $this->printTranscriptionData($data);
+            } elseif ($data->type === PublicationType::Edition) {
+                print "Publication $pubId is an Edition publication. Content display is not yet supported in CLI.\n";
             } else {
-                print "Publication $pubId is of type '$data->type': Sorry, only transcription publications are supported at this time\n";
+                print "Publication $pubId is of type '$data->type': Not supported for display\n";
                 return 1;
             }
             return 0;
@@ -230,30 +235,5 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             $linesToPrint[] = " ";
         }
         print implode("\n", $linesToPrint);
-    }
-
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    private function getMceDataForNodeService(int $mceId): GenEditionPublicationInputData {
-        $mceDataManager = $this->getSystemManager()->getMultiChunkEditionManager();
-        $ctManager = $this->getSystemManager()->getCollationTableManager();
-
-        $this->logger->debug("Retrieving MCE data for edition ID {$mceId}");
-        $mceDataInfo = $mceDataManager->getMultiChunkEditionById($mceId);
-        $versionString = $mceDataInfo['validFrom'];
-        $mceData = $mceDataInfo['mceData'];
-        $this->logger->debug("Retrieved MCE data for edition ID {$mceId}, version: {$versionString}, chunks count: " . count($mceData['chunks']));
-        $chunksCtData = [];
-
-        foreach($mceData['chunks'] as $chunkIndex => $chunk) {
-            $singleChunkEditionId = $chunk['chunkEditionTableId'];
-            $this->logger->debug("Retrieving chunk CT data for chunk index {$chunkIndex}, edition ID {$singleChunkEditionId}");
-            $chunkCtData = $ctManager->getCollationTableById($singleChunkEditionId);
-            $chunksCtData[$chunkIndex] = $chunkCtData;
-        }
-
-        return new GenEditionPublicationInputData($mceId, $mceData, $versionString, $chunksCtData);
     }
 }

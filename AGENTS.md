@@ -32,6 +32,12 @@ Infrastructure used by the project:
 
 Development services run in Docker containers. Agents must use PHP from the containers, not the local PHP.
 
+**Crucial for Agents:**
+- If the `docker` command is missing from your `PATH`, check `/usr/local/bin`. 
+- To run PHP tests for APM, use `scripts/apm-composer test`.
+- Paths for tests in the script should be relative to the container's working directory (`apps/apm/www`). 
+  Example: `./scripts/apm-composer test test/php/APM/System/PublicationManager/ApmPublicationManagerTest.php`
+
 ## Repository Layout
 
 - `apps`: apps and shared TS libraries

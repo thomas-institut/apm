@@ -2,7 +2,7 @@ import {useParams} from "react-router";
 import {JSX, useContext, useState} from "react";
 import {ApeContext} from "@/App/App";
 import {useQuery} from "@tanstack/react-query";
-import {docTypeName, getTranscribedPages, TextPublicationData, TranscriptionData} from "@/Api/Schema/ApiPublication";
+import {docTypeName, getTranscribedPages, TextPublicationData, TranscriptionData} from "@shared/ts";
 import {TranscriptionViewer} from "@/ui/TranscriptionViewer/TranscriptionViewer";
 import PageLayout, {TopBarCenter, TopBarRight} from "@/ui/ApeUx/PageLayout";
 import {nameFromCode} from "@/Lang/Lang";

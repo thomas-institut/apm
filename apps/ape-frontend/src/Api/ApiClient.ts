@@ -1,11 +1,12 @@
 import {AppConfig, GetAppConfigApiResponse} from "@/Api/Schema/GetAppConfig";
-import {ApiErrorResponse, ApiResponse} from "@/Api/Schema/ApiResponse";
 import {
   AnyPublicationData,
   PublicationApiListResponse,
   PublicationApiGetResponse,
   PublicationListing,
-} from "@/Api/Schema/ApiPublication";
+  ThomasInstStandardApiResponse,
+  ApiErrorResponse,
+} from "@shared/ts";
 import {GetPublicationLastUpdateApiResponse} from "@/Api/Schema/GetPublicationLastUpdate";
 
 export interface ApiClientResponse<T> {
@@ -53,7 +54,7 @@ export class ApiClient {
     );
   }
 
-  private async callApi<TApiResponse extends ApiResponse, TData>(
+  private async callApi<TApiResponse extends ThomasInstStandardApiResponse, TData>(
     path: string,
     mapSuccessData: (apiResponse: TApiResponse) => TData,
   ): Promise<ApiClientResponse<TData>> {
@@ -62,9 +63,9 @@ export class ApiClient {
     try {
       const fetchResponse = await fetch(url);
 
-      let response: ApiResponse | null = null;
+      let response: ThomasInstStandardApiResponse | null = null;
       try {
-        response = await fetchResponse.json() as ApiResponse;
+        response = await fetchResponse.json() as ThomasInstStandardApiResponse;
       } catch {
         // If we cannot parse JSON we still return a normalized error response below.
       }

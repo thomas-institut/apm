@@ -9,7 +9,7 @@ import {Measure} from "#src/Actions/Measure/Measure.js";
 import {Typeset} from "#src/Actions/Typeset/Typeset.js";
 import {GeneratePdf} from "#src/Actions/GeneratePdf/GeneratePdf.js";
 import {formatDuration} from "#src/util/formatDuration.js";
-import {GenerateEdition} from "#src/Actions/GenerateEdition/GenerateEdition.js";
+import {GenerateEditionFromMceData} from "#src/Actions/GenerateEdition/GenerateEditionFromMceData.js";
 
 const VERSION = '1.2.9-dev-23';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
@@ -139,7 +139,7 @@ nodeServiceServer.post('/api/edition/generate', async (req, res) => {
     return;
   }
 
-  const action = new GenerateEdition({
+  const action = new GenerateEditionFromMceData({
     logger: logger,
   });
 

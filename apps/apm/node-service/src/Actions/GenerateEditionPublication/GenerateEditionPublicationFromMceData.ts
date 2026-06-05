@@ -23,7 +23,7 @@ interface GenerateEditionOptions {
   logger: LoggerInterface;
 }
 
-export class GenerateEdition implements Action<GenerateEditionInput, GenerateEditionOutput>
+export class GenerateEditionPublicationFromMceData implements Action<GenerateEditionInput, GenerateEditionOutput>
 {
   private readonly logger: LoggerInterface;
   constructor(options: GenerateEditionOptions) {

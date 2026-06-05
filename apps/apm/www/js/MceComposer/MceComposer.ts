@@ -920,7 +920,7 @@ export class MceComposer extends ApmPage {
 
     // add witness siglum at the end of this.mceData.sigla
     if (this.mceData.sigla.indexOf(siglum) !== -1) {
-      // siglum already exists, since we don't want duplicate sigla,
+      // siglum already exists; since we don't want duplicate sigla,
       // we need to create a new unique one that the user will surely
       // change later on
       this.mceData.sigla.push(`W${witnessIndex}`);
@@ -934,7 +934,7 @@ export class MceComposer extends ApmPage {
   /**
    * Get the witness index for the given witness id
    *
-   * Return -1 if the witness in not in the multi-chunk edition witness list
+   * Return -1 if the witness is not in the multi-chunk edition witness list
    */
   private getWitnessIndexByWitnessId(witnessId: string): number {
     for (let i = 0; i < this.mceData.witnesses.length; i++) {

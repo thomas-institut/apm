@@ -1,4 +1,4 @@
-import {getTranscribedPages, TranscriptionColumn, TranscriptionData} from "@/Api/Schema/ApiPublication";
+import {getTranscribedPages, TranscriptionColumn, TranscriptionData} from "@shared/ts";
 
 
 export type ViewerType = 'singlePageText' | 'textOnlyNavigator' | 'navigator';

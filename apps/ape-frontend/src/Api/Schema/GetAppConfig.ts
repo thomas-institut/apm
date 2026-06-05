@@ -1,4 +1,4 @@
-import {ApiSuccessResponse} from "@/Api/Schema/ApiResponse";
+import {ApiSuccessResponse} from "@shared/ts";
 
 /**
  * Mirrors \ThomasInstitut\Ape\ActionsSchema\BackendInfo

@@ -3,7 +3,7 @@ export type ApiResult = 'Success' | 'Error' | 'Undefined';
 /**
  * Mirrors \ThomasInstitut\StandardApi\ApiResponse
  */
-export interface ApiResponse {
+export interface ThomasInstStandardApiResponse {
   result: ApiResult;
   timeStamp: number;
 }
@@ -11,7 +11,7 @@ export interface ApiResponse {
 /**
  * Mirrors \ThomasInstitut\StandardApi\ErrorResponse
  */
-export interface ApiErrorResponse extends ApiResponse {
+export interface ApiErrorResponse extends ThomasInstStandardApiResponse {
   result: 'Error';
   message: string;
   httpStatus: number;
@@ -20,6 +20,6 @@ export interface ApiErrorResponse extends ApiResponse {
 /**
  * Mirrors \ThomasInstitut\StandardApi\SuccessResponse
  */
-export interface ApiSuccessResponse extends ApiResponse {
+export interface ApiSuccessResponse extends ThomasInstStandardApiResponse {
   result: 'Success';
 }

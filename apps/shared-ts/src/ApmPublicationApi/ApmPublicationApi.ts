@@ -94,6 +94,7 @@ export interface MainTextToken {
   type: MainTextTokenType;
   text: CompactFmtText;
   style: string;
+  lang?: string;
 }
 
 /**
@@ -124,9 +125,10 @@ export interface WitnessData {
 export interface ApparatusSubEntry {
   type: SubEntryType;
   text: CompactFmtText;
-  witnessData: WitnessData;
+  witnessData: WitnessData[];
   keyword: string;
   position: number;
+  source?: string;
 }
 
 /**

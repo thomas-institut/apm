@@ -1,11 +1,11 @@
 import { Action } from "#src/Actions/Action.js"
-// @ts-ignore
 import {MceDataInterface} from "#www-js/MceData/MceDataInterface.js";
 import {CtDataInterface} from "#www-js/CtData/CtDataInterface.js";
 import {LoggerInterface} from "#www-js/lib/Logger/LoggerInterface.js";
 import {EditionInterface} from "#www-js/Edition/EditionInterface.js";
-import {Edition} from "#www-js/Edition/Edition.js";
 import {MceDataEditionGenerator} from "#www-js/MceData/MceDataEditionGenerator.js";
+import {EditionPublicationData} from "#shared-ts/ApmPublicationApi/ApmPublicationApi.js";
+import {toCompactFmtText} from "@thomas-inst/fmt-text";
 
 
 interface GenerateEditionInput {
@@ -14,7 +14,7 @@ interface GenerateEditionInput {
   chunksCtData: CtDataInterface[];
 }
 interface GenerateEditionOutput {
-  edition: EditionInterface;
+  edition: EditionPublicationData;
   error: boolean;
   errorMessage?: string;
 }
@@ -37,7 +37,7 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
     this.logger.debug(`Generating edition from MCE data: '${mceData.title}', lang ${mceData.lang}, ${numChunks} chunks`);
     if (numChunks === 0) {
       return {
-        edition: new Edition(),
+        edition: this.createEmptyEditionPublicationData(),
         error: true,
         errorMessage: 'No chunks found'
       };
@@ -45,7 +45,7 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
 
     if (input.chunksCtData.length !== numChunks) {
       return {
-        edition: new Edition(),
+        edition: this.createEmptyEditionPublicationData(),
         error: true,
         errorMessage: 'Mismatch between MCE and CT data chunk counts'
       };
@@ -58,16 +58,88 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
 
     try {
       return {
-        edition: await generator.generate(mceData, input.editionId),
-        error: true,
-        errorMessage: 'Not implemented yet'
+        edition: this.convertEditionToEditionPublicationData(await generator.generate(mceData, input.editionId)),
+        error: false,
       };
     } catch (error) {
       return {
-        edition: new Edition(),
+        edition: this.createEmptyEditionPublicationData(),
         error: true,
         errorMessage: String(error)
       }
     }
+  }
+
+  private convertEditionToEditionPublicationData(edition: EditionInterface): EditionPublicationData {
+    return {
+      type: 'edition',
+      id: edition.info.editionId,
+      versionTimeString: '',  // APM's PHP backend will fill this with actual versioning information
+      title: edition.metadata.title || 'Untitled Edition',
+      description: edition.metadata.description || '',
+      languageCode: edition.lang,
+      mainText: edition.mainText.map(token => ({
+        type: token.type,
+        text: toCompactFmtText(token.fmtText),
+        style: token.style,
+        lang: token.lang,
+      })),
+      apparatuses: edition.apparatuses.map(app => {
+        const validApparatusTypes = ['criticus', 'fontium', 'comparativus', 'marginalia'];
+        if (!validApparatusTypes.includes(app.type)) {
+          this.logger.warn(`Apparatus type mismatch: '${app.type}' is not one of the expected literal types: ${validApparatusTypes.join(', ')}`);
+        }
+        return {
+          type: app.type as any, // Cast to any because of potential mismatch between string and literal types
+          entries: app.entries.map(entry => ({
+            from: entry.from,
+            to: entry.to,
+            preLemma: entry.lemma,
+            postLemma: entry.postLemma,
+            lemmaText: entry.lemmaText,
+            separator: entry.separator,
+            subEntries: entry.subEntries.filter(s => s.enabled).map(subEntry => ({
+              type: subEntry.type as any,
+              text: toCompactFmtText(subEntry.fmtText),
+              source: subEntry.source,
+              witnessData: subEntry.witnessData.map(w => ({
+                witnessIndex: w.witnessIndex,
+                hand: w.hand,
+                location: w.location,
+                siglum: w.siglum,
+                omitSiglum: w.omitSiglum,
+                forceHandDisplay: w.forceHandDisplay
+              })),
+              keyword: subEntry.keyword,
+              position: subEntry.position
+            }))
+          }))
+        };
+      }),
+      witnesses: edition.witnesses.map(w => ({
+        title: w.title,
+        siglum: w.siglum,
+        publicationId: -1 // APM's PHP backend will fill this correctly
+      })),
+      siglaGroups: edition.siglaGroups.map(sg => ({
+        siglum: sg.siglum,
+        witnessIndices: sg.witnesses
+      }))
+    };
+  }
+
+  private createEmptyEditionPublicationData(): EditionPublicationData {
+   return {
+     type: 'edition',
+     id: -1,
+     versionTimeString: '',
+     title: 'Empty Edition',
+     description: 'Empty Edition',
+     languageCode: '',
+     mainText: [],
+     apparatuses: [],
+     siglaGroups: [],
+     witnesses: []
+   }
   }
 }

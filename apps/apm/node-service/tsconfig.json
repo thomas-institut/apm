@@ -3,7 +3,8 @@
     "baseUrl": ".",
     "paths": {
       "#src/*": ["./src/*"],
-      "#www-js/*": ["../www/js/*"]
+      "#www-js/*": ["../www/js/*"],
+      "#shared-ts/*": ["shared-ts/src/*"],
     },
     "target": "es2024",
     "lib": ["es2024"],
@@ -14,11 +15,9 @@
     "strict": true,
     "skipLibCheck": true,
     "outDir": "./dist",
-    "allowJs": true
+    "rootDir": "../..",
+    "allowJs": true,
   },
-  "include": [
-    "**/*.ts",
-  ],
   "exclude": [
     "node_modules",
     "dist"

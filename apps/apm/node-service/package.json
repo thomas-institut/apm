@@ -3,8 +3,9 @@
   "version": "1.2.9",
   "type": "module",
   "imports": {
-    "#src/*": "./dist/node-service/src/*",
-    "#www-js/*": "./dist/www/js/*"
+    "#src/*": "./dist/apm/node-service/src/*",
+    "#www-js/*": "./dist/apm/www/js/*",
+    "#shared-ts/*": "./dist/shared-ts/src/*"
   },
   "scripts": {
     "build": "rm -fr dist; tsc",

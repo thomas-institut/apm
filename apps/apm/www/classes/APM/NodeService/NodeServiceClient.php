@@ -3,6 +3,7 @@
 namespace APM\NodeService;
 
 use APM\ToolBox\HttpStatus;
+use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 
@@ -28,6 +29,8 @@ class NodeServiceClient
             $nodeServiceResponse = $client->post('/api/edition/publication/fromMceData', ['body' => json_encode($inputData)]);
         } catch (GuzzleException $e) {
             throw new CouldNotContactServiceException("Could not contact node service: " . $e->getMessage());
+        } catch (Exception $e) {
+            throw new NodeServiceFailedException("Unexpected error contacting node service: " . $e->getMessage());
         }
 
         if ($nodeServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {

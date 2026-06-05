@@ -10,8 +10,9 @@ import {Typeset} from "#src/Actions/Typeset/Typeset.js";
 import {GeneratePdf} from "#src/Actions/GeneratePdf/GeneratePdf.js";
 import {formatDuration} from "#src/util/formatDuration.js";
 import {GenerateEditionPublicationFromMceData} from "#src/Actions/GenerateEditionPublication/GenerateEditionPublicationFromMceData.js";
+import {getDurationInMs} from "#src/util/getDurationInMs.js";
 
-const VERSION = '1.2.9-dev-23';
+const VERSION = '1.2.9-dev-28';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;
@@ -145,7 +146,8 @@ nodeServiceServer.post('/api/edition/publication/fromMceData', async (req, res) 
 
   const generateEditionOutput = await action.execute({
     mceData: data.mceData,
-    editionId: data.id,
+    editionId: data.editionId,
+    publicationId: data.publicationId,
     chunksCtData: data.chunksCtData,
     versionString: data.versionString,
   });
@@ -203,8 +205,4 @@ process.on('SIGINT', () => shutdown('SIGINT'));
 async function readConfig(configFileName: string): Promise<any> {
   const fileContent = await readFile(configFileName, 'utf8');
   return YAML.parse(fileContent.toString());
-}
-
-function getDurationInMs(end: bigint, start: bigint) {
-  return Math.round(Number(end - start) / 1000000);
 }

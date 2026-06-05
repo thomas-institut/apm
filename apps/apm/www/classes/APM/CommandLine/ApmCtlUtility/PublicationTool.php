@@ -44,6 +44,12 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
 
     public function main($argc, $argv): int
     {
+
+        if ($argc === 1) {
+            print "Usage:\n" . $this->getHelp() . "\n";
+            return 0;
+        }
+
         $option = $argv[1] ?? '';
 
         return match ($option) {
@@ -53,7 +59,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             'del' => $this->remove((int)$argv[2]),
             'show' => $this->show((int)$argv[2]),
             'preview' => $this->preview($argv[2], (int)$argv[3]),
-            default => 1,
+            default => 0,
         };
     }
 
@@ -103,6 +109,9 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         } catch (PublicationNotFoundException) {
             print "Error: publication not found\n";
+            return 1;
+        } catch (ResourceNotFoundException $e) {
+            print "Error: publication's resource data not found\n";
             return 1;
         }
     }

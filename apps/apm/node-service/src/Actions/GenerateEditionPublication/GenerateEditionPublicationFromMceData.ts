@@ -6,11 +6,15 @@ import {EditionInterface} from "#www-js/Edition/EditionInterface.js";
 import {MceDataEditionGenerator} from "#www-js/MceData/MceDataEditionGenerator.js";
 import {EditionPublicationData} from "#shared-ts/ApmPublicationApi/ApmPublicationApi.js";
 import {toCompactFmtText} from "@thomas-inst/fmt-text";
+import {CtData} from "#www-js/CtData/CtData.js";
+import {hrtime} from "node:process";
+import {getDurationInMs} from "#src/util/getDurationInMs.js";
 
 
 interface GenerateEditionInput {
   mceData: MceDataInterface;
   editionId: number;
+  publicationId: number;
   versionString: string;
   chunksCtData: CtDataInterface[];
 }
@@ -34,8 +38,11 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
   async execute(input: GenerateEditionInput): Promise<GenerateEditionOutput> {
     const mceData = input.mceData;
     const numChunks = input.mceData.chunks.length;
+    const logPrefix = `PUB-${input.publicationId}:`;
 
-    this.logger.debug(`Generating edition from MCE data: '${mceData.title}', lang ${mceData.lang}, ${numChunks} chunks`);
+    const start = hrtime.bigint();
+
+    this.logger.info(`${logPrefix} Generating edition publication from MCE data: '${mceData.title}', edition Id ${input.editionId}, lang ${mceData.lang}, ${numChunks} chunks`);
     if (numChunks === 0) {
       return {
         edition: this.createEmptyEditionPublicationData(),
@@ -52,14 +59,25 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
       };
     }
 
+    const cleanChunksCtData = input.chunksCtData.map( (ctData, index) => {
+      this.logger.debug(`${logPrefix} Cleaning ct data for chunk ${index}: table ${ctData.tableId}, chunk ${ctData.chunkId}`);
+      return CtData.getCleanAndUpdatedCtData(ctData);
+    })
+
     const generator  = new MceDataEditionGenerator({
-      ctDataGetter: (_mceData, chunkIndex) => Promise.resolve(input.chunksCtData[chunkIndex]),
+      ctDataGetter: (_mceData, chunkIndex) => Promise.resolve(cleanChunksCtData[chunkIndex]),
       logger: this.logger
     });
 
     try {
+      this.logger.debug(`${logPrefix} Generating MCE Edition ${input.editionId} with ${cleanChunksCtData.length} chunks`);
+      const editionInterface = await generator.generate(mceData, input.editionId);
+      this.logger.debug(`Edition ${input.editionId} generated successfully, converting to publication`);
+      const publicationData = this.convertEditionToEditionPublicationData(editionInterface, input.publicationId, input.versionString);
+      const duration = getDurationInMs(process.hrtime.bigint(), start);
+      this.logger.info(`${logPrefix} Publication ${input.publicationId} data created successfully in ${duration} ms`);
       return {
-        edition: this.convertEditionToEditionPublicationData(await generator.generate(mceData, input.editionId)),
+        edition: publicationData,
         error: false,
       };
     } catch (error) {
@@ -71,11 +89,11 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
     }
   }
 
-  private convertEditionToEditionPublicationData(edition: EditionInterface): EditionPublicationData {
+  private convertEditionToEditionPublicationData(edition: EditionInterface, publicationId: number, versionString: string): EditionPublicationData {
     return {
       type: 'edition',
-      id: edition.info.editionId,
-      versionTimeString: '',  // APM's PHP backend will fill this with actual versioning information
+      id: publicationId,
+      versionTimeString: versionString,
       title: edition.metadata.title || 'Untitled Edition',
       description: edition.metadata.description || '',
       languageCode: edition.lang,

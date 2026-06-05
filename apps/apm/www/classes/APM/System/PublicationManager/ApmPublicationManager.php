@@ -16,6 +16,7 @@ use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\Transcription\TxText\ChunkMark;
 use APM\System\Transcription\TxText\Item;
+use Exception;
 use InvalidArgumentException;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
@@ -102,7 +103,7 @@ class ApmPublicationManager implements PublicationManagerInterface
             }
         } elseif ($type === PublicationType::Edition) {
             try {
-                $data = $this->getEditionDataForMce($resourceId);
+                $data = $this->getEditionDataForMce($resourceId, $id);
                 $data['id'] = $id;
                 $this->valkeyClient->hset($pubKey, 'data', serialize($data));
                 $this->valkeyClient->hset($pubKey, 'title', $data['title']);
@@ -172,12 +173,14 @@ class ApmPublicationManager implements PublicationManagerInterface
 
         if ($type === PublicationType::Edition) {
             try {
-                $editionData = $this->getEditionDataForMce($resourceId);
-                // The Node service returns an array that when serialized/unserialized should match
+                $id = Tid::generateUnique();
+                $editionData = $this->getEditionDataForMce($resourceId, $id);
+                $this->logger->debug("Retrieved edition data for resource ID: {$resourceId}");
+                // The Node service returns an array that, when serialized / unserialized, should match
                 // the expected data structure for an Edition publication.
                 // For now, we wrap it in a PublicationData-like structure if needed,
                 // but usually the node service returns the final data.
-                $id = Tid::generateUnique();
+
                 $editionData['id'] = $id;
 
                 $publicationData = new class($editionData) extends PublicationData {
@@ -196,11 +199,11 @@ class ApmPublicationManager implements PublicationManagerInterface
                     return $publicationData;
                 }
 
-                $this->valkeyClient->transaction(function ($tx) use ($id, $editionData, $type) {
+                $this->valkeyClient->transaction(function ($tx) use ($id, $editionData, $type, $resourceId) {
                     $pubKey = self::valkeyPrefix . 'pub:' . $id;
                     $tx->hset($pubKey, 'data', serialize($editionData));
                     $tx->hset($pubKey, 'type', $type);
-                    $tx->hset($pubKey, 'resourceId', (string)$editionData['editionId']);
+                    $tx->hset($pubKey, 'resourceId', (string)$resourceId);
                     $tx->hset($pubKey, 'title', $editionData['title']);
                     $tx->hset($pubKey, 'versionTimeString', $editionData['versionTimeString']);
                     $tx->hset($pubKey, 'description', $editionData['description'] ?? '');
@@ -217,17 +220,21 @@ class ApmPublicationManager implements PublicationManagerInterface
         throw new InvalidArgumentException("Publication type '$type' is not supported");
     }
 
-    private function getEditionDataForMce(int $resourceId): array
+    private function getEditionDataForMce(int $resourceId, int $publicationId): array
     {
-        $inputData = $this->getMceDataForNodeService($resourceId);
+        $inputData = $this->getMceDataForNodeService($resourceId, $publicationId);
         try {
-            return $this->nodeServiceClient->generateEditionPublication($inputData);
-        } catch (\Exception $e) {
+            $data =  $this->nodeServiceClient->generateEditionPublication($inputData);
+            if (isset($data['error']) && $data['error']) {
+                throw new RuntimeException("Node service returned error: {$data['errorMsg']}");
+            }
+            return $data;
+        } catch (Exception $e) {
             throw new RuntimeException("Node service failed: " . $e->getMessage(), 0, $e);
         }
     }
 
-    private function getMceDataForNodeService(int $mceId): GenEditionPublicationInputData
+    private function getMceDataForNodeService(int $mceId, int $publicationId): GenEditionPublicationInputData
     {
         $this->logger->debug("Retrieving MCE data for edition ID {$mceId}");
         $mceDataInfo = $this->mceManager->getMultiChunkEditionById($mceId);
@@ -243,7 +250,14 @@ class ApmPublicationManager implements PublicationManagerInterface
             $chunksCtData[$chunkIndex] = $chunkCtData;
         }
 
-        return new GenEditionPublicationInputData($mceId, $mceData, $versionString, $chunksCtData);
+        $inputData = new GenEditionPublicationInputData();
+        $inputData->editionId = $mceId;
+        $inputData->publicationId = $publicationId;
+        $inputData->mceData = $mceData;
+        $inputData->versionString = $versionString;
+        $inputData->chunksCtData = $chunksCtData;
+
+        return $inputData;
     }
 
     /**

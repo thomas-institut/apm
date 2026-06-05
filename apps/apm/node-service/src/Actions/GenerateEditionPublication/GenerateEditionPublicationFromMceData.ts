@@ -11,6 +11,7 @@ import {toCompactFmtText} from "@thomas-inst/fmt-text";
 interface GenerateEditionInput {
   mceData: MceDataInterface;
   editionId: number;
+  versionString: string;
   chunksCtData: CtDataInterface[];
 }
 interface GenerateEditionOutput {

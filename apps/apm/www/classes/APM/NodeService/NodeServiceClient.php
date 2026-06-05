@@ -17,6 +17,26 @@ class NodeServiceClient
 
     }
 
+
+    /**
+     * @throws NodeServiceFailedException
+     * @throws CouldNotContactServiceException
+     */
+    public function generateEditionPublication(GenEditionPublicationInputData $inputData) : array {
+        $client = $this->getGuzzleClient();
+        try {
+            $nodeServiceResponse = $client->post('/api/edition/publication/fromMceData', ['body' => json_encode($inputData)]);
+        } catch (GuzzleException $e) {
+            throw new CouldNotContactServiceException("Could not contact node service: " . $e->getMessage());
+        }
+
+        if ($nodeServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {
+            throw new NodeServiceFailedException("Node service failed with code " . $nodeServiceResponse->getStatusCode());
+        }
+
+        return json_decode($nodeServiceResponse->getBody()->getContents(), true);
+    }
+
     /**
      * @throws NodeServiceFailedException
      * @throws CouldNotContactServiceException

@@ -4,6 +4,7 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\Actions\GetTranscriptionDataForDocument;
 use APM\CommandLine\CommandLineUtility;
+use APM\NodeService\GenEditionPublicationInputData;
 use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\PublicationManager\ResourceNotFoundException;
@@ -229,5 +230,30 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             $linesToPrint[] = " ";
         }
         print implode("\n", $linesToPrint);
+    }
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getMceDataForNodeService(int $mceId): GenEditionPublicationInputData {
+        $mceDataManager = $this->getSystemManager()->getMultiChunkEditionManager();
+        $ctManager = $this->getSystemManager()->getCollationTableManager();
+
+        $this->logger->debug("Retrieving MCE data for edition ID {$mceId}");
+        $mceDataInfo = $mceDataManager->getMultiChunkEditionById($mceId);
+        $versionString = $mceDataInfo['validFrom'];
+        $mceData = $mceDataInfo['mceData'];
+        $this->logger->debug("Retrieved MCE data for edition ID {$mceId}, version: {$versionString}, chunks count: " . count($mceData['chunks']));
+        $chunksCtData = [];
+
+        foreach($mceData['chunks'] as $chunkIndex => $chunk) {
+            $singleChunkEditionId = $chunk['chunkEditionTableId'];
+            $this->logger->debug("Retrieving chunk CT data for chunk index {$chunkIndex}, edition ID {$singleChunkEditionId}");
+            $chunkCtData = $ctManager->getCollationTableById($singleChunkEditionId);
+            $chunksCtData[$chunkIndex] = $chunkCtData;
+        }
+
+        return new GenEditionPublicationInputData($mceId, $mceData, $versionString, $chunksCtData);
     }
 }

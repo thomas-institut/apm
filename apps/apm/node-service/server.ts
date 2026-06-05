@@ -131,7 +131,7 @@ nodeServiceServer.post('/api/typeset', async (req, res) => {
     }
   });
 });
-nodeServiceServer.post('/api/edition/generate', async (req, res) => {
+nodeServiceServer.post('/api/edition/publication/fromMceData', async (req, res) => {
   let data = req.body;
   if (data === undefined) {
     logger.error(`Error typesetting: No JSON in input`);
@@ -147,6 +147,7 @@ nodeServiceServer.post('/api/edition/generate', async (req, res) => {
     mceData: data.mceData,
     editionId: data.id,
     chunksCtData: data.chunksCtData,
+    versionString: data.versionString,
   });
   if (generateEditionOutput.error) {
     logger.error(`Error typesetting: ${generateEditionOutput.errorMessage}`);

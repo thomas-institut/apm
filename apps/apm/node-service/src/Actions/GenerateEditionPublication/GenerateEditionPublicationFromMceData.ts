@@ -76,6 +76,7 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
       const publicationData = this.convertEditionToEditionPublicationData(editionInterface, input.publicationId, input.versionString);
       const duration = getDurationInMs(process.hrtime.bigint(), start);
       this.logger.info(`${logPrefix} Publication data for edition from MCE ${input.editionId} created successfully in ${duration} ms`);
+      console.log(publicationData.apparatuses[0].entries[0].subEntries);
       return {
         edition: publicationData,
         error: false,
@@ -117,9 +118,9 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
             postLemma: entry.postLemma,
             lemmaText: entry.lemmaText,
             separator: entry.separator,
-            subEntries: entry.subEntries.filter(s => s.enabled).map(subEntry => ({
+            subEntries: entry.subEntries.map(subEntry => ({
               type: subEntry.type as any,
-              text: toCompactFmtText(subEntry.fmtText),
+              text: subEntry.fmtText,
               source: subEntry.source,
               witnessData: subEntry.witnessData.map(w => ({
                 witnessIndex: w.witnessIndex,

@@ -69,13 +69,13 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
         if ($type === 'tx' || $type === 'tx-full' ) {
-            $type = PublicationType::Transcription;
+            $type = PublicationType::Transcription->value;
         }
         if ($type === 'ed' || $type === 'edition') {
-            $type = PublicationType::Edition;
+            $type = PublicationType::Edition->value;
         }
 
-        if ($type !== PublicationType::Transcription && $type !== PublicationType::Edition) {
+        if ($type !== PublicationType::Transcription->value && $type !== PublicationType::Edition->value) {
             print "Sorry, only transcription and edition publications are supported at this time\n";
             return 1;
         }
@@ -128,7 +128,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             }
             print "Current Publications\n";
             foreach ($listings as $listing) {
-                print " - $listing->id  $listing->type  $listing->title $listing->versionTimeString\n";
+                print " - $listing->id  {$listing->type->value}  $listing->title $listing->versionTimeString\n";
             }
             return 0;
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
@@ -171,7 +171,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             } elseif ($data->type === PublicationType::Edition) {
                 print "Publication $pubId is an Edition publication. Content display is not yet supported in CLI.\n";
             } else {
-                print "Publication $pubId is of type '$data->type': Not supported for display\n";
+                print "Publication $pubId is of type '{$data->type->value}': Not supported for display\n";
                 return 1;
             }
             return 0;
@@ -191,10 +191,10 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
         if ($type === 'tx' || $type === 'tx-full' ) {
-            $type = PublicationType::Transcription;
+            $type = PublicationType::Transcription->value;
         }
 
-        if ($type !== PublicationType::Transcription) {
+        if ($type !== PublicationType::Transcription->value) {
             print "Sorry, only transcription publications are supported at this time\n";
             return 1;
         }

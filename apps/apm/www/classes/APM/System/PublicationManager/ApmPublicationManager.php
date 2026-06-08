@@ -16,11 +16,14 @@ use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\Transcription\TxText\ChunkMark;
 use APM\System\Transcription\TxText\Item;
+use CuyZ\Valinor\Mapper\MappingError;
+use CuyZ\Valinor\MapperBuilder;
 use Exception;
 use InvalidArgumentException;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use ThomasInstitut\ApmPublicationApi\EditionPublication\EditionPublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
@@ -30,6 +33,11 @@ use ThomasInstitut\ApmPublicationApi\TranscriptionPage;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
+use ThomasInstitut\FmtText\FmtTextToken;
+use ThomasInstitut\FmtText\FmtTextTextToken;
+use ThomasInstitut\FmtText\FmtTextMarkToken;
+use ThomasInstitut\FmtText\FmtTextGlueToken;
+use ThomasInstitut\FmtText\FmtTextEmptyToken;
 
 class ApmPublicationManager implements PublicationManagerInterface
 {
@@ -59,7 +67,7 @@ class ApmPublicationManager implements PublicationManagerInterface
             if ($pubFields) {
                 $listing = new PublicationListing();
                 $listing->id = (int)$id;
-                $listing->type = $pubFields['type'];
+                $listing->type = PublicationType::from($pubFields['type']);
                 $listing->title = $pubFields['title'];
                 $listing->versionTimeString = $pubFields['versionTimeString'];
                 $listing->description = $pubFields['description'] ?? '';
@@ -88,7 +96,7 @@ class ApmPublicationManager implements PublicationManagerInterface
         $type = $pubFields['type'];
         $resourceId = (int)$pubFields['resourceId'];
 
-        if ($type === PublicationType::Transcription) {
+        if ($type === PublicationType::Transcription->value) {
             try {
                 $data = $this->getTranscriptionDataForDocument($resourceId, $version);
                 $data->id = $id;
@@ -101,17 +109,17 @@ class ApmPublicationManager implements PublicationManagerInterface
             } catch (InvalidTimeStringException $e) {
                 throw new RuntimeException("Invalid time string: " . $e->getMessage(), 0, $e);
             }
-        } elseif ($type === PublicationType::Edition) {
-            try {
-                $data = $this->getEditionDataForMce($resourceId, $id);
-                $data['id'] = $id;
-                $this->valkeyClient->hset($pubKey, 'data', serialize($data));
-                $this->valkeyClient->hset($pubKey, 'title', $data['title']);
-                $this->valkeyClient->hset($pubKey, 'versionTimeString', $data['versionTimeString']);
-                $this->valkeyClient->hset($pubKey, 'description', $data['description'] ?? '');
-            } catch (RuntimeException $e) {
-                throw new ResourceNotFoundException("Error updating edition publication: " . $e->getMessage(), 0, $e);
-            }
+        } elseif ($type === PublicationType::Edition->value) {
+                try {
+                    $editionData = $this->mapEditionData($resourceId, $id);
+                } catch (RuntimeException $e) {
+                    throw new ResourceNotFoundException("Error updating edition publication: " . $e->getMessage(), 0, $e);
+                }
+
+                $this->valkeyClient->hset($pubKey, 'data', serialize($editionData));
+                $this->valkeyClient->hset($pubKey, 'title', $editionData->title);
+                $this->valkeyClient->hset($pubKey, 'versionTimeString', $editionData->versionTimeString);
+                $this->valkeyClient->hset($pubKey, 'description', $editionData->description ?? '');
         } else {
             throw new InvalidArgumentException("Publication type '$type' is not supported for update");
         }
@@ -141,7 +149,7 @@ class ApmPublicationManager implements PublicationManagerInterface
 
     public function createPublication(string $type, int $resourceId, string $version = 'current', bool $dryRun = false): PublicationData
     {
-        if ($type === PublicationType::Transcription) {
+        if ($type === PublicationType::Transcription->value) {
             try {
                 $data = $this->getTranscriptionDataForDocument($resourceId, $version);
                 $id = Tid::generateUnique();
@@ -171,42 +179,23 @@ class ApmPublicationManager implements PublicationManagerInterface
 
         }
 
-        if ($type === PublicationType::Edition) {
+        if ($type === PublicationType::Edition->value) {
             try {
                 $id = Tid::generateUnique();
-                $editionData = $this->getEditionDataForMce($resourceId, $id);
-                $this->logger->debug("Retrieved edition data for resource ID: {$resourceId}");
-                // The Node service returns an array that, when serialized / unserialized, should match
-                // the expected data structure for an Edition publication.
-                // For now, we wrap it in a PublicationData-like structure if needed,
-                // but usually the node service returns the final data.
-
-                $editionData['id'] = $id;
-
-                $publicationData = new class($editionData) extends PublicationData {
-                    public array $data;
-                    public function __construct(array $editionData) {
-                        $this->id = $editionData['id'];
-                        $this->type = PublicationType::Edition;
-                        $this->title = $editionData['title'];
-                        $this->versionTimeString = $editionData['versionTimeString'];
-                        $this->description = $editionData['description'] ?? '';
-                        $this->data = $editionData;
-                    }
-                };
+                $publicationData = $this->mapEditionData($resourceId, $id);
 
                 if ($dryRun) {
                     return $publicationData;
                 }
 
-                $this->valkeyClient->transaction(function ($tx) use ($id, $editionData, $type, $resourceId) {
+                $this->valkeyClient->transaction(function ($tx) use ($id, $publicationData, $type, $resourceId) {
                     $pubKey = self::valkeyPrefix . 'pub:' . $id;
-                    $tx->hset($pubKey, 'data', serialize($editionData));
+                    $tx->hset($pubKey, 'data', serialize($publicationData));
                     $tx->hset($pubKey, 'type', $type);
                     $tx->hset($pubKey, 'resourceId', (string)$resourceId);
-                    $tx->hset($pubKey, 'title', $editionData['title']);
-                    $tx->hset($pubKey, 'versionTimeString', $editionData['versionTimeString']);
-                    $tx->hset($pubKey, 'description', $editionData['description'] ?? '');
+                    $tx->hset($pubKey, 'title', $publicationData->title);
+                    $tx->hset($pubKey, 'versionTimeString', $publicationData->versionTimeString);
+                    $tx->hset($pubKey, 'description', $publicationData->description ?? '');
 
                     $tx->sadd(self::valkeyPrefix . 'pubs', [$id]);
                 });
@@ -218,6 +207,37 @@ class ApmPublicationManager implements PublicationManagerInterface
         }
 
         throw new InvalidArgumentException("Publication type '$type' is not supported");
+    }
+
+    private function mapEditionData(int $resourceId, int $id): EditionPublicationData
+    {
+        $rawEditionData = $this->getEditionDataForMce($resourceId, $id);
+        $this->logger->debug("Retrieved edition data for resource ID: {$resourceId}");
+
+        $rawEditionData['id'] = $id;
+        $rawEditionData['type'] = PublicationType::Edition->value;
+
+        try {
+            return (new MapperBuilder())
+                ->allowSuperfluousKeys()
+                ->infer(FmtTextToken::class, function (array $value): string {
+                    return match ($value['type'] ?? null) {
+                        'text'  => FmtTextTextToken::class,
+                        'mark'  => FmtTextMarkToken::class,
+                        'glue'  => FmtTextGlueToken::class,
+                        'empty' => FmtTextEmptyToken::class,
+                        default => throw new \RuntimeException("Unknown token type: " . (is_array($value['type'] ?? null) ? json_encode($value['type']) : ($value['type'] ?? 'null'))),
+                    };
+                })
+                ->mapper()
+                ->map(EditionPublicationData::class, $rawEditionData);
+        } catch (MappingError $e) {
+            $this->logger->error("Error mapping edition data: " . $e->getMessage());
+            foreach ($e->messages() as $msg) {
+                $this->logger->debug("Mapping error: {$msg->toString()}, {$msg->path()}");
+            }
+            throw new RuntimeException("Error mapping edition data: " . $e->getMessage(), 0, $e);
+        }
     }
 
     private function getEditionDataForMce(int $resourceId, int $publicationId): array

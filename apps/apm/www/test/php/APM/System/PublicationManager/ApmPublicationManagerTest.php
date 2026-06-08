@@ -16,10 +16,19 @@ use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\ApmPublicationApi\EditionPublication\EditionPublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
+
+use ThomasInstitut\TimeString\TimeString;
+use ThomasInstitut\FmtText\FmtTextToken;
+use ThomasInstitut\FmtText\FmtTextTextToken;
+use ThomasInstitut\FmtText\FmtTextMarkToken;
+use ThomasInstitut\FmtText\FmtTextGlueToken;
+use ThomasInstitut\FmtText\FmtTextEmptyToken;
+use ReflectionMethod;
 
 class ApmPublicationManagerTest extends TestCase
 {
@@ -79,7 +88,7 @@ class ApmPublicationManagerTest extends TestCase
                 if ($method === 'hgetall') {
                     if ($args[0] === 'APM:PublicationManager:pub:1') {
                         return [
-                            'type' => PublicationType::Transcription,
+                            'type' => PublicationType::Transcription->value,
                             'title' => 'Pub 1',
                             'versionTimeString' => '2023-01-01 00:00:00.000000',
                             'description' => ''
@@ -87,7 +96,7 @@ class ApmPublicationManagerTest extends TestCase
                     }
                     if ($args[0] === 'APM:PublicationManager:pub:2') {
                         return [
-                            'type' => PublicationType::Transcription,
+                            'type' => PublicationType::Transcription->value,
                             'title' => 'Pub 2',
                             'versionTimeString' => '2023-01-01 00:00:00.000000',
                             'description' => ''
@@ -231,12 +240,12 @@ class ApmPublicationManagerTest extends TestCase
                 $callback($tx);
             });
 
-        $result = $this->manager->createPublication(PublicationType::Transcription, $docId);
+        $result = $this->manager->createPublication(PublicationType::Transcription->value, $docId);
         $this->assertNotEquals($docId, $result->id);
         $this->assertEquals(PublicationType::Transcription, $result->type);
         $this->assertEquals('APM:PublicationManager:pub:' . $result->id, $capturedPubKey);
         $this->assertEquals((string)$docId, $capturedResourceId);
-        $this->assertEquals(PublicationType::Transcription, $capturedType);
+        $this->assertEquals(PublicationType::Transcription->value, $capturedType);
     }
 
     /**
@@ -264,7 +273,7 @@ class ApmPublicationManagerTest extends TestCase
         $this->valkeyClient->expects($this->never())
             ->method('transaction');
 
-        $result = $this->manager->createPublication(PublicationType::Transcription, $docId, 'current', true);
+        $result = $this->manager->createPublication(PublicationType::Transcription->value, $docId, 'current', true);
         $this->assertNotEquals($docId, $result->id);
         $this->assertEquals(PublicationType::Transcription, $result->type);
     }
@@ -284,7 +293,7 @@ class ApmPublicationManagerTest extends TestCase
                 if ($method === 'hgetall') {
                     if ($args[0] === 'APM:PublicationManager:pub:' . $pubId) {
                         return [
-                            'type' => PublicationType::Transcription,
+                            'type' => PublicationType::Transcription->value,
                             'resourceId' => (string)$docId,
                             'title' => 'Old Title'
                         ];
@@ -313,7 +322,7 @@ class ApmPublicationManagerTest extends TestCase
             ->willReturnCallback(function($method, $args) use (&$capturedFields) {
                 if ($method === 'hgetall') {
                      return [
-                            'type' => PublicationType::Transcription,
+                            'type' => PublicationType::Transcription->value,
                             'resourceId' => '456',
                             'title' => 'Old Title'
                         ];
@@ -363,7 +372,12 @@ class ApmPublicationManagerTest extends TestCase
             'editionId' => $mceId,
             'title' => 'Edition Title',
             'versionTimeString' => '2023-01-01 00:00:00.000000',
-            'description' => 'Edition Description'
+            'description' => 'Edition Description',
+            'languageCode' => 'ara',
+            'mainText' => [],
+            'apparatuses' => [],
+            'witnesses' => [],
+            'siglaGroups' => []
         ];
 
         $this->nodeServiceClient->expects($this->once())
@@ -384,7 +398,7 @@ class ApmPublicationManagerTest extends TestCase
                 $callback($tx);
             });
 
-        $result = $this->manager->createPublication(PublicationType::Edition, $mceId);
+        $result = $this->manager->createPublication(PublicationType::Edition->value, $mceId);
 
         $this->assertInstanceOf(PublicationData::class, $result);
         $this->assertEquals('Edition Title', $result->title);
@@ -406,7 +420,7 @@ class ApmPublicationManagerTest extends TestCase
             ->willReturnCallback(function($method, $args) use ($pubId, $mceId) {
                 if ($method === 'hgetall' && $args[0] === 'APM:PublicationManager:pub:' . $pubId) {
                     return [
-                        'type' => PublicationType::Edition,
+                        'type' => PublicationType::Edition->value,
                         'resourceId' => (string)$mceId,
                         'title' => 'Old Edition Title'
                     ];
@@ -427,7 +441,12 @@ class ApmPublicationManagerTest extends TestCase
         $updatedNodeResponse = [
             'title' => 'Updated Edition Title',
             'versionTimeString' => '2023-01-01 00:00:00.000000',
-            'description' => 'Updated Edition Description'
+            'description' => 'Updated Edition Description',
+            'languageCode' => 'ara',
+            'mainText' => [],
+            'apparatuses' => [],
+            'witnesses' => [],
+            'siglaGroups' => []
         ];
 
         $this->nodeServiceClient->expects($this->once())
@@ -439,7 +458,7 @@ class ApmPublicationManagerTest extends TestCase
             ->willReturnCallback(function($method, $args) use (&$capturedFields, $pubId, $mceId) {
                 if ($method === 'hgetall' && $args[0] === 'APM:PublicationManager:pub:' . $pubId) {
                     return [
-                        'type' => PublicationType::Edition,
+                        'type' => PublicationType::Edition->value,
                         'resourceId' => (string)$mceId,
                         'title' => 'Old Edition Title'
                     ];
@@ -454,8 +473,53 @@ class ApmPublicationManagerTest extends TestCase
 
         $this->assertEquals('Updated Edition Title', $capturedFields['title']);
         $this->assertArrayHasKey('data', $capturedFields);
+        /** @var EditionPublicationData $updatedData */
         $updatedData = unserialize($capturedFields['data']);
-        $this->assertEquals($pubId, $updatedData['id']);
-        $this->assertEquals('Updated Edition Title', $updatedData['title']);
+        $this->assertEquals($pubId, $updatedData->id);
+        $this->assertEquals('Updated Edition Title', $updatedData->title);
+    }
+
+    #[AllowMockObjectsWithoutExpectations]
+    public function testMapEditionData(): void
+    {
+        $resourceId = 123;
+        $publicationId = 456;
+
+        $mceDataInfo = [
+            'validFrom' => '2023-01-01 00:00:00.000000',
+            'mceData' => [
+                'chunks' => []
+            ]
+        ];
+
+        $this->mceManager->expects($this->once())
+            ->method('getMultiChunkEditionById')
+            ->with($resourceId)
+            ->willReturn($mceDataInfo);
+
+        $expectedNodeResponse = [
+            'editionId' => $resourceId,
+            'title' => 'Edition Title',
+            'versionTimeString' => '2023-01-01 00:00:00.000000',
+            'description' => 'Edition Description',
+            'languageCode' => 'ara',
+            'mainText' => [],
+            'apparatuses' => [],
+            'witnesses' => [],
+            'siglaGroups' => []
+        ];
+
+        $this->nodeServiceClient->expects($this->once())
+            ->method('generateEditionPublication')
+            ->willReturn($expectedNodeResponse);
+
+        $method = new ReflectionMethod(ApmPublicationManager::class, 'mapEditionData');
+
+        /** @var EditionPublicationData $result */
+        $result = $method->invoke($this->manager, $resourceId, $publicationId);
+
+        $this->assertInstanceOf(EditionPublicationData::class, $result);
+        $this->assertEquals($publicationId, $result->id);
+        $this->assertEquals('Edition Title', $result->title);
     }
 }

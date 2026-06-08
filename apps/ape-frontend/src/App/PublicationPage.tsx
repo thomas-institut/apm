@@ -2,12 +2,13 @@ import {useParams} from "react-router";
 import {JSX, useContext, useState} from "react";
 import {ApeContext} from "@/App/App";
 import {useQuery} from "@tanstack/react-query";
-import {docTypeName, getTranscribedPages, TextPublicationData, TranscriptionData} from "@shared/ts";
+import {docTypeName, getTranscribedPages, TextPublicationData, TranscriptionData, EditionPublicationData} from "@shared/ts";
 import {TranscriptionViewer} from "@/ui/TranscriptionViewer/TranscriptionViewer";
 import PageLayout, {TopBarCenter, TopBarRight} from "@/ui/ApeUx/PageLayout";
 import {nameFromCode} from "@/Lang/Lang";
 import {Clock, InfoLg} from "react-bootstrap-icons";
 import {IconToggle} from "@/ui/ApeUx/Widgets/IconToggle";
+import {EditionViewer} from "@/ui/EditionViewer/EditionViewer";
 
 export function PublicationPage() {
   const {id} = useParams<{ id: string }>();
@@ -53,6 +54,7 @@ export function PublicationPage() {
 
   const transcriptionData = publication as TranscriptionData;
   const textPublicationData = publication as TextPublicationData;
+  const editionData = publication as EditionPublicationData;
 
   const appShortName = context.appConfig?.shortName ?? 'APE';
 
@@ -73,6 +75,8 @@ export function PublicationPage() {
         {publication.type === 'transcription' &&
           <div>{nameFromCode(transcriptionData.languageCode)} {docTypeName(transcriptionData.docType)} </div>}
         {publication.type === 'transcription' && <div>{getDocInfo(transcriptionData)}</div>}
+        {publication.type === 'edition' &&
+          <div>{nameFromCode(editionData.languageCode)}</div>}
         <div style={{color: 'gray'}}>
           <InfoLg title={'Id:' + publication.id}/> <Clock title={'Version:' + publication.versionTimeString}/>
         </div>
@@ -83,6 +87,8 @@ export function PublicationPage() {
       {publication.type === 'text' && <div>{textPublicationData.text}</div>}
       {publication.type === 'transcription' &&
         <TranscriptionViewer viewerType={'singlePageText'} showAllPages={showAllPages} data={transcriptionData}/>}
+      {publication.type === 'edition' &&
+        <EditionViewer viewerType={'singlePage'} editionData={editionData}/>}
     </PageLayout>
   );
 }

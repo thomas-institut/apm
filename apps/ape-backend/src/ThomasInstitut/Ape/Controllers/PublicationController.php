@@ -30,7 +30,7 @@ class PublicationController extends ApiController
     }
 
     public function get(Request $request, Response $response): Response {
-        $this->setApiCallNameFromClassFunction(__CLASS__, __FUNCTION__);
+
         $idParam = $request->getAttribute('id');
         if ($idParam === null) {
             return $this->responseFactory->badRequest($response, 'No publication id given');
@@ -39,6 +39,7 @@ class PublicationController extends ApiController
             return $this->responseFactory->badRequest($response, 'Invalid publication id');
         }
         $id = intval($idParam);
+        $this->setApiCallNameFromClassFunction(__CLASS__, __FUNCTION__ . ':' . $id);
         try {
             $publicationManager = $this->container->get(PublicationManager::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {

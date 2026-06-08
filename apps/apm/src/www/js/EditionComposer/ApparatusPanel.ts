@@ -821,10 +821,12 @@ export class ApparatusPanel extends PanelWithToolbar {
   private setupApparatusTagEditor() {
 
     const containerSelector = `${this.containerSelector} div.apparatus-tags`;
-    $('.apparatus-tags').hide();
     const tags = this.getApparatusTags();
 
     if (this.apparatusTagEditor === null) {
+
+      $('.apparatus-tags').hide();
+
       this.apparatusTagEditor = new TagEditor({
         containerSelector,
         idPrefix: `apparatus-tags-${this.options.apparatusIndex}`,

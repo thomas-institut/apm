@@ -5,13 +5,14 @@ namespace ThomasInstitut\Ape\Cli;
 use DI\Container;
 use DI\DependencyException;
 use DI\NotFoundException;
-use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use ThomasInstitut\Ape\Managers\ApmCommunicationProblemException;
 use ThomasInstitut\Ape\Managers\PublicationManager;
 use ThomasInstitut\Ape\Managers\PublicationNotFoundException;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
+use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TextPublicationData;
+use Throwable;
 
 /**
  * @covers \ThomasInstitut\Ape\Cli\PublicationCliCommand
@@ -53,7 +54,7 @@ class PublicationCliCommandTest extends TestCase
     {
         $manager = $this->createMock(PublicationManager::class);
         $publication = $this->createListing(1);
-        $publication->type = 'type1';
+        $publication->type = PublicationType::Text;
         $publication->title = 'title1';
 
         $manager->expects($this->once())
@@ -64,7 +65,7 @@ class PublicationCliCommandTest extends TestCase
         $output = $this->captureRun($command, 1, ['list']);
 
         $this->assertTrue($output['result']->success);
-        $this->assertStringContainsString(' 1:    1 type1 title1', $output['stdout']);
+        $this->assertStringContainsString(' 1:    1 text title1', $output['stdout']);
     }
 
     /**
@@ -309,7 +310,7 @@ class PublicationCliCommandTest extends TestCase
     /**
      * Creates a container that throws when the publication manager is requested.
      */
-    private function createContainerThrowingForManager(\Throwable $exception): Container
+    private function createContainerThrowingForManager(Throwable $exception): Container
     {
         $container = $this->createMock(Container::class);
         $container->expects($this->once())
@@ -344,7 +345,7 @@ class PublicationCliCommandTest extends TestCase
     {
         $listing = new PublicationListing();
         $listing->id = $id;
-        $listing->type = 'edition';
+        $listing->type = PublicationType::Edition;
         $listing->versionTimeString = '2026-05-24 10:00:00.000000';
         $listing->title = "Publication $id";
         $listing->description = "Description $id";
@@ -359,7 +360,7 @@ class PublicationCliCommandTest extends TestCase
     {
         $publicationData = new TextPublicationData();
         $publicationData->id = $id;
-        $publicationData->type = 'text';
+        $publicationData->type = PublicationType::Text;
         $publicationData->versionTimeString = '2026-05-24 10:00:00.000000';
         $publicationData->title = "Publication $id";
         $publicationData->description = "Description $id";

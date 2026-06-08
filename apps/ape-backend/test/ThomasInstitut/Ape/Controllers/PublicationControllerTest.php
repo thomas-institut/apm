@@ -14,6 +14,7 @@ use Slim\Psr7\Response;
 use ThomasInstitut\Ape\Managers\PublicationManager;
 use ThomasInstitut\Ape\Managers\PublicationNotFoundException;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
+use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TextPublicationData;
 
 /**
@@ -287,7 +288,7 @@ class PublicationControllerTest extends TestCase
     {
         $listing = new PublicationListing();
         $listing->id = $id;
-        $listing->type = 'edition';
+        $listing->type = PublicationType::Edition;
         $listing->versionTimeString = '2026-05-24 10:00:00.000000';
         $listing->title = "Publication $id";
         $listing->description = "Description $id";
@@ -302,7 +303,7 @@ class PublicationControllerTest extends TestCase
     {
         $publicationData = new TextPublicationData();
         $publicationData->id = $id;
-        $publicationData->type = 'edition';
+        $publicationData->type = PublicationType::Text;
         $publicationData->versionTimeString = '2026-05-24 10:00:00.000000';
         $publicationData->title = "Publication $id";
         $publicationData->description = "Description $id";

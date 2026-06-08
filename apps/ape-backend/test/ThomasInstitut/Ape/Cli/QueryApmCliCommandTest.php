@@ -13,6 +13,7 @@ use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
+use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TextPublicationData;
 
 /**
@@ -330,7 +331,7 @@ class QueryApmCliCommandTest extends TestCase
     {
         $listing = new PublicationListing();
         $listing->id = $id;
-        $listing->type = 'edition';
+        $listing->type = PublicationType::Edition;
         $listing->versionTimeString = '2026-05-24 10:00:00.000000';
         $listing->title = "Publication $id";
         $listing->description = "Description $id";
@@ -345,7 +346,7 @@ class QueryApmCliCommandTest extends TestCase
     {
         $publicationData = new TextPublicationData();
         $publicationData->id = $id;
-        $publicationData->type = 'text';
+        $publicationData->type = PublicationType::Text;
         $publicationData->versionTimeString = '2026-05-24 10:00:00.000000';
         $publicationData->title = "Publication $id";
         $publicationData->description = "Description $id";

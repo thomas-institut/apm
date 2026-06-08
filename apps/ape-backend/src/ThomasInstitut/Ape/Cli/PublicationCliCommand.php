@@ -41,7 +41,7 @@ readonly class PublicationCliCommand implements CommandInterface
                 return new CommandResult(true);
             }
             foreach ($publications as $index => $publication) {
-                printf("%2d: %4d %s %s\n", $index + 1, $publication->id, $publication->type, $publication->title);
+                printf("%2d: %4d %s %s\n", $index + 1, $publication->id, $publication->type->value, $publication->title);
             }
             return new CommandResult(true);
         } catch (DependencyException | NotFoundException) {

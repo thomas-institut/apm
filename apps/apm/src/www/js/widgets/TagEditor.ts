@@ -1,12 +1,49 @@
 import {OptionsChecker} from "@thomas-inst/optionschecker";
-import { trimWhiteSpace } from '../toolbox/Util.ts'
+import { trimWhiteSpace } from '../toolbox/Util'
 
 
 const cacheKeyPrefix = 'apm-tag_hints'
 
-export class TagEditor {
+type TagEditorMode = 'edit' | 'show'
 
-  constructor(options) {
+export interface TagEditorOptions {
+  containerSelector: string
+  idPrefix?: string
+  mode: TagEditorMode
+  inputFormId?: string
+  tags?: string[]
+  getTagHints?: () => Promise<string[]>
+  saveTags?: (tags: string[]) => Promise<void>
+  onTagClick?: (tag: string, active: boolean, event: any) => void
+  onTagHover?: (tag: string, active: boolean, event: any) => void
+  showInput?: boolean
+  sortTags?: boolean
+  prependTags?: boolean
+}
+
+interface CleanTagEditorOptions {
+  containerSelector: string
+  idPrefix: string
+  mode: TagEditorMode
+  inputFormId: string
+  tags: string[]
+  getTagHints: () => Promise<string[]>
+  saveTags: (tags: string[]) => Promise<void>
+  onTagClick: (tag: string, active: boolean, event: any) => void
+  onTagHover: (tag: string, active: boolean, event: any) => void
+  showInput?: boolean
+  sortTags?: boolean
+  prependTags?: boolean
+}
+
+type TagTextStyle = Record<string, string>
+
+export class TagEditor {
+  private options: CleanTagEditorOptions
+  public idPrefix: string
+  private activeTags: Set<string>
+
+  constructor(options: TagEditorOptions) {
 
     const optionsDefinition = {
       containerSelector: {type: 'string', required: true},
@@ -18,7 +55,7 @@ export class TagEditor {
           return []
         }
       },
-      saveTags: { type: 'function', default: async (tags) => {
+      saveTags: { type: 'function', default: async (tags: string[]) => {
           console.log(`Tags [${tags.join(', ')}] would be saved now`)
         } },
       onTagClick: { type: 'function', default: () => {
@@ -28,18 +65,18 @@ export class TagEditor {
     }
 
     const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "TagEditor"});
-    this.options = oc.getCleanOptions(options);
+    this.options = oc.getCleanOptions(options) as CleanTagEditorOptions;
 
     // console.log(`Options`)
     // console.log(this.options)
 
     this.idPrefix = this.options.idPrefix;
-    this.activeTags = new Set();
+    this.activeTags = new Set<string>();
 
     this.render()
   }
 
-  setTags(tags) {
+  setTags(tags: string[]) {
     console.log(`Setting tags: [ ${tags.join(', ')}]`)
     this.options.tags = [...tags];
     this.render()
@@ -78,7 +115,7 @@ export class TagEditor {
     return tags
   }
 
-  getDefaultTagTextStyle() {
+  getDefaultTagTextStyle(): TagTextStyle {
     const palette = this.getTagColorPalette('__default__')
     return {
       display: 'inline-block',
@@ -95,11 +132,11 @@ export class TagEditor {
     };
   }
 
-  isActiveTag(tag) {
+  isActiveTag(tag: string) {
     return this.activeTags.has(tag);
   }
 
-  setActiveTag(tag, active) {
+  setActiveTag(tag: string, active: boolean) {
     if (active) {
       this.activeTags.add(tag);
       return;
@@ -141,13 +178,13 @@ export class TagEditor {
     this.makeAddTagEvent()
   }
 
-  makeRemoveTagEvent(tag_id) {
+  makeRemoveTagEvent(tag_id: string) {
     let thisObject = this;
     let selector = "#" + tag_id;
     $(selector).click(function(event) {
       event.preventDefault();
       console.log(`Click on remove tag ${tag_id}`)
-      let value = $(this).parent()[0].getAttribute('value').replace('_', ' ')
+      let value = $(this).parent()[0].getAttribute('value')!.replace('_', ' ')
       console.log(value)
       let index = thisObject.options.tags.indexOf(value)
       console.log(index)
@@ -157,7 +194,7 @@ export class TagEditor {
     })
   }
 
-  _appendTagItem(tag, includeRemoveButton) {
+  _appendTagItem(tag: string, includeRemoveButton: boolean) {
     let valueForTagId = tag.replace(/ /g, "_")
     let tagItemId = `${this.idPrefix}-${valueForTagId}-item`
     let tagRemoveId = `${this.idPrefix}-${valueForTagId}-id`
@@ -189,7 +226,7 @@ export class TagEditor {
     this.makeTagHoverAndClickEvents(tagItemId, tag)
   }
 
-  makeTagHoverAndClickEvents(tagItemId, tag) {
+  makeTagHoverAndClickEvents(tagItemId: string, tag: string) {
     let selector = `#${tagItemId}`
     $(selector).on('click', (event) => {
       const active = !this.isActiveTag(tag)
@@ -217,7 +254,7 @@ export class TagEditor {
       if (event.which === 13) {
         event.preventDefault();
 
-        let value = thisObject.formatTag($(this).val())
+        let value = thisObject.formatTag(String($(this).val() ?? ''))
         let valueForTagId = value.replace(/ /g, "_")
 
         if (value !== '' && thisObject.isTagValid(value) && thisObject.options.tags.includes(value) === false) {
@@ -240,7 +277,7 @@ export class TagEditor {
    * @param {string}string
    * @return {string}
    */
-  formatTag(string) {
+  formatTag(string: string) {
     return trimWhiteSpace(string)
   }
 
@@ -249,22 +286,22 @@ export class TagEditor {
    * @param {string}tag
    * @return {boolean}
    */
-  isTagValid(tag) {
+  isTagValid(tag: string) {
     let specialCharacters = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
     return !specialCharacters.test(tag);
   }
 
-  fillDatalistWithTags(tags) {
+  fillDatalistWithTags(tags: string[]) {
     tags.forEach((tag) => {
       $(`#${this.idPrefix}-list-of-tags`).append(`<option value="${tag}">${tag}</option>`)
     })
   }
 
-  _applyTagTextStyle(tagItemId, tag) {
+  _applyTagTextStyle(tagItemId: string, tag: string) {
     $(`#${tagItemId} span.tag-text`).css(this.getTagTextStyle(tag))
   }
 
-  getTagTextStyle(tag) {
+  getTagTextStyle(tag: string): TagTextStyle {
     const palette = this.getTagColorPalette(tag)
     let tagTextStyle = {
       ...this.getDefaultTagTextStyle(),
@@ -284,7 +321,7 @@ export class TagEditor {
   }
 
 
-hashStringToHue(string) {
+hashStringToHue(string: string) {
     let hash = 0
     for (let i = 0; i < string.length; i++) {
       hash = ((hash << 5) - hash) + string.charCodeAt(i)
@@ -293,7 +330,7 @@ hashStringToHue(string) {
     return Math.abs(hash) % 360
   }
 
-getTagColorPalette(tag) {
+getTagColorPalette(tag: string) {
     const hash = this.hashStringToHue(tag)
     const hue = (hash % 240)
     const saturation = 80 + ((hash >>> 3) % 8)
@@ -313,7 +350,7 @@ getTagColorPalette(tag) {
     }
   }
 
-getTagColor(tags) {
+getTagColor(tags: string[]) {
     const uniqueTags = [...new Set(tags)];
     if (uniqueTags.length === 0) {
       return '';

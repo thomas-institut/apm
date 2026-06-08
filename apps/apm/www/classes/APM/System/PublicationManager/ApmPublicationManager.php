@@ -17,12 +17,13 @@ use APM\System\Transcription\TranscriptionManager;
 use APM\System\Transcription\TxText\ChunkMark;
 use APM\System\Transcription\TxText\Item;
 use CuyZ\Valinor\Mapper\MappingError;
-use CuyZ\Valinor\MapperBuilder;
 use Exception;
 use InvalidArgumentException;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
+use ThomasInstitut\ApmPublicationApi\Client\CustomMapperErrorException;
+use ThomasInstitut\ApmPublicationApi\Client\EditionPublicationDataMapper;
 use ThomasInstitut\ApmPublicationApi\EditionPublication\EditionPublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
@@ -33,11 +34,6 @@ use ThomasInstitut\ApmPublicationApi\TranscriptionPage;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
-use ThomasInstitut\FmtText\FmtTextToken;
-use ThomasInstitut\FmtText\FmtTextTextToken;
-use ThomasInstitut\FmtText\FmtTextMarkToken;
-use ThomasInstitut\FmtText\FmtTextGlueToken;
-use ThomasInstitut\FmtText\FmtTextEmptyToken;
 
 class ApmPublicationManager implements PublicationManagerInterface
 {
@@ -112,11 +108,11 @@ class ApmPublicationManager implements PublicationManagerInterface
         } elseif ($type === PublicationType::Edition->value) {
                 try {
                     $editionData = $this->mapEditionData($resourceId, $id);
-                } catch (RuntimeException $e) {
+                } catch (RuntimeException|MappingError $e) {
                     throw new ResourceNotFoundException("Error updating edition publication: " . $e->getMessage(), 0, $e);
                 }
 
-                $this->valkeyClient->hset($pubKey, 'data', serialize($editionData));
+            $this->valkeyClient->hset($pubKey, 'data', serialize($editionData));
                 $this->valkeyClient->hset($pubKey, 'title', $editionData->title);
                 $this->valkeyClient->hset($pubKey, 'versionTimeString', $editionData->versionTimeString);
                 $this->valkeyClient->hset($pubKey, 'description', $editionData->description ?? '');
@@ -201,7 +197,7 @@ class ApmPublicationManager implements PublicationManagerInterface
                 });
 
                 return $publicationData;
-            } catch (RuntimeException $e) {
+            } catch (RuntimeException|MappingError $e) {
                 throw new ResourceNotFoundException("Error creating edition publication: " . $e->getMessage(), 0, $e);
             }
         }
@@ -209,35 +205,23 @@ class ApmPublicationManager implements PublicationManagerInterface
         throw new InvalidArgumentException("Publication type '$type' is not supported");
     }
 
+    /**
+     * @throws MappingError
+     */
     private function mapEditionData(int $resourceId, int $id): EditionPublicationData
     {
         $rawEditionData = $this->getEditionDataForMce($resourceId, $id);
-        $this->logger->debug("Retrieved edition data for resource ID: {$resourceId}");
+        $this->logger->debug("Retrieved edition data for resource ID: $resourceId");
 
         $rawEditionData['id'] = $id;
         $rawEditionData['type'] = PublicationType::Edition->value;
-
         try {
-            return (new MapperBuilder())
-                ->allowSuperfluousKeys()
-                ->infer(FmtTextToken::class, function (array $value): string {
-                    return match ($value['type'] ?? null) {
-                        'text'  => FmtTextTextToken::class,
-                        'mark'  => FmtTextMarkToken::class,
-                        'glue'  => FmtTextGlueToken::class,
-                        'empty' => FmtTextEmptyToken::class,
-                        default => throw new \RuntimeException("Unknown token type: " . (is_array($value['type'] ?? null) ? json_encode($value['type']) : ($value['type'] ?? 'null'))),
-                    };
-                })
-                ->mapper()
-                ->map(EditionPublicationData::class, $rawEditionData);
-        } catch (MappingError $e) {
+            return EditionPublicationDataMapper::map($rawEditionData);
+        } catch (CustomMapperErrorException $e) {
             $this->logger->error("Error mapping edition data: " . $e->getMessage());
-            foreach ($e->messages() as $msg) {
-                $this->logger->debug("Mapping error: {$msg->toString()}, {$msg->path()}");
-            }
             throw new RuntimeException("Error mapping edition data: " . $e->getMessage(), 0, $e);
         }
+
     }
 
     private function getEditionDataForMce(int $resourceId, int $publicationId): array
@@ -256,16 +240,16 @@ class ApmPublicationManager implements PublicationManagerInterface
 
     private function getMceDataForNodeService(int $mceId, int $publicationId): GenEditionPublicationInputData
     {
-        $this->logger->debug("Retrieving MCE data for edition ID {$mceId}");
+        $this->logger->debug("Retrieving MCE data for edition ID $mceId");
         $mceDataInfo = $this->mceManager->getMultiChunkEditionById($mceId);
         $versionString = $mceDataInfo['validFrom'];
         $mceData = $mceDataInfo['mceData'];
-        $this->logger->debug("Retrieved MCE data for edition ID {$mceId}, version: {$versionString}, chunks count: " . count($mceData['chunks']));
+        $this->logger->debug("Retrieved MCE data for edition ID $mceId, version: $versionString, chunks count: " . count($mceData['chunks']));
         $chunksCtData = [];
 
         foreach ($mceData['chunks'] as $chunkIndex => $chunk) {
             $singleChunkEditionId = $chunk['chunkEditionTableId'];
-            $this->logger->debug("Retrieving chunk CT data for chunk index {$chunkIndex}, edition ID {$singleChunkEditionId}");
+            $this->logger->debug("Retrieving chunk CT data for chunk index $chunkIndex, edition ID $singleChunkEditionId");
             $chunkCtData = $this->ctManager->getCollationTableById($singleChunkEditionId);
             $chunksCtData[$chunkIndex] = $chunkCtData;
         }

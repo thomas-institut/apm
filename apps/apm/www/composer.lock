@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "c2ba7ad6306a5cfdcdbd59841d4d150d",
+    "content-hash": "98708f267eaa305b5ba7d9302f3a5f9d",
     "packages": [
         {
             "name": "clue/stream-filter",
@@ -2964,16 +2964,16 @@
         },
         {
             "name": "thomas-institut/apm-publication-api",
-            "version": "0.0.13",
+            "version": "0.0.16",
             "source": {
                 "type": "git",
                 "url": "https://github.com/thomas-institut/apm-publication-api.git",
-                "reference": "4fadbd3bc6dea820396310e121dee84a52b39ba9"
+                "reference": "4d1e8a1272c6948ec810b7d2a6efb2ee71b9994a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/thomas-institut/apm-publication-api/zipball/4fadbd3bc6dea820396310e121dee84a52b39ba9",
-                "reference": "4fadbd3bc6dea820396310e121dee84a52b39ba9",
+                "url": "https://api.github.com/repos/thomas-institut/apm-publication-api/zipball/4d1e8a1272c6948ec810b7d2a6efb2ee71b9994a",
+                "reference": "4d1e8a1272c6948ec810b7d2a6efb2ee71b9994a",
                 "shasum": ""
             },
             "require": {
@@ -3008,9 +3008,9 @@
             "description": "Definition and client for APM's publication API",
             "support": {
                 "issues": "https://github.com/thomas-institut/apm-publication-api/issues",
-                "source": "https://github.com/thomas-institut/apm-publication-api/tree/0.0.13"
+                "source": "https://github.com/thomas-institut/apm-publication-api/tree/0.0.16"
             },
-            "time": "2026-06-08T09:19:33+00:00"
+            "time": "2026-06-08T12:07:35+00:00"
         },
         {
             "name": "thomas-institut/datacache",

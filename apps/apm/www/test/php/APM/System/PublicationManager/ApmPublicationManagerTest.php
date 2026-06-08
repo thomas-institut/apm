@@ -498,12 +498,18 @@ class ApmPublicationManagerTest extends TestCase
             ->willReturn($mceDataInfo);
 
         $expectedNodeResponse = [
+            'type' => 'edition',
+            'id' > 123,
             'editionId' => $resourceId,
             'title' => 'Edition Title',
             'versionTimeString' => '2023-01-01 00:00:00.000000',
             'description' => 'Edition Description',
             'languageCode' => 'ara',
-            'mainText' => [],
+            'mainText' => [
+                [ 'type' => 'text', 'text' => 'Hello'],
+                [ 'type' => 'glue'],
+                [ 'type' => 'text', 'text' => [ ['type' => 'text', 'text' => 'World', 'fontWeight' => 'bold'] ]]
+            ],
             'apparatuses' => [],
             'witnesses' => [],
             'siglaGroups' => []

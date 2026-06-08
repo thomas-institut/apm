@@ -28,7 +28,7 @@
     "ext-iconv": "*",
     "thomas-institut/php-backend-common": "0.0.2",
     "thomas-institut/standard-api": "^1.0.0",
-    "thomas-institut/apm-publication-api": "0.0.13",
+    "thomas-institut/apm-publication-api": "0.0.16",
     "thomas-institut/datatable": "^3.0.2",
     "thomas-institut/timestring": "^v1.3",
     "thomas-institut/datacache": "^v1.0.1",

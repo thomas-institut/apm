@@ -10,7 +10,7 @@
  *  but WITHOUT ANY WARRANTY; without even the implied warranty of
  *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  *  GNU General Public License for more details.
- *
+ *`
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
  *
@@ -1015,7 +1015,7 @@ export class TableEditor<T> {
     this.dispatchTableDrawnPreEvent();
     if (this.container) {
       const newVNode = this.genTableVNode();
-      profiler.lap('vnode generated');
+      // profiler.lap('vnode generated');
       if (!this.vnode) {
         this.container.innerHTML = '';
         const placeholder = document.createElement('div');
@@ -1024,14 +1024,14 @@ export class TableEditor<T> {
       }
       this.vnode = patch(this.vnode, newVNode);
     }
-    profiler.lap('vnode patched');
+    // profiler.lap('vnode patched');
     this.setupTableForEditMode(this.tableEditMode);
     this.setupTableEventHandlers();
     // dispatch redraw callbacks
     if (this.options.onTableDrawnEventHandler !== null) {
       this.dispatchTableDrawnEvent();
     }
-    profiler.stop();
+    // profiler.stop();
   }
 
   private genCellVNode(row: number, col: number, tableColumnNumber = -1): VNode {

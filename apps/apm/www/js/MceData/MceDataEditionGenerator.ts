@@ -76,7 +76,7 @@ export class MceDataEditionGenerator {
     let nextChunkShift = 0;
     let currentFoliationChanges: FoliationChangeInfoInterface[] = [];
     if (mceData.chunkOrder === undefined) {
-      console.warn(`No chunk order in MceData`);
+      // console.warn(`No chunk order in MceData`);
       mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
     }
     for (let chunkOrderIndex = 0; chunkOrderIndex < mceData.chunkOrder.length; chunkOrderIndex++) {
@@ -140,7 +140,7 @@ export class MceDataEditionGenerator {
         let singleChunkApparatus = singleChunkEdition.apparatuses[appIndex];
         let currentApparatus;
         if (edition.apparatuses[appIndex] === undefined) {
-          console.log(`At chunk index ${chunkIndex}, apparatus ${appIndex} is empty, creating empty apparatus`);
+          // console.log(`At chunk index ${chunkIndex}, apparatus ${appIndex} is empty, creating empty apparatus`);
           currentApparatus = ApparatusTools.createEmpty();
           currentApparatus.type = singleChunkApparatus.type;
           edition.apparatuses.push((new Apparatus()).setFromInterface(currentApparatus));

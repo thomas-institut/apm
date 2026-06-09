@@ -20,13 +20,13 @@ export function SinglePageEditionViewer({editionData}: SinglePageEditionViewerPr
   const [highlightedToken, setHighlightedToken] = React.useState<number | null>(null);
 
 
-  const renderParagraph = (paragraph: MainTextParagraph) => {
+  const renderParagraph = (paragraph: MainTextParagraph, key: number) => {
 
     const handleOnClick = (index: number) => {
       setHighlightedToken(index === highlightedToken ? null : index);
     }
     return (
-      <p className={paragraph.style}>
+      <p className={paragraph.style} key={key}>
         {paragraph.tokens.map((token, index) => {
           let className = `main-text-token main-text-token-${token.originalIndex} `
             + token.entries.map(entry => `entry-${entry.apparatus} entry-${entry.apparatus}-${entry.entryIndex}`).join(' ');
@@ -70,8 +70,8 @@ export function SinglePageEditionViewer({editionData}: SinglePageEditionViewerPr
   const langClass = ` text-${editionData.languageCode}`;
   return (
     <div className={langClass + ' ev-single-page'}>
-      <div style={{}} className={'main-text-panel'}>
-        {getMainTextParagraphs(editionData.mainText, specMap).map((paragraph) => renderParagraph(paragraph))}
+      <div className={'main-text-panel'}>
+        {getMainTextParagraphs(editionData.mainText, specMap).map((paragraph, index) => renderParagraph(paragraph, index))}
       </div>
       <div className={'app-panel'}>
         { highlightedToken !== null &&  renderEntries(specMap.get(highlightedToken) ?? null)}

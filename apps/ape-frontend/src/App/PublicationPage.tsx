@@ -27,6 +27,7 @@ export function PublicationPage() {
       if (!response || response.result === 'Error') {
         throw new Error(response?.message || 'Failed to fetch publication');
       }
+      console.log(`Publication data fetched successfully for publication ${publicationId}`, response.data);
       return response.data;
     },
     enabled: !!apiClient && publicationId !== undefined,
@@ -75,8 +76,6 @@ export function PublicationPage() {
         {publication.type === 'transcription' &&
           <div>{nameFromCode(transcriptionData.languageCode)} {docTypeName(transcriptionData.docType)} </div>}
         {publication.type === 'transcription' && <div>{getDocInfo(transcriptionData)}</div>}
-        {publication.type === 'edition' &&
-          <div>{nameFromCode(editionData.languageCode)}</div>}
         <div style={{color: 'gray'}}>
           <InfoLg title={'Id:' + publication.id}/> <Clock title={'Version:' + publication.versionTimeString}/>
         </div>

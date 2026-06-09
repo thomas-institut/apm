@@ -74,6 +74,7 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
       const editionInterface = await generator.generate(mceData, input.editionId);
       this.logger.debug(`Edition from MCE ${input.editionId} generated successfully, converting to publication`);
       const publicationData = this.convertEditionToEditionPublicationData(editionInterface, input.publicationId, input.versionString);
+      publicationData.title = input.mceData.title;
       const duration = getDurationInMs(process.hrtime.bigint(), start);
       this.logger.info(`${logPrefix} Publication data for edition from MCE ${input.editionId} created successfully in ${duration} ms`);
       console.log(publicationData.apparatuses[0].entries[0].subEntries);

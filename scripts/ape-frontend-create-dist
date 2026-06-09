@@ -53,7 +53,7 @@ fi
 
 mkdir "$TMP_DIR" || exit
 
-APP_CONFIG="window.APP_CONFIG = { apiBaseUrl: '$API_URL', appName: '$APP_NAME' };"
+APP_CONFIG="window.APP_CONFIG = { baseUrl: '$BASE_DIR', apiBaseUrl: '$API_URL', appName: '$APP_NAME' };"
 
 echo Building frontend JS for production with base dir \'"$BASE_DIR"\'
 echo - "$APP_CONFIG"

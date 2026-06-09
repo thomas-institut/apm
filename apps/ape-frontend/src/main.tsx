@@ -5,11 +5,13 @@ import 'bootstrap/dist/css/bootstrap.css';
 import './main.css';
 
 export interface InlineAppConfig {
+  baseUrl?: string;
   apiBaseUrl?: string;
   appName?: string;
 }
 
 const config: InlineAppConfig = (window as any).APP_CONFIG || {
+  baseUrl: '',
   apiBaseUrl: null,
   appName: 'DARE'
 };

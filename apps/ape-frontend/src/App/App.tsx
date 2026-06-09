@@ -10,7 +10,6 @@ import {About} from "@/App/About";
 import {PublicationPage} from "@/App/PublicationPage";
 
 import "./app.css";
-import PageLayout from "@/ui/ApeUx/PageLayout";
 
 interface AppProps {
     inlineConfig: InlineAppConfig
@@ -76,11 +75,11 @@ export function App({inlineConfig}: AppProps) {
 
     return (<ApeContext value={context}>
         <QueryClientProvider client={queryClient}>
-            <BrowserRouter>
+            <BrowserRouter basename={inlineConfig.baseUrl}>
                     <Routes>
-                        <Route path="/" element={<Home/>}/>
-                        <Route path="/about" element={<About/>}/>
-                        <Route path="/publication/:id" element={<PublicationPage/>}/>
+                        <Route path={"/"} element={<Home/>}/>
+                        <Route path={"/about"} element={<About/>}/>
+                        <Route path={"/publication/:id"} element={<PublicationPage/>}/>
                     </Routes>
             </BrowserRouter>
         </QueryClientProvider>

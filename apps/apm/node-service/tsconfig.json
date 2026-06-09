@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "#src/*": ["./src/*"],
+      "#www-js/*": ["../www/js/*"],
+      "#shared-ts/*": ["shared-ts/src/*"],
+    },
+    "target": "es2024",
+    "lib": ["es2024"],
+    "module": "es2022",
+    "moduleResolution": "bundler",
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "outDir": "./dist",
+    "rootDir": "../..",
+    "allowJs": true,
+  },
+  "exclude": [
+    "node_modules",
+    "dist"
+  ]
+}

@@ -6,14 +6,14 @@
 #
 #  Rafael Nájera
 #
-# Created:  17 Jun 2025
-# Modified: 09 May 2026
+# Created: 17 Jun 2025
+# Modified: 29 May 2026
 #
-name: apm-development
+name: apm-dev
 
 services:
   nginx:
-    container_name: nginx
+    container_name: apm-nginx
     image: nginx:latest
     ports:
       - "8888:80"
@@ -26,7 +26,7 @@ services:
       - php
 
   mysql:
-    container_name: mysql
+    container_name: apm-mysql
     image: mysql:8.0
     ports:
       - "4306:3306" # so that it can be accessed from the host machine!
@@ -42,22 +42,21 @@ services:
   # It is also possible, of course, to create an empty database and initialize with the SQL scripts in src/db
 
   php:
-    container_name: php
+    container_name: apm-php
     build:
       context: .
       dockerfile: dev-php.Dockerfile
     volumes:
       - ${REPO_ROOT}/${APM_SRC}:/opt/apm
-      - ${REPO_ROOT}/${SHARED_PHP_SRC}:/opt/shared-php
       - ${REPO_ROOT}/${DEV_TMP}/apm:/var/apm
     depends_on:
       - mysql
 
-  typesetting:
-    container_name: typesetting
+  node:
+    container_name: apm-node24
     build:
       context: .
-      dockerfile: dev-typesetting.Dockerfile
+      dockerfile: dev-node24.Dockerfile
     ports:
       - "4711:4711"
     volumes:
@@ -76,18 +75,18 @@ services:
 
 
   collatex:
-    container_name: collatex
+    container_name: apm-collatex
     build: ../collatex-http
 
   valkey:
-    container_name: valkey
+    container_name: apm-valkey
     image: valkey/valkey:8.1-alpine
     volumes:
       - ${REPO_ROOT}/${DEV_TMP}/apm/valkey-data:/data
     command: valkey-server --save 60 1 --loglevel warning --dir /data
 
   typesense:
-    container_name: typesense
+    container_name: apm-typesense
     image: typesense/typesense:28.0
     volumes:
       - ${REPO_ROOT}/${DEV_TMP}/apm/typesense-data:/data

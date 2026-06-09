@@ -7,7 +7,7 @@ consistency with the surrounding code and avoid unnecessary refactors.
 
 ## Project Summary
 
-This repository is a monorepo for two main apps, APM and APE, and shared PHP and TS code. 
+This repository is a monorepo for two main apps, APM and APE, and shared TS code. 
 
 APM is a system that allows users to create manuscript transcriptions and critical editions.  APE is a presentation
 app for APM generated data.
@@ -30,16 +30,21 @@ Infrastructure used by the project:
 
 ## Development Environment
 
-Development services run in Docker containers
+Development services run in Docker containers. Agents must use PHP from the containers, not the local PHP.
+
+**Crucial for Agents:**
+- If the `docker` command is missing from your `PATH`, check `/usr/local/bin`. 
+- To run PHP tests for APM, use `scripts/apm-composer test`.
+- Paths for tests in the script should be relative to the container's working directory (`apps/apm/www`). 
+  Example: `./scripts/apm-composer test test/php/APM/System/PublicationManager/ApmPublicationManagerTest.php`
 
 ## Repository Layout
 
-- `apps`: apps and shared PHP and TS libraries
+- `apps`: apps and shared TS libraries
 - `docker`: Docker container generation for development
 - `docs`: various general documentation files and files related to specific issues from Github Issues. Use only if instructed to do so.
 - `policies`: code policies
 - `scripts`: various scripts for testing and distribution tar file creation
-
 
 ### APM
 
@@ -70,14 +75,21 @@ Typesetting service:
 ### APE
 
 Split into separate backend and frontend:
-- Backend: `apps/ape-backend`
-- Frontend: `apps/ape-frontend`
 
-### Shared PHP
+#### Backend
 
-A collection of PHP classes for use both in APM and APE. They're meant to be tested separately using its own development 
-environment. Use `scripts/share-php-composer` and `scripts/share-php-test` for composer and testing.
+Root folder: `apps/ape-backend`
 
+(paths below given in relation to APE backend root folder)
+
+- `cli`: control scripts
+- `src`: PHP code
+- `test`: test code
+
+
+#### Frontend
+
+Root folder: `apps/ape-frontend`
 
 ## Guidelines and Policies
 

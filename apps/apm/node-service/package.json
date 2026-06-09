@@ -1,0 +1,39 @@
+{
+  "name": "apm-node-service",
+  "version": "1.2.9",
+  "type": "module",
+  "imports": {
+    "#src/*": "./dist/apm/node-service/src/*",
+    "#www-js/*": "./dist/apm/www/js/*",
+    "#shared-ts/*": "./dist/shared-ts/src/*"
+  },
+  "scripts": {
+    "build": "rm -fr dist; tsc",
+    "tsc:version": "tsc --version"
+  },
+  "prettier": {
+    "singleQuote": true,
+    "tabWidth": 2,
+    "useTabs": false,
+    "trailingComma": "all",
+    "maxLineLength": 80
+  },
+  "dependencies": {
+    "@thomas-inst/fmt-text": "1.1.1",
+    "@thomas-inst/matrix": "1.0.1",
+    "@thomas-inst/typesetter" : "^1.0.0",
+    "@thomas-inst/optionschecker": "^1.1.4",
+    "body-parser": "^2.2.0",
+    "express": "^5.2",
+    "kleur": "^4.1.5",
+    "node-gtk": "^1.0.0",
+    "yaml": "^2.9.0"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "typescript": "^5.9.2"
+  },
+  "allowScripts": {
+    "node-gtk@1.0.0": true
+  }
+}

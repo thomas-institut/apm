@@ -1,0 +1,219 @@
+// noinspection ES6PreferShortImport
+
+import {StyleSheetDefinition} from "@thomas-inst/typesetter";
+
+
+export const latinPeetersJournal: StyleSheetDefinition =  {
+  _metaData: {
+    name: 'Peeters Journal',
+    description: 'A4 paper, Linux Libertine'
+  },
+  fontConversions: [
+    {
+      from: { script: 'ar' },
+      to: { fontFamily: 'Amiri' }
+    }
+  ],
+  default: {
+    strings: {
+      omission: 'om.',
+      addition: 'add.',
+      ante: 'ante',
+      post: 'post',
+      defaultLemmaSeparator: ']',
+      lineRangeSeparator: '\u2016',  // double vertical line
+      entrySeparator:  '\u007c' // single vertical line
+    },
+    page: {
+      width: "16 cm",
+      height: "24 cm",
+      marginTop: "3.3846 cm",
+      marginLeft: "3.1579 cm",
+      marginBottom: "3.1579 cm",
+      marginRight: "2.4662 cm",
+      minDistanceFromApparatusToText: "12 pt",
+      minInterApparatusDistance: "12 pt",
+      lineNumbers: "western",   //  "western", "arabic", "none"
+      lineNumbersToTextDistance: "0.5 cm",
+      lineNumbersFontSize: "0.8 em",
+      lineNumbersPosition: "left",
+      resetLineNumbersEachPage: true
+    },
+    paragraph: {
+      lineSkip: "12.788 pt",
+      indent: "3.759 mm",
+      align: 'justified',
+      spaceBefore: "0",
+      spaceAfter: "0"
+    },
+    text: {
+      fontFamily: "EB Garamond",
+      fontSize: "11 pt",
+      fontStyle: "",
+      fontWeight: "",
+      shiftY: "0"
+    },
+    glue: {
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.08 em"
+    },
+  },
+  emGlue: {
+    parent: "",
+    glue: {
+      width: "1 em",
+      shrink: "0.02 em",
+      stretch: "0.08 em"
+    }
+  },
+  small:  {
+    parent: "",
+    text: {
+      fontSize: "0.8 em"
+    }
+  },
+  superscript: {
+    parent: "",
+    text: {
+      fontSize: "0.7 em",
+      shiftY: "-0.6 em"
+    }
+  },
+  subscript:  {
+    parent: "",
+    text: {
+      fontSize: "0.7 em",
+      shiftY: "0.6 em"
+    }
+  },
+  normal: {
+    parent: 'default',
+    paragraph: {
+      indent: '1 em'
+    }
+  },
+  arabicText: {
+    parent: "",
+    text: {
+      fontFamily: "Noto Naskh Arabic",
+    }
+  },
+  h1: {
+    parent: 'default',
+    text: {
+      fontSize: '1.5 em',
+      fontWeight: 'bold',
+    },
+    paragraph: {
+      align: 'center',
+      spaceBefore: '2 em',
+      spaceAfter: '1 em',
+      keepWithNext: true
+    }
+  },
+  h2: {
+    parent: 'default',
+    text: {
+      fontSize: '1.2 em',
+      fontWeight: 'bold',
+    },
+    paragraph: {
+      spaceBefore: '1 em',
+      spaceAfter: '0.5 em',
+      keepWithNext: true
+    }
+  },
+  h3: {
+    parent: 'default',
+    text: {
+      fontWeight: 'bold',
+    },
+    paragraph: {
+      spaceBefore: '0.5 em',
+      spaceAfter: '0.25 em',
+      keepWithNext: true
+    }
+  },
+  apparatus: {
+    parent: "default",
+    text: {
+      fontSize: "9.4 pt",
+    },
+    paragraph: {
+      lineSkip: "10.54 pt"
+    }
+  },
+  lineRangeSeparator: {
+    text: {
+      fontWeight: 'bold',
+    }
+  },
+  postLineRangeSeparator: {
+    glue: {
+      width: "1.25 em",
+      stretch: "0.5 em",
+      shrink: "0.25 em"
+    }
+  },
+  preEntrySeparator : {
+    glue: {
+      width: "0.5 em",
+      stretch: "0.25 em",
+      shrink: "0.05 em"
+    }
+  },
+  entrySeparator: {
+    // text: {
+    //   fontWeight: 'bold',
+    // }
+  },
+  postEntrySeparator: {
+    glue: {
+      width: "1.25 em",
+      stretch: "0.5 em",
+      shrink: "0.25 em"
+    }
+  },
+  apparatusLineNumbers: {
+    text: {
+      fontWeight: 'bold',
+    }
+  },
+  apparatusKeyword: {
+    text: {
+      fontStyle: 'italic',
+    }
+  },
+  sigla: {
+    text: {
+      fontStyle: 'italic',
+    }
+  },
+  hand: {
+    parent: 'superscript'
+  },
+  marginalia: {
+    parent: "default",
+    text: {
+      fontSize: "9 pt",
+    },
+    paragraph: {
+      lineSkip: "15 pt"
+    },
+    glue: {
+      width: "0.25 em",
+      shrink: "0.03 em",
+      stretch: "0.08 em"
+    },
+  },
+  marginaliaKeyword: {
+    text: {
+      fontStyle: 'italic',
+    }
+  },
+  latinInterSigla: {
+    parent: "apparatus",
+    glue: { width: "0.1 em", shrink: '0', stretch:'0'}
+  }
+}

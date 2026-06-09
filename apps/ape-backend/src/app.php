@@ -1,54 +1,32 @@
 <?php
 
+use CuyZ\Valinor\Mapper\MappingError;
 use JetBrains\PhpStorm\NoReturn;
 use Monolog\Handler\StreamHandler;
 use Monolog\Logger;
-use Psr\Log\LoggerInterface;
+use Predis\ClientInterface;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Log\LoggerInterface;
 use Slim\Exception\HttpException;
 use Slim\Exception\HttpNotFoundException;
 use Slim\Factory\AppFactory;
 use ThomasInstitut\Ape\Config\SystemConfig;
-use ThomasInstitut\ConfigLoader\ConfigLoader;
+use ThomasInstitut\Ape\Factories\ApmApiClientFactory;
+use ThomasInstitut\Ape\Factories\PublicationManagerFactory;
+use ThomasInstitut\Ape\Factories\ValkeyClientFactory;
+use ThomasInstitut\Ape\Managers\PublicationManager;
+use ThomasInstitut\ApmPublicationApi\Client\PublicationApiClient;
 use ThomasInstitut\Profiler\SystemProfiler;
-use ThomasInstitut\Settable\MissingRequiredValueException;
-use ThomasInstitut\Settable\WrongValueTypeException;
-use ThomasInstitut\StandardApi\RouteBuilder;
-
+use ThomasInstitut\RouteBuilder\RouteBuilder;
+use function DI\factory;
 
 require_once __DIR__ . '/../vendor/autoload.php';
 
 SystemProfiler::start();
 
+require_once __DIR__ . '/loadConfig.php';
 // Load the route definitions
 $apiRoutesSpec = require __DIR__ . '/api-routes-spec.php';
-
-
-
-if (!function_exists('loadConfig')) {
-    function loadConfig(): SystemConfig
-    {
-        $baseDir = __DIR__ . '/..';
-        $configArray = ConfigLoader::getConfigArray(
-            [$baseDir . '/version.yaml'],
-            [$baseDir . '/config.yaml', '/etc/ti/ape-config.yaml']
-        );
-
-        if ($configArray === null) {
-            exitWithErrorMessage(ConfigLoader::getErrorMessage());
-        }
-
-        $systemConfig = new SystemConfig();
-        try {
-            $systemConfig->fromArray($configArray);
-        } catch (MissingRequiredValueException|WrongValueTypeException $e) {
-            exitWithErrorMessage($e->getMessage());
-        }
-
-        return $systemConfig;
-    }
-
-}
 
 if (!function_exists('buildLogger')) {
     function buildLogger(SystemConfig $systemConfig): Logger
@@ -57,7 +35,6 @@ if (!function_exists('buildLogger')) {
         $logger->pushHandler(new StreamHandler($systemConfig->log->path));
         return $logger;
     }
-
 }
 
 if (!function_exists('exitWithErrorMessage')) {
@@ -73,39 +50,49 @@ if (!function_exists('exitWithErrorMessage')) {
 }
 
 // Create the system config and logger
-$systemConfig = loadConfig();
+try {
+    $systemConfig = loadConfig();
+} catch (MappingError|RuntimeException $e) {
+    exitWithErrorMessage($e->getMessage());
+}
 $logger = buildLogger($systemConfig);
 
 // Create the DI container
-$container = new DI\Container();
-$container->set(SystemConfig::class, $systemConfig);
-$container->set(LoggerInterface::class, $logger);
+$builder = new DI\ContainerBuilder();
+$builder->addDefinitions([
+    SystemConfig::class => $systemConfig,
+    LoggerInterface::class => $logger,
+    ClientInterface::class => factory([ValkeyClientFactory::class, 'create']),
+    PublicationApiClient::class =>factory([ ApmApiClientFactory::class, 'create']),
+    PublicationManager::class => factory([PublicationManagerFactory::class, 'create']),
+]);
 
+try {
+    $container = $builder->build();
+} catch (Exception $e) {
+    exitWithErrorMessage("Can't build container: " . $e->getMessage());
+}
 AppFactory::setContainer($container);
+
 $app = AppFactory::create();
 if ($systemConfig->general->subDir !== '') {
     $app->setBasePath('/' . $systemConfig->general->subDir);
 }
 RouteBuilder::build($app, $apiRoutesSpec);
 
-//$routes = $app->getRouteCollector()->getRoutes();
-//foreach ($routes as $route) {
-//    $logger->debug("Route: {$route->getPattern()}");
-//}
-
 $errorMiddleware = $app->addErrorMiddleware(false, true, true, $logger);
 $errorMiddleware->setDefaultErrorHandler(function (
     ServerRequestInterface $request,
-    Throwable $exception,
-    bool $displayErrorDetails,
-    bool $logErrors
+    Throwable              $exception,
+    bool                   $displayErrorDetails,
+    bool                   $logErrors
 ) use ($app, $logger) {
 
     $statusCode = 500;
     $logMessage = 'Slim found an error';
     $errorType = 'other';
     $logTrace = false;
-    $errorId = strtoupper(base_convert((string) time(), 10, 36));
+    $errorId = strtoupper(base_convert((string)time(), 10, 36));
 
 
     if ($exception instanceof HttpNotFoundException) {
@@ -118,7 +105,7 @@ $errorMiddleware->setDefaultErrorHandler(function (
         case 'notFound':
             $statusCode = 404;
             $logMessage = 'Endpoint not found';
-            $logDetails  = [
+            $logDetails = [
                 'path' => $request->getUri()->getPath(),
             ];
             break;

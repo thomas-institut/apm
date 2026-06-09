@@ -1,0 +1,78 @@
+.pageContent {
+  overflow-y: visible;
+}
+
+div.ev-single-page {
+
+  padding: 0.5rem;
+  margin: 2em auto;
+  max-width: 80em;
+  display: grid;
+  height: 100%;
+  overflow-y: hidden;
+  grid-template-columns: 70% 30%;
+
+  gap: 0.5rem;
+
+  div.main-text-panel {
+    margin-top: 2em;
+    max-width: 60em;
+    overflow-y: auto;
+    height: 100%;
+    box-sizing: border-box;
+    min-height: 0;
+    padding-bottom: 5em;
+
+    .h1 {
+      font-weight: bold;
+      font-size: 1.5em;
+      text-align: center;
+      margin-bottom: 0.75em;
+    }
+
+    .entry-criticus {
+      background-color: #e1f4fa;
+    }
+
+    .highlighted-token {
+      border: 2px solid blue;
+    }
+  }
+
+  div.app-panel {
+    height: 100%;
+    overflow-y: auto;
+    min-height: 0;
+    box-sizing: border-box;
+    margin-top: 2em;
+
+
+    .lemma-text {
+      color: #07306c;
+    }
+    .apparatus-div {
+      margin-bottom: 1em;
+    }
+
+    .apparatus-type {
+      font-weight: bold;
+      margin-bottom: 0.25em;
+    }
+    .apparatus-entry {
+      margin-bottom: 0.25em;
+    }
+
+    .sub-entry {
+      margin-left: 0.25em;
+      margin-right: 0.5em;
+    }
+
+  }
+
+
+
+
+}
+
+
+

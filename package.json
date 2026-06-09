@@ -3,7 +3,7 @@
   "private": true,
   "workspaces": [
     "apps/ape-frontend",
-    "apps/apm/src/www",
+    "apps/apm/www",
     "apps/shared-ts"
   ]
 }

@@ -1,0 +1,2 @@
+#!/bin/bash
+docker exec -w /opt/ape-backend ape-php cli/apectl "$@"

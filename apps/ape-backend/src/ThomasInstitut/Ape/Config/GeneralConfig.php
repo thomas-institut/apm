@@ -2,14 +2,14 @@
 
 namespace ThomasInstitut\Ape\Config;
 
-use ThomasInstitut\Settable\FromFlatArrayTrait;
-use ThomasInstitut\Settable\SettableFromArray;
-
-class GeneralConfig implements SettableFromArray
+class GeneralConfig
 {
-    use FromFlatArrayTrait;
-
-    public string $name = 'APE Backend';
+    /**
+     * The name of the application
+     * @var string
+     */
+    public string $name = 'Averroes Presentation Environment';
+    public string $shortName = 'APE';
     public bool $devMode = true;
     public string $subDir = '';
 }

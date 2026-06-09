@@ -1,6 +1,13 @@
-import {BackendInfo, GetBackendInfoResponse} from "@/Api/Schema/GetBackendInfo";
-import {ApiErrorResponse, ApiResponse} from "@/Api/Schema/ApiResponse";
-
+import {AppConfig, GetAppConfigApiResponse} from "@/Api/Schema/GetAppConfig";
+import {
+  AnyPublicationData,
+  PublicationApiListResponse,
+  PublicationApiGetResponse,
+  PublicationListing,
+  ThomasInstStandardApiResponse,
+  ApiErrorResponse,
+} from "@shared/ts";
+import {GetPublicationLastUpdateApiResponse} from "@/Api/Schema/GetPublicationLastUpdate";
 
 export interface ApiClientResponse<T> {
   result: 'Success' | 'Error';
@@ -19,36 +26,98 @@ export class ApiClient {
     return this;
   }
 
-  async getBackendInfo(): Promise<ApiClientResponse<BackendInfo>> {
-    const url = this.baseUrl + '/info';
-    const clientResponse: ApiClientResponse<BackendInfo> = {
-      result: 'Success',
-      timestamp: -1,
-      httpStatus: 0,
+  async getAppConfig(): Promise<ApiClientResponse<AppConfig>> {
+    return this.callApi<GetAppConfigApiResponse, AppConfig>(
+      '/app/config',
+      (response) => response.appConfig,
+    );
+  }
+
+  async getPublicationListings(): Promise<ApiClientResponse<PublicationListing[]>> {
+    return this.callApi<PublicationApiListResponse, PublicationListing[]>(
+      '/publication/list',
+      (response) => response.publications,
+    );
+  }
+
+  async getPublicationData(publicationId: number): Promise<ApiClientResponse<AnyPublicationData>> {
+    return this.callApi<PublicationApiGetResponse, AnyPublicationData>(
+      `/publication/${publicationId}/get`,
+      (response) => response.publicationData,
+    );
+  }
+
+  async getPublicationLastUpdate(): Promise<ApiClientResponse<number>> {
+    return this.callApi<GetPublicationLastUpdateApiResponse, number>(
+      '/publication/lastUpdate',
+      (response) => this.unixSecondsToJsMs(response.apmLastUpdate),
+    );
+  }
+
+  private async callApi<TApiResponse extends ThomasInstStandardApiResponse, TData>(
+    path: string,
+    mapSuccessData: (apiResponse: TApiResponse) => TData,
+  ): Promise<ApiClientResponse<TData>> {
+    const url = this.baseUrl + path;
+
+    try {
+      const fetchResponse = await fetch(url);
+
+      let response: ThomasInstStandardApiResponse | null = null;
+      try {
+        response = await fetchResponse.json() as ThomasInstStandardApiResponse;
+      } catch {
+        // If we cannot parse JSON we still return a normalized error response below.
+      }
+
+      if (response !== null && response.result === 'Error') {
+        const errorResponse = response as ApiErrorResponse;
+        return {
+          result: 'Error',
+          message: errorResponse.message,
+          httpStatus: errorResponse.httpStatus,
+          timestamp: this.unixSecondsToJsMs(errorResponse.timeStamp),
+        };
+      }
+
+      if (!fetchResponse.ok) {
+        return {
+          result: 'Error',
+          httpStatus: fetchResponse.status,
+          message: fetchResponse.statusText,
+          timestamp: Date.now(),
+        };
+      }
+
+      if (response === null) {
+        return {
+          result: 'Error',
+          httpStatus: fetchResponse.status,
+          message: 'Invalid JSON response from server',
+          timestamp: Date.now(),
+        };
+      }
+
+      const apiResponse = response as TApiResponse;
+      return {
+        result: 'Success',
+        httpStatus: fetchResponse.status,
+        timestamp: this.unixSecondsToJsMs(apiResponse.timeStamp),
+        data: mapSuccessData(apiResponse),
+      };
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error while calling API';
+      return {
+        result: 'Error',
+        message,
+        httpStatus: 0,
+        timestamp: Date.now(),
+      };
     }
-    const fetchResponse = await fetch(url);
-    if (!fetchResponse.ok) {
-      clientResponse.result = 'Error';
-      clientResponse.httpStatus = fetchResponse.status;
-      clientResponse.message = fetchResponse.statusText;
-      clientResponse.timestamp = Date.now();
-      return clientResponse
-    }
-    const response = await fetchResponse.json() as ApiResponse;
-    if (response.result === 'Error') {
-      const errorResponse = response as ApiErrorResponse;
-      clientResponse.result = 'Error';
-      clientResponse.message = errorResponse.message;
-      clientResponse.httpStatus = errorResponse.httpStatus;
-      clientResponse.timestamp = errorResponse.timestamp;
-      return clientResponse;
-    }
-    const apiResponse = response as GetBackendInfoResponse;
-    clientResponse.result = 'Success';
-    clientResponse.httpStatus = fetchResponse.status;
-    clientResponse.timestamp = apiResponse.timestamp;
-    clientResponse.data = apiResponse.backendInfo;
-    return clientResponse;
+  }
+
+  private unixSecondsToJsMs(unixSeconds: number): number {
+    return unixSeconds * 1000;
   }
 
 }

@@ -2,19 +2,25 @@
 
 namespace ThomasInstitut\Ape\Config;
 
+use CuyZ\Valinor\Mapper\MappingError;
+use CuyZ\Valinor\MapperBuilder;
 use PHPUnit\Framework\TestCase;
-use ThomasInstitut\Settable\MissingRequiredValueException;
-use ThomasInstitut\Settable\WrongValueTypeException;
 
 class SystemConfigTest extends TestCase
 {
+    private function map(array $data): SystemConfig
+    {
+        $data['general'] = $data;
+        return (new MapperBuilder())
+            ->allowSuperfluousKeys()
+            ->mapper()
+            ->map(SystemConfig::class, $data);
+    }
+
     /**
-     * @throws MissingRequiredValueException
-     * @throws WrongValueTypeException
      */
     public function testFromArray(): void
     {
-        $config = new SystemConfig();
         $data = [
             'devMode' => false,
             'subDir' => '/test',
@@ -28,7 +34,7 @@ class SystemConfigTest extends TestCase
             ]
         ];
 
-        $config->fromArray($data);
+        $config = $this->map($data);
         $this->assertFalse($config->general->devMode);
         $this->assertEquals('/test', $config->general->subDir);
 
@@ -40,16 +46,10 @@ class SystemConfigTest extends TestCase
     }
 
     /**
-     * @throws MissingRequiredValueException
-     * @throws WrongValueTypeException
      */
     public function testDefaults(): void
     {
-        $config = new SystemConfig();
-        
-        // We must provide version info because it's required if the key is present
-        
-        $config->fromArray([
+        $config = $this->map([
             'version' => [
                 'title' => 'v1',
                 'date' => 'today'
@@ -66,26 +66,21 @@ class SystemConfigTest extends TestCase
     }
 
     /**
-     * @throws WrongValueTypeException
      */
     public function testRequiredVersionInfo(): void
     {
-        $config = new SystemConfig();
-        
-        // If 'version' key is present but empty, it should throw MissingRequiredValueException
-        $this->expectException(MissingRequiredValueException::class);
-        $config->fromArray([
+        // If 'version' key is present but empty, it should throw MappingError
+        $this->expectException(MappingError::class);
+        $this->map([
             'version' => []
         ]);
     }
 
     /**
-     * @throws WrongValueTypeException
      */
     public function testMissingVersionSection(): void
     {
-        $config = new SystemConfig();
-        $this->expectException(MissingRequiredValueException::class);
-        $config->fromArray([]);
+        $this->expectException(MappingError::class);
+        $this->map([]);
     }
 }

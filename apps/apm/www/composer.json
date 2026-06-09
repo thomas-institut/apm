@@ -1,0 +1,73 @@
+{
+  "name": "thomas-institut/apm",
+  "version": "1.2.9",
+  "description": "Averroes Project Manager",
+  "type": "application",
+  "keywords": [
+    "mss"
+  ],
+  "homepage": "https://averroes.uni-koeln.de",
+  "license": "GPL-3.0-or-later",
+  "scripts": {
+    "test": "./vendor/bin/phpunit test/php --display-all-issues",
+    "phpstan": "./vendor/bin/phpstan analyse",
+    "test:coverage": "XDEBUG_MODE=coverage ./vendor/bin/phpunit test/php --display-all-issues --coverage-filter classes --coverage-text --coverage-html build/coverage"
+  },
+  "require": {
+    "php": "^8.3",
+    "ext-pdo": "*",
+    "ext-json": "*",
+    "ext-intl": "*",
+    "ext-mbstring": "*",
+    "ext-zlib": "*",
+    "ext-pcntl": "*",
+    "ext-posix": "*",
+    "ext-sockets": "*",
+    "ext-yaml": "*",
+    "ext-gd": "*",
+    "ext-iconv": "*",
+    "thomas-institut/php-backend-common": "0.0.2",
+    "thomas-institut/standard-api": "^1.0.0",
+    "thomas-institut/apm-publication-api": "0.0.16",
+    "thomas-institut/datatable": "^3.0.2",
+    "thomas-institut/timestring": "^v1.3",
+    "thomas-institut/datacache": "^v1.0.1",
+    "psr/log": "^3.0",
+    "slim/slim": "^4.3",
+    "slim/psr7": "^1.6",
+    "php-di/php-di": "^7.1",
+    "slim/twig-view": "^3.3.0",
+    "dflydev/fig-cookies": "^v3.0.0",
+    "predis/predis": "^v3.0",
+    "rafaelnajera/xmlmatcher": "^0.4",
+    "monolog/monolog": "^3.0",
+    "php-http/curl-client": "^2.3",
+    "typesense/typesense-php": "^4.9",
+    "guzzlehttp/guzzle": "^7.5",
+    "zircote/swagger-php": "^5.1",
+    "cuyz/valinor": "^2.4"
+  },
+  "require-dev": {
+    "phpunit/phpunit": "^12.5.14",
+    "phpstan/phpstan": "^2.1"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "prepend-autoloader": false,
+    "allow-plugins": {
+      "php-http/discovery": true
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "APM\\": "classes/APM",
+      "ThomasInstitut\\": "classes/ThomasInstitut"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "APM\\": "test/php/APM",
+      "ThomasInstitut\\": "test/php/ThomasInstitut"
+    }
+  }
+}

@@ -3,6 +3,8 @@ import {fromCompactFmtText} from "@thomas-inst/fmt-text";
 import {FmtTextSpan} from "@/ui/EditionViewer/FmtTextSpan";
 import React, {useMemo} from "react";
 import {SubEntryComponent} from "@/ui/EditionViewer/SubEntryComponent";
+import "./SinglePageEditionViewer.css";
+import {titleCase} from "@/Utilities/StringUtilities";
 
 
 interface SinglePageEditionViewerProps {
@@ -39,12 +41,10 @@ export function SinglePageEditionViewer({editionData}: SinglePageEditionViewerPr
   };
 
 
-
-
   const renderEntries = (entrySpecs: EntrySpec[]|null) => {
     if (!entrySpecs) return null;
     return entrySpecs.map((entrySpec, index) => {
-      const entryClass = `entry-${entrySpec.apparatus}`;
+      const apparatusClass = `apparatus-div apparatus-${entrySpec.apparatus}`;
       const apparatus = editionData.apparatuses.find(apparatus => apparatus.type === entrySpec.apparatus);
       if (apparatus === undefined) {
         console.warn(`Apparatus with type ${entrySpec.apparatus} not found in edition data`);
@@ -55,11 +55,12 @@ export function SinglePageEditionViewer({editionData}: SinglePageEditionViewerPr
         console.warn(`Entry with index ${entrySpec.entryIndex} not found in apparatus ${apparatus.type}`);
         return null;
       }
-      return <div key={index} className={entryClass}>{<>
-        <div className={'app-type'}>{apparatus.type}</div>
-        <div className={'lemma-text'}>{entry.lemmaText}]</div>
-        <div className={'sub-entries'}>{
-          entry.subEntries.map( (subEntry, subEntryIndex) => <SubEntryComponent key={subEntryIndex} subEntry={subEntry}/>)}</div>
+      return <div key={index} className={apparatusClass}>{<>
+        <div className={'apparatus-type'}>{titleCase(apparatus.type)}</div>
+        <div className={'apparatus-entry'}>
+          <span className={'lemma-text'}>{entry.lemmaText}</span>]
+          { entry.subEntries.map( (subEntry, subEntryIndex) => <SubEntryComponent key={subEntryIndex} subEntry={subEntry} langCode={editionData.languageCode} witnessInfo={editionData.witnesses}/>)}
+        </div>
       </>
       }</div>;
     });
@@ -68,11 +69,11 @@ export function SinglePageEditionViewer({editionData}: SinglePageEditionViewerPr
 
   const langClass = ` text-${editionData.languageCode}`;
   return (
-    <div className={langClass} style={{ display: 'grid', height: '100%', minHeight: 0, overflowY: 'hidden', gridTemplateColumns: '70% 30%', gap: '0.5rem'}}>
-      <div style={{overflowY: "auto", height: "100%", boxSizing: 'border-box', minHeight: 0}} className={'edition-main-text'}>
+    <div className={langClass + ' ev-single-page'}>
+      <div style={{}} className={'main-text-panel'}>
         {getMainTextParagraphs(editionData.mainText, specMap).map((paragraph) => renderParagraph(paragraph))}
       </div>
-      <div  className={'edition-main-text-entries'}>
+      <div className={'app-panel'}>
         { highlightedToken !== null &&  renderEntries(specMap.get(highlightedToken) ?? null)}
       </div>
     </div>

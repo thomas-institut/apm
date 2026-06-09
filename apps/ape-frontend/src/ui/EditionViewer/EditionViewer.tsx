@@ -8,7 +8,6 @@ interface EditionViewerProps {
 
 
 export function EditionViewer({editionData, viewerType}: EditionViewerProps) {
-
   if (viewerType === 'singlePage') {
     return <SinglePageEditionViewer editionData={editionData}/>;
   }

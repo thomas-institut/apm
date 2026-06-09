@@ -42,26 +42,7 @@ html, body {
   font-size: 2em;
 }
 
-.edition-main-text {
-  padding: 3em 0;
-  margin: 0 auto;
-  max-width: 50em;
-}
-
-.edition-main-text .h1 {
-  font-weight: bold;
-  font-size: 1.5em;
-  text-align: center;
-  margin-bottom: 0.75em;
-}
 
 
-.entry-criticus {
-  background-color: #e1f4fa;
-}
-
-.highlighted-token {
-  border: 2px solid blue;
-}
 
 

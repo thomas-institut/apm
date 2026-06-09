@@ -118,6 +118,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   private newEntryMainTextFrom: number;
   private newEntryMainTextTo: number;
   private apparatusEntryFormIsVisible: boolean = false;
+  private activeTagFilters: Set<string> = new Set();
   private preLemmaToggle!: MultiToggle;
   private customPreLemmaTextInput!: JQuery<HTMLElement>;
   private lemmaToggle!: MultiToggle;
@@ -129,6 +130,7 @@ export class ApparatusPanel extends PanelWithToolbar {
   private updateButton!: JQuery<HTMLElement>;
   private cancelButton!: JQuery<HTMLElement>;
   private tagEditor!: TagEditor;
+  private apparatusTagEditor!: TagEditor | null;
   private subEntryEditors: SubEntryEditorsArray = [];
   private useCtColNumbers: boolean = false;
   private mainTextTypesettingInfo: MainTextTypesettingInfo | null = null;
@@ -202,6 +204,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.entryFormState = entryFormStateNotInitialized;
     this.newEntryMainTextFrom = -1;
     this.newEntryMainTextTo = -1;
+    this.apparatusTagEditor = null;
     //this.debug = this.options.debug
     this.debug = true;
   }
@@ -722,6 +725,122 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.fitDivs();
   }
 
+  private getApparatusTags(): string[] {
+    return [...new Set(
+      this.apparatus.entries.flatMap(e => e.tags && e.tags.length > 0 ? e.tags : [])
+    )];
+  }
+
+  private getEntriesWithTag(tag: string): number[] {
+    return this.apparatus.entries
+    .map((e, i) => ({e, i}))
+    .filter(({e}) => e.tags && e.tags.includes(tag))
+    .map(({i}) => i);
+  }
+
+  private getActiveTags(entryIndex: number, hoveredTag: string | null = null): string[] {
+    
+    const entryTags = this.apparatus.entries[entryIndex].tags ?? [];
+    const activeTags = entryTags.filter(tag => this.activeTagFilters.has(tag));
+    
+    if (hoveredTag !== null && entryTags.includes(hoveredTag) && !activeTags.includes(hoveredTag)) {
+      return [...activeTags, hoveredTag];
+    }
+    
+    return activeTags;
+  }
+
+  private highlightEntryByIndex(entryIndex: number, hoveredTag: string | null = null) {
+    
+    const background = this.apparatusTagEditor?.getTagColor(this.getActiveTags(entryIndex, hoveredTag));
+    const lemma = $(this.containerSelector).find(`.lemma-${this.options.apparatusIndex}-${entryIndex}`);
+    const mainTextEntry = $(`.entry-index-${this.options.apparatusIndex}-${entryIndex}`);
+    
+    if (background === '') {
+      lemma.css('background', '');
+      mainTextEntry.css('background', '');
+      return;
+    }
+
+      // @ts-ignore
+      lemma.css('background', background);
+      // @ts-ignore
+      mainTextEntry.css('background', background);
+
+  }
+
+  private onApparatusTagHover(tag: string, active: boolean, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    const entriesWithTag = this.getEntriesWithTag(tag);
+    entriesWithTag.forEach(i => {
+      this.highlightEntryByIndex(i, active ? tag : null);
+    });
+  }
+
+  private onApparatusTagClick(tag: string, active: boolean, event: MouseEvent) {
+
+    // prevent removal of lemma selection
+    event.preventDefault();
+    event.stopPropagation();
+
+    const entriesWithTag = this.getEntriesWithTag(tag);
+
+    // tag activation
+    if (active) {
+      this.activeTagFilters.add(tag);
+      entriesWithTag.forEach(i => {
+        this.highlightEntryByIndex(i);
+      });
+
+    // tag deactivation
+    } else {
+      this.activeTagFilters.delete(tag);
+      entriesWithTag.forEach(i => {
+        this.highlightEntryByIndex(i);
+      });
+    }
+  }
+
+  private clearActiveTagBasedHighlights() {
+    const activeTags = [...this.activeTagFilters];
+
+    // deactivate active tags
+    activeTags.forEach((tag) => {
+      this.apparatusTagEditor?.setActiveTag(tag, false);
+      const tagItemId = `${this.apparatusTagEditor?.idPrefix}-${tag.replace(/ /g, "_")}-item`;
+      (this.apparatusTagEditor as any)._applyTagTextStyle(tagItemId, tag);
+    });
+  
+    // remove tag based highlights in apparatus and main text
+    this.activeTagFilters.clear();
+    this.apparatus.entries.forEach((_entry, index) => {
+      this.highlightEntryByIndex(index);
+    });
+  }
+
+  private setupApparatusTagEditor() {
+
+    const containerSelector = `${this.containerSelector} div.apparatus-tags`;
+    $('.apparatus-tags').hide();
+    const tags = this.getApparatusTags();
+
+    if (this.apparatusTagEditor === null) {
+      this.apparatusTagEditor = new TagEditor({
+        containerSelector,
+        idPrefix: `apparatus-tags-${this.options.apparatusIndex}`,
+        tags: tags,
+        mode: 'show',
+        onTagHover: this.onApparatusTagHover.bind(this),
+        onTagClick: this.onApparatusTagClick.bind(this),
+      });
+
+      return;
+    }
+
+    this.apparatusTagEditor.setTags(tags);
+  }
+
   updateApparatus(mainTextTypesettingInfo: MainTextTypesettingInfo | null) {
     if (mainTextTypesettingInfo !== null) {
       this.mainTextTypesettingInfo = mainTextTypesettingInfo;
@@ -737,6 +856,8 @@ export class ApparatusPanel extends PanelWithToolbar {
       }
       this.apparatusVNode = newVNode;
     }
+
+    this.setupApparatusTagEditor();
 
     this._setUpEventHandlers();
 
@@ -777,7 +898,10 @@ export class ApparatusPanel extends PanelWithToolbar {
                   </div>
                </div>
             </div>
-            <div class="panel-toolbar-group"><span id="line-column-numbers-toggle"></span></div>`;
+            <div class="panel-toolbar-group">
+                <span id="line-column-numbers-toggle" style="margin-right: 10px"></span>
+                <span id="show-tags-toggle"></span>
+            </div>`;
   }
 
   _setUpEventHandlers() {
@@ -935,9 +1059,29 @@ export class ApparatusPanel extends PanelWithToolbar {
       offPopoverText: 'Click to use collation table column numbers for apparatus entries',
       initialValue: this.useCtColNumbers
     });
+
+    const tagsToggle = new NiceToggle({
+      containerSelector: `${this.containerSelector} #show-tags-toggle`,
+      title: 'Show Tags: ',
+      onIcon: '<i class="fas fa-toggle-on"></i>',
+      onPopoverText: 'Click to hide tags for apparatus entries',
+      offIcon: '<i class="fas fa-toggle-off"></i>',
+      offPopoverText: 'Click to show tags for apparatus entries',
+      initialValue: false
+    });
+
     lineColumnNumbersToggle.on(toggleEvent, (ev: any) => {
       this.useCtColNumbers = ev.detail.toggleStatus;
       this.updateApparatus(this.mainTextTypesettingInfo);
+    });
+
+    tagsToggle.on(toggleEvent, (ev: any) => {
+      $('.apparatus-tags').toggle()
+
+      this.clearActiveTagBasedHighlights()
+      this.apparatus.entries.forEach((_entry, index) => {
+        this.highlightEntryByIndex(index);
+      });
     });
   }
 
@@ -1086,6 +1230,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     }
 
     const entries: VNode[] = [];
+    entries.push(h('div.apparatus-tags', {style: {marginBottom: '4px'}}));
 
     this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
       let currentLine = "__UNDEFINED__";

@@ -36,7 +36,7 @@ mkdir "$TMP_DIR" || exit
 
 echo Copying files to temporary directory
 #cp -R "$SRC_BASE_DIR"/db "$TMP_DIR"
-#cp -R "$SRC_BASE_DIR"/bin "$TMP_DIR"
+cp -R "$SRC_BASE_DIR"/cli "$TMP_DIR"
 
 cp -R "$SRC_BASE_DIR"/src "$TMP_DIR"
 cp -L -R "$SRC_BASE_DIR"/vendor "$TMP_DIR"

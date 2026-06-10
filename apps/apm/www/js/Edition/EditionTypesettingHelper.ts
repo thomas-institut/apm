@@ -62,6 +62,7 @@ import {HyphenationLanguage} from '@thomas-inst/typesetter';
 import {ItemArray} from '@thomas-inst/typesetter';
 import {getLemmaData} from "./LemmaData.js";
 import {GLUE, NUMBERING_LABEL, TEXT} from "./MainTextTokenType.js";
+import {getLatinSiglaSpacing} from "./LatinSiglaSpacing.js";
 
 export const MaxLineCount = 10000;
 const enDash = '\u2013';
@@ -489,7 +490,7 @@ export class EditionTypesettingHelper {
             typesetterItems.push(...await this.getTsItemsForPreLemma(entry));
             // lemma text
             typesetterItems.push(...await this.getTsItemsForLemma(entry));
-            // post lemma
+            // post-lemma
             typesetterItems.push(...await this.getTsItemsForPostLemma(entry));
             // separator
             typesetterItems.push(...await this.getTsItemsForSeparator(entry));
@@ -623,8 +624,16 @@ export class EditionTypesettingHelper {
   async getTsItemsForSigla(subEntry: ApparatusSubEntryInterface): Promise<TypesetterItem[]> {
     let items = [];
     let siglaData = ApparatusUtil.getSiglaData(subEntry.witnessData, this.sigla, this.siglaGroups);
+
+    let interSiglaSpacing: number[] = [];
+    if (this.edition.lang === 'la') {
+      interSiglaSpacing = getLatinSiglaSpacing(siglaData.map(sigla => sigla.siglum));
+    }
+
+
     for (let i = 0; i < siglaData.length; i++) {
       let siglumData = siglaData[i];
+
       // the siglum
       let siglumItem = await this.ss.apply(TextBoxFactory.simpleText(siglumData.siglum), 'apparatus sigla');
       siglumItem.setTextDirection(this.textDirection);
@@ -642,12 +651,9 @@ export class EditionTypesettingHelper {
           items.push(this.createPenalty(InfinitePenalty));
           items.push(await this.createGlue('apparatus', 0));
         }
-        if (this.edition.lang === 'la') {
-          if (siglumData.siglum.toLowerCase() !== siglumData.siglum && siglumData.siglum.toUpperCase() !== siglumData.siglum) {
-            // the siglum has at least one lowercase letter, so we need to add a very small space with the next
-            items.push(this.createPenalty(InfinitePenalty));
-            items.push(await this.createGlue('latinInterSigla'));
-          }
+        if (this.edition.lang === 'la' && interSiglaSpacing.includes(i)) {
+          items.push(this.createPenalty(InfinitePenalty));
+          items.push(await this.createGlue('latinInterSigla'));
         }
       }
     }
@@ -767,7 +773,6 @@ export class EditionTypesettingHelper {
     switch (subEntry.type) {
       case 'variant':
         items.push(...await this.getTsItemsForFmtText(subEntry.fmtText, apparatusStyle, 'detect'));
-        // items.push(...this.setTextDirection(await this.tokenRenderer.renderWithStyle(subEntry.fmtText, apparatusStyle), 'detect'));
         items.push(this.createPenalty(InfinitePenalty));
         items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
         items.push(...await this.getTsItemsForSigla(subEntry));
@@ -778,9 +783,9 @@ export class EditionTypesettingHelper {
         let keyword = this.ss.getStrings()[subEntry.type];
         let keywordTextBox = await this.ss.apply((new TextBox()).setText(keyword).setTextDirection(this.textDirection), keywordStyle);
         items.push(keywordTextBox);
-        if (subEntry.type === 'omission') {
-          items.push(this.createPenalty(InfinitePenalty));
-        }
+        // if (subEntry.type === 'omission') {
+        items.push(this.createPenalty(InfinitePenalty));
+        // }
         items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
         if (subEntry.type === 'addition') {
           items.push(...await this.getTsItemsForFmtText(subEntry.fmtText, apparatusStyle, 'detect'));

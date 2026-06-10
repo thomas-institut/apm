@@ -145,10 +145,6 @@ button.disablebutton{
     color: silver;
 }
 
-.popover {
-    max-width: 400px;
-}
-
 div.textcol{
     width: 100%;
 }
@@ -171,4 +167,53 @@ table.versiontable  td {
 table.versiontable {
     margin-top: 15px;
     margin-left: 20px;
+}
+
+
+.popover {
+    max-width: none !important;
+    width: 200px;
+}
+
+
+@media (min-width: 768px) {
+    .popover {
+        max-width: none !important;
+        width: 300px;
+    }
+}
+
+@media (min-width: 1024px) {
+    .popover {
+        max-width: none !important;
+        width: 400px;
+    }
+}
+
+@media (min-width: 1400px) {
+    .popover {
+        max-width: none !important;
+        width: 600px;
+    }
+}
+
+
+div.page-nav-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(30px, 1fr));
+    gap: 0.4em; /* Spacing between your 'table' cells */
+    width: 100%;
+}
+
+div.page-nav-grid-cell {
+    font-size: 0.9em;
+    text-align: center;
+}
+
+div.page-nav-grid-cell a {
+    color: var(--default-font-color);
+}
+
+div.page-nav-grid-cell.no-tx a {
+    color: silver;
 }

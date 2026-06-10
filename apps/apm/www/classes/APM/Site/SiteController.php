@@ -630,13 +630,14 @@ END;
             } else {
                 $thePage['foliation'] = $page['foliation'];
             }
+            $thePage['isTranscribed'] = in_array($page['page_number'], $transcribedPages);
 
-            $thePage['classes'] = '';
-            if (!in_array($page['page_number'], $transcribedPages)) {
-                $thePage['classes'] =
-                    $thePage['classes'] . ' withouttranscription';
-            }
-            $thePage['classes'] .= ' type' . $page['type'];
+//            $thePage['classes'] = '';
+//            if (!in_array($page['page_number'], $transcribedPages)) {
+//                $thePage['classes'] =
+//                    $thePage['classes'] . ' withouttranscription';
+//            }
+//            $thePage['classes'] .= ' type' . $page['type'];
             $thePages[] = $thePage;
         }
         return $thePages;

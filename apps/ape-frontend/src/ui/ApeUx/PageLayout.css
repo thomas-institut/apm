@@ -11,6 +11,8 @@
   overflow: hidden;
 }
 
+
+
 .pageTopBar {
   overflow: hidden;
   display: grid;
@@ -31,6 +33,10 @@
 .pageContent {
   overflow-y: auto;
   min-height: 0;
+}
+
+.pageContent.noScroll {
+  overflow: hidden;
 }
 
 .pageTopBar h1 {

@@ -67,10 +67,13 @@ export function PublicationPage() {
     return `${numPages} pages, ${transcribed} transcribed`;
   };
 
-
+  let noScroll =false;
+  if (publication.type === 'edition') {
+    noScroll = true;
+  }
 
   return (
-    <PageLayout>
+    <PageLayout noScroll={noScroll}>
       <TopBarCenter>
         <h1>{publication.title}</h1>
         {publication.type === 'transcription' &&

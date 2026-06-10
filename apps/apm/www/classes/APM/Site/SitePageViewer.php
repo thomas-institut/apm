@@ -150,7 +150,6 @@ class SitePageViewer extends SiteController
             'activeColumn' => $activeColumn,
             'pageNumberFoliation' => $pageNumberFoliation,
             'pageInfo' => $pageInfo,
-            'pageTypeNames' => [],
             'activeWorks' => $activeWorks,
             'thePages' => $thePages,
             'imageUrl' => $imageUrl,

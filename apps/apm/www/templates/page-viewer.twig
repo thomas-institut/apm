@@ -1,5 +1,3 @@
-{% import 'macros.twig' as macros %}
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -38,8 +36,7 @@
         defaultLang: JSON.parse({{pageInfo.lang|json_encode|e('js')}}),
         activeWorks: JSON.parse("{{activeWorks|json_encode|e('js')}}"),
         languagesArray: JSON.parse("{{languagesArray|json_encode|e('js')}}"),
-        pageTypeNames : JSON.parse('{{pageTypeNames|json_encode|e('js')}}'),
-        pagePopoverContent : '{{macros.pageviewtablepv(docIdString, thePages, navByPage)|escape('js')}}',
+        pageArray: JSON.parse('{{thePages|json_encode|e('js')}}'),
         deepZoom: '{{ deepZoom }}' === '1'
       })
     })

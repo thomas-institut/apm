@@ -19,10 +19,10 @@
 import { TranscriptionEditor } from './TranscriptionEditor'
 import { urlGen } from '../common/SiteUrlGen'
 import { ApmPage } from '../ApmPage'
-import { OptionsChecker } from '@thomas-inst/optionschecker'
 import { TranscriptionLanguages } from '@/constants/TranscriptionLanguages'
 import { getPageTypeName, getPageTypes } from '@/constants/PageTypes'
 import { ApmFormats } from '../common/ApmFormats'
+import { ApmUrlGenerator } from '@/ApmUrlGenerator'
 
 const DEFAULT_LAYOUT_CACHE_TTL = 180 * 24 * 3600  // 6 months
 const LAYOUT_CACHE_DATA_ID = 'apm_pv_a4af3548'
@@ -33,16 +33,6 @@ export class PageViewer extends ApmPage {
     super(options)
 
     this.constructorPromise.then(async () => {
-      let oc = new OptionsChecker({
-        context: 'PageViewer',
-        optionsDefinition: {
-          docId: { type: 'integer', required: true },
-          pageId: { type: 'integer', required: true },
-          activeColumn: { type: 'integer', required: true },
-          pageInfo: { type: 'object', required: true },
-        }
-      })
-
       this.options = options
       console.log('Page Viewer options')
       console.log(options)
@@ -55,6 +45,7 @@ export class PageViewer extends ApmPage {
       console.log('Page Info', this.pageInfo)
       this.column = this.options.activeColumn
       this.defaultLang = this.options.pageInfo.lang
+      this.urlGenerator = new ApmUrlGenerator(this.commonData.baseUrl)
 
       TranscriptionEditor.init(this.commonData.baseUrl)
 
@@ -101,7 +92,7 @@ export class PageViewer extends ApmPage {
       // TODO: generate page list in JS
       $('#pagenumber').popover({
         title: 'Page List',
-        content: options.pagePopoverContent,
+        content: this.genPageNavigationPopoverContent(options.pageArray),
         container: 'body',
         html: true,
         placement: 'auto',
@@ -134,6 +125,69 @@ export class PageViewer extends ApmPage {
       $.getJSON(urlGen.apiGetNumColumns(this.docId, this.pageNumber),
         this.genOnLoadNumColumns())
     })
+  }
+
+  /**
+   * Generate the content for the page navigation popover.
+   *
+   * @param {{number: number, seq: number, type: number, foliation: string, classes: string}[]} pageArray - The array of page numbers.
+   * @returns {string} The content for the page navigation popover.
+   */
+  genPageNavigationPopoverContentOld(pageArray) {
+    const pagesPerRow = 10;
+    const numRows = Math.ceil(pageArray.length / pagesPerRow);
+
+    const rows = [];
+    for (let i = 0; i < numRows; i++) {
+      const startIdx = i * pagesPerRow;
+      const endIdx = Math.min(startIdx + pagesPerRow, pageArray.length);
+      const rowPages = pageArray.slice(startIdx, endIdx);
+      const rowHtml = rowPages.map((page) => {
+        const url = this.urlGenerator.sitePageView(this.docId, page.seq);
+        return `<td class="${page.classes}"><a href="${url}" title="View page ${page.seq} (fol = ${page.foliation})">${page.foliation}</a></td>`
+      }).join('');
+      rows.push(`<tr>${rowHtml}</tr>`);
+    }
+
+    return [
+      `<table class="pagetable" style="font-size: 0.9em">`,
+      ...rows,
+      `</table>`
+    ].join('');
+  }
+
+  /**
+   * Generate the content for the page navigation popover.
+   *
+   * @param {{number: number, seq: number, type: number, foliation: string, isTranscribed: boolean}[]} pageArray - The array of page numbers.
+   * @returns {string} The content for the page navigation popover.
+   */
+  genPageNavigationPopoverContent(pageArray) {
+    //
+    // const rows = [];
+    // for (let i = 0; i < numRows; i++) {
+    //   const startIdx = i * pagesPerRow;
+    //   const endIdx = Math.min(startIdx + pagesPerRow, pageArray.length);
+    //   const rowPages = pageArray.slice(startIdx, endIdx);
+    //   const rowHtml = rowPages.map((page) => {
+    //     const url = this.urlGenerator.sitePageView(this.docId, page.seq);
+    //     return `<td class="${page.classes}"><a href="${url}" title="View page ${page.seq} (fol = ${page.foliation})">${page.foliation}</a></td>`
+    //   }).join('');
+    //   rows.push(`<tr>${rowHtml}</tr>`);
+    // }
+
+    return [
+      `<div class="page-nav-grid" >`,
+      ...pageArray.map( (page) => {
+        const url = this.urlGenerator.sitePageView(this.docId, page.seq);
+        const classes = [ 'page-nav-grid-cell'];
+        if (!page.isTranscribed) {
+          classes.push('no-tx');
+        }
+        return `<div class="${classes.join(' ')}"><a href="${url}" title="View page ${page.seq} (fol = ${page.foliation})">${page.foliation}</a></div>`
+      }),
+      `</div>`
+    ].join('');
   }
 
   genOnOsdZoom () {
@@ -187,16 +241,16 @@ export class PageViewer extends ApmPage {
       $.getJSON(apiAddColumnUrl, () => {
         location.replace('')
       })
-      .fail((resp) => {
-        console.log('Error adding new column')
+        .fail((resp) => {
+          console.log('Error adding new column')
 
-        $('#addColumnModal').modal('hide')
-        let msg = resp.responseJSON['msg'] ?? ''
-        $('#pageinfoerrors').html('<p class="text-danger">Error adding new column.<br/>'
-          + 'HTTP Status: ' + resp.status + '<br/>'
-          + 'Error: (' + resp.responseJSON.error + ') '
-          + msg + '</p>')
-      })
+          $('#addColumnModal').modal('hide')
+          let msg = resp.responseJSON['msg'] ?? ''
+          $('#pageinfoerrors').html('<p class="text-danger">Error adding new column.<br/>'
+            + 'HTTP Status: ' + resp.status + '<br/>'
+            + 'Error: (' + resp.responseJSON.error + ') '
+            + msg + '</p>')
+        })
     }
   }
 
@@ -264,23 +318,23 @@ export class PageViewer extends ApmPage {
               console.log(currentData)
               $.post(urlGen.apiTranscriptionsUpdateData(this.options.docId, thePageNumber, col),
                 { data: JSON.stringify(currentData) })
-              .done(() => {
-                $.getJSON(apiGetColumnDataUrl, (newColumnData) => {
-                  //console.log(newResp)
-                  console.log('API data received from server:')
-                  console.log(newColumnData)
-                  te.saveSuccess(newColumnData)
-                  console.log('... finished saving')
-                  const versions = newColumnData.info.versions
-                  console.log(versions)
-                  $('#versions-col' + col).html(this.genVersionsDiv(col, versions))
+                .done(() => {
+                  $.getJSON(apiGetColumnDataUrl, (newColumnData) => {
+                    //console.log(newResp)
+                    console.log('API data received from server:')
+                    console.log(newColumnData)
+                    te.saveSuccess(newColumnData)
+                    console.log('... finished saving')
+                    const versions = newColumnData.info.versions
+                    console.log(versions)
+                    $('#versions-col' + col).html(this.genVersionsDiv(col, versions))
+                  })
                 })
-              })
-              .fail((resp) => {
-                let msg = resp.responseJSON['msg'] ?? 'Click to try again'
-                te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error + ' ('
-                  + msg + ')')
-              })
+                .fail((resp) => {
+                  let msg = resp.responseJSON['msg'] ?? 'Click to try again'
+                  te.saveFail('Status: ' + resp.status + ' Error: ' + resp.responseJSON.error + ' ('
+                    + msg + ')')
+                })
             })
             te.on('version-request', (ev) => {
               let versionId = ev.originalEvent.detail.versionId
@@ -353,18 +407,18 @@ export class PageViewer extends ApmPage {
       }
       console.log('Updating page settings', apiPostData, pageSettingsForm.serialize())
       $.post(apiUpdatePageSettingsUrl, apiPostData)
-      .done(() => {
-        location.replace('')
-      })
-      .fail((resp) => {
-        console.log('Error updating page settings')
-        $('#editPageModal').modal('hide')
-        let msg = resp.responseJSON['msg'] ?? ''
-        $('#pageinfoerrors').html('<p class="text-danger">Error updating page settings.<br/>'
-          + 'HTTP Status: ' + resp.status + '<br/>'
-          + 'Error: (' + resp.responseJSON.error + ') '
-          + msg + '</p>')
-      })
+        .done(() => {
+          location.replace('')
+        })
+        .fail((resp) => {
+          console.log('Error updating page settings')
+          $('#editPageModal').modal('hide')
+          let msg = resp.responseJSON['msg'] ?? ''
+          $('#pageinfoerrors').html('<p class="text-danger">Error updating page settings.<br/>'
+            + 'HTTP Status: ' + resp.status + '<br/>'
+            + 'Error: (' + resp.responseJSON.error + ') '
+            + msg + '</p>')
+        })
     }
   }
 

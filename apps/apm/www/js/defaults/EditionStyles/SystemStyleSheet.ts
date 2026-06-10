@@ -12,6 +12,7 @@ import { arabicDeGruyter } from './ArabicDeGruyter.js'
 import { arabicDeGruyterAmiri} from './ArabicDeGruyterAmiri.js'
 import { arabicDeGruyterScheherazadeNew } from './ArabicDeGruyterScheherazadeNew.js'
 import {latinPeetersJournal} from "./LatinPeetersJournal.js";
+import {latinPeetersEdition} from "./LatinPeetersEdition.js";
 
 
 interface SystemStylesDatabase {
@@ -31,7 +32,8 @@ let systemStyles: SystemStylesDatabase = {
   la: {
     default: defaultLatinEditionStyle,
     libertine: latinLibertine,
-    peetersJournal: latinPeetersJournal
+    peetersJournal: latinPeetersJournal,
+    peetersEdition: latinPeetersEdition,
   },
   he: {
     default: defaultHebrewEditionStyle,

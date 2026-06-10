@@ -1,0 +1,57 @@
+/*
+ *  Copyright (C) 2025 Universität zu Köln
+ *
+ *  This program is free software: you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation, either version 3 of the License, or
+ *  (at your option) any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ *
+ */
+
+
+/* Font face definitions for Baskerville Pro fonts hosted by APM*/
+
+
+/*Regular*/
+@font-face {
+    font-family: "Baskerville Pro";
+    src: local("Baskerville Pro"),
+        local("Baskerville Pro"),
+        url(../Baskerville/BaskervillePro-Regular.otf) format("truetype");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Baskerville Pro";
+    src: local("Baskerville Pro Italic"),
+        url(../Baskerville/BaskervillePro-Italic.otf) format("truetype");
+    font-weight: 400;
+    font-style: italic;
+}
+
+/*Bold*/
+@font-face {
+    font-family: "Baskerville Pro";
+    src: local("Baskerville Pro Bold"),
+      url(../Baskerville/BaskervillePro-Bold.otf) format("truetype");
+    font-weight: 700;
+    font-style: normal;
+}
+
+@font-face {
+    font-family: "Baskerville Pro";
+    src: local("Baskerville Pro Bold Italic"),
+      url(../Baskerville/Baskerville-BoldItalic.otf) format("truetype");
+    font-weight: 700;
+    font-style: italic;
+}
+

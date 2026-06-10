@@ -258,13 +258,16 @@ export class EditionViewerCanvas {
       editionTypesettingHelper.setup().then(async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText();
         this.rawMainTextVerticalListToTypeset = verticalListToTypeset.getExportObject();
-        // this.mainTextVerticalListToTypeset = verticalListToTypeset;
-        this.debug && console.log(`List to typeset`,verticalListToTypeset)
+        this.debug && console.log(`List to typeset`,verticalListToTypeset);
+        const pageStyle = helperOptions.editionStyleSheet.getStyleDef('default').page;
+        const defaultLineNumbersPosition  = isRtl(this.edition.lang) ? 'right' : 'left';
+        const styleLineNumberPosition = pageStyle !== undefined ? (pageStyle.lineNumbersPosition ?? defaultLineNumbersPosition) : defaultLineNumbersPosition;
+        console.log(`styleLineNumberPosition`, styleLineNumberPosition);
         let lineNumbersAlign = 'right';
         let lineNumbersX = this.geometry.margin.left - this.geometry.textToLineNumbers;
         let marginaliaX = this.geometry.pageWidth - this.geometry.margin.right + this.geometry.textToMarginalia;
         let marginaliaAlign: MarginaliaAlignDirection = 'left';
-        if (isRtl(this.edition.lang)) {
+        if (styleLineNumberPosition === 'right') {
           lineNumbersAlign = 'left';
           lineNumbersX = this.geometry.pageWidth - this.geometry.margin.right + this.geometry.textToLineNumbers;
           marginaliaAlign = 'right';

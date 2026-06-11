@@ -21,7 +21,7 @@
   "dependencies": {
     "@thomas-inst/fmt-text": "1.1.1",
     "@thomas-inst/matrix": "1.0.1",
-    "@thomas-inst/typesetter" : "^1.0.0",
+    "@thomas-inst/typesetter" : "1.0.1",
     "@thomas-inst/optionschecker": "^1.1.4",
     "body-parser": "^2.2.0",
     "express": "^5.2",

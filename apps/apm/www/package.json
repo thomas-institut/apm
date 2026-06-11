@@ -24,7 +24,7 @@
     "@tanstack/react-table": "^8.21",
     "@thomas-inst/optionschecker": "1.1.4",
     "@thomas-inst/fmt-text" : "1.1.1",
-    "@thomas-inst/typesetter": "1.0.0",
+    "@thomas-inst/typesetter": "1.0.1",
     "bootstrap": "^4.6.2",
     "bootstrap-icons": "^1.10.2",
     "bootstrap-validator": "^0.11.9",

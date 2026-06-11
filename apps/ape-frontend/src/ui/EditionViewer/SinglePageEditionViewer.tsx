@@ -1,16 +1,19 @@
 import {EditionPublicationData, MainTextToken} from "@shared/ts";
-import {fromCompactFmtText} from "@thomas-inst/fmt-text";
-import {FmtTextSpan} from "@/ui/EditionViewer/FmtTextSpan";
-import React, {useMemo} from "react";
+import React, {useCallback, useMemo} from "react";
 import {SubEntryComponent} from "@/ui/EditionViewer/SubEntryComponent";
 import "./SinglePageEditionViewer.css";
 import {titleCase} from "@/Utilities/StringUtilities";
+import {
+  DisplayMainTextToken,
+  EditionParagraph,
+  EntrySpec,
+  MainTextParagraph
+} from "@/ui/EditionViewer/EditionParagraph";
 
 
 interface SinglePageEditionViewerProps {
   editionData: EditionPublicationData;
 }
-
 
 
 export function SinglePageEditionViewer({editionData}: SinglePageEditionViewerProps) {
@@ -19,29 +22,12 @@ export function SinglePageEditionViewer({editionData}: SinglePageEditionViewerPr
 
   const [highlightedToken, setHighlightedToken] = React.useState<number | null>(null);
 
-
-  const renderParagraph = (paragraph: MainTextParagraph, key: number) => {
-
-    const handleOnClick = (index: number) => {
-      setHighlightedToken(index === highlightedToken ? null : index);
-    }
-    return (
-      <p className={paragraph.style} key={key}>
-        {paragraph.tokens.map((token, index) => {
-          let className = `main-text-token main-text-token-${token.originalIndex} `
-            + token.entries.map(entry => `entry-${entry.apparatus} entry-${entry.apparatus}-${entry.entryIndex}`).join(' ');
-
-          if (token.originalIndex === highlightedToken) {
-            className += ' highlighted-token';
-          }
-          return <span key={index} className={className} onClick={() =>handleOnClick(token.originalIndex)}><FmtTextSpan fmtText={fromCompactFmtText(token.text)}/></span>;
-        })}
-      </p>
-    );
-  };
+  const handleTokenClick = useCallback((index: number) => {
+    setHighlightedToken(current => index === current ? null : index);
+  }, []);
 
 
-  const renderEntries = (entrySpecs: EntrySpec[]|null) => {
+  const renderEntries = (entrySpecs: EntrySpec[] | null) => {
     if (!entrySpecs) return null;
     return entrySpecs.map((entrySpec, index) => {
       const apparatusClass = `apparatus-div apparatus-${entrySpec.apparatus}`;
@@ -59,42 +45,46 @@ export function SinglePageEditionViewer({editionData}: SinglePageEditionViewerPr
         <div className={'apparatus-type'}>{titleCase(apparatus.type)}</div>
         <div className={'apparatus-entry'}>
           <span className={'lemma-text'}>{entry.lemmaText}</span>]
-          { entry.subEntries.map( (subEntry, subEntryIndex) => <SubEntryComponent key={subEntryIndex} subEntry={subEntry} langCode={editionData.languageCode} witnessInfo={editionData.witnesses}/>)}
+          {entry.subEntries.map((subEntry, subEntryIndex) => <SubEntryComponent key={subEntryIndex} subEntry={subEntry}
+                                                                                langCode={editionData.languageCode}
+                                                                                witnessInfo={editionData.witnesses}/>)}
         </div>
       </>
       }</div>;
     });
-  }
+  };
+
+  const {paragraphs, tokenToParagraphMap} = useMemo(
+    () => getMainTextParagraphs(editionData.mainText, specMap),
+    [editionData.mainText, specMap]
+  );
+
+  const highlightedParagraphIndex = useMemo(() => {
+    return highlightedToken !== null ? tokenToParagraphMap.get(highlightedToken) ?? null : null;
+  }, [highlightedToken, tokenToParagraphMap]);
 
 
   const langClass = ` text-${editionData.languageCode}`;
   return (
     <div className={langClass + ' ev-single-page'}>
       <div className={'main-text-panel'}>
-        {getMainTextParagraphs(editionData.mainText, specMap).map((paragraph, index) => renderParagraph(paragraph, index))}
+        {paragraphs.map((paragraph, index) => (
+          <EditionParagraph
+            key={index}
+            paragraph={paragraph}
+            highlightedToken={index === highlightedParagraphIndex ? highlightedToken : null}
+            onTokenClick={handleTokenClick}
+          />
+        ))}
       </div>
       <div className={'app-panel'}>
-        { highlightedToken !== null &&  renderEntries(specMap.get(highlightedToken) ?? null)}
+        {highlightedToken !== null && renderEntries(specMap.get(highlightedToken) ?? null)}
       </div>
     </div>
 
   );
 }
 
-interface MainTextParagraph {
-  style: string;
-  tokens: DisplayMainTextToken[];
-}
-
-interface DisplayMainTextToken extends MainTextToken {
-  originalIndex: number;
-  entries: EntrySpec[];
-}
-
-interface EntrySpec {
-  apparatus: string;
-  entryIndex: number;
-}
 
 function getMainTextTokenIndexToEntrySpecMap(data: EditionPublicationData): Map<number, EntrySpec[]> {
   const map = new Map<number, EntrySpec[]>();
@@ -117,15 +107,19 @@ function getMainTextTokenIndexToEntrySpecMap(data: EditionPublicationData): Map<
 }
 
 
-function getMainTextParagraphs(tokens: MainTextToken[], map: Map<number, EntrySpec[]>): MainTextParagraph[] {
+function getMainTextParagraphs(tokens: MainTextToken[], map: Map<number, EntrySpec[]>): {
+  paragraphs: MainTextParagraph[],
+  tokenToParagraphMap: Map<number, number>
+} {
 
   const paragraphs: MainTextParagraph[] = [];
+  const tokenToParagraphMap = new Map<number, number>();
   let currentParagraph: MainTextParagraph = {style: "", tokens: []};
 
   tokens.forEach((token, index) => {
     if (token.type === "paragraph_end") {
-      paragraphs.push(currentParagraph);
       currentParagraph.style = token.style;
+      paragraphs.push(currentParagraph);
       currentParagraph = {style: "", tokens: []};
     } else {
       const displayToken: DisplayMainTextToken = {...token, originalIndex: index, entries: []};
@@ -133,12 +127,13 @@ function getMainTextParagraphs(tokens: MainTextToken[], map: Map<number, EntrySp
       if (specs) {
         displayToken.entries = specs;
       }
+      tokenToParagraphMap.set(index, paragraphs.length);
       currentParagraph.tokens.push(displayToken);
     }
   });
   if (currentParagraph.tokens.length > 0) {
     paragraphs.push(currentParagraph);
   }
-  return paragraphs;
+  return {paragraphs, tokenToParagraphMap};
 }
 

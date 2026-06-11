@@ -269,7 +269,11 @@ export class EditionTypesettingHelper {
             const plainText = getPlainText(mainTextToken.fmtText);
             if (FoliationChangeMainTextCharacters.includes(plainText)) {
               // detect manual foliation change marks and add penalty so that they stay with the next word
-              textItems.push(...await this.tokenRenderer.renderWithStyle(fromString(plainText), paragraphStyle));
+              const markerItems = await this.tokenRenderer.renderWithStyle(fromString(plainText), paragraphStyle);
+              if (markerItems.length > 0) {
+                markerItems[0].addMetadata(MainTextOriginalIndex, mainTextToken.originalIndex);
+              }
+              textItems.push(...markerItems);
               // the next token needs to be a glue in order for this penalty to work but this is what
               // an editor will naturally do in the text, so there's no need to do further checks.
               textItems.push(this.createPenalty(InfinitePenalty));
@@ -460,7 +464,7 @@ export class EditionTypesettingHelper {
       let lineRangesKeys = Object.keys(this.lineRanges[apparatus.type]);
 
       if (apparatus.type === MarginaliaApparatusType) {
-        // for every line range, typeset and save each sub-entry
+        // for every line range, typeset and save each subentry
         for (let lineRangeKeyIndex = 0; lineRangeKeyIndex < lineRangesKeys.length; lineRangeKeyIndex++) {
           let lineRange = this.lineRanges[apparatus.type][lineRangesKeys[lineRangeKeyIndex]];
           lineRange.marginalSubEntries = [];
@@ -1015,7 +1019,7 @@ export class EditionTypesettingHelper {
   }
 
   /**
-   * Returns an array ItemLineInfo objects
+   * Returns an array of ItemLineInfo objects
    * for main text tokens stored in a TypesetterItem's metadata
    * Recursively extracts info from merged items
    */

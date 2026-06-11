@@ -4,6 +4,7 @@ import PageTopBar from "@/ui/ApeUx/TopBar/PageTopBar";
 import './PageLayout.css';
 
 interface PageLayoutProps {
+  noScroll?: boolean;
   children?: ReactNode;
 }
 
@@ -11,10 +12,12 @@ interface PageLayoutProps {
 export const TopBarCenter = ({ children }: { children?: ReactNode }) => <>{children}</>;
 export const TopBarRight = ({ children }: { children?: ReactNode }) => <>{children}</>;
 
-export default function PageLayout({ children }: PageLayoutProps) {
+export default function PageLayout({ children , noScroll = false}: PageLayoutProps) {
   let topBarCenterItems: ReactNode = null;
   let topBarRightItems: ReactNode = null;
   const content: ReactNode[] = [];
+
+  const pageContentClassName = noScroll ? 'pageContent noScroll' : 'pageContent';
 
   // Iterate over children to identify slots
   Children.forEach(children, (child) => {
@@ -36,7 +39,7 @@ export default function PageLayout({ children }: PageLayoutProps) {
   return (
     <div className="pageLayout">
       <PageTopBar centerItems={topBarCenterItems} rightItems={topBarRightItems} />
-      <div className="pageContent">
+      <div className={pageContentClassName}>
         {content}
       </div>
     </div>

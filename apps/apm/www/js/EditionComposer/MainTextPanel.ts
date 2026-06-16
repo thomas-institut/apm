@@ -1840,7 +1840,7 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
   }
 
   private __fmtTextToEditionWitnessTokens(fmtText: FmtText): WitnessToken[] {
-    const attributesToCopy = ['fontWeight', 'fontStyle', 'fontSize'];
+    const attributesToCopy = ['fontWeight', 'fontStyle', 'fontSize', 'verticalAlign'];
     let witnessTokens: WitnessToken[] = [];
     console.log(`Processing fmtText`);
     console.log(fmtText);

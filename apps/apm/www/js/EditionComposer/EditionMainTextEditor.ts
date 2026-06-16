@@ -30,9 +30,7 @@ import {CompactFmtText, fromCompactFmtText} from "@thomas-inst/fmt-text";
 import {QuillRange} from "@/lib/types/Quill";
 
 
-const simpleFormats = ['bold', 'italic', 'numberingLabel', 'small'
-  // 'superscript'
-];
+const simpleFormats = ['bold', 'italic', 'numberingLabel', 'small',  'superscript'];
 
 
 Inline.order = ['cursor', 'inline',   // Must be lower
@@ -46,7 +44,7 @@ const formatButtons: { [key: string]: { icon: string, title: string } } = {
   italic: {icon: '<i class="bi bi-type-italic"></i>', title: 'Italic'},
   numberingLabel: {icon: '<small class="fte-icon">x.y</small>', title: 'Numbering Label'},
   small: { icon: '<small class="fte-icon">S</small>', title: 'Small Font'},
-  // superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
+  superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 };
 
 const headingIcons = ['', '<span class="mte-icon">H<sub>1</sub></span>', '<span class="mte-icon">H<sub>2</sub></span>', '<span class="mte-icon">H<sub>3</sub></span>'];
@@ -269,5 +267,7 @@ function setButtonState(btn: JQuery<Element>, state: boolean) {
 
 // Initialization
 Quill.register({
-  'formats/small': Small, 'formats/superscript': Superscript, 'formats/numberingLabel': NumberingLabel
+  'formats/small': Small,
+  'formats/superscript': Superscript,
+  'formats/numberingLabel': NumberingLabel
 }, true);

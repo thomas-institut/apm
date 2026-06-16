@@ -2,14 +2,9 @@ import { describe, it, expect } from 'vitest';
 import { getLatinSiglaSpacing } from '@/Edition/LatinSiglaSpacing';
 
 describe('getLatinSiglaSpacing', () => {
-    it('returns indices of sigla that should have a space after them', () => {
+    it('returns index before the first strictly lowercase siglum', () => {
         const sigla = ['A', 'B', 'c', 'Dx', 'E'];
-        // Index 0 ('A'): last 'A' (UPPER), next 'B' (UPPER) -> No space
-        // Index 1 ('B'): last 'B' (UPPER), next 'c' (lower) -> Space after 1
-        // Index 2 ('c'): last 'c' (lower), next 'Dx' (UPPER) -> Space after 2
-        // Index 3 ('Dx'): last 'x' (lower), next 'E' (UPPER) -> Space after 3
-        // Index 4 ('E'): Last sigla -> No space after
-        expect(getLatinSiglaSpacing(sigla)).toEqual([1, 2, 3]);
+        expect(getLatinSiglaSpacing(sigla)).toEqual([1]);
     });
 
     it('returns empty array for single sigla', () => {
@@ -21,9 +16,14 @@ describe('getLatinSiglaSpacing', () => {
         expect(getLatinSiglaSpacing(['A', 'B', 'C'])).toEqual([]);
     });
 
-    it('handles lowercase transitions correctly', () => {
+    it('returns empty array when the first siglum is strictly lowercase', () => {
+        expect(getLatinSiglaSpacing(['a', 'B'])).toEqual([]);
+        expect(getLatinSiglaSpacing(['a', 'b'])).toEqual([]);
+    });
+
+    it('ignores mixed-case sigla when searching for first strictly lowercase siglum', () => {
         expect(getLatinSiglaSpacing(['A', 'b'])).toEqual([0]);
-        expect(getLatinSiglaSpacing(['a', 'B'])).toEqual([0]);
-        expect(getLatinSiglaSpacing(['a', 'b'])).toEqual([0]);
+        expect(getLatinSiglaSpacing(['Ab', 'Bx', 'Cd', 'p', 'v'])).toEqual([2]);
+        expect(getLatinSiglaSpacing(['Ab', 'Bx', 'Cd'])).toEqual([]);
     });
 });

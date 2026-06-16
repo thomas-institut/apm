@@ -113,7 +113,7 @@ interface SourceData {
 interface EditionComposerOptions extends  ApmPageOptions {
   isTechSupport?: boolean;
   lastVersion: string,
-  collationTableData: CtDataInterface,
+  collationTableData: CtDataInterface | null,
   tableId: number,
   version: string;
   langDef: Record<string, LanguageDefinition> ,
@@ -260,11 +260,22 @@ export class EditionComposer extends ApmPage {
 
     const body = $('body');
 
-    body.html(getPrenderMessage(`Getting data for table ${this.tableId}`));
-    const apiCtDataResponse = await this.apiClient.getSingleChunkData(this.options.tableId, this.options.version);
+    if (this.tableId === -1) {
+      // this has to be a new table
+      if (this.options.collationTableData === null) {
+        body.html(getPrenderMessage(`Server Error: no initial data provided`));
+        throw new Error(`Server Error: no initial data provided`);
+      }
+      this.ctData =  CtData.getCleanAndUpdatedCtData(this.options.collationTableData);
+      this.versionInfo = [];
+    } else {
+      body.html(getPrenderMessage(`Getting data for table ${this.tableId}`));
+      const apiCtDataResponse = await this.apiClient.getSingleChunkData(this.options.tableId, this.options.version);
 
-    body.html(getPrenderMessage(`Setting up data`));
-    this.ctData = CtData.getCleanAndUpdatedCtData(apiCtDataResponse.ctData);
+      body.html(getPrenderMessage(`Setting up data`));
+      this.ctData = CtData.getCleanAndUpdatedCtData(apiCtDataResponse.ctData);
+      this.versionInfo = apiCtDataResponse.versions;
+    }
     this.ctData.tableId = this.tableId;
     console.log('Clean CT Data');
     console.log(this.ctData);
@@ -279,7 +290,7 @@ export class EditionComposer extends ApmPage {
     this.registerStandardNormalizers();
     this.lastSavedCtData = Util.deepCopy(this.ctData);
 
-    this.versionInfo = apiCtDataResponse.versions;
+
     this.isLastVersion = this.options.lastVersion;
     this.version = this.options.version;
 

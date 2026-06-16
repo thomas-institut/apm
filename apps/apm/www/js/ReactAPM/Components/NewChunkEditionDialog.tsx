@@ -102,6 +102,7 @@ export function NewChunkEditionDialog(props: NewChunkEditionDialogProps) {
 
   function validateParams(): boolean {
     const params = getParams();
+    console.log('params', params);
     let allGood = true;
     if (params.workId === '') {
       allGood = false;
@@ -117,9 +118,13 @@ export function NewChunkEditionDialog(props: NewChunkEditionDialogProps) {
   }
 
   function getParams(): NewChunkEditionParams {
+    let chunkNumber = parseInt(chunkNumberInputRef.current!.value);
+    if (isNaN(chunkNumber)) {
+      chunkNumber = -1;
+    }
     return {
       workId: workSelectRef.current!.value,
-      chunkNumber: parseInt(chunkNumberInputRef.current!.value),
+      chunkNumber: chunkNumber,
       language: languageSelectRef.current!.value
     };
   }

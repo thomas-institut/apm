@@ -644,7 +644,7 @@ export class EditionTypesettingHelper {
       items.push(siglumItem);
       // the hand
       if (siglumData.hand !== 0 || siglumData.forceHandDisplay) {
-        let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand + 1, this.edition.lang)), 'apparatus hand');
+        let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand + 1, this.edition.lang)), 'apparatus sigla hand');
         handItem.setTextDirection(this.textDirection);
         //this.__detectAndSetTextBoxTextDirection(handItem)
         items.push(handItem);

@@ -165,8 +165,9 @@ export class MceDataEditionGenerator {
             newSubEntry.keyword = subEntry.keyword;
             newSubEntry.witnessData = subEntry.witnessData.map( (wd) => {
               let newWd = new WitnessDataItem()
-              newWd.setHand(wd.hand)
-              newWd.setWitnessIndex(mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex])
+              newWd.setHand(wd.hand);
+              newWd.setWitnessIndex(mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex]);
+              newWd.realFoliationChange = wd.realFoliationChange;
               return newWd
             });
             return newSubEntry;

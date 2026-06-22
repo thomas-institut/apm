@@ -6,7 +6,7 @@ type TagTextStyle = Record<string, string>
 
 export interface TagEditorOptions {
   containerSelector: string
-  idPrefix?: string
+  containerIdPrefix?: string
   mode: TagEditorMode
   inputFormId?: string
   tags?: string[]
@@ -21,7 +21,7 @@ export interface TagEditorOptions {
 
 interface CleanTagEditorOptions {
   containerSelector: string
-  idPrefix: string
+  containerIdPrefix: string
   mode: TagEditorMode
   inputFormId: string
   tags: string[]
@@ -36,13 +36,13 @@ interface CleanTagEditorOptions {
 
 export class TagEditor {
   private options: CleanTagEditorOptions
-  public idPrefix: string
+  public containerIdPrefix: string
   private activeTags: Set<string>
 
   constructor(options: TagEditorOptions) {
     const optionsDefinition = {
       containerSelector: {type: 'string', required: true},
-      idPrefix: {type: 'string', default: 'tag-editor'},
+      containerIdPrefix: {type: 'string', default: 'tag-editor'},
       mode: {type: 'string', required: true},
       inputFormId: {type: 'string', required: false, default: 'nil'},
       tags: {type: 'array', required: false, default: []},
@@ -69,7 +69,7 @@ export class TagEditor {
     const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "TagEditor"});
     this.options = oc.getCleanOptions(options) as CleanTagEditorOptions;
 
-    this.idPrefix = this.options.idPrefix;
+    this.containerIdPrefix = this.options.containerIdPrefix;
     this.activeTags = new Set<string>();
 
     this.render()
@@ -80,12 +80,12 @@ export class TagEditor {
   // ---------------------------------------------------------------------------
 
   /**
-   * Replaces the current tags and re-renders the editor.
+   * Replaces the current tags and re-renders the tag editor.
    *
    * @param {string[]}tags
    * @return {void}
    */
-  setTags(tags: string[]) {
+  setTags(tags: string[]): void {
     console.log(`Setting tags: [ ${tags.join(', ')}]`)
     this.options.tags = [...tags];
     this.render()
@@ -96,7 +96,7 @@ export class TagEditor {
    *
    * @return {string[]}
    */
-  getTags() {
+  getTags(): string[] {
     return this.options.tags.sort()
   }
 
@@ -106,23 +106,26 @@ export class TagEditor {
    * @param {string}tag
    * @return {boolean}
    */
-  isActiveTag(tag: string) {
+  isActiveTag(tag: string): boolean {
     return this.activeTags.has(tag);
   }
 
   /**
-   * Sets the active state of a tag.
+   * Sets the state of a tag to active or inactive.
    *
    * @param {string}tag
    * @param {boolean}active
    * @return {void}
    */
-  setActiveTag(tag: string, active: boolean) {
+  setTagActivationStatus(tag: string, active: boolean): void {
     if (active) {
       this.activeTags.add(tag);
-      return;
+    } else {
+      this.activeTags.delete(tag);
     }
-    this.activeTags.delete(tag);
+
+    const tagItemId = `${this.options.containerIdPrefix}-${tag.replace(/ /g, "_")}-item`;
+    this.applyTagTextStyle(tagItemId, tag);
   }
 
   /**
@@ -131,7 +134,7 @@ export class TagEditor {
    * @param {string[]}tags
    * @return {string}
    */
-  getTagColor(tags: string[]) {
+  getTagColor(tags: string[]): string {
     const uniqueTags = [...new Set(tags)];
     if (uniqueTags.length === 0) {
       return '';
@@ -152,6 +155,7 @@ export class TagEditor {
     return `linear-gradient(90deg, ${segments.join(', ')})`;
   }
 
+
   // ---------------------------------------------------------------------------
   // Rendering
   // ---------------------------------------------------------------------------
@@ -161,7 +165,7 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private render() {
+  private render(): void {
     switch (this.options.mode) {
       case 'edit':
         this.setupEditMode();
@@ -178,12 +182,12 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private setupEditMode() {
+  private setupEditMode(): void {
     this.buildStructureOfTagEditor()
     this.options.getTagHints().then((tags) => {
       this.showGivenTagsInEditMode()
       this.appendAddTagField()
-      this.fillDatalistWithTags(tags)
+      this.fillDatalistWithTagHints(tags)
       this.setupEvents()
     })
   }
@@ -193,7 +197,7 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private setupShowMode() {
+  private setupShowMode(): void {
     this.buildStructureOfTagEditor()
     this.showGivenTagsInShowMode()
   }
@@ -203,9 +207,9 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private buildStructureOfTagEditor() {
+  private buildStructureOfTagEditor(): void {
     $(this.options.containerSelector).html(`
-                    <ul class="tag-editor-tags-ul" id="${this.idPrefix}-tag-list">
+                    <ul class="tag-editor-tags-ul" id="${this.containerIdPrefix}-tag-list">
                    </ul>`)
   }
 
@@ -214,7 +218,7 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private showGivenTagsInShowMode() {
+  private showGivenTagsInShowMode(): void {
     for (let tag of this.getOrderedTags()) {
       this.appendTagItem(tag, false)
     }
@@ -225,7 +229,7 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private showGivenTagsInEditMode() {
+  private showGivenTagsInEditMode(): void {
     for (let tag of this.getOrderedTags()) {
       this.appendTagItem(tag, true)
     }
@@ -236,15 +240,15 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private appendAddTagField() {
+  private appendAddTagField(): void {
     if (this.options.mode !== 'edit') {
       return
     }
 
-    $(`#${this.idPrefix}-tag-list`).append(`
+    $(`#${this.containerIdPrefix}-tag-list`).append(`
                         <li class="tagAdd taglist">
-                            <input list="${this.idPrefix}-list-of-tags" class="tag-input" id="${this.idPrefix}-search-field" placeholder="+">
-                            <datalist id="${this.idPrefix}-list-of-tags"></datalist>
+                            <input list="${this.containerIdPrefix}-list-of-tags" class="tag-input" id="${this.containerIdPrefix}-search-field" placeholder="+">
+                            <datalist id="${this.containerIdPrefix}-list-of-tags"></datalist>
                         </li>`)
   }
 
@@ -255,10 +259,10 @@ export class TagEditor {
    * @param {boolean}includeRemoveButton
    * @return {void}
    */
-  private appendTagItem(tag: string, includeRemoveButton: boolean) {
+  private appendTagItem(tag: string, includeRemoveButton: boolean): void {
     let valueForTagId = tag.replace(/ /g, "_")
-    let tagItemId = `${this.idPrefix}-${valueForTagId}-item`
-    let tagRemoveId = `${this.idPrefix}-${valueForTagId}-id`
+    let tagItemId = `${this.containerIdPrefix}-${valueForTagId}-item`
+    let tagRemoveId = `${this.containerIdPrefix}-${valueForTagId}-id`
     let tagTextStyle = this.getTagTextStyle(tag)
     let removeButtonHtml = ''
     let hiddenInputHtml = ''
@@ -268,7 +272,7 @@ export class TagEditor {
       hiddenInputHtml = '<input type="hidden" name="tags[]">'
     }
 
-    $(`#${this.idPrefix}-tag-list`)['append'](`
+    $(`#${this.containerIdPrefix}-tag-list`)['append'](`
                        <li class="addedTag" id="${tagItemId}" value=${valueForTagId}><span class="tag-text">${tag}</span>
                         ${removeButtonHtml}
                         ${hiddenInputHtml}
@@ -298,7 +302,7 @@ export class TagEditor {
    *
    * @return {string[]}
    */
-  private getOrderedTags() {
+  private getOrderedTags(): string[] {
     let tags = [...this.options.tags]
     tags.sort()
     return tags
@@ -310,9 +314,9 @@ export class TagEditor {
    * @param {string[]}tags
    * @return {void}
    */
-  private fillDatalistWithTags(tags: string[]) {
+  private fillDatalistWithTagHints(tags: string[]): void {
     tags.forEach((tag) => {
-      $(`#${this.idPrefix}-list-of-tags`).append(`<option value="${tag}">${tag}</option>`)
+      $(`#${this.containerIdPrefix}-list-of-tags`).append(`<option value="${tag}">${tag}</option>`)
     })
   }
 
@@ -325,7 +329,7 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private setupEvents() {
+  private setupEvents(): void {
     this.makeFocusSearchFieldEvent()
     this.makeAddTagEvent()
   }
@@ -336,7 +340,7 @@ export class TagEditor {
    * @param {string}tagId
    * @return {void}
    */
-  private makeRemoveTagEvent(tagId: string) {
+  private makeRemoveTagEvent(tagId: string): void {
     let self = this;
     let selector = "#" + tagId;
 
@@ -360,12 +364,12 @@ export class TagEditor {
    * @param {string}tag
    * @return {void}
    */
-  private makeTagHoverAndClickEvents(tagItemId: string, tag: string) {
+  private makeTagHoverAndClickEvents(tagItemId: string, tag: string): void {
     let selector = `#${tagItemId}`
 
     $(selector).on('click', (event: JQuery.ClickEvent<HTMLElement>) => {
       const active = !this.isActiveTag(tag)
-      this.setActiveTag(tag, active)
+      this.setTagActivationStatus(tag, active)
       this.applyTagTextStyle(tagItemId, tag)
       this.options.onTagClick(tag, active, event)
     })
@@ -384,9 +388,9 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private makeFocusSearchFieldEvent() {
+  private makeFocusSearchFieldEvent(): void {
     $('ul.tags').click((event: JQuery.ClickEvent<HTMLElement>) => {
-      $(`#${this.idPrefix}-search-field`).focus();
+      $(`#${this.containerIdPrefix}-search-field`).focus();
     })
   }
 
@@ -395,10 +399,10 @@ export class TagEditor {
    *
    * @return {void}
    */
-  private makeAddTagEvent() {
+  private makeAddTagEvent(): void {
     let self = this
 
-    $(`#${this.idPrefix}-search-field`).keypress(function(event: JQuery.KeyPressEvent<HTMLElement>) {
+    $(`#${this.containerIdPrefix}-search-field`).keypress(function(event: JQuery.KeyPressEvent<HTMLElement>) {
       if (event.which === 13) {
         event.preventDefault();
 
@@ -407,8 +411,8 @@ export class TagEditor {
 
         if (value !== '' && self.isTagValid(value) && !self.options.tags.includes(value)) {
           self.appendTagItem(value, true)
-          $(`#${self.idPrefix}-${valueForTagId}-item`).insertBefore(`${self.options.containerSelector} .tagAdd`)
-          let tagId = `${self.idPrefix}-${valueForTagId}-id`
+          $(`#${self.containerIdPrefix}-${valueForTagId}-item`).insertBefore(`${self.options.containerSelector} .tagAdd`)
+          let tagId = `${self.containerIdPrefix}-${valueForTagId}-id`
           self.makeRemoveTagEvent(tagId)
           self.options.tags.push(value)
           self.options.saveTags(self.options.tags).then(() => {
@@ -422,7 +426,7 @@ export class TagEditor {
   }
 
   // ---------------------------------------------------------------------------
-  // Tag input helpers
+  // Helpers
   // ---------------------------------------------------------------------------
 
   /**
@@ -431,22 +435,23 @@ export class TagEditor {
    * @param {string}string
    * @return {string}
    */
-  private formatTag(string: string) {
+  private formatTag(string: string): string {
     return trimWhiteSpace(string)
   }
 
   /**
+   * Validates the form of a given tag.
    *
    * @param {string}tag
    * @return {boolean}
    */
-  isTagValid(tag: string) {
+  isTagValid(tag: string): boolean {
     let specialCharacters = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
     return !specialCharacters.test(tag);
   }
 
   // ---------------------------------------------------------------------------
-  // Tag styling
+  // Tag Styling
   // ---------------------------------------------------------------------------
 
   /**
@@ -456,7 +461,7 @@ export class TagEditor {
    * @param {string}tag
    * @return {void}
    */
-  public applyTagTextStyle(tagItemId: string, tag: string) {
+  private applyTagTextStyle(tagItemId: string, tag: string): void {
     $(`#${tagItemId} span.tag-text`).css(this.getTagTextStyle(tag))
   }
 
@@ -515,7 +520,7 @@ export class TagEditor {
    * @param {string}tag
    * @return {{chipBackground: string, chipBorder: string, chipText: string, chipActiveBackground: string, chipActiveBorder: string, chipActiveText: string, highlightBackground: string}}
    */
-  private getTagColorPalette(tag: string) {
+  private getTagColorPalette(tag: string): { chipBackground: string; chipBorder: string; chipText: string; chipActiveBackground: string; chipActiveBorder: string; chipActiveText: string; highlightBackground: string; } {
     const hash = this.hashStringToHue(tag)
     const hue = (hash % 240)
     const saturation = 80 + ((hash >>> 3) % 8)
@@ -536,17 +541,13 @@ export class TagEditor {
     }
   }
 
-  // ---------------------------------------------------------------------------
-  // Color utilities
-  // ---------------------------------------------------------------------------
-
   /**
    * Maps a string deterministically to a hue value.
    *
    * @param {string}string
    * @return {number}
    */
-  private hashStringToHue(string: string) {
+  private hashStringToHue(string: string): number {
     let hash = 0
     for (let i = 0; i < string.length; i++) {
       hash = ((hash << 5) - hash) + string.charCodeAt(i)

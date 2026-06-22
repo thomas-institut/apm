@@ -474,7 +474,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
     this.tagEditor = new TagEditor({
       containerSelector: `${formSelector} div.tags`,
-      idPrefix: `app-tags-${this.options.apparatusIndex}`,
+      containerIdPrefix: `app-tags-${this.options.apparatusIndex}`,
       getTagHints: async () => {
         return ['revise', 'remove', 'disjunctive error'];
       },
@@ -806,9 +806,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
     // deactivate active tags
     activeTags.forEach((tag) => {
-      this.apparatusTagEditor?.setActiveTag(tag, false);
-      const tagItemId = `${this.apparatusTagEditor?.idPrefix}-${tag.replace(/ /g, "_")}-item`;
-      (this.apparatusTagEditor as any).applyTagTextStyle(tagItemId, tag);
+      this.apparatusTagEditor?.setTagActivationStatus(tag, false);
     });
   
     // remove tag based highlights in apparatus and main text
@@ -829,7 +827,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
       this.apparatusTagEditor = new TagEditor({
         containerSelector,
-        idPrefix: `apparatus-tags-${this.options.apparatusIndex}`,
+        containerIdPrefix: `apparatus-tags-${this.options.apparatusIndex}`,
         tags: tags,
         mode: 'show',
         onTagHover: this.onApparatusTagHover.bind(this),

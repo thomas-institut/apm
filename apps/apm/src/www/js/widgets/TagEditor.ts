@@ -5,6 +5,7 @@ import { trimWhiteSpace } from '../toolbox/Util'
 const cacheKeyPrefix = 'apm-tag_hints'
 
 type TagEditorMode = 'edit' | 'show'
+type TagTextStyle = Record<string, string>
 
 export interface TagEditorOptions {
   containerSelector: string
@@ -35,8 +36,6 @@ interface CleanTagEditorOptions {
   sortTags?: boolean
   prependTags?: boolean
 }
-
-type TagTextStyle = Record<string, string>
 
 export class TagEditor {
   private options: CleanTagEditorOptions
@@ -97,9 +96,9 @@ export class TagEditor {
   setupEditMode() {
     this.buildStructureOfTagEditor()
     this.options.getTagHints().then( (tags) => {
-      this.fillDatalistWithTags(tags)
       this.showGivenTagsInEditMode()
       this.appendAddTagField()
+      this.fillDatalistWithTags(tags)
       this.setupEvents()
     })
   }
@@ -207,8 +206,8 @@ export class TagEditor {
     }
     $(`#${this.idPrefix}-tag-list`)['append'](`
                <li class="addedTag" id="${tagItemId}" value=${valueForTagId}><span class="tag-text">${tag}</span>
-               ${removeButtonHtml}
-               ${hiddenInputHtml}
+                ${removeButtonHtml}
+                ${hiddenInputHtml}
                </li>`)
     $(`#${tagItemId}`).css({
       display: 'inline-flex',

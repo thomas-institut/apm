@@ -30,7 +30,7 @@ const Search = lazy(() => import('./Pages/Search/Search.js'));
 // @ts-ignore
 const Docs = lazy(() => import('@/ReactAPM/Pages/Docs/Docs.js'));
 // @ts-ignore
-const MultiChunkEdition = lazy(() => import('./Pages/MultiChunkEdition.js'));
+const MultiChunkEdition = lazy(() => import('./Pages/MceComposer/./MceComposer.js'));
 // @ts-ignore
 const Work = lazy(() => import('./Pages/Work/Work.js'));
 // @ts-ignore

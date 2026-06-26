@@ -1,4 +1,4 @@
-import '../../node_modules/bootstrap5/dist/css/bootstrap.css';
+import 'bootstrap/dist/css/bootstrap.min.css'
 import './splitPanelsTest.css';
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import {createRoot} from "react-dom/client";

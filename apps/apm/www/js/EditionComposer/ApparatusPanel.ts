@@ -474,7 +474,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
     this.tagEditor = new TagEditor({
       containerSelector: `${formSelector} div.tags`,
-      idPrefix: `app-tags-${this.options.apparatusIndex}`,
+      containerIdPrefix: `app-tags-${this.options.apparatusIndex}`,
       getTagHints: async () => {
         return ['revise', 'remove', 'disjunctive error'];
       },
@@ -769,7 +769,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
   }
 
-  private onApparatusTagHover(tag: string, active: boolean, event: MouseEvent) {
+  private onApparatusTagHover(tag: string, active: boolean, event: JQuery.MouseEnterEvent<HTMLElement> | JQuery.MouseLeaveEvent<HTMLElement>) {
     event.preventDefault();
     event.stopPropagation();
     const entriesWithTag = this.getEntriesWithTag(tag);
@@ -778,7 +778,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     });
   }
 
-  private onApparatusTagClick(tag: string, active: boolean, event: MouseEvent) {
+  private onApparatusTagClick(tag: string, active: boolean, event: JQuery.ClickEvent<HTMLElement>) {
 
     // prevent removal of lemma selection
     event.preventDefault();
@@ -807,9 +807,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
     // deactivate active tags
     activeTags.forEach((tag) => {
-      this.apparatusTagEditor?.setActiveTag(tag, false);
-      const tagItemId = `${this.apparatusTagEditor?.idPrefix}-${tag.replace(/ /g, "_")}-item`;
-      (this.apparatusTagEditor as any)._applyTagTextStyle(tagItemId, tag);
+      this.apparatusTagEditor?.setTagActivationStatus(tag, false);
     });
   
     // remove tag based highlights in apparatus and main text
@@ -822,13 +820,15 @@ export class ApparatusPanel extends PanelWithToolbar {
   private setupApparatusTagEditor() {
 
     const containerSelector = `${this.containerSelector} div.apparatus-tags`;
-    $('.apparatus-tags').hide();
     const tags = this.getApparatusTags();
 
     if (this.apparatusTagEditor === null) {
+
+      $('.apparatus-tags').hide();
+
       this.apparatusTagEditor = new TagEditor({
         containerSelector,
-        idPrefix: `apparatus-tags-${this.options.apparatusIndex}`,
+        containerIdPrefix: `apparatus-tags-${this.options.apparatusIndex}`,
         tags: tags,
         mode: 'show',
         onTagHover: this.onApparatusTagHover.bind(this),
@@ -1079,9 +1079,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       $('.apparatus-tags').toggle()
 
       this.clearActiveTagBasedHighlights()
-      this.apparatus.entries.forEach((_entry, index) => {
-        this.highlightEntryByIndex(index);
-      });
+
     });
   }
 

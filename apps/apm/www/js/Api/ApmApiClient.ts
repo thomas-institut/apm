@@ -56,6 +56,8 @@ import {TimeString} from "@/toolbox/TimeString";
 import {CtData} from "@/CtData/CtData";
 import {ApiErrorResponse} from "@/Api/DataSchema/ApiResponse";
 import {ApiLoginRequest, ApiLoginResponse} from "@/Api/DataSchema/ApiLogin";
+import {MceDataInterface} from "@/MceData/MceDataInterface";
+import {ApiMceData} from "@/Api/DataSchema/ApiMceData";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -234,6 +236,10 @@ export class ApmApiClient {
       console.error(`Error getting collation table version info ${tableId}, ${versionTimeString}`, error);
       return null;
     }
+  }
+
+  async getMceData(editionId: number) : Promise<ApiMceData> {
+    return await this.get(urlGen.apiGetMultiChunkEdition(editionId));
   }
 
 

@@ -1,5 +1,5 @@
 import {useParams} from "react-router";
-import {useContext, useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
@@ -12,7 +12,10 @@ import {CloudArrowUp, LayoutSplit} from "react-bootstrap-icons";
 import {MceData} from '@/MceData/MceData';
 import {useQuery} from "@tanstack/react-query";
 import {AppContext} from "@/ReactAPM/App";
-import EditionPanel from "@/ReactAPM/Pages/MceComposer/EditionPanel";
+import EditionPanel, {CtDataState, CtDataStatus} from "@/ReactAPM/Pages/MceComposer/EditionPanel";
+
+
+type MceDataLoadStatus = 'loading' | 'justLoaded' | 'loaded';
 
 export default function MceComposer() {
 
@@ -45,37 +48,75 @@ export default function MceComposer() {
     if (isNaN(numericalId)) {
       throw new Error('Invalid MCE ID');
     }
-    return appContext.apiClient.getMceData(numericalId);
-  }
+    const resp = await appContext.apiClient.getMceData(numericalId);
+    console.log(`Got MCE data for edition ${numericalId}`, resp);
+    return resp;
+  };
 
   const mceDataQueryResult = useQuery({
     queryKey: ['mceData', mceDataId],
     queryFn: () => getMceData(mceDataId),
   });
 
-
-
+  const [mceDataLoadStatus, setMceDataLoadStatus] = useState<MceDataLoadStatus>('loading');
   const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
   const [activeTab, setActiveTab] = useState('edition');
   const [changes, setChanges] = useState(false);
+  const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
+
+
+  useEffect(() => {
+    if (mceDataLoadStatus === 'loaded') {
+      // find first ctData not loaded
+      const firstCtDataNotLoaded = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataState === 'loading');
+      if (!firstCtDataNotLoaded) {
+        return;
+      }
+      const ctDataId = firstCtDataNotLoaded.ctDataId;
+      const ctDataStatusIndex = ctDataStatusArray.findIndex((ctDataStatus) => ctDataStatus.ctDataId === ctDataId);
+      console.log(`Loading CtData for chunk ${ctDataStatusIndex}, table ${ctDataId}`);
+      appContext.apiClient.getSingleChunkData(ctDataId, '').then((apiResponse) => {
+        console.log(`Got data for chunk ${ctDataStatusIndex}, table ${ctDataId}`, apiResponse);
+        const ctData = apiResponse.ctData;
+        setCtDataStatusArray((prevCtDataStatusArray) => {
+          const newCtDataStatusArray = [...prevCtDataStatusArray];
+          newCtDataStatusArray[ctDataStatusIndex] = {
+            ...newCtDataStatusArray[ctDataStatusIndex],
+            ctDataState: 'loaded',
+            ctData: ctData
+          };
+          return newCtDataStatusArray;
+        });
+      });
+    }
+  }, [mceDataLoadStatus, ctDataStatusArray]);
 
 
   if (mceDataQueryResult.status === 'pending') {
-    return <div>Loading edition {id}...</div>
+    return <div>Loading edition {id}...</div>;
   }
 
   if (mceDataQueryResult.status === 'error') {
-    return <div>Error loading edition {id}</div>
+    return <div>Error loading edition {id}</div>;
   }
 
-  const apiMceDeata = mceDataQueryResult.data!;
+  if (mceDataLoadStatus === 'loading') {
+    setMceDataLoadStatus('justLoaded');
+  }
 
-  console.log(`API MceData for edition ${mceDataId}:`, apiMceDeata);
+  const apiMceData = mceDataQueryResult.data!;
 
-  const mceData = apiMceDeata.mceData;
+
+  const mceData = apiMceData.mceData;
 
   document.title = mceData.title;
 
+  if (mceDataLoadStatus === 'justLoaded') {
+    setCtDataStatusArray(mceData.chunks.map((chunk) => (
+      {ctDataId: chunk.chunkEditionTableId, ctData: null, ctDataState: 'loading' as CtDataState, errorMsg: ''}
+    )));
+    setMceDataLoadStatus('loaded');
+  }
 
   const handleClickDirectionIcon = (horizontalIcon: boolean) => {
     if (horizontalIcon) {
@@ -91,18 +132,20 @@ export default function MceComposer() {
 
   const SaveIcon = () => {
     if (changes) {
-      return <CloudArrowUp className={'tb-icon tb-icon-active'}/>
+      return <CloudArrowUp className={'tb-icon tb-icon-active'}/>;
     }
-    return <CloudArrowUp className={'tb-icon tb-icon-disabled'} title={'Nothing to save'}/>
-  }
+    return <CloudArrowUp className={'tb-icon tb-icon-disabled'} title={'Nothing to save'}/>;
+  };
 
   return (<div className="mce-composer-container">
     <div className="header">
       <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'} height={'40px'}/></div>
       <div className={'title'}>{mceData.title}</div>
       <div className={'controls'}>
-        <LayoutSplit className={'tb-icon'} title={'Switch to vertical layout'} onClick={() => handleClickDirectionIcon(true)}/>
-        <LayoutSplit className={'fa-rotate-90 tb-icon'} title={'Switch to horizontal layout'} onClick={() => handleClickDirectionIcon(false)}/>
+        <LayoutSplit className={'tb-icon'} title={'Switch to vertical layout'}
+                     onClick={() => handleClickDirectionIcon(true)}/>
+        <LayoutSplit className={'fa-rotate-90 tb-icon'} title={'Switch to horizontal layout'}
+                     onClick={() => handleClickDirectionIcon(false)}/>
         <SaveIcon/>
       </div>
     </div>
@@ -111,7 +154,7 @@ export default function MceComposer() {
       <TabPanel activeTabKey={activeTab} onClickTab={(tabKey) => setActiveTab(tabKey)}>
         <Panel tabKey={'edition'} tabTitle={'Edition'}>
           <PanelContent className={'padding-1'}>
-            <EditionPanel mceData={mceData}/>
+            <EditionPanel mceData={mceData} ctDataStatusArray={ctDataStatusArray}/>
           </PanelContent>
         </Panel>
         <Panel tabKey={'search'} tabTitle={'Chunk Search'}>

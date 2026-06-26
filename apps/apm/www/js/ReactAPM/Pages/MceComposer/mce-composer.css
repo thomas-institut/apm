@@ -51,7 +51,7 @@
 }
 
 .tb-icon-disabled, .tb-icon-disabled:hover {
-    color: #ccc;
+    color: gray;
     cursor: initial;
 }
 

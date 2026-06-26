@@ -23,6 +23,7 @@
 
         .controls {
             text-align: right;
+            font-size: 20px;
         }
     }
 
@@ -38,4 +39,22 @@
 
 .padding-1 {
     padding: 0.25em;
+}
+
+.tb-icon {
+    margin-left: 0.5em;
+    cursor: pointer;
+}
+
+.tb-icon:hover {
+    color: #0d6efd;
+}
+
+.tb-icon-disabled, .tb-icon-disabled:hover {
+    color: #ccc;
+    cursor: initial;
+}
+
+.tb-icon-active {
+    color: #0d6efd;
 }

@@ -13,6 +13,9 @@ import {MceData} from '@/MceData/MceData';
 import {useQuery} from "@tanstack/react-query";
 import {AppContext} from "@/ReactAPM/App";
 import EditionPanel, {CtDataState, CtDataStatus} from "@/ReactAPM/Pages/MceComposer/EditionPanel";
+import EditableTextField from "@/ReactAPM/Components/EditableTextField";
+import {MceDataInterface} from "@/MceData/MceDataInterface";
+import {deepCopy} from "@/toolbox/Util";
 
 
 type MceDataLoadStatus = 'loading' | 'justLoaded' | 'loaded';
@@ -61,8 +64,10 @@ export default function MceComposer() {
   const [mceDataLoadStatus, setMceDataLoadStatus] = useState<MceDataLoadStatus>('loading');
   const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
   const [activeTab, setActiveTab] = useState('edition');
-  const [changes, setChanges] = useState(false);
+  const [changes, setChanges] = useState<string[]>([]);
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
+  const [title, setTitle] = useState<string>('Loading...');
+  const [lastSavedMceData, setLastSavedMceData] = useState<MceDataInterface | null>(null);
 
 
   useEffect(() => {
@@ -92,6 +97,16 @@ export default function MceComposer() {
   }, [mceDataLoadStatus, ctDataStatusArray]);
 
 
+  useEffect(() => {
+    if (mceDataQueryResult.data) {
+      const newTitle = mceDataQueryResult.data.mceData.title;
+      setTitle(newTitle);
+      document.title = newTitle;
+      setLastSavedMceData(deepCopy(mceDataQueryResult.data.mceData));
+    }
+  }, [mceDataQueryResult.data]);
+
+
   if (mceDataQueryResult.status === 'pending') {
     return <div>Loading edition {id}...</div>;
   }
@@ -105,17 +120,25 @@ export default function MceComposer() {
   }
 
   const apiMceData = mceDataQueryResult.data!;
-
-
   const mceData = apiMceData.mceData;
-
-  document.title = mceData.title;
 
   if (mceDataLoadStatus === 'justLoaded') {
     setCtDataStatusArray(mceData.chunks.map((chunk) => (
       {ctDataId: chunk.chunkEditionTableId, ctData: null, ctDataState: 'loading' as CtDataState, errorMsg: ''}
     )));
     setMceDataLoadStatus('loaded');
+  }
+
+  const checkForChanges = () => {
+    if (lastSavedMceData === null) {
+      console.warn(`Checking for changes but no last saved MCE data available`);
+      return;
+    }
+    const newChanges: string[] = [];
+    if (mceData.title !== lastSavedMceData.title) {
+      newChanges.push(`New title: '${mceData.title}'`);
+    }
+    setChanges(newChanges);
   }
 
   const handleClickDirectionIcon = (horizontalIcon: boolean) => {
@@ -130,9 +153,20 @@ export default function MceComposer() {
     console.log("handleResize", firstRatio, secondRatio);
   };
 
+  const handleConfirmTitleEdit = (newTitle: string) => {
+    console.log("handleConfirmTitleEdit", newTitle);
+    const sanitizedTitle = newTitle.trim();
+    console.log("sanitizedTitle", sanitizedTitle);
+    setTitle(sanitizedTitle);
+    document.title = sanitizedTitle;
+    mceData.title = sanitizedTitle;
+    checkForChanges();
+  }
+
   const SaveIcon = () => {
-    if (changes) {
-      return <CloudArrowUp className={'tb-icon tb-icon-active'}/>;
+    if (changes.length > 0) {
+      const title = changes.join('\n');
+      return <CloudArrowUp className={'tb-icon tb-icon-active'} title={title}/>;
     }
     return <CloudArrowUp className={'tb-icon tb-icon-disabled'} title={'Nothing to save'}/>;
   };
@@ -140,7 +174,7 @@ export default function MceComposer() {
   return (<div className="mce-composer-container">
     <div className="header">
       <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'} height={'40px'}/></div>
-      <div className={'title'}>{mceData.title}</div>
+      <EditableTextField className={'title'} editingClassName={'title editing'} text={title} onConfirm={handleConfirmTitleEdit}/>
       <div className={'controls'}>
         <LayoutSplit className={'tb-icon'} title={'Switch to vertical layout'}
                      onClick={() => handleClickDirectionIcon(true)}/>

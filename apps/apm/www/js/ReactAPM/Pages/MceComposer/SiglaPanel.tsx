@@ -7,9 +7,8 @@ interface SiglaPanelProps {
 
 export default function SiglaPanel({mceData}: SiglaPanelProps) {
 
-  if (mceData.sigla.length === 0) {
-    return <div>No sigla defined</div>
-  }
-
-  return <div>Sigla Panel will be here, this is the current sigla: { mceData.sigla.join(', ')}</div>
+  return <div className={'sigla-panel'}>
+    { mceData.sigla.length === 0 && <>No sigla defined</>}
+    { mceData.sigla.length > 0 && <>Sigla Panel will be here, this is the current sigla: { mceData.sigla.join(', ')}</>}
+  </div>
 }

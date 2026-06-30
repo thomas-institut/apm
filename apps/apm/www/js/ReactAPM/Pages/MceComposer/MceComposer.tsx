@@ -79,7 +79,8 @@ export default function MceComposer() {
 
   const [mceDataLoadStatus, setMceDataLoadStatus] = useState<MceDataLoadStatus>('loading');
   const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
-  const [activeTab, setActiveTab] = useState('edition');
+  const [activeTabPanelOne, setActiveTabPanelOne] = useState('chunks');
+  const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('preview');
   const [changes, setChanges] = useState<string[]>([]);
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
   const [title, setTitle] = useState<string>('Loading...');
@@ -209,8 +210,8 @@ export default function MceComposer() {
     </div>
     <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={3}
                  outerMargin={10} onResize={handleResize}>
-      <TabPanel activeTabKey={activeTab} onClickTab={(tabKey) => setActiveTab(tabKey)} shimWidth={shimWidth}>
-        <Panel tabKey={'edition'} tabTitle={'Chunks'}>
+      <TabPanel activeTabKey={activeTabPanelOne} onClickTab={(tabKey) => setActiveTabPanelOne(tabKey)} shimWidth={shimWidth}>
+        <Panel tabKey={'chunks'} tabTitle={'Chunks'}>
             <ChunksPanel mceData={mceData}
                          ctDataStatusArray={ctDataStatusArray}
                          moveChunk={(chunkIndex, direction) => {moveChunk(chunkIndex, direction)}}
@@ -221,20 +222,25 @@ export default function MceComposer() {
         <Panel tabKey={'sigla'} tabTitle={'Witnesses and Sigla'}>
           <SiglaPanel mceData={mceData}/>
         </Panel>
-        <Panel tabKey={'sigla-groups'} tabTitle={'Sigla Groups'}>
+        <Panel tabKey={'siglaGroups'} tabTitle={'Sigla Groups'}>
           <SiglaGroupsPanel mceData={mceData}/>
         </Panel>
-        <Panel tabKey={'search'} tabTitle={'Add Chunks'}>
-          <PanelContent className={'padding-1'}>
-            <p>Chunk search will be here...</p>
-          </PanelContent>
-        </Panel>
       </TabPanel>
-      <TabPanel shimWidth={shimWidth}>
+      <TabPanel  activeTabKey={activeTabPanelTwo} onClickTab={(tabKey) => setActiveTabPanelTwo(tabKey)} shimWidth={shimWidth}>
         <Panel tabKey={'preview'} tabTitle={'Preview'}>
           <Toolbar className={'preview-toolbar'}>Toolbar 3</Toolbar>
           <PanelContent className={'padding-1'}>
             <p>Edition Preview will be here...</p>
+          </PanelContent>
+        </Panel>
+        <Panel tabKey={'addChunks'} tabTitle={'Add Chunks'}>
+          <PanelContent className={'padding-1'}>
+            <p>Chunk search will be here...</p>
+          </PanelContent>
+        </Panel>
+        <Panel tabKey={'versions'} tabTitle={'Versions'}>
+          <PanelContent className={'padding-1'}>
+            <p>Versions will be here...</p>
           </PanelContent>
         </Panel>
       </TabPanel>

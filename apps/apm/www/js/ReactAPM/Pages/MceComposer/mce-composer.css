@@ -83,6 +83,13 @@
     color: black;
 }
 
+.sigla-panel {
+    padding: 1em;
+}
+
+.sigla-groups-panel {
+    padding: 1em;
+}
 
 .chunks-panel {
     padding: 0.25em;

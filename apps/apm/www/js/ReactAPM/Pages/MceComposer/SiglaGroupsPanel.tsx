@@ -7,9 +7,10 @@ interface SiglaGroupsPanelProps {
 
 export default function SiglaGroupsPanel({mceData}: SiglaGroupsPanelProps) {
 
-  if (mceData.siglaGroups.length === 0) {
-    return <div>No sigla groups defined</div>
-  }
 
-  return <div>Sigla Groups Panel will be here, there are {mceData.siglaGroups.length} sigla groups defined</div>
+  return <div className="sigla-groups-panel">
+    { mceData.siglaGroups.length === 0 && <>No sigla groups defined</>}
+    { mceData.siglaGroups.length > 0 && <>Sigla Groups Panel will be here, there are {mceData.siglaGroups.length} sigla groups defined</>}
+  </div>
+
 }

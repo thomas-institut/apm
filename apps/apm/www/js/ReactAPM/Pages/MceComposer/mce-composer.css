@@ -6,14 +6,18 @@
     overflow: hidden;
 
 
+    .divider {
+        background-color: #efefef;
+    }
+
+
     div.header {
         height: 50px;
-        padding: 0.25em;
+        padding: 0.25em 0.25em 0;
         margin: 0;
         display: grid;
         grid-template-columns: 20% 60% 20%;
         align-items: center;
-        background-color: #f8f8f8;
 
         .title {
             font-size: 1.3em;
@@ -62,4 +66,18 @@
 
 .tb-icon-active {
     color: #0d6efd;
+}
+
+.tab-panel-tab {
+    font-size: 0.9em;
+    color: #0c5460;
+}
+
+.tab-panel-tab.active {
+    font-weight: bold;
+    color: black;
+}
+
+.tab-panel-content {
+    border: none;
 }

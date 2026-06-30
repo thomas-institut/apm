@@ -25,12 +25,14 @@ interface TabPanelProps {
   activeTabKey?: string;
   onClickTab?: (tabKey: string) => void;
   children: TabPanelChild | TabPanelChild[];
+  shimWidth?: number;
   style?: CSSProperties
 }
 export default function TabPanel(props: TabPanelProps) {
 
   const children = Children.toArray(props.children) as TabPanelChild[];
   const activeTabKey = props.activeTabKey ?? children[0].props.tabKey ?? `tab-0`;
+  const shimWidth = props.shimWidth ?? 3;
 
   const childSpecs: TabPanelChildSpec[] = children.map((child, index) => {
     if (!isValidElement(child)) {
@@ -48,6 +50,7 @@ export default function TabPanel(props: TabPanelProps) {
 
   return <div className="tab-panel">
     <div className={'tab-panel-tabs'}>
+      <div className={'shim'} style={{width: shimWidth + 'px'}}></div>
       { childSpecs.map((spec) => {
         return <div key={spec.tabKey} className={'tab-panel-tab' + (spec.tabKey === activeTabKey ? ' active' : '')} onClick={() => {props.onClickTab?.(spec.tabKey);}}>
           {spec.tabTitle}

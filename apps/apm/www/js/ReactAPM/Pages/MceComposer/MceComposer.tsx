@@ -26,6 +26,10 @@ export default function MceComposer() {
 
   const paramId = id ?? '';
 
+
+  const shimWidth = 5;
+
+
   let mceDataId = -1;
 
   if (paramId === '') {
@@ -162,7 +166,7 @@ export default function MceComposer() {
 
   return (<div className="mce-composer-container">
     <div className="header">
-      <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'} height={'40px'}/></div>
+      <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'} height={'35px'}/></div>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={title}
                          onConfirm={handleConfirmTitleEdit}/>
       <div className={'controls'}>
@@ -173,9 +177,9 @@ export default function MceComposer() {
         <SaveIcon changes={changes}/>
       </div>
     </div>
-    <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={5}
+    <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={3}
                  outerMargin={10} onResize={handleResize}>
-      <TabPanel activeTabKey={activeTab} onClickTab={(tabKey) => setActiveTab(tabKey)}>
+      <TabPanel activeTabKey={activeTab} onClickTab={(tabKey) => setActiveTab(tabKey)} shimWidth={shimWidth}>
         <Panel tabKey={'edition'} tabTitle={'Edition'}>
           <PanelContent className={'padding-1'}>
             <EditionPanel mceData={mceData} ctDataStatusArray={ctDataStatusArray}/>
@@ -187,7 +191,7 @@ export default function MceComposer() {
           </PanelContent>
         </Panel>
       </TabPanel>
-      <TabPanel>
+      <TabPanel shimWidth={shimWidth}>
         <Panel tabKey={'preview'} tabTitle={'Preview'}>
           <Toolbar className={'preview-toolbar'}>Toolbar 3</Toolbar>
           <PanelContent className={'padding-1'}>

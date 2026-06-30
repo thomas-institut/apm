@@ -83,3 +83,29 @@
     color: black;
 }
 
+
+.chunks-panel {
+
+    padding: 0.25em;
+
+    h1 {
+        margin-top: 2em;
+        font-size: 1.2em;
+        font-weight: bold;
+    }
+
+    .chunk-table {
+        margin: 1em;
+        display: grid;
+        grid-template-columns: repeat(5, max-content);
+        gap: 0.5em;
+
+        .chunk-table-header {
+            font-weight: bold;
+        }
+    }
+}
+
+.margin-top-0 {
+    margin-top: 0 !important;
+}

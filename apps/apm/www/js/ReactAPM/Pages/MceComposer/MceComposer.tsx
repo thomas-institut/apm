@@ -10,14 +10,24 @@ import {LayoutSplit} from "react-bootstrap-icons";
 import {MceData} from '@/MceData/MceData';
 import {useQuery} from "@tanstack/react-query";
 import {AppContext} from "@/ReactAPM/App";
-import EditionPanel, {CtDataState, CtDataStatus} from "@/ReactAPM/Pages/MceComposer/EditionPanel";
+import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import {MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import SaveIcon from "@/ReactAPM/Pages/MceComposer/SaveIcon";
+import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 
 
 type MceDataLoadStatus = 'loading' | 'justLoaded' | 'loaded';
+
+export type CtDataState = 'loading' | 'loaded' | 'error';
+
+export interface CtDataStatus {
+  ctDataId: number;
+  apiData: null | SingleChunkApiData;
+  ctDataState: CtDataState;
+  errorMsg: string;
+}
 
 export default function MceComposer() {
 
@@ -85,13 +95,12 @@ export default function MceComposer() {
       console.log(`Loading CtData for chunk ${ctDataStatusIndex}, table ${ctDataId}`);
       appContext.apiClient.getSingleChunkData(ctDataId, '').then((apiResponse) => {
         console.log(`Got data for chunk ${ctDataStatusIndex}, table ${ctDataId}`, apiResponse);
-        const ctData = apiResponse.ctData;
         setCtDataStatusArray((prevCtDataStatusArray) => {
           const newCtDataStatusArray = [...prevCtDataStatusArray];
           newCtDataStatusArray[ctDataStatusIndex] = {
             ...newCtDataStatusArray[ctDataStatusIndex],
+            apiData: apiResponse,
             ctDataState: 'loaded',
-            ctData: ctData
           };
           return newCtDataStatusArray;
         });
@@ -127,7 +136,7 @@ export default function MceComposer() {
 
   if (mceDataLoadStatus === 'justLoaded') {
     setCtDataStatusArray(mceData.chunks.map((chunk) => (
-      {ctDataId: chunk.chunkEditionTableId, ctData: null, ctDataState: 'loading' as CtDataState, errorMsg: ''}
+      {ctDataId: chunk.chunkEditionTableId, apiData: null, ctDataState: 'loading' as CtDataState, errorMsg: ''}
     )));
     setMceDataLoadStatus('loaded');
   }
@@ -180,12 +189,17 @@ export default function MceComposer() {
     <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={3}
                  outerMargin={10} onResize={handleResize}>
       <TabPanel activeTabKey={activeTab} onClickTab={(tabKey) => setActiveTab(tabKey)} shimWidth={shimWidth}>
-        <Panel tabKey={'edition'} tabTitle={'Edition'}>
-          <PanelContent className={'padding-1'}>
-            <EditionPanel mceData={mceData} ctDataStatusArray={ctDataStatusArray}/>
+        <Panel tabKey={'edition'} tabTitle={'Chunks'}>
+          <PanelContent>
+            <ChunksPanel mceData={mceData} ctDataStatusArray={ctDataStatusArray}/>
           </PanelContent>
         </Panel>
-        <Panel tabKey={'search'} tabTitle={'Chunk Search'}>
+        <Panel tabKey={'sigla'} tabTitle={'Sigla'}>
+          <PanelContent className={'padding-1'}>
+            <p>Sigla will be here...</p>
+          </PanelContent>
+        </Panel>
+        <Panel tabKey={'search'} tabTitle={'Add Chunks'}>
           <PanelContent className={'padding-1'}>
             <p>Chunk search will be here...</p>
           </PanelContent>

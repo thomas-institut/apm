@@ -9,6 +9,7 @@ interface EditionPanelProps {
   mceData: MceDataInterface;
   deleteChunk?: (chunkIndex: number) => void;
   updateChunk?: (chunkIndex: number) => void;
+  moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => void;
   ctDataStatusArray: CtDataStatus[];
 }
 
@@ -21,6 +22,7 @@ interface ChunkTableRow {
   tableId: number | null;
   title: string | null;
   version: string | null;
+  breakAfter: string;
   errorMessage: string | null;
   warningMessage: string | null;
   buttons: ControlButton[];
@@ -31,7 +33,7 @@ interface ChunkTableColSpec {
   gridTemplate: string;
 }
 
-export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, updateChunk}: EditionPanelProps) {
+export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, updateChunk, moveChunk}: EditionPanelProps) {
 
   const tableCols: ChunkTableColSpec[] = [
     {title: '', gridTemplate: 'max-content'},
@@ -39,6 +41,7 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
     {title: 'Table Id', gridTemplate: 'max-content'},
     {title: 'Title', gridTemplate: 'max-content'},
     {title: 'Version', gridTemplate: 'max-content'},
+    {title: 'Break After', gridTemplate: 'max-content'},
     {title: '', gridTemplate: 'max-content'},
   ];
 
@@ -77,6 +80,7 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
       tableId: chunk.chunkEditionTableId,
       title: chunk.title,
       version: null,
+      breakAfter: chunk.break,
       errorMessage: null,
       warningMessage: null,
       buttons: []
@@ -109,10 +113,14 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
     updateChunk && updateChunk(chunkIndex);
   };
 
+  const handleMoveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
+    moveChunk && moveChunk(chunkIndex, direction);
+  }
+
   const getChunkTableRowElement = (row: ChunkTableRow, index: number) => {
     const arrowsDiv = (<div className={'chunk-table-arrows'}>
-      <ArrowUp className={row.moveUpArrow ? '' : 'disabled'}/>
-      <ArrowDown className={row.moveDownArrow ? '' : 'disabled'}/>
+      <ArrowUp className={row.moveUpArrow ? '' : 'disabled'} onClick={() => handleMoveChunk(index, 'up')}/>
+      <ArrowDown className={row.moveDownArrow ? '' : 'disabled'} onClick={() => handleMoveChunk(index, 'down')}/>
     </div>);
 
     let statusDiv;
@@ -143,6 +151,7 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
       <div>{row.tableId}</div>
       <div>{row.title}</div>
       <div>{row.version === null ? '' : ApmFormats.time(row.version)}</div>
+      <div>{row.breakAfter ?? ''}</div>
       {statusDiv}
     </Fragment>;
   };

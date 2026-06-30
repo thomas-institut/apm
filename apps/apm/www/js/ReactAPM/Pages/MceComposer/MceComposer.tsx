@@ -16,6 +16,8 @@ import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import SaveIcon from "@/ReactAPM/Pages/MceComposer/SaveIcon";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
+import SiglaPanel from "@/ReactAPM/Pages/MceComposer/SiglaPanel";
+import SiglaGroupsPanel from "@/ReactAPM/Pages/MceComposer/SiglaGroupsPanel";
 
 
 type MceDataLoadStatus = 'loading' | 'justLoaded' | 'loaded';
@@ -163,9 +165,26 @@ export default function MceComposer() {
     }
   };
 
-  const handleResize = (firstRatio: number, secondRatio: number) => {
-    console.log("handleResize", firstRatio, secondRatio);
+  /**
+   * Placeholder just in case we need to handle resize events in the future
+   * @param _firstRatio
+   * @param _secondRatio
+   */
+  const handleResize = (_firstRatio: number, _secondRatio: number) => {
+    // console.log("handleResize", firstRatio, secondRatio);
   };
+
+  const deleteChunk = (chunkIndex: number) => {
+    console.log("deleteChunk", chunkIndex);
+  }
+
+  const moveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
+    console.log(`Move chunk index ${chunkIndex} '${direction}'`);
+  }
+
+  const updateChunk = (chunkIndex: number) => {
+    console.log(`Update chunk index ${chunkIndex}`);
+  }
 
   const handleConfirmTitleEdit = (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
@@ -192,14 +211,18 @@ export default function MceComposer() {
                  outerMargin={10} onResize={handleResize}>
       <TabPanel activeTabKey={activeTab} onClickTab={(tabKey) => setActiveTab(tabKey)} shimWidth={shimWidth}>
         <Panel tabKey={'edition'} tabTitle={'Chunks'}>
-          <PanelContent>
-            <ChunksPanel mceData={mceData} ctDataStatusArray={ctDataStatusArray}/>
-          </PanelContent>
+            <ChunksPanel mceData={mceData}
+                         ctDataStatusArray={ctDataStatusArray}
+                         moveChunk={(chunkIndex, direction) => {moveChunk(chunkIndex, direction)}}
+                         updateChunk={(chunkIndex) => {updateChunk(chunkIndex)}}
+                         deleteChunk={(chunkIndex) => {deleteChunk(chunkIndex)}}
+            />
         </Panel>
-        <Panel tabKey={'sigla'} tabTitle={'Sigla'}>
-          <PanelContent className={'padding-1'}>
-            <p>Sigla will be here...</p>
-          </PanelContent>
+        <Panel tabKey={'sigla'} tabTitle={'Witnesses and Sigla'}>
+          <SiglaPanel mceData={mceData}/>
+        </Panel>
+        <Panel tabKey={'sigla-groups'} tabTitle={'Sigla Groups'}>
+          <SiglaGroupsPanel mceData={mceData}/>
         </Panel>
         <Panel tabKey={'search'} tabTitle={'Add Chunks'}>
           <PanelContent className={'padding-1'}>

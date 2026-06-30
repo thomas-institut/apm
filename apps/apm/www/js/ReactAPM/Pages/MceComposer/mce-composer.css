@@ -1,4 +1,8 @@
 
+:root {
+    --tab-border-color: #cfcfcf;
+}
+
 .mce-composer-container {
     display: grid;
     grid-template-rows: auto 1fr;
@@ -6,9 +10,9 @@
     overflow: hidden;
 
 
-    .divider {
-        background-color: #efefef;
-    }
+    /*.divider {*/
+    /*    background-color: #efefef;*/
+    /*}*/
 
 
     div.header {
@@ -73,11 +77,9 @@
     color: #0c5460;
 }
 
+
 .tab-panel-tab.active {
     font-weight: bold;
     color: black;
 }
 
-.tab-panel-content {
-    border: none;
-}

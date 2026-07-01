@@ -36,7 +36,8 @@ interface PanelSpec {
   panel: 'one' | 'two';
   key: string;
   title: string;
-  expandable: boolean;
+  expandable?: boolean;
+  closable?: boolean;
   content: JSX.Element;
 }
 
@@ -117,7 +118,6 @@ export default function MceComposer() {
     }
   }, [mceDataLoadStatus, ctDataStatusArray]);
 
-
   useEffect(() => {
     if (mceDataQueryResult.data) {
       const mceTitle = mceDataQueryResult.data.mceData.title;
@@ -126,7 +126,6 @@ export default function MceComposer() {
       setLastSavedMceData(deepCopy(mceDataQueryResult.data.mceData));
     }
   }, [mceDataQueryResult.data]);
-
 
   if (mceDataQueryResult.status === 'pending') {
     return <div>Loading edition {id}...</div>;
@@ -167,7 +166,6 @@ export default function MceComposer() {
     }
     setChanges(newChanges);
   };
-
   const handleClickDirectionIcon = (horizontalIcon: boolean) => {
     if (horizontalIcon) {
       setDirection('vertical');
@@ -176,11 +174,6 @@ export default function MceComposer() {
     }
   };
 
-  /**
-   * Placeholder just in case we need to handle resize events in the future
-   * @param _firstRatio
-   * @param _secondRatio
-   */
   const handleResize = (_firstRatio: number, _secondRatio: number) => {
     // console.log("handleResize", firstRatio, secondRatio);
   };
@@ -238,14 +231,12 @@ export default function MceComposer() {
       panel: 'one',
       key: 'sigla',
       title: 'Witnesses and Sigla',
-      expandable: false,
       content: <SiglaPanel mceData={mceData}/>
     },
     {
       panel: 'one',
       key: 'siglaGroups',
       title: 'Sigla Groups',
-      expandable: false,
       content: <SiglaGroupsPanel mceData={mceData}/>
     },
     {
@@ -279,6 +270,7 @@ export default function MceComposer() {
       key: 'versions',
       title: 'Versions',
       expandable: true,
+      closable: true,
       content: <>Versions will be here...</>
     }
   ];
@@ -286,7 +278,6 @@ export default function MceComposer() {
 
 
   const numChunks = ctDataStatusArray.length;
-
   const loadedCtDataCount = ctDataStatusArray.filter((ctDataStatus) => ctDataStatus.ctDataState === 'loaded').length;
   const allCtDataStatusLoaded = loadedCtDataCount === numChunks;
 
@@ -351,8 +342,10 @@ export default function MceComposer() {
                 onClickExpand={handleOnClickTabExpand}
                 shimWidth={shimWidth}>
         {panelSpecs.filter(panelSpec => panelSpec.panel === 'one')
-          .map((panelSpec) => <Panel tabKey={panelSpec.key} tabTitle={panelSpec.title}
-                                     expandable={panelSpec.expandable}>
+          .map((panelSpec) => <Panel tabKey={panelSpec.key}
+                                     tabTitle={panelSpec.title}
+                                     closable={panelSpec.closable ?? false}
+                                     expandable={panelSpec.expandable ?? false}>
             {panelSpec.content}
           </Panel>)}
       </TabPanel>
@@ -361,8 +354,10 @@ export default function MceComposer() {
                 onClickExpand={handleOnClickTabExpand}
                 shimWidth={shimWidth}>
         {panelSpecs.filter(panelSpec => panelSpec.panel === 'two')
-          .map((panelSpec) => <Panel tabKey={panelSpec.key} tabTitle={panelSpec.title}
-                                     expandable={panelSpec.expandable}>
+          .map((panelSpec) => <Panel tabKey={panelSpec.key}
+                                     tabTitle={panelSpec.title}
+                                     closable={panelSpec.closable ?? false}
+                                     expandable={panelSpec.expandable ?? false}>
             {panelSpec.content}
           </Panel>)}
       </TabPanel>

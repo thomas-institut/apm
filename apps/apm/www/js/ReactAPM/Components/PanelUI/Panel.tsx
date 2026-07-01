@@ -11,6 +11,7 @@ interface PanelProps {
   style?: CSSProperties;
   children?: ReactNode;
   expandable?: boolean;
+  closable?: boolean;
 }
 
 /**

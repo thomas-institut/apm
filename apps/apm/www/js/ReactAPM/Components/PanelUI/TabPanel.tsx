@@ -3,12 +3,14 @@ import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 
 import './panel-ui.css';
 import {ArrowsAngleExpand} from "react-bootstrap-icons";
+import {CloseButton} from "react-bootstrap";
 
 
 interface TabPanelChildProps {
   tabKey?: string;
   tabTitle?: string;
   expandable?: boolean;
+  closable?: boolean;
 }
 
 
@@ -23,9 +25,13 @@ type TabPanelChild = ReactElement<TabPanelChildProps, typeof Panel>;
 const ValidTypes = [Panel];
 
 interface TabPanelProps {
-  activeTabKey?: string;
+  /**
+   * The key of the active tab. If not provided or null, the first tab will be active.
+   */
+  activeTabKey?: string | null;
   onClickTab?: (tabKey: string) => void;
   onClickExpand?: (tabKey: string) => void;
+  onClickClose?: (tabKey: string) => void;
   children: TabPanelChild | TabPanelChild[];
   shimWidth?: number;
   style?: CSSProperties;
@@ -50,6 +56,7 @@ export default function TabPanel(props: TabPanelProps) {
       tabTitle: child.props.tabTitle ?? `Tab ${index + 1}`,
       element: child,
       expandable: child.props.expandable ?? false,
+      closable: child.props.closable ?? false,
     };
   });
 
@@ -70,7 +77,9 @@ export default function TabPanel(props: TabPanelProps) {
             {spec.tabTitle}
           </span>
           {spec.expandable && isActive && hoveredTabKey === spec.tabKey &&
-            <ArrowsAngleExpand onClick={() => props.onClickExpand?.(spec.tabKey)}/>} 
+            <ArrowsAngleExpand onClick={() => props.onClickExpand?.(spec.tabKey)} title={'Click to expand this tab'}/>}
+          {spec.closable && isActive && hoveredTabKey === spec.tabKey &&
+            <CloseButton onClick={() => props.onClickClose?.(spec.tabKey)} title={'Click to close this tab'}/>}
         </div>;
       })}
     </div>

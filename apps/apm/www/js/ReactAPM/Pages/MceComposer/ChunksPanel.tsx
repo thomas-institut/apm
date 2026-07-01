@@ -3,6 +3,7 @@ import {Fragment} from "react";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import {ArrowCounterclockwise, ArrowDown, ArrowUp, Trash} from "react-bootstrap-icons";
 import {ApmFormats} from "@/pages/common/ApmFormats";
+import EntityLink from "@/ReactAPM/Components/EntityLink";
 
 
 interface EditionPanelProps {
@@ -38,7 +39,7 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
   const tableCols: ChunkTableColSpec[] = [
     {title: '', gridTemplate: 'max-content'},
     {title: 'Chunk Id', gridTemplate: 'max-content'},
-    {title: 'Table Id', gridTemplate: 'max-content'},
+    {title: 'Edition Id', gridTemplate: 'max-content'},
     {title: 'Title', gridTemplate: 'max-content'},
     {title: 'Version', gridTemplate: 'max-content'},
     {title: 'Break After', gridTemplate: 'max-content'},
@@ -53,7 +54,6 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
   if (numChunks === 0) {
     return <div>No chunks, add some in the "Add Chunks panel"</div>;
   }
-  ctDataStatusArray.filter((ctDataStatus) => ctDataStatus.ctDataState === 'loaded').length;
   const lastChunkIndex = mceData.chunks.length - 1;
 
   const tableStyle = {
@@ -146,7 +146,11 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
     return <Fragment key={row.chunkId}>
       {arrowsDiv}
       <div>{row.chunkId}</div>
-      <div>{row.tableId}</div>
+      <EntityLink id={row.tableId ?? -1}
+                  type={'singleChunkEdition'}
+                  openInNewTab={true}
+                  title={`Click to open chunk edition ${row.tableId} in new tab`}
+                  label={row.tableId?.toString() ?? ''}/>
       <div>{row.title}</div>
       <div>{row.version === null ? '' : ApmFormats.time(row.version)}</div>
       <div>{row.breakAfter ?? ''}</div>

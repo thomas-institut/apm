@@ -14,8 +14,9 @@
         padding: 0.25em 0.25em 0;
         margin: 0;
         display: grid;
-        grid-template-columns: max-content max-content 1fr;
+        grid-template-columns: max-content max-content 1fr max-content;
         align-items: center;
+        gap: 1em;
 
         .logo {
             padding-right: 2em;
@@ -28,6 +29,15 @@
         .title {
             font-size: 1.3em;
             font-weight: bold;
+        }
+
+        .notifications {
+            display: flex;
+            flex-direction: row;
+            gap: 1em;
+            justify-content: flex-end;
+            align-items: center;
+            color: #c3a472;
         }
 
         .editing > .textInput {

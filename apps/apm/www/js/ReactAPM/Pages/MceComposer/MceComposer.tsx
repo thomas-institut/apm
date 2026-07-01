@@ -120,9 +120,9 @@ export default function MceComposer() {
 
   useEffect(() => {
     if (mceDataQueryResult.data) {
-      const newTitle = mceDataQueryResult.data.mceData.title;
-      setTitle(newTitle);
-      document.title = newTitle;
+      const mceTitle = mceDataQueryResult.data.mceData.title;
+      setTitle(mceTitle);
+      document.title = `E: ${mceTitle}`;
       setLastSavedMceData(deepCopy(mceDataQueryResult.data.mceData));
     }
   }, [mceDataQueryResult.data]);
@@ -253,7 +253,7 @@ export default function MceComposer() {
       key: 'normalization',
       title: 'Main Text Normalization',
       expandable: true,
-      content: <div>Main text normalization will be here...</div>
+      content: <>Main text normalization will be here...</>
     },
     {
       panel: 'two',
@@ -272,16 +272,31 @@ export default function MceComposer() {
       key: 'addChunks',
       title: 'Add Chunks',
       expandable: true,
-      content: <PanelContent>Add chunks will be here...</PanelContent>
+      content: <>Add chunks will be here...</>
     },
     {
       panel: 'two',
       key: 'versions',
       title: 'Versions',
       expandable: true,
-      content: <PanelContent>Versions will be here...</PanelContent>
+      content: <>Versions will be here...</>
     }
   ];
+
+
+
+  const numChunks = ctDataStatusArray.length;
+
+  const loadedCtDataCount = ctDataStatusArray.filter((ctDataStatus) => ctDataStatus.ctDataState === 'loaded').length;
+  const allCtDataStatusLoaded = loadedCtDataCount === numChunks;
+
+
+  let loadingProgress: JSX.Element|null  = null;
+
+  if (!allCtDataStatusLoaded) {
+    loadingProgress = <span className={'loading-notification'}>Loading chunks... {loadedCtDataCount} of {numChunks}</span>;
+  }
+
 
   let expandedTabSpec: PanelSpec | null = null;
 
@@ -289,6 +304,9 @@ export default function MceComposer() {
     expandedTabSpec = panelSpecs.find(spec => spec.key === expandedTab) ?? null;
   }
 
+  const notificationsDiv = <div className={'notifications'}>
+    {!allCtDataStatusLoaded && loadingProgress}
+  </div>
 
   if (expandedTabSpec !== null) {
     return (
@@ -300,6 +318,7 @@ export default function MceComposer() {
             <span className={'tab-name'}>{expandedTabSpec.title}</span>
             <ArrowsAngleContract className={'tb-icon'} onClick={() => handleOnClickCollapseTab()}/>
           </div>
+          {notificationsDiv}
           <div className={'controls'}>
             <SaveIcon changes={changes}/>
           </div>
@@ -316,6 +335,7 @@ export default function MceComposer() {
       <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'}/></div>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={title}
                          onConfirm={handleConfirmTitleEdit}/>
+      { notificationsDiv }
       <div className={'controls'}>
         <LayoutSplit className={'tb-icon'} title={'Switch to vertical layout'}
                      onClick={() => handleClickDirectionIcon(true)}/>

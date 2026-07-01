@@ -53,9 +53,7 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
   if (numChunks === 0) {
     return <div>No chunks, add some in the "Add Chunks panel"</div>;
   }
-
-  const loadedCtDataCount = ctDataStatusArray.filter((ctDataStatus) => ctDataStatus.ctDataState === 'loaded').length;
-  const allCtDataStatusLoaded = loadedCtDataCount === numChunks;
+  ctDataStatusArray.filter((ctDataStatus) => ctDataStatus.ctDataState === 'loaded').length;
   const lastChunkIndex = mceData.chunks.length - 1;
 
   const tableStyle = {
@@ -157,8 +155,6 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
   };
 
   return (<div className={'chunks-panel'}>
-    {!allCtDataStatusLoaded &&
-      <div className={'text-warning'}>Loading chunks... {loadedCtDataCount} of {numChunks}</div>}
     <div className={'chunk-table'} style={tableStyle}>
       {getChunkTableHeader()}
       {mceData.chunks

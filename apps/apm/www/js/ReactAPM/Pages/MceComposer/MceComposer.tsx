@@ -19,6 +19,7 @@ import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 import SiglaPanel from "@/ReactAPM/Pages/MceComposer/SiglaPanel";
 import SiglaGroupsPanel from "@/ReactAPM/Pages/MceComposer/SiglaGroupsPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
+import LoremIpsumText from "@/ReactAPM/Components/LoremIpsumText";
 
 
 type MceDataLoadStatus = 'loading' | 'justLoaded' | 'loaded';
@@ -37,6 +38,7 @@ interface PanelSpec {
   panel: 'one' | 'two';
   key: string;
   title: string;
+  className?: string;
   expandable?: boolean;
   closable?: boolean;
   content: JSX.Element;
@@ -123,7 +125,7 @@ export default function MceComposer() {
     if (mceDataQueryResult.data) {
       const mceTitle = mceDataQueryResult.data.mceData.title;
       setTitle(mceTitle);
-      document.title = `E: ${mceTitle}`;
+      document.title = `MCE: ${mceTitle}`;
       setLastSavedMceData(deepCopy(mceDataQueryResult.data.mceData));
     }
   }, [mceDataQueryResult.data]);
@@ -187,6 +189,10 @@ export default function MceComposer() {
     console.log(`Move chunk index ${chunkIndex} '${direction}'`);
   };
 
+  const setChunkBreak = (chunkIndex: number, breakAfter: string) => {
+    console.log(`Set chunk break index ${chunkIndex} '${breakAfter}'`);
+  };
+
   const updateChunk = (chunkIndex: number) => {
     console.log(`Update chunk index ${chunkIndex}`);
   };
@@ -226,6 +232,9 @@ export default function MceComposer() {
                             deleteChunk={(chunkIndex) => {
                               deleteChunk(chunkIndex);
                             }}
+                            setChunkBreak={(chunkIndex, breakAfter) => {
+                              setChunkBreak(chunkIndex, breakAfter);
+                            }}
       />
     },
     {
@@ -252,10 +261,11 @@ export default function MceComposer() {
       key: 'preview',
       title: 'Preview',
       expandable: true,
+      className: 'preview-panel',
       content: <>
-        <Toolbar className={'preview-toolbar'}>Toolbar 3</Toolbar>
+        <Toolbar className={'preview-toolbar padding-1'}>Preview Toolbar</Toolbar>
         <PanelContent className={'padding-1'}>
-          <p>Edition Preview will be here...</p>
+          <LoremIpsumText paragraphs={20}/>
         </PanelContent>
       </>
     },
@@ -321,9 +331,9 @@ export default function MceComposer() {
             <SaveIcon changes={changes}/>
           </div>
         </div>
-        <div className={'expanded-panel'}>
+        <Panel className={expandedTabSpec.className ?? ''}>
           {expandedTabSpec.content}
-        </div>
+        </Panel>
       </div>
     );
   }
@@ -350,6 +360,7 @@ export default function MceComposer() {
                 shimWidth={shimWidth}>
         {panelSpecs.filter(panelSpec => panelSpec.panel === 'one')
           .map((panelSpec) => <Panel tabKey={panelSpec.key}
+                                     className={panelSpec.className ?? ''}
                                      tabTitle={panelSpec.title}
                                      closable={panelSpec.closable ?? false}
                                      expandable={panelSpec.expandable ?? false}>
@@ -363,6 +374,7 @@ export default function MceComposer() {
         {panelSpecs.filter(panelSpec => panelSpec.panel === 'two')
           .map((panelSpec) => <Panel tabKey={panelSpec.key}
                                      tabTitle={panelSpec.title}
+                                     className={panelSpec.className ?? ''}
                                      closable={panelSpec.closable ?? false}
                                      expandable={panelSpec.expandable ?? false}>
             {panelSpec.content}

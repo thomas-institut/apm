@@ -1,0 +1,26 @@
+
+.multi-toggle {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+}
+
+.mt-option {
+    cursor: pointer;
+    padding: 0.2rem;
+    color: silver;
+    border: 1px solid var(--very-light-gray);
+}
+
+
+.mt-option.mt-selected {
+    border-radius: 0.1rem;
+    color: var(--default-font-color);
+    border: 1px solid silver;
+}
+
+
+.mt-disabled {
+    color: silver;
+    cursor: default;
+}

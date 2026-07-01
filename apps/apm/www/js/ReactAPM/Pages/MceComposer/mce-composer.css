@@ -8,6 +8,7 @@
     grid-template-rows: auto 1fr;
     height: 100dvh;
     overflow: hidden;
+    box-sizing: border-box;
 
     .header {
         padding: 5px;
@@ -15,6 +16,7 @@
         grid-template-columns: max-content max-content 1fr max-content;
         align-items: center;
         gap: 1em;
+        box-sizing: border-box;
 
         .logo {
             padding-right: 2em;
@@ -135,6 +137,7 @@
 
 .chunks-panel {
     padding: 0.25em;
+    box-sizing: border-box;
 
     h1 {
         margin-top: 2em;

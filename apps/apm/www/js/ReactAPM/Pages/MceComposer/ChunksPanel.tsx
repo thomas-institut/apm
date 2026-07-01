@@ -1,9 +1,11 @@
-import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
+import {ChunkInMceData, MceDataInterface, ValidChunkBreaks} from "@/MceData/MceDataInterface";
 import {Fragment} from "react";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import {ArrowCounterclockwise, ArrowDown, ArrowUp, Trash} from "react-bootstrap-icons";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
+import MultiToggle, {MultiToggleOptionSpec} from "@/ReactAPM/Components/MultiToggle/MultiToggle";
+import {capitalizeFirstLetter} from "@/toolbox/Util";
 
 
 interface EditionPanelProps {
@@ -11,6 +13,7 @@ interface EditionPanelProps {
   deleteChunk?: (chunkIndex: number) => void;
   updateChunk?: (chunkIndex: number) => void;
   moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => void;
+  setChunkBreak?: (chunkIndex: number, breakAfter: string) => void;
   ctDataStatusArray: CtDataStatus[];
 }
 
@@ -34,7 +37,14 @@ interface ChunkTableColSpec {
   gridTemplate: string;
 }
 
-export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, updateChunk, moveChunk}: EditionPanelProps) {
+export default function ChunksPanel({
+                                      mceData,
+                                      ctDataStatusArray,
+                                      deleteChunk,
+                                      updateChunk,
+                                      moveChunk,
+                                      setChunkBreak
+                                    }: EditionPanelProps) {
 
   const tableCols: ChunkTableColSpec[] = [
     {title: '', gridTemplate: 'max-content'},
@@ -78,7 +88,7 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
       tableId: chunk.chunkEditionTableId,
       title: chunk.title,
       version: null,
-      breakAfter: chunk.break,
+      breakAfter: chunk.break === '' ? 'none' : chunk.break,
       errorMessage: null,
       warningMessage: null,
       buttons: []
@@ -113,12 +123,42 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
 
   const handleMoveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
     moveChunk && moveChunk(chunkIndex, direction);
-  }
+  };
+
+  const handleSetChunkBreak = (chunkIndex: number, breakAfter: string) => {
+    setChunkBreak && setChunkBreak(chunkIndex, breakAfter === 'none' ? '': breakAfter);
+  };
+
+  const chunkBreakMultiToggleOptionSpecs: MultiToggleOptionSpec[] = [
+    {
+      key: 'none',
+      label: 'None',
+      disabled: false,
+    },
+    ...ValidChunkBreaks.filter((breakType) => breakType !== '')
+      .map((breakType) => {
+        return {
+          key: breakType,
+          label: capitalizeFirstLetter(breakType),
+          disabled: false,
+        };
+      })
+  ];
 
   const getChunkTableRowElement = (row: ChunkTableRow, index: number) => {
+
+    const arrowUpClasses = [ 'control-button'];
+    if (!row.moveUpArrow) {
+      arrowUpClasses.push('disabled');
+    }
+    const arrowDownClasses = [ 'control-button'];
+    if (!row.moveDownArrow) {
+      arrowDownClasses.push('disabled');
+    }
+
     const arrowsDiv = (<div className={'chunk-table-arrows'}>
-      <ArrowUp className={row.moveUpArrow ? '' : 'disabled'} onClick={() => handleMoveChunk(index, 'up')}/>
-      <ArrowDown className={row.moveDownArrow ? '' : 'disabled'} onClick={() => handleMoveChunk(index, 'down')}/>
+      <ArrowUp className={arrowUpClasses.join(' ')} onClick={() => handleMoveChunk(index, 'up')}/>
+      <ArrowDown className={arrowDownClasses.join(' ')} onClick={() => handleMoveChunk(index, 'down')}/>
     </div>);
 
     let statusDiv;
@@ -153,7 +193,8 @@ export default function ChunksPanel({mceData, ctDataStatusArray, deleteChunk, up
                   label={row.tableId?.toString() ?? ''}/>
       <div>{row.title}</div>
       <div>{row.version === null ? '' : ApmFormats.time(row.version)}</div>
-      <div>{row.breakAfter ?? ''}</div>
+      <MultiToggle options={chunkBreakMultiToggleOptionSpecs} onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
+                   selected={row.breakAfter ?? 'none'}/>
       {statusDiv}
     </Fragment>;
   };

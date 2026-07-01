@@ -28,6 +28,8 @@ export interface WitnessInMceData {
   tid?: number,
 }
 
+export const ValidChunkBreaks = ['', 'paragraph'];
+
 export interface ChunkInMceData {
   chunkId: string,
   break: string,

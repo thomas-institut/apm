@@ -1,4 +1,4 @@
-import {Children, CSSProperties, isValidElement, ReactElement, ReactNode} from "react";
+import {Children, CSSProperties, isValidElement, ReactElement, ReactNode, Fragment} from "react";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 
@@ -29,7 +29,12 @@ interface PanelProps {
  * @constructor
  */
 export default function Panel(props: PanelProps) {
-  const children = Children.toArray(props.children);
+  let children = Children.toArray(props.children);
+
+  if (children.length === 1 && isValidElement(children[0]) && children[0].type === Fragment) {
+    // @ts-ignore
+    children = Children.toArray(children[0].props.children);
+  }
 
   if (children.length > 1 && isValidElement(children[0]) && (children[0] as ReactElement).type === Toolbar) {
     if (children.length > 2) {

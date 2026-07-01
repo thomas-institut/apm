@@ -6,7 +6,7 @@ import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import './mce-composer.css';
-import {ArrowsAngleContract, LayoutSplit} from "react-bootstrap-icons";
+import {ArrowsAngleContract, ChevronRight, LayoutSplit} from "react-bootstrap-icons";
 import {MceData} from '@/MceData/MceData';
 import {useQuery} from "@tanstack/react-query";
 import {AppContext} from "@/ReactAPM/App";
@@ -312,6 +312,7 @@ export default function MceComposer() {
           <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'}/></div>
           <div className={'expanded-tab-title-area'}>
             <span className={'title'}>{title}</span>
+            <ChevronRight/>
             <span className={'tab-name'}>{expandedTabSpec.title}</span>
             <ArrowsAngleContract className={'tb-icon'} onClick={() => handleOnClickCollapseTab()}/>
           </div>

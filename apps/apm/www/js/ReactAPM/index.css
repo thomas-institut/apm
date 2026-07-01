@@ -4,7 +4,7 @@
     /* DEFAULT FONT */
     --default-font-family: var(--bs-font-sans-serif), sans-serif;
     --default-font-size: 10.5pt;
-    --default-font-color: #9f7e61;
+    --default-font-color: #0d0d0d;
     --monospace-font-family: "Noto Mono", monospace;
 
     /* TEXT ICON FONT */

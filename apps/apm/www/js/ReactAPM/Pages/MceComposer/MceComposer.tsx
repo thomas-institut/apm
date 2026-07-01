@@ -18,6 +18,7 @@ import SaveIcon from "@/ReactAPM/Pages/MceComposer/SaveIcon";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 import SiglaPanel from "@/ReactAPM/Pages/MceComposer/SiglaPanel";
 import SiglaGroupsPanel from "@/ReactAPM/Pages/MceComposer/SiglaGroupsPanel";
+import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
 
 
 type MceDataLoadStatus = 'loading' | 'justLoaded' | 'loaded';
@@ -276,16 +277,21 @@ export default function MceComposer() {
   ];
 
 
-
   const numChunks = ctDataStatusArray.length;
   const loadedCtDataCount = ctDataStatusArray.filter((ctDataStatus) => ctDataStatus.ctDataState === 'loaded').length;
   const allCtDataStatusLoaded = loadedCtDataCount === numChunks;
 
 
-  let loadingProgress: JSX.Element|null  = null;
+  let loadingProgress: JSX.Element | null = null;
 
   if (!allCtDataStatusLoaded) {
-    loadingProgress = <span className={'loading-notification'}>Loading chunks... {loadedCtDataCount} of {numChunks}</span>;
+    loadingProgress = <ProgressBar currentStep={loadedCtDataCount}
+                                   width={200}
+                                   className={'chunk-progress-bar'}
+                                   numSteps={numChunks}
+                                   getLabel={(s, ns) => {
+                                     return `Loading chunk ${s} of ${ns}`;
+                                   }}/>;
   }
 
 
@@ -297,7 +303,7 @@ export default function MceComposer() {
 
   const notificationsDiv = <div className={'notifications'}>
     {!allCtDataStatusLoaded && loadingProgress}
-  </div>
+  </div>;
 
   if (expandedTabSpec !== null) {
     return (
@@ -326,7 +332,7 @@ export default function MceComposer() {
       <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'}/></div>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={title}
                          onConfirm={handleConfirmTitleEdit}/>
-      { notificationsDiv }
+      {notificationsDiv}
       <div className={'controls'}>
         <LayoutSplit className={'tb-icon'} title={'Switch to vertical layout'}
                      onClick={() => handleClickDirectionIcon(true)}/>

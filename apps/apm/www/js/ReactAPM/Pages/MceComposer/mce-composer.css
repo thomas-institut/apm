@@ -37,7 +37,17 @@
             gap: 1em;
             justify-content: flex-end;
             align-items: center;
-            color: #c3a472;
+            color: #dd8806;
+
+            .chunk-progress-bar {
+                border-radius: 5px;
+                border: 1px solid silver;
+                color: gray;
+
+                .progress-bar-fill {
+                    background: #dddddd;
+                }
+            }
         }
 
         .editing > .textInput {

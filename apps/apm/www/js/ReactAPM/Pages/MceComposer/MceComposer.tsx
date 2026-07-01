@@ -1,12 +1,12 @@
 import {useParams} from "react-router";
-import {useContext, useEffect, useState} from "react";
+import {JSX, useContext, useEffect, useState} from "react";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import './mce-composer.css';
-import {LayoutSplit} from "react-bootstrap-icons";
+import {ArrowsAngleContract, LayoutSplit} from "react-bootstrap-icons";
 import {MceData} from '@/MceData/MceData';
 import {useQuery} from "@tanstack/react-query";
 import {AppContext} from "@/ReactAPM/App";
@@ -32,19 +32,22 @@ export interface CtDataStatus {
   errorMsg: string;
 }
 
+interface PanelSpec {
+  panel: 'one' | 'two';
+  key: string;
+  title: string;
+  expandable: boolean;
+  content: JSX.Element;
+}
+
 export default function MceComposer() {
 
   const {id} = useParams();
   const appContext = useContext(AppContext);
-
   const paramId = id ?? '';
-
-
   const shimWidth = 5;
 
-
   let mceDataId = -1;
-
   if (paramId === '') {
     throw new Error('Invalid MCE ID');
   }
@@ -85,6 +88,7 @@ export default function MceComposer() {
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
   const [title, setTitle] = useState<string>('Loading...');
   const [lastSavedMceData, setLastSavedMceData] = useState<MceDataInterface | null>(null);
+  const [expandedTab, setExpandedTab] = useState<string | null>(null);
 
 
   useEffect(() => {
@@ -141,7 +145,13 @@ export default function MceComposer() {
 
   if (mceDataLoadStatus === 'justLoaded') {
     setCtDataStatusArray(mceData.chunks.map((chunk) => (
-      {ctDataId: chunk.chunkEditionTableId, chunkInMceData: chunk, apiData: null, ctDataState: 'loading' as CtDataState, errorMsg: ''}
+      {
+        ctDataId: chunk.chunkEditionTableId,
+        chunkInMceData: chunk,
+        apiData: null,
+        ctDataState: 'loading' as CtDataState,
+        errorMsg: ''
+      }
     )));
     setMceDataLoadStatus('loaded');
   }
@@ -177,15 +187,15 @@ export default function MceComposer() {
 
   const deleteChunk = (chunkIndex: number) => {
     console.log("deleteChunk", chunkIndex);
-  }
+  };
 
   const moveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
     console.log(`Move chunk index ${chunkIndex} '${direction}'`);
-  }
+  };
 
   const updateChunk = (chunkIndex: number) => {
     console.log(`Update chunk index ${chunkIndex}`);
-  }
+  };
 
   const handleConfirmTitleEdit = (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
@@ -195,9 +205,115 @@ export default function MceComposer() {
     checkForChanges();
   };
 
+  const handleOnClickTabExpand = (tabKey: string) => {
+    console.log(`Click on expand tab ${tabKey}`);
+    setExpandedTab(tabKey);
+  };
+
+  const handleOnClickCollapseTab = () => {
+    console.log(`Click on collapse icon`);
+    setExpandedTab(null);
+  };
+
+  const panelSpecs: PanelSpec[] = [
+    {
+      panel: 'one',
+      key: 'chunks',
+      title: 'Chunks',
+      expandable: true,
+      content: <ChunksPanel mceData={mceData}
+                            ctDataStatusArray={ctDataStatusArray}
+                            moveChunk={(chunkIndex, direction) => {
+                              moveChunk(chunkIndex, direction);
+                            }}
+                            updateChunk={(chunkIndex) => {
+                              updateChunk(chunkIndex);
+                            }}
+                            deleteChunk={(chunkIndex) => {
+                              deleteChunk(chunkIndex);
+                            }}
+      />
+    },
+    {
+      panel: 'one',
+      key: 'sigla',
+      title: 'Witnesses and Sigla',
+      expandable: false,
+      content: <SiglaPanel mceData={mceData}/>
+    },
+    {
+      panel: 'one',
+      key: 'siglaGroups',
+      title: 'Sigla Groups',
+      expandable: false,
+      content: <SiglaGroupsPanel mceData={mceData}/>
+    },
+    {
+      panel: 'one',
+      key: 'normalization',
+      title: 'Main Text Normalization',
+      expandable: true,
+      content: <div>Main text normalization will be here...</div>
+    },
+    {
+      panel: 'two',
+      key: 'preview',
+      title: 'Preview',
+      expandable: true,
+      content: <>
+        <Toolbar className={'preview-toolbar'}>Toolbar 3</Toolbar>
+        <PanelContent className={'padding-1'}>
+          <p>Edition Preview will be here...</p>
+        </PanelContent>
+      </>
+    },
+    {
+      panel: 'two',
+      key: 'addChunks',
+      title: 'Add Chunks',
+      expandable: true,
+      content: <PanelContent>Add chunks will be here...</PanelContent>
+    },
+    {
+      panel: 'two',
+      key: 'versions',
+      title: 'Versions',
+      expandable: true,
+      content: <PanelContent>Versions will be here...</PanelContent>
+    }
+  ];
+
+  let expandedTabSpec: PanelSpec | null = null;
+
+  if (expandedTab !== null) {
+    expandedTabSpec = panelSpecs.find(spec => spec.key === expandedTab) ?? null;
+  }
+
+
+  if (expandedTabSpec !== null) {
+    return (
+      <div className="mce-composer-container expanded">
+        <div className="header">
+          <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'}/></div>
+          <div className={'expanded-tab-title-area'}>
+            <span className={'title'}>{title}</span>
+            <span className={'tab-name'}>{expandedTabSpec.title}</span>
+            <ArrowsAngleContract className={'tb-icon'} onClick={() => handleOnClickCollapseTab()}/>
+          </div>
+          <div className={'controls'}>
+            <SaveIcon changes={changes}/>
+          </div>
+        </div>
+        <div className={'expanded-panel'}>
+          {expandedTabSpec.content}
+        </div>
+      </div>
+    );
+  }
+
   return (<div className="mce-composer-container">
     <div className="header">
-      <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'} height={'35px'}/></div>
+      <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'}/></div>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={title}
                          onConfirm={handleConfirmTitleEdit}/>
       <div className={'controls'}>
@@ -210,41 +326,26 @@ export default function MceComposer() {
     </div>
     <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={3}
                  outerMargin={10} onResize={handleResize}>
-      <TabPanel activeTabKey={activeTabPanelOne} onClickTab={(tabKey) => setActiveTabPanelOne(tabKey)} shimWidth={shimWidth}>
-        <Panel tabKey={'chunks'} tabTitle={'Chunks'}>
-            <ChunksPanel mceData={mceData}
-                         ctDataStatusArray={ctDataStatusArray}
-                         moveChunk={(chunkIndex, direction) => {moveChunk(chunkIndex, direction)}}
-                         updateChunk={(chunkIndex) => {updateChunk(chunkIndex)}}
-                         deleteChunk={(chunkIndex) => {deleteChunk(chunkIndex)}}
-            />
-        </Panel>
-        <Panel tabKey={'sigla'} tabTitle={'Witnesses and Sigla'}>
-          <SiglaPanel mceData={mceData}/>
-        </Panel>
-        <Panel tabKey={'siglaGroups'} tabTitle={'Sigla Groups'}>
-          <SiglaGroupsPanel mceData={mceData}/>
-        </Panel>
+      <TabPanel activeTabKey={activeTabPanelOne}
+                onClickTab={(tabKey) => setActiveTabPanelOne(tabKey)}
+                onClickExpand={handleOnClickTabExpand}
+                shimWidth={shimWidth}>
+        {panelSpecs.filter(panelSpec => panelSpec.panel === 'one')
+          .map((panelSpec) => <Panel tabKey={panelSpec.key} tabTitle={panelSpec.title}
+                                     expandable={panelSpec.expandable}>
+            {panelSpec.content}
+          </Panel>)}
       </TabPanel>
-      <TabPanel  activeTabKey={activeTabPanelTwo} onClickTab={(tabKey) => setActiveTabPanelTwo(tabKey)} shimWidth={shimWidth}>
-        <Panel tabKey={'preview'} tabTitle={'Preview'}>
-          <Toolbar className={'preview-toolbar'}>Toolbar 3</Toolbar>
-          <PanelContent className={'padding-1'}>
-            <p>Edition Preview will be here...</p>
-          </PanelContent>
-        </Panel>
-        <Panel tabKey={'addChunks'} tabTitle={'Add Chunks'}>
-          <PanelContent className={'padding-1'}>
-            <p>Chunk search will be here...</p>
-          </PanelContent>
-        </Panel>
-        <Panel tabKey={'versions'} tabTitle={'Versions'}>
-          <PanelContent className={'padding-1'}>
-            <p>Versions will be here...</p>
-          </PanelContent>
-        </Panel>
+      <TabPanel activeTabKey={activeTabPanelTwo}
+                onClickTab={(tabKey) => setActiveTabPanelTwo(tabKey)}
+                onClickExpand={handleOnClickTabExpand}
+                shimWidth={shimWidth}>
+        {panelSpecs.filter(panelSpec => panelSpec.panel === 'two')
+          .map((panelSpec) => <Panel tabKey={panelSpec.key} tabTitle={panelSpec.title}
+                                     expandable={panelSpec.expandable}>
+            {panelSpec.content}
+          </Panel>)}
       </TabPanel>
-
     </SplitPanels>
   </div>);
 }

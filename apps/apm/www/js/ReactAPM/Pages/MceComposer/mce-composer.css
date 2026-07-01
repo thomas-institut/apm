@@ -9,24 +9,25 @@
     height: 100dvh;
     overflow: hidden;
 
-
-    /*.divider {*/
-    /*    background-color: #efefef;*/
-    /*}*/
-
-
-    div.header {
+    .header {
         height: 50px;
         padding: 0.25em 0.25em 0;
         margin: 0;
         display: grid;
-        grid-template-columns: 20% 60% 20%;
+        grid-template-columns: max-content max-content 1fr;
         align-items: center;
+
+        .logo {
+            padding-right: 2em;
+        }
+
+        .logo img {
+            height: 30px;
+        }
 
         .title {
             font-size: 1.3em;
             font-weight: bold;
-            text-align: center;
         }
 
         .editing > .textInput {
@@ -37,12 +38,29 @@
         .controls {
             text-align: right;
             font-size: 20px;
+            padding-right: 0.5em;
         }
     }
 
     .panelContainer {
         padding: 0 !important;
     }
+
+}
+
+.mce-composer-container.expanded {
+
+    .tab-name {
+        font-size: 1.3em;
+    }
+
+    .expanded-tab-title-area {
+        display: flex;
+        flex-direction: row;
+        gap: 1em;
+        align-items: center;
+    }
+
 }
 
 

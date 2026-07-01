@@ -1,13 +1,14 @@
-
 import {Children, CSSProperties, isValidElement, ReactElement} from "react";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 
-import './panel-ui.css'
+import './panel-ui.css';
+import {ArrowsAngleExpand} from "react-bootstrap-icons";
 
 
 interface TabPanelChildProps {
   tabKey?: string;
   tabTitle?: string;
+  expandable?: boolean;
 }
 
 
@@ -16,18 +17,20 @@ interface TabPanelChildSpec extends Required<TabPanelChildProps> {
 }
 
 
-
 type TabPanelChild = ReactElement<TabPanelChildProps, typeof Panel>;
 
 
 const ValidTypes = [Panel];
+
 interface TabPanelProps {
   activeTabKey?: string;
   onClickTab?: (tabKey: string) => void;
+  onClickExpand?: (tabKey: string) => void;
   children: TabPanelChild | TabPanelChild[];
   shimWidth?: number;
-  style?: CSSProperties
+  style?: CSSProperties;
 }
+
 export default function TabPanel(props: TabPanelProps) {
 
   const children = Children.toArray(props.children) as TabPanelChild[];
@@ -45,30 +48,34 @@ export default function TabPanel(props: TabPanelProps) {
       tabKey: child.props.tabKey ?? `tab-${index}`,
       tabTitle: child.props.tabTitle ?? `Tab ${index + 1}`,
       element: child,
-    }
+      expandable: child.props.expandable ?? false,
+    };
   });
 
   return <div className="tab-panel">
     <div className={'tab-panel-tabs'}>
       <div className={'shim'} style={{width: shimWidth + 'px'}}></div>
-      { childSpecs.map((spec) => {
-        return <div key={spec.tabKey} className={'tab-panel-tab' + (spec.tabKey === activeTabKey ? ' active' : '')} onClick={() => {props.onClickTab?.(spec.tabKey);}}>
-          {spec.tabTitle}
-        </div>
+      {childSpecs.map((spec) => {
+        const isActive = spec.tabKey === activeTabKey;
+        return <div key={spec.tabKey} className={'tab-panel-tab' + (isActive ? ' active' : '')}>
+          <span className={'tab-title'} onClick={() => {
+            props.onClickTab?.(spec.tabKey);
+          }}>
+            {spec.tabTitle}
+          </span>
+          { spec.expandable && isActive && <ArrowsAngleExpand onClick={() => props.onClickExpand?.(spec.tabKey)}/> }
+        </div>;
       })}
     </div>
     <div className={'tab-panel-content'}>
-      { childSpecs.map((spec) => {
-        return <div key={spec.tabKey} className={'tab-panel-content-item' + (spec.tabKey === activeTabKey ? ' active' : '')}>
+      {childSpecs.map((spec) => {
+        return <div key={spec.tabKey}
+                    className={'tab-panel-content-item' + (spec.tabKey === activeTabKey ? ' active' : '')}>
           {spec.element}
-        </div>
+        </div>;
       })}
     </div>
-  </div>
-
-
-
-
+  </div>;
 
 
 }

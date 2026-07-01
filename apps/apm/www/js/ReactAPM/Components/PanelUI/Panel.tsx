@@ -10,6 +10,7 @@ interface PanelProps {
   className?: string;
   style?: CSSProperties;
   children?: ReactNode;
+  expandable?: boolean;
 }
 
 /**

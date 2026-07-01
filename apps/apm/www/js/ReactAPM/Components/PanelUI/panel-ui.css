@@ -26,6 +26,10 @@ div.tab-panel {
     border-top-left-radius: 0.25rem;
     border-top-right-radius: 0.25rem;
     margin-bottom: -1px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-direction: row;
 
     &.active {
         border: solid 1px;

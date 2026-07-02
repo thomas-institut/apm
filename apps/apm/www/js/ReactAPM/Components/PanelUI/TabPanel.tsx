@@ -1,28 +1,22 @@
-import {Children, CSSProperties, isValidElement, ReactElement, useState} from "react";
-import Panel from "@/ReactAPM/Components/PanelUI/Panel";
+import {Children, isValidElement, ReactElement, useState} from "react";
 
 import './panel-ui.css';
 import {ArrowsAngleExpand} from "react-bootstrap-icons";
 import {CloseButton} from "react-bootstrap";
 
 
-interface TabPanelChildProps {
+export interface TabbableElementProps {
   tabKey?: string;
   tabTitle?: string;
   expandable?: boolean;
   closable?: boolean;
 }
 
+type TabbableElement = ReactElement<TabbableElementProps>;
 
-interface TabPanelChildSpec extends Required<TabPanelChildProps> {
-  element: TabPanelChild;
+interface TabPanelChildSpec extends Required<TabbableElementProps> {
+  element: TabbableElement;
 }
-
-
-type TabPanelChild = ReactElement<TabPanelChildProps, typeof Panel>;
-
-
-const ValidTypes = [Panel];
 
 interface TabPanelProps {
   /**
@@ -32,25 +26,22 @@ interface TabPanelProps {
   onClickTab?: (tabKey: string) => void;
   onClickExpand?: (tabKey: string) => void;
   onClickClose?: (tabKey: string) => void;
-  children: TabPanelChild | TabPanelChild[];
+  children: TabbableElement | TabbableElement[];
   shimWidth?: number;
-  style?: CSSProperties;
 }
 
 export default function TabPanel(props: TabPanelProps) {
 
-  const children = Children.toArray(props.children) as TabPanelChild[];
+  const children = Children.toArray(props.children) as TabbableElement[];
   const activeTabKey = props.activeTabKey ?? children[0].props.tabKey ?? `tab-0`;
   const shimWidth = props.shimWidth ?? 3;
   const [hoveredTabKey, setHoveredTabKey] = useState<string | null>(null);
 
-  const childSpecs: TabPanelChildSpec[] = children.map((child, index) => {
+  const childrenSpecs: TabPanelChildSpec[] = children.map((child, index) => {
     if (!isValidElement(child)) {
-      throw new Error('TabPanel children must be valid React elements');
+      throw new Error(`TabPanel children must be valid React elements, child ${index} is not`);
     }
-    if (!ValidTypes.includes(child.type)) {
-      throw new Error(`TabPanel children must be Panel, got ${child.type}`);
-    }
+
     return {
       tabKey: child.props.tabKey ?? `tab-${index}`,
       tabTitle: child.props.tabTitle ?? `Tab ${index + 1}`,
@@ -62,8 +53,8 @@ export default function TabPanel(props: TabPanelProps) {
 
   return <div className="tab-panel">
     <div className={'tab-panel-tabs'}>
-      <div className={'shim'} style={{width: shimWidth + 'px'}}></div>
-      {childSpecs.map((spec) => {
+      {shimWidth !== 0 && <div className={'shim'} style={{width: shimWidth + 'px'}}></div>}
+      {childrenSpecs.map((spec) => {
         const isActive = spec.tabKey === activeTabKey;
         return <div
           key={spec.tabKey}
@@ -84,7 +75,7 @@ export default function TabPanel(props: TabPanelProps) {
       })}
     </div>
     <div className={'tab-panel-content'}>
-      {childSpecs.map((spec) => {
+      {childrenSpecs.map((spec) => {
         return <div key={spec.tabKey}
                     className={'tab-panel-content-item' + (spec.tabKey === activeTabKey ? ' active' : '')}>
           {spec.element}
@@ -92,6 +83,4 @@ export default function TabPanel(props: TabPanelProps) {
       })}
     </div>
   </div>;
-
-
 }

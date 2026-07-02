@@ -18,10 +18,10 @@ interface PanelProps {
  * A panel that can be used to display information.
  *
  * The panel can be used as a tab in a TabPanel or on its own with a parent
- * that set its height.
+ * that sets its height.
  *
  * If the first child is a Toolbar, only another child is allowed. The Toolbar will be displayed
- * at the top and the second child will be displayed below it as panel content. Use PanelContent to avoid
+ * at the top, and the second child will be displayed below it as panel content. Use PanelContent to avoid
  * having to wrap the content in a div.
  *
  * Otherwise, all children will be displayed in a scrollable area.

@@ -1,7 +1,8 @@
 import {MceDataInterface} from "@/MceData/MceDataInterface";
+import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 
 
-interface SiglaGroupsPanelProps {
+interface SiglaGroupsPanelProps extends TabbableElementProps {
   mceData: MceDataInterface
 }
 

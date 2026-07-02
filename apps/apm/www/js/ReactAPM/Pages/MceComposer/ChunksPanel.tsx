@@ -6,9 +6,10 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import MultiToggle, {MultiToggleOptionSpec} from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import {capitalizeFirstLetter} from "@/toolbox/Util";
+import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 
 
-interface EditionPanelProps {
+interface ChunksPanelProps extends TabbableElementProps {
   mceData: MceDataInterface;
   deleteChunk?: (chunkIndex: number) => void;
   updateChunk?: (chunkIndex: number) => void;
@@ -44,7 +45,7 @@ export default function ChunksPanel({
                                       updateChunk,
                                       moveChunk,
                                       setChunkBreak
-                                    }: EditionPanelProps) {
+                                    }: ChunksPanelProps) {
 
   const tableCols: ChunkTableColSpec[] = [
     {title: '', gridTemplate: 'max-content'},

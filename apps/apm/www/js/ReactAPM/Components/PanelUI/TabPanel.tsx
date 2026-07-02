@@ -12,7 +12,7 @@ export interface TabbableElementProps {
   closable?: boolean;
 }
 
-type TabbableElement = ReactElement<TabbableElementProps>;
+export type TabbableElement = ReactElement<TabbableElementProps>;
 
 interface TabPanelChildSpec extends Required<TabbableElementProps> {
   element: TabbableElement;

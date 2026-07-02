@@ -1,5 +1,5 @@
 import {useParams} from "react-router";
-import {JSX, useContext, useEffect, useState} from "react";
+import {cloneElement, JSX, useContext, useEffect, useState} from "react";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
@@ -42,6 +42,7 @@ interface PanelSpec {
   expandable?: boolean;
   closable?: boolean;
   content: JSX.Element;
+  tabbable?: boolean;
 }
 
 export default function MceComposer() {
@@ -235,19 +236,22 @@ export default function MceComposer() {
                             setChunkBreak={(chunkIndex, breakAfter) => {
                               setChunkBreak(chunkIndex, breakAfter);
                             }}
-      />
+      />,
+      tabbable: true,
     },
     {
       panel: 'one',
       key: 'sigla',
       title: 'Witnesses and Sigla',
-      content: <SiglaPanel mceData={mceData}/>
+      content: <SiglaPanel mceData={mceData}/>,
+      tabbable: true,
     },
     {
       panel: 'one',
       key: 'siglaGroups',
       title: 'Sigla Groups',
-      content: <SiglaGroupsPanel mceData={mceData}/>
+      content: <SiglaGroupsPanel mceData={mceData}/>,
+      tabbable: true,
     },
     {
       panel: 'one',
@@ -262,12 +266,13 @@ export default function MceComposer() {
       title: 'Preview',
       expandable: true,
       className: 'preview-panel',
-      content: <>
+      content: <Panel>
         <Toolbar className={'preview-toolbar padding-1'}>Preview Toolbar</Toolbar>
         <PanelContent className={'padding-1'}>
           <LoremIpsumText paragraphs={20}/>
         </PanelContent>
-      </>
+      </Panel>,
+      tabbable: true,
     },
     {
       panel: 'two',
@@ -331,12 +336,35 @@ export default function MceComposer() {
             <SaveIcon changes={changes}/>
           </div>
         </div>
-        <Panel className={expandedTabSpec.className ?? ''}>
-          {expandedTabSpec.content}
-        </Panel>
+        {  expandedTabSpec.tabbable && cloneElement(expandedTabSpec.content, { className: expandedTabSpec.className ?? '' })   }
+        { !expandedTabSpec.tabbable && <Panel className={expandedTabSpec.className ?? ''}>{expandedTabSpec.content}</Panel> }
       </div>
     );
   }
+
+  const panelsFromSpecs = (panelSpecs: PanelSpec[], panel: 'one' | 'two') => {
+    return panelSpecs.filter(panelSpec => panelSpec.panel === panel)
+      .map((panelSpec) => {
+        if (panelSpec.tabbable) {
+          return cloneElement(panelSpec.content, {
+            tabKey: panelSpec.key,
+            tabTitle: panelSpec.title,
+            className: panelSpec.className ?? '',
+            closable: panelSpec.closable ?? false,
+            expandable: panelSpec.expandable ?? false,
+          })
+        } else {
+          return <Panel tabKey={panelSpec.key}
+                        className={panelSpec.className ?? ''}
+                        tabTitle={panelSpec.title}
+                        closable={panelSpec.closable ?? false}
+                        expandable={panelSpec.expandable ?? false}>
+            {panelSpec.content}
+          </Panel>
+        }
+
+      });
+  };
 
   return (<div className="mce-composer-container">
     <div className="header">
@@ -358,27 +386,13 @@ export default function MceComposer() {
                 onClickTab={(tabKey) => setActiveTabPanelOne(tabKey)}
                 onClickExpand={handleOnClickTabExpand}
                 shimWidth={shimWidth}>
-        {panelSpecs.filter(panelSpec => panelSpec.panel === 'one')
-          .map((panelSpec) => <Panel tabKey={panelSpec.key}
-                                     className={panelSpec.className ?? ''}
-                                     tabTitle={panelSpec.title}
-                                     closable={panelSpec.closable ?? false}
-                                     expandable={panelSpec.expandable ?? false}>
-            {panelSpec.content}
-          </Panel>)}
+        {panelsFromSpecs(panelSpecs, 'one')}
       </TabPanel>
       <TabPanel activeTabKey={activeTabPanelTwo}
                 onClickTab={(tabKey) => setActiveTabPanelTwo(tabKey)}
                 onClickExpand={handleOnClickTabExpand}
                 shimWidth={shimWidth}>
-        {panelSpecs.filter(panelSpec => panelSpec.panel === 'two')
-          .map((panelSpec) => <Panel tabKey={panelSpec.key}
-                                     tabTitle={panelSpec.title}
-                                     className={panelSpec.className ?? ''}
-                                     closable={panelSpec.closable ?? false}
-                                     expandable={panelSpec.expandable ?? false}>
-            {panelSpec.content}
-          </Panel>)}
+        {panelsFromSpecs(panelSpecs, 'two')}
       </TabPanel>
     </SplitPanels>
   </div>);

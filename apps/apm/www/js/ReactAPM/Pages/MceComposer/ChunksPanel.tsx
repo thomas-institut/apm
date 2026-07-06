@@ -73,7 +73,7 @@ export default function ChunksPanel({
   };
 
   const getChunkTableHeader = () => {
-    return <Fragment>
+    return <Fragment key={'chunk-table-header'}>
       {tableCols.map((col) => <div className={'chunk-table-header'}>{col.title}</div>)}
     </Fragment>;
   };

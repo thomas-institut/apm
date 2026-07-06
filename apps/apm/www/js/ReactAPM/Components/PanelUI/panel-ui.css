@@ -56,6 +56,11 @@
         border: solid 1px;
         border-color: var(--tab-border-color) var(--tab-border-color) #fff;
         background-color: var(--active-tab-bg-color);
+        cursor: default;
+    }
+
+    .tab-button {
+        cursor: pointer;
     }
 }
 

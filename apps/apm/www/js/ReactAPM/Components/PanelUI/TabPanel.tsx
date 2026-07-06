@@ -6,12 +6,29 @@ import {CloseButton} from "react-bootstrap";
 
 
 export interface TabbableElementProps {
+  /**
+   * The key of the tab. If not provided, the index of the tab will be used.
+   */
   tabKey?: string;
+  /**
+   * The title of the tab. If not provided, the tab key will be used.
+   */
   tabTitle?: string;
+
   expandable?: boolean;
   closable?: boolean;
 }
 
+/**
+ * A TabbableElement is a ReactElement that can be used as a tab in a TabPanel.
+ *
+ * It can be any ReactElement that can accept TabbableElementProps.
+ *
+ * These props are metadata that describes the tab so that the TabPanel can display the tab correctly.
+ * The element may or may not use these props to alter its appearance or behavior.
+ *
+ * @see TabbableElementProps
+ */
 export type TabbableElement = ReactElement<TabbableElementProps>;
 
 interface TabPanelChildSpec extends Required<TabbableElementProps> {
@@ -30,8 +47,19 @@ interface TabPanelProps {
   shimWidth?: number;
 }
 
+/**
+ * A tab panel component that displays a set of tabs and their corresponding content.
+ *
+ * Each child element must be a valid TabbableElement, which is any element that accepts
+ * TabbableElementProps, a set of metadata that describes the tab so that the TabPanel can display the tab
+ * correctly.
+ *
+ * @param props
+ * @constructor
+ * @see TabbableElement
+ * @see TabbableElementProps
+ */
 export default function TabPanel(props: TabPanelProps) {
-
   const children = Children.toArray(props.children) as TabbableElement[];
   const activeTabKey = props.activeTabKey ?? children[0].props.tabKey ?? `tab-0`;
   const shimWidth = props.shimWidth ?? 3;
@@ -68,9 +96,9 @@ export default function TabPanel(props: TabPanelProps) {
             {spec.tabTitle}
           </span>
           {spec.expandable && isActive && hoveredTabKey === spec.tabKey &&
-            <ArrowsAngleExpand onClick={() => props.onClickExpand?.(spec.tabKey)} title={'Click to expand this tab'}/>}
+            <ArrowsAngleExpand className={'tab-button'} onClick={() => props.onClickExpand?.(spec.tabKey)} title={'Click to expand this tab'}/>}
           {spec.closable && isActive && hoveredTabKey === spec.tabKey &&
-            <CloseButton onClick={() => props.onClickClose?.(spec.tabKey)} title={'Click to close this tab'}/>}
+            <CloseButton className={'tab-button'} onClick={() => props.onClickClose?.(spec.tabKey)} title={'Click to close this tab'}/>}
         </div>;
       })}
     </div>

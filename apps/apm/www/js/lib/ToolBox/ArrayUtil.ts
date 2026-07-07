@@ -31,7 +31,13 @@ export function ArrayUniqueValues<T>(theArray: T[]): T[] {
   return [...new Set(theArray)];
 }
 
-export function swapElements(theArray: any[], index1: number, index2: number): any[] {
+/**
+ * Swaps two elements in the given array in place.
+ * @param theArray
+ * @param index1
+ * @param index2
+ */
+export function swapElements<T>(theArray: T[], index1: number, index2: number): T[] {
   let element1 = theArray[index1];
   theArray[index1] = theArray[index2];
   theArray[index2] = element1;

@@ -1,5 +1,5 @@
 import {useParams} from "react-router";
-import {cloneElement, JSX, useContext, useEffect, useState} from "react";
+import {cloneElement, JSX, useContext, useEffect, useRef, useState} from "react";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
@@ -8,7 +8,6 @@ import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import './mce-composer.css';
 import {ArrowsAngleContract, ChevronRight, LayoutSplit} from "react-bootstrap-icons";
 import {MceData} from '@/MceData/MceData';
-import {useQuery} from "@tanstack/react-query";
 import {AppContext} from "@/ReactAPM/App";
 import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
@@ -19,12 +18,19 @@ import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 import SiglaPanel from "@/ReactAPM/Pages/MceComposer/SiglaPanel";
 import SiglaGroupsPanel from "@/ReactAPM/Pages/MceComposer/SiglaGroupsPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
-import LoremIpsumText from "@/ReactAPM/Components/LoremIpsumText";
-
-
-type MceDataLoadStatus = 'loading' | 'justLoaded' | 'loaded';
+import {Edition} from "@/Edition/Edition";
+import {MceDataEditionGenerator} from "@/MceData/MceDataEditionGenerator";
+import {BasicProfiler} from "@/toolbox/BasicProfiler";
+import MainTextPanel from "@/ReactAPM/Pages/MceComposer/MainTextPanel";
 
 export type CtDataState = 'loading' | 'loaded' | 'error';
+
+type MceComposerStatus =
+  'start'
+  | 'loadingMce'
+  | 'loadingSingleChunks'
+  | 'loaded'
+  | 'error';
 
 export interface CtDataStatus {
   ctDataId: number;
@@ -47,116 +53,168 @@ interface PanelSpec {
 
 export default function MceComposer() {
 
-  const {id} = useParams();
-  const appContext = useContext(AppContext);
-  const paramId = id ?? '';
-  const shimWidth = 5;
-
-  let mceDataId = -1;
-  if (paramId === '') {
-    throw new Error('Invalid MCE ID');
-  }
-  mceDataId = parseInt(paramId);
-  if (isNaN(mceDataId)) {
-    throw new Error('Invalid MCE ID');
-  }
-
-  const getMceData = async (numericalId: number) => {
-    if (numericalId === -1) {
-      return {
-        authorTid: -1,
-        chunks: [],
-        mceData: MceData.createEmpty(),
-        validFrom: '',
-        validUntil: '',
-        versionDescription: '',
-      };
-    }
-    if (isNaN(numericalId)) {
-      throw new Error('Invalid MCE ID');
-    }
-    const resp = await appContext.apiClient.getMceData(numericalId);
-    console.log(`Got MCE data for edition ${numericalId}`, resp);
-    return resp;
-  };
-
-  const mceDataQueryResult = useQuery({
-    queryKey: ['mceData', mceDataId],
-    queryFn: () => getMceData(mceDataId),
-  });
-
-  const [mceDataLoadStatus, setMceDataLoadStatus] = useState<MceDataLoadStatus>('loading');
-  const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
-  const [activeTabPanelOne, setActiveTabPanelOne] = useState('chunks');
-  const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('preview');
-  const [changes, setChanges] = useState<string[]>([]);
+  const [mceComposerStatus, setMceComposerStatus] = useState<MceComposerStatus>('loadingMce');
+  const [errorMsg, setErrorMsg] = useState<string>('');
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
   const [title, setTitle] = useState<string>('Loading...');
   const [lastSavedMceData, setLastSavedMceData] = useState<MceDataInterface | null>(null);
+  const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
+  const [edition, setEdition] = useState<Edition | null>(null);
+
+  const [editionGenerationProgress, setEditionGenerationProgress] = useState<number|null>(null);
+  const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
+  const [activeTabPanelOne, setActiveTabPanelOne] = useState('chunks');
+  const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('mainText');
+  const [changes, setChanges] = useState<string[]>([]);
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
 
+  const singleChunkEditionCache = useRef<Record<number, Edition>>([])
 
-  useEffect(() => {
-    if (mceDataLoadStatus === 'loaded') {
-      // find first ctData not loaded
-      const firstCtDataNotLoaded = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataState === 'loading');
-      if (!firstCtDataNotLoaded) {
-        return;
+  const {id} = useParams();
+  const appContext = useContext(AppContext);
+  let mceDataId = -1;
+
+  if (id === undefined) {
+    setMceComposerStatus('error');
+    setErrorMsg('MCE ID is undefined');
+  } else {
+    if (id !== 'new') {
+      // should be a valid numerical id
+      if (isNaN(parseInt(id))) {
+        console.log('Invalid MCE ID: NaN');
+        setMceComposerStatus('error');
+        setErrorMsg('Invalid MCE ID');
+      } else {
+        mceDataId = parseInt(id);
+        if (mceDataId <= 0) {
+          console.log('Invalid MCE ID: negative or zero');
+          setMceComposerStatus('error');
+          setErrorMsg('Invalid MCE ID');
+        }
       }
-      const ctDataId = firstCtDataNotLoaded.ctDataId;
-      const ctDataStatusIndex = ctDataStatusArray.findIndex((ctDataStatus) => ctDataStatus.ctDataId === ctDataId);
-      console.log(`Loading CtData for chunk ${ctDataStatusIndex}, table ${ctDataId}`);
-      const ctDataStatus = ctDataStatusArray[ctDataStatusIndex];
-      appContext.apiClient.getSingleChunkData(ctDataId, ctDataStatus.chunkInMceData.version).then((apiResponse) => {
-        console.log(`Got data for chunk ${ctDataStatusIndex}, table ${ctDataId}`, apiResponse);
-        setCtDataStatusArray((prevCtDataStatusArray) => {
-          const newCtDataStatusArray = [...prevCtDataStatusArray];
-          newCtDataStatusArray[ctDataStatusIndex] = {
-            ...newCtDataStatusArray[ctDataStatusIndex],
-            apiData: apiResponse,
-            ctDataState: 'loaded',
-          };
-          return newCtDataStatusArray;
+    }
+  }
+
+  if (mceComposerStatus === 'error') {
+    return (
+      <div>
+        <h2>Error</h2>
+        <p className={'text-danger'}>{errorMsg}</p>
+      </div>
+    );
+  }
+
+  const shimWidth = 5;
+
+
+  /**
+   * Data loading and processing
+   */
+  useEffect(() => {
+    switch (mceComposerStatus) {
+      case 'start':
+        setMceComposerStatus('loadingMce');
+        break;
+
+      case 'loadingMce':
+        if (mceDataId === -1) {
+          // new edition, no Mce to load from server
+          // no need to set MceData, since by default mceData is an empty edition
+          setMceComposerStatus('loadingSingleChunks');
+        } else {
+          appContext.apiClient.getMceData(mceDataId).then((resp) => {
+            const mceTitle = resp.mceData.title;
+            setTitle(mceTitle);
+            document.title = `MCE: ${mceTitle}`;
+            setLastSavedMceData(deepCopy(resp.mceData));
+            setMceData(resp.mceData);
+            setCtDataStatusArray(resp.mceData.chunks.map((chunk) => (
+              {
+                ctDataId: chunk.chunkEditionTableId,
+                chunkInMceData: chunk,
+                apiData: null,
+                ctDataState: 'loading' as CtDataState,
+                errorMsg: ''
+              }
+            )));
+            setMceComposerStatus('loadingSingleChunks');
+          }).catch((error) => {
+            setMceComposerStatus('error');
+            setErrorMsg(`Failed to load MCE data from server: ${error.message}`);
+          });
+        }
+        break;
+
+      case 'loadingSingleChunks':
+        const firstCtDataNotLoaded = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataState === 'loading');
+        if (!firstCtDataNotLoaded) {
+          if (ctDataStatusArray.every((ctDataStatus) => ctDataStatus.ctDataState === 'loaded')) {
+            setMceComposerStatus('loaded');
+          } else {
+            console.warn(`All chunks are not loaded yet, but can't find a chunk to load`);
+            setMceComposerStatus('error');
+            setErrorMsg(`Inconsistent state reached, please report bug`);
+          }
+          break;
+        }
+        const ctDataId = firstCtDataNotLoaded.ctDataId;
+        const ctDataStatusIndex = ctDataStatusArray.findIndex((ctDataStatus) => ctDataStatus.ctDataId === ctDataId);
+        console.log(`Loading CtData for chunk ${ctDataStatusIndex}, table ${ctDataId}`);
+        const ctDataStatus = ctDataStatusArray[ctDataStatusIndex];
+        appContext.apiClient.getSingleChunkData(ctDataId, ctDataStatus.chunkInMceData.version).then((apiResponse) => {
+          console.log(`Got data for chunk ${ctDataStatusIndex}, table ${ctDataId}`, apiResponse);
+          setCtDataStatusArray((prevCtDataStatusArray) => {
+            const newCtDataStatusArray = [...prevCtDataStatusArray];
+            newCtDataStatusArray[ctDataStatusIndex] = {
+              ...newCtDataStatusArray[ctDataStatusIndex],
+              apiData: apiResponse,
+              ctDataState: 'loaded',
+            };
+            return newCtDataStatusArray;
+          });
         });
-      });
     }
-  }, [mceDataLoadStatus, ctDataStatusArray]);
+  }, [mceComposerStatus, ctDataStatusArray]);
 
-  useEffect(() => {
-    if (mceDataQueryResult.data) {
-      const mceTitle = mceDataQueryResult.data.mceData.title;
-      setTitle(mceTitle);
-      document.title = `MCE: ${mceTitle}`;
-      setLastSavedMceData(deepCopy(mceDataQueryResult.data.mceData));
+  useEffect( () => {
+    if (mceComposerStatus !== 'loaded') {
+      return;
     }
-  }, [mceDataQueryResult.data]);
+    if (edition !== null) {
+      return;
+    }
 
-  if (mceDataQueryResult.status === 'pending') {
-    return <div>Loading edition {id}...</div>;
-  }
+    const profiler = new BasicProfiler('RegenerateEdition', true);
 
-  if (mceDataQueryResult.status === 'error') {
-    return <div>Error loading edition {id}</div>;
-  }
-
-  if (mceDataLoadStatus === 'loading') {
-    setMceDataLoadStatus('justLoaded');
-  }
-
-  const apiMceData = mceDataQueryResult.data!;
-  const mceData = apiMceData.mceData;
-
-  if (mceDataLoadStatus === 'justLoaded') {
-    setCtDataStatusArray(mceData.chunks.map((chunk) => (
-      {
-        ctDataId: chunk.chunkEditionTableId,
-        chunkInMceData: chunk,
-        apiData: null,
-        ctDataState: 'loading' as CtDataState,
-        errorMsg: ''
+    const generator = new MceDataEditionGenerator({
+      ctDataGetter: async (mceData: MceDataInterface, chunkIndex: number) => {
+        const chunk = mceData.chunks[chunkIndex];
+        const data = await appContext.apiClient.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
+        return data.ctData;
+      },
+      singleChunkEditionGetter: async (_mceData: MceDataInterface, chunkIndex: number) => {
+        return singleChunkEditionCache.current[chunkIndex] ?? null;
+      },
+      singleChunkEditionSaver: async (_mceData: MceDataInterface, chunkIndex: number, edition) => {
+        singleChunkEditionCache.current[chunkIndex] = new Edition().setFromInterface(edition);
+      },
+      onProgressUpdate: (step, numSteps) => {
+        setEditionGenerationProgress(step / numSteps);
+        return Promise.resolve();
       }
-    )));
-    setMceDataLoadStatus('loaded');
+    });
+
+    generator.generate( mceData, mceDataId).then( (generatedEdition) => {
+      profiler.stop();
+      setEdition(new Edition().setFromInterface(generatedEdition));
+      setEditionGenerationProgress(null);
+    }).catch( (e) => {
+      console.error(e);
+    });
+  }, [mceComposerStatus, edition])
+
+  if (mceComposerStatus === 'loadingMce') {
+    return <div>Loading edition {mceDataId}...</div>;
   }
 
   const checkForChanges = () => {
@@ -222,7 +280,8 @@ export default function MceComposer() {
       key: 'chunks',
       title: 'Chunks',
       expandable: true,
-      content: <ChunksPanel mceData={mceData}
+      content: <ChunksPanel chunks={mceData.chunks}
+                            chunkOrder={mceData.chunkOrder ?? MceData.getDefaultChunkOrder(mceData)}
                             ctDataStatusArray={ctDataStatusArray}
                             moveChunk={(chunkIndex, direction) => {
                               moveChunk(chunkIndex, direction);
@@ -262,6 +321,14 @@ export default function MceComposer() {
     },
     {
       panel: 'two',
+      key: 'mainText',
+      title: 'Edition Text',
+      expandable: true,
+      content: <MainTextPanel edition={edition} generationProgress={editionGenerationProgress}/>,
+      tabbable: true,
+    },
+    {
+      panel: 'two',
       key: 'preview',
       title: 'Preview',
       expandable: true,
@@ -269,7 +336,7 @@ export default function MceComposer() {
       content: <Panel>
         <Toolbar className={'preview-toolbar padding-1'}>Preview Toolbar</Toolbar>
         <PanelContent className={'padding-1'}>
-          <LoremIpsumText paragraphs={20}/>
+          Preview will be here...
         </PanelContent>
       </Panel>,
       tabbable: true,
@@ -309,6 +376,18 @@ export default function MceComposer() {
                                    }}/>;
   }
 
+  let editionGenerationProgressBar: JSX.Element | null = null;
+
+  if (editionGenerationProgress !== null) {
+    editionGenerationProgressBar = <ProgressBar currentStep={editionGenerationProgress}
+                                                width={200}
+                                                className={'edition-generation-progress-bar'}
+                                                numSteps={1}
+                                                getLabel={(s, _ns) => {
+                                                  return `Generating edition... ${Math.round(s * 100)}%`;
+                                                }}/>;
+  }
+
 
   let expandedTabSpec: PanelSpec | null = null;
 
@@ -318,6 +397,7 @@ export default function MceComposer() {
 
   const notificationsDiv = <div className={'notifications'}>
     {!allCtDataStatusLoaded && loadingProgress}
+    {editionGenerationProgressBar}
   </div>;
 
   if (expandedTabSpec !== null) {
@@ -336,8 +416,9 @@ export default function MceComposer() {
             <SaveIcon changes={changes}/>
           </div>
         </div>
-        {  expandedTabSpec.tabbable && cloneElement(expandedTabSpec.content, { className: expandedTabSpec.className ?? '' })   }
-        { !expandedTabSpec.tabbable && <Panel className={expandedTabSpec.className ?? ''}>{expandedTabSpec.content}</Panel> }
+        {expandedTabSpec.tabbable && cloneElement(expandedTabSpec.content, {className: expandedTabSpec.className ?? ''})}
+        {!expandedTabSpec.tabbable &&
+          <Panel className={expandedTabSpec.className ?? ''}>{expandedTabSpec.content}</Panel>}
       </div>
     );
   }
@@ -352,7 +433,7 @@ export default function MceComposer() {
             className: panelSpec.className ?? '',
             closable: panelSpec.closable ?? false,
             expandable: panelSpec.expandable ?? false,
-          })
+          });
         } else {
           return <Panel tabKey={panelSpec.key}
                         className={panelSpec.className ?? ''}
@@ -360,7 +441,7 @@ export default function MceComposer() {
                         closable={panelSpec.closable ?? false}
                         expandable={panelSpec.expandable ?? false}>
             {panelSpec.content}
-          </Panel>
+          </Panel>;
         }
 
       });

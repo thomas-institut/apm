@@ -1,4 +1,4 @@
-import {ChunkInMceData, MceDataInterface, ValidChunkBreaks} from "@/MceData/MceDataInterface";
+import {ChunkInMceData, ValidChunkBreaks} from "@/MceData/MceDataInterface";
 import {Fragment} from "react";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import {ArrowCounterclockwise, ArrowDown, ArrowUp, Trash} from "react-bootstrap-icons";
@@ -10,7 +10,8 @@ import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 
 
 interface ChunksPanelProps extends TabbableElementProps {
-  mceData: MceDataInterface;
+  chunks: ChunkInMceData[];
+  chunkOrder: number[];
   deleteChunk?: (chunkIndex: number) => void;
   updateChunk?: (chunkIndex: number) => void;
   moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => void;
@@ -39,7 +40,8 @@ interface ChunkTableColSpec {
 }
 
 export default function ChunksPanel({
-                                      mceData,
+                                      chunks,
+                                      chunkOrder,
                                       ctDataStatusArray,
                                       deleteChunk,
                                       updateChunk,
@@ -57,7 +59,7 @@ export default function ChunksPanel({
     {title: '', gridTemplate: 'max-content'},
   ];
 
-  if (mceData.chunks.length !== ctDataStatusArray.length) {
+  if (chunks.length !== ctDataStatusArray.length) {
     return <div className={'text-danger'}>Chunks and CtDataStatusArray length mismatch!</div>;
   }
 
@@ -65,7 +67,7 @@ export default function ChunksPanel({
   if (numChunks === 0) {
     return <div>No chunks, add some in the "Add Chunks panel"</div>;
   }
-  const lastChunkIndex = mceData.chunks.length - 1;
+  const lastChunkIndex = chunks.length - 1;
 
   const tableStyle = {
     display: 'grid',
@@ -127,7 +129,7 @@ export default function ChunksPanel({
   };
 
   const handleSetChunkBreak = (chunkIndex: number, breakAfter: string) => {
-    setChunkBreak && setChunkBreak(chunkIndex, breakAfter === 'none' ? '': breakAfter);
+    setChunkBreak && setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
   };
 
   const chunkBreakMultiToggleOptionSpecs: MultiToggleOptionSpec[] = [
@@ -148,11 +150,11 @@ export default function ChunksPanel({
 
   const getChunkTableRowElement = (row: ChunkTableRow, index: number) => {
 
-    const arrowUpClasses = [ 'control-button'];
+    const arrowUpClasses = ['control-button'];
     if (!row.moveUpArrow) {
       arrowUpClasses.push('disabled');
     }
-    const arrowDownClasses = [ 'control-button'];
+    const arrowDownClasses = ['control-button'];
     if (!row.moveDownArrow) {
       arrowDownClasses.push('disabled');
     }
@@ -194,7 +196,8 @@ export default function ChunksPanel({
                   label={row.tableId?.toString() ?? ''}/>
       <div>{row.title}</div>
       <div>{row.version === null ? '' : ApmFormats.time(row.version)}</div>
-      <MultiToggle options={chunkBreakMultiToggleOptionSpecs} onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
+      <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
+                   onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
                    selected={row.breakAfter ?? 'none'}/>
       {statusDiv}
     </Fragment>;
@@ -203,7 +206,7 @@ export default function ChunksPanel({
   return (<div className={'chunks-panel'}>
     <div className={'chunk-table'} style={tableStyle}>
       {getChunkTableHeader()}
-      {mceData.chunks
+      {chunkOrder.map((chunkOrder) => chunks[chunkOrder])
         .map((chunk, index) => getChunkTableRow(chunk, index))
         .map((row, index) => getChunkTableRowElement(row, index))}
     </div>

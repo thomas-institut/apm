@@ -22,6 +22,7 @@ import {uniq} from "../lib/ToolBox/ArrayUtil.js";
 export type CtDataGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<CtDataInterface>;
 export type SingleChunkEditionSaver = (mceData: MceDataInterface, chunkIndex: number, edition: EditionInterface) => Promise<void>;
 export type SingleChunkEditionGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<EditionInterface|null>;
+export type OnProgressUpdatHandler = (step: number, numSteps: number) => Promise<void> | null;
 
 export interface MceDataEditionGeneratorOptions {
   /**
@@ -40,14 +41,17 @@ export interface MceDataEditionGeneratorOptions {
   /**
    * Logger for logging information and errors during edition generation.
    */
-  logger?: LoggerInterface
+  logger?: LoggerInterface,
+
+  onProgressUpdate?: OnProgressUpdatHandler;
 }
 
 export class MceDataEditionGenerator {
-  private ctDataGetter: CtDataGetter;
+  private readonly ctDataGetter: CtDataGetter;
   private logger: LoggerInterface;
-  private singleChunkEditionSaver: SingleChunkEditionSaver;
-  private singleChunkEditionGetter: SingleChunkEditionGetter;
+  private readonly singleChunkEditionSaver: SingleChunkEditionSaver;
+  private readonly singleChunkEditionGetter: SingleChunkEditionGetter;
+  private readonly onProgressUpdate: OnProgressUpdatHandler | null;
 
   constructor(options: MceDataEditionGeneratorOptions) {
    this.ctDataGetter = options.ctDataGetter;
@@ -56,6 +60,8 @@ export class MceDataEditionGenerator {
      (async (_mceData: MceDataInterface, _chunkIndex: number, _edition: EditionInterface) => {});
    this.singleChunkEditionGetter = options.singleChunkEditionGetter ?? 
      (async (_mceData: MceDataInterface, _chunkIndex: number) => null);
+
+   this.onProgressUpdate = options.onProgressUpdate ?? null;
   }
 
   async generate(mceData: MceDataInterface, editionId: number) : Promise<EditionInterface> {
@@ -71,7 +77,7 @@ export class MceDataEditionGenerator {
     edition.witnesses = mceData.witnesses.map((w, i) => {
       return (new EditionWitnessInfo()).setSiglum(mceData.sigla[i]).setTitle(w.title);
     });
-    // merge main text
+
     let currentMainTextIndexShift = 0;
     let nextChunkShift = 0;
     let currentFoliationChanges: FoliationChangeInfoInterface[] = [];
@@ -79,7 +85,10 @@ export class MceDataEditionGenerator {
       // console.warn(`No chunk order in MceData`);
       mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
     }
+
+    // merge main text
     for (let chunkOrderIndex = 0; chunkOrderIndex < mceData.chunkOrder.length; chunkOrderIndex++) {
+      this.onProgressUpdate?.(chunkOrderIndex, numChunks);
       let chunkIndex = mceData.chunkOrder[chunkOrderIndex];
       const cachedEdition = await this.singleChunkEditionGetter(mceData, chunkIndex);
       const singleChunkEdition = cachedEdition !== null ? cachedEdition :
@@ -211,7 +220,7 @@ export class MceDataEditionGenerator {
   }
 
   /**
-   * Returns the CtData's includeInAutoFoliation array that is needed to include the witnesses
+   * Returns the CtData's includeInAutoFoliation array needed to include the witnesses
    * given in the MceData
    * @return {number[]}
    * @param {MceDataInterface}mceData
@@ -270,3 +279,4 @@ export class MceDataEditionGenerator {
 
 
 }
+

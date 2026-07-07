@@ -35,4 +35,12 @@ DO NOT release a new version if any of the builds or any of the tests fails.
 
 ### 3. Create distribution packages
 
-* Run `create-dist` scripts for the different apps. 
+* Run `create-dist` scripts for the different apps:
+
+```bash
+./scripts/ape-backend-create-dist X.Y.Z
+
+set -a; source <env file>; set +a; ./scripts/ape-frontend-create-dist X.Y.Z <inst path>
+
+./script/apm-create-dist X.Y.Z <inst path>
+```

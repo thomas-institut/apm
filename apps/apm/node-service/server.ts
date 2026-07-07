@@ -12,7 +12,7 @@ import {formatDuration} from "#src/util/formatDuration.js";
 import {GenerateEditionPublicationFromMceData} from "#src/Actions/GenerateEditionPublication/GenerateEditionPublicationFromMceData.js";
 import {getDurationInMs} from "#src/util/getDurationInMs.js";
 
-const VERSION = '1.3.3c';
+const VERSION = '1.3.4';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;

@@ -520,7 +520,7 @@ export class TagEditor {
    * @param {string}tag
    * @return {{chipBackground: string, chipBorder: string, chipText: string, chipActiveBackground: string, chipActiveBorder: string, chipActiveText: string, highlightBackground: string}}
    */
-  private getTagColorPalette(tag: string): { chipBackground: string; chipBorder: string; chipText: string; chipActiveBackground: string; chipActiveBorder: string; chipActiveText: string; highlightBackground: string; } {
+   getTagColorPalette(tag: string): { chipBackground: string; chipBorder: string; chipText: string; chipActiveBackground: string; chipActiveBorder: string; chipActiveText: string; highlightBackground: string; } {
     const hash = this.hashStringToHue(tag)
     const hue = (hash % 240)
     const saturation = 80 + ((hash >>> 3) % 8)

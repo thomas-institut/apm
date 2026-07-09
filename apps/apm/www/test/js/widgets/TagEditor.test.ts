@@ -27,7 +27,7 @@ describe('TagEditor', () => {
 
     new TagEditor({
       containerSelector: '#root',
-      idPrefix: 'tag-test',
+      containerIdPrefix: 'tag-test',
       tags: ['beta', 'alpha'],
       mode: 'show',
       showInput: false,
@@ -81,7 +81,7 @@ describe('TagEditor', () => {
   it('renders the add tag field after existing tags in edit mode', async () => {
     new TagEditor({
       containerSelector: '#root',
-      idPrefix: 'tag-edit',
+      containerIdPrefix: 'tag-edit',
       tags: ['beta', 'alpha'],
       mode: 'edit',
       getTagHints: async () => [],
@@ -99,7 +99,7 @@ describe('TagEditor', () => {
   it('applies the individual palette when adding a tag in edit mode', async () => {
     new TagEditor({
       containerSelector: '#root',
-      idPrefix: 'tag-edit',
+      containerIdPrefix: 'tag-edit',
       tags: [],
       mode: 'edit',
       getTagHints: async () => [],

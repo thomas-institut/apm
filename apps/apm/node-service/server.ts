@@ -12,7 +12,7 @@ import {formatDuration} from "#src/util/formatDuration.js";
 import {GenerateEditionPublicationFromMceData} from "#src/Actions/GenerateEditionPublication/GenerateEditionPublicationFromMceData.js";
 import {getDurationInMs} from "#src/util/getDurationInMs.js";
 
-const VERSION = '1.3.3';
+const VERSION = '1.3.5';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;
@@ -93,7 +93,10 @@ nodeServiceServer.post('/api/typeset', async (req, res) => {
     return;
   }
   const typesettingEnd = hrtime.bigint();
-  logger.info(`${inputId}: Typesetting done in ${getDurationInMs(typesettingEnd, callStart)} ms`);
+  const typesetterSignature = outputData.output?.metadata?.typesetter ?? 'unknown';
+  const typesetterVersion = outputData.output?.metadata?.typesetterVersion ?? 'unknown';
+
+  logger.info(`${inputId}: Typesetting done in ${getDurationInMs(typesettingEnd, callStart)} ms. Typesetter: '${typesetterSignature}', version: '${typesetterVersion}'`);
 
   if (outputType === 'json') {
     logger.info(`${inputId}: Sending JSON out`);

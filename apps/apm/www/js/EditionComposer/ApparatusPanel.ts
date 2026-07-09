@@ -769,7 +769,7 @@ export class ApparatusPanel extends PanelWithToolbar {
 
   }
 
-  private onApparatusTagHover(tag: string, active: boolean, event: JQuery.MouseEnterEvent<HTMLElement> | JQuery.MouseLeaveEvent<HTMLElement>) {
+  private onApparatusTagHover(tag: string, active: boolean, event: MouseEvent) {
     event.preventDefault();
     event.stopPropagation();
     const entriesWithTag = this.getEntriesWithTag(tag);
@@ -778,7 +778,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     });
   }
 
-  private onApparatusTagClick(tag: string, active: boolean, event: JQuery.ClickEvent<HTMLElement>) {
+  private onApparatusTagClick(tag: string, active: boolean, event: MouseEvent) {
 
     // prevent removal of lemma selection
     event.preventDefault();

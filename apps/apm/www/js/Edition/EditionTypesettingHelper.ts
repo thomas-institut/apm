@@ -225,11 +225,11 @@ export class EditionTypesettingHelper {
         paragraphStyle = 'normal';
       }
       let paragraphStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle(paragraphStyle);
-      const spaceBefore = Dimension.getPixelValue(paragraphStyleDef.spaceBefore, 12);
+      const spaceBefore = Dimension.getPixelValue(paragraphStyleDef.spaceBefore ?? null, 12);
       if (spaceBefore != 0) {
         verticalItems.push((new Glue(VerticalItemDirection)).setHeight(spaceBefore));
       }
-      const indent = Dimension.getPixelValue(paragraphStyleDef.indent, 12);
+      const indent = Dimension.getPixelValue(paragraphStyleDef.indent ?? null, 12);
       if (indent !== 0) {
         paragraphToTypeset.pushItem(this.createIndentBox(indent, this.textDirection));
       }
@@ -323,7 +323,7 @@ export class EditionTypesettingHelper {
         // console.log(`keepWithNext paragraph style detected, adding never break penalty, style: ${paragraphStyle}`);
         verticalItems.push(Penalty.createNeverBreakPenalty());
       }
-      const spaceAfter = Dimension.getPixelValue(paragraphStyleDef.spaceAfter, 12);
+      const spaceAfter = Dimension.getPixelValue(paragraphStyleDef.spaceAfter ?? null, 12);
       if (spaceAfter !== 0) {
         verticalItems.push((new Glue(VerticalItemDirection)).setHeight(spaceAfter));
       }

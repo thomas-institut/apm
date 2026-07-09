@@ -3,7 +3,6 @@
  */
 
 import {beforeEach, describe, expect, it, vi} from 'vitest';
-import $ from 'jquery';
 import {TagEditor} from '@/widgets/TagEditor';
 
 function extractHue(hslColor: string): number {
@@ -15,10 +14,6 @@ function extractHue(hslColor: string): number {
 describe('TagEditor', () => {
   beforeEach(() => {
     document.body.innerHTML = '<div id="root"></div>';
-    // @ts-expect-error test-only global binding
-    globalThis.$ = $;
-    // @ts-expect-error test-only global binding
-    globalThis.jQuery = $;
   });
 
   it('renders show mode tags without input and forwards events', () => {
@@ -27,7 +22,7 @@ describe('TagEditor', () => {
 
     new TagEditor({
       containerSelector: '#root',
-      idPrefix: 'tag-test',
+      containerIdPrefix: 'tag-test',
       tags: ['beta', 'alpha'],
       mode: 'show',
       showInput: false,
@@ -49,16 +44,16 @@ describe('TagEditor', () => {
     expect(alphaTag.style.lineHeight).toBe('1.05em');
     expect(alphaText.style.padding).toBe('2px 5px');
 
-    $(alphaTag).trigger('mouseenter');
-    $(alphaTag).trigger('mouseleave');
-    $(alphaTag).trigger('click');
+    alphaTag.dispatchEvent(new MouseEvent('mouseenter', {bubbles: true}));
+    alphaTag.dispatchEvent(new MouseEvent('mouseleave', {bubbles: true}));
+    alphaTag.dispatchEvent(new MouseEvent('click', {bubbles: true}));
     // expect(alphaText.getAttribute('style') ?? '').not.toBe(initialStyle);
 
     expect(onHover).toHaveBeenNthCalledWith(1, 'alpha', true, expect.any(Object));
     expect(onHover).toHaveBeenNthCalledWith(2, 'alpha', false, expect.any(Object));
     expect(onClick).toHaveBeenNthCalledWith(1, 'alpha', true, expect.any(Object));
 
-    $(alphaTag).trigger('click');
+    alphaTag.dispatchEvent(new MouseEvent('click', {bubbles: true}));
     expect(onClick).toHaveBeenNthCalledWith(2, 'alpha', false, expect.any(Object));
   });
 
@@ -81,7 +76,7 @@ describe('TagEditor', () => {
   it('renders the add tag field after existing tags in edit mode', async () => {
     new TagEditor({
       containerSelector: '#root',
-      idPrefix: 'tag-edit',
+      containerIdPrefix: 'tag-edit',
       tags: ['beta', 'alpha'],
       mode: 'edit',
       getTagHints: async () => [],
@@ -99,7 +94,7 @@ describe('TagEditor', () => {
   it('applies the individual palette when adding a tag in edit mode', async () => {
     new TagEditor({
       containerSelector: '#root',
-      idPrefix: 'tag-edit',
+      containerIdPrefix: 'tag-edit',
       tags: [],
       mode: 'edit',
       getTagHints: async () => [],
@@ -113,7 +108,7 @@ describe('TagEditor', () => {
     expect(input).toBeDefined();
 
     input.value = 'alpha';
-    $(input).trigger($.Event('keypress', { which: 13 }));
+    input.dispatchEvent(new KeyboardEvent('keypress', {key: 'Enter', bubbles: true}));
 
     const tagText = document.querySelector('#tag-edit-alpha-item .tag-text') as HTMLElement;
     expect(tagText).toBeDefined();

@@ -1,43 +1,27 @@
-import {OptionsChecker} from "@thomas-inst/optionschecker";
-import {trimWhiteSpace} from '@/toolbox/Util'
+import {trimWhiteSpace} from '@/toolbox/Util';
 
 type TagEditorMode = 'edit' | 'show'
 type TagTextStyle = Record<string, string>
 
 export interface TagEditorOptions {
-  containerSelector: string
-  containerIdPrefix?: string
-  mode: TagEditorMode
-  inputFormId?: string
-  tags?: string[]
-  getTagHints?: () => Promise<string[]>
-  saveTags?: (tags: string[]) => Promise<void>
-  onTagClick?: (tag: string, active: boolean, event: JQuery.ClickEvent<HTMLElement>) => void
-  onTagHover?: (tag: string, active: boolean, event: JQuery.MouseEnterEvent<HTMLElement> | JQuery.MouseLeaveEvent<HTMLElement>) => void
-  showInput?: boolean
-  sortTags?: boolean
-  prependTags?: boolean
-}
-
-interface CleanTagEditorOptions {
-  containerSelector: string
-  containerIdPrefix: string
-  mode: TagEditorMode
-  inputFormId: string
-  tags: string[]
-  getTagHints: () => Promise<string[]>
-  saveTags: (tags: string[]) => Promise<void>
-  onTagClick: (tag: string, active: boolean, event: JQuery.ClickEvent<HTMLElement>) => void
-  onTagHover: (tag: string, active: boolean, event: JQuery.MouseEnterEvent<HTMLElement> | JQuery.MouseLeaveEvent<HTMLElement>) => void
-  showInput?: boolean
-  sortTags?: boolean
-  prependTags?: boolean
+  containerSelector: string;
+  containerIdPrefix?: string;
+  mode: TagEditorMode;
+  inputFormId?: string;
+  tags?: string[];
+  getTagHints?: () => Promise<string[]>;
+  saveTags?: (tags: string[]) => Promise<void>;
+  onTagClick?: (tag: string, active: boolean, event: MouseEvent) => void;
+  onTagHover?: (tag: string, active: boolean, event: MouseEvent) => void;
+  showInput?: boolean;
+  sortTags?: boolean;
+  prependTags?: boolean;
 }
 
 export class TagEditor {
-  private options: CleanTagEditorOptions
-  public containerIdPrefix: string
-  private activeTags: Set<string>
+  public containerIdPrefix: string;
+  private options: Required<TagEditorOptions>;
+  private activeTags: Set<string>;
 
   constructor(options: TagEditorOptions) {
     const optionsDefinition = {
@@ -48,12 +32,12 @@ export class TagEditor {
       tags: {type: 'array', required: false, default: []},
       getTagHints: {
         type: 'function', default: async () => {
-          return []
+          return [];
         }
       },
       saveTags: {
         type: 'function', default: async (tags: string[]) => {
-          console.log(`Tags [${tags.join(', ')}] would be saved now`)
+          console.log(`Tags [${tags.join(', ')}] would be saved now`);
         }
       },
       onTagClick: {
@@ -64,15 +48,34 @@ export class TagEditor {
         type: 'function', default: () => {
         }
       },
+    };
+
+    const defaults = {
+      containerIdPrefix: 'tag-editor',
+      inputFormId: 'nil',
+      tags: [],
+
+      getTagHints: async (): Promise<string[]> => {
+        return [];
+      },
+      saveTags: async (tags: string[]): Promise<void> => {
+        console.log(`Tags [${tags.join(', ')}] would be saved now`);
+      },
+      showInput: false,
+      sortTags: false,
+      prependTags: false,
+      onTagClick: () => {
+      },
+      onTagHover: () => {
+      },
     }
 
-    const oc = new OptionsChecker({optionsDefinition: optionsDefinition, context: "TagEditor"});
-    this.options = oc.getCleanOptions(options) as CleanTagEditorOptions;
+    this.options = { ...defaults, ...options };
 
     this.containerIdPrefix = this.options.containerIdPrefix;
     this.activeTags = new Set<string>();
 
-    this.render()
+    this.render();
   }
 
   // ---------------------------------------------------------------------------
@@ -86,9 +89,9 @@ export class TagEditor {
    * @return {void}
    */
   setTags(tags: string[]): void {
-    console.log(`Setting tags: [ ${tags.join(', ')}]`)
+    console.log(`Setting tags: [ ${tags.join(', ')}]`);
     this.options.tags = [...tags];
-    this.render()
+    this.render();
   }
 
   /**
@@ -97,7 +100,7 @@ export class TagEditor {
    * @return {string[]}
    */
   getTags(): string[] {
-    return this.options.tags.sort()
+    return this.options.tags.sort();
   }
 
   /**
@@ -161,6 +164,52 @@ export class TagEditor {
   // ---------------------------------------------------------------------------
 
   /**
+   * Validates the form of a given tag.
+   *
+   * @param {string}tag
+   * @return {boolean}
+   */
+  isTagValid(tag: string): boolean {
+    let specialCharacters = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/;
+    return !specialCharacters.test(tag);
+  }
+
+  /**
+   * Returns the color palette used to render a tag.
+   *
+   * @param {string}tag
+   * @return {{chipBackground: string, chipBorder: string, chipText: string, chipActiveBackground: string, chipActiveBorder: string, chipActiveText: string, highlightBackground: string}}
+   */
+  getTagColorPalette(tag: string): {
+    chipBackground: string;
+    chipBorder: string;
+    chipText: string;
+    chipActiveBackground: string;
+    chipActiveBorder: string;
+    chipActiveText: string;
+    highlightBackground: string;
+  } {
+    const hash = this.hashStringToHue(tag);
+    const hue = (hash % 240);
+    const saturation = 80 + ((hash >>> 3) % 8);
+    const lightness = 84 + ((hash >>> 6) % 4);
+    const activeLightness = Math.max(74, lightness - 10);
+    const borderSaturation = Math.max(42, saturation - 26);
+    const borderLightness = Math.max(56, lightness - 16);
+    const activeBorderLightness = Math.max(48, activeLightness - 40);
+
+    return {
+      chipBackground: `hsl(${hue} ${saturation}% ${lightness}%)`,
+      chipBorder: `hsl(${hue} ${borderSaturation}% ${borderLightness}%)`,
+      chipText: 'black',
+      chipActiveBackground: `hsl(${hue} ${saturation}% ${activeLightness}%)`,
+      chipActiveBorder: `hsl(${hue} ${borderSaturation}% ${activeBorderLightness}%)`,
+      chipActiveText: 'black',
+      highlightBackground: `hsl(${hue} ${Math.max(74, saturation)}% ${lightness}%)`
+    };
+  }
+
+  /**
    * Renders the editor according to its configured mode.
    *
    * @return {void}
@@ -169,11 +218,11 @@ export class TagEditor {
     switch (this.options.mode) {
       case 'edit':
         this.setupEditMode();
-        break
+        break;
 
       case 'show':
         this.setupShowMode();
-        break
+        break;
     }
   }
 
@@ -183,13 +232,13 @@ export class TagEditor {
    * @return {void}
    */
   private setupEditMode(): void {
-    this.buildStructureOfTagEditor()
+    this.buildStructureOfTagEditor();
     this.options.getTagHints().then((tags) => {
-      this.showGivenTagsInEditMode()
-      this.appendAddTagField()
-      this.fillDatalistWithTagHints(tags)
-      this.setupEvents()
-    })
+      this.showGivenTagsInEditMode();
+      this.appendAddTagField();
+      this.fillDatalistWithTagHints(tags);
+      this.setupEvents();
+    });
   }
 
   /**
@@ -198,8 +247,8 @@ export class TagEditor {
    * @return {void}
    */
   private setupShowMode(): void {
-    this.buildStructureOfTagEditor()
-    this.showGivenTagsInShowMode()
+    this.buildStructureOfTagEditor();
+    this.showGivenTagsInShowMode();
   }
 
   /**
@@ -208,9 +257,14 @@ export class TagEditor {
    * @return {void}
    */
   private buildStructureOfTagEditor(): void {
-    $(this.options.containerSelector).html(`
+    const container = document.querySelector(this.options.containerSelector);
+    if (container === null) {
+      return;
+    }
+
+    container.innerHTML = `
                     <ul class="tag-editor-tags-ul" id="${this.containerIdPrefix}-tag-list">
-                   </ul>`)
+                   </ul>`;
   }
 
   /**
@@ -220,7 +274,7 @@ export class TagEditor {
    */
   private showGivenTagsInShowMode(): void {
     for (let tag of this.getOrderedTags()) {
-      this.appendTagItem(tag, false)
+      this.appendTagItem(tag, false);
     }
   }
 
@@ -231,7 +285,7 @@ export class TagEditor {
    */
   private showGivenTagsInEditMode(): void {
     for (let tag of this.getOrderedTags()) {
-      this.appendTagItem(tag, true)
+      this.appendTagItem(tag, true);
     }
   }
 
@@ -242,14 +296,19 @@ export class TagEditor {
    */
   private appendAddTagField(): void {
     if (this.options.mode !== 'edit') {
-      return
+      return;
     }
 
-    $(`#${this.containerIdPrefix}-tag-list`).append(`
+    const tagList = document.querySelector(`#${this.containerIdPrefix}-tag-list`);
+    if (tagList === null) {
+      return;
+    }
+
+    tagList.insertAdjacentHTML('beforeend', `
                         <li class="tagAdd taglist">
                             <input list="${this.containerIdPrefix}-list-of-tags" class="tag-input" id="${this.containerIdPrefix}-search-field" placeholder="+">
                             <datalist id="${this.containerIdPrefix}-list-of-tags"></datalist>
-                        </li>`)
+                        </li>`);
   }
 
   /**
@@ -260,42 +319,59 @@ export class TagEditor {
    * @return {void}
    */
   private appendTagItem(tag: string, includeRemoveButton: boolean): void {
-    let valueForTagId = tag.replace(/ /g, "_")
-    let tagItemId = `${this.containerIdPrefix}-${valueForTagId}-item`
-    let tagRemoveId = `${this.containerIdPrefix}-${valueForTagId}-id`
-    let tagTextStyle = this.getTagTextStyle(tag)
-    let removeButtonHtml = ''
-    let hiddenInputHtml = ''
+    let valueForTagId = tag.replace(/ /g, "_");
+    let tagItemId = `${this.containerIdPrefix}-${valueForTagId}-item`;
+    let tagRemoveId = `${this.containerIdPrefix}-${valueForTagId}-id`;
+    let tagTextStyle = this.getTagTextStyle(tag);
+    let removeButtonHtml = '';
+    let hiddenInputHtml = '';
 
     if (includeRemoveButton) {
-      removeButtonHtml = `<span class="tagRemove" id="${tagRemoveId}"><sup>x</sup></span>`
-      hiddenInputHtml = '<input type="hidden" name="tags[]">'
+      removeButtonHtml = `<span class="tagRemove" id="${tagRemoveId}"><sup>x</sup></span>`;
+      hiddenInputHtml = '<input type="hidden" name="tags[]">';
     }
 
-    $(`#${this.containerIdPrefix}-tag-list`)['append'](`
+    const tagList = document.querySelector(`#${this.containerIdPrefix}-tag-list`);
+    if (tagList === null) {
+      return;
+    }
+
+    tagList.insertAdjacentHTML('beforeend', `
                        <li class="addedTag" id="${tagItemId}" value=${valueForTagId}><span class="tag-text">${tag}</span>
                         ${removeButtonHtml}
                         ${hiddenInputHtml}
-                       </li>`)
+                       </li>`);
 
-    $(`#${tagItemId}`).css({
+    const tagItem = document.getElementById(tagItemId);
+    if (tagItem === null) {
+      return;
+    }
+
+    Object.assign(tagItem.style, {
       display: 'inline-flex',
       alignItems: 'center',
       lineHeight: includeRemoveButton ? '1.25em' : '1.05em',
       marginInlineEnd: includeRemoveButton ? '0.35em' : '0.25em',
       verticalAlign: 'middle',
       whiteSpace: 'nowrap'
-    })
+    });
 
-    $(`#${tagItemId} span.tag-text`).css(tagTextStyle)
-
-    if (includeRemoveButton) {
-      this.makeRemoveTagEvent(tagRemoveId)
-      return
+    const tagText = tagItem.querySelector('span.tag-text') as HTMLElement | null;
+    if (tagText !== null) {
+      Object.assign(tagText.style, tagTextStyle);
     }
 
-    this.makeTagHoverAndClickEvents(tagItemId, tag)
+    if (includeRemoveButton) {
+      this.makeRemoveTagEvent(tagRemoveId);
+      return;
+    }
+
+    this.makeTagHoverAndClickEvents(tagItemId, tag);
   }
+
+  // ---------------------------------------------------------------------------
+  // Events
+  // ---------------------------------------------------------------------------
 
   /**
    * Returns the configured tags sorted alphabetically.
@@ -303,9 +379,9 @@ export class TagEditor {
    * @return {string[]}
    */
   private getOrderedTags(): string[] {
-    let tags = [...this.options.tags]
-    tags.sort()
-    return tags
+    let tags = [...this.options.tags];
+    tags.sort();
+    return tags;
   }
 
   /**
@@ -315,14 +391,15 @@ export class TagEditor {
    * @return {void}
    */
   private fillDatalistWithTagHints(tags: string[]): void {
-    tags.forEach((tag) => {
-      $(`#${this.containerIdPrefix}-list-of-tags`).append(`<option value="${tag}">${tag}</option>`)
-    })
-  }
+    const datalist = document.querySelector(`#${this.containerIdPrefix}-list-of-tags`);
+    if (datalist === null) {
+      return;
+    }
 
-  // ---------------------------------------------------------------------------
-  // Events
-  // ---------------------------------------------------------------------------
+    tags.forEach((tag) => {
+      datalist.insertAdjacentHTML('beforeend', `<option value="${tag}">${tag}</option>`);
+    });
+  }
 
   /**
    * Registers all event handlers used in edit mode.
@@ -330,8 +407,8 @@ export class TagEditor {
    * @return {void}
    */
   private setupEvents(): void {
-    this.makeFocusSearchFieldEvent()
-    this.makeAddTagEvent()
+    this.makeFocusSearchFieldEvent();
+    this.makeAddTagEvent();
   }
 
   /**
@@ -341,20 +418,26 @@ export class TagEditor {
    * @return {void}
    */
   private makeRemoveTagEvent(tagId: string): void {
-    let self = this;
-    let selector = "#" + tagId;
+    const removeButton = document.getElementById(tagId);
+    if (removeButton === null) {
+      return;
+    }
 
-    $(selector).click(function(event: JQuery.ClickEvent<HTMLElement>) {
+    removeButton.addEventListener('click', (event: MouseEvent) => {
       event.preventDefault();
-      console.log(`Click on remove tag ${tagId}`)
-      let value = $(this).parent()[0].getAttribute('value')!.replace('_', ' ')
-      console.log(value)
-      let index = self.options.tags.indexOf(value)
-      console.log(index)
-      self.options.tags.splice(index, 1);
-      self.options.saveTags(self.options.tags)
-      $(this).parent().remove()
-    })
+      console.log(`Click on remove tag ${tagId}`);
+      const tagElement = removeButton.parentElement;
+      if (tagElement === null) {
+        return;
+      }
+      let value = (tagElement.getAttribute('value') ?? '').replace('_', ' ');
+      console.log(value);
+      let index = this.options.tags.indexOf(value);
+      console.log(index);
+      this.options.tags.splice(index, 1);
+      this.options.saveTags(this.options.tags);
+      tagElement.remove();
+    });
   }
 
   /**
@@ -365,23 +448,30 @@ export class TagEditor {
    * @return {void}
    */
   private makeTagHoverAndClickEvents(tagItemId: string, tag: string): void {
-    let selector = `#${tagItemId}`
+    const tagElement = document.getElementById(tagItemId);
+    if (tagElement === null) {
+      return;
+    }
 
-    $(selector).on('click', (event: JQuery.ClickEvent<HTMLElement>) => {
-      const active = !this.isActiveTag(tag)
-      this.setTagActivationStatus(tag, active)
-      this.applyTagTextStyle(tagItemId, tag)
-      this.options.onTagClick(tag, active, event)
-    })
+    tagElement.addEventListener('click', (event: MouseEvent) => {
+      const active = !this.isActiveTag(tag);
+      this.setTagActivationStatus(tag, active);
+      this.applyTagTextStyle(tagItemId, tag);
+      this.options.onTagClick(tag, active, event);
+    });
 
-    $(selector).on('mouseenter', (event: JQuery.MouseEnterEvent<HTMLElement>) => {
-      this.options.onTagHover(tag, true, event)
-    })
+    tagElement.addEventListener('mouseenter', (event: MouseEvent) => {
+      this.options.onTagHover(tag, true, event);
+    });
 
-    $(selector).on('mouseleave', (event: JQuery.MouseLeaveEvent<HTMLElement>) => {
-      this.options.onTagHover(tag, false, event)
-    })
+    tagElement.addEventListener('mouseleave', (event: MouseEvent) => {
+      this.options.onTagHover(tag, false, event);
+    });
   }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
   /**
    * Registers a click handler that focuses the search field.
@@ -389,9 +479,11 @@ export class TagEditor {
    * @return {void}
    */
   private makeFocusSearchFieldEvent(): void {
-    $('ul.tags').click((event: JQuery.ClickEvent<HTMLElement>) => {
-      $(`#${this.containerIdPrefix}-search-field`).focus();
-    })
+    document.querySelectorAll('ul.tags').forEach((listElement) => {
+      listElement.addEventListener('click', () => {
+        (document.querySelector(`#${this.containerIdPrefix}-search-field`) as HTMLElement | null)?.focus();
+      });
+    });
   }
 
   /**
@@ -400,33 +492,40 @@ export class TagEditor {
    * @return {void}
    */
   private makeAddTagEvent(): void {
-    let self = this
+    const searchField = document.querySelector(`#${this.containerIdPrefix}-search-field`) as HTMLInputElement | null;
+    if (searchField === null) {
+      return;
+    }
 
-    $(`#${this.containerIdPrefix}-search-field`).keypress(function(event: JQuery.KeyPressEvent<HTMLElement>) {
-      if (event.which === 13) {
+    searchField.addEventListener('keypress', (event: KeyboardEvent) => {
+      if (event.key === 'Enter' || event.keyCode === 13) {
         event.preventDefault();
 
-        let value = self.formatTag(String($(this).val() ?? ''))
-        let valueForTagId = value.replace(/ /g, "_")
+        let value = this.formatTag(String(searchField.value ?? ''));
+        let valueForTagId = value.replace(/ /g, "_");
 
-        if (value !== '' && self.isTagValid(value) && !self.options.tags.includes(value)) {
-          self.appendTagItem(value, true)
-          $(`#${self.containerIdPrefix}-${valueForTagId}-item`).insertBefore(`${self.options.containerSelector} .tagAdd`)
-          let tagId = `${self.containerIdPrefix}-${valueForTagId}-id`
-          self.makeRemoveTagEvent(tagId)
-          self.options.tags.push(value)
-          self.options.saveTags(self.options.tags).then(() => {
-            $(this).val('')
-          })
+        if (value !== '' && this.isTagValid(value) && !this.options.tags.includes(value)) {
+          this.appendTagItem(value, true);
+
+          const tagElement = document.querySelector(`#${this.containerIdPrefix}-${valueForTagId}-item`);
+          const addTagElement = document.querySelector(`${this.options.containerSelector} .tagAdd`);
+          if (tagElement !== null && addTagElement !== null) {
+            addTagElement.parentNode?.insertBefore(tagElement, addTagElement);
+          }
+
+          this.options.tags.push(value);
+          this.options.saveTags(this.options.tags).then(() => {
+            searchField.value = '';
+          });
         }
 
         event.stopPropagation();
       }
-    })
+    });
   }
 
   // ---------------------------------------------------------------------------
-  // Helpers
+  // Tag Styling
   // ---------------------------------------------------------------------------
 
   /**
@@ -436,23 +535,8 @@ export class TagEditor {
    * @return {string}
    */
   private formatTag(string: string): string {
-    return trimWhiteSpace(string)
+    return trimWhiteSpace(string);
   }
-
-  /**
-   * Validates the form of a given tag.
-   *
-   * @param {string}tag
-   * @return {boolean}
-   */
-  isTagValid(tag: string): boolean {
-    let specialCharacters = /[`!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/
-    return !specialCharacters.test(tag);
-  }
-
-  // ---------------------------------------------------------------------------
-  // Tag Styling
-  // ---------------------------------------------------------------------------
 
   /**
    * Applies the current text style to a rendered tag item.
@@ -462,7 +546,12 @@ export class TagEditor {
    * @return {void}
    */
   private applyTagTextStyle(tagItemId: string, tag: string): void {
-    $(`#${tagItemId} span.tag-text`).css(this.getTagTextStyle(tag))
+    const tagText = document.querySelector(`#${tagItemId} span.tag-text`) as HTMLElement | null;
+    if (tagText === null) {
+      return;
+    }
+
+    Object.assign(tagText.style, this.getTagTextStyle(tag));
   }
 
   /**
@@ -472,13 +561,13 @@ export class TagEditor {
    * @return {TagTextStyle}
    */
   private getTagTextStyle(tag: string): TagTextStyle {
-    const palette = this.getTagColorPalette(tag)
+    const palette = this.getTagColorPalette(tag);
     let tagTextStyle = {
       ...this.getDefaultTagTextStyle(),
       backgroundColor: palette.chipBackground,
       border: `1px solid ${palette.chipBorder}`,
       color: palette.chipText
-    }
+    };
 
     if (this.isActiveTag(tag)) {
       tagTextStyle = {
@@ -486,10 +575,10 @@ export class TagEditor {
         backgroundColor: palette.chipActiveBackground,
         border: `1px solid ${palette.chipActiveBorder}`,
         color: palette.chipActiveText
-      }
+      };
     }
 
-    return tagTextStyle
+    return tagTextStyle;
   }
 
   /**
@@ -498,7 +587,7 @@ export class TagEditor {
    * @return {TagTextStyle}
    */
   private getDefaultTagTextStyle(): TagTextStyle {
-    const palette = this.getTagColorPalette('__default__')
+    const palette = this.getTagColorPalette('__default__');
     return {
       display: 'inline-block',
       backgroundColor: palette.chipBackground,
@@ -515,44 +604,17 @@ export class TagEditor {
   }
 
   /**
-   * Returns the color palette used to render a tag.
-   *
-   * @param {string}tag
-   * @return {{chipBackground: string, chipBorder: string, chipText: string, chipActiveBackground: string, chipActiveBorder: string, chipActiveText: string, highlightBackground: string}}
-   */
-   getTagColorPalette(tag: string): { chipBackground: string; chipBorder: string; chipText: string; chipActiveBackground: string; chipActiveBorder: string; chipActiveText: string; highlightBackground: string; } {
-    const hash = this.hashStringToHue(tag)
-    const hue = (hash % 240)
-    const saturation = 80 + ((hash >>> 3) % 8)
-    const lightness = 84 + ((hash >>> 6) % 4)
-    const activeLightness = Math.max(74, lightness - 10)
-    const borderSaturation = Math.max(42, saturation - 26)
-    const borderLightness = Math.max(56, lightness - 16)
-    const activeBorderLightness = Math.max(48, activeLightness - 40)
-
-    return {
-      chipBackground: `hsl(${hue} ${saturation}% ${lightness}%)`,
-      chipBorder: `hsl(${hue} ${borderSaturation}% ${borderLightness}%)`,
-      chipText: 'black',
-      chipActiveBackground: `hsl(${hue} ${saturation}% ${activeLightness}%)`,
-      chipActiveBorder: `hsl(${hue} ${borderSaturation}% ${activeBorderLightness}%)`,
-      chipActiveText: 'black',
-      highlightBackground: `hsl(${hue} ${Math.max(74, saturation)}% ${lightness}%)`
-    }
-  }
-
-  /**
    * Maps a string deterministically to a hue value.
    *
    * @param {string}string
    * @return {number}
    */
   private hashStringToHue(string: string): number {
-    let hash = 0
+    let hash = 0;
     for (let i = 0; i < string.length; i++) {
-      hash = ((hash << 5) - hash) + string.charCodeAt(i)
-      hash |= 0
+      hash = ((hash << 5) - hash) + string.charCodeAt(i);
+      hash |= 0;
     }
-    return Math.abs(hash) % 360
+    return Math.abs(hash) % 360;
   }
 }

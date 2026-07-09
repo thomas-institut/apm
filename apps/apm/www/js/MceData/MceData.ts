@@ -1,6 +1,5 @@
 import {MceDataInterface} from "./MceDataInterface.js";
-import * as ArrayUtil from "@/lib/ToolBox/ArrayUtil";
-
+import * as ArrayUtil from "../lib/ToolBox/ArrayUtil.js";
 
 export class MceData {
 

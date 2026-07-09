@@ -22,6 +22,8 @@ import {Edition} from "@/Edition/Edition";
 import {MceDataEditionGenerator} from "@/MceData/MceDataEditionGenerator";
 import {BasicProfiler} from "@/toolbox/BasicProfiler";
 import MainTextPanel from "@/ReactAPM/Pages/MceComposer/MainTextPanel";
+import ApmLogo from "@/ReactAPM/Components/ApmLogo/ApmLogo";
+import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
 
 export type CtDataState = 'loading' | 'loaded' | 'error';
 
@@ -61,14 +63,15 @@ export default function MceComposer() {
   const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
   const [edition, setEdition] = useState<Edition | null>(null);
 
-  const [editionGenerationProgress, setEditionGenerationProgress] = useState<number|null>(null);
+  const [editionGenerationProgress, setEditionGenerationProgress] = useState<number | null>(null);
   const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
   const [activeTabPanelOne, setActiveTabPanelOne] = useState('chunks');
   const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('mainText');
   const [changes, setChanges] = useState<string[]>([]);
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
 
-  const singleChunkEditionCache = useRef<Record<number, Edition>>([])
+  const singleChunkEditionCache = useRef<Record<number, Edition>>([]);
+  const shimWidth = 5;
 
   const {id} = useParams();
   const appContext = useContext(AppContext);
@@ -94,17 +97,6 @@ export default function MceComposer() {
       }
     }
   }
-
-  if (mceComposerStatus === 'error') {
-    return (
-      <div>
-        <h2>Error</h2>
-        <p className={'text-danger'}>{errorMsg}</p>
-      </div>
-    );
-  }
-
-  const shimWidth = 5;
 
 
   /**
@@ -153,7 +145,7 @@ export default function MceComposer() {
           } else {
             console.warn(`All chunks are not loaded yet, but can't find a chunk to load`);
             setMceComposerStatus('error');
-            setErrorMsg(`Inconsistent state reached, please report bug`);
+            setErrorMsg(`Inconsistent state reached trying to load chunks`);
           }
           break;
         }
@@ -176,7 +168,7 @@ export default function MceComposer() {
     }
   }, [mceComposerStatus, ctDataStatusArray]);
 
-  useEffect( () => {
+  useEffect(() => {
     if (mceComposerStatus !== 'loaded') {
       return;
     }
@@ -204,18 +196,16 @@ export default function MceComposer() {
       }
     });
 
-    generator.generate( mceData, mceDataId).then( (generatedEdition) => {
+    generator.generate(mceData, mceDataId).then((generatedEdition) => {
       profiler.stop();
       setEdition(new Edition().setFromInterface(generatedEdition));
       setEditionGenerationProgress(null);
-    }).catch( (e) => {
+    }).catch((e) => {
       console.error(e);
     });
-  }, [mceComposerStatus, edition])
+  }, [mceComposerStatus, edition]);
 
-  if (mceComposerStatus === 'loadingMce') {
-    return <div>Loading edition {mceDataId}...</div>;
-  }
+
 
   const checkForChanges = () => {
     if (lastSavedMceData === null) {
@@ -358,15 +348,31 @@ export default function MceComposer() {
     }
   ];
 
+  if (mceComposerStatus === 'error') {
+    return <StatusPage label={'Error'}>
+        <h2>Oops!</h2>
+        <p className={'text-danger'}>{errorMsg}</p>
+        <p>This may be a bug, please report it.</p>
+      </StatusPage>;
+  }
+
+  if (mceComposerStatus === 'loadingMce') {
+    return <StatusPage label={'Edition'}>Loading edition {mceDataId}...</StatusPage>;
+  }
+
+  if (mceComposerStatus === 'start') {
+    return <StatusPage label={'Edition'}>Starting...</StatusPage>;
+  }
+
+  // mceComposerStatus === 'loadingSingleChunks'  || mceComposerStatus === 'loaded'
 
   const numChunks = ctDataStatusArray.length;
-  const loadedCtDataCount = ctDataStatusArray.filter((ctDataStatus) => ctDataStatus.ctDataState === 'loaded').length;
-  const allCtDataStatusLoaded = loadedCtDataCount === numChunks;
 
 
   let loadingProgress: JSX.Element | null = null;
 
-  if (!allCtDataStatusLoaded) {
+  if (mceComposerStatus !== 'loaded') {
+    const loadedCtDataCount = ctDataStatusArray.filter((ctDataStatus) => ctDataStatus.ctDataState === 'loaded').length;
     loadingProgress = <ProgressBar currentStep={loadedCtDataCount}
                                    width={200}
                                    className={'chunk-progress-bar'}
@@ -396,7 +402,7 @@ export default function MceComposer() {
   }
 
   const notificationsDiv = <div className={'notifications'}>
-    {!allCtDataStatusLoaded && loadingProgress}
+    {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
   </div>;
 
@@ -404,7 +410,7 @@ export default function MceComposer() {
     return (
       <div className="mce-composer-container expanded">
         <div className="header">
-          <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'}/></div>
+          <ApmLogo height={30} className={'logo'}/>
           <div className={'expanded-tab-title-area'}>
             <span className={'title'}>{title}</span>
             <ChevronRight/>
@@ -449,7 +455,7 @@ export default function MceComposer() {
 
   return (<div className="mce-composer-container">
     <div className="header">
-      <div className={'logo'}><img src={'../../../public/apm-logo.svg'} alt={'APM logo'}/></div>
+      <ApmLogo height={30} className={'logo'}/>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={title}
                          onConfirm={handleConfirmTitleEdit}/>
       {notificationsDiv}

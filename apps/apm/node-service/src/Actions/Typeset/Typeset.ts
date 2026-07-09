@@ -111,7 +111,7 @@ export class Typeset implements Action<TypesetInputData, TypesetOutputData> {
       data.helperOptions.edition = new Edition().setFromInterface(data.helperOptions.edition);
       data.helperOptions.editionStyleSheet = SystemStyleSheet.getStyleSheet(data.helperOptions.edition.lang, data.helperOptions.styleId);
       let editionTypesettingHelper = new EditionTypesettingHelper(data.helperOptions);
-      data.options.getApparatusListToTypeset = (mainTextVerticalList: any, apparatus: any, lineFrom: number, lineTo: number, resetFirstLine: boolean) => {
+      data.options.getApparatusListToTypeset = (mainTextVerticalList: ItemList, apparatus: ApparatusInterface, lineFrom: number, lineTo: number, resetFirstLine: boolean) => {
         return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine);
       };
       data.options.preTypesetApparatuses = () => {

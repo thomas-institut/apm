@@ -10,7 +10,7 @@ import './docs.css';
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import {TablePaginationControls} from "@/ReactAPM/Components/TablePaginationControls";
 import TableStateSummary from "@/ReactAPM/Components/TableStateSummary";
-import GridTable from "@/ReactAPM/Components/GridTable";
+import TanstackGridReactTable from "@/ReactAPM/Components/TanstackGridReactTable";
 import {Button, Col, Form, Row} from "react-bootstrap";
 import {EntityNameTuple} from "@/Api/ApmApiClient";
 import {varsAreEqual} from "@/toolbox/ObjectUtil";
@@ -195,9 +195,9 @@ export default function Docs() {
       </div>
       <TablePaginationControls className="tableNavigationDiv" table={table} key="pagination"/>
     </div>);
-    content = <GridTable table={table} tableId="docsTable" key="table"
-                         style={{margin: '1em', overflow: 'auto'}}
-                         gridColumnDef={'1fr max-content max-content max-content max-content 1fr'}/>;
+    content = <TanstackGridReactTable table={table} tableId="docsTable" key="table"
+                                      style={{margin: '1em', overflow: 'auto'}}
+                                      gridColumnDef={'1fr max-content max-content max-content max-content 1fr'}/>;
   }
 
   switch (queryResult.status) {

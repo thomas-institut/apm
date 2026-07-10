@@ -1,4 +1,3 @@
-
 :root {
     --tab-border-color: #cfcfcf;
 }
@@ -120,7 +119,6 @@
 
 }
 
-
 .preview-toolbar {
     background-color: #f5f5f5;
 }
@@ -158,16 +156,23 @@
     color: black;
 }
 
-.sigla-panel {
-    padding: 1em;
+.tab-panel-content-item h1 {
+    padding: 0;
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 1em;
 }
 
-.sigla-groups-panel {
-    padding: 1em;
+.tab-panel-content-item .section {
+    margin-top: 1em;
+    margin-bottom: 2em;
+}
+
+.tab-panel-content-item .section-content {
+    padding-left: 2em;
 }
 
 .chunks-panel {
-    padding: 0.25em;
     box-sizing: border-box;
     overflow: auto;
     height: 100%;
@@ -179,14 +184,29 @@
     }
 
     .chunk-table {
-        margin: 1em;
-        column-gap: 1.5em;
-        row-gap: 0.75em;
         align-items: center;
+
+        div {
+            align-content: center;
+            padding: 0.5em 1em;
+            height: 3em;
+        }
+
 
         .chunk-table-header {
             font-weight: bold;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background-color: white;
+            border-bottom: 1px solid #efefef;
+            height: 2.5em;
         }
+
+        .odd {
+            background-color: #f8f8f8;
+        }
+
 
         .chunk-table-error {
             color: var(--danger);
@@ -243,6 +263,18 @@
         width: auto;
         min-width: 52em;
     }
+}
+
+
+.sigla-panel {
+    padding: 1em;
+
+
+
+
+    .section.sigla-groups {
+        margin-top: 0;
+    }
 
 }
 
@@ -272,6 +304,4 @@
         padding: 0;
         margin-bottom: 0.25em;
     }
-
-
 }

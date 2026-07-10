@@ -1,0 +1,73 @@
+import {CSSProperties, JSX} from "react";
+
+import './nice-table.css';
+
+export interface NiceTableColumnDef<T> {
+  title: string;
+  key: string;
+  width?: string;
+  className?: string;
+  cellContent: (data: T, rowIndex: number) => JSX.Element;
+}
+
+export interface NiceTableProps<T> {
+  columnDefs: NiceTableColumnDef<T>[];
+  rows: T[];
+  highlightedRow?: number | null;
+  className?: string;
+  oddEvenHighlight?: boolean;
+  oddRowClassName?: string;
+  evenRowClassName?: string;
+}
+
+export default function NiceTable<T>(props: NiceTableProps<T>) {
+
+  const oddEvenHighlight = props.oddEvenHighlight ?? false;
+  const oddRowClassName = props.oddRowClassName ?? 'odd';
+  const evenRowClassName = props.evenRowClassName ?? 'even';
+  const tableClasses = ['nice-table'];
+  const highlightedRow = props.highlightedRow ?? null;
+  if (props.className) {
+    tableClasses.push(props.className);
+  }
+
+  const getTh = (columnDef: NiceTableColumnDef<T>) => {
+    const style: CSSProperties = columnDef.width !== undefined ? {width: columnDef.width} : {};
+    return <th key={columnDef.key} style={style} className={columnDef.className ?? ''}>
+      {columnDef.title}
+    </th>;
+  };
+
+  const getTd = (columnDef: NiceTableColumnDef<T>, row: T, rowIndex: number) => {
+    return <td key={columnDef.key} className={columnDef.className ?? ''}>
+      {columnDef.cellContent(row, rowIndex)}
+    </td>;
+  };
+
+  const getTrClass = (rowIndex: number) => {
+    const classes:string[] = [];
+    if (highlightedRow !== null && highlightedRow === rowIndex) {
+      classes.push('highlighted');
+    }
+    if (oddEvenHighlight) {
+      classes.push(rowIndex % 2 === 0 ? evenRowClassName : oddRowClassName);
+    }
+    return classes.join(' ');
+  }
+
+  return <table className={tableClasses.join(' ')}>
+    <thead>
+    <tr>
+      {props.columnDefs.map((columnDef) => getTh(columnDef))}
+    </tr>
+    </thead>
+    <tbody>
+    {props.rows.map((row, rowIndex) => (
+      <tr key={rowIndex} className={getTrClass(rowIndex)}>
+        {props.columnDefs.map((columnDef) => getTd(columnDef, row, rowIndex)
+        )}
+      </tr>
+    ))}
+    </tbody>
+  </table>;
+}

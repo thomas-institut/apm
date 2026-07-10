@@ -16,7 +16,7 @@ const DefaultSortingIcons: SortingIcons = {
 
 };
 
-interface GridTableProps<T> {
+interface TanstackGridReactTableProps<T> {
   table: Table<T>;
   tableId?: string;
   gridColumnDef: string;
@@ -26,7 +26,7 @@ interface GridTableProps<T> {
   sortingIcons?: SortingIcons;
 }
 
-export default function GridTable<T>(props: GridTableProps<T>) {
+export default function TanstackGridReactTable<T>(props: TanstackGridReactTableProps<T>) {
   const table = props.table;
   const enableSorting = props.enableSorting ?? true;
   const sortingIcons = props.sortingIcons ?? DefaultSortingIcons;

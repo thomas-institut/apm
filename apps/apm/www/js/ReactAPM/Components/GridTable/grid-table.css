@@ -1,0 +1,30 @@
+
+
+.grid-table {
+
+    box-sizing: border-box;
+
+    div {
+        align-content: center;
+        padding: 0.5em;
+        height: 2.5em;
+    }
+
+    .header {
+        font-weight: bold;
+        padding: 0.5em;
+
+        .sticky {
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            background-color: white;
+        }
+    }
+
+    .odd-row {
+        background-color: #f8f8f8;
+    }
+
+
+}

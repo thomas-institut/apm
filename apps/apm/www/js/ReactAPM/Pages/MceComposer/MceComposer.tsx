@@ -16,7 +16,6 @@ import {deepCopy} from "@/toolbox/Util";
 import SaveIcon from "@/ReactAPM/Pages/MceComposer/SaveIcon";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 import SiglaPanel from "@/ReactAPM/Pages/MceComposer/SiglaPanel";
-import SiglaGroupsPanel from "@/ReactAPM/Pages/MceComposer/SiglaGroupsPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
 import {Edition} from "@/Edition/Edition";
 import {MceDataEditionGenerator} from "@/MceData/MceDataEditionGenerator";
@@ -291,21 +290,14 @@ export default function MceComposer() {
     {
       panel: 'one',
       key: 'sigla',
-      title: 'Witnesses and Sigla',
+      title: 'Sigla',
       content: <SiglaPanel mceData={mceData}/>,
       tabbable: true,
     },
     {
       panel: 'one',
-      key: 'siglaGroups',
-      title: 'Sigla Groups',
-      content: <SiglaGroupsPanel mceData={mceData}/>,
-      tabbable: true,
-    },
-    {
-      panel: 'one',
       key: 'normalization',
-      title: 'Main Text Normalization',
+      title: 'Normalization',
       expandable: true,
       content: <>Main text normalization will be here...</>
     },

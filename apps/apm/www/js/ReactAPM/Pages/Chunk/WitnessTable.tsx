@@ -5,7 +5,7 @@ import {
   createColumnHelper, getCoreRowModel, getSortedRowModel, SortingState, useReactTable
 } from "@tanstack/react-table";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
-import GridTable from "@/ReactAPM/Components/GridTable";
+import TanstackGridReactTable from "@/ReactAPM/Components/TanstackGridReactTable";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {ExclamationTriangle} from "react-bootstrap-icons";
 import {AppContext} from "@/ReactAPM/App";
@@ -195,7 +195,7 @@ export default function WitnessTable(props: WitnessTableProps) {
     enableSortingRemoval: false, // globalFilterFn: "includesString"
   });
   return (<div style={{marginTop: '2em', marginBottom: '2em'}}>
-    <GridTable table={table} tableId={'witnessesTable'} key="table"
-               gridColumnDef={'20em max-content max-content max-content max-content max-content max-content max-content 5em'}/>
+    <TanstackGridReactTable table={table} tableId={'witnessesTable'} key="table"
+                            gridColumnDef={'20em max-content max-content max-content max-content max-content max-content max-content 5em'}/>
   </div>);
 }

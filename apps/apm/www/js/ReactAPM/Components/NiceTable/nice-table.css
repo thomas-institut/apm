@@ -1,0 +1,21 @@
+
+table.nice-table {
+    border-collapse: collapse;
+
+    thead {
+        /*border-bottom: 1px solid #ddd;*/
+    }
+
+    tr.odd {
+        background-color: #f2f2f2;
+    }
+
+    tr.even {
+        background-color: white;
+    }
+
+    td {
+        padding: 0.5em;
+    }
+}
+

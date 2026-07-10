@@ -22,6 +22,7 @@ interface ChunksPanelProps extends TabbableElementProps {
 type ControlButton = 'delete' | 'update';
 
 interface ChunkTableRow {
+  className: string;
   chunkId: string;
   moveUpArrow: boolean;
   moveDownArrow: boolean;
@@ -50,13 +51,13 @@ export default function ChunksPanel({
                                     }: ChunksPanelProps) {
 
   const tableCols: ChunkTableColSpec[] = [
-    {title: '', gridTemplate: 'max-content'},
+    {title: '', gridTemplate: '5em'},
     {title: 'Chunk Id', gridTemplate: 'max-content'},
     {title: 'Edition Id', gridTemplate: 'max-content'},
     {title: 'Title', gridTemplate: 'max-content'},
     {title: 'Version', gridTemplate: 'max-content'},
     {title: 'Break After', gridTemplate: 'max-content'},
-    {title: '', gridTemplate: 'max-content'},
+    {title: '', gridTemplate: '5em'},
   ];
 
   if (chunks.length !== ctDataStatusArray.length) {
@@ -85,6 +86,7 @@ export default function ChunksPanel({
     const isLast = index === lastChunkIndex;
 
     const chunkTableRow: ChunkTableRow = {
+      className: index % 2 === 0 ? 'even' : 'odd',
       chunkId: chunk.chunkId,
       moveUpArrow: !isFirst,
       moveDownArrow: !isLast,
@@ -159,7 +161,7 @@ export default function ChunksPanel({
       arrowDownClasses.push('disabled');
     }
 
-    const arrowsDiv = (<div className={'chunk-table-arrows'}>
+    const arrowsDiv = (<div className={'chunk-table-arrows ' +  row.className}>
       <ArrowUp className={arrowUpClasses.join(' ')} onClick={() => handleMoveChunk(index, 'up')}/>
       <ArrowDown className={arrowDownClasses.join(' ')} onClick={() => handleMoveChunk(index, 'down')}/>
     </div>);
@@ -167,12 +169,12 @@ export default function ChunksPanel({
     let statusDiv;
 
     if (row.errorMessage) {
-      statusDiv = <div className={'chunk-table-error'}>{row.errorMessage}</div>;
+      statusDiv = <div className={'chunk-table-error ' + row.className}>{row.errorMessage}</div>;
     } else if (row.warningMessage) {
-      statusDiv = <div className={'chunk-table-warning'}>{row.warningMessage}</div>;
+      statusDiv = <div className={'chunk-table-warning ' + row.className}>{row.warningMessage}</div>;
     } else {
       // buttons
-      statusDiv = <div className={'chunk-table-control-buttons'}>
+      statusDiv = <div className={'chunk-table-control-buttons ' + row.className}>
         {row.buttons.map((button) => {
           switch (button) {
             case 'delete':
@@ -188,17 +190,24 @@ export default function ChunksPanel({
 
     return <Fragment key={row.chunkId}>
       {arrowsDiv}
-      <div>{row.chunkId}</div>
-      <EntityLink id={row.tableId ?? -1}
-                  type={'singleChunkEdition'}
-                  openInNewTab={true}
-                  title={`Click to open chunk edition ${row.tableId} in new tab`}
-                  label={row.tableId?.toString() ?? ''}/>
-      <div>{row.title}</div>
-      <div>{row.version === null ? '' : ApmFormats.time(row.version)}</div>
+      <div className={row.className}>{row.chunkId}</div>
+      <div className={row.className}>
+        <EntityLink id={row.tableId ?? -1}
+                    type={'singleChunkEdition'}
+                    openInNewTab={true}
+                    title={`Click to open chunk edition ${row.tableId} in new tab`}
+                    label={row.tableId?.toString() ?? ''}/>
+      </div>
+
+      <div className={row.className}>{row.title}</div>
+      <div className={row.className}>{row.version === null ? '' : ApmFormats.time(row.version)}</div>
+
       <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
-                   onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
-                   selected={row.breakAfter ?? 'none'}/>
+                     className={row.className}
+                     onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
+                     selected={row.breakAfter ?? 'none'}/>
+
+
       {statusDiv}
     </Fragment>;
   };

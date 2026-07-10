@@ -1,4 +1,6 @@
 .witnesses-panel {
+    overflow: auto;
+    height: 100%;
     padding: 1em;
 
     .section.sigla-groups {

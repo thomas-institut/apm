@@ -1,6 +1,7 @@
 import {MceDataInterface} from "@/MceData/MceDataInterface";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
+import './WitnessesPanel.css';
 
 
 interface WitnessesPanelProps extends TabbableElementProps {

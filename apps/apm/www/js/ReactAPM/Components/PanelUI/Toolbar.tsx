@@ -1,4 +1,5 @@
 import {ReactNode} from "react";
+import './PanelUI.css';
 
 interface ToolbarProps {
   className?: string;

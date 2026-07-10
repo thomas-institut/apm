@@ -1,9 +1,7 @@
 import {Children, isValidElement, ReactElement, useState} from "react";
-
-import './panel-ui.css';
 import {ArrowsAngleExpand} from "react-bootstrap-icons";
 import {CloseButton} from "react-bootstrap";
-
+import './PanelUI.css';
 
 export interface TabbableElementProps {
   /**
@@ -96,9 +94,11 @@ export default function TabPanel(props: TabPanelProps) {
             {spec.tabTitle}
           </span>
           {spec.expandable && isActive && hoveredTabKey === spec.tabKey &&
-            <ArrowsAngleExpand className={'tab-button'} onClick={() => props.onClickExpand?.(spec.tabKey)} title={'Click to expand this tab'}/>}
+            <ArrowsAngleExpand className={'tab-button'} onClick={() => props.onClickExpand?.(spec.tabKey)}
+                               title={'Click to expand this tab'}/>}
           {spec.closable && isActive && hoveredTabKey === spec.tabKey &&
-            <CloseButton className={'tab-button'} onClick={() => props.onClickClose?.(spec.tabKey)} title={'Click to close this tab'}/>}
+            <CloseButton className={'tab-button'} onClick={() => props.onClickClose?.(spec.tabKey)}
+                         title={'Click to close this tab'}/>}
         </div>;
       })}
     </div>

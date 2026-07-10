@@ -1,4 +1,5 @@
 import {CSSProperties, ReactNode} from "react";
+import './PanelUI.css';
 
 interface PanelContentProps {
   className?: string;

@@ -9,6 +9,7 @@ import {
   useRef,
   useState,
 } from "react";
+import './PanelUI.css';
 
 type StylableChild = ReactElement<{style?: CSSProperties, className?: string}>
 

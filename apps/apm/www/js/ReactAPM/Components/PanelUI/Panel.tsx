@@ -1,6 +1,7 @@
 import {Children, CSSProperties, isValidElement, ReactElement, ReactNode, Fragment} from "react";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
+import './PanelUI.css';
 
 
 interface PanelProps {

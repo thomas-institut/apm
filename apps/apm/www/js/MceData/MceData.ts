@@ -189,11 +189,11 @@ export class MceData {
       witnessIndices: [],
       title: ctData.title
     };
-    mceData.chunks.push(newChunk);
     // add it to the end of the list
     if (mceData.chunkOrder === undefined) {
       mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
     }
+    mceData.chunks.push(newChunk);
     mceData.chunkOrder.push(mceData.chunks.length - 1);
 
     const addNewWitnessInfo = (witnessInfo: WitnessInMceData, siglum: string): number => {
@@ -216,7 +216,7 @@ export class MceData {
      * Returns the index of the witness with the given witnessId in `mceData.witnesses`, or -1 if it doesn't exist
      * @param witnessId
      */
-  const getWitnessIndexByWitnessId = (witnessId: string): number => {
+    const getWitnessIndexByWitnessId = (witnessId: string): number => {
       for (let i = 0; i < mceData.witnesses.length; i++) {
         if (witnessId === mceData.witnesses[i].witnessId) {
           return i;

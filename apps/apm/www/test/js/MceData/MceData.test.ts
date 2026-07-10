@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { MceData } from '@/MceData/MceData.js';
 import { MceDataInterface } from '@/MceData/MceDataInterface.js';
 
@@ -247,6 +247,125 @@ describe('MceData', () => {
         { siglum: 'G1', witnesses: [0] },
         { siglum: 'G2', witnesses: [0, 1] }
       ]);
+    });
+  });
+
+  describe('addChunk', () => {
+    const getDocTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Doc ${id}`));
+    const getSourceTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Source ${id}`));
+
+    it('prevents adding duplicate chunks', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.chunks = [{ chunkEditionTableId: 1, version: 'v1' } as any];
+
+      const ctData = { chunkId: 'c2', lang: 'en' } as any;
+      const result = await MceData.addChunk(mceData, 1, ctData, 'v1', getDocTitle, getSourceTitle);
+
+      expect(result.chunks.length).toBe(1);
+    });
+
+    it('prevents adding chunks with different language', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.lang = 'en';
+      mceData.chunks = [{ chunkId: 'c1' } as any];
+
+      const ctData = { chunkId: 'c2', lang: 'fr' } as any;
+      const result = await MceData.addChunk(mceData, 2, ctData, 'v1', getDocTitle, getSourceTitle);
+
+      expect(result.chunks.length).toBe(1);
+    });
+
+    it('sets language and adds first chunk correctly', async () => {
+      const mceData = MceData.createEmpty();
+      const ctData = {
+        chunkId: 'c1',
+        lang: 'la',
+        title: 'Chunk Title',
+        witnesses: [
+          { witnessType: 'edition' },
+          { witnessType: 'fullTx', docId: 10, localWitnessId: 'A' },
+          { witnessType: 'source', ApmWitnessId: 'source:20' }
+        ],
+        sigla: ['Ed', 'A', 'S']
+      } as any;
+
+      await MceData.addChunk(mceData, 1, ctData, '2023-01-01', getDocTitle, getSourceTitle);
+
+      expect(mceData.lang).toBe('la');
+      expect(mceData.chunks.length).toBe(1);
+      expect(mceData.chunks[0]).toEqual({
+        chunkId: 'c1',
+        chunkEditionTableId: 1,
+        version: '2023-01-01',
+        break: 'paragraph',
+        lineNumbersRestart: false,
+        witnessIndices: [-1, 0, 1],
+        title: 'Chunk Title'
+      });
+      expect(mceData.witnesses.length).toBe(2);
+      expect(mceData.witnesses[0]).toEqual({
+        type: 'fullTx',
+        witnessId: 'fullTx-10-A',
+        docId: 10,
+        localWitnessId: 'A',
+        title: 'Doc 10'
+      });
+      expect(mceData.witnesses[1]).toEqual({
+        type: 'source',
+        witnessId: 'source:20',
+        tid: 20,
+        title: 'Source 20'
+      });
+      expect(mceData.sigla).toEqual(['A', 'S']);
+      expect(mceData.chunkOrder).toEqual([0]);
+    });
+
+    it('reuses existing witnesses in subsequent chunks', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.lang = 'la';
+      mceData.witnesses = [{ witnessId: 'fullTx-10-A' } as any];
+      mceData.sigla = ['A'];
+
+      const ctData = {
+        chunkId: 'c2',
+        lang: 'la',
+        witnesses: [{ witnessType: 'fullTx', docId: 10, localWitnessId: 'A' }],
+        sigla: ['A']
+      } as any;
+
+      await MceData.addChunk(mceData, 2, ctData, 'v2', getDocTitle, getSourceTitle);
+
+      expect(mceData.chunks.length).toBe(1);
+      expect(mceData.chunks[0].witnessIndices).toEqual([0]);
+      expect(mceData.witnesses.length).toBe(1);
+    });
+
+    it('handles siglum collisions by generating a unique one', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any];
+      mceData.sigla = ['A'];
+
+      const ctData = {
+        chunkId: 'c1',
+        lang: 'en',
+        witnesses: [{ witnessType: 'fullTx', docId: 10, localWitnessId: 'B' }],
+        sigla: ['A']
+      } as any;
+
+      await MceData.addChunk(mceData, 1, ctData, 'v1', getDocTitle, getSourceTitle);
+
+      // addNewWitnessInfo pushes to witnesses first, so length becomes 2. witnessIndex is 1.
+      expect(mceData.sigla).toEqual(['A', 'W1']);
+    });
+
+    it('initializes chunkOrder if missing when adding a chunk', async () => {
+      const mceData = MceData.createEmpty();
+      delete mceData.chunkOrder;
+
+      const ctData = { chunkId: 'c1', lang: 'en', witnesses: [], sigla: [] } as any;
+      await MceData.addChunk(mceData, 1, ctData, 'v1', getDocTitle, getSourceTitle);
+
+      expect(mceData.chunkOrder).toEqual([0]);
     });
   });
 });

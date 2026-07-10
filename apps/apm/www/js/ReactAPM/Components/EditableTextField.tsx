@@ -45,10 +45,12 @@ export default function EditableTextField(props: EditableTextFieldProps) {
   const handleConfirm = () => {
     onConfirm(editedText);
     setIsEditing(false);
+    setIsHovered(false);
   };
 
   const handleCancel = () => {
     setEditedText(text);
+    setIsHovered(false);
     setIsEditing(false);
   };
 

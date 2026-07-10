@@ -5,7 +5,12 @@ import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
-import {ArrowsAngleContract, ChevronRight, LayoutSplit} from "react-bootstrap-icons";
+import {
+  ArrowCounterclockwise,
+  ArrowsAngleContract,
+  ChevronRight,
+  LayoutSplit
+} from "react-bootstrap-icons";
 import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
 import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel";
@@ -262,6 +267,16 @@ export default function MceComposer() {
     setExpandedTab(null);
   };
 
+  const handleOnClickRevertChanges = () => {
+    console.log(`Click on revert changes`);
+    if (changes.length > 0 && lastSavedMceData !== null) {
+      console.log(`Reverting to last saved changes`);
+      setChanges([]);
+      setMceData(deepCopy(lastSavedMceData));
+      setTitle(lastSavedMceData.title);
+    }
+  }
+
   const panelSpecs: PanelSpec[] = [
     {
       panel: 'one',
@@ -411,6 +426,9 @@ export default function MceComposer() {
           {notificationsDiv}
           <div className={'controls'}>
             <SaveButton changes={changes}/>
+            { changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
+                                                           onClick={() => handleOnClickRevertChanges()}
+                                                           title={'Click to revert to last saved version'}/>}
           </div>
         </div>
         {expandedTabSpec.tabbable && cloneElement(expandedTabSpec.content, {className: expandedTabSpec.className ?? ''})}
@@ -456,6 +474,9 @@ export default function MceComposer() {
         <LayoutSplit className={'fa-rotate-90 icon-btn'} title={'Switch to horizontal layout'}
                      onClick={() => handleClickDirectionIcon(false)}/>
         <SaveButton changes={changes}/>
+        { changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
+                                                       onClick={() => handleOnClickRevertChanges()}
+                                                       title={'Click to revert to last saved version'}/>}
       </div>
     </div>
     <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={3}

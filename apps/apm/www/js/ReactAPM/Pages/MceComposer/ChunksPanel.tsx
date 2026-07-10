@@ -1,6 +1,11 @@
 import {ChunkInMceData, ValidChunkBreaks} from "@/MceData/MceDataInterface";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
-import {ArrowCounterclockwise, ArrowDown, ArrowUp, Trash} from "react-bootstrap-icons";
+import {
+  ArrowClockwise,
+  ArrowDownShort,
+  ArrowUpShort,
+  Trash
+} from "react-bootstrap-icons";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import MultiToggle, {MultiToggleOptionSpec} from "@/ReactAPM/Components/MultiToggle/MultiToggle";
@@ -146,9 +151,9 @@ export default function ChunksPanel({
           return `Click to move chunk ${row.chunkId} ${direction === 'up' ? 'one row up' : 'one row down'}`;
         };
         return <div className={'chunk-table-arrows'}>
-          <ArrowUp className={arrowUpClasses.join(' ')} title={getArrowTitle('up')}
+          <ArrowUpShort className={arrowUpClasses.join(' ')} title={getArrowTitle('up')}
                    onClick={() => handleMoveChunk(index, 'up')}/>
-          <ArrowDown className={arrowDownClasses.join(' ')} title={getArrowTitle('down')}
+          <ArrowDownShort className={arrowDownClasses.join(' ')} title={getArrowTitle('down')}
                      onClick={() => handleMoveChunk(index, 'down')}/>
         </div>;
       }
@@ -209,7 +214,7 @@ export default function ChunksPanel({
                               title={`Click to remove chunk ${row.chunkId} from the edition`}
                               onClick={() => handleDeleteChunk(index)}/>;
               case 'update':
-                return <ArrowCounterclockwise key={'update'} className={'icon-btn'}
+                return <ArrowClockwise key={'update'} className={'icon-btn'}
                                               title={`Click to update chunk ${row.chunkId}`}
                                               onClick={() => handleUpdateChunk(index)}/>;
               default:

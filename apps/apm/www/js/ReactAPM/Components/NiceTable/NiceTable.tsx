@@ -6,14 +6,25 @@ export interface NiceTableColumnDef<T> {
   title: string;
   key: string;
   width?: string;
-  className?: string;
+  /**
+   * Class name for the <td> elements
+   */
+  tdClassName?: string;
+  /**
+   * Class name for the <th> elements
+   */
+  thClassName?: string;
   cellContent: (data: T, rowIndex: number) => JSX.Element;
 }
 
 export interface NiceTableProps<T> {
   columnDefs: NiceTableColumnDef<T>[];
   rows: T[];
+  stickyHeader?: boolean;
   highlightedRow?: number | null;
+  /**
+   * Class name for the <table> element
+   */
   className?: string;
   oddEvenHighlight?: boolean;
   oddRowClassName?: string;
@@ -27,19 +38,27 @@ export default function NiceTable<T>(props: NiceTableProps<T>) {
   const evenRowClassName = props.evenRowClassName ?? 'even';
   const tableClasses = ['nice-table'];
   const highlightedRow = props.highlightedRow ?? null;
+  const stickyHeader = props.stickyHeader ?? false;
   if (props.className) {
     tableClasses.push(props.className);
   }
 
   const getTh = (columnDef: NiceTableColumnDef<T>) => {
     const style: CSSProperties = columnDef.width !== undefined ? {width: columnDef.width} : {};
-    return <th key={columnDef.key} style={style} className={columnDef.className ?? ''}>
+    const classes: string[] = [];
+    if (stickyHeader) {
+      classes.push('sticky');
+    }
+    if (columnDef.thClassName !== undefined) {
+      classes.push(columnDef.thClassName);
+    }
+    return <th key={columnDef.key} style={style} className={classes.join(' ')}>
       {columnDef.title}
     </th>;
   };
 
   const getTd = (columnDef: NiceTableColumnDef<T>, row: T, rowIndex: number) => {
-    return <td key={columnDef.key} className={columnDef.className ?? ''}>
+    return <td key={columnDef.key} className={columnDef.tdClassName ?? ''}>
       {columnDef.cellContent(row, rowIndex)}
     </td>;
   };

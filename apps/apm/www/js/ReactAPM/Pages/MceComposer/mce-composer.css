@@ -172,83 +172,65 @@
     padding-left: 2em;
 }
 
+
 .chunks-panel {
-    box-sizing: border-box;
-    overflow: auto;
+
+    padding: 0 1em 1em 1em;
     height: 100%;
+    overflow: auto;
 
-    h1 {
-        margin-top: 2em;
-        font-size: 1.2em;
-        font-weight: bold;
+    table.nice-table {
+        border-collapse: separate;
+        border-spacing: 0;
+
+        th {
+            padding: 2em 0.5em 1em 0.5em;
+            border-bottom: 1px solid #ececec;
+        }
+        td {
+            padding: 1em 0.5em;
+        }
     }
 
-    .chunk-table {
+    .chunk-table-arrows {
+        display: flex;
+        flex-direction: row;
         align-items: center;
-
-        div {
-            align-content: center;
-            padding: 0.5em 1em;
-            height: 3em;
-        }
-
-
-        .chunk-table-header {
-            font-weight: bold;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-            background-color: white;
-            border-bottom: 1px solid #efefef;
-            height: 2.5em;
-        }
-
-        .odd {
-            background-color: #f8f8f8;
-        }
-
-
-        .chunk-table-error {
-            color: var(--danger);
-        }
-
-        .chunk-table-warning {
-            color: var(--warning);
-        }
-
-        .chunk-table-arrows {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5em;
-
-            .disabled {
-                color: silver;
-            }
-
-            :hover {
-                color: #0d6efd;
-            }
-        }
-
-        .chunk-table-control-buttons {
-            display: flex;
-            flex-direction: row;
-            align-items: center;
-            gap: 0.5em;
-            justify-content: start;
-        }
-
-        .control-button {
-            cursor: pointer;
-        }
-
-        .control-button :hover {
-            color: #0d6efd;
-        }
+        justify-content: center;
+        gap: 0.5em;
     }
+
+    .chunk-table-error {
+        color: var(--danger);
+    }
+
+    .chunk-table-warning {
+        color: var(--warning);
+    }
+
+    .chunk-table-control-buttons {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5em;
+        justify-content: start;
+    }
+
+    .control-button {
+        cursor: pointer;
+    }
+
+    .control-button.disabled {
+        color: silver;
+        cursor: default;
+    }
+
+    .control-button :hover {
+        color: #0d6efd;
+    }
+
 }
+
 
 .main-text-panel {
     padding: 1em;

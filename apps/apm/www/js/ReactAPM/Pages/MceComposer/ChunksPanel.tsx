@@ -1,5 +1,4 @@
 import {ChunkInMceData, ValidChunkBreaks} from "@/MceData/MceDataInterface";
-import {Fragment} from "react";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import {ArrowCounterclockwise, ArrowDown, ArrowUp, Trash} from "react-bootstrap-icons";
 import {ApmFormats} from "@/pages/common/ApmFormats";
@@ -7,6 +6,7 @@ import EntityLink from "@/ReactAPM/Components/EntityLink";
 import MultiToggle, {MultiToggleOptionSpec} from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import {capitalizeFirstLetter} from "@/toolbox/Util";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
+import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 
 
 interface ChunksPanelProps extends TabbableElementProps {
@@ -22,7 +22,6 @@ interface ChunksPanelProps extends TabbableElementProps {
 type ControlButton = 'delete' | 'update';
 
 interface ChunkTableRow {
-  className: string;
   chunkId: string;
   moveUpArrow: boolean;
   moveDownArrow: boolean;
@@ -35,11 +34,6 @@ interface ChunkTableRow {
   buttons: ControlButton[];
 }
 
-interface ChunkTableColSpec {
-  title: string;
-  gridTemplate: string;
-}
-
 export default function ChunksPanel({
                                       chunks,
                                       chunkOrder,
@@ -50,15 +44,6 @@ export default function ChunksPanel({
                                       setChunkBreak
                                     }: ChunksPanelProps) {
 
-  const tableCols: ChunkTableColSpec[] = [
-    {title: '', gridTemplate: '5em'},
-    {title: 'Chunk Id', gridTemplate: 'max-content'},
-    {title: 'Edition Id', gridTemplate: 'max-content'},
-    {title: 'Title', gridTemplate: 'max-content'},
-    {title: 'Version', gridTemplate: 'max-content'},
-    {title: 'Break After', gridTemplate: 'max-content'},
-    {title: '', gridTemplate: '5em'},
-  ];
 
   if (chunks.length !== ctDataStatusArray.length) {
     return <div className={'text-danger'}>Chunks and CtDataStatusArray length mismatch!</div>;
@@ -70,23 +55,11 @@ export default function ChunksPanel({
   }
   const lastChunkIndex = chunks.length - 1;
 
-  const tableStyle = {
-    display: 'grid',
-    gridTemplateColumns: tableCols.map((col) => col.gridTemplate).join(' ')
-  };
-
-  const getChunkTableHeader = () => {
-    return <Fragment key={'chunk-table-header'}>
-      {tableCols.map((col) => <div className={'chunk-table-header'}>{col.title}</div>)}
-    </Fragment>;
-  };
-
   const getChunkTableRow = (chunk: ChunkInMceData, index: number): ChunkTableRow => {
     const isFirst = index === 0;
     const isLast = index === lastChunkIndex;
 
     const chunkTableRow: ChunkTableRow = {
-      className: index % 2 === 0 ? 'even' : 'odd',
       chunkId: chunk.chunkId,
       moveUpArrow: !isFirst,
       moveDownArrow: !isLast,
@@ -149,77 +122,111 @@ export default function ChunksPanel({
         };
       })
   ];
+  const columnDefs: NiceTableColumnDef<ChunkTableRow>[] = [
 
-  const getChunkTableRowElement = (row: ChunkTableRow, index: number) => {
-
-    const arrowUpClasses = ['control-button'];
-    if (!row.moveUpArrow) {
-      arrowUpClasses.push('disabled');
-    }
-    const arrowDownClasses = ['control-button'];
-    if (!row.moveDownArrow) {
-      arrowDownClasses.push('disabled');
-    }
-
-    const arrowsDiv = (<div className={'chunk-table-arrows ' +  row.className}>
-      <ArrowUp className={arrowUpClasses.join(' ')} onClick={() => handleMoveChunk(index, 'up')}/>
-      <ArrowDown className={arrowDownClasses.join(' ')} onClick={() => handleMoveChunk(index, 'down')}/>
-    </div>);
-
-    let statusDiv;
-
-    if (row.errorMessage) {
-      statusDiv = <div className={'chunk-table-error ' + row.className}>{row.errorMessage}</div>;
-    } else if (row.warningMessage) {
-      statusDiv = <div className={'chunk-table-warning ' + row.className}>{row.warningMessage}</div>;
-    } else {
-      // buttons
-      statusDiv = <div className={'chunk-table-control-buttons ' + row.className}>
-        {row.buttons.map((button) => {
-          switch (button) {
-            case 'delete':
-              return <Trash className={'control-button'} onClick={() => handleDeleteChunk(index)}/>;
-            case 'update':
-              return <ArrowCounterclockwise className={'control-button'} onClick={() => handleUpdateChunk(index)}/>;
-            default:
-              return null;
+    {
+      key: 'arrows',
+      title: '',
+      cellContent: (row, index) => {
+        const arrowUpClasses = ['control-button'];
+        if (!row.moveUpArrow) {
+          arrowUpClasses.push('disabled');
+        }
+        const arrowDownClasses = ['control-button'];
+        if (!row.moveDownArrow) {
+          arrowDownClasses.push('disabled');
+        }
+        const getArrowTitle = (direction: 'up' | 'down') => {
+          if (direction === 'up' && !row.moveUpArrow) {
+            return '';
           }
-        })}
-      </div>;
+          if (direction === 'down' && !row.moveDownArrow) {
+            return '';
+          }
+          return `Click to move chunk ${row.chunkId} ${direction === 'up' ? 'one row up' : 'one row down'}`;
+        };
+        return <div className={'chunk-table-arrows'}>
+          <ArrowUp className={arrowUpClasses.join(' ')} title={getArrowTitle('up')}
+                   onClick={() => handleMoveChunk(index, 'up')}/>
+          <ArrowDown className={arrowDownClasses.join(' ')} title={getArrowTitle('down')}
+                     onClick={() => handleMoveChunk(index, 'down')}/>
+        </div>;
+      }
+    },
+    {
+      key: 'pos',
+      title: 'Pos',
+      cellContent: (_row, index) => <>{index + 1}</>
+    },
+    {
+      key: 'chunkId',
+      title: 'Chunk Id',
+      cellContent: (row) => <>{row.chunkId}</>,
+    },
+    {
+      key: 'tableId',
+      title: 'Table Id',
+      cellContent: (row) => <EntityLink id={row.tableId ?? -1}
+                                        type={'singleChunkEdition'}
+                                        openInNewTab={true}
+                                        title={`Click to open chunk edition ${row.tableId} in new tab`}
+                                        label={row.tableId?.toString() ?? ''}/>,
+    },
+    {
+      key: 'title',
+      title: 'Title',
+      cellContent: (row) => <>{row.title}</>,
+    },
+    {
+      key: 'version',
+      title: 'Version',
+      cellContent: (row) => <>{row.version === null ? '' : ApmFormats.time(row.version)}</>,
+    },
+    {
+      key: 'breakAfter',
+      title: 'Break After',
+      cellContent: (row, index) => <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
+                                                onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
+                                                selected={row.breakAfter ?? 'none'}/>,
+    },
+    {
+      key: 'status',
+      title: '',
+      cellContent: (row, index) => {
+
+        if (row.errorMessage) {
+          return <span className={'chunk-table-error'}>{row.errorMessage}</span>;
+        }
+        if (row.warningMessage) {
+          return <span className={'chunk-table-warning'}>{row.warningMessage}</span>;
+        }
+        // buttons
+        return <div className={'chunk-table-control-buttons'}>
+          {row.buttons.map((button) => {
+            switch (button) {
+              case 'delete':
+                return <Trash className={'control-button'}
+                              title={`Click to remove chunk ${row.chunkId} from the edition`}
+                              onClick={() => handleDeleteChunk(index)}/>;
+              case 'update':
+                return <ArrowCounterclockwise className={'control-button'}
+                                               title={`Click to update chunk ${row.chunkId}`}
+                                               onClick={() => handleUpdateChunk(index)}/>;
+              default:
+                return null;
+            }
+          })}
+        </div>;
+      }
     }
+  ];
 
-    return <Fragment key={row.chunkId}>
-      {arrowsDiv}
-      <div className={row.className}>{row.chunkId}</div>
-      <div className={row.className}>
-        <EntityLink id={row.tableId ?? -1}
-                    type={'singleChunkEdition'}
-                    openInNewTab={true}
-                    title={`Click to open chunk edition ${row.tableId} in new tab`}
-                    label={row.tableId?.toString() ?? ''}/>
-      </div>
+  const rows = chunkOrder.map((chunkOrder) => chunks[chunkOrder])
+    .map((chunk, index) => getChunkTableRow(chunk, index));
 
-      <div className={row.className}>{row.title}</div>
-      <div className={row.className}>{row.version === null ? '' : ApmFormats.time(row.version)}</div>
-
-      <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
-                     className={row.className}
-                     onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
-                     selected={row.breakAfter ?? 'none'}/>
-
-
-      {statusDiv}
-    </Fragment>;
-  };
-
-  return (<div className={'chunks-panel'}>
-    <div className={'chunk-table'} style={tableStyle}>
-      {getChunkTableHeader()}
-      {chunkOrder.map((chunkOrder) => chunks[chunkOrder])
-        .map((chunk, index) => getChunkTableRow(chunk, index))
-        .map((row, index) => getChunkTableRowElement(row, index))}
-    </div>
-  </div>);
+  return <div className={'chunks-panel'}>
+    <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true}/>
+  </div>;
 }
 
 

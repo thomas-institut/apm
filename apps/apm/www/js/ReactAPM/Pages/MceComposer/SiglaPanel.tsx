@@ -44,7 +44,7 @@ export default function SiglaPanel({mceData}: SiglaPanelProps) {
       key: "siglum",
       title: 'Siglum',
       width: '5em',
-      className: 'siglum',
+      tdClassName: 'siglum',
       cellContent: (siglumData) => <>{siglumData.siglum}</>
     },
     {

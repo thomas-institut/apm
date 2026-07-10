@@ -52,19 +52,19 @@ export default function NiceTable<T>(props: NiceTableProps<T>) {
     if (columnDef.thClassName !== undefined) {
       classes.push(columnDef.thClassName);
     }
-    return <th key={columnDef.key} style={style} className={classes.join(' ')}>
+    return <th key={columnDef.key + 'head'} style={style} className={classes.join(' ')}>
       {columnDef.title}
     </th>;
   };
 
   const getTd = (columnDef: NiceTableColumnDef<T>, row: T, rowIndex: number) => {
-    return <td key={columnDef.key} className={columnDef.tdClassName ?? ''}>
+    return <td key={columnDef.key + rowIndex.toString()} className={columnDef.tdClassName ?? ''}>
       {columnDef.cellContent(row, rowIndex)}
     </td>;
   };
 
   const getTrClass = (rowIndex: number) => {
-    const classes:string[] = [];
+    const classes: string[] = [];
     if (highlightedRow !== null && highlightedRow === rowIndex) {
       classes.push('highlighted');
     }
@@ -72,11 +72,11 @@ export default function NiceTable<T>(props: NiceTableProps<T>) {
       classes.push(rowIndex % 2 === 0 ? evenRowClassName : oddRowClassName);
     }
     return classes.join(' ');
-  }
+  };
 
   return <table className={tableClasses.join(' ')}>
     <thead>
-    <tr>
+    <tr key={'head'}>
       {props.columnDefs.map((columnDef) => getTh(columnDef))}
     </tr>
     </thead>

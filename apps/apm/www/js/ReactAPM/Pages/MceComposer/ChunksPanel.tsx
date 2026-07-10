@@ -210,8 +210,8 @@ export default function ChunksPanel({
                               onClick={() => handleDeleteChunk(index)}/>;
               case 'update':
                 return <ArrowCounterclockwise className={'control-button'}
-                                               title={`Click to update chunk ${row.chunkId}`}
-                                               onClick={() => handleUpdateChunk(index)}/>;
+                                              title={`Click to update chunk ${row.chunkId}`}
+                                              onClick={() => handleUpdateChunk(index)}/>;
               default:
                 return null;
             }

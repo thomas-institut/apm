@@ -2,9 +2,6 @@
 table.nice-table {
     border-collapse: collapse;
 
-    thead {
-        /*border-bottom: 1px solid #ddd;*/
-    }
 
     th.sticky {
         position: sticky;
@@ -22,6 +19,10 @@ table.nice-table {
     }
 
     td {
+        padding: 0.5em;
+    }
+
+    th {
         padding: 0.5em;
     }
 }

@@ -187,6 +187,7 @@
             padding: 2em 0.5em 1em 0.5em;
             border-bottom: 1px solid #ececec;
         }
+
         td {
             padding: 1em 0.5em;
         }
@@ -248,11 +249,8 @@
 }
 
 
-.sigla-panel {
+.witnesses-panel {
     padding: 1em;
-
-
-
 
     .section.sigla-groups {
         margin-top: 0;

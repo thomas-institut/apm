@@ -15,7 +15,7 @@ import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import SaveIcon from "@/ReactAPM/Pages/MceComposer/SaveIcon";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
-import SiglaPanel from "@/ReactAPM/Pages/MceComposer/SiglaPanel";
+import WitnessesPanel from "@/ReactAPM/Pages/MceComposer/WitnessesPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
 import {Edition} from "@/Edition/Edition";
 import {MceDataEditionGenerator} from "@/MceData/MceDataEditionGenerator";
@@ -289,9 +289,9 @@ export default function MceComposer() {
     },
     {
       panel: 'one',
-      key: 'sigla',
-      title: 'Sigla',
-      content: <SiglaPanel mceData={mceData}/>,
+      key: 'witnesses',
+      title: 'Witnesses',
+      content: <WitnessesPanel mceData={mceData}/>,
       tabbable: true,
     },
     {

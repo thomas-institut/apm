@@ -7,7 +7,7 @@ import MultiToggle, {MultiToggleOptionSpec} from "@/ReactAPM/Components/MultiTog
 import {capitalizeFirstLetter} from "@/toolbox/Util";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
-
+import './ChunksPanel.css';
 
 interface ChunksPanelProps extends TabbableElementProps {
   chunks: ChunkInMceData[];
@@ -128,11 +128,11 @@ export default function ChunksPanel({
       key: 'arrows',
       title: '',
       cellContent: (row, index) => {
-        const arrowUpClasses = ['control-button'];
+        const arrowUpClasses = ['icon-btn'];
         if (!row.moveUpArrow) {
           arrowUpClasses.push('disabled');
         }
-        const arrowDownClasses = ['control-button'];
+        const arrowDownClasses = ['icon-btn'];
         if (!row.moveDownArrow) {
           arrowDownClasses.push('disabled');
         }
@@ -205,11 +205,11 @@ export default function ChunksPanel({
           {row.buttons.map((button) => {
             switch (button) {
               case 'delete':
-                return <Trash key={'delete'} className={'control-button'}
+                return <Trash key={'delete'} className={'icon-btn'}
                               title={`Click to remove chunk ${row.chunkId} from the edition`}
                               onClick={() => handleDeleteChunk(index)}/>;
               case 'update':
-                return <ArrowCounterclockwise key={'update'} className={'control-button'}
+                return <ArrowCounterclockwise key={'update'} className={'icon-btn'}
                                               title={`Click to update chunk ${row.chunkId}`}
                                               onClick={() => handleUpdateChunk(index)}/>;
               default:

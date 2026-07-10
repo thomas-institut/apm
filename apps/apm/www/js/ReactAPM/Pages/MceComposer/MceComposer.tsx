@@ -5,7 +5,6 @@ import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
-import './mce-composer.css';
 import {ArrowsAngleContract, ChevronRight, LayoutSplit} from "react-bootstrap-icons";
 import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
@@ -13,7 +12,7 @@ import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
-import SaveIcon from "@/ReactAPM/Pages/MceComposer/SaveIcon";
+import SaveButton from "@/ReactAPM/Pages/MceComposer/SaveButton";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 import WitnessesPanel from "@/ReactAPM/Pages/MceComposer/WitnessesPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
@@ -23,6 +22,7 @@ import {BasicProfiler} from "@/toolbox/BasicProfiler";
 import MainTextPanel from "@/ReactAPM/Pages/MceComposer/MainTextPanel";
 import ApmLogo from "@/ReactAPM/Components/ApmLogo/ApmLogo";
 import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
+import './MceComposer.css';
 
 export type CtDataState = 'loading' | 'loaded' | 'error';
 
@@ -205,7 +205,6 @@ export default function MceComposer() {
   }, [mceComposerStatus, edition]);
 
 
-
   const checkForChanges = () => {
     if (lastSavedMceData === null) {
       console.warn(`Checking for changes but no last saved MCE data available`);
@@ -316,8 +315,8 @@ export default function MceComposer() {
       expandable: true,
       className: 'preview-panel',
       content: <Panel>
-        <Toolbar className={'preview-toolbar padding-1'}>Preview Toolbar</Toolbar>
-        <PanelContent className={'padding-1'}>
+        <Toolbar className={'preview-toolbar'}>Preview Toolbar</Toolbar>
+        <PanelContent>
           Preview will be here...
         </PanelContent>
       </Panel>,
@@ -342,10 +341,10 @@ export default function MceComposer() {
 
   if (mceComposerStatus === 'error') {
     return <StatusPage label={'Error'}>
-        <h2>Oops!</h2>
-        <p className={'text-danger'}>{errorMsg}</p>
-        <p>This may be a bug, please report it.</p>
-      </StatusPage>;
+      <h2>Oops!</h2>
+      <p className={'text-danger'}>{errorMsg}</p>
+      <p>This may be a bug, please report it.</p>
+    </StatusPage>;
   }
 
   if (mceComposerStatus === 'loadingMce') {
@@ -400,18 +399,18 @@ export default function MceComposer() {
 
   if (expandedTabSpec !== null) {
     return (
-      <div className="mce-composer-container expanded">
+      <div className="mce-composer expanded">
         <div className="header">
           <ApmLogo height={30} className={'logo'}/>
           <div className={'expanded-tab-title-area'}>
             <span className={'title'}>{title}</span>
             <ChevronRight/>
             <span className={'tab-name'}>{expandedTabSpec.title}</span>
-            <ArrowsAngleContract className={'tb-icon'} onClick={() => handleOnClickCollapseTab()}/>
+            <ArrowsAngleContract className={'icon-btn'} onClick={() => handleOnClickCollapseTab()}/>
           </div>
           {notificationsDiv}
           <div className={'controls'}>
-            <SaveIcon changes={changes}/>
+            <SaveButton changes={changes}/>
           </div>
         </div>
         {expandedTabSpec.tabbable && cloneElement(expandedTabSpec.content, {className: expandedTabSpec.className ?? ''})}
@@ -445,18 +444,18 @@ export default function MceComposer() {
       });
   };
 
-  return (<div className="mce-composer-container">
+  return (<div className="mce-composer">
     <div className="header">
       <ApmLogo height={30} className={'logo'}/>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={title}
                          onConfirm={handleConfirmTitleEdit}/>
       {notificationsDiv}
       <div className={'controls'}>
-        <LayoutSplit className={'tb-icon'} title={'Switch to vertical layout'}
+        <LayoutSplit className={'icon-btn'} title={'Switch to vertical layout'}
                      onClick={() => handleClickDirectionIcon(true)}/>
-        <LayoutSplit className={'fa-rotate-90 tb-icon'} title={'Switch to horizontal layout'}
+        <LayoutSplit className={'fa-rotate-90 icon-btn'} title={'Switch to horizontal layout'}
                      onClick={() => handleClickDirectionIcon(false)}/>
-        <SaveIcon changes={changes}/>
+        <SaveButton changes={changes}/>
       </div>
     </div>
     <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={3}

@@ -1,0 +1,24 @@
+.status-page {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    height: 100dvh;
+    overflow: hidden;
+    box-sizing: border-box;
+
+    .status-page-header {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 1em;
+    }
+
+    .status-page-label {
+        font-size: 1.3em;
+        font-weight: bold;
+    }
+
+    .status-page-content {
+        overflow: auto;
+        padding: 1em;
+    }
+}

@@ -1,0 +1,42 @@
+.chunks-panel {
+    padding: 0 1em 1em 1em;
+    height: 100%;
+    overflow: auto;
+
+    table.nice-table {
+        --td-padding: 1em 0.5em;
+        --th-padding: 2em 0.5em 1em 0.5em;
+
+        th {
+            border-bottom: 1px solid #ececec;
+        }
+
+    }
+
+    .chunk-table-arrows {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5em;
+    }
+
+    .chunk-table-error {
+        color: var(--danger);
+    }
+
+    .chunk-table-warning {
+        color: var(--warning);
+    }
+
+    .chunk-table-control-buttons {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5em;
+        justify-content: start;
+    }
+
+
+
+}

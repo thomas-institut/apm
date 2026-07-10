@@ -1,5 +1,6 @@
 import {Edition} from "@/Edition/Edition";
 import {JSX} from "react";
+import './MainTextPanel.css';
 
 interface MainTextPanelProps {
   edition: Edition | null;
@@ -16,24 +17,24 @@ export default function MainTextPanel({edition, generationProgress}: MainTextPan
     const paragraphs: string[] = [];
 
     let currentParagraph: string = "";
-    edition.mainText.forEach( (token) => {
-     switch (token.type) {
-       case 'text':
-       case 'glue':
-         currentParagraph += token.getPlainText();
-         break;
-       case 'paragraph_end':
-         paragraphs.push(currentParagraph);
-         currentParagraph = "";
-         break;
-     }
+    edition.mainText.forEach((token) => {
+      switch (token.type) {
+        case 'text':
+        case 'glue':
+          currentParagraph += token.getPlainText();
+          break;
+        case 'paragraph_end':
+          paragraphs.push(currentParagraph);
+          currentParagraph = "";
+          break;
+      }
     });
     if (currentParagraph !== "") {
       paragraphs.push(currentParagraph);
     }
 
     return paragraphs;
-  }
+  };
 
   if (edition === null && generationProgress === null) {
     generationNotification = <div className={'waiting'}>Waiting for edition...</div>;
@@ -43,14 +44,14 @@ export default function MainTextPanel({edition, generationProgress}: MainTextPan
     }
   }
 
-  const mainTextClasses = [ 'main-text', 'text-' + edition?.lang];
+  const mainTextClasses = ['main-text', 'text-' + edition?.lang];
 
   return (
     <div className={'main-text-panel'}>
-      { generationNotification }
-      { edition !== null && <div className={mainTextClasses.join(' ')}>
+      {generationNotification}
+      {edition !== null && <div className={mainTextClasses.join(' ')}>
         <div className={'left-margin'}></div>
-        <div>{getText(edition).map( (p,i) => <p key={i}>{p}</p>)}</div>
+        <div>{getText(edition).map((p, i) => <p key={i}>{p}</p>)}</div>
         <div className={'right-margin'}></div>
       </div>}
     </div>

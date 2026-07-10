@@ -1,9 +1,9 @@
-import  {ReactNode} from "react";
+import {ReactNode} from "react";
 import ApmLogo from "@/ReactAPM/Components/ApmLogo/ApmLogo";
-
+import './StatusPage.css';
 
 interface StatusPageProps {
-  label:string;
+  label: string;
   children: ReactNode;
 }
 
@@ -22,6 +22,5 @@ export function StatusPage({children, label}: StatusPageProps) {
     <div className={'status-page-content'}>
       {children}
     </div>
-  </div>
-
+  </div>;
 }

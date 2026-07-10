@@ -3,11 +3,11 @@ import Popover from "react-bootstrap/Popover";
 import {OverlayTrigger} from "react-bootstrap";
 
 
-interface SaveIconProps {
+interface SaveButtonProps {
   changes: string[]
 }
 
-export default function SaveIcon({ changes }: SaveIconProps) {
+export default function SaveButton({ changes }: SaveButtonProps) {
   if (changes.length > 0) {
     changes.join('\n');
     const popover = (
@@ -24,8 +24,8 @@ export default function SaveIcon({ changes }: SaveIconProps) {
     return <OverlayTrigger overlay={popover}
                            placement={'auto-end'}
                            trigger={['hover', 'focus']}>
-      <CloudArrowUp className={'tb-icon tb-icon-active'}/>
+      <CloudArrowUp className={'icon-btn highlighted'}/>
     </OverlayTrigger>;
   }
-  return <CloudArrowUp className={'tb-icon tb-icon-disabled'} title={'Nothing to save'}/>;
+  return <CloudArrowUp className={'icon-btn disabled'} title={'Nothing to save'}/>;
 }

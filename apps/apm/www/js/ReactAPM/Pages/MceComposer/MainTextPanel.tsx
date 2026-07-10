@@ -50,7 +50,7 @@ export default function MainTextPanel({edition, generationProgress}: MainTextPan
       { generationNotification }
       { edition !== null && <div className={mainTextClasses.join(' ')}>
         <div className={'left-margin'}></div>
-        <div>{getText(edition).map( p => <p>{p}</p>)}</div>
+        <div>{getText(edition).map( (p,i) => <p key={i}>{p}</p>)}</div>
         <div className={'right-margin'}></div>
       </div>}
     </div>

@@ -163,34 +163,41 @@
     margin-bottom: 1em;
 }
 
-.tab-panel-content-item .section {
+.section {
     margin-top: 1em;
     margin-bottom: 2em;
 }
 
-.tab-panel-content-item .section-content {
+.section-content {
     padding-left: 2em;
 }
 
+.control-button {
+    cursor: pointer;
+}
+
+.control-button.disabled {
+    color: silver;
+    cursor: default;
+}
+
+.control-button:hover {
+    color: #0d6efd;
+}
 
 .chunks-panel {
-
     padding: 0 1em 1em 1em;
     height: 100%;
     overflow: auto;
 
     table.nice-table {
-        border-collapse: separate;
-        border-spacing: 0;
+        --td-padding: 1em 0.5em;
+        --th-padding: 2em 0.5em 1em 0.5em;
 
         th {
-            padding: 2em 0.5em 1em 0.5em;
             border-bottom: 1px solid #ececec;
         }
 
-        td {
-            padding: 1em 0.5em;
-        }
     }
 
     .chunk-table-arrows {
@@ -217,18 +224,7 @@
         justify-content: start;
     }
 
-    .control-button {
-        cursor: pointer;
-    }
 
-    .control-button.disabled {
-        color: silver;
-        cursor: default;
-    }
-
-    .control-button :hover {
-        color: #0d6efd;
-    }
 
 }
 
@@ -256,10 +252,6 @@
         margin-top: 0;
     }
 
-}
-
-.margin-top-0 {
-    margin-top: 0 !important;
 }
 
 .popover {

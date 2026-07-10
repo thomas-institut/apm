@@ -205,11 +205,11 @@ export default function ChunksPanel({
           {row.buttons.map((button) => {
             switch (button) {
               case 'delete':
-                return <Trash className={'control-button'}
+                return <Trash key={'delete'} className={'control-button'}
                               title={`Click to remove chunk ${row.chunkId} from the edition`}
                               onClick={() => handleDeleteChunk(index)}/>;
               case 'update':
-                return <ArrowCounterclockwise className={'control-button'}
+                return <ArrowCounterclockwise key={'update'} className={'control-button'}
                                               title={`Click to update chunk ${row.chunkId}`}
                                               onClick={() => handleUpdateChunk(index)}/>;
               default:

@@ -6,6 +6,8 @@ import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import {
+  Arrow90degLeft,
+  Arrow90degRight,
   ArrowCounterclockwise,
   ArrowsAngleContract,
   ChevronRight,
@@ -18,6 +20,11 @@ import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import SaveButton from "@/ReactAPM/Pages/MceComposer/SaveButton";
+import {ActionHistory} from "@/toolbox/ActionHistory";
+import {ChangeTitleAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeTitleAction";
+import {DeleteChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteChunkAction";
+import {MoveChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/MoveChunkAction";
+import {SetChunkBreakAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetChunkBreakAction";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 import WitnessesPanel from "@/ReactAPM/Pages/MceComposer/WitnessesPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
@@ -27,6 +34,7 @@ import {BasicProfiler} from "@/toolbox/BasicProfiler";
 import MainTextPanel from "@/ReactAPM/Pages/MceComposer/MainTextPanel";
 import ApmLogo from "@/ReactAPM/Components/ApmLogo/ApmLogo";
 import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
+import HistoryPanel from "@/ReactAPM/Pages/MceComposer/HistoryPanel";
 import './MceComposer.css';
 
 export type CtDataState = 'loading' | 'loaded' | 'error';
@@ -73,6 +81,8 @@ export default function MceComposer() {
   const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('mainText');
   const [changes, setChanges] = useState<string[]>([]);
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
+  const [history] = useState(() => new ActionHistory());
+  const [historyVersion, setHistoryVersion] = useState(0);
 
   const singleChunkEditionCache = useRef<Record<number, Edition>>([]);
   const shimWidth = 5;
@@ -124,6 +134,9 @@ export default function MceComposer() {
             document.title = `MCE: ${mceTitle}`;
             setLastSavedMceData(deepCopy(resp.mceData));
             setMceData(resp.mceData);
+            history.clear();
+            history.markAsSaved();
+            setHistoryVersion(v => v + 1);
             setCtDataStatusArray(resp.mceData.chunks.map((chunk) => (
               {
                 ctDataId: chunk.chunkEditionTableId,
@@ -211,16 +224,13 @@ export default function MceComposer() {
 
 
   const checkForChanges = () => {
-    if (lastSavedMceData === null) {
-      console.warn(`Checking for changes but no last saved MCE data available`);
-      return;
-    }
-    const newChanges: string[] = [];
-    if (mceData.title !== lastSavedMceData.title) {
-      newChanges.push(`New title: '${mceData.title}'`);
-    }
-    setChanges(newChanges);
+    setChanges(history.getUnsavedActionLabels());
   };
+
+  useEffect(() => {
+    checkForChanges();
+  }, [historyVersion]);
+
   const handleClickDirectionIcon = (horizontalIcon: boolean) => {
     if (horizontalIcon) {
       setDirection('vertical');
@@ -228,33 +238,55 @@ export default function MceComposer() {
       setDirection('horizontal');
     }
   };
-
-  const handleResize = (_firstRatio: number, _secondRatio: number) => {
-    // console.log("handleResize", firstRatio, secondRatio);
-  };
-
   const deleteChunk = (chunkIndex: number) => {
     console.log("deleteChunk", chunkIndex);
+    history.execute(new DeleteChunkAction(mceData, chunkIndex, (newData) => {
+      setMceData(newData);
+      setHistoryVersion(v => v + 1);
+    }));
   };
 
   const moveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
     console.log(`Move chunk index ${chunkIndex} '${direction}'`);
+    const newMceData = deepCopy(mceData);
+    MceData.moveChunk(newMceData, chunkIndex, direction === 'up' ? 'backwards' : 'forwards');
+    if (newMceData.chunkOrder === undefined) {
+      throw new Error("Invalid chunk order after move");
+    }
+    history.execute(new MoveChunkAction(mceData.chunkOrder ?? MceData.getDefaultChunkOrder(mceData), newMceData.chunkOrder, (newOrder) => {
+      setMceData(prev => ({...prev, chunkOrder: newOrder}));
+      setHistoryVersion(v => v + 1);
+    }));
   };
 
   const setChunkBreak = (chunkIndex: number, breakAfter: string) => {
     console.log(`Set chunk break index ${chunkIndex} '${breakAfter}'`);
+    history.execute(new SetChunkBreakAction(chunkIndex, mceData.chunks[chunkIndex].break, breakAfter, (idx, brk) => {
+      setMceData(prev => {
+        const newData = deepCopy(prev);
+        newData.chunks[idx].break = brk;
+        return newData;
+      });
+      setHistoryVersion(v => v + 1);
+    }));
   };
 
   const updateChunk = (chunkIndex: number) => {
     console.log(`Update chunk index ${chunkIndex}`);
+    // No action implemented yet for update chunk in history
+    checkForChanges();
   };
 
   const handleConfirmTitleEdit = (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
-    setTitle(sanitizedTitle);
-    document.title = sanitizedTitle;
-    mceData.title = sanitizedTitle;
-    checkForChanges();
+    if (sanitizedTitle === title) return;
+
+    history.execute(new ChangeTitleAction(title, sanitizedTitle, (t) => {
+      setTitle(t);
+      document.title = t;
+      setMceData(prev => ({...prev, title: t}));
+      setHistoryVersion(v => v + 1);
+    }));
   };
 
   const handleOnClickTabExpand = (tabKey: string) => {
@@ -269,13 +301,8 @@ export default function MceComposer() {
 
   const handleOnClickRevertChanges = () => {
     console.log(`Click on revert changes`);
-    if (changes.length > 0 && lastSavedMceData !== null) {
-      console.log(`Reverting to last saved changes`);
-      setChanges([]);
-      setMceData(deepCopy(lastSavedMceData));
-      setTitle(lastSavedMceData.title);
-    }
-  }
+    history.revertToSaved();
+  };
 
   const panelSpecs: PanelSpec[] = [
     {
@@ -306,6 +333,16 @@ export default function MceComposer() {
       key: 'witnesses',
       title: 'Witnesses',
       content: <WitnessesPanel mceData={mceData}/>,
+      tabbable: true,
+    },
+    {
+      panel: 'one',
+      key: 'history',
+      title: 'History',
+      content: <HistoryPanel history={history} onGoTo={(idx) => {
+        history.goTo(idx);
+        setHistoryVersion(v => v + 1);
+      }}/>,
       tabbable: true,
     },
     {
@@ -425,10 +462,22 @@ export default function MceComposer() {
           </div>
           {notificationsDiv}
           <div className={'controls'}>
+            <Arrow90degLeft className={'icon-btn' + (history.getUndoStack().length > 0 ? '' : ' disabled')}
+                            title={'Undo'}
+                            onClick={() => {
+                              history.undo();
+                              setHistoryVersion(v => v + 1);
+                            }}/>
+            <Arrow90degRight className={'icon-btn' + (history.getRedoStack().length > 0 ? '' : ' disabled')}
+                             title={'Redo'}
+                             onClick={() => {
+                               history.redo();
+                               setHistoryVersion(v => v + 1);
+                             }}/>
             <SaveButton changes={changes}/>
-            { changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
-                                                           onClick={() => handleOnClickRevertChanges()}
-                                                           title={'Click to revert to last saved version'}/>}
+            {changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
+                                                          onClick={() => handleOnClickRevertChanges()}
+                                                          title={'Click to revert to last saved version'}/>}
           </div>
         </div>
         {expandedTabSpec.tabbable && cloneElement(expandedTabSpec.content, {className: expandedTabSpec.className ?? ''})}
@@ -469,18 +518,30 @@ export default function MceComposer() {
                          onConfirm={handleConfirmTitleEdit}/>
       {notificationsDiv}
       <div className={'controls'}>
+        <Arrow90degLeft className={'icon-btn' + (history.getUndoStack().length > 0 ? '' : ' disabled')}
+                        title={'Undo'}
+                        onClick={() => {
+                          history.undo();
+                          setHistoryVersion(v => v + 1);
+                        }}/>
+        <Arrow90degRight className={'icon-btn' + (history.getRedoStack().length > 0 ? '' : ' disabled')}
+                         title={'Redo'}
+                         onClick={() => {
+                           history.redo();
+                           setHistoryVersion(v => v + 1);
+                         }}/>
         <LayoutSplit className={'icon-btn'} title={'Switch to vertical layout'}
                      onClick={() => handleClickDirectionIcon(true)}/>
         <LayoutSplit className={'fa-rotate-90 icon-btn'} title={'Switch to horizontal layout'}
                      onClick={() => handleClickDirectionIcon(false)}/>
         <SaveButton changes={changes}/>
-        { changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
-                                                       onClick={() => handleOnClickRevertChanges()}
-                                                       title={'Click to revert to last saved version'}/>}
+        {changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
+                                                      onClick={() => handleOnClickRevertChanges()}
+                                                      title={'Click to revert to last saved version'}/>}
       </div>
     </div>
     <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={3}
-                 outerMargin={10} onResize={handleResize}>
+                 outerMargin={10}>
       <TabPanel activeTabKey={activeTabPanelOne}
                 onClickTab={(tabKey) => setActiveTabPanelOne(tabKey)}
                 onClickExpand={handleOnClickTabExpand}

@@ -97,11 +97,11 @@ export class MceData {
       mceData.siglaGroups = [];
       return mceData;
     }
-    console.log(`Deleting chunk ${chunkIndex}`);
-    mceData.chunks.splice(chunkIndex, 1);
     if (mceData.chunkOrder === undefined) {
       mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
     }
+    console.log(`Deleting chunk ${chunkIndex}`);
+    mceData.chunks.splice(chunkIndex, 1);
     mceData.chunkOrder = mceData.chunkOrder.map((index) => {
       if (index === chunkIndex) {
         return -1;
@@ -114,16 +114,43 @@ export class MceData {
       return index !== -1;
     });
 
-    // TODO: handle witnesses and sigla
-    // Check all the witnesses in mceData.witnesses to see if they're still used in at least one chunk 
-    // if not, remove that witness from mceData.witnesses and the corresponding siglum in mceData.sigla, and
-    // make sure the witness indices in every chunk (mceData.chunks[i].witnessIndices) point to the correct witnesses
-    //
-    const removeWitness = (witnessIndex: number) => {
-      mceData.witnesses.splice(witnessIndex, 1);
-      mceData.sigla.splice(witnessIndex, 1);
-      // TODO: update witness indices in chunks
-    }
+    const usedWitnessIndices = new Set<number>();
+    mceData.chunks.forEach(chunk => {
+      chunk.witnessIndices.forEach(idx => {
+        if (idx !== -1) {
+          usedWitnessIndices.add(idx);
+        }
+      });
+    });
+
+    const oldWitnesses = [...mceData.witnesses];
+    const oldSigla = [...mceData.sigla];
+    mceData.witnesses = [];
+    mceData.sigla = [];
+
+    const oldToNewIndexMap = new Map<number, number>();
+    oldWitnesses.forEach((witness, oldIndex) => {
+      if (usedWitnessIndices.has(oldIndex)) {
+        mceData.witnesses.push(witness);
+        mceData.sigla.push(oldSigla[oldIndex]);
+        oldToNewIndexMap.set(oldIndex, mceData.witnesses.length - 1);
+      }
+    });
+
+    mceData.chunks.forEach(chunk => {
+      chunk.witnessIndices = chunk.witnessIndices.map(oldIndex => {
+        if (oldIndex === -1) {
+          return -1;
+        }
+        return oldToNewIndexMap.get(oldIndex) ?? -1;
+      });
+    });
+
+    mceData.siglaGroups.forEach(group => {
+      group.witnesses = group.witnesses
+        .map(oldIndex => oldToNewIndexMap.get(oldIndex))
+        .filter(newIndex => newIndex !== undefined) as number[];
+    });
 
     return mceData;
   }

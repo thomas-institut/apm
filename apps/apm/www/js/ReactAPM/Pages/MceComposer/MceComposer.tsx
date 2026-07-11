@@ -81,7 +81,6 @@ export default function MceComposer() {
   const [mceComposerStatus, setMceComposerStatus] = useState<MceComposerStatus>('loadingMce');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
-  const [title, setTitle] = useState<string>('Loading...');
   const [lastSavedMceData, setLastSavedMceData] = useState<MceDataInterface | null>(null);
   const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
   const [edition, setEdition] = useState<Edition | null>(null);
@@ -140,9 +139,6 @@ export default function MceComposer() {
           setMceComposerStatus('loadingSingleChunks');
         } else {
           appContext.apiClient.getMceData(mceDataId).then((resp) => {
-            const mceTitle = resp.mceData.title;
-            setTitle(mceTitle);
-            document.title = `MCE: ${mceTitle}`;
             setLastSavedMceData(deepCopy(resp.mceData));
             setMceData(resp.mceData);
             history.clear();
@@ -242,6 +238,10 @@ export default function MceComposer() {
     checkForChanges();
   }, [historyVersion]);
 
+  useEffect(() => {
+    document.title = `MCE: ${mceData.title}`;
+  }, [mceData]);
+
   const handleClickDirectionIcon = (horizontalIcon: boolean) => {
     if (horizontalIcon) {
       setDirection('vertical');
@@ -282,12 +282,10 @@ export default function MceComposer() {
 
   const handleConfirmTitleEdit = (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
-    if (sanitizedTitle === title) return;
+    if (sanitizedTitle === mceData.title) return;
 
     history.execute(new ChangeTitleAction(mceData, sanitizedTitle, (newData) => {
       setMceData(newData);
-      setTitle(newData.title);
-      document.title = newData.title;
       setHistoryVersion(v => v + 1);
     }));
   };
@@ -342,7 +340,7 @@ export default function MceComposer() {
       panel: 'one',
       key: 'history',
       title: 'History',
-      content: <HistoryPanel history={history} onGoTo={(idx) => {
+      content: <HistoryPanel history={history} historyVersion={historyVersion} onGoTo={(idx) => {
         history.goTo(idx);
         setHistoryVersion(v => v + 1);
       }}/>,
@@ -458,7 +456,7 @@ export default function MceComposer() {
         <div className="header">
           <ApmLogo height={30} className={'logo'}/>
           <div className={'expanded-tab-title-area'}>
-            <span className={'title'}>{title}</span>
+            <span className={'title'}>{mceData.title}</span>
             <ChevronRight/>
             <span className={'tab-name'}>{expandedTabSpec.title}</span>
             <ArrowsAngleContract className={'icon-btn'} onClick={() => handleOnClickCollapseTab()}/>
@@ -517,7 +515,7 @@ export default function MceComposer() {
   return (<div className="mce-composer">
     <div className="header">
       <ApmLogo height={30} className={'logo'}/>
-      <EditableTextField className={'title'} editingClassName={'title editing'} text={title}
+      <EditableTextField className={'title'} editingClassName={'title editing'} text={mceData.title}
                          onConfirm={handleConfirmTitleEdit}/>
       {notificationsDiv}
       <div className={'controls'}>

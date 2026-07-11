@@ -7,6 +7,7 @@ import React, {useEffect, useState} from "react";
 interface HistoryPanelProps {
   history: ActionHistory;
   onGoTo: (index: number) => void;
+  historyVersion: number;
 }
 
 interface HistoryTableRow {
@@ -18,43 +19,34 @@ interface HistoryTableRow {
   executionTimestamp?: number;
 }
 
-export default function HistoryPanel({history, onGoTo}: HistoryPanelProps) {
+export default function HistoryPanel({history, onGoTo, historyVersion}: HistoryPanelProps) {
   const [_refreshTick, setRefreshTick] = useState(0);
+
+  // Re-render when history changes externally
+  useEffect(() => {
+    setRefreshTick(t => t + 1);
+  }, [historyVersion]);
 
   useEffect(() => {
     const interval = setInterval(() => setRefreshTick(t => t + 1), 60000);
     return () => clearInterval(interval);
   }, []);
 
-  const undoStack = history.getUndoStack();
-  const redoStack = history.getRedoStack();
+  const actions = history.getActions();
+  const currentIndex = history.getCurrentIndex();
   const lastSavedIndex = history.getLastSavedIndex();
 
   const rows: HistoryTableRow[] = [];
-  const currentUndoLength = undoStack.length;
 
-  // Redo stack first
-  for (let i =0; i  < redoStack.length; i++) {
-    const action = redoStack[i];
-    rows.push({
-      index: currentUndoLength + i,
-      label: action.label,
-      isCurrent: false,
-      isSaved: currentUndoLength + i + 1 === lastSavedIndex,
-      isRedo: true,
-      executionTimestamp: action.executionTimestamp
-    });
-  }
-
-  // Add undo stack in reverse order (most recent action at top)
-  for (let i = undoStack.length - 1; i >= 0; i--) {
-    const action = undoStack[i];
+  // Actions in reverse order (most recent first)
+  for (let i = actions.length - 1; i >= 0; i--) {
+    const action = actions[i];
     rows.push({
       index: i,
       label: action.label,
-      isCurrent: i === undoStack.length - 1,
-      isSaved: i + 1 === lastSavedIndex,
-      isRedo: false,
+      isCurrent: i === currentIndex,
+      isSaved: i === lastSavedIndex,
+      isRedo: i > currentIndex,
       executionTimestamp: action.executionTimestamp
     });
   }
@@ -63,8 +55,8 @@ export default function HistoryPanel({history, onGoTo}: HistoryPanelProps) {
   rows.push({
     index: -1,
     label: '(Initial State)',
-    isCurrent: undoStack.length === 0,
-    isSaved: lastSavedIndex === 0,
+    isCurrent: currentIndex === -1,
+    isSaved: lastSavedIndex === -1,
     isRedo: false
   });
 
@@ -73,7 +65,8 @@ export default function HistoryPanel({history, onGoTo}: HistoryPanelProps) {
       key: 'status',
       title: '',
       cellContent: (row) => (
-        <div style={{display: 'flex', gap: '5px'}}>
+        <div style={{display: 'flex', gap: '5px', cursor: 'pointer'}}
+             onClick={() => onGoTo(row.index)}>
           {row.isCurrent ? <CheckCircleFill className="text-primary" /> : <Circle className="text-muted" />}
           {row.isSaved && <Save className="text-success" title="Last saved state" />}
         </div>

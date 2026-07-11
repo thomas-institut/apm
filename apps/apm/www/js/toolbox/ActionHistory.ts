@@ -25,59 +25,59 @@ export interface UndoableAction {
 
 /**
  * Manages a history of undoable actions.
+ *
+ * Maintains a single chronological array of all executed actions,
+ * with a currentIndex pointer for undo/redo navigation.
  */
 export class ActionHistory {
-  private undoStack: UndoableAction[] = [];
-  private redoStack: UndoableAction[] = [];
-  private lastSavedIndex: number = 0;
-  private currentVersion: number = 0;
+  private actions: UndoableAction[] = [];
+  private currentIndex: number = -1;
+  private lastSavedIndex: number = -1;
 
   /**
-   * Execute a new action and add it to the undo stack.
-   * Clears the redo stack.
+   * Execute a new action and add it to the history.
+   * Discards any future actions (those after currentIndex).
    * @param action
    */
   execute(action: UndoableAction): void {
+    // Discard any future actions
+    this.actions = this.actions.slice(0, this.currentIndex + 1);
+
     action.execute();
     action.executionTimestamp = Date.now();
-    this.undoStack.push(action); // more recently executed action is always at the end of the undo array
-    this.redoStack = [];
-    this.currentVersion++;
+    this.actions.push(action);
+    this.currentIndex = this.actions.length - 1;
   }
 
   /**
    * Undo the last action.
    */
   undo(): void {
-    const action = this.undoStack.pop();
-    if (action) {
-      action.undo();
-      this.redoStack.push(action); // oldest action is at the end of the redo array
-      this.currentVersion++;
+    if (this.currentIndex >= 0) {
+      this.actions[this.currentIndex].undo();
+      this.currentIndex--;
     }
   }
 
   /**
-   * Redo the last undone action.
+   * Redo the next undone action.
    */
   redo(): void {
-    const action = this.redoStack.pop();
-    if (action) {
-      action.execute();
-      this.undoStack.push(action);
-      this.currentVersion++;
+    if (this.currentIndex < this.actions.length - 1) {
+      this.currentIndex++;
+      this.actions[this.currentIndex].execute();
     }
   }
 
   /**
    * Go to a specific point in history.
-   * @param index The index in the undo stack to go to (-1 means empty stack).
+   * @param index The action index to go to (-1 means before any actions).
    */
   goTo(index: number): void {
-    while (this.undoStack.length - 1 > index) {
+    while (this.currentIndex > index) {
       this.undo();
     }
-    while (this.undoStack.length - 1 < index && this.redoStack.length > 0) {
+    while (this.currentIndex < index) {
       this.redo();
     }
   }
@@ -86,52 +86,60 @@ export class ActionHistory {
    * Mark the current state as saved.
    */
   markAsSaved(): void {
-    this.lastSavedIndex = this.undoStack.length;
+    this.lastSavedIndex = this.currentIndex;
   }
 
   /**
    * Check if there are unsaved changes.
    */
   isDirty(): boolean {
-    return this.undoStack.length !== this.lastSavedIndex;
+    return this.currentIndex !== this.lastSavedIndex;
   }
 
   /**
-   * Get the list of actions in the undo stack.
+   * Get the list of executed actions (compat).
    */
   getUndoStack(): UndoableAction[] {
-    return [...this.undoStack];
+    return this.actions.slice(0, this.currentIndex + 1);
   }
 
   /**
-   * Get the list of actions in the redo stack.
+   * Get the list of future (undone) actions (compat).
    */
   getRedoStack(): UndoableAction[] {
-    return [...this.redoStack];
+    return this.actions.slice(this.currentIndex + 1);
   }
 
   /**
-   * Get the number of unsaved actions.
+   * Get all actions in chronological order.
    */
-  getUnsavedActionsCount(): number {
-    return Math.abs(this.undoStack.length - this.lastSavedIndex);
+  getActions(): UndoableAction[] {
+    return [...this.actions];
+  }
+
+  /**
+   * Get the index of the current action (-1 if none).
+   */
+  getCurrentIndex(): number {
+    return this.currentIndex;
   }
 
   /**
    * Get the labels of unsaved actions.
    */
   getUnsavedActionLabels(): string[] {
-    if (this.undoStack.length > this.lastSavedIndex) {
-      return this.undoStack.slice(this.lastSavedIndex).map(a => a.label);
-    } else if (this.undoStack.length < this.lastSavedIndex) {
-      // User undone past the last saved point
-      return [`(Undone) ${this.lastSavedIndex - this.undoStack.length} actions`];
+    if (this.currentIndex > this.lastSavedIndex) {
+      return this.actions
+        .slice(this.lastSavedIndex + 1, this.currentIndex + 1)
+        .map(a => a.label);
+    } else if (this.currentIndex < this.lastSavedIndex) {
+      return [`(Undone) ${this.lastSavedIndex - this.currentIndex} actions`];
     }
     return [];
   }
 
   /**
-   * Get the index of the last saved state in the undo stack.
+   * Get the index of the last saved state.
    */
   getLastSavedIndex(): number {
     return this.lastSavedIndex;
@@ -141,24 +149,22 @@ export class ActionHistory {
    * Revert to the last saved state.
    */
   revertToSaved(): void {
-    this.goTo(this.lastSavedIndex - 1);
+    this.goTo(this.lastSavedIndex);
   }
 
   /**
-   * Get a version number that increments on every change.
-   * Useful for triggering React re-renders.
+   * Get a version number useful for triggering re-renders.
    */
   getVersion(): number {
-    return this.currentVersion;
+    return this.currentIndex;
   }
 
   /**
    * Clear all history.
    */
   clear(): void {
-    this.undoStack = [];
-    this.redoStack = [];
-    this.lastSavedIndex = 0;
-    this.currentVersion++;
+    this.actions = [];
+    this.currentIndex = -1;
+    this.lastSavedIndex = -1;
   }
 }

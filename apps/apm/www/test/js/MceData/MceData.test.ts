@@ -250,6 +250,94 @@ describe('MceData', () => {
     });
   });
 
+  describe('setTitle', () => {
+    it('sets the title on the mceData', () => {
+      const mceData = MceData.createEmpty();
+      mceData.title = 'Old Title';
+
+      MceData.setTitle(mceData, 'New Title');
+      expect(mceData.title).toBe('New Title');
+    });
+
+    it('trims whitespace from the new title', () => {
+      const mceData = MceData.createEmpty();
+
+      MceData.setTitle(mceData, '  Trimmed Title  ');
+      expect(mceData.title).toBe('Trimmed Title');
+    });
+
+    it('does not change the title when given an empty string after trim', () => {
+      const mceData = MceData.createEmpty();
+      mceData.title = 'Original';
+
+      MceData.setTitle(mceData, '   ');
+      expect(mceData.title).toBe('Original');
+    });
+
+    it('returns the mceData instance', () => {
+      const mceData = MceData.createEmpty();
+
+      const result = MceData.setTitle(mceData, 'Title');
+      expect(result).toBe(mceData);
+    });
+  });
+
+  describe('setChunkBreak', () => {
+    it('sets the break on the chunk at the given index', () => {
+      const mceData = MceData.createEmpty();
+      mceData.chunks = [
+        { break: '' } as any,
+        { break: 'paragraph' } as any,
+      ];
+
+      MceData.setChunkBreak(mceData, 0, 'paragraph');
+      expect(mceData.chunks[0].break).toBe('paragraph');
+
+      MceData.setChunkBreak(mceData, 1, '');
+      expect(mceData.chunks[1].break).toBe('');
+    });
+
+    it('does nothing when chunkIndex is negative', () => {
+      const mceData = MceData.createEmpty();
+      mceData.chunks = [{ break: 'paragraph' } as any];
+
+      MceData.setChunkBreak(mceData, -1, '');
+      expect(mceData.chunks[0].break).toBe('paragraph');
+    });
+
+    it('does nothing when chunkIndex is out of range', () => {
+      const mceData = MceData.createEmpty();
+      mceData.chunks = [{ break: 'paragraph' } as any];
+
+      MceData.setChunkBreak(mceData, 1, '');
+      expect(mceData.chunks[0].break).toBe('paragraph');
+    });
+
+    it('does nothing when break value is invalid', () => {
+      const mceData = MceData.createEmpty();
+      mceData.chunks = [{ break: 'paragraph' } as any];
+
+      MceData.setChunkBreak(mceData, 0, 'invalid');
+      expect(mceData.chunks[0].break).toBe('paragraph');
+    });
+
+    it('does nothing when chunks array is empty', () => {
+      const mceData = MceData.createEmpty();
+
+      MceData.setChunkBreak(mceData, 0, 'paragraph');
+      // Should not throw, mceData remains empty
+      expect(mceData.chunks).toEqual([]);
+    });
+
+    it('returns the mceData instance', () => {
+      const mceData = MceData.createEmpty();
+      mceData.chunks = [{ break: '' } as any];
+
+      const result = MceData.setChunkBreak(mceData, 0, 'paragraph');
+      expect(result).toBe(mceData);
+    });
+  });
+
   describe('addChunk', () => {
     const getDocTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Doc ${id}`));
     const getSourceTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Source ${id}`));

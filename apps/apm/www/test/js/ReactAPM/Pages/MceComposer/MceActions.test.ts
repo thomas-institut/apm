@@ -8,14 +8,31 @@ import { MceDataInterface } from '@/MceData/MceDataInterface';
 describe('MCE Actions', () => {
   describe('ChangeTitleAction', () => {
     it('should change title and undo', () => {
+      const mceData: MceDataInterface = {
+        title: 'Old',
+        chunks: [],
+        chunkOrder: [],
+        witnesses: [],
+        sigla: [],
+        siglaGroups: [],
+        preamble: [],
+        initialSpace: '',
+        lang: '',
+        stylesheetId: '',
+        archived: false,
+        schemaVersion: '1.0'
+      };
+
       const onUpdate = vi.fn();
-      const action = new ChangeTitleAction('Old', 'New', onUpdate);
-      
+      const action = new ChangeTitleAction(mceData, 'New', onUpdate);
+
       action.execute();
-      expect(onUpdate).toHaveBeenCalledWith('New');
-      
+      const updatedData = onUpdate.mock.calls[0][0];
+      expect(updatedData.title).toBe('New');
+
       action.undo();
-      expect(onUpdate).toHaveBeenCalledWith('Old');
+      const undoneData = onUpdate.mock.calls[1][0];
+      expect(undoneData.title).toBe('Old');
     });
   });
 

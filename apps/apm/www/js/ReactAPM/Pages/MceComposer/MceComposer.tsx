@@ -38,7 +38,6 @@ import HistoryPanel from "@/ReactAPM/Pages/MceComposer/HistoryPanel";
 import './MceComposer.css';
 
 // TODO 2026-07-10
-//  - Revise all currently implemented actions. (BTW, shouldn't all actions be asynchronous?)
 //  - Implement bug notification when actions throw errors
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
 //  - Decide what to do with [title, setTitle] state, should it be removed preferring mceData?
@@ -285,10 +284,10 @@ export default function MceComposer() {
     const sanitizedTitle = newTitle.trim();
     if (sanitizedTitle === title) return;
 
-    history.execute(new ChangeTitleAction(title, sanitizedTitle, (t) => {
-      setTitle(t);
-      document.title = t;
-      setMceData(prev => ({...prev, title: t}));
+    history.execute(new ChangeTitleAction(mceData, sanitizedTitle, (newData) => {
+      setMceData(newData);
+      setTitle(newData.title);
+      document.title = newData.title;
       setHistoryVersion(v => v + 1);
     }));
   };

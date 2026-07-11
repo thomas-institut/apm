@@ -54,6 +54,16 @@ export class MceData {
     return mceData.chunks.map((_c, i) => i);
   }
 
+  static setTitle(mceData: MceDataInterface, newTitle: string) {
+    newTitle = newTitle.trim();
+    if (newTitle === '')   {
+      console.warn(`Invalid title '${newTitle}'`);
+      return mceData;
+    }
+    mceData.title = newTitle;
+    return mceData;
+  }
+
   static setChunkBreak(mceData: MceDataInterface, chunkIndex: number, newBreak: string) {
     if (chunkIndex < 0 || chunkIndex >= mceData.chunks.length) {
       console.warn(`Invalid chunk index ${chunkIndex}`);

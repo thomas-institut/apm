@@ -40,10 +40,7 @@ import './MceComposer.css';
 // TODO 2026-07-10
 //  - Implement bug notification when actions throw errors
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
-//  - Decide what to do with [title, setTitle] state, should it be removed preferring mceData?
-//  - Decide how to handle subcomponents that only change part of mceData state.
-//  - Decide if mceData state should be handled by zustand.
-//  - Gray out state before last save in history panel
+//  - Design data slices for components, do not pass mceData around
 //  - Save generated editions in memory cache so that switching history states is responsive
 //  - Add auto/manual edition regeneration, make it manual by default for big editions
 //  - Allow users to force edition regeneration if current edition comes from cache
@@ -251,27 +248,36 @@ export default function MceComposer() {
   };
   const deleteChunk = (chunkIndex: number) => {
     console.log("deleteChunk", chunkIndex);
-    history.execute(new DeleteChunkAction({ mceData, ctDataStatusArray}, chunkIndex, (newData) => {
+    const result = history.execute(new DeleteChunkAction({ mceData, ctDataStatusArray}, chunkIndex, (newData) => {
       setMceData(newData.mceData);
       setCtDataStatusArray(newData.ctDataStatusArray);
       setHistoryVersion(v => v + 1);
     }));
+    if (!result.success) {
+      console.error('DeleteChunkAction failed', result.errors);
+    }
   };
 
   const moveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
     console.log(`Move chunk index ${chunkIndex} '${direction}'`);
-    history.execute(new MoveChunkAction(mceData, chunkIndex, direction === 'up' ? 'backwards' : 'forwards', (newData) => {
+    const result = history.execute(new MoveChunkAction(mceData, chunkIndex, direction === 'up' ? 'backwards' : 'forwards', (newData) => {
       setMceData(newData);
       setHistoryVersion(v => v + 1);
     }));
+    if (!result.success) {
+      console.error('MoveChunkAction failed', result.errors);
+    }
   };
 
   const setChunkBreak = (chunkIndex: number, newBreak: string) => {
     console.log(`Set chunk break index ${chunkIndex} '${newBreak}'`);
-    history.execute(new SetChunkBreakAction(mceData, chunkIndex, newBreak, (newData) => {
+    const result = history.execute(new SetChunkBreakAction(mceData, chunkIndex, newBreak, (newData) => {
       setMceData(newData);
       setHistoryVersion(v => v + 1);
     }));
+    if (!result.success) {
+      console.error('SetChunkBreakAction failed', result.errors);
+    }
   };
 
   const updateChunk = (chunkIndex: number) => {
@@ -284,10 +290,13 @@ export default function MceComposer() {
     const sanitizedTitle = newTitle.trim();
     if (sanitizedTitle === mceData.title) return;
 
-    history.execute(new ChangeTitleAction(mceData, sanitizedTitle, (newData) => {
+    const result = history.execute(new ChangeTitleAction(mceData, sanitizedTitle, (newData) => {
       setMceData(newData);
       setHistoryVersion(v => v + 1);
     }));
+    if (!result.success) {
+      console.error('ChangeTitleAction failed', result.errors);
+    }
   };
 
   const handleOnClickTabExpand = (tabKey: string) => {

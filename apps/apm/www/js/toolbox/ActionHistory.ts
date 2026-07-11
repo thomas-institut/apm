@@ -1,16 +1,25 @@
 /**
+ * Result of executing or undoing an action.
+ */
+export interface ActionResultInterface {
+  success: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+/**
  * Interface for actions that can be undone and redone.
  */
 export interface UndoableAction {
   /**
    * Execute the action.
    */
-  execute(): void;
+  execute(): ActionResultInterface;
 
   /**
    * Undo the action.
    */
-  undo(): void;
+  undo(): ActionResultInterface;
 
   /**
    * Human-readable label for the action.
@@ -21,6 +30,14 @@ export interface UndoableAction {
    * Timestamp when the action was executed.
    */
   executionTimestamp: number;
+}
+
+export function actionSuccess(warnings: string[] = []): ActionResultInterface {
+  return { success: true, errors: [], warnings };
+}
+
+export function actionFailure(errors: string[], warnings: string[] = []): ActionResultInterface {
+  return { success: false, errors, warnings };
 }
 
 /**
@@ -37,36 +54,43 @@ export class ActionHistory {
   /**
    * Execute a new action and add it to the history.
    * Discards any future actions (those after currentIndex).
+   * Only adds to history if the action succeeds.
    * @param action
    */
-  execute(action: UndoableAction): void {
+  execute(action: UndoableAction): ActionResultInterface {
     // Discard any future actions
     this.actions = this.actions.slice(0, this.currentIndex + 1);
 
-    action.execute();
-    action.executionTimestamp = Date.now();
-    this.actions.push(action);
-    this.currentIndex = this.actions.length - 1;
+    const result = action.execute();
+    if (result.success) {
+      action.executionTimestamp = Date.now();
+      this.actions.push(action);
+      this.currentIndex = this.actions.length - 1;
+    }
+    return result;
   }
 
   /**
    * Undo the last action.
    */
-  undo(): void {
+  undo(): ActionResultInterface {
     if (this.currentIndex >= 0) {
-      this.actions[this.currentIndex].undo();
+      const result = this.actions[this.currentIndex].undo();
       this.currentIndex--;
+      return result;
     }
+    return actionFailure(['Nothing to undo']);
   }
 
   /**
    * Redo the next undone action.
    */
-  redo(): void {
+  redo(): ActionResultInterface {
     if (this.currentIndex < this.actions.length - 1) {
       this.currentIndex++;
-      this.actions[this.currentIndex].execute();
+      return this.actions[this.currentIndex].execute();
     }
+    return actionFailure(['Nothing to redo']);
   }
 
   /**

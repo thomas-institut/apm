@@ -1,12 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import {ActionHistory, UndoableAction} from '@/toolbox/ActionHistory';
+import {ActionHistory, actionSuccess, UndoableAction} from '@/toolbox/ActionHistory';
 
 class MockAction implements UndoableAction {
   executedCount = 0;
   undoneCount = 0;
+  executionTimestamp = -1;
   constructor(public label: string) {}
-  execute() { this.executedCount++; }
-  undo() { this.undoneCount++; }
+  execute() { this.executedCount++; return actionSuccess(); }
+  undo() { this.undoneCount++; return actionSuccess(); }
 }
 
 describe('ActionHistory', () => {

@@ -1,46 +1,32 @@
-import {UndoableAction} from '@/toolbox/ActionHistory';
 import {MceDataInterface} from '@/MceData/MceDataInterface';
-import {deepCopy} from '@/toolbox/Util';
-import {MceData} from "@/MceData/MceData";
-import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
+import {MceData} from '@/MceData/MceData';
+import {CtDataStatus} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {DataEditAction} from '@/ReactAPM/Pages/MceComposer/Actions/DataEditAction';
 
 interface DeleteChunkActionData {
   mceData: MceDataInterface;
   ctDataStatusArray: CtDataStatus[];
 }
 
-export class DeleteChunkAction implements UndoableAction {
+export class DeleteChunkAction extends DataEditAction<DeleteChunkActionData> {
 
-  executionTimestamp: number = -1;
-  private readonly oldData: DeleteChunkActionData;
-  private readonly newData: DeleteChunkActionData;
-  private readonly description: string;
-
-  constructor(data: DeleteChunkActionData,
+  constructor(
+    data: DeleteChunkActionData,
     chunkIndex: number,
-    private onUpdate: (data: DeleteChunkActionData) => void
+    onUpdate: (data: DeleteChunkActionData) => void
   ) {
-    this.oldData = deepCopy(data);
-    this.newData = deepCopy(data);
-
-    // Perform deletion on newData
-    const chunkId = this.newData.mceData.chunks[chunkIndex].chunkId;
-    const newMceData = MceData.deleteChunk(this.newData.mceData, chunkIndex);
-    const newCtDataStatusArray = this.newData.ctDataStatusArray.filter ( status => status.chunkInMceData.chunkId !== chunkId)
-    this.newData.mceData = newMceData;
-    this.newData.ctDataStatusArray = newCtDataStatusArray;
-    this.description = `Delete chunk ${this.oldData.mceData.chunks[chunkIndex].chunkId}`;
-  }
-
-  get label() {
-    return this.description;
-  }
-
-  execute() {
-    this.onUpdate(this.newData);
-  }
-
-  undo() {
-    this.onUpdate(this.oldData);
+    super(
+      data,
+      onUpdate,
+      (d) => {
+        const chunkId = d.mceData.chunks[chunkIndex].chunkId;
+        const newMceData = MceData.deleteChunk(d.mceData, chunkIndex);
+        const newCtDataStatusArray = d.ctDataStatusArray.filter(s => s.chunkInMceData.chunkId !== chunkId);
+        d.mceData = newMceData;
+        d.ctDataStatusArray = newCtDataStatusArray;
+      },
+      'Delete chunk',
+      (oldData) => `Delete chunk ${oldData.mceData.chunks[chunkIndex].chunkId}`
+    );
   }
 }

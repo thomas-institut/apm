@@ -40,7 +40,7 @@ export class ActionHistory {
   execute(action: UndoableAction): void {
     action.execute();
     action.executionTimestamp = Date.now();
-    this.undoStack.push(action);
+    this.undoStack.push(action); // more recently executed action is always at the end of the undo array
     this.redoStack = [];
     this.currentVersion++;
   }
@@ -52,7 +52,7 @@ export class ActionHistory {
     const action = this.undoStack.pop();
     if (action) {
       action.undo();
-      this.redoStack.push(action);
+      this.redoStack.push(action); // oldest action is at the end of the redo array
       this.currentVersion++;
     }
   }

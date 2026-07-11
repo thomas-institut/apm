@@ -54,6 +54,15 @@ export class MceData {
     return mceData.chunks.map((_c, i) => i);
   }
 
+  static setChunkBreak(mceData: MceDataInterface, chunkIndex: number, newBreak: string) {
+    if (chunkIndex < 0 || chunkIndex >= mceData.chunks.length) {
+      return mceData;
+    }
+
+    mceData.chunks[chunkIndex].break = newBreak;
+    return mceData;
+  }
+
   /**
    * Moves a chunk in the chunk order array from the current position to the next position in the specified direction.
    * @param mceData

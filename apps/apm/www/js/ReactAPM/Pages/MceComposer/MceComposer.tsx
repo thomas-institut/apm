@@ -252,21 +252,17 @@ export default function MceComposer() {
   };
   const deleteChunk = (chunkIndex: number) => {
     console.log("deleteChunk", chunkIndex);
-    history.execute(new DeleteChunkAction(mceData, chunkIndex, (newData) => {
-      setMceData(newData);
+    history.execute(new DeleteChunkAction({ mceData, ctDataStatusArray}, chunkIndex, (newData) => {
+      setMceData(newData.mceData);
+      setCtDataStatusArray(newData.ctDataStatusArray);
       setHistoryVersion(v => v + 1);
     }));
   };
 
   const moveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
     console.log(`Move chunk index ${chunkIndex} '${direction}'`);
-    const newMceData = deepCopy(mceData);
-    MceData.moveChunk(newMceData, chunkIndex, direction === 'up' ? 'backwards' : 'forwards');
-    if (newMceData.chunkOrder === undefined) {
-      throw new Error("Invalid chunk order after move");
-    }
-    history.execute(new MoveChunkAction(mceData.chunkOrder ?? MceData.getDefaultChunkOrder(mceData), newMceData.chunkOrder, (newOrder) => {
-      setMceData(prev => ({...prev, chunkOrder: newOrder}));
+    history.execute(new MoveChunkAction(mceData, chunkIndex, direction === 'up' ? 'backwards' : 'forwards', (newData) => {
+      setMceData(newData);
       setHistoryVersion(v => v + 1);
     }));
   };

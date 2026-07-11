@@ -33,8 +33,8 @@ export default function HistoryPanel({history, onGoTo}: HistoryPanelProps) {
   const rows: HistoryTableRow[] = [];
   const currentUndoLength = undoStack.length;
 
-  // Add redo stack in reverse order (most recently undone at top)
-  for (let i = redoStack.length - 1; i >= 0; i--) {
+  // Redo stack first
+  for (let i =0; i  < redoStack.length; i++) {
     const action = redoStack[i];
     rows.push({
       index: currentUndoLength + i,

@@ -130,6 +130,41 @@ export class ApmFormats {
   }
 
   /**
+   * Returns a human-readable string describing how long ago a timestamp was.
+   * Rounds up to the closest minute.
+   *
+   * @param timestamp - timestamp in seconds (consistent with ApmFormats.time)
+   * @returns string like '<1min ago', 'N mins ago', or 'Xh Ymin ago'
+   */
+  static timeAgo(timestamp: number): string {
+    const now = Date.now() / 1000;
+    const diffSeconds = now - timestamp;
+
+    if (diffSeconds <= 0) {
+      return '<1min ago';
+    }
+
+    const diffMinutes = Math.ceil(diffSeconds / 60);
+
+    if (diffMinutes < 1) {
+      return '<1min ago';
+    }
+
+    if (diffMinutes < 60) {
+      return `${diffMinutes} mins ago`;
+    }
+
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+
+    if (minutes === 0) {
+      return `${hours}h ago`;
+    }
+
+    return `${hours}h ${minutes}min ago`;
+  }
+
+  /**
    * Sets the language to us in all format
    * @param {string} languageCode
    */

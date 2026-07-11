@@ -44,7 +44,7 @@ import './MceComposer.css';
 //  - Decide what to do with [title, setTitle] state, should it be removed preferring mceData?
 //  - Decide how to handle subcomponents that only change part of mceData state.
 //  - Decide if mceData state should be handled by zustand.
-//  - Add time info in History panel, gray out state before last save, show table in descending order
+//  - Gray out state before last save in history panel
 //  - Save generated editions in memory cache so that switching history states is responsive
 //  - Add auto/manual edition regeneration, make it manual by default for big editions
 //  - Allow users to force edition regeneration if current edition comes from cache

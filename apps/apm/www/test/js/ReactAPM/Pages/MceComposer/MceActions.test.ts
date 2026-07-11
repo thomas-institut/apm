@@ -101,14 +101,34 @@ describe('MCE Actions', () => {
 
   describe('SetChunkBreakAction', () => {
     it('should set break and undo', () => {
+      const mceData: MceDataInterface = {
+        title: 'Test',
+        chunks: [
+          { chunkId: '1', break: 'none', chunkEditionTableId: 10, version: '1', title: 'C1', witnessIndices: [] as number[] } as any,
+          { chunkId: '2', break: '', chunkEditionTableId: 20, version: '1', title: 'C2', witnessIndices: [] as number[] } as any
+        ],
+        chunkOrder: [0, 1],
+        witnesses: [],
+        sigla: [],
+        siglaGroups: [],
+        preamble: [],
+        initialSpace: '',
+        lang: '',
+        stylesheetId: '',
+        archived: false,
+        schemaVersion: '1.0'
+      };
+
       const onUpdate = vi.fn();
-      const action = new SetChunkBreakAction(1, 'none', 'paragraph', onUpdate);
-      
+      const action = new SetChunkBreakAction(mceData, 1, 'paragraph', onUpdate);
+
       action.execute();
-      expect(onUpdate).toHaveBeenCalledWith(1, 'paragraph');
-      
+      const updatedData = onUpdate.mock.calls[0][0];
+      expect(updatedData.chunks[1].break).toBe('paragraph');
+
       action.undo();
-      expect(onUpdate).toHaveBeenCalledWith(1, 'none');
+      const undoneData = onUpdate.mock.calls[1][0];
+      expect(undoneData.chunks[1].break).toBe('');
     });
   });
 });

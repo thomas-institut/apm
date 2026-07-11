@@ -267,14 +267,10 @@ export default function MceComposer() {
     }));
   };
 
-  const setChunkBreak = (chunkIndex: number, breakAfter: string) => {
-    console.log(`Set chunk break index ${chunkIndex} '${breakAfter}'`);
-    history.execute(new SetChunkBreakAction(chunkIndex, mceData.chunks[chunkIndex].break, breakAfter, (idx, brk) => {
-      setMceData(prev => {
-        const newData = deepCopy(prev);
-        newData.chunks[idx].break = brk;
-        return newData;
-      });
+  const setChunkBreak = (chunkIndex: number, newBreak: string) => {
+    console.log(`Set chunk break index ${chunkIndex} '${newBreak}'`);
+    history.execute(new SetChunkBreakAction(mceData, chunkIndex, newBreak, (newData) => {
+      setMceData(newData);
       setHistoryVersion(v => v + 1);
     }));
   };

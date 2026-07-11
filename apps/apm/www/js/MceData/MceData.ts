@@ -1,4 +1,4 @@
-import {ChunkInMceData, MceDataInterface, WitnessInMceData} from "./MceDataInterface.js";
+import {ChunkInMceData, MceDataInterface, ValidChunkBreaks, WitnessInMceData} from "./MceDataInterface.js";
 import * as ArrayUtil from "../lib/ToolBox/ArrayUtil.js";
 import {CtDataInterface} from "@/CtData/CtDataInterface";
 
@@ -56,6 +56,12 @@ export class MceData {
 
   static setChunkBreak(mceData: MceDataInterface, chunkIndex: number, newBreak: string) {
     if (chunkIndex < 0 || chunkIndex >= mceData.chunks.length) {
+      console.warn(`Invalid chunk index ${chunkIndex}`);
+      return mceData;
+    }
+
+    if (!ValidChunkBreaks.includes(newBreak)) {
+      console.warn(`Invalid chunk break '${newBreak}'`);
       return mceData;
     }
 

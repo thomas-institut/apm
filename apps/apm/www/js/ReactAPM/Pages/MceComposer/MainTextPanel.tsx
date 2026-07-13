@@ -9,9 +9,14 @@ interface MainTextPanelProps {
   onClickRegenerate: () => void;
 }
 
-export default function MainTextPanel({edition, generationProgress, editionOutOfDate, onClickRegenerate}: MainTextPanelProps) {
+export default function MainTextPanel({
+                                        edition,
+                                        generationProgress,
+                                        editionOutOfDate,
+                                        onClickRegenerate
+                                      }: MainTextPanelProps) {
 
-    const getText = (edition: Edition): string[] => {
+  const getText = (edition: Edition): string[] => {
     const paragraphs: string[] = [];
 
     let currentParagraph: string = "";
@@ -35,15 +40,17 @@ export default function MainTextPanel({edition, generationProgress, editionOutOf
   };
 
   if (edition === null) {
-    return <div className={'main-text-panel initializing'}>Initializing...</div>
+    return <div className={'main-text-panel initializing'}>Initializing...</div>;
   }
 
   const mainTextClasses = ['main-text', 'text-' + edition?.lang];
 
   return (
     <div className={'main-text-panel'}>
-      {editionOutOfDate && <div className={'out-of-date'}>Edition is out of date. <Button variant="outline-secondary" onClick={onClickRegenerate}>Regenerate</Button></div>}
-      {generationProgress !== null && <div className={'waiting'}>Waiting for edition to be generated...</div>}
+      {editionOutOfDate &&
+        <div className={'out-of-date'}>Edition is out of date. { generationProgress === null ? <Button variant="outline-secondary"
+                                                                        onClick={onClickRegenerate}>Regenerate</Button> : 'Regenerating...'}
+        </div>}
       <div className={mainTextClasses.join(' ')}>
         <div className={'left-margin'}></div>
         <div>{getText(edition).map((p, i) => <p key={i}>{p}</p>)}</div>

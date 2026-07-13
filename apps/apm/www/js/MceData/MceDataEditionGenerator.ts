@@ -22,7 +22,7 @@ import {uniq} from "../lib/ToolBox/ArrayUtil.js";
 export type CtDataGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<CtDataInterface>;
 export type SingleChunkEditionSaver = (mceData: MceDataInterface, chunkIndex: number, edition: EditionInterface) => Promise<void>;
 export type SingleChunkEditionGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<EditionInterface|null>;
-export type OnProgressUpdatHandler = (step: number, numSteps: number) => Promise<void> | null;
+export type OnProgressUpdateHandler = (step: number, numSteps: number) => void | null;
 
 export interface MceDataEditionGeneratorOptions {
   /**
@@ -43,7 +43,7 @@ export interface MceDataEditionGeneratorOptions {
    */
   logger?: LoggerInterface,
 
-  onProgressUpdate?: OnProgressUpdatHandler;
+  onProgressUpdate?: OnProgressUpdateHandler;
 }
 
 export class MceDataEditionGenerator {
@@ -51,7 +51,7 @@ export class MceDataEditionGenerator {
   private logger: LoggerInterface;
   private readonly singleChunkEditionSaver: SingleChunkEditionSaver;
   private readonly singleChunkEditionGetter: SingleChunkEditionGetter;
-  private readonly onProgressUpdate: OnProgressUpdatHandler | null;
+  private readonly onProgressUpdate: OnProgressUpdateHandler | null;
 
   constructor(options: MceDataEditionGeneratorOptions) {
    this.ctDataGetter = options.ctDataGetter;

@@ -41,9 +41,7 @@ import './MceComposer.css';
 //  - Implement bug notification when actions throw errors
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
 //  - Design data slices for components, do not pass mceData around
-//  - Save generated editions in memory cache so that switching history states is responsive
-//  - Add auto/manual edition regeneration, make it manual by default for big editions
-//  - Allow users to force edition regeneration if current edition comes from cache
+
 
 export type CtDataState = 'loading' | 'loaded' | 'error';
 
@@ -104,7 +102,7 @@ export default function MceComposer() {
   const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
 
 
-  const singleChunkEditionCache = useRef<Record<number, Edition>>([]);
+  const singleChunkEditionCache = useRef<Record<string, Edition>>({});
   /**
    * Cache of generated editions, indexed by data's hash
    */
@@ -208,19 +206,24 @@ export default function MceComposer() {
 
   const getMceDataHash = (mceData: MceDataInterface, mceDataId: number) => {
     return hashString(JSON.stringify([mceData, mceDataId]));
-  }
+  };
   const isEditionInCache = (mceData: MceDataInterface, mceDataId: number) => {
     return editionCache.current[getMceDataHash(mceData, mceDataId)] !== undefined;
-  }
+  };
 
   const getEdition = async (mceData: MceDataInterface, mceDataId: number) => {
-    console.log('reGenerateEdition');
+    console.log(`reGenerateEdition for mceData ${mceDataId}, ${mceData.chunks.length} chunks`);
     const mceDataHash = getMceDataHash(mceData, mceDataId);
     if (editionCache.current[mceDataHash] !== undefined) {
       console.log('reGenerateEdition: editionCache hit');
+      setEditionGenerationProgress(null);
       return editionCache.current[mceDataHash];
     }
     const profiler = new BasicProfiler('RegenerateEdition', true);
+    const singleChunkEditionCacheKey = (chunkIndex: number) => {
+      const chunkInfo = mceData.chunks[chunkIndex];
+      return `${chunkInfo.chunkId}:${chunkInfo.chunkEditionTableId}:${chunkInfo.version}`;
+    };
 
     const generator = new MceDataEditionGenerator({
       ctDataGetter: async (mceData: MceDataInterface, chunkIndex: number) => {
@@ -229,22 +232,21 @@ export default function MceComposer() {
         return data.ctData;
       },
       singleChunkEditionGetter: async (_mceData: MceDataInterface, chunkIndex: number) => {
-        return singleChunkEditionCache.current[chunkIndex] ?? null;
+        return singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] ?? null;
       },
       singleChunkEditionSaver: async (_mceData: MceDataInterface, chunkIndex: number, edition) => {
-        singleChunkEditionCache.current[chunkIndex] = new Edition().setFromInterface(edition);
+        singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] = new Edition().setFromInterface(edition);
       },
       onProgressUpdate: (step, numSteps) => {
         setEditionGenerationProgress(step / numSteps);
-        return Promise.resolve();
       }
     });
-    const generatedEdition = (new Edition()).setFromInterface(await generator.generate(mceData, mceDataId));
+    const generatedEdition = new Edition().setFromInterface(await generator.generate(mceData, mceDataId));
     profiler.stop();
     setEditionGenerationProgress(null);
     editionCache.current[mceDataHash] = generatedEdition;
     return generatedEdition;
-  }
+  };
 
   /**
    * Initial edition generation
@@ -256,7 +258,7 @@ export default function MceComposer() {
     if (edition !== null) {
       return;
     }
-    getEdition(mceData, mceDataId).then( (generatedEdition) => {
+    getEdition(mceData, mceDataId).then((generatedEdition) => {
       setEdition(generatedEdition);
       setEditionOutOfDate(false);
     });
@@ -275,7 +277,7 @@ export default function MceComposer() {
     if (!isEditionInCache(mceData, mceDataId)) {
       setEditionOutOfDate(true);
     } else {
-      getEdition(mceData, mceDataId).then( (generatedEdition) => {
+      getEdition(mceData, mceDataId).then((generatedEdition) => {
         setEdition(generatedEdition);
         setEditionOutOfDate(false);
       });
@@ -295,7 +297,7 @@ export default function MceComposer() {
   };
   const deleteChunk = (chunkIndex: number) => {
     console.log("deleteChunk", chunkIndex);
-    const result = history.execute(new DeleteChunkAction({ mceData, ctDataStatusArray}, chunkIndex, (newData) => {
+    const result = history.execute(new DeleteChunkAction({mceData, ctDataStatusArray}, chunkIndex, (newData) => {
       setMceData(newData.mceData);
       setCtDataStatusArray(newData.ctDataStatusArray);
       setHistoryVersion(v => v + 1);
@@ -361,13 +363,16 @@ export default function MceComposer() {
     history.revertToSaved();
   };
 
-  const handleOnClickRegenerate = async () => {
+  const handleOnClickRegenerate = () => {
     console.log(`Click on regenerate`);
-    const newEdition = await getEdition(mceData, mceDataId);
-    if (newEdition !== null) {
-      setEdition(newEdition);
-      setEditionOutOfDate(false);
-    }
+    setEditionGenerationProgress(0);
+    getEdition(mceData, mceDataId).then((newEdition) => {
+      if (newEdition !== null) {
+        setEdition(newEdition);
+        setEditionGenerationProgress(null);
+        setEditionOutOfDate(false);
+      }
+    });
   };
 
   const panelSpecs: PanelSpec[] = [
@@ -415,7 +420,8 @@ export default function MceComposer() {
       title: 'Edition Text',
       expandable: true,
       content: <MainTextPanel edition={edition}
-                              generationProgress={editionGenerationProgress} editionOutOfDate={editionOutOfDate} onClickRegenerate={handleOnClickRegenerate}/>,
+                              generationProgress={editionGenerationProgress} editionOutOfDate={editionOutOfDate}
+                              onClickRegenerate={handleOnClickRegenerate}/>,
       tabbable: true,
     },
     {
@@ -493,18 +499,14 @@ export default function MceComposer() {
                                    }}/>;
   }
 
-  let editionGenerationProgressBar: JSX.Element | null = null;
-
-  if (editionGenerationProgress !== null) {
-    editionGenerationProgressBar = <ProgressBar currentStep={editionGenerationProgress}
-                                                width={200}
-                                                className={'edition-generation-progress-bar'}
-                                                numSteps={1}
-                                                getLabel={(s, _ns) => {
-                                                  return `Generating edition... ${Math.round(s * 100)}%`;
-                                                }}/>;
-  }
-
+  const editionGenerationProgressBar = editionGenerationProgress === null ? null :
+    <ProgressBar currentStep={editionGenerationProgress}
+                 width={200}
+                 className={'edition-generation-progress-bar'}
+                 numSteps={1}
+                 getLabel={(s, _ns) => {
+                   return `Generating edition... ${Math.round(s * 100)}%`;
+                 }}/>;
 
   let expandedTabSpec: PanelSpec | null = null;
 

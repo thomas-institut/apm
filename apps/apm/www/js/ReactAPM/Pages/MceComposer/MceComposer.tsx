@@ -43,7 +43,7 @@ import './MceComposer.css';
 //  - Design data slices for components, do not pass mceData around
 
 
-export type CtDataState = 'loading' | 'loaded' | 'error';
+export type CtDataState = 'notLoaded' | 'loading' | 'loaded' | 'error';
 
 type MceComposerStatus =
   'start'
@@ -161,7 +161,7 @@ export default function MceComposer() {
                 ctDataId: chunk.chunkEditionTableId,
                 chunkInMceData: chunk,
                 apiData: null,
-                ctDataState: 'loading' as CtDataState,
+                ctDataState: 'notLoaded' as CtDataState,
                 errorMsg: ''
               }
             )));
@@ -174,14 +174,15 @@ export default function MceComposer() {
         break;
 
       case 'loadingSingleChunks':
-        const firstCtDataNotLoaded = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataState === 'loading');
+        const firstCtDataNotLoaded = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataState === 'notLoaded');
         if (!firstCtDataNotLoaded) {
           if (ctDataStatusArray.every((ctDataStatus) => ctDataStatus.ctDataState === 'loaded')) {
             setMceComposerStatus('loaded');
           } else {
-            console.warn(`All chunks are not loaded yet, but can't find a chunk to load`);
-            setMceComposerStatus('error');
-            setErrorMsg(`Inconsistent state reached trying to load chunks`);
+            if (ctDataStatusArray.some((ctDataStatus) => ctDataStatus.ctDataState === 'error')) {
+              setMceComposerStatus('error');
+              setErrorMsg(`Error loading chunks`);
+            }
           }
           break;
         }
@@ -189,6 +190,7 @@ export default function MceComposer() {
         const ctDataStatusIndex = ctDataStatusArray.findIndex((ctDataStatus) => ctDataStatus.ctDataId === ctDataId);
         console.log(`Loading CtData for chunk ${ctDataStatusIndex}, table ${ctDataId}`);
         const ctDataStatus = ctDataStatusArray[ctDataStatusIndex];
+        ctDataStatus.ctDataState = 'loading';
         appContext.apiClient.getSingleChunkData(ctDataId, ctDataStatus.chunkInMceData.version).then((apiResponse) => {
           // console.log(`Got data for chunk ${ctDataStatusIndex}, table ${ctDataId}`, apiResponse);
           setCtDataStatusArray((prevCtDataStatusArray) => {

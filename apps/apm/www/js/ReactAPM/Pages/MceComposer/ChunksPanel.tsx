@@ -14,6 +14,7 @@ import MultiToggle, {MultiToggleOptionSpec} from "@/ReactAPM/Components/MultiTog
 import {capitalizeFirstLetter} from "@/toolbox/Util";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
+import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 import './ChunksPanel.css';
 
 interface ChunksPanelProps extends TabbableElementProps {
@@ -52,9 +53,11 @@ export default function ChunksPanel({
                                     }: ChunksPanelProps) {
 
   const [pendingDeleteChunkIndex, setPendingDeleteChunkIndex] = useState<number | null>(null);
+  const [confirmDeleteChunkIndex, setConfirmDeleteChunkIndex] = useState<number | null>(null);
 
   useEffect(() => {
     setPendingDeleteChunkIndex(null);
+    setConfirmDeleteChunkIndex(null);
   }, [chunks, chunkOrder, ctDataStatusArray]);
 
 
@@ -109,11 +112,26 @@ export default function ChunksPanel({
       return;
     }
 
+    setConfirmDeleteChunkIndex(chunkIndex);
+  };
+
+  const handleAcceptDeleteChunk = () => {
+    if (confirmDeleteChunkIndex === null || !deleteChunk || pendingDeleteChunkIndex !== null) {
+      return;
+    }
+
+    const chunkIndex = confirmDeleteChunkIndex;
+    setConfirmDeleteChunkIndex(null);
+
     setPendingDeleteChunkIndex(chunkIndex);
     const deleteSuccess = deleteChunk(chunkIndex);
     if (!deleteSuccess) {
       setPendingDeleteChunkIndex(null);
     }
+  };
+
+  const handleCancelDeleteChunk = () => {
+    setConfirmDeleteChunkIndex(null);
   };
 
   const handleUpdateChunk = (chunkIndex: number) => {
@@ -249,7 +267,20 @@ export default function ChunksPanel({
   const rows = chunkOrder.map((chunkOrder) => chunks[chunkOrder])
     .map((chunk, index) => getChunkTableRow(chunk, index));
 
+  const confirmDeleteChunkId = confirmDeleteChunkIndex !== null ? rows[confirmDeleteChunkIndex]?.chunkId : null;
+
   return <div className={'chunks-panel'}>
+    <ConfirmDialog
+      show={confirmDeleteChunkIndex !== null}
+      onHide={handleCancelDeleteChunk}
+      onCancel={handleCancelDeleteChunk}
+      onAccept={handleAcceptDeleteChunk}
+      title={'Remove chunk?'}
+      body={<>{`Are you sure you want to remove chunk ${confirmDeleteChunkId ?? ''} from the edition?`}</>}
+      acceptButtonLabel={'Remove'}
+      cancelButtonLabel={'Cancel'}
+      size={'sm'}
+    />
     <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true}/>
   </div>;
 }

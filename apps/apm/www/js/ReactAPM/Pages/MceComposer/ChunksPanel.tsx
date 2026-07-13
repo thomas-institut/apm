@@ -1,5 +1,7 @@
 import {ChunkInMceData, ValidChunkBreaks} from "@/MceData/MceDataInterface";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
+import {useEffect, useState} from "react";
+import {Spinner} from "react-bootstrap";
 import {
   ArrowClockwise,
   ArrowDownShort,
@@ -17,7 +19,7 @@ import './ChunksPanel.css';
 interface ChunksPanelProps extends TabbableElementProps {
   chunks: ChunkInMceData[];
   chunkOrder: number[];
-  deleteChunk?: (chunkIndex: number) => void;
+  deleteChunk?: (chunkIndex: number) => boolean;
   updateChunk?: (chunkIndex: number) => void;
   moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => void;
   setChunkBreak?: (chunkIndex: number, breakAfter: string) => void;
@@ -48,6 +50,12 @@ export default function ChunksPanel({
                                       moveChunk,
                                       setChunkBreak
                                     }: ChunksPanelProps) {
+
+  const [pendingDeleteChunkIndex, setPendingDeleteChunkIndex] = useState<number | null>(null);
+
+  useEffect(() => {
+    setPendingDeleteChunkIndex(null);
+  }, [chunks, chunkOrder, ctDataStatusArray]);
 
 
   if (chunks.length !== ctDataStatusArray.length) {
@@ -97,7 +105,15 @@ export default function ChunksPanel({
   };
 
   const handleDeleteChunk = (chunkIndex: number) => {
-    deleteChunk && deleteChunk(chunkIndex);
+    if (!deleteChunk || pendingDeleteChunkIndex !== null) {
+      return;
+    }
+
+    setPendingDeleteChunkIndex(chunkIndex);
+    const deleteSuccess = deleteChunk(chunkIndex);
+    if (!deleteSuccess) {
+      setPendingDeleteChunkIndex(null);
+    }
   };
 
   const handleUpdateChunk = (chunkIndex: number) => {
@@ -210,6 +226,10 @@ export default function ChunksPanel({
           {row.buttons.map((button) => {
             switch (button) {
               case 'delete':
+                if (pendingDeleteChunkIndex === index) {
+                  return <Spinner key={'delete'} animation={'border'} size={'sm'}
+                                  title={`Removing chunk ${row.chunkId}`}/>;
+                }
                 return <Trash key={'delete'} className={'icon-btn'}
                               title={`Click to remove chunk ${row.chunkId} from the edition`}
                               onClick={() => handleDeleteChunk(index)}/>;

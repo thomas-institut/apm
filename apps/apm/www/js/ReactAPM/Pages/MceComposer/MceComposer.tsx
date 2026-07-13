@@ -295,7 +295,7 @@ export default function MceComposer() {
       setDirection('horizontal');
     }
   };
-  const deleteChunk = (chunkIndex: number) => {
+  const deleteChunk = (chunkIndex: number): boolean => {
     console.log("deleteChunk", chunkIndex);
     const result = history.execute(new DeleteChunkAction({mceData, ctDataStatusArray}, chunkIndex, (newData) => {
       setMceData(newData.mceData);
@@ -305,6 +305,7 @@ export default function MceComposer() {
     if (!result.success) {
       console.error('DeleteChunkAction failed', result.errors);
     }
+    return result.success;
   };
 
   const moveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
@@ -393,7 +394,7 @@ export default function MceComposer() {
                               updateChunk(chunkIndex);
                             }}
                             deleteChunk={(chunkIndex) => {
-                              deleteChunk(chunkIndex);
+                              return deleteChunk(chunkIndex);
                             }}
                             setChunkBreak={(chunkIndex, breakAfter) => {
                               setChunkBreak(chunkIndex, breakAfter);

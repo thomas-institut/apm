@@ -151,6 +151,7 @@ export default function MceComposer() {
           setMceComposerStatus('loadingSingleChunks');
         } else {
           appContext.apiClient.getMceData(mceDataId).then((resp) => {
+            MceData.fix(resp.mceData);
             setLastSavedMceData(deepCopy(resp.mceData));
             setMceData(resp.mceData);
             history.clear();

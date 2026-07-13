@@ -366,13 +366,15 @@ export default function MceComposer() {
   const handleOnClickRegenerate = () => {
     console.log(`Click on regenerate`);
     setEditionGenerationProgress(0);
-    getEdition(mceData, mceDataId).then((newEdition) => {
-      if (newEdition !== null) {
-        setEdition(newEdition);
-        setEditionGenerationProgress(null);
-        setEditionOutOfDate(false);
-      }
-    });
+    setTimeout(() => {
+      getEdition(mceData, mceDataId).then((newEdition) => {
+        if (newEdition !== null) {
+          setEdition(newEdition);
+          setEditionGenerationProgress(null);
+          setEditionOutOfDate(false);
+        }
+      });
+    }, 0);
   };
 
   const panelSpecs: PanelSpec[] = [

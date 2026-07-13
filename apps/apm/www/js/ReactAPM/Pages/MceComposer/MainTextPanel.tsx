@@ -48,8 +48,9 @@ export default function MainTextPanel({
   return (
     <div className={'main-text-panel'}>
       {editionOutOfDate &&
-        <div className={'out-of-date'}>Edition is out of date. { generationProgress === null ? <Button variant="outline-secondary"
-                                                                        onClick={onClickRegenerate}>Regenerate</Button> : 'Regenerating...'}
+        <div className={'out-of-date'}>Edition is out of date. {generationProgress === null ?
+          <Button variant="outline-secondary"
+                  onClick={onClickRegenerate}>Regenerate</Button> : 'Regenerating...'}
         </div>}
       <div className={mainTextClasses.join(' ')}>
         <div className={'left-margin'}></div>

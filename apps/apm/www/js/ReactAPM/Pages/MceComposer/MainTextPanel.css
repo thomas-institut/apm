@@ -4,6 +4,16 @@
     overflow-y: auto;
     overflow-x: auto;
 
+
+
+    .out-of-date {
+        color: #0a53be;
+        padding: 1em;
+        font-size: 1.2em;
+        border: 1px solid #0a53be;
+        margin-bottom: 1em;
+    }
+
     .main-text {
         display: grid;
         grid-template-columns: 5em 40em 5em;
@@ -11,4 +21,10 @@
         width: auto;
         min-width: 52em;
     }
+}
+
+
+.main-text-panel.initializing {
+    padding: 2em;
+    font-size: 1.5em;
 }

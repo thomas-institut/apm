@@ -75,6 +75,16 @@ interface PanelSpec {
 
 export default function MceComposer() {
 
+  const hashString = (value: string): string => {
+    // FNV-1a 32-bit hash (fast, deterministic, browser-safe)
+    let hash = 0x811c9dc5;
+    for (let i = 0; i < value.length; i++) {
+      hash ^= value.charCodeAt(i);
+      hash = Math.imul(hash, 0x01000193);
+    }
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  };
+
   const [mceComposerStatus, setMceComposerStatus] = useState<MceComposerStatus>('loadingMce');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
@@ -91,7 +101,14 @@ export default function MceComposer() {
   const [history] = useState(() => new ActionHistory());
   const [historyVersion, setHistoryVersion] = useState(0);
 
+  const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
+
+
   const singleChunkEditionCache = useRef<Record<number, Edition>>([]);
+  /**
+   * Cache of generated editions, indexed by data's hash
+   */
+  const editionCache = useRef<Record<string, Edition>>({});
   const shimWidth = 5;
 
   const {id} = useParams();
@@ -189,14 +206,20 @@ export default function MceComposer() {
     }
   }, [mceComposerStatus, ctDataStatusArray]);
 
-  useEffect(() => {
-    if (mceComposerStatus !== 'loaded') {
-      return;
-    }
-    if (edition !== null) {
-      return;
-    }
+  const getMceDataHash = (mceData: MceDataInterface, mceDataId: number) => {
+    return hashString(JSON.stringify([mceData, mceDataId]));
+  }
+  const isEditionInCache = (mceData: MceDataInterface, mceDataId: number) => {
+    return editionCache.current[getMceDataHash(mceData, mceDataId)] !== undefined;
+  }
 
+  const getEdition = async (mceData: MceDataInterface, mceDataId: number) => {
+    console.log('reGenerateEdition');
+    const mceDataHash = getMceDataHash(mceData, mceDataId);
+    if (editionCache.current[mceDataHash] !== undefined) {
+      console.log('reGenerateEdition: editionCache hit');
+      return editionCache.current[mceDataHash];
+    }
     const profiler = new BasicProfiler('RegenerateEdition', true);
 
     const generator = new MceDataEditionGenerator({
@@ -216,13 +239,26 @@ export default function MceComposer() {
         return Promise.resolve();
       }
     });
+    const generatedEdition = (new Edition()).setFromInterface(await generator.generate(mceData, mceDataId));
+    profiler.stop();
+    setEditionGenerationProgress(null);
+    editionCache.current[mceDataHash] = generatedEdition;
+    return generatedEdition;
+  }
 
-    generator.generate(mceData, mceDataId).then((generatedEdition) => {
-      profiler.stop();
-      setEdition(new Edition().setFromInterface(generatedEdition));
-      setEditionGenerationProgress(null);
-    }).catch((e) => {
-      console.error(e);
+  /**
+   * Initial edition generation
+   */
+  useEffect(() => {
+    if (mceComposerStatus !== 'loaded') {
+      return;
+    }
+    if (edition !== null) {
+      return;
+    }
+    getEdition(mceData, mceDataId).then( (generatedEdition) => {
+      setEdition(generatedEdition);
+      setEditionOutOfDate(false);
     });
   }, [mceComposerStatus, edition]);
 
@@ -231,8 +267,19 @@ export default function MceComposer() {
     setChanges(history.getUnsavedActionLabels());
   };
 
+  /**
+   * Things to do when historyVersion changes
+   */
   useEffect(() => {
     checkForChanges();
+    if (!isEditionInCache(mceData, mceDataId)) {
+      setEditionOutOfDate(true);
+    } else {
+      getEdition(mceData, mceDataId).then( (generatedEdition) => {
+        setEdition(generatedEdition);
+        setEditionOutOfDate(false);
+      });
+    }
   }, [historyVersion]);
 
   useEffect(() => {
@@ -314,6 +361,15 @@ export default function MceComposer() {
     history.revertToSaved();
   };
 
+  const handleOnClickRegenerate = async () => {
+    console.log(`Click on regenerate`);
+    const newEdition = await getEdition(mceData, mceDataId);
+    if (newEdition !== null) {
+      setEdition(newEdition);
+      setEditionOutOfDate(false);
+    }
+  };
+
   const panelSpecs: PanelSpec[] = [
     {
       panel: 'one',
@@ -345,16 +401,7 @@ export default function MceComposer() {
       content: <WitnessesPanel mceData={mceData}/>,
       tabbable: true,
     },
-    {
-      panel: 'one',
-      key: 'history',
-      title: 'History',
-      content: <HistoryPanel history={history} historyVersion={historyVersion} onGoTo={(idx) => {
-        history.goTo(idx);
-        setHistoryVersion(v => v + 1);
-      }}/>,
-      tabbable: true,
-    },
+
     {
       panel: 'one',
       key: 'normalization',
@@ -367,7 +414,8 @@ export default function MceComposer() {
       key: 'mainText',
       title: 'Edition Text',
       expandable: true,
-      content: <MainTextPanel edition={edition} generationProgress={editionGenerationProgress}/>,
+      content: <MainTextPanel edition={edition}
+                              generationProgress={editionGenerationProgress} editionOutOfDate={editionOutOfDate} onClickRegenerate={handleOnClickRegenerate}/>,
       tabbable: true,
     },
     {
@@ -398,7 +446,17 @@ export default function MceComposer() {
       expandable: true,
       closable: true,
       content: <>Versions will be here...</>
-    }
+    },
+    {
+      panel: 'two',
+      key: 'history',
+      title: 'History',
+      content: <HistoryPanel history={history} historyVersion={historyVersion} onGoTo={(idx) => {
+        history.goTo(idx);
+        setHistoryVersion(v => v + 1);
+      }}/>,
+      tabbable: true,
+    },
   ];
 
   if (mceComposerStatus === 'error') {

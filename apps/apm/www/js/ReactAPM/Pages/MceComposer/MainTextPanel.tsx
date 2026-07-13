@@ -1,19 +1,17 @@
 import {Edition} from "@/Edition/Edition";
-import {JSX} from "react";
 import './MainTextPanel.css';
+import {Button} from "react-bootstrap";
 
 interface MainTextPanelProps {
   edition: Edition | null;
   generationProgress: number | null;
+  editionOutOfDate: boolean;
+  onClickRegenerate: () => void;
 }
 
-export default function MainTextPanel({edition, generationProgress}: MainTextPanelProps) {
+export default function MainTextPanel({edition, generationProgress, editionOutOfDate, onClickRegenerate}: MainTextPanelProps) {
 
-
-  let generationNotification: JSX.Element | null = null;
-
-
-  const getText = (edition: Edition): string[] => {
+    const getText = (edition: Edition): string[] => {
     const paragraphs: string[] = [];
 
     let currentParagraph: string = "";
@@ -36,24 +34,21 @@ export default function MainTextPanel({edition, generationProgress}: MainTextPan
     return paragraphs;
   };
 
-  if (edition === null && generationProgress === null) {
-    generationNotification = <div className={'waiting'}>Waiting for edition...</div>;
-  } else {
-    if (generationProgress !== null) {
-      generationNotification = <div className={'out-of-date'}>Generation in progress...</div>;
-    }
+  if (edition === null) {
+    return <div className={'main-text-panel initializing'}>Initializing...</div>
   }
 
   const mainTextClasses = ['main-text', 'text-' + edition?.lang];
 
   return (
     <div className={'main-text-panel'}>
-      {generationNotification}
-      {edition !== null && <div className={mainTextClasses.join(' ')}>
+      {editionOutOfDate && <div className={'out-of-date'}>Edition is out of date. <Button variant="outline-secondary" onClick={onClickRegenerate}>Regenerate</Button></div>}
+      {generationProgress !== null && <div className={'waiting'}>Waiting for edition to be generated...</div>}
+      <div className={mainTextClasses.join(' ')}>
         <div className={'left-margin'}></div>
         <div>{getText(edition).map((p, i) => <p key={i}>{p}</p>)}</div>
         <div className={'right-margin'}></div>
-      </div>}
+      </div>
     </div>
   );
 }

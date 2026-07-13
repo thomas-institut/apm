@@ -44,7 +44,7 @@ export class CachedFetcher {
       let startTime = Date.now();
       this.debug && console.log(`Doing actual fetch for '${key}'`);
       const data = await fetcher();
-      this.verbose && console.log(`Got data for '${key}' in ${Date.now() - startTime} ms`);
+      // this.verbose && console.log(`Got data for '${key}' in ${Date.now() - startTime} ms`);
       let actualTtl = ttl === -1 ? this.defaultTtl : ttl;
       if (actualTtl > 0) {
         await this.cache.store(key, data, actualTtl);

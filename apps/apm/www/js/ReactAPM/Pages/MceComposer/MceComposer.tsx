@@ -190,7 +190,7 @@ export default function MceComposer() {
         console.log(`Loading CtData for chunk ${ctDataStatusIndex}, table ${ctDataId}`);
         const ctDataStatus = ctDataStatusArray[ctDataStatusIndex];
         appContext.apiClient.getSingleChunkData(ctDataId, ctDataStatus.chunkInMceData.version).then((apiResponse) => {
-          console.log(`Got data for chunk ${ctDataStatusIndex}, table ${ctDataId}`, apiResponse);
+          // console.log(`Got data for chunk ${ctDataStatusIndex}, table ${ctDataId}`, apiResponse);
           setCtDataStatusArray((prevCtDataStatusArray) => {
             const newCtDataStatusArray = [...prevCtDataStatusArray];
             newCtDataStatusArray[ctDataStatusIndex] = {
@@ -212,10 +212,11 @@ export default function MceComposer() {
   };
 
   const getEdition = async (mceData: MceDataInterface, mceDataId: number) => {
-    console.log(`reGenerateEdition for mceData ${mceDataId}, ${mceData.chunks.length} chunks`);
+
     const mceDataHash = getMceDataHash(mceData, mceDataId);
+    console.log(`getEdition ${mceDataHash}: mceData ${mceDataId}, ${mceData.chunks.length} chunks`);
     if (editionCache.current[mceDataHash] !== undefined) {
-      console.log('reGenerateEdition: editionCache hit');
+      console.log(`getEdition ${mceDataHash}: cache hit`);
       setEditionGenerationProgress(null);
       return editionCache.current[mceDataHash];
     }
@@ -244,6 +245,7 @@ export default function MceComposer() {
     const generatedEdition = new Edition().setFromInterface(await generator.generate(mceData, mceDataId));
     profiler.stop();
     setEditionGenerationProgress(null);
+    console.log(`getEdition ${mceDataHash}: edition generated`);
     editionCache.current[mceDataHash] = generatedEdition;
     return generatedEdition;
   };
@@ -258,6 +260,7 @@ export default function MceComposer() {
     if (edition !== null) {
       return;
     }
+    console.log(`Initial edition generation: mceData ${mceDataId}, ${mceData.chunks.length} chunks, hash ${getMceDataHash(mceData, mceDataId)}`, mceData);
     getEdition(mceData, mceDataId).then((generatedEdition) => {
       setEdition(generatedEdition);
       setEditionOutOfDate(false);
@@ -273,8 +276,12 @@ export default function MceComposer() {
    * Things to do when historyVersion changes
    */
   useEffect(() => {
+    if (mceComposerStatus !== 'loaded') {
+      return;
+    }
     checkForChanges();
     if (!isEditionInCache(mceData, mceDataId)) {
+      console.log(`History change ${historyVersion} → ${history.getVersion()}: edition ${mceDataId} (hash ${getMceDataHash(mceData, mceDataId)}) not in cache`, mceData);
       setEditionOutOfDate(true);
     } else {
       getEdition(mceData, mceDataId).then((generatedEdition) => {

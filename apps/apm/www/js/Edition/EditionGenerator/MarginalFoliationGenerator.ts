@@ -98,7 +98,7 @@ export class MarginalFoliationGenerator {
   getCurrentFoliationChanges(): FoliationChangeInfoInterface[] {
     if (this.currentFoliationChanges === null) {
       this.currentFoliationChanges = MarginalFoliationGenerator.getFoliationChangeInfoArray(this.ctData, this.lastFoliations);
-      console.log(`Current foliation changes`, this.currentFoliationChanges);
+      // console.log(`Current foliation changes`, this.currentFoliationChanges);
     }
     return this.currentFoliationChanges;
   }

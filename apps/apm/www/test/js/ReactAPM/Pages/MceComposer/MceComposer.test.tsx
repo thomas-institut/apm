@@ -73,6 +73,7 @@ vi.mock('react-bootstrap-icons', () => {
     ArrowsAngleContract: Icon,
     ChevronRight: Icon,
     LayoutSplit: Icon,
+    Gear: Icon,
   };
 });
 

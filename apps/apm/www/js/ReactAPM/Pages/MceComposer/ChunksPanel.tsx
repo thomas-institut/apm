@@ -31,8 +31,8 @@ type ControlButton = 'delete' | 'update';
 
 interface ChunkTableRow {
   chunkId: string;
-  moveUpArrow: boolean;
-  moveDownArrow: boolean;
+  isFirst: boolean;
+  isLast: boolean;
   tableId: number | null;
   title: string | null;
   version: string | null;
@@ -72,13 +72,10 @@ export default function ChunksPanel({
   const lastChunkIndex = chunks.length - 1;
 
   const getChunkTableRow = (chunk: ChunkInMceData, index: number): ChunkTableRow => {
-    const isFirst = index === 0;
-    const isLast = index === lastChunkIndex;
-
     const chunkTableRow: ChunkTableRow = {
       chunkId: chunk.chunkId,
-      moveUpArrow: !isFirst,
-      moveDownArrow: !isLast,
+      isFirst:  index === 0,
+      isLast: index === lastChunkIndex,
       tableId: chunk.chunkEditionTableId,
       title: chunk.title,
       version: null,
@@ -163,38 +160,10 @@ export default function ChunksPanel({
   ];
   const columnDefs: NiceTableColumnDef<ChunkTableRow>[] = [
 
+
     {
-      key: 'arrows',
+      key: 'n',
       title: '',
-      cellContent: (row, index) => {
-        const arrowUpClasses = ['icon-btn'];
-        if (!row.moveUpArrow) {
-          arrowUpClasses.push('disabled');
-        }
-        const arrowDownClasses = ['icon-btn'];
-        if (!row.moveDownArrow) {
-          arrowDownClasses.push('disabled');
-        }
-        const getArrowTitle = (direction: 'up' | 'down') => {
-          if (direction === 'up' && !row.moveUpArrow) {
-            return '';
-          }
-          if (direction === 'down' && !row.moveDownArrow) {
-            return '';
-          }
-          return `Click to move chunk ${row.chunkId} ${direction === 'up' ? 'one row up' : 'one row down'}`;
-        };
-        return <div className={'chunk-table-arrows'}>
-          <ArrowUpShort className={arrowUpClasses.join(' ')} title={getArrowTitle('up')}
-                   onClick={() => handleMoveChunk(index, 'up')}/>
-          <ArrowDownShort className={arrowDownClasses.join(' ')} title={getArrowTitle('down')}
-                     onClick={() => handleMoveChunk(index, 'down')}/>
-        </div>;
-      }
-    },
-    {
-      key: 'pos',
-      title: 'Pos',
       cellContent: (_row, index) => <>{index + 1}</>
     },
     {
@@ -202,6 +171,7 @@ export default function ChunksPanel({
       title: 'Chunk Id',
       cellContent: (row) => <>{row.chunkId}</>,
     },
+
     {
       key: 'tableId',
       title: 'Table Id',
@@ -224,9 +194,38 @@ export default function ChunksPanel({
     {
       key: 'breakAfter',
       title: 'Break After',
-      cellContent: (row, index) => <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
+      cellContent: (row, index) => row.isLast ? <div/> : <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
                                                 onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
                                                 selected={row.breakAfter ?? 'none'}/>,
+    },
+    {
+      key: 'arrows',
+      title: '',
+      cellContent: (row, index) => {
+        const arrowUpClasses = ['icon-btn'];
+        if (row.isFirst) {
+          arrowUpClasses.push('disabled');
+        }
+        const arrowDownClasses = ['icon-btn'];
+        if (row.isLast) {
+          arrowDownClasses.push('disabled');
+        }
+        const getArrowTitle = (direction: 'up' | 'down') => {
+          if (direction === 'up' && row.isFirst) {
+            return '';
+          }
+          if (direction === 'down' && row.isLast) {
+            return '';
+          }
+          return `Click to move chunk ${row.chunkId} ${direction === 'up' ? 'one row up' : 'one row down'}`;
+        };
+        return <div className={'chunk-table-arrows'}>
+          <ArrowUpShort className={arrowUpClasses.join(' ')} title={getArrowTitle('up')}
+                        onClick={() => handleMoveChunk(index, 'up')}/>
+          <ArrowDownShort className={arrowDownClasses.join(' ')} title={getArrowTitle('down')}
+                          onClick={() => handleMoveChunk(index, 'down')}/>
+        </div>;
+      }
     },
     {
       key: 'status',
@@ -261,7 +260,8 @@ export default function ChunksPanel({
           })}
         </div>;
       }
-    }
+    },
+
   ];
 
   const rows = chunkOrder.map((chunkOrder) => chunks[chunkOrder])

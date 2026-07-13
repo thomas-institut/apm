@@ -101,6 +101,7 @@
     }
 
 
+
     .preview-toolbar {
         background-color: #f5f5f5;
     }
@@ -171,3 +172,29 @@
     }
 }
 
+
+
+.settings-popover {
+    .popover-body {
+        display: flex;
+        flex-direction: column;
+        gap: 1em;
+        padding: 1em;
+
+        .setting-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5em;
+            margin-bottom: 1em;
+
+            .label {
+                font-weight: bold;
+                font-size: 0.9em;
+            }
+        }
+
+
+    }
+
+
+}

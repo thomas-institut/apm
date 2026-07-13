@@ -11,8 +11,9 @@ import {
   ArrowCounterclockwise,
   ArrowsAngleContract,
   ChevronRight,
-  LayoutSplit
+  Gear
 } from "react-bootstrap-icons";
+import {Form, OverlayTrigger, Popover} from "react-bootstrap";
 import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
 import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel";
@@ -35,6 +36,7 @@ import MainTextPanel from "@/ReactAPM/Pages/MceComposer/MainTextPanel";
 import ApmLogo from "@/ReactAPM/Components/ApmLogo/ApmLogo";
 import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
 import HistoryPanel from "@/ReactAPM/Pages/MceComposer/HistoryPanel";
+import MultiToggle from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import './MceComposer.css';
 
 // TODO 2026-07-10
@@ -58,6 +60,11 @@ export interface CtDataStatus {
   apiData: null | SingleChunkApiData;
   ctDataState: CtDataState;
   errorMsg: string;
+}
+
+interface MceSettings {
+  autoRegenerate: boolean;
+  layoutOrientation: 'horizontal' | 'vertical';
 }
 
 interface PanelSpec {
@@ -91,7 +98,10 @@ export default function MceComposer() {
   const [edition, setEdition] = useState<Edition | null>(null);
 
   const [editionGenerationProgress, setEditionGenerationProgress] = useState<number | null>(null);
-  const [direction, setDirection] = useState<'horizontal' | 'vertical'>('vertical');
+  const [settings, setSettings] = useState<MceSettings>({
+    autoRegenerate: true,
+    layoutOrientation: 'vertical'
+  });
   const [activeTabPanelOne, setActiveTabPanelOne] = useState('chunks');
   const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('mainText');
   const [changes, setChanges] = useState<string[]>([]);
@@ -286,25 +296,21 @@ export default function MceComposer() {
     if (!isEditionInCache(mceData, mceDataId)) {
       console.log(`History change ${historyVersion} → ${history.getVersion()}: edition ${mceDataId} (hash ${getMceDataHash(mceData, mceDataId)}) not in cache`, mceData);
       setEditionOutOfDate(true);
+      if (settings.autoRegenerate) {
+        regenerateEdition();
+      }
     } else {
       getEdition(mceData, mceDataId).then((generatedEdition) => {
         setEdition(generatedEdition);
         setEditionOutOfDate(false);
       });
     }
-  }, [historyVersion]);
+  }, [historyVersion, settings.autoRegenerate]);
 
   useEffect(() => {
     document.title = `MCE: ${mceData.title}`;
   }, [mceData]);
 
-  const handleClickDirectionIcon = (horizontalIcon: boolean) => {
-    if (horizontalIcon) {
-      setDirection('vertical');
-    } else {
-      setDirection('horizontal');
-    }
-  };
   const deleteChunk = (chunkIndex: number): boolean => {
     console.log("deleteChunk", chunkIndex);
     const result = history.execute(new DeleteChunkAction({mceData, ctDataStatusArray}, chunkIndex, (newData) => {
@@ -374,8 +380,8 @@ export default function MceComposer() {
     history.revertToSaved();
   };
 
-  const handleOnClickRegenerate = () => {
-    console.log(`Click on regenerate`);
+  const regenerateEdition = () => {
+    if (editionGenerationProgress !== null) return;
     setEditionGenerationProgress(0);
     setTimeout(() => {
       getEdition(mceData, mceDataId).then((newEdition) => {
@@ -386,6 +392,11 @@ export default function MceComposer() {
         }
       });
     }, 0);
+  };
+
+  const handleOnClickRegenerate = () => {
+    console.log(`Click on regenerate`);
+    regenerateEdition();
   };
 
   const panelSpecs: PanelSpec[] = [
@@ -494,8 +505,6 @@ export default function MceComposer() {
     return <StatusPage label={'Edition'}>Starting...</StatusPage>;
   }
 
-  // mceComposerStatus === 'loadingSingleChunks'  || mceComposerStatus === 'loaded'
-
   const numChunks = ctDataStatusArray.length;
 
 
@@ -532,10 +541,62 @@ export default function MceComposer() {
   const undoTitle = undoStack.length > 0 ? `Undo ${undoStack[undoStack.length - 1].label}` : 'Undo';
   const redoTitle = redoStack.length > 0 ? `Redo ${redoStack[0].label}` : 'Redo';
 
+  const settingsPopover = (
+    <Popover id="settings-popover" className="settings-popover">
+      <Popover.Header as="h3">Editor Settings</Popover.Header>
+      <Popover.Body>
+        <div className="setting-item">
+          <div className="label">Layout Orientation</div>
+          <MultiToggle
+            options={[
+              {key: 'vertical', label: 'Vertical'},
+              {key: 'horizontal', label: 'Horizontal'}
+            ]}
+            selected={settings.layoutOrientation}
+            onChange={(key) => setSettings({...settings, layoutOrientation: key as 'horizontal' | 'vertical'})}
+          />
+        </div>
+        <div className="setting-item">
+          <Form.Check
+            type="switch"
+            id="auto-regenerate-switch"
+            label="Automatic edition generation"
+            checked={settings.autoRegenerate}
+            onChange={(e) => setSettings({...settings, autoRegenerate: e.target.checked})}
+          />
+        </div>
+      </Popover.Body>
+    </Popover>
+  );
+
   const notificationsDiv = <div className={'notifications'}>
     {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
   </div>;
+
+  const controlsDiv =  <div className={'controls'}>
+    <Arrow90degLeft className={'icon-btn' + (undoStack.length > 0 ? '' : ' disabled')}
+                    title={undoTitle}
+                    onClick={() => {
+                      history.undo();
+                      setHistoryVersion(v => v + 1);
+                    }}/>
+    <Arrow90degRight className={'icon-btn' + (redoStack.length > 0 ? '' : ' disabled')}
+                     title={redoTitle}
+                     onClick={() => {
+                       history.redo();
+                       setHistoryVersion(v => v + 1);
+                     }}/>
+
+    <SaveButton changes={changes}/>
+    {changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
+                                                  onClick={() => handleOnClickRevertChanges()}
+                                                  title={'Click to revert to last saved version'}/>}
+    <OverlayTrigger trigger="click" placement="bottom" overlay={settingsPopover} rootClose>
+      <Gear className={'icon-btn'} title={'Settings'}/>
+    </OverlayTrigger>
+  </div>
+
 
   if (expandedTabSpec !== null) {
     return (
@@ -549,24 +610,7 @@ export default function MceComposer() {
             <ArrowsAngleContract className={'icon-btn'} onClick={() => handleOnClickCollapseTab()}/>
           </div>
           {notificationsDiv}
-          <div className={'controls'}>
-            <Arrow90degLeft className={'icon-btn' + (undoStack.length > 0 ? '' : ' disabled')}
-                            title={undoTitle}
-                            onClick={() => {
-                              history.undo();
-                              setHistoryVersion(v => v + 1);
-                            }}/>
-            <Arrow90degRight className={'icon-btn' + (redoStack.length > 0 ? '' : ' disabled')}
-                             title={redoTitle}
-                             onClick={() => {
-                               history.redo();
-                               setHistoryVersion(v => v + 1);
-                             }}/>
-            <SaveButton changes={changes}/>
-            {changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
-                                                          onClick={() => handleOnClickRevertChanges()}
-                                                          title={'Click to revert to last saved version'}/>}
-          </div>
+          {controlsDiv}
         </div>
         {expandedTabSpec.tabbable && cloneElement(expandedTabSpec.content, {className: expandedTabSpec.className ?? ''})}
         {!expandedTabSpec.tabbable &&
@@ -605,30 +649,9 @@ export default function MceComposer() {
       <EditableTextField className={'title'} editingClassName={'title editing'} text={mceData.title}
                          onConfirm={handleConfirmTitleEdit}/>
       {notificationsDiv}
-      <div className={'controls'}>
-        <Arrow90degLeft className={'icon-btn' + (undoStack.length > 0 ? '' : ' disabled')}
-                        title={undoTitle}
-                        onClick={() => {
-                          history.undo();
-                          setHistoryVersion(v => v + 1);
-                        }}/>
-        <Arrow90degRight className={'icon-btn' + (redoStack.length > 0 ? '' : ' disabled')}
-                         title={redoTitle}
-                         onClick={() => {
-                           history.redo();
-                           setHistoryVersion(v => v + 1);
-                         }}/>
-        <LayoutSplit className={'icon-btn'} title={'Switch to vertical layout'}
-                     onClick={() => handleClickDirectionIcon(true)}/>
-        <LayoutSplit className={'fa-rotate-90 icon-btn'} title={'Switch to horizontal layout'}
-                     onClick={() => handleClickDirectionIcon(false)}/>
-        <SaveButton changes={changes}/>
-        {changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
-                                                      onClick={() => handleOnClickRevertChanges()}
-                                                      title={'Click to revert to last saved version'}/>}
-      </div>
+      {controlsDiv}
     </div>
-    <SplitPanels direction={direction} className="panelContainer" dividerClass="divider" dividerWidth={3}
+    <SplitPanels direction={settings.layoutOrientation} className="panelContainer" dividerClass="divider" dividerWidth={3}
                  outerMargin={10}>
       <TabPanel activeTabKey={activeTabPanelOne}
                 onClickTab={(tabKey) => setActiveTabPanelOne(tabKey)}

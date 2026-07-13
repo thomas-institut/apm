@@ -51,7 +51,9 @@ vi.mock('@/ReactAPM/Pages/MceComposer/SaveButton', () => ({
 }));
 
 vi.mock('@/ReactAPM/Components/EditableTextField', () => ({
-  default: ({text}: {text: string}) => <div>{text}</div>
+  default: ({text, onConfirm}: {text: string, onConfirm: (t: string) => void}) => (
+    <div data-testid="editable-text-field" onClick={() => onConfirm('New Title Action')}>{text}</div>
+  )
 }));
 
 vi.mock('@/ReactAPM/Components/ApmLogo/ApmLogo', () => ({
@@ -63,7 +65,7 @@ vi.mock('@/ReactAPM/Pages/MceComposer/StatusPage', () => ({
 }));
 
 vi.mock('react-bootstrap-icons', () => {
-  const Icon = () => <span/>;
+  const Icon = (props: any) => <span {...props}/>;
   return {
     Arrow90degLeft: Icon,
     Arrow90degRight: Icon,
@@ -139,5 +141,71 @@ describe('MceComposer', () => {
     });
 
     vi.useRealTimers();
+  });
+
+  it('updates undo/redo titles when actions are performed', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        getMceData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    const undoBtn = container.querySelector('.icon-btn[title^="Undo"]') as HTMLElement;
+    const redoBtn = container.querySelector('.icon-btn[title^="Redo"]') as HTMLElement;
+
+    expect(undoBtn.getAttribute('title')).toBe('Undo');
+    expect(redoBtn.getAttribute('title')).toBe('Redo');
+
+    // Trigger an action (Change Title)
+    await act(async () => {
+      (container.querySelector('[data-testid="editable-text-field"]') as HTMLElement).click();
+    });
+
+    expect(undoBtn.getAttribute('title')).toBe('Undo Change title to "New Title Action"');
+    expect(redoBtn.getAttribute('title')).toBe('Redo');
+
+    // Undo the action
+    await act(async () => {
+      undoBtn.click();
+    });
+
+    expect(undoBtn.getAttribute('title')).toBe('Undo');
+    expect(redoBtn.getAttribute('title')).toBe('Redo Change title to "New Title Action"');
+
+    // Redo the action
+    await act(async () => {
+      redoBtn.click();
+    });
+
+    expect(undoBtn.getAttribute('title')).toBe('Undo Change title to "New Title Action"');
+    expect(redoBtn.getAttribute('title')).toBe('Redo');
   });
 });

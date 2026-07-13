@@ -527,6 +527,11 @@ export default function MceComposer() {
     expandedTabSpec = panelSpecs.find(spec => spec.key === expandedTab) ?? null;
   }
 
+  const undoStack = history.getUndoStack();
+  const redoStack = history.getRedoStack();
+  const undoTitle = undoStack.length > 0 ? `Undo ${undoStack[undoStack.length - 1].label}` : 'Undo';
+  const redoTitle = redoStack.length > 0 ? `Redo ${redoStack[0].label}` : 'Redo';
+
   const notificationsDiv = <div className={'notifications'}>
     {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
@@ -545,14 +550,14 @@ export default function MceComposer() {
           </div>
           {notificationsDiv}
           <div className={'controls'}>
-            <Arrow90degLeft className={'icon-btn' + (history.getUndoStack().length > 0 ? '' : ' disabled')}
-                            title={'Undo'}
+            <Arrow90degLeft className={'icon-btn' + (undoStack.length > 0 ? '' : ' disabled')}
+                            title={undoTitle}
                             onClick={() => {
                               history.undo();
                               setHistoryVersion(v => v + 1);
                             }}/>
-            <Arrow90degRight className={'icon-btn' + (history.getRedoStack().length > 0 ? '' : ' disabled')}
-                             title={'Redo'}
+            <Arrow90degRight className={'icon-btn' + (redoStack.length > 0 ? '' : ' disabled')}
+                             title={redoTitle}
                              onClick={() => {
                                history.redo();
                                setHistoryVersion(v => v + 1);
@@ -601,14 +606,14 @@ export default function MceComposer() {
                          onConfirm={handleConfirmTitleEdit}/>
       {notificationsDiv}
       <div className={'controls'}>
-        <Arrow90degLeft className={'icon-btn' + (history.getUndoStack().length > 0 ? '' : ' disabled')}
-                        title={'Undo'}
+        <Arrow90degLeft className={'icon-btn' + (undoStack.length > 0 ? '' : ' disabled')}
+                        title={undoTitle}
                         onClick={() => {
                           history.undo();
                           setHistoryVersion(v => v + 1);
                         }}/>
-        <Arrow90degRight className={'icon-btn' + (history.getRedoStack().length > 0 ? '' : ' disabled')}
-                         title={'Redo'}
+        <Arrow90degRight className={'icon-btn' + (redoStack.length > 0 ? '' : ' disabled')}
+                         title={redoTitle}
                          onClick={() => {
                            history.redo();
                            setHistoryVersion(v => v + 1);

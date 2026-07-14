@@ -11,7 +11,8 @@ const actionTo = (nextState: TestState, description = `to ${nextState.value}`): 
 const buildHistoryWithRepeatedStates = (): StateHistory<TestState> => {
   const history = new StateHistory<TestState>({ value: 'a' });
   history.do(actionTo({ value: 'x' }, 'a->x'));
-  history.do(actionTo({ value: 'a' }, 'x->a'));
+  history.do(actionTo({ value: 'b' }, 'x->b'));
+  history.do(actionTo({ value: 'a' }, 'b->a'));
   history.do(actionTo({ value: 'c' }, 'a->c'));
   history.do(actionTo({ value: 'd' }, 'c->d'));
   history.do(actionTo({ value: 'x' }, 'd->x'));
@@ -30,6 +31,7 @@ describe('StateHistory', () => {
       state: initialState,
       actionDescription: 'Initial State',
       signature: expect.any(String),
+      executionTimestamp: expect.any(Number),
     });
   });
 
@@ -91,6 +93,53 @@ describe('StateHistory', () => {
     expect(history.redo()).toEqual({ value: 'b' });
     expect(history.redo()).toEqual({ value: 'c' });
     expect(() => history.redo()).toThrow('Cannot redo further');
+  });
+
+  it('should detect an effective redo when do reaches the next state', () => {
+    const history = new StateHistory<TestState>({ value: 'a' });
+    history.do(actionTo({ value: 'b' }, 'a->b'));
+    history.do(actionTo({ value: 'c' }, 'b->c'));
+    history.undo();
+
+    const newState = history.do(actionTo({ value: 'c' }, 'b->c again'));
+
+    expect(newState).toEqual({ value: 'c' });
+    expect(history.getCurrentState()).toEqual({ value: 'c' });
+    expect(history.getCurrentStateIndex()).toBe(2);
+    expect(history.getHistory()).toHaveLength(3);
+    expect(history.getHistory().map(item => item.state.value)).toEqual(['a', 'b', 'c']);
+    expect(history.getHistory()[2].actionDescription).toBe('b->c');
+  });
+
+  it('should detect an effective undo when do reaches the previous state', () => {
+    const history = new StateHistory<TestState>({ value: 'a' });
+    history.do(actionTo({ value: 'b' }, 'a->b'));
+    history.do(actionTo({ value: 'c' }, 'b->c'));
+
+    const newState = history.do(actionTo({ value: 'b' }, 'c->b again'));
+
+    expect(newState).toEqual({ value: 'b' });
+    expect(history.getCurrentState()).toEqual({ value: 'b' });
+    expect(history.getCurrentStateIndex()).toBe(1);
+    expect(history.getHistory()).toHaveLength(3);
+    expect(history.getHistory().map(item => item.state.value)).toEqual(['a', 'b', 'c']);
+    expect(history.getHistory()[1].actionDescription).toBe('a->b');
+  });
+
+  it('should erase future history and append at the end for a divergent do action', () => {
+    const history = new StateHistory<TestState>({ value: 'a' });
+    history.do(actionTo({ value: 'b' }, 'a->b'));
+    history.do(actionTo({ value: 'c' }, 'b->c'));
+    history.undo();
+
+    const newState = history.do(actionTo({ value: 'd' }, 'b->d'));
+
+    expect(newState).toEqual({ value: 'd' });
+    expect(history.getCurrentState()).toEqual({ value: 'd' });
+    expect(history.getCurrentStateIndex()).toBe(2);
+    expect(history.getHistory()).toHaveLength(3);
+    expect(history.getHistory().map(item => item.state.value)).toEqual(['a', 'b', 'd']);
+    expect(history.getHistory()[2].actionDescription).toBe('b->d');
   });
 
   it('should go to a valid state index and throw for invalid indices', () => {

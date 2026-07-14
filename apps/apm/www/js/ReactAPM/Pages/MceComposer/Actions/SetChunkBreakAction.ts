@@ -1,21 +1,30 @@
-import {MceDataInterface} from '@/MceData/MceDataInterface';
 import {MceData} from '@/MceData/MceData';
-import {DataEditAction} from '@/ReactAPM/ToolBox/ActionHistory/DataEditAction';
+import {deepCopy} from '@/toolbox/Util';
+import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
+import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
-export class SetChunkBreakAction extends DataEditAction<MceDataInterface> {
+export class SetChunkBreakAction implements StateTransformAction<HistoryState> {
+  private title: string;
 
   constructor(
-    mceData: MceDataInterface,
-    chunkIndex: number,
-    newBreak: string,
-    onUpdate: (data: MceDataInterface) => void
+    private readonly chunkIndex: number,
+    private readonly newBreak: string,
   ) {
-    super(
-      mceData,
-      onUpdate,
-      (data) => { MceData.setChunkBreak(data, chunkIndex, newBreak); },
-      'Set chunk break',
-      () => `Set chunk ${chunkIndex} break to '${newBreak}'`
-    );
+    this.title = `Set chunk ${this.chunkIndex} break after to '${this.newBreak}'`;
+  }
+
+  execute(state: HistoryState): HistoryState {
+    const chunk = state.mceData.chunks[this.chunkIndex];
+    if (!chunk) {
+      throw new Error(`Chunk ${this.chunkIndex} does not exist`);
+    }
+    const newState = deepCopy(state);
+    MceData.setChunkBreak(newState.mceData, this.chunkIndex, this.newBreak);
+    this.title = `Set chunk ${chunk.chunkId} break after to '${this.newBreak}'`;
+    return newState;
+  }
+
+  description(): string {
+    return this.title;
   }
 }

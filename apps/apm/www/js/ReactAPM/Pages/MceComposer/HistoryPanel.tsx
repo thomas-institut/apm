@@ -1,11 +1,13 @@
-import {ActionHistory} from "@/ReactAPM/ToolBox/ActionHistory/ActionHistory";
+import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
+import {HistoryState} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {CheckCircleFill, Circle, Save} from "react-bootstrap-icons";
 import React, {useEffect, useState} from "react";
 
 interface HistoryPanelProps {
-  history: ActionHistory;
+  history: StateHistory<HistoryState>;
+  savedStateSignature: string;
   onGoTo: (index: number) => void;
   historyVersion: number;
 }
@@ -17,9 +19,10 @@ interface HistoryTableRow {
   isSaved: boolean;
   isRedo: boolean;
   executionTimestamp?: number;
+  signature: string;
 }
 
-export default function HistoryPanel({history, onGoTo, historyVersion}: HistoryPanelProps) {
+export default function HistoryPanel({history, savedStateSignature, onGoTo, historyVersion}: HistoryPanelProps) {
   const [_refreshTick, setRefreshTick] = useState(0);
 
   // Re-render when history changes externally
@@ -32,33 +35,24 @@ export default function HistoryPanel({history, onGoTo, historyVersion}: HistoryP
     return () => clearInterval(interval);
   }, []);
 
-  const actions = history.getActions();
-  const currentIndex = history.getCurrentIndex();
-  const lastSavedIndex = history.getLastSavedIndex();
+  const states = history.getHistory();
+  const currentIndex = history.getCurrentStateIndex();
 
   const rows: HistoryTableRow[] = [];
 
-  // Actions in reverse order (most recent first)
-  for (let i = actions.length - 1; i >= 0; i--) {
-    const action = actions[i];
+  // States in reverse order (most recent first)
+  for (let i = states.length - 1; i >= 0; i--) {
+    const state = states[i];
     rows.push({
       index: i,
-      label: action.label,
+      label: state.actionDescription,
       isCurrent: i === currentIndex,
-      isSaved: i === lastSavedIndex,
+      isSaved: state.signature === savedStateSignature,
       isRedo: i > currentIndex,
-      executionTimestamp: action.executionTimestamp
+      executionTimestamp: state.executionTimestamp,
+      signature: state.signature
     });
   }
-
-  // Add initial state at bottom
-  rows.push({
-    index: -1,
-    label: '(Initial State)',
-    isCurrent: currentIndex === -1,
-    isSaved: lastSavedIndex === -1,
-    isRedo: false
-  });
 
   const columnDefs: NiceTableColumnDef<HistoryTableRow>[] = [
     {
@@ -73,8 +67,19 @@ export default function HistoryPanel({history, onGoTo, historyVersion}: HistoryP
       )
     },
     {
+      key: 'signature',
+      title: 'Signature',
+      cellContent: (row) => (
+        <span className={row.isRedo ? 'text-muted' : ''}
+              style={{cursor: 'pointer', fontWeight: row.isCurrent ? 'bold' : 'normal'}}
+              onClick={() => onGoTo(row.index)}>
+          {row.signature}
+        </span>
+      )
+    },
+    {
       key: 'label',
-      title: 'Action',
+      title: 'State',
       cellContent: (row) => (
         <span className={row.isRedo ? 'text-muted' : ''} 
               style={{cursor: 'pointer', fontWeight: row.isCurrent ? 'bold' : 'normal'}}

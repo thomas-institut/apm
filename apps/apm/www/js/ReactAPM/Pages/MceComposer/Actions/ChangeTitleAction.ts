@@ -1,20 +1,20 @@
-import {MceDataInterface} from '@/MceData/MceDataInterface';
 import {MceData} from '@/MceData/MceData';
-import {DataEditAction} from '@/ReactAPM/ToolBox/ActionHistory/DataEditAction';
+import {deepCopy} from '@/toolbox/Util';
+import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
+import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
-export class ChangeTitleAction extends DataEditAction<MceDataInterface> {
+export class ChangeTitleAction implements StateTransformAction<HistoryState> {
 
-  constructor(
-    mceData: MceDataInterface,
-    newTitle: string,
-    onUpdate: (data: MceDataInterface) => void
-  ) {
-    super(
-      mceData,
-      onUpdate,
-      (data) => { MceData.setTitle(data, newTitle); },
-      'Change title',
-      (_oldData, newData) => `Change title to "${newData.title}"`
-    );
+  constructor(private readonly newTitle: string) {
+  }
+
+  execute(state: HistoryState): HistoryState {
+    const newState = deepCopy(state);
+    MceData.setTitle(newState.mceData, this.newTitle);
+    return newState;
+  }
+
+  description(_state: HistoryState): string {
+    return `Change title to "${this.newTitle}"`;
   }
 }

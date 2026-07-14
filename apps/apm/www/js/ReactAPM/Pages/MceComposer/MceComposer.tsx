@@ -21,7 +21,7 @@ import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import SaveButton from "@/ReactAPM/Pages/MceComposer/SaveButton";
-import {ActionHistory} from "@/ReactAPM/ToolBox/ActionHistory/ActionHistory";
+import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
 import {ChangeTitleAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeTitleAction";
 import {DeleteChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteChunkAction";
 import {MoveChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/MoveChunkAction";
@@ -60,6 +60,11 @@ export interface CtDataStatus {
   apiData: null | SingleChunkApiData;
   ctDataState: CtDataState;
   errorMsg: string;
+}
+
+export interface HistoryState {
+  mceData: MceDataInterface;
+  ctDataStatusArray: CtDataStatus[];
 }
 
 interface MceSettings {
@@ -106,8 +111,12 @@ export default function MceComposer() {
   const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('mainText');
   const [changes, setChanges] = useState<string[]>([]);
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
-  const [history] = useState(() => new ActionHistory());
+  const [history, setHistory] = useState(() => new StateHistory<HistoryState>({
+    mceData: MceData.createEmpty(),
+    ctDataStatusArray: [],
+  }));
   const [historyVersion, setHistoryVersion] = useState(0);
+  const [savedStateSignature, setSavedStateSignature] = useState(history.getHistory()[0].signature);
 
   const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
 
@@ -162,12 +171,7 @@ export default function MceComposer() {
         } else {
           appContext.apiClient.getMceData(mceDataId).then((resp) => {
             MceData.fix(resp.mceData);
-            setLastSavedMceData(deepCopy(resp.mceData));
-            setMceData(resp.mceData);
-            history.clear();
-            history.markAsSaved();
-            setHistoryVersion(v => v + 1);
-            setCtDataStatusArray(resp.mceData.chunks.map((chunk) => (
+            const initialCtDataStatusArray = resp.mceData.chunks.map((chunk) => (
               {
                 ctDataId: chunk.chunkEditionTableId,
                 chunkInMceData: chunk,
@@ -175,7 +179,10 @@ export default function MceComposer() {
                 ctDataState: 'notLoaded' as CtDataState,
                 errorMsg: ''
               }
-            )));
+            ));
+            setLastSavedMceData(deepCopy(resp.mceData));
+            setMceData(resp.mceData);
+            setCtDataStatusArray(initialCtDataStatusArray);
             setMceComposerStatus('loadingSingleChunks');
           }).catch((error) => {
             setMceComposerStatus('error');
@@ -188,6 +195,11 @@ export default function MceComposer() {
         const firstCtDataNotLoaded = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataState === 'notLoaded');
         if (!firstCtDataNotLoaded) {
           if (ctDataStatusArray.every((ctDataStatus) => ctDataStatus.ctDataState === 'loaded')) {
+            const initialHistory = new StateHistory<HistoryState>(deepCopy({mceData, ctDataStatusArray}));
+            setHistory(initialHistory);
+            setSavedStateSignature(initialHistory.getCurrentStateSignature());
+            console.log(`Loaded MCE data and all CtData, saved state signature is ${initialHistory.getCurrentStateSignature()}`, initialHistory);
+            setHistoryVersion(v => v + 1);
             setMceComposerStatus('loaded');
           } else {
             if (ctDataStatusArray.some((ctDataStatus) => ctDataStatus.ctDataState === 'error')) {
@@ -282,7 +294,12 @@ export default function MceComposer() {
 
 
   const checkForChanges = () => {
-    setChanges(history.getUnsavedActionLabels());
+    console.log(`Check for changes, savedState ${savedStateSignature}`, history);
+    const fullMinimalHistory = history.getMinimalHistory(savedStateSignature, history.getCurrentStateSignature());
+    console.log(`Full minimal history`, fullMinimalHistory);
+    const descriptions = fullMinimalHistory.filter( s => s.signature !== savedStateSignature)
+      .map((entry) => entry.actionDescription);
+    setChanges(descriptions);
   };
 
   /**
@@ -293,8 +310,11 @@ export default function MceComposer() {
       return;
     }
     checkForChanges();
+    const currentHistoryState = history.getCurrentState();
+    setMceData(currentHistoryState.mceData);
+    setCtDataStatusArray(currentHistoryState.ctDataStatusArray);
     if (!isEditionInCache(mceData, mceDataId)) {
-      console.log(`History change ${historyVersion} → ${history.getVersion()}: edition ${mceDataId} (hash ${getMceDataHash(mceData, mceDataId)}) not in cache`, mceData);
+      console.log(`History change ${historyVersion}: edition ${mceDataId} (hash ${getMceDataHash(mceData, mceDataId)}) not in cache`, mceData);
       setEditionOutOfDate(true);
       if (settings.autoRegenerate) {
         regenerateEdition();
@@ -313,37 +333,36 @@ export default function MceComposer() {
 
   const deleteChunk = (chunkIndex: number): boolean => {
     console.log("deleteChunk", chunkIndex);
-    const result = history.execute(new DeleteChunkAction({mceData, ctDataStatusArray}, chunkIndex, (newData) => {
-      setMceData(newData.mceData);
-      setCtDataStatusArray(newData.ctDataStatusArray);
-      setHistoryVersion(v => v + 1);
-    }));
-    if (!result.success) {
-      console.error('DeleteChunkAction failed', result.errors);
+    try {
+      history.do(new DeleteChunkAction(chunkIndex));
+    } catch (error) {
+      console.error('DeleteChunkAction failed', error);
+      return false;
     }
-    return result.success;
+    setHistoryVersion(v => v + 1);
+    return true;
   };
 
   const moveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
     console.log(`Move chunk index ${chunkIndex} '${direction}'`);
-    const result = history.execute(new MoveChunkAction(mceData, chunkIndex, direction === 'up' ? 'backwards' : 'forwards', (newData) => {
-      setMceData(newData);
-      setHistoryVersion(v => v + 1);
-    }));
-    if (!result.success) {
-      console.error('MoveChunkAction failed', result.errors);
+    try {
+      history.do(new MoveChunkAction(chunkIndex, direction === 'up' ? 'backwards' : 'forwards'));
+    } catch (error) {
+      console.error('MoveChunkAction failed', error);
+      return;
     }
+    setHistoryVersion(v => v + 1);
   };
 
   const setChunkBreak = (chunkIndex: number, newBreak: string) => {
     console.log(`Set chunk break index ${chunkIndex} '${newBreak}'`);
-    const result = history.execute(new SetChunkBreakAction(mceData, chunkIndex, newBreak, (newData) => {
-      setMceData(newData);
-      setHistoryVersion(v => v + 1);
-    }));
-    if (!result.success) {
-      console.error('SetChunkBreakAction failed', result.errors);
+    try {
+      history.do(new SetChunkBreakAction(chunkIndex, newBreak));
+    } catch (error) {
+      console.error('SetChunkBreakAction failed', error);
+      return;
     }
+    setHistoryVersion(v => v + 1);
   };
 
   const updateChunk = (chunkIndex: number) => {
@@ -356,13 +375,13 @@ export default function MceComposer() {
     const sanitizedTitle = newTitle.trim();
     if (sanitizedTitle === mceData.title) return;
 
-    const result = history.execute(new ChangeTitleAction(mceData, sanitizedTitle, (newData) => {
-      setMceData(newData);
-      setHistoryVersion(v => v + 1);
-    }));
-    if (!result.success) {
-      console.error('ChangeTitleAction failed', result.errors);
+    try {
+      history.do(new ChangeTitleAction(sanitizedTitle));
+    } catch (error) {
+      console.error('ChangeTitleAction failed', error);
+      return;
     }
+    setHistoryVersion(v => v + 1);
   };
 
   const handleOnClickTabExpand = (tabKey: string) => {
@@ -377,7 +396,11 @@ export default function MceComposer() {
 
   const handleOnClickRevertChanges = () => {
     console.log(`Click on revert changes`);
-    history.revertToSaved();
+    const savedIndex = history.getHistory().findIndex(item => item.signature === savedStateSignature);
+    if (savedIndex >= 0) {
+      history.goToState(savedIndex);
+      setHistoryVersion(v => v + 1);
+    }
   };
 
   const regenerateEdition = () => {
@@ -481,8 +504,10 @@ export default function MceComposer() {
       panel: 'two',
       key: 'history',
       title: 'History',
-      content: <HistoryPanel history={history} historyVersion={historyVersion} onGoTo={(idx) => {
-        history.goTo(idx);
+      content: <HistoryPanel history={history}
+                             savedStateSignature={savedStateSignature}
+                             historyVersion={historyVersion} onGoTo={(idx) => {
+        history.goToState(idx);
         setHistoryVersion(v => v + 1);
       }}/>,
       tabbable: true,
@@ -536,10 +561,12 @@ export default function MceComposer() {
     expandedTabSpec = panelSpecs.find(spec => spec.key === expandedTab) ?? null;
   }
 
-  const undoStack = history.getUndoStack();
-  const redoStack = history.getRedoStack();
-  const undoTitle = undoStack.length > 0 ? `Undo ${undoStack[undoStack.length - 1].label}` : 'Undo';
-  const redoTitle = redoStack.length > 0 ? `Redo ${redoStack[0].label}` : 'Redo';
+  const historyItems = history.getHistory();
+  const currentStateIndex = history.getCurrentStateIndex();
+  const canUndo = currentStateIndex > 0;
+  const canRedo = currentStateIndex < historyItems.length - 1;
+  const undoTitle = canUndo ? `Undo ${historyItems[currentStateIndex].actionDescription}` : 'Undo';
+  const redoTitle = canRedo ? `Redo ${historyItems[currentStateIndex + 1].actionDescription}` : 'Redo';
 
   const settingsPopover = (
     <Popover id="settings-popover" className="settings-popover">
@@ -575,13 +602,13 @@ export default function MceComposer() {
   </div>;
 
   const controlsDiv =  <div className={'controls'}>
-    <Arrow90degLeft className={'icon-btn' + (undoStack.length > 0 ? '' : ' disabled')}
+    <Arrow90degLeft className={'icon-btn' + (canUndo ? '' : ' disabled')}
                     title={undoTitle}
                     onClick={() => {
                       history.undo();
                       setHistoryVersion(v => v + 1);
                     }}/>
-    <Arrow90degRight className={'icon-btn' + (redoStack.length > 0 ? '' : ' disabled')}
+    <Arrow90degRight className={'icon-btn' + (canRedo ? '' : ' disabled')}
                      title={redoTitle}
                      onClick={() => {
                        history.redo();

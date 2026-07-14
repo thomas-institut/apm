@@ -194,7 +194,8 @@ export default function ChunksPanel({
     {
       key: 'breakAfter',
       title: 'Break After',
-      cellContent: (row, index) => row.isLast ? <div/> : <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
+      cellContent: (row, index) => <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
+                                                className={row.isLast ? 'grayed-out' : ''}
                                                 onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
                                                 selected={row.breakAfter ?? 'none'}/>,
     },

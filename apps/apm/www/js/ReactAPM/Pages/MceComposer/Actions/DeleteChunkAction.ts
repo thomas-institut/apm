@@ -1,32 +1,32 @@
 import {MceDataInterface} from '@/MceData/MceDataInterface';
 import {MceData} from '@/MceData/MceData';
-import {CtDataStatus} from '@/ReactAPM/Pages/MceComposer/MceComposer';
-import {DataEditAction} from '@/ReactAPM/ToolBox/ActionHistory/DataEditAction';
+import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
+import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {deepCopy} from '@/toolbox/Util';
 
-interface DeleteChunkActionData {
-  mceData: MceDataInterface;
-  ctDataStatusArray: CtDataStatus[];
-}
+export class DeleteChunkAction implements StateTransformAction<HistoryState> {
 
-export class DeleteChunkAction extends DataEditAction<DeleteChunkActionData> {
-
+  private title: string;
   constructor(
-    data: DeleteChunkActionData,
-    chunkIndex: number,
-    onUpdate: (data: DeleteChunkActionData) => void
+    private readonly chunkIndex: number,
   ) {
-    super(
-      data,
-      onUpdate,
-      (d) => {
-        const chunkId = d.mceData.chunks[chunkIndex].chunkId;
-        const newMceData = MceData.deleteChunk(d.mceData, chunkIndex);
-        const newCtDataStatusArray = d.ctDataStatusArray.filter(s => s.chunkInMceData.chunkId !== chunkId);
-        d.mceData = newMceData;
-        d.ctDataStatusArray = newCtDataStatusArray;
-      },
-      'Delete chunk',
-      (oldData) => `Delete chunk ${oldData.mceData.chunks[chunkIndex].chunkId}`
-    );
+    this.title = `Delete chunk`;
+  }
+
+  execute(state: HistoryState): HistoryState {
+    const chunk = (state.mceData as MceDataInterface).chunks[this.chunkIndex];
+    if (!chunk) {
+      throw new Error('Chunk not found');
+    }
+    const chunkId = chunk.chunkId;
+    const newState = deepCopy(state);
+    MceData.deleteChunk(newState.mceData, this.chunkIndex);
+    newState.ctDataStatusArray = newState.ctDataStatusArray.filter(s => s.chunkInMceData.chunkId !== chunkId);
+    this.title = `Remove chunk ${chunkId} from edition`;
+    return newState
+  }
+
+  description(_state: HistoryState): string {
+   return this.title;
   }
 }

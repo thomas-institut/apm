@@ -23,20 +23,29 @@ export interface StateHistoryItem<T> {
   state: T;
   signature: string;
   actionDescription: string;
+  executionTimestamp: number;
 }
 
 export class StateHistory<T> {
 
-  private readonly stateHistory: StateHistoryItem<T>[];
+  private stateHistory: StateHistoryItem<T>[];
   private currentStateIndex: number;
 
   constructor(initialState: T) {
-    this.stateHistory = [{ state: initialState, signature: this.getStateSignature(initialState), actionDescription: 'Initial State' }];
+    this.stateHistory = [{ state: initialState, signature: this.getStateSignature(initialState), actionDescription: 'Initial State', executionTimestamp: Date.now() }];
     this.currentStateIndex = 0;
   }
 
   getHistory() : StateHistoryItem<T>[] {
     return this.stateHistory;
+  }
+
+  getCurrentStateIndex(): number {
+    return this.currentStateIndex;
+  }
+
+  getCurrentStateSignature(): string {
+    return this.stateHistory[this.currentStateIndex].signature;
   }
 
   /**
@@ -151,7 +160,21 @@ export class StateHistory<T> {
       return newState;
     }
 
-    this.stateHistory.push({ state: newState, signature: newSignature, actionDescription: newActionDescription });
+    // check if the new state has the same signature as the next state and just move to it: this an effective redo
+    if (this.currentStateIndex < this.stateHistory.length - 1 && newSignature === this.stateHistory[this.currentStateIndex + 1].signature) {
+      this.currentStateIndex++;
+      return newState;
+    }
+
+    // check if the new state has the same signature as the previous state and just move to it: this is an effective undo
+    if (this.currentStateIndex > 0 && newSignature === this.stateHistory[this.currentStateIndex - 1].signature) {
+      this.currentStateIndex--;
+      return newState;
+    }
+
+    // completely new state: clip the history to current state and push the new state
+    this.stateHistory = this.stateHistory.slice(0, this.currentStateIndex + 1);
+    this.stateHistory.push({ state: newState, signature: newSignature, actionDescription: newActionDescription, executionTimestamp: Date.now()});
     this.currentStateIndex++;
     return newState;
   }

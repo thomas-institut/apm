@@ -53,7 +53,7 @@ export class ActionHistory {
 
   /**
    * Execute a new action and add it to the history.
-   * Discards any future actions (those after currentIndex).
+   * Discards any future actions (those after the currentIndex).
    * Only adds to history if the action succeeds.
    * @param action
    */

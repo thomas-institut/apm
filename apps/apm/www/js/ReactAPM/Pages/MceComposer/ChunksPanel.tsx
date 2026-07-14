@@ -163,7 +163,7 @@ export default function ChunksPanel({
 
     {
       key: 'n',
-      title: '',
+      title: 'N',
       cellContent: (_row, index) => <>{index + 1}</>
     },
     {

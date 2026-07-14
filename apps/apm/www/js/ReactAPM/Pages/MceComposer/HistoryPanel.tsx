@@ -1,4 +1,4 @@
-import {ActionHistory} from "@/toolbox/ActionHistory";
+import {ActionHistory} from "@/ReactAPM/ToolBox/ActionHistory/ActionHistory";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {CheckCircleFill, Circle, Save} from "react-bootstrap-icons";

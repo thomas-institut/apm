@@ -1,7 +1,7 @@
 import {MceDataInterface} from '@/MceData/MceDataInterface';
 import {MceData} from '@/MceData/MceData';
 import {CtDataStatus} from '@/ReactAPM/Pages/MceComposer/MceComposer';
-import {DataEditAction} from '@/ReactAPM/Pages/MceComposer/Actions/DataEditAction';
+import {DataEditAction} from '@/ReactAPM/ToolBox/ActionHistory/DataEditAction';
 
 interface DeleteChunkActionData {
   mceData: MceDataInterface;

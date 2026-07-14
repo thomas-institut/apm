@@ -1,4 +1,4 @@
-import {ActionResultInterface, actionFailure, actionSuccess, UndoableAction} from '@/toolbox/ActionHistory';
+import {ActionResultInterface, actionFailure, actionSuccess, UndoableAction} from '@/ReactAPM/ToolBox/ActionHistory/ActionHistory';
 import {deepCopy} from '@/toolbox/Util';
 
 /**

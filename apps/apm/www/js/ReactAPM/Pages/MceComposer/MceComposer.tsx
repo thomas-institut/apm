@@ -21,7 +21,7 @@ import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import SaveButton from "@/ReactAPM/Pages/MceComposer/SaveButton";
-import {ActionHistory} from "@/toolbox/ActionHistory";
+import {ActionHistory} from "@/ReactAPM/ToolBox/ActionHistory/ActionHistory";
 import {ChangeTitleAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeTitleAction";
 import {DeleteChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteChunkAction";
 import {MoveChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/MoveChunkAction";

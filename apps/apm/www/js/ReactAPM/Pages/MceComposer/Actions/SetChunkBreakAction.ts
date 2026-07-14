@@ -1,6 +1,6 @@
 import {MceDataInterface} from '@/MceData/MceDataInterface';
 import {MceData} from '@/MceData/MceData';
-import {DataEditAction} from '@/ReactAPM/Pages/MceComposer/Actions/DataEditAction';
+import {DataEditAction} from '@/ReactAPM/ToolBox/ActionHistory/DataEditAction';
 
 export class SetChunkBreakAction extends DataEditAction<MceDataInterface> {
 

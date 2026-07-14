@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {ActionHistory, actionSuccess, UndoableAction} from '@/toolbox/ActionHistory';
+import {ActionHistory, actionSuccess, UndoableAction} from '@/ReactAPM/ToolBox/ActionHistory/ActionHistory';
 
 class MockAction implements UndoableAction {
   executedCount = 0;

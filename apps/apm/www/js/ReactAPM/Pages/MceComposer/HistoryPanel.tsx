@@ -4,11 +4,14 @@ import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/Nic
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {CheckCircleFill, Circle, Save} from "react-bootstrap-icons";
 import React, {useEffect, useState} from "react";
+import {Button} from "react-bootstrap";
+import './HistoryPanel.css';
 
 interface HistoryPanelProps {
   history: StateHistory<HistoryState>;
   savedStateSignature: string;
   onGoTo: (index: number) => void;
+  onClearHistory: () => void;
   historyVersion: number;
 }
 
@@ -22,7 +25,7 @@ interface HistoryTableRow {
   signature: string;
 }
 
-export default function HistoryPanel({history, savedStateSignature, onGoTo, historyVersion}: HistoryPanelProps) {
+export default function HistoryPanel({history, savedStateSignature, onGoTo, onClearHistory, historyVersion}: HistoryPanelProps) {
   const [_refreshTick, setRefreshTick] = useState(0);
 
   // Re-render when history changes externally
@@ -79,7 +82,7 @@ export default function HistoryPanel({history, savedStateSignature, onGoTo, hist
     },
     {
       key: 'label',
-      title: 'State',
+      title: 'Description',
       cellContent: (row) => (
         <span className={row.isRedo ? 'text-muted' : ''} 
               style={{cursor: 'pointer', fontWeight: row.isCurrent ? 'bold' : 'normal'}}
@@ -103,9 +106,19 @@ export default function HistoryPanel({history, savedStateSignature, onGoTo, hist
     }
   ];
 
+  const canClear = history.getCurrentStateSignature() === savedStateSignature && states.length > 1;
+
   return (
     <div className="history-panel">
+
       <NiceTable rows={rows} columnDefs={columnDefs} />
+      {canClear && (
+        <div className="clear-history">
+          <Button variant="primary" onClick={onClearHistory}>
+            Clear History
+          </Button>
+        </div>
+      )}
     </div>
   );
 }

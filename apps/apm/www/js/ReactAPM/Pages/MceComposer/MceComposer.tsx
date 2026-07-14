@@ -506,10 +506,19 @@ export default function MceComposer() {
       title: 'History',
       content: <HistoryPanel history={history}
                              savedStateSignature={savedStateSignature}
-                             historyVersion={historyVersion} onGoTo={(idx) => {
-        history.goToState(idx);
-        setHistoryVersion(v => v + 1);
-      }}/>,
+                             historyVersion={historyVersion}
+                             onGoTo={(idx) => {
+                               history.goToState(idx);
+                               setHistoryVersion(v => v + 1);
+                             }}
+                             onClearHistory={() => {
+                               const savedIndex = history.getHistory().findIndex(item => item.signature === savedStateSignature);
+                               if (savedIndex >= 0) {
+                                 history.clear(savedIndex);
+                                 setHistoryVersion(v => v + 1);
+                               }
+                             }}
+      />,
       tabbable: true,
     },
   ];

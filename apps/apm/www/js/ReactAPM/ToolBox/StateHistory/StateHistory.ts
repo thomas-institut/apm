@@ -195,6 +195,15 @@ export class StateHistory<T> {
     return this.getCurrentState();
   }
 
+  clear(newInitialStateIndex: number) {
+    if (newInitialStateIndex < 0 || newInitialStateIndex >= this.stateHistory.length) {
+      throw new Error('Invalid state index');
+    }
+    const state = this.stateHistory[newInitialStateIndex];
+    this.stateHistory = [state];
+    this.currentStateIndex = 0;
+  }
+
   getCurrentState(): T {
     return this.stateHistory[this.currentStateIndex].state;
   }

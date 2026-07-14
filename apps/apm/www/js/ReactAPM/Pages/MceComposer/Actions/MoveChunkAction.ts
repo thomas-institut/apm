@@ -20,9 +20,8 @@ export class MoveChunkAction implements StateTransformAction<HistoryState> {
       throw `Chunk ${this.chunkIndex} does not exist`;
     }
 
-    this.title = `Move chunk ${chunk.chunkId} at position ${this.chunkIndex + 1} ${this.direction}`;
-
-
+    const newIndex = this.chunkIndex + (this.direction === 'forwards' ? 1 : -1);
+    this.title = `Move chunk ${chunk.chunkId} to position ${newIndex + 1}`;
     MceData.moveChunk(newState.mceData, this.chunkIndex, this.direction);
 
     return newState;

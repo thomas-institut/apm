@@ -38,6 +38,7 @@ import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
 import HistoryPanel from "@/ReactAPM/Pages/MceComposer/HistoryPanel";
 import MultiToggle from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import './MceComposer.css';
+import {hashString} from "@/ReactAPM/ToolBox/Hash";
 
 // TODO 2026-07-10
 //  - Implement bug notification when actions throw errors
@@ -85,20 +86,9 @@ interface PanelSpec {
 
 export default function MceComposer() {
 
-  const hashString = (value: string): string => {
-    // FNV-1a 32-bit hash (fast, deterministic, browser-safe)
-    let hash = 0x811c9dc5;
-    for (let i = 0; i < value.length; i++) {
-      hash ^= value.charCodeAt(i);
-      hash = Math.imul(hash, 0x01000193);
-    }
-    return (hash >>> 0).toString(16).padStart(8, '0');
-  };
-
   const [mceComposerStatus, setMceComposerStatus] = useState<MceComposerStatus>('loadingMce');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
-  const [lastSavedMceData, setLastSavedMceData] = useState<MceDataInterface | null>(null);
   const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
   const [edition, setEdition] = useState<Edition | null>(null);
 
@@ -153,81 +143,129 @@ export default function MceComposer() {
     }
   }
 
-
-  /**
-   * Data loading and processing
-   */
+  // 1. Hook to load MceData (Phase: start -> loadingMce -> loadingSingleChunks)
   useEffect(() => {
-    switch (mceComposerStatus) {
-      case 'start':
-        setMceComposerStatus('loadingMce');
-        break;
-
-      case 'loadingMce':
-        if (mceDataId === -1) {
-          // new edition, no Mce to load from server
-          // no need to set MceData, since by default mceData is an empty edition
-          setMceComposerStatus('loadingSingleChunks');
-        } else {
-          appContext.apiClient.getMceData(mceDataId).then((resp) => {
-            MceData.fix(resp.mceData);
-            const initialCtDataStatusArray = resp.mceData.chunks.map((chunk) => (
-              {
-                ctDataId: chunk.chunkEditionTableId,
-                chunkInMceData: chunk,
-                apiData: null,
-                ctDataState: 'notLoaded' as CtDataState,
-                errorMsg: ''
-              }
-            ));
-            setLastSavedMceData(deepCopy(resp.mceData));
-            setMceData(resp.mceData);
-            setCtDataStatusArray(initialCtDataStatusArray);
-            setMceComposerStatus('loadingSingleChunks');
-          }).catch((error) => {
-            setMceComposerStatus('error');
-            setErrorMsg(`Failed to load MCE data from server: ${error.message}`);
-          });
-        }
-        break;
-
-      case 'loadingSingleChunks':
-        const firstCtDataNotLoaded = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataState === 'notLoaded');
-        if (!firstCtDataNotLoaded) {
-          if (ctDataStatusArray.every((ctDataStatus) => ctDataStatus.ctDataState === 'loaded')) {
-            const initialHistory = new StateHistory<HistoryState>(deepCopy({mceData, ctDataStatusArray}));
-            setHistory(initialHistory);
-            setSavedStateSignature(initialHistory.getCurrentStateSignature());
-            console.log(`Loaded MCE data and all CtData, saved state signature is ${initialHistory.getCurrentStateSignature()}`, initialHistory);
-            setHistoryVersion(v => v + 1);
-            setMceComposerStatus('loaded');
-          } else {
-            if (ctDataStatusArray.some((ctDataStatus) => ctDataStatus.ctDataState === 'error')) {
-              setMceComposerStatus('error');
-              setErrorMsg(`Error loading chunks`);
-            }
-          }
-          break;
-        }
-        const ctDataId = firstCtDataNotLoaded.ctDataId;
-        const ctDataStatusIndex = ctDataStatusArray.findIndex((ctDataStatus) => ctDataStatus.ctDataId === ctDataId);
-        console.log(`Loading CtData for chunk ${ctDataStatusIndex}, table ${ctDataId}`);
-        const ctDataStatus = ctDataStatusArray[ctDataStatusIndex];
-        ctDataStatus.ctDataState = 'loading';
-        appContext.apiClient.getSingleChunkData(ctDataId, ctDataStatus.chunkInMceData.version).then((apiResponse) => {
-          // console.log(`Got data for chunk ${ctDataStatusIndex}, table ${ctDataId}`, apiResponse);
-          setCtDataStatusArray((prevCtDataStatusArray) => {
-            const newCtDataStatusArray = [...prevCtDataStatusArray];
-            newCtDataStatusArray[ctDataStatusIndex] = {
-              ...newCtDataStatusArray[ctDataStatusIndex],
-              apiData: apiResponse,
-              ctDataState: 'loaded',
-            };
-            return newCtDataStatusArray;
-          });
-        });
+    if (mceComposerStatus === 'start') {
+      setMceComposerStatus('loadingMce');
+      return;
     }
-  }, [mceComposerStatus, ctDataStatusArray]);
+
+    if (mceComposerStatus === 'loadingMce') {
+      if (mceDataId === -1) {
+        // new MCE
+        setMceComposerStatus('loadingSingleChunks');
+        return;
+      }
+
+      let ignore = false;
+      appContext.apiClient.getMceData(mceDataId)
+        .then((resp) => {
+          if (ignore) {
+            return; // avoid problems with React strict mode
+          }
+          MceData.fix(resp.mceData);
+
+          const initialCtDataStatusArray = resp.mceData.chunks.map((chunk) => ({
+            ctDataId: chunk.chunkEditionTableId,
+            chunkInMceData: chunk,
+            apiData: null,
+            ctDataState: 'notLoaded' as CtDataState,
+            errorMsg: ''
+          }));
+          setMceData(resp.mceData);
+          setCtDataStatusArray(initialCtDataStatusArray);
+          setMceComposerStatus('loadingSingleChunks');
+        })
+        .catch((error) => {
+          if (ignore) {
+            return; // avoid problems with React strict mode
+          }
+          setMceComposerStatus('error');
+          setErrorMsg(`Failed to load MCE data from server: ${error.message}`);
+        });
+
+      return () => {
+        ignore = true;
+      }; // Resilient to Strict Mode double-firing
+    }
+  }, [mceComposerStatus, mceDataId]);
+
+
+// 2. Hook to fetch chunks (Phase: loadingSingleChunks)
+  useEffect(() => {
+    if (mceComposerStatus !== 'loadingSingleChunks') {
+      return;
+    }
+    if (ctDataStatusArray.length === 0) {
+      return;
+    }
+
+    // Check if we are fully done
+    const allLoaded = ctDataStatusArray.every(st => st.ctDataState === 'loaded');
+    const hasErrors = ctDataStatusArray.some(st => st.ctDataState === 'error');
+
+    if (allLoaded) {
+      const initialHistory = new StateHistory<HistoryState>(deepCopy({mceData, ctDataStatusArray}));
+      setHistory(initialHistory);
+      setSavedStateSignature(initialHistory.getCurrentStateSignature());
+      setHistoryVersion(v => v + 1);
+      setMceComposerStatus('loaded');
+      return;
+    }
+
+    if (hasErrors) {
+      setMceComposerStatus('error');
+      setErrorMsg(`Error loading chunks`);
+      return;
+    }
+
+    // Find the next chunk to load
+    const nextChunkIndex = ctDataStatusArray.findIndex(st => st.ctDataState === 'notLoaded');
+    if (nextChunkIndex === -1) {
+      return; // Currently loading some, waiting for promises to resolve
+    }
+    const chunkToLoad = ctDataStatusArray[nextChunkIndex];
+
+    // Instantly mark it as 'loading' in local state so the next render cycle knows not to double-trigger it
+    setCtDataStatusArray(prev => {
+      const next = [...prev];
+      next[nextChunkIndex] = {...next[nextChunkIndex], ctDataState: 'loading'};
+      return next;
+    });
+
+    // Fetch the data
+    console.log(`Fetching chunk index ${nextChunkIndex} (${chunkToLoad.ctDataId}) from server`);
+    appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.chunkInMceData.version)
+      .then((apiResponse) => {
+        setCtDataStatusArray(prev => {
+          const next = [...prev];
+          const index = next.findIndex(st => st.ctDataId === chunkToLoad.ctDataId);
+          if (index !== -1) {
+            next[index] = {
+              ...next[index],
+              apiData: apiResponse,
+              ctDataState: 'loaded'
+            };
+          }
+          return next;
+        });
+      })
+      .catch((error) => {
+        setCtDataStatusArray(prev => {
+          const next = [...prev];
+          const index = next.findIndex(st => st.ctDataId === chunkToLoad.ctDataId);
+          if (index !== -1) {
+            next[index] = {
+              ...next[index],
+              ctDataState: 'error',
+              errorMsg: error.message
+            };
+          }
+          return next;
+        });
+      });
+
+  }, [mceComposerStatus, ctDataStatusArray, mceData]);
 
   const getMceDataHash = (mceData: MceDataInterface, mceDataId: number) => {
     return hashString(JSON.stringify([mceData, mceDataId]));
@@ -239,12 +277,12 @@ export default function MceComposer() {
   const getEdition = async (mceData: MceDataInterface, mceDataId: number) => {
 
     const mceDataHash = getMceDataHash(mceData, mceDataId);
-    console.log(`getEdition ${mceDataHash}: mceData ${mceDataId}, ${mceData.chunks.length} chunks`);
     if (editionCache.current[mceDataHash] !== undefined) {
       console.log(`getEdition ${mceDataHash}: cache hit`);
       setEditionGenerationProgress(null);
       return editionCache.current[mceDataHash];
     }
+    console.log(`getEdition ${mceDataHash}: cache miss`);
     const profiler = new BasicProfiler('RegenerateEdition', true);
     const singleChunkEditionCacheKey = (chunkIndex: number) => {
       const chunkInfo = mceData.chunks[chunkIndex];
@@ -275,29 +313,12 @@ export default function MceComposer() {
     return generatedEdition;
   };
 
-  /**
-   * Initial edition generation
-   */
-  useEffect(() => {
-    if (mceComposerStatus !== 'loaded') {
-      return;
-    }
-    if (edition !== null) {
-      return;
-    }
-    console.log(`Initial edition generation: mceData ${mceDataId}, ${mceData.chunks.length} chunks, hash ${getMceDataHash(mceData, mceDataId)}`, mceData);
-    getEdition(mceData, mceDataId).then((generatedEdition) => {
-      setEdition(generatedEdition);
-      setEditionOutOfDate(false);
-    });
-  }, [mceComposerStatus, edition]);
-
 
   const checkForChanges = () => {
-    console.log(`Check for changes, savedState ${savedStateSignature}`, history);
+    // console.log(`Check for changes, savedState ${savedStateSignature}`, history);
     const fullMinimalHistory = history.getMinimalHistory(savedStateSignature, history.getCurrentStateSignature());
-    console.log(`Full minimal history`, fullMinimalHistory);
-    const descriptions = fullMinimalHistory.filter( s => s.signature !== savedStateSignature)
+    // console.log(`Full minimal history`, fullMinimalHistory);
+    const descriptions = fullMinimalHistory.filter(s => s.signature !== savedStateSignature)
       .map((entry) => entry.actionDescription);
     setChanges(descriptions);
   };
@@ -313,8 +334,17 @@ export default function MceComposer() {
     const currentHistoryState = history.getCurrentState();
     setMceData(currentHistoryState.mceData);
     setCtDataStatusArray(currentHistoryState.ctDataStatusArray);
+  }, [historyVersion]);
+
+  /**
+   * Things to do when mceData changes
+   */
+  useEffect( () => {
+    if (mceComposerStatus !== 'loaded') {
+      return;
+    }
     if (!isEditionInCache(mceData, mceDataId)) {
-      console.log(`History change ${historyVersion}: edition ${mceDataId} (hash ${getMceDataHash(mceData, mceDataId)}) not in cache`, mceData);
+      console.log(`mceData change: edition hash ${getMceDataHash(mceData, mceDataId)} not in cache`, mceData);
       setEditionOutOfDate(true);
       if (settings.autoRegenerate) {
         regenerateEdition();
@@ -325,7 +355,7 @@ export default function MceComposer() {
         setEditionOutOfDate(false);
       });
     }
-  }, [historyVersion, settings.autoRegenerate]);
+  }, [mceData, mceDataId, settings.autoRegenerate]);
 
   useEffect(() => {
     document.title = `MCE: ${mceData.title}`;
@@ -610,7 +640,7 @@ export default function MceComposer() {
     {editionGenerationProgressBar}
   </div>;
 
-  const controlsDiv =  <div className={'controls'}>
+  const controlsDiv = <div className={'controls'}>
     <Arrow90degLeft className={'icon-btn' + (canUndo ? '' : ' disabled')}
                     title={undoTitle}
                     onClick={() => {
@@ -631,7 +661,7 @@ export default function MceComposer() {
     <OverlayTrigger trigger="click" placement="bottom" overlay={settingsPopover} rootClose>
       <Gear className={'icon-btn'} title={'Settings'}/>
     </OverlayTrigger>
-  </div>
+  </div>;
 
 
   if (expandedTabSpec !== null) {
@@ -687,7 +717,8 @@ export default function MceComposer() {
       {notificationsDiv}
       {controlsDiv}
     </div>
-    <SplitPanels direction={settings.layoutOrientation} className="panelContainer" dividerClass="divider" dividerWidth={3}
+    <SplitPanels direction={settings.layoutOrientation} className="panelContainer" dividerClass="divider"
+                 dividerWidth={3}
                  outerMargin={10}>
       <TabPanel activeTabKey={activeTabPanelOne}
                 onClickTab={(tabKey) => setActiveTabPanelOne(tabKey)}

@@ -22,6 +22,7 @@ export interface NiceTableProps<T> {
   rows: T[];
   stickyHeader?: boolean;
   highlightedRow?: number | null;
+  getRowKey?: (row: T, index: number) => string | number;
   /**
    * Class name for the <table> element
    */
@@ -81,12 +82,15 @@ export default function NiceTable<T>(props: NiceTableProps<T>) {
     </tr>
     </thead>
     <tbody>
-    {props.rows.map((row, rowIndex) => (
-      <tr key={rowIndex} className={getTrClass(rowIndex)}>
-        {props.columnDefs.map((columnDef) => getTd(columnDef, row, rowIndex)
-        )}
-      </tr>
-    ))}
+    {props.rows.map((row, rowIndex) => {
+      const rowKey = props.getRowKey ? props.getRowKey(row, rowIndex) : rowIndex;
+      return (
+        <tr key={rowKey} className={getTrClass(rowIndex)}>
+          {props.columnDefs.map((columnDef) => getTd(columnDef, row, rowIndex)
+          )}
+        </tr>
+      );
+    })}
     </tbody>
   </table>;
 }

@@ -11,6 +11,10 @@
             border-bottom: 1px solid #ececec;
         }
 
+        .highlighted {
+            animation: flashBackground 1.5s ease-in-out;
+        }
+
     }
 
     .chunk-table-arrows {
@@ -37,6 +41,28 @@
         justify-content: start;
     }
 
+}
 
+:root {
+    --flash-background-color: var(--warning, #fff3ac);
+}
 
+@keyframes flashBackground {
+    0%, 100% {
+        background-color: initial; /* Ends and starts with element's normal background */
+    }
+    10% {
+        background-color: var(--flash-background-color);
+    }
+    20% {
+        background-color: initial;
+    }
+    30% {
+        background-color: var(--flash-background-color);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
 }

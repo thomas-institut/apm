@@ -15,7 +15,7 @@ vi.mock('@/ReactAPM/Components/EntityLink', () => ({
 }));
 
 vi.mock('@/ReactAPM/Components/MultiToggle/MultiToggle', () => ({
-  default: () => <div>Break toggle</div>
+  default: ({onChange}: {onChange: (val: string) => void}) => <button type="button" className="break-toggle" onClick={() => onChange('page')}>Break toggle</button>
 }));
 
 vi.mock('@/ReactAPM/Components/ConfirmDialog', () => ({
@@ -139,6 +139,109 @@ describe('ChunksPanel', () => {
     });
 
     expect(deleteChunk).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('highlights a chunk after moving it and clears highlight on other actions', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const chunk1 = buildChunk();
+    const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
+    const chunk2Status = buildCtDataStatus(chunk2);
+    // @ts-expect-error test-only property override
+    chunk2Status.apiData.isLatestVersion = false;
+    const moveChunk = vi.fn();
+    const updateChunk = vi.fn();
+
+    const render = (order: number[]) => act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk1, chunk2]}
+          chunkOrder={order}
+          ctDataStatusArray={[buildCtDataStatus(chunk1), chunk2Status]}
+          moveChunk={moveChunk}
+          updateChunk={updateChunk}
+        />
+      );
+    });
+
+    await render([0, 1]);
+
+    const moveDownButton = container.querySelector('[title="Click to move chunk C1 one row down"]') as HTMLButtonElement;
+
+    // 1. Move chunk C1 down
+    await act(async () => {
+      moveDownButton.click();
+    });
+
+    expect(moveChunk).toHaveBeenCalledWith(0, 'down');
+
+    // Check if row 1 (index 0) is highlighted
+    let rows = container.querySelectorAll('tr');
+    expect(rows[1].className).toContain('highlighted'); // rows[0] is header
+
+    // 2. Simulate move completion by updating props
+    await render([1, 0]);
+
+    // Now C1 should be at index 1 (second row)
+    rows = container.querySelectorAll('tr');
+    expect(rows[2].className).toContain('highlighted');
+    expect(rows[1].className).not.toContain('highlighted');
+
+    // 3. Perform another action (Update)
+    const updateButton = container.querySelector('[title="Click to update chunk C2"]') as HTMLButtonElement;
+    await act(async () => {
+      updateButton.click();
+    });
+
+    expect(updateChunk).toHaveBeenCalled();
+
+    // Trigger reset of pending state
+    await render([1, 0]);
+
+    // Highlight should be cleared
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    // 4. Move again (it's at index 1 now, so move it up)
+    const moveUpButton = container.querySelector('[title="Click to move chunk C1 one row up"]') as HTMLButtonElement;
+    expect(moveUpButton).not.toBeNull();
+    await act(async () => {
+      moveUpButton.click();
+    });
+    expect(container.querySelector('.highlighted')).not.toBeNull();
+
+    // 5. Cancel highlight by changing break
+    const breakToggle = container.querySelector('.break-toggle') as HTMLButtonElement;
+    await act(async () => {
+      breakToggle.click();
+    });
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    // Trigger reset of pending state
+    await render([1, 0]);
+
+    // 6. Move again
+    const moveDownButton2 = container.querySelector('[title="Click to move chunk C2 one row down"]') as HTMLButtonElement;
+    await act(async () => {
+      moveDownButton2.click();
+    });
+    expect(container.querySelector('.highlighted')).not.toBeNull();
+
+    // Clear move pending state
+    await render([1, 0]);
+
+    // 7. Click delete
+    const deleteBtn = container.querySelector('[title="Click to remove chunk C1 from the edition"]') as HTMLButtonElement;
+    expect(deleteBtn).not.toBeNull();
+    await act(async () => {
+      deleteBtn.click();
+    });
+    expect(container.querySelector('.highlighted')).toBeNull();
 
     await act(async () => {
       root.unmount();

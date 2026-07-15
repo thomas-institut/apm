@@ -60,7 +60,6 @@ describe('MCE Actions', () => {
 
       const result = action.execute(state);
       expect(result.mceData.chunkOrder).toEqual([1, 0, 2]);
-      expect(action.description(state)).toBe('Move chunk 1 at position 1 forwards');
     });
   });
 

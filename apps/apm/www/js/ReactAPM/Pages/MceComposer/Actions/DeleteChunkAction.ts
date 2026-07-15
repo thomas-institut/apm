@@ -1,4 +1,3 @@
-import {MceDataInterface} from '@/MceData/MceDataInterface';
 import {MceData} from '@/MceData/MceData';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';

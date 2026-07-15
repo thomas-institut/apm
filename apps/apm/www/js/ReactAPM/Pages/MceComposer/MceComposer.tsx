@@ -434,6 +434,7 @@ export default function MceComposer() {
     if (savedIndex >= 0) {
       history.goToState(savedIndex);
       setHistoryVersion(v => v + 1);
+      setChunksPanelVersion(v => v + 1);
     }
   };
 
@@ -532,7 +533,6 @@ export default function MceComposer() {
       key: 'versions',
       title: 'Versions',
       expandable: true,
-      closable: true,
       content: <>Versions will be here...</>
     },
     {
@@ -651,12 +651,14 @@ export default function MceComposer() {
                     onClick={() => {
                       history.undo();
                       setHistoryVersion(v => v + 1);
+                      setChunksPanelVersion(v => v + 1);
                     }}/>
     <Arrow90degRight className={'icon-btn' + (canRedo ? '' : ' disabled')}
                      title={redoTitle}
                      onClick={() => {
                        history.redo();
                        setHistoryVersion(v => v + 1);
+                       setChunksPanelVersion(v => v + 1);
                      }}/>
 
     <SaveButton changes={changes}/>

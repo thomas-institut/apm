@@ -62,6 +62,7 @@ export default function ChunksPanel({
   const [pendingMoveChunkIndex, setPendingMoveChunkIndex] = useState<number | null>(null);
   const [pendingSetChunkBreakIndex, setPendingSetChunkBreakIndex] = useState<number | null>(null);
   const [confirmDeleteChunkIndex, setConfirmDeleteChunkIndex] = useState<number | null>(null);
+  const [highlightedChunkId, setHighlightedChunkId] = useState<string | null>(null);
 
   useEffect(() => {
     setPendingDeleteChunkIndex(null);
@@ -70,6 +71,10 @@ export default function ChunksPanel({
     setPendingSetChunkBreakIndex(null);
     setConfirmDeleteChunkIndex(null);
   }, [chunks, chunkOrder, ctDataStatusArray, version]);
+
+  useEffect(() => {
+    setHighlightedChunkId(null);
+  }, [version]);
 
   const isAnyPending = pendingDeleteChunkIndex !== null ||
     pendingUpdateChunkIndex !== null ||
@@ -121,6 +126,7 @@ export default function ChunksPanel({
   };
 
   const handleDeleteChunk = (chunkIndex: number) => {
+    setHighlightedChunkId(null);
     if (!deleteChunk || isAnyPending) {
       return;
     }
@@ -147,6 +153,7 @@ export default function ChunksPanel({
   };
 
   const handleUpdateChunk = (chunkIndex: number) => {
+    setHighlightedChunkId(null);
     if (!updateChunk || isAnyPending) {
       return;
     }
@@ -158,11 +165,13 @@ export default function ChunksPanel({
     if (!moveChunk || isAnyPending) {
       return;
     }
+    setHighlightedChunkId(chunks[chunkOrder[chunkIndex]].chunkId);
     setPendingMoveChunkIndex(chunkIndex);
     moveChunk(chunkIndex, direction);
   };
 
   const handleSetChunkBreak = (chunkIndex: number, breakAfter: string) => {
+    setHighlightedChunkId(null);
     if (!setChunkBreak || isAnyPending) {
       return;
     }
@@ -186,7 +195,6 @@ export default function ChunksPanel({
       })
   ];
   const columnDefs: NiceTableColumnDef<ChunkTableRow>[] = [
-
 
     {
       key: 'n',
@@ -313,7 +321,9 @@ export default function ChunksPanel({
       cancelButtonLabel={'Cancel'}
       size={'sm'}
     />
-    <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true}/>
+    <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true}
+               getRowKey={(row, index) => `${row.chunkId}-${index}`}
+               highlightedRow={highlightedChunkId === null ? null : rows.findIndex(row => row.chunkId === highlightedChunkId)}/>
   </div>;
 }
 

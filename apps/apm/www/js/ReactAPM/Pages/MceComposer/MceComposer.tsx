@@ -107,6 +107,7 @@ export default function MceComposer() {
   }));
   const [historyVersion, setHistoryVersion] = useState(0);
   const [savedStateSignature, setSavedStateSignature] = useState(history.getHistory()[0].signature);
+  const [chunksPanelVersion, setChunksPanelVersion] = useState<number>(0);
 
   const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
 
@@ -339,7 +340,7 @@ export default function MceComposer() {
   /**
    * Things to do when mceData changes
    */
-  useEffect( () => {
+  useEffect(() => {
     if (mceComposerStatus !== 'loaded') {
       return;
     }
@@ -397,8 +398,10 @@ export default function MceComposer() {
 
   const updateChunk = (chunkIndex: number) => {
     console.log(`Update chunk index ${chunkIndex}`);
+
+    console.log(`Update chunk not implemented yet`);
     // No action implemented yet for update chunk in history
-    checkForChanges();
+    setChunksPanelVersion(v => v + 1);
   };
 
   const handleConfirmTitleEdit = (newTitle: string) => {
@@ -459,6 +462,7 @@ export default function MceComposer() {
       title: 'Chunks',
       expandable: true,
       content: <ChunksPanel chunks={mceData.chunks}
+                            version={chunksPanelVersion}
                             chunkOrder={mceData.chunkOrder ?? MceData.getDefaultChunkOrder(mceData)}
                             ctDataStatusArray={ctDataStatusArray}
                             moveChunk={(chunkIndex, direction) => {

@@ -25,6 +25,10 @@ interface ChunksPanelProps extends TabbableElementProps {
   moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => void;
   setChunkBreak?: (chunkIndex: number, breakAfter: string) => void;
   ctDataStatusArray: CtDataStatus[];
+  /**
+   * A version number that is incremented whenever the panel needs to be redrawn.
+   */
+  version?: number;
 }
 
 type ControlButton = 'delete' | 'update';
@@ -49,16 +53,28 @@ export default function ChunksPanel({
                                       deleteChunk,
                                       updateChunk,
                                       moveChunk,
-                                      setChunkBreak
+                                      setChunkBreak,
+                                      version
                                     }: ChunksPanelProps) {
 
   const [pendingDeleteChunkIndex, setPendingDeleteChunkIndex] = useState<number | null>(null);
+  const [pendingUpdateChunkIndex, setPendingUpdateChunkIndex] = useState<number | null>(null);
+  const [pendingMoveChunkIndex, setPendingMoveChunkIndex] = useState<number | null>(null);
+  const [pendingSetChunkBreakIndex, setPendingSetChunkBreakIndex] = useState<number | null>(null);
   const [confirmDeleteChunkIndex, setConfirmDeleteChunkIndex] = useState<number | null>(null);
 
   useEffect(() => {
     setPendingDeleteChunkIndex(null);
+    setPendingUpdateChunkIndex(null);
+    setPendingMoveChunkIndex(null);
+    setPendingSetChunkBreakIndex(null);
     setConfirmDeleteChunkIndex(null);
-  }, [chunks, chunkOrder, ctDataStatusArray]);
+  }, [chunks, chunkOrder, ctDataStatusArray, version]);
+
+  const isAnyPending = pendingDeleteChunkIndex !== null ||
+    pendingUpdateChunkIndex !== null ||
+    pendingMoveChunkIndex !== null ||
+    pendingSetChunkBreakIndex !== null;
 
 
   if (chunks.length !== ctDataStatusArray.length) {
@@ -105,14 +121,14 @@ export default function ChunksPanel({
   };
 
   const handleDeleteChunk = (chunkIndex: number) => {
-    if (!deleteChunk || pendingDeleteChunkIndex !== null) {
+    if (!deleteChunk || isAnyPending) {
       return;
     }
     setConfirmDeleteChunkIndex(chunkIndex);
   };
 
   const handleAcceptDeleteChunk = () => {
-    if (confirmDeleteChunkIndex === null || !deleteChunk || pendingDeleteChunkIndex !== null) {
+    if (confirmDeleteChunkIndex === null || !deleteChunk || isAnyPending) {
       return;
     }
 
@@ -131,29 +147,41 @@ export default function ChunksPanel({
   };
 
   const handleUpdateChunk = (chunkIndex: number) => {
-    updateChunk && updateChunk(chunkIndex);
+    if (!updateChunk || isAnyPending) {
+      return;
+    }
+    setPendingUpdateChunkIndex(chunkIndex);
+    updateChunk(chunkIndex);
   };
 
   const handleMoveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
-    moveChunk && moveChunk(chunkIndex, direction);
+    if (!moveChunk || isAnyPending) {
+      return;
+    }
+    setPendingMoveChunkIndex(chunkIndex);
+    moveChunk(chunkIndex, direction);
   };
 
   const handleSetChunkBreak = (chunkIndex: number, breakAfter: string) => {
-    setChunkBreak && setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
+    if (!setChunkBreak || isAnyPending) {
+      return;
+    }
+    setPendingSetChunkBreakIndex(chunkIndex);
+    setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
   };
 
   const chunkBreakMultiToggleOptionSpecs: MultiToggleOptionSpec[] = [
     {
       key: 'none',
       label: 'None',
-      disabled: false,
+      disabled: isAnyPending,
     },
     ...ValidChunkBreaks.filter((breakType) => breakType !== '')
       .map((breakType) => {
         return {
           key: breakType,
           label: capitalizeFirstLetter(breakType),
-          disabled: false,
+          disabled: isAnyPending,
         };
       })
   ];
@@ -193,10 +221,12 @@ export default function ChunksPanel({
     {
       key: 'breakAfter',
       title: 'Break After',
-      cellContent: (row, index) => <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
-                                                className={row.isLast ? 'grayed-out' : ''}
-                                                onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
-                                                selected={row.breakAfter ?? 'none'}/>,
+      cellContent: (row, index) => <ComponentWithPending pending={pendingSetChunkBreakIndex === index} pendingTitle={`Setting break for chunk ${row.chunkId}`}>
+        <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
+                     className={row.isLast ? 'grayed-out' : ''}
+                     onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
+                     selected={row.breakAfter ?? 'none'}/>
+      </ComponentWithPending>,
     },
     {
       key: 'arrows',
@@ -220,10 +250,12 @@ export default function ChunksPanel({
           return `Click to move chunk ${row.chunkId} ${direction === 'up' ? 'one row up' : 'one row down'}`;
         };
         return <div className={'chunk-table-arrows'}>
-          <ArrowUpShort className={arrowUpClasses.join(' ')} title={getArrowTitle('up')}
-                        onClick={() => handleMoveChunk(index, 'up')}/>
-          <ArrowDownShort className={arrowDownClasses.join(' ')} title={getArrowTitle('down')}
-                          onClick={() => handleMoveChunk(index, 'down')}/>
+          <ComponentWithPending pending={pendingMoveChunkIndex === index} pendingTitle={`Moving chunk ${row.chunkId}`}>
+            <ArrowUpShort className={arrowUpClasses.join(' ')} title={getArrowTitle('up')}
+                          onClick={() => handleMoveChunk(index, 'up')}/>
+            <ArrowDownShort className={arrowDownClasses.join(' ')} title={getArrowTitle('down')}
+                            onClick={() => handleMoveChunk(index, 'down')}/>
+          </ComponentWithPending>
         </div>;
       }
     },
@@ -245,13 +277,15 @@ export default function ChunksPanel({
               case 'delete':
                 return <ComponentWithPending key={'delete'} pending={pendingDeleteChunkIndex === index} pendingTitle={`Removing chunk ${row.chunkId}`}>
                   <Trash className={'icon-btn'}
-                         title={`Click to remove chunk ${row.chunkId} from the edition`}
+                         title={isAnyPending ? '' : `Click to remove chunk ${row.chunkId} from the edition`}
                          onClick={() => handleDeleteChunk(index)}/>
                 </ComponentWithPending>
               case 'update':
-                return <ArrowClockwise key={'update'} className={'icon-btn'}
-                                              title={`Click to update chunk ${row.chunkId}`}
-                                              onClick={() => handleUpdateChunk(index)}/>;
+                return <ComponentWithPending key={'update'} pending={pendingUpdateChunkIndex === index} pendingTitle={`Updating chunk ${row.chunkId}`}>
+                  <ArrowClockwise key={'update'} className={'icon-btn'}
+                                  title={`Click to update chunk ${row.chunkId}`}
+                                  onClick={() => handleUpdateChunk(index)}/>
+                </ComponentWithPending>;
               default:
                 return null;
             }

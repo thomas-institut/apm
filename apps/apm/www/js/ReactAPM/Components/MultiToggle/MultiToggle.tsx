@@ -40,7 +40,7 @@ export default function MultiToggle(props: MultiToggleProps) {
         return (
           <span
             key={optionSpec.key}
-            onClick={() => !optionSpec.disabled && props.onChange?.(optionSpec.key)}
+            onClick={() => !optionSpec.disabled && optionSpec.key !== props.selected && props.onChange?.(optionSpec.key)}
             className={optionSpanClasses.join(' ')}
           >
             {optionSpec.label}

@@ -8,19 +8,24 @@ export class DeleteChunkAction implements StateTransformAction<HistoryState> {
 
   private title: string;
   constructor(
-    private readonly chunkIndex: number,
+    private readonly chunkPosition: number,
   ) {
     this.title = `Delete chunk`;
   }
 
   execute(state: HistoryState): HistoryState {
-    const chunk = (state.mceData as MceDataInterface).chunks[this.chunkIndex];
+    const newState = deepCopy(state);
+    const chunkOrder = state.mceData.chunkOrder;
+    if (chunkOrder === undefined) {
+      throw `Chunk order is undefined`;
+    }
+    const chunkIndex = chunkOrder[this.chunkPosition];
+    const chunk = state.mceData.chunks[chunkIndex];
     if (!chunk) {
-      throw new Error('Chunk not found');
+      throw `Chunk at position ${this.chunkPosition} does not exist`;
     }
     const chunkId = chunk.chunkId;
-    const newState = deepCopy(state);
-    MceData.deleteChunk(newState.mceData, this.chunkIndex);
+    MceData.deleteChunk(newState.mceData, chunkIndex);
     newState.ctDataStatusArray = newState.ctDataStatusArray.filter(s => s.chunkInMceData.chunkId !== chunkId);
     this.title = `Remove chunk ${chunkId} from edition`;
     return newState

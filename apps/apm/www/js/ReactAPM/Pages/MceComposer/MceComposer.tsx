@@ -374,10 +374,10 @@ export default function MceComposer() {
     return true;
   };
 
-  const moveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
-    console.log(`Move chunk index ${chunkIndex} '${direction}'`);
+  const moveChunk = (chunkPosition: number, direction: 'up' | 'down') => {
+    console.log(`Move chunk at position ${chunkPosition} '${direction}'`);
     try {
-      history.do(new MoveChunkAction(chunkIndex, direction === 'up' ? 'backwards' : 'forwards'));
+      history.do(new MoveChunkAction(chunkPosition, direction === 'up' ? 'backwards' : 'forwards'));
     } catch (error) {
       console.error('MoveChunkAction failed', error);
       return;
@@ -385,15 +385,16 @@ export default function MceComposer() {
     setHistoryVersion(v => v + 1);
   };
 
-  const setChunkBreak = (chunkIndex: number, newBreak: string) => {
-    console.log(`Set chunk break index ${chunkIndex} '${newBreak}'`);
+  const setChunkBreak = (chunkPosition: number, newBreak: string) => {
+    console.log(`Set break for chunk at position ${chunkPosition} to '${newBreak}'`);
     try {
-      history.do(new SetChunkBreakAction(chunkIndex, newBreak));
+      history.do(new SetChunkBreakAction(chunkPosition, newBreak));
     } catch (error) {
       console.error('SetChunkBreakAction failed', error);
       return;
     }
     setHistoryVersion(v => v + 1);
+    setChunksPanelVersion(v => v + 1);
   };
 
   const updateChunk = (chunkIndex: number) => {

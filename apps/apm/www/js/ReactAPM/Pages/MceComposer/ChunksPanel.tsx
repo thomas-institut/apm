@@ -87,11 +87,11 @@ export default function ChunksPanel({
   }
   const lastChunkIndex = chunks.length - 1;
 
-  const getChunkTableRow = (chunk: ChunkInMceData, index: number): ChunkTableRow => {
+  const getChunkTableRow = (chunk: ChunkInMceData, chunkPosition: number): ChunkTableRow => {
     const chunkTableRow: ChunkTableRow = {
       chunkId: chunk.chunkId,
-      isFirst:  index === 0,
-      isLast: index === lastChunkIndex,
+      isFirst:  chunkPosition === 0,
+      isLast: chunkPosition === lastChunkIndex,
       tableId: chunk.chunkEditionTableId,
       title: chunk.title,
       version: null,
@@ -221,7 +221,7 @@ export default function ChunksPanel({
     {
       key: 'breakAfter',
       title: 'Break After',
-      cellContent: (row, index) => <ComponentWithPending pending={pendingSetChunkBreakIndex === index} pendingTitle={`Setting break for chunk ${row.chunkId}`}>
+      cellContent: (row, index) => <ComponentWithPending pending={pendingSetChunkBreakIndex === index} smartContainer={true} pendingTitle={`Setting break for chunk ${row.chunkId}`}>
         <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
                      className={row.isLast ? 'grayed-out' : ''}
                      onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
@@ -297,7 +297,7 @@ export default function ChunksPanel({
   ];
 
   const rows = chunkOrder.map((chunkOrder) => chunks[chunkOrder])
-    .map((chunk, index) => getChunkTableRow(chunk, index));
+    .map((chunk, chunkPosition) => getChunkTableRow(chunk, chunkPosition));
 
   const confirmDeleteChunkId = confirmDeleteChunkIndex !== null ? rows[confirmDeleteChunkIndex]?.chunkId : null;
 

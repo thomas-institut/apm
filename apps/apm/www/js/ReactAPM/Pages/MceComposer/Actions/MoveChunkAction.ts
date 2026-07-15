@@ -7,7 +7,7 @@ export class MoveChunkAction implements StateTransformAction<HistoryState> {
 
   private title: string;
   constructor(
-    private readonly chunkIndex: number,
+    private readonly chunkPosition: number,
     private readonly direction: 'forwards' | 'backwards',
   ) {
     this.title = 'Move chunk';
@@ -15,15 +15,17 @@ export class MoveChunkAction implements StateTransformAction<HistoryState> {
 
   execute(state: HistoryState): HistoryState {
     const newState = deepCopy(state);
-    const chunk = state.mceData.chunks[this.chunkIndex];
-    if (!chunk) {
-      throw `Chunk ${this.chunkIndex} does not exist`;
+    const chunkOrder = state.mceData.chunkOrder;
+    if (chunkOrder === undefined) {
+       throw `Chunk order is undefined`;
     }
-
-    const newIndex = this.chunkIndex + (this.direction === 'forwards' ? 1 : -1);
-    this.title = `Move chunk ${chunk.chunkId} to position ${newIndex + 1}`;
-    MceData.moveChunk(newState.mceData, this.chunkIndex, this.direction);
-
+    const chunk = state.mceData.chunks[chunkOrder[this.chunkPosition]];
+    if (!chunk) {
+      throw `Chunk at position ${this.chunkPosition} does not exist`;
+    }
+    const newPosition = this.chunkPosition + (this.direction === 'forwards' ? 1 : -1);
+    this.title = `Move chunk ${chunk.chunkId} to position ${newPosition + 1}`;
+    MceData.moveChunk(newState.mceData, this.chunkPosition, this.direction);
     return newState;
   }
 

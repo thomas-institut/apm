@@ -1,7 +1,6 @@
 import {ChunkInMceData, ValidChunkBreaks} from "@/MceData/MceDataInterface";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import {useEffect, useState} from "react";
-import {Spinner} from "react-bootstrap";
 import {
   ArrowClockwise,
   ArrowDownShort,
@@ -16,6 +15,7 @@ import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 import './ChunksPanel.css';
+import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 
 interface ChunksPanelProps extends TabbableElementProps {
   chunks: ChunkInMceData[];
@@ -108,7 +108,6 @@ export default function ChunksPanel({
     if (!deleteChunk || pendingDeleteChunkIndex !== null) {
       return;
     }
-
     setConfirmDeleteChunkIndex(chunkIndex);
   };
 
@@ -244,13 +243,11 @@ export default function ChunksPanel({
           {row.buttons.map((button) => {
             switch (button) {
               case 'delete':
-                if (pendingDeleteChunkIndex === index) {
-                  return <Spinner key={'delete'} animation={'border'} size={'sm'}
-                                  title={`Removing chunk ${row.chunkId}`}/>;
-                }
-                return <Trash key={'delete'} className={'icon-btn'}
-                              title={`Click to remove chunk ${row.chunkId} from the edition`}
-                              onClick={() => handleDeleteChunk(index)}/>;
+                return <ComponentWithPending key={'delete'} pending={pendingDeleteChunkIndex === index} pendingTitle={`Removing chunk ${row.chunkId}`}>
+                  <Trash className={'icon-btn'}
+                         title={`Click to remove chunk ${row.chunkId} from the edition`}
+                         onClick={() => handleDeleteChunk(index)}/>
+                </ComponentWithPending>
               case 'update':
                 return <ArrowClockwise key={'update'} className={'icon-btn'}
                                               title={`Click to update chunk ${row.chunkId}`}

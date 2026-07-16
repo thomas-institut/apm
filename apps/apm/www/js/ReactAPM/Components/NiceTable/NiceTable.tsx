@@ -23,6 +23,7 @@ export interface NiceTableProps<T> {
   stickyHeader?: boolean;
   highlightedRow?: number | null;
   getRowKey?: (row: T, index: number) => string | number;
+  getRowClassName?: (row: T, index: number) => string;
   /**
    * Class name for the <table> element
    */
@@ -64,8 +65,11 @@ export default function NiceTable<T>(props: NiceTableProps<T>) {
     </td>;
   };
 
-  const getTrClass = (rowIndex: number) => {
+  const getTrClass = (row: T, rowIndex: number) => {
     const classes: string[] = [];
+    if (props.getRowClassName) {
+      classes.push(props.getRowClassName(row, rowIndex));
+    }
     if (highlightedRow !== null && highlightedRow === rowIndex) {
       classes.push('highlighted');
     }
@@ -85,7 +89,7 @@ export default function NiceTable<T>(props: NiceTableProps<T>) {
     {props.rows.map((row, rowIndex) => {
       const rowKey = props.getRowKey ? props.getRowKey(row, rowIndex) : rowIndex;
       return (
-        <tr key={rowKey} className={getTrClass(rowIndex)}>
+        <tr key={rowKey} className={getTrClass(row, rowIndex)}>
           {props.columnDefs.map((columnDef) => getTd(columnDef, row, rowIndex)
           )}
         </tr>

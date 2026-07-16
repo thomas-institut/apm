@@ -1,12 +1,7 @@
 import {ChunkInMceData, ValidChunkBreaks} from "@/MceData/MceDataInterface";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import {useEffect, useState} from "react";
-import {
-  ArrowClockwise,
-  ArrowDownShort,
-  ArrowUpShort,
-  Trash
-} from "react-bootstrap-icons";
+import {ArrowClockwise, ArrowDownShort, ArrowUpShort, Trash} from "react-bootstrap-icons";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import MultiToggle, {MultiToggleOptionSpec} from "@/ReactAPM/Components/MultiToggle/MultiToggle";
@@ -54,7 +49,8 @@ export default function ChunksPanel({
                                       updateChunk,
                                       moveChunk,
                                       setChunkBreak,
-                                      version
+                                      version,
+                                      active
                                     }: ChunksPanelProps) {
 
   const [pendingDeleteChunkIndex, setPendingDeleteChunkIndex] = useState<number | null>(null);
@@ -95,7 +91,7 @@ export default function ChunksPanel({
   const getChunkTableRow = (chunk: ChunkInMceData, chunkPosition: number): ChunkTableRow => {
     const chunkTableRow: ChunkTableRow = {
       chunkId: chunk.chunkId,
-      isFirst:  chunkPosition === 0,
+      isFirst: chunkPosition === 0,
       isLast: chunkPosition === lastChunkIndex,
       tableId: chunk.chunkEditionTableId,
       title: chunk.title,
@@ -229,7 +225,9 @@ export default function ChunksPanel({
     {
       key: 'breakAfter',
       title: 'Break After',
-      cellContent: (row, index) => <ComponentWithPending pending={pendingSetChunkBreakIndex === index} smartContainer={true} pendingTitle={`Setting break for chunk ${row.chunkId}`}>
+      cellContent: (row, index) => <ComponentWithPending pending={pendingSetChunkBreakIndex === index}
+                                                         smartContainer={true}
+                                                         pendingTitle={`Setting break for chunk ${row.chunkId}`}>
         <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
                      className={row.isLast ? 'grayed-out' : ''}
                      onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
@@ -283,13 +281,15 @@ export default function ChunksPanel({
           {row.buttons.map((button) => {
             switch (button) {
               case 'delete':
-                return <ComponentWithPending key={'delete'} pending={pendingDeleteChunkIndex === index} pendingTitle={`Removing chunk ${row.chunkId}`}>
+                return <ComponentWithPending key={'delete'} pending={pendingDeleteChunkIndex === index}
+                                             pendingTitle={`Removing chunk ${row.chunkId}`}>
                   <Trash className={'icon-btn'}
                          title={isAnyPending ? '' : `Click to remove chunk ${row.chunkId} from the edition`}
                          onClick={() => handleDeleteChunk(index)}/>
-                </ComponentWithPending>
+                </ComponentWithPending>;
               case 'update':
-                return <ComponentWithPending key={'update'} pending={pendingUpdateChunkIndex === index} pendingTitle={`Updating chunk ${row.chunkId}`}>
+                return <ComponentWithPending key={'update'} pending={pendingUpdateChunkIndex === index}
+                                             pendingTitle={`Updating chunk ${row.chunkId}`}>
                   <ArrowClockwise key={'update'} className={'icon-btn'}
                                   title={`Click to update chunk ${row.chunkId}`}
                                   onClick={() => handleUpdateChunk(index)}/>
@@ -308,6 +308,7 @@ export default function ChunksPanel({
     .map((chunk, chunkPosition) => getChunkTableRow(chunk, chunkPosition));
 
   const confirmDeleteChunkId = confirmDeleteChunkIndex !== null ? rows[confirmDeleteChunkIndex]?.chunkId : null;
+  const highlightedRow = highlightedChunkId === null ? null : rows.findIndex(row => row.chunkId === highlightedChunkId);
 
   return <div className={'chunks-panel'}>
     <ConfirmDialog
@@ -323,7 +324,7 @@ export default function ChunksPanel({
     />
     <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true}
                getRowKey={(row, index) => `${row.chunkId}-${index}`}
-               highlightedRow={highlightedChunkId === null ? null : rows.findIndex(row => row.chunkId === highlightedChunkId)}/>
+               highlightedRow={highlightedRow}/>
   </div>;
 }
 

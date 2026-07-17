@@ -69,6 +69,11 @@
             display: flex;
             flex-direction: row;
             gap: 0.5em;
+
+            .bug-icon {
+                color: #dc3545;
+                animation: mce-composer-bug-flash 1s steps(2, start) infinite;
+            }
         }
     }
 
@@ -154,6 +159,15 @@
 
 }
 
+@keyframes mce-composer-bug-flash {
+    0%, 50% {
+        opacity: 1;
+    }
+    50.01%, 100% {
+        opacity: 0.2;
+    }
+}
+
 .mce-composer.expanded {
     .header {
         border-bottom: 1px solid #dddddd;
@@ -194,6 +208,25 @@
         }
 
 
+    }
+}
+
+.bug-popover {
+
+    .bug-description {
+        font-size: 0.9em;
+        font-family: monospace;
+        color: indianred;
+    }
+
+    ul {
+        padding: 0;
+        margin-left: 1em;
+    }
+
+    li {
+        line-height: 1.25em;
+        margin-bottom: 0.75em;
     }
 }
 

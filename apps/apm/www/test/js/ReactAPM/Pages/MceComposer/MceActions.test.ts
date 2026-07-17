@@ -3,6 +3,8 @@ import { ChangeTitleAction } from '@/ReactAPM/Pages/MceComposer/Actions/ChangeTi
 import { MoveChunkAction } from '@/ReactAPM/Pages/MceComposer/Actions/MoveChunkAction';
 import { DeleteChunkAction } from '@/ReactAPM/Pages/MceComposer/Actions/DeleteChunkAction';
 import { SetChunkBreakAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetChunkBreakAction';
+import { SetSiglumAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetSiglumAction';
+import { SetIncludeInAutoMarginalFoliationAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction';
 import { MceDataInterface } from '@/MceData/MceDataInterface';
 import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
@@ -104,6 +106,101 @@ describe('MCE Actions', () => {
 
       const result = action.execute(state);
       expect(result.mceData.chunks[1].break).toBe('paragraph');
+    });
+  });
+
+  describe('SetSiglumAction', () => {
+    it('should set siglum and update description', () => {
+      const mceData: MceDataInterface = {
+        ...makeBaseMceData(),
+        witnesses: [
+          { witnessId: 'w1', title: 'Witness A' } as any,
+          { witnessId: 'w2', title: 'Witness B' } as any
+        ],
+        sigla: ['A', 'B']
+      };
+
+      const state = makeState(mceData);
+      const action = new SetSiglumAction(1, 'C');
+
+      const result = action.execute(state);
+      expect(result.mceData.sigla).toEqual(['A', 'C']);
+      expect(action.description()).toBe("Change siglum for Witness B from 'B' to 'C'");
+    });
+
+    it('should throw when witness index is out of bounds', () => {
+      const mceData: MceDataInterface = {
+        ...makeBaseMceData(),
+        witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
+        sigla: ['A']
+      };
+
+      const state = makeState(mceData);
+
+      expect(() => new SetSiglumAction(-1, 'B').execute(state)).toThrow('Witness index -1 is out of bounds');
+      expect(() => new SetSiglumAction(1, 'B').execute(state)).toThrow('Witness index 1 is out of bounds');
+    });
+
+    it('should throw when siglum is empty', () => {
+      const mceData: MceDataInterface = {
+        ...makeBaseMceData(),
+        witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
+        sigla: ['A']
+      };
+
+      const state = makeState(mceData);
+
+      expect(() => new SetSiglumAction(0, '   ').execute(state)).toThrow('Siglum cannot be empty');
+    });
+  });
+
+  describe('SetIncludeInAutoMarginalFoliationAction', () => {
+    it('should include witness index and update description', () => {
+      const mceData: MceDataInterface = {
+        ...makeBaseMceData(),
+        witnesses: [
+          { witnessId: 'w1', title: 'Witness A' } as any,
+          { witnessId: 'w2', title: 'Witness B' } as any
+        ],
+        includeInAutoMarginalFoliation: [0]
+      };
+
+      const state = makeState(mceData);
+      const action = new SetIncludeInAutoMarginalFoliationAction(1, true);
+
+      const result = action.execute(state);
+      expect(result.mceData.includeInAutoMarginalFoliation).toEqual([0, 1]);
+      expect(action.description()).toBe('Include Witness B in auto marginal foliation');
+    });
+
+    it('should exclude witness index and update description', () => {
+      const mceData: MceDataInterface = {
+        ...makeBaseMceData(),
+        witnesses: [
+          { witnessId: 'w1', title: 'Witness A' } as any,
+          { witnessId: 'w2', title: 'Witness B' } as any
+        ],
+        includeInAutoMarginalFoliation: [0, 1]
+      };
+
+      const state = makeState(mceData);
+      const action = new SetIncludeInAutoMarginalFoliationAction(1, false);
+
+      const result = action.execute(state);
+      expect(result.mceData.includeInAutoMarginalFoliation).toEqual([0]);
+      expect(action.description()).toBe('Exclude Witness B from auto marginal foliation');
+    });
+
+    it('should throw when witness index is out of bounds', () => {
+      const mceData: MceDataInterface = {
+        ...makeBaseMceData(),
+        witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
+      };
+
+      const state = makeState(mceData);
+
+      expect(() => new SetIncludeInAutoMarginalFoliationAction(-1, true).execute(state)).toThrow('Witness index -1 is out of bounds');
+      expect(() => new SetIncludeInAutoMarginalFoliationAction(1, false).execute(state)).toThrow('Witness index 1 is out of bounds');
     });
   });
 });

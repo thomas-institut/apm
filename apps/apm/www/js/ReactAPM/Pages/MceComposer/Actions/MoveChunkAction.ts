@@ -14,6 +14,7 @@ export class MoveChunkAction implements StateTransformAction<HistoryState> {
   }
 
   execute(state: HistoryState): HistoryState {
+    // throw new Error('Simulating a bug');
     const newState = deepCopy(state);
     const chunkOrder = state.mceData.chunkOrder;
     if (chunkOrder === undefined) {

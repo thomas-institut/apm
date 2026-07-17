@@ -9,10 +9,30 @@ import {describe, expect, it, vi} from 'vitest';
 import MceComposer from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {AppContext, AppContextProps} from '@/ReactAPM/App';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
+import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 
 vi.mock('react-router', () => ({
   useParams: () => ({id: 'new'})
 }));
+
+vi.mock('react-bootstrap', () => {
+  const PopoverComponent = ({children}: {children: React.ReactNode}) => <div>{children}</div>;
+  const PopoverHeader = ({children}: {children: React.ReactNode}) => <div>{children}</div>;
+  const PopoverBody = ({children}: {children: React.ReactNode}) => <div>{children}</div>;
+
+  return {
+    Form: {
+      Check: ({checked, onChange}: {checked: boolean, onChange: (e: any) => void}) => (
+        <input type="checkbox" checked={checked} onChange={onChange}/>
+      )
+    },
+    OverlayTrigger: ({children, overlay}: {children: React.ReactNode, overlay: React.ReactNode}) => <>{children}{overlay}</>,
+    Popover: Object.assign(PopoverComponent, {
+      Header: PopoverHeader,
+      Body: PopoverBody
+    })
+  };
+});
 
 vi.mock('@/ReactAPM/Components/PanelUI/SplitPanels', () => ({
   default: ({children}: {children: React.ReactNode}) => <div>{children}</div>
@@ -46,7 +66,7 @@ vi.mock('@/ReactAPM/Pages/MceComposer/HistoryPanel', () => ({
   default: () => <div>history</div>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/SaveButton', () => ({
+vi.mock('@/ReactAPM/Pages/MceComposer/MceComposerSaveButton', () => ({
   default: () => <div>save</div>
 }));
 
@@ -71,6 +91,7 @@ vi.mock('react-bootstrap-icons', () => {
     Arrow90degRight: Icon,
     ArrowCounterclockwise: Icon,
     ArrowsAngleContract: Icon,
+    BugFill: Icon,
     ChevronRight: Icon,
     LayoutSplit: Icon,
     Gear: Icon,
@@ -208,5 +229,59 @@ describe('MceComposer', () => {
 
     expect(undoBtn.getAttribute('title')).toBe('Undo Change title to "New Title Action"');
     expect(redoBtn.getAttribute('title')).toBe('Redo');
+  });
+
+  it('shows a bug icon and message when an action throws', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do').mockImplementation(() => {
+      throw new Error('boom');
+    });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        getMceData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (container.querySelector('[data-testid="editable-text-field"]') as HTMLElement).click();
+    });
+
+    expect(container.querySelector('.bug-icon')).not.toBeNull();
+    expect(container.querySelector('.icon-btn[title^="Undo"]')).toBeNull();
+    expect(container.querySelector('.icon-btn[title^="Redo"]')).toBeNull();
+    expect(container.textContent).not.toContain('save');
+    expect(container.querySelector('.icon-btn[title="Settings"]')).not.toBeNull();
+    expect(container.textContent).toContain('You have discovered a bug in the software');
+    expect(container.textContent).toContain('ChangeTitleAction failed');
+
+    historyDoSpy.mockRestore();
   });
 });

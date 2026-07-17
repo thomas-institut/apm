@@ -10,6 +10,7 @@ import {
   Arrow90degRight,
   ArrowCounterclockwise,
   ArrowsAngleContract,
+  BugFill,
   ChevronRight,
   Gear
 } from "react-bootstrap-icons";
@@ -44,8 +45,7 @@ import {
   SetIncludeInAutoMarginalFoliationAction
 } from "@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction";
 
-// TODO 2026-07-10
-//  - Implement bug notification when actions throw errors
+// TODO 2026-07-17
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
 //  - Design data slices for components, do not pass mceData around
 
@@ -112,6 +112,8 @@ export default function MceComposer() {
   const [historyVersion, setHistoryVersion] = useState(0);
   const [savedStateSignature, setSavedStateSignature] = useState(history.getHistory()[0].signature);
   const [chunksPanelVersion, setChunksPanelVersion] = useState<number>(0);
+  const [foundBug, setFoundBug] = useState<boolean>(false);
+  const [foundBugDescription, setFoundBugDescription] = useState<string>('');
 
   const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
 
@@ -366,12 +368,18 @@ export default function MceComposer() {
     document.title = `MCE: ${mceData.title}`;
   }, [mceData]);
 
+  const reportActionBug = (actionName: string, error: unknown) => {
+    console.error(`${actionName} failed`, error);
+    setFoundBug(true);
+    setFoundBugDescription(`${actionName} failed. ${error}`);
+  };
+
   const deleteChunk = (chunkIndex: number): boolean => {
     console.log("deleteChunk", chunkIndex);
     try {
       history.do(new DeleteChunkAction(chunkIndex));
     } catch (error) {
-      console.error('DeleteChunkAction failed', error);
+      reportActionBug('DeleteChunkAction', error);
       return false;
     }
     setHistoryVersion(v => v + 1);
@@ -383,7 +391,7 @@ export default function MceComposer() {
     try {
       history.do(new MoveChunkAction(chunkPosition, direction === 'up' ? 'backwards' : 'forwards'));
     } catch (error) {
-      console.error('MoveChunkAction failed', error);
+      reportActionBug('MoveChunkAction', error);
       return false;
     }
     setHistoryVersion(v => v + 1);
@@ -395,7 +403,7 @@ export default function MceComposer() {
     try {
       history.do(new SetChunkBreakAction(chunkPosition, newBreak));
     } catch (error) {
-      console.error('SetChunkBreakAction failed', error);
+      reportActionBug('SetChunkBreakAction', error);
       return false;
     }
     setHistoryVersion(v => v + 1);
@@ -416,7 +424,7 @@ export default function MceComposer() {
     try {
       history.do(new SetSiglumAction(witnessIndex, newSiglum));
     } catch (error) {
-      console.error('SetSiglumAction failed', error);
+      reportActionBug('SetSiglumAction', error);
       return false;
     }
     setHistoryVersion(v => v + 1);
@@ -427,7 +435,7 @@ export default function MceComposer() {
     try {
       history.do(new SetIncludeInAutoMarginalFoliationAction(witnessIndex, newState));
     } catch (error) {
-      console.error('SetIncludeInAutoMarginalFoliationAction failed', error);
+      reportActionBug('SetIncludeInAutoMarginalFoliationAction', error);
       return false;
     }
     setHistoryVersion(v => v + 1);
@@ -441,7 +449,7 @@ export default function MceComposer() {
     try {
       history.do(new ChangeTitleAction(sanitizedTitle));
     } catch (error) {
-      console.error('ChangeTitleAction failed', error);
+      reportActionBug('ChangeTitleAction', error);
       return false;
     }
     setHistoryVersion(v => v + 1);
@@ -676,26 +684,46 @@ export default function MceComposer() {
     {editionGenerationProgressBar}
   </div>;
 
-  const controlsDiv = <div className={'controls'}>
-    <Arrow90degLeft className={'icon-btn' + (canUndo ? '' : ' disabled')}
-                    title={undoTitle}
-                    onClick={() => {
-                      history.undo();
-                      setHistoryVersion(v => v + 1);
-                      setChunksPanelVersion(v => v + 1);
-                    }}/>
-    <Arrow90degRight className={'icon-btn' + (canRedo ? '' : ' disabled')}
-                     title={redoTitle}
-                     onClick={() => {
-                       history.redo();
-                       setHistoryVersion(v => v + 1);
-                       setChunksPanelVersion(v => v + 1);
-                     }}/>
+  const bugPopover = (
+    <Popover id="bug-popover" className="bug-popover">
+      <Popover.Header>Oops!</Popover.Header>
+      <Popover.Body>
+        <p>You have discovered a bug in the software! Please click <a href={'https://github.com/thomas-institut/apm/issues/new'} target="_blank">here to report it on Github</a>.</p>
+        <p>Include the following description:</p>
+        <p className={'bug-description'}>{foundBugDescription}</p>
+        <p>Be sure to include the following information as well:</p>
+        <ul>
+          <li>What you were doing when the bug occurred.</li>
+          <li>A screenshot of the History Panel</li>
+          <li>If possible, error messages or logs from the Developer Tools</li>
+        </ul>
+      </Popover.Body>
+    </Popover>
+  );
 
-    <MceComposerSaveButton changes={changes}/>
-    <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
-                                                  onClick={() => handleOnClickRevertChanges()}
-                                                  title={'Click to revert to last saved version'}/>
+  const controlsDiv = <div className={'controls'}>
+    {!foundBug && <Arrow90degLeft className={'icon-btn' + (canUndo ? '' : ' disabled')}
+                                  title={undoTitle}
+                                  onClick={() => {
+                                    history.undo();
+                                    setHistoryVersion(v => v + 1);
+                                    setChunksPanelVersion(v => v + 1);
+                                  }}/>}
+    {!foundBug && <Arrow90degRight className={'icon-btn' + (canRedo ? '' : ' disabled')}
+                                   title={redoTitle}
+                                   onClick={() => {
+                                     history.redo();
+                                     setHistoryVersion(v => v + 1);
+                                     setChunksPanelVersion(v => v + 1);
+                                   }}/>}
+
+    {!foundBug && <MceComposerSaveButton changes={changes}/>}
+    {!foundBug && <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
+                                         onClick={() => handleOnClickRevertChanges()}
+                                         title={'Click to revert to last saved version'}/>}
+    {foundBug && <OverlayTrigger trigger={['click']} placement="bottom" overlay={bugPopover}>
+      <BugFill className={'icon-btn bug-icon'} title={`A bug was found, click here for more information`}/>
+    </OverlayTrigger>}
     <OverlayTrigger trigger="click" placement="bottom" overlay={settingsPopover} rootClose>
       <Gear className={'icon-btn'} title={'Settings'}/>
     </OverlayTrigger>

@@ -1,0 +1,16 @@
+
+
+.nice-toggle {
+    padding: 0.25em;
+    border: 1px solid lightgrey;
+    border-radius: 0.25em;
+    cursor: pointer;
+}
+
+.nice-toggle.on {
+    border: 1px solid gray
+}
+
+.nice-toggle.off {
+    color: gray;
+}

@@ -3,7 +3,7 @@ import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import './WitnessesPanel.css';
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
-import NiceToggle from "@/ReactAPM/Components/NiceToggle";
+import NiceToggle from "@/ReactAPM/Components/NiceToggle/NiceToggle";
 
 
 interface WitnessesPanelProps extends TabbableElementProps {
@@ -67,6 +67,8 @@ export default function WitnessesPanel({mceData, onChangeSiglum, onChangeInclude
       title: 'Marg. Fol.',
       cellContent: (witnessData, witnessIndex) => <NiceToggle
         isOn={witnessData.includeInAutoMarginalFoliation}
+        onTitle={`Click to exclude ${witnessData.title} from auto marginal foliation`}
+        offTitle={`Click to include ${witnessData.title} in auto marginal foliation`}
         onClick={(newState) => {
           if (onChangeIncludeInAutoMarginalFoliation) {
             onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);

@@ -6,7 +6,7 @@ import {describe, expect, it, vi} from 'vitest';
 import React, {useState} from 'react';
 import {createRoot} from 'react-dom/client';
 import {act} from 'react';
-import NiceToggle from '@/ReactAPM/Components/NiceToggle';
+import NiceToggle from '@/ReactAPM/Components/NiceToggle/NiceToggle';
 
 // @ts-expect-error test-only global binding
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

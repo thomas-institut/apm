@@ -1,4 +1,5 @@
 import {CSSProperties, ReactNode} from 'react';
+import './NiceToggle.css';
 
 interface NiceToggleProps {
   className?: string;
@@ -17,8 +18,8 @@ export default function NiceToggle(props: NiceToggleProps) {
     style,
     on,
     off,
-    onTitle,
-    offTitle,
+    onTitle = 'Click to set OFF',
+    offTitle = 'Click to set ON',
     isOn,
     onClick
   } = props;

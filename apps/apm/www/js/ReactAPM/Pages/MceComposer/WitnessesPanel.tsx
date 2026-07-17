@@ -6,6 +6,10 @@ import NiceToggle from "@/ReactAPM/Components/NiceToggle/NiceToggle";
 import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {Pencil, Trash} from "react-bootstrap-icons";
 import {Button} from "react-bootstrap";
+import {useState} from "react";
+import EditSiglaGroup from "@/ReactAPM/Pages/MceComposer/EditSiglaGroup";
+import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
+import {getSiglaGroupString} from "@/ReactAPM/Pages/MceComposer/SiglaGroupUtil";
 
 
 export interface WitnessData {
@@ -35,7 +39,7 @@ interface WitnessesPanelProps extends TabbableElementProps {
    * Must return true if the sigla group at siglaGroupIndex can be changed to the given group (or added
    * if siglaGroupIndex is -1) or a string with the error message if it cannot.
    */
-  isSiglaGroupValid?: (siglaGroupIndex: number, group: SiglaGroupInterface) => true | string,
+  isSiglaGroupValid: (siglaGroupIndex: number, group: SiglaGroupInterface) => true | string,
 }
 
 interface SiglaGroupsTableRow {
@@ -53,9 +57,17 @@ export default function WitnessesPanel({
                                          isSiglaGroupValid
                                        }: WitnessesPanelProps) {
 
+  const [editingSiglaGroupData, setEditingSiglaGroupData] = useState<null | {
+    siglaGroupIndex: number,
+    siglaGroup: SiglaGroupInterface
+  }>(null);
+  const [confirmDeleteSiglaGroupIndex, setConfirmDeleteSiglaGroupIndex] = useState<number | null>(null);
+
   if (witnesses.length === 0) {
     return <>No witnesses defined</>;
   }
+
+  const sigla = witnesses.map(witness => witness.siglum);
 
   const witnessesTableColumnDefs: NiceTableColumnDef<WitnessData>[] = [
     {
@@ -100,7 +112,7 @@ export default function WitnessesPanel({
   const siglaGroupsTableRows: SiglaGroupsTableRow[] = siglaGroups.map((siglaGroup) => {
     return {
       siglum: siglaGroup.siglum,
-      sigla: witnesses.map(w => w.siglum)
+      sigla: siglaGroup.witnesses.map(witnessIndex => witnesses[witnessIndex]?.siglum ?? '')
     };
   });
 
@@ -126,14 +138,31 @@ export default function WitnessesPanel({
       title: '',
       cellContent: (_siglumData, rowIndex) => <>
         <Trash onClick={() => {
-          if (onDeleteSiglaGroup) onDeleteSiglaGroup(rowIndex);
+          setConfirmDeleteSiglaGroupIndex(rowIndex);
         }}/>
         <Pencil onClick={() => {
-          console.log(`Click on edit sigla group ${rowIndex}`)
+          setEditingSiglaGroupData({
+            siglaGroupIndex: rowIndex,
+            siglaGroup: siglaGroups[rowIndex]
+          });
         }}/>
       </>
     }
   ];
+
+  const handleAcceptDeleteSiglaGroup = () => {
+    if (confirmDeleteSiglaGroupIndex === null || onDeleteSiglaGroup === undefined) {
+      return;
+    }
+    onDeleteSiglaGroup(confirmDeleteSiglaGroupIndex);
+  }
+
+  const handleCancelDeleteSiglaGroup = () => {
+    setConfirmDeleteSiglaGroupIndex(null);
+  }
+
+  const siglaGroupToDelete = confirmDeleteSiglaGroupIndex === null ? null : siglaGroups[confirmDeleteSiglaGroupIndex] ?? null;
+  const siglaGroupToDeleteLabel = siglaGroupToDelete === null ? '' : getSiglaGroupString(siglaGroupToDelete, sigla);
 
 
   return (
@@ -152,10 +181,49 @@ export default function WitnessesPanel({
           {siglaGroupsTableRows.length > 0 &&
             <NiceTable columnDefs={siglaGroupsTableColumnDefs} rows={siglaGroupsTableRows}/>}
           <Button variant={'outline-secondary'} size={'sm'} className={'add-sigla-group'} onClick={() => {
-            console.log(`Click on add sigla group`)
+            setEditingSiglaGroupData({
+              siglaGroupIndex: -1,
+              siglaGroup: {
+                siglum: '',
+                witnesses: []
+              }
+            });
           }}>Add Sigla Group</Button>
         </div>
       </div>
+      {editingSiglaGroupData !== null && <EditSiglaGroup
+        sigla={sigla}
+        siglaGroup={editingSiglaGroupData.siglaGroup}
+        siglaGroupIndex={editingSiglaGroupData.siglaGroupIndex}
+        isSiglaGroupValid={(siglaGroupIndex, group) => {
+          if (isSiglaGroupValid === undefined) {
+            return true;
+          }
+          return isSiglaGroupValid(siglaGroupIndex, group);
+        }}
+        onClickConfirm={(siglaGroupIndex, group) => {
+          if (onChangeSiglaGroup === undefined) {
+            setEditingSiglaGroupData(null);
+            return;
+          }
+          const result = onChangeSiglaGroup(siglaGroupIndex, group);
+          if (result) {
+            setEditingSiglaGroupData(null);
+          }
+        }}
+        onClickCancel={() => {
+          setEditingSiglaGroupData(null);
+        }}
+      />}
+      <ConfirmDialog
+        show={confirmDeleteSiglaGroupIndex !== null}
+        onHide={() => {
+          setConfirmDeleteSiglaGroupIndex(null);
+        }}
+        onCancel={handleCancelDeleteSiglaGroup}
+        onAccept={handleAcceptDeleteSiglaGroup}
+        body={`Are you sure you want to remove sigla group ${siglaGroupToDeleteLabel} from the edition?`}
+      />
     </div>
   );
 

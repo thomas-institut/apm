@@ -1,0 +1,16 @@
+.sigla-checkboxes {
+    margin-top: 1rem;
+
+    .sigla-checkboxes-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+    }
+
+    .sigla-checkbox {
+        margin-bottom: 0.25rem;
+    }
+}
+
+.validation-message {
+    margin-right: auto;
+}

@@ -59,7 +59,14 @@ vi.mock('@/ReactAPM/Pages/MceComposer/ChunksPanel', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/WitnessesPanel', () => ({
-  default: () => <div>witnesses</div>
+  default: ({onDeleteSiglaGroup, onChangeSiglaGroup}: {
+    onDeleteSiglaGroup?: (siglaGroupIndex: number) => boolean,
+    onChangeSiglaGroup?: (siglaGroupIndex: number, group: {siglum: string, witnesses: number[]}) => boolean
+  }) => <div>
+    <button type="button" data-testid="delete-sigla-group" onClick={() => onDeleteSiglaGroup?.(0)}>delete group</button>
+    <button type="button" data-testid="change-sigla-group"
+            onClick={() => onChangeSiglaGroup?.(-1, {siglum: 'Gx', witnesses: [0, 1]})}>change group</button>
+  </div>
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/HistoryPanel', () => ({
@@ -152,7 +159,9 @@ describe('MceComposer', () => {
     expect(container.querySelector('[data-testid="edition-generation-progress-bar"]')).toBeNull();
 
     await act(async () => {
-      (container.querySelector('button') as HTMLButtonElement).click();
+      const regenerateButton = Array.from(container.querySelectorAll('button'))
+        .find((button) => button.textContent === 'Regenerate') as HTMLButtonElement;
+      regenerateButton.click();
     });
 
     expect(container.querySelector('[data-testid="edition-generation-progress-bar"]')).not.toBeNull();
@@ -281,6 +290,56 @@ describe('MceComposer', () => {
     expect(container.querySelector('.icon-btn[title="Settings"]')).not.toBeNull();
     expect(container.textContent).toContain('You have discovered a bug in the software');
     expect(container.textContent).toContain('ChangeTitleAction failed');
+
+    historyDoSpy.mockRestore();
+  });
+
+  it('wires witness panel sigla-group handlers to history actions', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do').mockImplementation(() => {
+    });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        getMceData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (container.querySelector('[data-testid="change-sigla-group"]') as HTMLButtonElement).click();
+      (container.querySelector('[data-testid="delete-sigla-group"]') as HTMLButtonElement).click();
+    });
+
+    expect(historyDoSpy).toHaveBeenCalledTimes(2);
+    expect((historyDoSpy.mock.calls[0] as any[])[0].constructor.name).toBe('ChangeSiglaGroupAction');
+    expect((historyDoSpy.mock.calls[1] as any[])[0].constructor.name).toBe('DeleteSiglaGroupAction');
 
     historyDoSpy.mockRestore();
   });

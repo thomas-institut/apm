@@ -88,11 +88,13 @@ export class MceData {
    */
   static isSiglaGroupValid(mceData: MceDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface): true | string {
 
+    const trimmedSiglum = group.siglum.trim();
+
     if (siglaGroupIndex >= mceData.siglaGroups.length) {
       return 'Invalid sigla group index';
     }
 
-    if (group.siglum.trim() === '') {
+    if (trimmedSiglum === '') {
       return 'Sigla group must have a non-empty siglum';
     }
 
@@ -107,6 +109,14 @@ export class MceData {
 
     // check if the group is duplicated
     const otherGroups = mceData.siglaGroups.filter( (g,i) => i !== siglaGroupIndex);
+
+    if (otherGroups.some(g => g.siglum.trim() === trimmedSiglum)) {
+      return 'Sigla group siglum is duplicated';
+    }
+
+    if (mceData.sigla.some(siglum => siglum.trim() === trimmedSiglum)) {
+      return 'Sigla group siglum is a witness siglum';
+    }
 
     if (otherGroups.some( g => g.witnesses.every( s => group.witnesses.includes(s) ) )) {
       return 'Sigla group is duplicated';

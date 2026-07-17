@@ -307,6 +307,27 @@ describe('MceData', () => {
         .toBe('Sigla group contains invalid witnesses');
     });
 
+    it('returns an error when siglum duplicates another sigla group siglum', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any, { witnessId: 'w2' } as any];
+      mceData.siglaGroups = [
+        { siglum: 'G1', witnesses: [0, 1] },
+        { siglum: 'G2', witnesses: [1, 2] }
+      ];
+
+      expect(MceData.isSiglaGroupValid(mceData, 0, { siglum: 'G2', witnesses: [0, 2] }))
+        .toBe('Sigla group siglum is duplicated');
+    });
+
+    it('returns an error when siglum duplicates a witness siglum', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any, { witnessId: 'w2' } as any];
+      mceData.sigla = ['A', 'B', 'C'];
+
+      expect(MceData.isSiglaGroupValid(mceData, -1, { siglum: 'B', witnesses: [0, 2] }))
+        .toBe('Sigla group siglum is a witness siglum');
+    });
+
     it('returns an error when a group duplicates another group', () => {
       const mceData = MceData.createEmpty();
       mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any, { witnessId: 'w2' } as any];

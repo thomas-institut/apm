@@ -44,6 +44,9 @@ import {SetSiglumAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetSiglumAct
 import {
   SetIncludeInAutoMarginalFoliationAction
 } from "@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction";
+import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
+import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeSiglaGroupAction";
+import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteSiglaGroupAction";
 
 // TODO 2026-07-17
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
@@ -446,6 +449,28 @@ export default function MceComposer() {
     return true;
   }
 
+  const handleDeleteSiglaGroup = (siglaGroupIndex: number) => {
+    try {
+      history.do(new DeleteSiglaGroupAction(siglaGroupIndex));
+    } catch (error) {
+      reportActionBug('DeleteSiglaGroupAction', error);
+      return false;
+    }
+    setHistoryVersion(v => v + 1);
+    return true;
+  }
+
+  const handleChangeSiglaGroup = (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => {
+    try {
+      history.do(new ChangeSiglaGroupAction(siglaGroupIndex, newGroup));
+    } catch (error) {
+      reportActionBug('ChangeSiglaGroupAction', error);
+      return false;
+    }
+    setHistoryVersion(v => v + 1);
+    return true;
+  }
+
   const handleConfirmTitleEdit = (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
     if (sanitizedTitle === mceData.title) return;
@@ -477,6 +502,11 @@ export default function MceComposer() {
       setHistoryVersion(v => v + 1);
       setChunksPanelVersion(v => v + 1);
     }
+  };
+
+
+  const isSiglaGroupValid: (siglaGroupIndex: number, group: SiglaGroupInterface) => true | string = (siglaGroupIndex, group) => {
+    return MceData.isSiglaGroupValid(mceData, siglaGroupIndex, group);
   };
 
   const regenerateEdition = () => {
@@ -542,6 +572,9 @@ export default function MceComposer() {
       content: <WitnessesPanel witnesses={getDataForWitnessPanel()}
                                siglaGroups={mceData.siglaGroups}
                                onChangeSiglum={handleSetSiglum}
+                               isSiglaGroupValid={isSiglaGroupValid}
+                               onDeleteSiglaGroup={handleDeleteSiglaGroup}
+                               onChangeSiglaGroup={handleChangeSiglaGroup}
                                onChangeIncludeInAutoMarginalFoliation={handleSetIncludeInAutoMarginalFoliation}/>,
       tabbable: true,
     },

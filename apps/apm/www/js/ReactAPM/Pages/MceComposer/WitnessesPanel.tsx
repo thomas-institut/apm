@@ -8,14 +8,14 @@ import NiceToggle from "@/ReactAPM/Components/NiceToggle";
 
 interface WitnessesPanelProps extends TabbableElementProps {
   mceData: MceDataInterface;
-  onChangeSiglum?: (newSiglum: string, witnessIndex: number) => boolean,
-  onChangeAutoFoliation?: (newAutoFoliation: boolean, witnessIndex: number) => boolean,
+  onChangeSiglum?: (witnessIndex: number, newSiglum: string) => boolean,
+  onChangeIncludeInAutoMarginalFoliation?: (witnessIndex: number, newState: boolean) => boolean,
 }
 
 interface WitnessTableRow {
   siglum: string,
   title: string,
-  autoFoliation: boolean
+  includeInAutoMarginalFoliation: boolean
 }
 
 interface SiglaGroupsTableRow {
@@ -23,7 +23,7 @@ interface SiglaGroupsTableRow {
   sigla: string[]
 }
 
-export default function WitnessesPanel({mceData, onChangeSiglum, onChangeAutoFoliation}: WitnessesPanelProps) {
+export default function WitnessesPanel({mceData, onChangeSiglum, onChangeIncludeInAutoMarginalFoliation}: WitnessesPanelProps) {
 
   if (mceData.sigla.length === 0) {
     return <>No sigla defined</>;
@@ -35,8 +35,8 @@ export default function WitnessesPanel({mceData, onChangeSiglum, onChangeAutoFol
     if (witness.localWitnessId !== undefined && witness.localWitnessId !== 'A') {
       title = `${title} (${witness.localWitnessId})`;
     }
-    const autoFoliation = mceData.includeInAutoMarginalFoliation?.includes(index) ?? false;
-    return {siglum, title, autoFoliation};
+    const includeInAutoMarginalFoliationState = mceData.includeInAutoMarginalFoliation?.includes(index) ?? false;
+    return {siglum, title, includeInAutoMarginalFoliation: includeInAutoMarginalFoliationState};
   });
 
 
@@ -59,17 +59,17 @@ export default function WitnessesPanel({mceData, onChangeSiglum, onChangeAutoFol
       tdClassName: 'siglum',
       cellContent: (witnessData, witnessIndex) => <EditableTextField text={witnessData.siglum} onConfirm={(newSiglum) => {
         if (onChangeSiglum) {
-          onChangeSiglum(newSiglum, witnessIndex);
+          onChangeSiglum(witnessIndex, newSiglum);
         } }}/>
     },
     {
       key: "margFol",
       title: 'Marg. Fol.',
       cellContent: (witnessData, witnessIndex) => <NiceToggle
-        isOn={witnessData.autoFoliation}
+        isOn={witnessData.includeInAutoMarginalFoliation}
         onClick={(newState) => {
-          if (onChangeAutoFoliation) {
-            onChangeAutoFoliation(newState, witnessIndex);
+          if (onChangeIncludeInAutoMarginalFoliation) {
+            onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
           }
         }}
       />

@@ -40,6 +40,9 @@ import MultiToggle from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import './MceComposer.css';
 import {hashString} from "@/ReactAPM/ToolBox/Hash";
 import {SetSiglumAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetSiglumAction";
+import {
+  SetIncludeInAutoMarginalFoliationAction
+} from "@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction";
 
 // TODO 2026-07-10
 //  - Implement bug notification when actions throw errors
@@ -420,6 +423,17 @@ export default function MceComposer() {
     return true;
   }
 
+  const handleSetIncludeInAutoMarginalFoliation = (witnessIndex: number, newState: boolean) => {
+    try {
+      history.do(new SetIncludeInAutoMarginalFoliationAction(witnessIndex, newState));
+    } catch (error) {
+      console.error('SetIncludeInAutoMarginalFoliationAction failed', error);
+      return false;
+    }
+    setHistoryVersion(v => v + 1);
+    return true;
+  }
+
   const handleConfirmTitleEdit = (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
     if (sanitizedTitle === mceData.title) return;
@@ -501,7 +515,9 @@ export default function MceComposer() {
       panel: 'one',
       key: 'witnesses',
       title: 'Witnesses',
-      content: <WitnessesPanel mceData={mceData} onChangeSiglum={(newSiglum, witnessIndex) => handleSetSiglum(witnessIndex, newSiglum)}/>,
+      content: <WitnessesPanel mceData={mceData}
+                               onChangeSiglum={handleSetSiglum}
+                               onChangeIncludeInAutoMarginalFoliation={handleSetIncludeInAutoMarginalFoliation}/>,
       tabbable: true,
     },
 

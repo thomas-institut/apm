@@ -250,6 +250,154 @@ describe('MceData', () => {
     });
   });
 
+  describe('deleteSiglaGroup', () => {
+    it('deletes a sigla group at a valid index', () => {
+      const mceData = MceData.createEmpty();
+      mceData.siglaGroups = [
+        { siglum: 'G1', witnesses: [0, 1] },
+        { siglum: 'G2', witnesses: [1, 2] }
+      ];
+
+      const result = MceData.deleteSiglaGroup(mceData, 0);
+
+      expect(result).toBe(mceData);
+      expect(mceData.siglaGroups).toEqual([{ siglum: 'G2', witnesses: [1, 2] }]);
+    });
+
+    it('throws when index is out of range', () => {
+      const mceData = MceData.createEmpty();
+      mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
+
+      expect(() => MceData.deleteSiglaGroup(mceData, -1)).toThrow("Invalid sigla group index -1");
+      expect(() => MceData.deleteSiglaGroup(mceData, 1)).toThrow("Invalid sigla group index 1");
+    });
+  });
+
+  describe('isSiglaGroupValid', () => {
+    it('returns an error for an invalid sigla group index', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+      mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
+
+      expect(MceData.isSiglaGroupValid(mceData, 1, { siglum: 'G2', witnesses: [0, 1] }))
+        .toBe('Invalid sigla group index');
+    });
+
+    it('returns an error when a group has fewer than two witnesses', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+
+      expect(MceData.isSiglaGroupValid(mceData, -1, { siglum: 'G1', witnesses: [0] }))
+        .toBe('Sigla group must have at least two witnesses');
+    });
+
+    it('returns an error when a group has an empty siglum after trim', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+
+      expect(MceData.isSiglaGroupValid(mceData, -1, { siglum: '   ', witnesses: [0, 1] }))
+        .toBe('Sigla group must have a non-empty siglum');
+    });
+
+    it('returns an error when a group contains invalid witnesses', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+
+      expect(MceData.isSiglaGroupValid(mceData, -1, { siglum: 'G1', witnesses: [0, 2] }))
+        .toBe('Sigla group contains invalid witnesses');
+    });
+
+    it('returns an error when a group duplicates another group', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any, { witnessId: 'w2' } as any];
+      mceData.siglaGroups = [
+        { siglum: 'G1', witnesses: [0, 1] },
+        { siglum: 'G2', witnesses: [1, 2] }
+      ];
+
+      expect(MceData.isSiglaGroupValid(mceData, 0, { siglum: 'G3', witnesses: [1, 2] }))
+        .toBe('Sigla group is duplicated');
+    });
+
+    it('returns true for a valid replacement group', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any, { witnessId: 'w2' } as any];
+      mceData.siglaGroups = [
+        { siglum: 'G1', witnesses: [0, 1] },
+        { siglum: 'G2', witnesses: [1, 2] }
+      ];
+
+      expect(MceData.isSiglaGroupValid(mceData, 0, { siglum: 'G3', witnesses: [0, 2] })).toBe(true);
+    });
+
+    it('returns true when replacement group is identical to current group at index', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any, { witnessId: 'w2' } as any];
+      mceData.siglaGroups = [
+        { siglum: 'G1', witnesses: [0, 1] },
+        { siglum: 'G2', witnesses: [1, 2] }
+      ];
+
+      expect(MceData.isSiglaGroupValid(mceData, 0, { siglum: 'G1', witnesses: [0, 1] })).toBe(true);
+    });
+  });
+
+  describe('changeSiglaGroup', () => {
+    it('throws when index is out of range', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+      mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
+
+      expect(() => MceData.changeSiglaGroup(mceData, -1, { siglum: 'G2', witnesses: [0, 1] }))
+        .toThrow('Invalid sigla group index -1');
+      expect(() => MceData.changeSiglaGroup(mceData, 1, { siglum: 'G2', witnesses: [0, 1] }))
+        .toThrow('Invalid sigla group index 1');
+    });
+
+    it('replaces a group using a deep copy', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any, { witnessId: 'w2' } as any];
+      mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
+      const newGroup = { siglum: 'G2', witnesses: [1, 2] };
+
+      MceData.changeSiglaGroup(mceData, 0, newGroup);
+      newGroup.witnesses.push(0);
+
+      expect(mceData.siglaGroups).toEqual([{ siglum: 'G2', witnesses: [1, 2] }]);
+    });
+
+    it('throws when replacement group is invalid', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+      mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
+
+      expect(() => MceData.changeSiglaGroup(mceData, 0, { siglum: 'G2', witnesses: [0] }))
+        .toThrow('Invalid sigla group {"siglum":"G2","witnesses":[0]}: Sigla group must have at least two witnesses');
+    });
+  });
+
+  describe('addSiglaGroup', () => {
+    it('adds a sigla group using a deep copy', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any, { witnessId: 'w2' } as any];
+      const group = { siglum: 'G1', witnesses: [0, 1] };
+
+      MceData.addSiglaGroup(mceData, group);
+      group.witnesses.push(2);
+
+      expect(mceData.siglaGroups).toEqual([{ siglum: 'G1', witnesses: [0, 1] }]);
+    });
+
+    it('throws when group is invalid', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+
+      expect(() => MceData.addSiglaGroup(mceData, { siglum: 'G1', witnesses: [0] }))
+        .toThrow('Invalid sigla group {"siglum":"G1","witnesses":[0]}: Sigla group must have at least two witnesses');
+      expect(mceData.siglaGroups).toEqual([]);
+    });
+  });
+
   describe('setTitle', () => {
     it('sets the title on the mceData', () => {
       const mceData = MceData.createEmpty();

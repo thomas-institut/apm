@@ -1,6 +1,8 @@
 import {ChunkInMceData, MceDataInterface, ValidChunkBreaks, WitnessInMceData} from "./MceDataInterface.js";
 import * as ArrayUtil from "../lib/ToolBox/ArrayUtil.js";
-import {CtDataInterface} from "@/CtData/CtDataInterface";
+import {CtDataInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
+import {deepCopy} from "@/toolbox/Util";
+
 
 export class MceData {
 
@@ -62,6 +64,75 @@ export class MceData {
     }
     mceData.title = newTitle;
     return mceData;
+  }
+
+  static deleteSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number) {
+    if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
+      throw(`Invalid sigla group index ${siglaGroupIndex}`);
+    }
+    mceData.siglaGroups.splice(siglaGroupIndex, 1);
+    return mceData;
+  }
+
+  /**
+   *
+   * Returns true if the given sigla group is a valid replacement of the existing sigla group at the given index.
+   *
+   * If the given index is -1, the group is meant to be added to the end of the list.
+   *
+   * If the group is invalid  returns a string describing the error.
+   *
+   * @param mceData
+   * @param siglaGroupIndex
+   * @param group
+   */
+  static isSiglaGroupValid(mceData: MceDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface): true | string {
+
+    if (siglaGroupIndex >= mceData.siglaGroups.length) {
+      return 'Invalid sigla group index';
+    }
+
+    if (group.siglum.trim() === '') {
+      return 'Sigla group must have a non-empty siglum';
+    }
+
+    if (group.witnesses.length < 2) {
+      return 'Sigla group must have at least two witnesses';
+    }
+
+    // check if the witnesses are valid
+    if (group.witnesses.some( index => index >= mceData.witnesses.length || index < 0 )) {
+      return 'Sigla group contains invalid witnesses';
+    }
+
+    // check if the group is duplicated
+    const otherGroups = mceData.siglaGroups.filter( (g,i) => i !== siglaGroupIndex);
+
+    if (otherGroups.some( g => g.witnesses.every( s => group.witnesses.includes(s) ) )) {
+      return 'Sigla group is duplicated';
+    }
+
+    return true;
+  }
+
+  static changeSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface) {
+    if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
+      throw(`Invalid sigla group index ${siglaGroupIndex}`);
+    }
+    const isValid = this.isSiglaGroupValid(mceData, siglaGroupIndex, group);
+    if (isValid !== true) {
+      throw(`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
+    }
+
+    mceData.siglaGroups[siglaGroupIndex] = deepCopy(group);
+  }
+
+  static addSiglaGroup(mceData: MceDataInterface, group: SiglaGroupInterface) {
+    const isValid = this.isSiglaGroupValid(mceData, -1, group);
+    if (isValid !== true) {
+      throw(`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
+    }
+    mceData.siglaGroups.push(deepCopy(group));
   }
 
   static setChunkBreak(mceData: MceDataInterface, chunkIndex: number, newBreak: string) {

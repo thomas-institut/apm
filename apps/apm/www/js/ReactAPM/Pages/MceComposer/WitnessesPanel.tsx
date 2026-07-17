@@ -1,21 +1,41 @@
-import {MceDataInterface} from "@/MceData/MceDataInterface";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import './WitnessesPanel.css';
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import NiceToggle from "@/ReactAPM/Components/NiceToggle/NiceToggle";
+import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
+import {Pencil, Trash} from "react-bootstrap-icons";
+import {Button} from "react-bootstrap";
 
 
-interface WitnessesPanelProps extends TabbableElementProps {
-  mceData: MceDataInterface;
-  onChangeSiglum?: (witnessIndex: number, newSiglum: string) => boolean,
-  onChangeIncludeInAutoMarginalFoliation?: (witnessIndex: number, newState: boolean) => boolean,
-}
-
-interface WitnessTableRow {
+export interface WitnessData {
   siglum: string,
   title: string,
   includeInAutoMarginalFoliation: boolean
+}
+
+interface WitnessesPanelProps extends TabbableElementProps {
+  witnesses: WitnessData[],
+  siglaGroups: SiglaGroupInterface[],
+  onChangeSiglum?: (witnessIndex: number, newSiglum: string) => boolean,
+  onChangeIncludeInAutoMarginalFoliation?: (witnessIndex: number, newState: boolean) => boolean,
+  /**
+   * Callback to delete a sigla group
+   */
+  onDeleteSiglaGroup?: (siglaGroupIndex: number) => boolean,
+  /**
+   * Callback to change a sigla group
+   *
+   * If siglaGroupIndex is -1, then the sigla group is being added
+   */
+  onChangeSiglaGroup?: (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => boolean,
+  /**
+   * Callback to validate a sigla group
+   *
+   * Must return true if the sigla group at siglaGroupIndex can be changed to the given group (or added
+   * if siglaGroupIndex is -1) or a string with the error message if it cannot.
+   */
+  isSiglaGroupValid?: (siglaGroupIndex: number, group: SiglaGroupInterface) => true | string,
 }
 
 interface SiglaGroupsTableRow {
@@ -23,24 +43,21 @@ interface SiglaGroupsTableRow {
   sigla: string[]
 }
 
-export default function WitnessesPanel({mceData, onChangeSiglum, onChangeIncludeInAutoMarginalFoliation}: WitnessesPanelProps) {
+export default function WitnessesPanel({
+                                         witnesses,
+                                         siglaGroups,
+                                         onChangeSiglum,
+                                         onChangeIncludeInAutoMarginalFoliation,
+                                         onDeleteSiglaGroup,
+                                         onChangeSiglaGroup,
+                                         isSiglaGroupValid
+                                       }: WitnessesPanelProps) {
 
-  if (mceData.sigla.length === 0) {
-    return <>No sigla defined</>;
+  if (witnesses.length === 0) {
+    return <>No witnesses defined</>;
   }
 
-  const witnessTableRows: WitnessTableRow[] = mceData.sigla.map((siglum, index) => {
-    const witness = mceData.witnesses[index];
-    let title = witness.title;
-    if (witness.localWitnessId !== undefined && witness.localWitnessId !== 'A') {
-      title = `${title} (${witness.localWitnessId})`;
-    }
-    const includeInAutoMarginalFoliationState = mceData.includeInAutoMarginalFoliation?.includes(index) ?? false;
-    return {siglum, title, includeInAutoMarginalFoliation: includeInAutoMarginalFoliationState};
-  });
-
-
-  const witnessesTableColumnDefs: NiceTableColumnDef<WitnessTableRow>[] = [
+  const witnessesTableColumnDefs: NiceTableColumnDef<WitnessData>[] = [
     {
       key: "n",
       title: 'N',
@@ -57,10 +74,12 @@ export default function WitnessesPanel({mceData, onChangeSiglum, onChangeInclude
       title: 'Siglum',
       width: '5em',
       tdClassName: 'siglum',
-      cellContent: (witnessData, witnessIndex) => <EditableTextField text={witnessData.siglum} onConfirm={(newSiglum) => {
-        if (onChangeSiglum) {
-          onChangeSiglum(witnessIndex, newSiglum);
-        } }}/>
+      cellContent: (witnessData, witnessIndex) => <EditableTextField text={witnessData.siglum}
+                                                                     onConfirm={(newSiglum) => {
+                                                                       if (onChangeSiglum) {
+                                                                         onChangeSiglum(witnessIndex, newSiglum);
+                                                                       }
+                                                                     }}/>
     },
     {
       key: "margFol",
@@ -78,10 +97,10 @@ export default function WitnessesPanel({mceData, onChangeSiglum, onChangeInclude
     }
   ];
 
-  const siglaGroupsTableRows: SiglaGroupsTableRow[] = mceData.siglaGroups.map((siglaGroup) => {
+  const siglaGroupsTableRows: SiglaGroupsTableRow[] = siglaGroups.map((siglaGroup) => {
     return {
       siglum: siglaGroup.siglum,
-      sigla: siglaGroup.witnesses.map((witnessIndex) => mceData.sigla[witnessIndex])
+      sigla: witnesses.map(w => w.siglum)
     };
   });
 
@@ -101,6 +120,18 @@ export default function WitnessesPanel({mceData, onChangeSiglum, onChangeInclude
       key: "sigla",
       title: 'Sigla',
       cellContent: (siglumData) => <>{siglumData.sigla.join(' ')}</>
+    },
+    {
+      key: 'controls',
+      title: '',
+      cellContent: (_siglumData, rowIndex) => <>
+        <Trash onClick={() => {
+          if (onDeleteSiglaGroup) onDeleteSiglaGroup(rowIndex);
+        }}/>
+        <Pencil onClick={() => {
+          console.log(`Click on edit sigla group ${rowIndex}`)
+        }}/>
+      </>
     }
   ];
 
@@ -110,18 +141,20 @@ export default function WitnessesPanel({mceData, onChangeSiglum, onChangeInclude
       <div className={'section witnesses'}>
         <h1>Witnesses</h1>
         <div className={'section-content'}>
-          {witnessTableRows.length === 0 && <>No witnesses defined</>}
-          {witnessTableRows.length > 0 && <NiceTable columnDefs={witnessesTableColumnDefs} rows={witnessTableRows}/>}
+          {witnesses.length === 0 && <>No witnesses defined</>}
+          {witnesses.length > 0 && <NiceTable columnDefs={witnessesTableColumnDefs} rows={witnesses}/>}
         </div>
       </div>
       <div className={'section sigla-groups'}>
         <h1>Sigla Groups</h1>
         <div className={'section-content'}>
-          {siglaGroupsTableRows.length === 0 && <>No sigla groups defined</>}
+          {siglaGroupsTableRows.length === 0 && <div>No sigla groups defined</div>}
           {siglaGroupsTableRows.length > 0 &&
             <NiceTable columnDefs={siglaGroupsTableColumnDefs} rows={siglaGroupsTableRows}/>}
+          <Button variant={'outline-secondary'} size={'sm'} className={'add-sigla-group'} onClick={() => {
+            console.log(`Click on add sigla group`)
+          }}>Add Sigla Group</Button>
         </div>
-
       </div>
     </div>
   );

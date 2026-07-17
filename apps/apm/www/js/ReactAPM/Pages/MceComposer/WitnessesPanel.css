@@ -5,5 +5,15 @@
 
     .section.sigla-groups {
         margin-top: 0;
+
+        .section-content {
+            display: flex;
+            flex-direction: column;
+            gap: 2em;
+
+            .add-sigla-group {
+                width: 10em;
+            }
+        }
     }
 }

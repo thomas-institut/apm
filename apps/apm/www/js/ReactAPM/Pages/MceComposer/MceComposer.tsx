@@ -28,7 +28,7 @@ import {DeleteChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteChun
 import {MoveChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/MoveChunkAction";
 import {SetChunkBreakAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetChunkBreakAction";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
-import WitnessesPanel from "@/ReactAPM/Pages/MceComposer/WitnessesPanel";
+import WitnessesPanel, {WitnessData} from "@/ReactAPM/Pages/MceComposer/WitnessesPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
 import {Edition} from "@/Edition/Edition";
 import {MceDataEditionGenerator} from "@/MceData/MceDataEditionGenerator";
@@ -48,6 +48,10 @@ import {
 // TODO 2026-07-17
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
 //  - Design data slices for components, do not pass mceData around
+//  - Implement add/edit sigla groups
+//  - Implement preview panel
+//  - Implement versions panel
+//  - Implement showing tags in chunks panel
 
 
 export type CtDataState = 'notLoaded' | 'loading' | 'loaded' | 'error';
@@ -494,6 +498,18 @@ export default function MceComposer() {
     regenerateEdition();
   };
 
+  const getDataForWitnessPanel = () : WitnessData[] => {
+    return mceData.witnesses.map((w, index) => {
+      let title = w.title;
+      if (w.localWitnessId !== undefined && w.localWitnessId !== 'A') {
+        title = `${title} (${w.localWitnessId})`;
+      }
+      const includeInAutoMarginalFoliationState = mceData.includeInAutoMarginalFoliation?.includes(index) ?? false;
+      return {siglum: mceData.sigla[index], title, includeInAutoMarginalFoliation: includeInAutoMarginalFoliationState};
+    });
+  }
+
+
   const panelSpecs: PanelSpec[] = [
     {
       panel: 'one',
@@ -523,7 +539,8 @@ export default function MceComposer() {
       panel: 'one',
       key: 'witnesses',
       title: 'Witnesses',
-      content: <WitnessesPanel mceData={mceData}
+      content: <WitnessesPanel witnesses={getDataForWitnessPanel()}
+                               siglaGroups={mceData.siglaGroups}
                                onChangeSiglum={handleSetSiglum}
                                onChangeIncludeInAutoMarginalFoliation={handleSetIncludeInAutoMarginalFoliation}/>,
       tabbable: true,

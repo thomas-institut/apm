@@ -7,14 +7,14 @@ interface SaveButtonProps {
   changes: string[]
 }
 
-export default function SaveButton({ changes }: SaveButtonProps) {
+export default function MceComposerSaveButton({ changes }: SaveButtonProps) {
   if (changes.length > 0) {
     changes.join('\n');
     const popover = (
       <Popover className={'save-changes-popover'}>
-        <Popover.Header as="h3">Save changes</Popover.Header>
+        <Popover.Header>Save changes</Popover.Header>
         <Popover.Body>
-          <p>There are unsaved changes:</p>
+          <p className={'notice'}>There are unsaved changes:</p>
           <ul>
             {changes.map((change, index) => <li key={index}>{change}</li>)}
           </ul>

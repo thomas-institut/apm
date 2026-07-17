@@ -20,7 +20,7 @@ import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
-import SaveButton from "@/ReactAPM/Pages/MceComposer/SaveButton";
+import MceComposerSaveButton from "@/ReactAPM/Pages/MceComposer/MceComposerSaveButton";
 import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
 import {ChangeTitleAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeTitleAction";
 import {DeleteChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteChunkAction";
@@ -676,7 +676,7 @@ export default function MceComposer() {
                        setChunksPanelVersion(v => v + 1);
                      }}/>
 
-    <SaveButton changes={changes}/>
+    <MceComposerSaveButton changes={changes}/>
     <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
                                                   onClick={() => handleOnClickRevertChanges()}
                                                   title={'Click to revert to last saved version'}/>

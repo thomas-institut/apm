@@ -380,9 +380,10 @@ export default function MceComposer() {
       history.do(new MoveChunkAction(chunkPosition, direction === 'up' ? 'backwards' : 'forwards'));
     } catch (error) {
       console.error('MoveChunkAction failed', error);
-      return;
+      return false;
     }
     setHistoryVersion(v => v + 1);
+    return true;
   };
 
   const setChunkBreak = (chunkPosition: number, newBreak: string) => {
@@ -391,10 +392,11 @@ export default function MceComposer() {
       history.do(new SetChunkBreakAction(chunkPosition, newBreak));
     } catch (error) {
       console.error('SetChunkBreakAction failed', error);
-      return;
+      return false;
     }
     setHistoryVersion(v => v + 1);
     setChunksPanelVersion(v => v + 1);
+    return true;
   };
 
   const updateChunk = (chunkIndex: number) => {
@@ -403,6 +405,7 @@ export default function MceComposer() {
     console.log(`Update chunk not implemented yet`);
     // No action implemented yet for update chunk in history
     setChunksPanelVersion(v => v + 1);
+    return true;
   };
 
   const handleConfirmTitleEdit = (newTitle: string) => {
@@ -468,16 +471,16 @@ export default function MceComposer() {
                             chunkOrder={mceData.chunkOrder ?? MceData.getDefaultChunkOrder(mceData)}
                             ctDataStatusArray={ctDataStatusArray}
                             moveChunk={(chunkIndex, direction) => {
-                              moveChunk(chunkIndex, direction);
+                              return moveChunk(chunkIndex, direction);
                             }}
                             updateChunk={(chunkIndex) => {
-                              updateChunk(chunkIndex);
+                              return updateChunk(chunkIndex);
                             }}
                             deleteChunk={(chunkIndex) => {
                               return deleteChunk(chunkIndex);
                             }}
                             setChunkBreak={(chunkIndex, breakAfter) => {
-                              setChunkBreak(chunkIndex, breakAfter);
+                              return setChunkBreak(chunkIndex, breakAfter);
                             }}
       />,
       tabbable: true,

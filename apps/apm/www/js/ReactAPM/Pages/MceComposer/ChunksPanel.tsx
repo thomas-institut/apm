@@ -16,9 +16,15 @@ interface ChunksPanelProps extends TabbableElementProps {
   chunks: ChunkInMceData[];
   chunkOrder: number[];
   deleteChunk?: (chunkIndex: number) => boolean;
-  updateChunk?: (chunkIndex: number) => void;
-  moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => void;
-  setChunkBreak?: (chunkIndex: number, breakAfter: string) => void;
+  updateChunk?: (chunkIndex: number) => boolean;
+  /**
+   * Move a chunk up or down in the list.
+   * @param chunkIndex The index of the chunk to move.
+   * @param direction The direction to move the chunk.
+   * @returns True if the chunk was moved, false if it was not.
+   */
+  moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => boolean;
+  setChunkBreak?: (chunkIndex: number, breakAfter: string) => boolean;
   ctDataStatusArray: CtDataStatus[];
   /**
    * A version number that is incremented whenever the panel needs to be redrawn.
@@ -52,6 +58,8 @@ export default function ChunksPanel({
                                       version,
                                       active
                                     }: ChunksPanelProps) {
+  const highlightAnimationDurationMs = 1600;
+  const isPanelActive = active ?? true;
 
   const [pendingDeleteChunkIndex, setPendingDeleteChunkIndex] = useState<number | null>(null);
   const [pendingUpdateChunkIndex, setPendingUpdateChunkIndex] = useState<number | null>(null);
@@ -59,6 +67,7 @@ export default function ChunksPanel({
   const [pendingSetChunkBreakIndex, setPendingSetChunkBreakIndex] = useState<number | null>(null);
   const [confirmDeleteChunkIndex, setConfirmDeleteChunkIndex] = useState<number | null>(null);
   const [highlightedChunkId, setHighlightedChunkId] = useState<string | null>(null);
+  const [pendingHighlightChunkId, setPendingHighlightChunkId] = useState<string | null>(null);
 
   useEffect(() => {
     setPendingDeleteChunkIndex(null);
@@ -70,7 +79,30 @@ export default function ChunksPanel({
 
   useEffect(() => {
     setHighlightedChunkId(null);
+    setPendingHighlightChunkId(null);
   }, [version]);
+
+  useEffect(() => {
+    if (!isPanelActive || pendingHighlightChunkId === null) {
+      return;
+    }
+    setHighlightedChunkId(pendingHighlightChunkId);
+    setPendingHighlightChunkId(null);
+  }, [isPanelActive, pendingHighlightChunkId]);
+
+  useEffect(() => {
+    if (highlightedChunkId === null) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setHighlightedChunkId(null);
+    }, highlightAnimationDurationMs);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [highlightedChunkId]);
 
   const isAnyPending = pendingDeleteChunkIndex !== null ||
     pendingUpdateChunkIndex !== null ||
@@ -123,6 +155,7 @@ export default function ChunksPanel({
 
   const handleDeleteChunk = (chunkIndex: number) => {
     setHighlightedChunkId(null);
+    setPendingHighlightChunkId(null);
     if (!deleteChunk || isAnyPending) {
       return;
     }
@@ -150,6 +183,7 @@ export default function ChunksPanel({
 
   const handleUpdateChunk = (chunkIndex: number) => {
     setHighlightedChunkId(null);
+    setPendingHighlightChunkId(null);
     if (!updateChunk || isAnyPending) {
       return;
     }
@@ -161,13 +195,17 @@ export default function ChunksPanel({
     if (!moveChunk || isAnyPending) {
       return;
     }
-    setHighlightedChunkId(chunks[chunkOrder[chunkIndex]].chunkId);
+    setPendingHighlightChunkId(chunks[chunkOrder[chunkIndex]].chunkId);
     setPendingMoveChunkIndex(chunkIndex);
-    moveChunk(chunkIndex, direction);
+    if (!moveChunk(chunkIndex, direction)){
+      setPendingHighlightChunkId(null);
+      setPendingMoveChunkIndex(null);
+    }
   };
 
   const handleSetChunkBreak = (chunkIndex: number, breakAfter: string) => {
     setHighlightedChunkId(null);
+    setPendingHighlightChunkId(null);
     if (!setChunkBreak || isAnyPending) {
       return;
     }

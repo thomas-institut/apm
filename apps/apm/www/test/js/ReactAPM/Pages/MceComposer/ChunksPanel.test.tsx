@@ -145,20 +145,21 @@ describe('ChunksPanel', () => {
     });
   });
 
-  it('highlights a chunk after moving it and clears highlight on other actions', async () => {
+  it('highlights a moved chunk once when panel is active and clears highlight on other actions', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
+    vi.useFakeTimers();
 
     const chunk1 = buildChunk();
     const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
     const chunk2Status = buildCtDataStatus(chunk2);
     // @ts-expect-error test-only property override
     chunk2Status.apiData.isLatestVersion = false;
-    const moveChunk = vi.fn();
-    const updateChunk = vi.fn();
+    const moveChunk = vi.fn(() => true);
+    const updateChunk = vi.fn(() => true);
 
-    const render = (order: number[]) => act(async () => {
+    const render = (order: number[], active = true) => act(async () => {
       root.render(
         <ChunksPanel
           chunks={[chunk1, chunk2]}
@@ -166,6 +167,7 @@ describe('ChunksPanel', () => {
           ctDataStatusArray={[buildCtDataStatus(chunk1), chunk2Status]}
           moveChunk={moveChunk}
           updateChunk={updateChunk}
+          active={active}
         />
       );
     });
@@ -192,6 +194,16 @@ describe('ChunksPanel', () => {
     rows = container.querySelectorAll('tr');
     expect(rows[2].className).toContain('highlighted');
     expect(rows[1].className).not.toContain('highlighted');
+
+    // Highlight expires after animation time and should not replay on tab switch.
+    await act(async () => {
+      vi.advanceTimersByTime(1700);
+    });
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    await render([1, 0], false);
+    await render([1, 0], true);
+    expect(container.querySelector('.highlighted')).toBeNull();
 
     // 3. Perform another action (Update)
     const updateButton = container.querySelector('[title="Click to update chunk C2"]') as HTMLButtonElement;
@@ -241,6 +253,102 @@ describe('ChunksPanel', () => {
     await act(async () => {
       deleteBtn.click();
     });
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    vi.useRealTimers();
+  });
+
+  it('defers moved-row highlight while inactive and consumes it once when active', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    vi.useFakeTimers();
+
+    const chunk1 = buildChunk();
+    const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
+    const moveChunk = vi.fn(() => true);
+
+    const render = (order: number[], active: boolean) => act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk1, chunk2]}
+          chunkOrder={order}
+          ctDataStatusArray={[buildCtDataStatus(chunk1), buildCtDataStatus(chunk2)]}
+          moveChunk={moveChunk}
+          active={active}
+        />
+      );
+    });
+
+    await render([0, 1], false);
+
+    const moveDownButton = container.querySelector('[title="Click to move chunk C1 one row down"]') as HTMLButtonElement;
+    await act(async () => {
+      moveDownButton.click();
+    });
+
+    expect(moveChunk).toHaveBeenCalledWith(0, 'down');
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    await render([1, 0], true);
+
+    let rows = container.querySelectorAll('tr');
+    expect(rows[2].className).toContain('highlighted');
+    expect(rows[1].className).not.toContain('highlighted');
+
+    await act(async () => {
+      vi.advanceTimersByTime(1700);
+    });
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    await render([1, 0], false);
+    await render([1, 0], true);
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    vi.useRealTimers();
+  });
+
+  it('does not highlight and clears pending move when moveChunk fails', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const chunk1 = buildChunk();
+    const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
+    const moveChunk = vi.fn(() => false);
+
+    await act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk1, chunk2]}
+          chunkOrder={[0, 1]}
+          ctDataStatusArray={[buildCtDataStatus(chunk1), buildCtDataStatus(chunk2)]}
+          moveChunk={moveChunk}
+        />
+      );
+    });
+
+    const moveDownButton = container.querySelector('[title="Click to move chunk C1 one row down"]') as HTMLButtonElement;
+
+    await act(async () => {
+      moveDownButton.click();
+    });
+
+    expect(moveChunk).toHaveBeenCalledTimes(1);
+    expect(moveChunk).toHaveBeenCalledWith(0, 'down');
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    await act(async () => {
+      moveDownButton.click();
+    });
+
+    expect(moveChunk).toHaveBeenCalledTimes(2);
     expect(container.querySelector('.highlighted')).toBeNull();
 
     await act(async () => {

@@ -79,6 +79,43 @@ export class MceData {
     return mceData;
   }
 
+  static setSiglum(mceData: MceDataInterface, witnessIndex: number, newSiglum: string) {
+    if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
+      console.warn(`Invalid witness index ${witnessIndex}`);
+      return mceData;
+    }
+    newSiglum = newSiglum.trim();
+    if (newSiglum === '') {
+      console.warn(`Invalid siglum '${newSiglum}'`);
+      return mceData;
+    }
+    mceData.sigla[witnessIndex] = newSiglum;
+    return mceData;
+  }
+
+  static setAutoMarginalFoliation(mceData: MceDataInterface, witnessIndex: number, newState: boolean) {
+    if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
+      console.warn(`Invalid witness index ${witnessIndex}`);
+      return mceData;
+    }
+    if (mceData.includeInAutoMarginalFoliation === undefined) {
+      mceData.includeInAutoMarginalFoliation = [];
+    }
+    if (newState) {
+      if (!mceData.includeInAutoMarginalFoliation.includes(witnessIndex)) {
+        mceData.includeInAutoMarginalFoliation.push(witnessIndex);
+      }
+    } else {
+      const index = mceData.includeInAutoMarginalFoliation.indexOf(witnessIndex);
+      if (index !== -1) {
+        mceData.includeInAutoMarginalFoliation.splice(index, 1);
+      }
+    }
+
+    return mceData;
+  }
+
+
   /**
    * Moves a chunk in the chunk order array from the current position to the next position in the specified direction.
    * @param mceData

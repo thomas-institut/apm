@@ -338,6 +338,71 @@ describe('MceData', () => {
     });
   });
 
+  describe('setSiglum', () => {
+    it('sets a trimmed siglum at the given witness index', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+      mceData.sigla = ['A', 'B'];
+
+      MceData.setSiglum(mceData, 1, '  C  ');
+
+      expect(mceData.sigla).toEqual(['A', 'C']);
+    });
+
+    it('does nothing when witness index is invalid', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any];
+      mceData.sigla = ['A'];
+
+      MceData.setSiglum(mceData, -1, 'B');
+      MceData.setSiglum(mceData, 1, 'C');
+
+      expect(mceData.sigla).toEqual(['A']);
+    });
+
+    it('does nothing when siglum is empty after trimming', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any];
+      mceData.sigla = ['A'];
+
+      MceData.setSiglum(mceData, 0, '   ');
+
+      expect(mceData.sigla).toEqual(['A']);
+    });
+  });
+
+  describe('setAutoMarginalFoliation', () => {
+    it('includes witness index when newState is true', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+
+      MceData.setAutoMarginalFoliation(mceData, 1, true);
+
+      expect(mceData.includeInAutoMarginalFoliation).toContain(1);
+    });
+
+    it('removes witness index when newState is false', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+      mceData.includeInAutoMarginalFoliation = [0, 1];
+
+      MceData.setAutoMarginalFoliation(mceData, 1, false);
+
+      expect(mceData.includeInAutoMarginalFoliation).toEqual([0]);
+    });
+
+    it('does nothing when witness index is invalid', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any];
+      mceData.includeInAutoMarginalFoliation = [0];
+
+      MceData.setAutoMarginalFoliation(mceData, -1, true);
+      MceData.setAutoMarginalFoliation(mceData, 1, false);
+
+      expect(mceData.includeInAutoMarginalFoliation).toEqual([0]);
+    });
+  });
+
   describe('addChunk', () => {
     const getDocTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Doc ${id}`));
     const getSourceTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Source ${id}`));

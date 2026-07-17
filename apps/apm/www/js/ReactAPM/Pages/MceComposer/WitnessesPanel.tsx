@@ -2,15 +2,20 @@ import {MceDataInterface} from "@/MceData/MceDataInterface";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import './WitnessesPanel.css';
+import EditableTextField from "@/ReactAPM/Components/EditableTextField";
+import NiceToggle from "@/ReactAPM/Components/NiceToggle";
 
 
 interface WitnessesPanelProps extends TabbableElementProps {
   mceData: MceDataInterface;
+  onChangeSiglum?: (newSiglum: string, witnessIndex: number) => boolean,
+  onChangeAutoFoliation?: (newAutoFoliation: boolean, witnessIndex: number) => boolean,
 }
 
 interface WitnessTableRow {
   siglum: string,
-  title: string
+  title: string,
+  autoFoliation: boolean
 }
 
 interface SiglaGroupsTableRow {
@@ -18,7 +23,7 @@ interface SiglaGroupsTableRow {
   sigla: string[]
 }
 
-export default function WitnessesPanel({mceData}: WitnessesPanelProps) {
+export default function WitnessesPanel({mceData, onChangeSiglum, onChangeAutoFoliation}: WitnessesPanelProps) {
 
   if (mceData.sigla.length === 0) {
     return <>No sigla defined</>;
@@ -30,7 +35,8 @@ export default function WitnessesPanel({mceData}: WitnessesPanelProps) {
     if (witness.localWitnessId !== undefined && witness.localWitnessId !== 'A') {
       title = `${title} (${witness.localWitnessId})`;
     }
-    return {siglum, title};
+    const autoFoliation = mceData.includeInAutoMarginalFoliation?.includes(index) ?? false;
+    return {siglum, title, autoFoliation};
   });
 
 
@@ -39,24 +45,34 @@ export default function WitnessesPanel({mceData}: WitnessesPanelProps) {
       key: "n",
       title: 'N',
       width: '2em',
-      cellContent: (_siglumData, rowIndex) => <>{rowIndex + 1}</>,
+      cellContent: (_witnessData, witnessIndex) => <>{witnessIndex + 1}</>,
     },
     {
       key: "witness",
       title: 'Witness',
-      cellContent: (siglumData) => <>{siglumData.title}</>
+      cellContent: (witnessData) => <>{witnessData.title}</>
     },
     {
       key: "siglum",
       title: 'Siglum',
       width: '5em',
       tdClassName: 'siglum',
-      cellContent: (siglumData) => <>{siglumData.siglum}</>
+      cellContent: (witnessData, witnessIndex) => <EditableTextField text={witnessData.siglum} onConfirm={(newSiglum) => {
+        if (onChangeSiglum) {
+          onChangeSiglum(newSiglum, witnessIndex);
+        } }}/>
     },
     {
       key: "margFol",
       title: 'Marg. Fol.',
-      cellContent: (_siglumData) => <></>
+      cellContent: (witnessData, witnessIndex) => <NiceToggle
+        isOn={witnessData.autoFoliation}
+        onClick={(newState) => {
+          if (onChangeAutoFoliation) {
+            onChangeAutoFoliation(newState, witnessIndex);
+          }
+        }}
+      />
     }
   ];
 

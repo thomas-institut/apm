@@ -39,6 +39,7 @@ import HistoryPanel from "@/ReactAPM/Pages/MceComposer/HistoryPanel";
 import MultiToggle from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import './MceComposer.css';
 import {hashString} from "@/ReactAPM/ToolBox/Hash";
+import {SetSiglumAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetSiglumAction";
 
 // TODO 2026-07-10
 //  - Implement bug notification when actions throw errors
@@ -408,6 +409,17 @@ export default function MceComposer() {
     return true;
   };
 
+  const handleSetSiglum = (witnessIndex: number, newSiglum: string) => {
+    try {
+      history.do(new SetSiglumAction(witnessIndex, newSiglum));
+    } catch (error) {
+      console.error('SetSiglumAction failed', error);
+      return false;
+    }
+    setHistoryVersion(v => v + 1);
+    return true;
+  }
+
   const handleConfirmTitleEdit = (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
     if (sanitizedTitle === mceData.title) return;
@@ -416,7 +428,7 @@ export default function MceComposer() {
       history.do(new ChangeTitleAction(sanitizedTitle));
     } catch (error) {
       console.error('ChangeTitleAction failed', error);
-      return;
+      return false;
     }
     setHistoryVersion(v => v + 1);
   };
@@ -489,7 +501,7 @@ export default function MceComposer() {
       panel: 'one',
       key: 'witnesses',
       title: 'Witnesses',
-      content: <WitnessesPanel mceData={mceData}/>,
+      content: <WitnessesPanel mceData={mceData} onChangeSiglum={(newSiglum, witnessIndex) => handleSetSiglum(witnessIndex, newSiglum)}/>,
       tabbable: true,
     },
 
@@ -665,9 +677,9 @@ export default function MceComposer() {
                      }}/>
 
     <SaveButton changes={changes}/>
-    {changes.length > 0 && <ArrowCounterclockwise className={'icon-btn highlighted'}
+    <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
                                                   onClick={() => handleOnClickRevertChanges()}
-                                                  title={'Click to revert to last saved version'}/>}
+                                                  title={'Click to revert to last saved version'}/>
     <OverlayTrigger trigger="click" placement="bottom" overlay={settingsPopover} rootClose>
       <Gear className={'icon-btn'} title={'Settings'}/>
     </OverlayTrigger>

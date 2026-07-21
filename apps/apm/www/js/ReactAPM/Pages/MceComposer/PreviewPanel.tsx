@@ -6,12 +6,6 @@ import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import {
   ArrowClockwise,
-  ChevronBarLeft,
-  ChevronBarRight,
-  ChevronLeft,
-  ChevronRight,
-  ZoomIn,
-  ZoomOut
 } from "react-bootstrap-icons";
 import {useEffect, useState} from "react";
 import {SystemStyles, SystemStyleSheet} from "@/defaults/EditionStyles/SystemStyleSheet";
@@ -20,6 +14,8 @@ import {TypesetterDocument} from "@thomas-inst/typesetter";
 import {Edition} from "@/Edition/Edition";
 import {getTypesetEdition} from "@/ReactAPM/Pages/MceComposer/EditionTypesetter";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
+import PreviewPageControls from "@/ReactAPM/Pages/MceComposer/PreviewPageControls";
+import PreviewZoomControls from "@/ReactAPM/Pages/MceComposer/PreviewZoomControls";
 
 interface PreviewPanelProps extends TabbableElementProps {
   edition: EditionInterface | null;
@@ -55,7 +51,7 @@ export default function PreviewPanel({edition}: PreviewPanelProps) {
       Edition not ready yet...
     </Panel>;
   }
-  const zoomInPercentage = Math.round(zoom * 100);
+
 
 
   const doTypeset = async () => {
@@ -83,12 +79,10 @@ export default function PreviewPanel({edition}: PreviewPanelProps) {
     }, 0);
   };
 
-
   const styleSheetSelect = <select defaultValue={styleSheetId ?? undefined}
                                    onChange={e => setStyleSheetId(e.target.value)}>
     {Object.keys(systemStyles).map((id) => <option key={id} value={id}>{systemStyles[id]._metaData.name}</option>)}
   </select>;
-
 
   return <Panel className={'preview-panel'}>
     <Toolbar>
@@ -96,16 +90,10 @@ export default function PreviewPanel({edition}: PreviewPanelProps) {
         <div>Style: {styleSheetSelect}</div>
       </div>
       <div className={'toolbar-group center'}>
-        <ChevronBarLeft/>
-        <ChevronLeft/>
-        <div>Page {page}</div>
-        <ChevronRight/>
-        <ChevronBarRight/>
+        { typesetEdition !== null && <PreviewPageControls page={page} totalPages={typesetEdition.getPageCount()} onChange={(p) => setPage(p)}/>}
       </div>
       <div className={'toolbar-group center'}>
-        <div>Zoom {zoomInPercentage}%</div>
-        <div><ZoomIn/></div>
-        <div><ZoomOut/></div>
+        { typesetEdition !== null && <PreviewZoomControls zoom={zoom} onChange={(z) => setZoom(z)}/>}
       </div>
       <div className={'toolbar-group right'}>
         {!previewUpToDate && <ComponentWithPending pending={refreshingPreview}>Out of date <ArrowClockwise className={'tb-button'}

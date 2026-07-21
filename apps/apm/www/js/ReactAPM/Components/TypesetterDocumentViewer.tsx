@@ -21,7 +21,7 @@ export default function TypesetterDocumentViewer({doc, zoom, page, className}: T
     {doc === null && 'Waiting for TypesetDocument '}
     {doc !== null && (
       <>
-        TypesetDocumentViewer zoom {zoom} page {page}
+        TypesetDocumentViewer zoom {zoom} page {page + 1}
       </>
     )}
 

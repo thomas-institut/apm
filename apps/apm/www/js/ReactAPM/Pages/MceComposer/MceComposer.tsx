@@ -47,9 +47,9 @@ import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/Chang
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteSiglaGroupAction";
 import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel";
 
-// TODO 2026-07-17
+// TODO 2026-07-21
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
-//  - Implement preview panel
+//  - Implement getPDF in preview panel
 //  - Implement versions panel
 //  - Implement showing tags in chunks panel
 

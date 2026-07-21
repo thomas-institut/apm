@@ -4,9 +4,7 @@ import './PreviewPanel.css';
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
-import {
-  ArrowClockwise,
-} from "react-bootstrap-icons";
+import {ArrowClockwise,} from "react-bootstrap-icons";
 import {useEffect, useState} from "react";
 import {SystemStyles, SystemStyleSheet} from "@/defaults/EditionStyles/SystemStyleSheet";
 import TypesetterDocumentViewer from "@/ReactAPM/Components/TypesetterDocumentViewer/TypesetterDocumentViewer";
@@ -16,6 +14,7 @@ import {getTypesetEdition} from "@/ReactAPM/Pages/MceComposer/EditionTypesetter"
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import PreviewPageControls from "@/ReactAPM/Pages/MceComposer/PreviewPageControls";
 import PreviewZoomControls from "@/ReactAPM/Pages/MceComposer/PreviewZoomControls";
+import {Spinner} from "react-bootstrap";
 
 interface PreviewPanelProps extends TabbableElementProps {
   edition: EditionInterface | null;
@@ -23,7 +22,7 @@ interface PreviewPanelProps extends TabbableElementProps {
 
 export default function PreviewPanel({edition}: PreviewPanelProps) {
 
-  const [page, setPage] = useState(1);
+  const [page, setPage] = useState(0);
   const [zoom, setZoom] = useState(1);
   const [typesetEdition, setTypesetEdition] = useState<null | TypesetterDocument>(null);
   const [styleSheetId, setStyleSheetId] = useState<string | null>(null);
@@ -51,7 +50,6 @@ export default function PreviewPanel({edition}: PreviewPanelProps) {
       Edition not ready yet...
     </Panel>;
   }
-
 
 
   const doTypeset = async () => {
@@ -84,9 +82,14 @@ export default function PreviewPanel({edition}: PreviewPanelProps) {
     setPreviewUpToDate(false);
     setRefreshingPreview(true);
     setTimeout(async () => {
-      setTypesetEdition(await doTypeset());
+      const newlyTypesetEdition = await doTypeset();
+      if (newlyTypesetEdition !== null) {
+        setPage(Math.min(page, newlyTypesetEdition.getPageCount() - 1));
+      }
+      setTypesetEdition(newlyTypesetEdition);
       setRefreshingPreview(false);
       setPreviewUpToDate(true);
+
     }, 0);
   };
 
@@ -101,19 +104,26 @@ export default function PreviewPanel({edition}: PreviewPanelProps) {
         <div>Style: {styleSheetSelect}</div>
       </div>
       <div className={'toolbar-group center'}>
-        { typesetEdition !== null && <PreviewPageControls page={page} totalPages={typesetEdition.getPageCount()} onChange={(p) => setPage(p)}/>}
+        {typesetEdition !== null &&
+          <PreviewPageControls page={page} totalPages={typesetEdition.getPageCount()} onChange={(p) => setPage(p)}/>}
       </div>
       <div className={'toolbar-group center'}>
-        { typesetEdition !== null && <PreviewZoomControls zoom={zoom} onChange={(z) => setZoom(z)}/>}
+        {typesetEdition !== null && <PreviewZoomControls zoom={zoom} onChange={(z) => setZoom(z)}/>}
       </div>
       <div className={'toolbar-group right'}>
-        {!previewUpToDate && <ComponentWithPending pending={refreshingPreview}>Out of date <ArrowClockwise className={'tb-button'}
-                                                                                               onClick={handleClickOnRefresh}/></ComponentWithPending>}
+        {!previewUpToDate &&
+          <ComponentWithPending pending={refreshingPreview}
+                                pendingElement={<span>Refreshing preview... <Spinner size={'sm'}/></span>}>
+            <span className={'tb-btn'} onClick={handleClickOnRefresh}
+                  title={'Click to refresh preview'}>Out of date <ArrowClockwise/></span>
+          </ComponentWithPending>}
         {previewUpToDate && <div>PDF</div>}
       </div>
     </Toolbar>
     <PanelContent>
-      <TypesetterDocumentViewer doc={typesetEdition} zoom={zoom} page={page}/>
+      <TypesetterDocumentViewer doc={typesetEdition} zoom={zoom} page={page}
+                                placeHolder={<div className={'placeholder'}>Click on the <ArrowClockwise/> icon above to
+                                  refresh the preview</div>}/>
     </PanelContent>
   </Panel>;
 }

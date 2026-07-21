@@ -1,10 +1,27 @@
-import {CSSProperties, ReactNode, useLayoutEffect, useRef, useState} from "react";
+import {CSSProperties, JSX, ReactNode, useLayoutEffect, useRef, useState} from "react";
 import {Spinner} from "react-bootstrap";
 
 interface ComponentWithPendingProps {
+  /**
+   * if true, the pending component will be displayed instead of the children
+   */
   pending: boolean;
+
+  /**
+   * Element to display when pending is true.
+   *
+   * If not given, a spinner will be displayed
+   *
+   */
+  pendingElement?: JSX.Element;
+  /**
+   * The title to display on the spinner if no pendingElement is given
+   */
   pendingTitle?: string;
-  smartContainer?: boolean
+  /**
+   * If true, the pending component will be displayed in a smart container that will resize to fit the pending component.
+   */
+  smartContainer?: boolean;
   children: ReactNode;
 }
 
@@ -27,12 +44,15 @@ export default function ComponentWithPending(props: ComponentWithPendingProps){
     }
   }, [ref]);
 
+  const content = <>
+    { props.pending && props.pendingElement && props.pendingElement}
+    { props.pending && !props.pendingElement && <Spinner animation={'border'} size={'sm'}
+                                                         title={props.pendingTitle ?? ''}/>}
+    {!props.pending && props.children}
+  </>
+
   if (!smartContainer) {
-    return <>
-      { props.pending && <Spinner animation={'border'} size={'sm'}
-                                  title={props.pendingTitle ?? ''}/>}
-      {!props.pending && props.children}
-    </>;
+    return content;
   }
 
   const style: CSSProperties = props.pending  && dimensions.width !== -1 ? {
@@ -45,9 +65,7 @@ export default function ComponentWithPending(props: ComponentWithPendingProps){
 
 
   return <span ref={ref} style={style}>
-    { props.pending && <Spinner animation={'border'} size={'sm'}
-             title={props.pendingTitle ?? ''}/>}
-    {!props.pending && props.children}
+    {content}
   </span>;
 }
 

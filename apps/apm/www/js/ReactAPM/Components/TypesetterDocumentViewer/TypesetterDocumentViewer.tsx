@@ -1,5 +1,5 @@
 import {TypesetterDocument} from "@thomas-inst/typesetter";
-import React, {useEffect, useRef} from "react";
+import React, {JSX, useEffect, useRef} from "react";
 import {PagedCanvasRenderer} from "@/ReactAPM/Components/TypesetterDocumentViewer/PagedCanvasRenderer";
 import './TypesetterDocumentViewer.css';
 import {BrowserUtilities} from "@/toolbox/BrowserUtilities";
@@ -9,17 +9,12 @@ interface TypesetterDocumentViewer {
   doc: TypesetterDocument | null
   zoom: number,
   page: number,
-  className?: string,
-  style?: React.CSSProperties,
+  placeHolder?: JSX.Element
 }
 
 
-export default function TypesetterDocumentViewer({doc, zoom, page, className}: TypesetterDocumentViewer) {
+export default function TypesetterDocumentViewer({doc, zoom, page, placeHolder}: TypesetterDocumentViewer) {
 
-  let classes = 'doc-viewer';
-  if (className) {
-    classes += ' ' + className;
-  }
 
   const canvasElement = useRef<HTMLCanvasElement>(null);
   const canvasRenderer = useRef<PagedCanvasRenderer|null>(null);
@@ -34,7 +29,7 @@ export default function TypesetterDocumentViewer({doc, zoom, page, className}: T
     if (doc === null) {
       return;
     }
-    canvasRenderer.current.setCurrentPage(page);
+    canvasRenderer.current.setCurrentPage(Math.min(page, doc.getPageCount() -1 ));
     canvasRenderer.current.setScale(zoom);
     const [width, height] = canvasRenderer.current.getCanvasDimensionsForDoc(doc);
     BrowserUtilities.setCanvasHiPDI(canvasElement.current, width, height);
@@ -42,7 +37,7 @@ export default function TypesetterDocumentViewer({doc, zoom, page, className}: T
   }, [doc, page, zoom]);
 
   if (doc===null) {
-    return <div className={classes}>Waiting for TypesetDocument</div>;
+    return placeHolder ?? <div>Waiting for TypesetDocument</div>;
   }
 
   return  <canvas ref={canvasElement}></canvas>;

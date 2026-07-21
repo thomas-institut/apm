@@ -48,7 +48,15 @@
     .panel-content {
         background: #e3e3e3;
         text-align: center;
-        padding: 1em
+        padding: 1em;
+
+        .placeholder {
+            text-align: center;
+            font-size: 1.2em;
+            padding: 3em;
+            background: transparent;
+            cursor: default;
+        }
     }
 
 }

@@ -9,7 +9,7 @@ import {
 } from "react-bootstrap-icons";
 import {useEffect, useState} from "react";
 import {SystemStyles, SystemStyleSheet} from "@/defaults/EditionStyles/SystemStyleSheet";
-import TypesetterDocumentViewer from "@/ReactAPM/Components/TypesetterDocumentViewer";
+import TypesetterDocumentViewer from "@/ReactAPM/Components/TypesetterDocumentViewer/TypesetterDocumentViewer";
 import {TypesetterDocument} from "@thomas-inst/typesetter";
 import {Edition} from "@/Edition/Edition";
 import {getTypesetEdition} from "@/ReactAPM/Pages/MceComposer/EditionTypesetter";
@@ -65,6 +65,17 @@ export default function PreviewPanel({edition}: PreviewPanelProps) {
 
     const editionObject = (new Edition()).setFromInterface(edition);
     const styleSheet = SystemStyleSheet.getStyleSheet(edition.lang, styleSheetId);
+    // Load fonts
+    console.log(`Loading fonts`);
+    let fontsToLoad: string[] = [];
+    styleSheet.getFontFamilies().forEach((fontFamily) => {
+      fontsToLoad.push(`1em ${fontFamily}`, `bold 1em ${fontFamily}`, `italic 1em ${fontFamily}`, `bold italic 1em ${fontFamily}`);
+    });
+
+    for (let i = 0; i < fontsToLoad.length; i++) {
+      await document.fonts.load(fontsToLoad[i]);
+      console.log(` Loaded ${fontsToLoad[i]} `);
+    }
 
     return getTypesetEdition(editionObject, styleSheet);
   };

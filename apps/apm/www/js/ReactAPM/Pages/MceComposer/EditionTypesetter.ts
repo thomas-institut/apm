@@ -64,7 +64,7 @@ export async function getTypesetEdition(edition: Edition, styleSheet: StyleSheet
     textToLineNumbersInCm: Dimension.str2cm(defaultStyleDef.page?.lineNumbersToTextDistance ?? '1cm', defaultFontSize),
     textToApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minDistanceFromApparatusToText ?? '1cm'),
     interApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minInterApparatusDistance ?? '1cm'),
-    textToMarginaliaInCm: Dimension.str2cm(0.3), // TODO: add to stylesheet
+    textToMarginaliaInCm: Dimension.str2cm('0.3cm'), // TODO: add to stylesheet
     debug: true
   };
 

@@ -14,12 +14,12 @@ export default function PreviewZoomControls({zoom, onChange}: PreviewZoomControl
   const currentZoomStep = zoomSteps.findIndex(z => z === closestZoom) ?? 3;
 
   return <>
-    <div><ZoomOut onClick={() => currentZoomStep !== 0 && onChange(zoomSteps[currentZoomStep - 1])}/></div>
+    <div><ZoomOut className={'tb-btn'} title="Zoom Out" onClick={() => currentZoomStep !== 0 && onChange(zoomSteps[currentZoomStep - 1])}/></div>
 
     <div>Zoom <select value={closestZoom} onChange={(e) => onChange(Number(e.target.value))}>{
       zoomSteps.map(z => <option key={z} value={z}>{toPercentage(z)}%</option>)
     }</select></div>
-    <div><ZoomIn onClick={() => currentZoomStep !== zoomSteps.length - 1 && onChange(zoomSteps[currentZoomStep + 1])}/>
+    <div><ZoomIn className={'tb-btn'} title="Zoom In" onClick={() => currentZoomStep !== zoomSteps.length - 1 && onChange(zoomSteps[currentZoomStep + 1])}/>
     </div>
   </>;
 }

@@ -28,7 +28,27 @@
             justify-content: end;
         }
 
+        .tb-btn {
+            background: transparent;
+            border: none;
+            cursor: pointer;
+        }
 
+        .tb-btn:hover {
+            opacity: 0.8;
+        }
+
+        .tb-btn.disabled {
+            opacity: 0.5;
+            cursor: default;
+        }
+
+    }
+
+    .panel-content {
+        background: #e3e3e3;
+        text-align: center;
+        padding: 1em
     }
 
 }

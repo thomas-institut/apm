@@ -3,8 +3,6 @@ import {cloneElement, JSX, useContext, useEffect, useRef, useState} from "react"
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
-import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
-import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import {
   Arrow90degLeft,
   Arrow90degRight,
@@ -47,11 +45,10 @@ import {
 import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeSiglaGroupAction";
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteSiglaGroupAction";
+import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel";
 
 // TODO 2026-07-17
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
-//  - Design data slices for components, do not pass mceData around
-//  - Implement add/edit sigla groups
 //  - Implement preview panel
 //  - Implement versions panel
 //  - Implement showing tags in chunks panel
@@ -602,12 +599,7 @@ export default function MceComposer() {
       title: 'Preview',
       expandable: true,
       className: 'preview-panel',
-      content: <Panel>
-        <Toolbar className={'preview-toolbar'}>Preview Toolbar</Toolbar>
-        <PanelContent>
-          Preview will be here...
-        </PanelContent>
-      </Panel>,
+      content: <PreviewPanel edition={edition}/>,
       tabbable: true,
     },
     {

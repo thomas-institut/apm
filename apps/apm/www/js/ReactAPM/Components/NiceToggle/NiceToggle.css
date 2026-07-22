@@ -5,10 +5,12 @@
     border: 1px solid lightgrey;
     border-radius: 0.25em;
     cursor: pointer;
+    font-size: 0.8em;
 }
 
 .nice-toggle.on {
-    border: 1px solid gray
+    border: 1px solid gray;
+    font-size: 0.9em;
 }
 
 .nice-toggle.off {

@@ -232,7 +232,8 @@ export default function ChunksPanel({
 
     {
       key: 'n',
-      title: 'N',
+      title: '#',
+
       cellContent: (_row, index) => <>{index + 1}</>
     },
     {
@@ -258,6 +259,7 @@ export default function ChunksPanel({
     {
       key: 'version',
       title: 'Version',
+      tdClassName: 'version',
       cellContent: (row) => <>{row.version === null ? '' : ApmFormats.time(row.version)}</>,
     },
     {

@@ -3,7 +3,7 @@
     --icon-btn-color: var(--bs-body-color, black);
     --icon-btn-hover: var(--link-color-hover, #0d6efd);
     --icon-btn-disabled: silver;
-    --icon-btn-highlighted:  var(--link-color-hover, blue);
+    --icon-btn-highlighted: var(--link-color-hover, blue);
 
     display: grid;
     grid-template-rows: auto 1fr;
@@ -106,7 +106,6 @@
     }
 
 
-
     .preview-toolbar {
         background-color: #f5f5f5;
     }
@@ -155,7 +154,22 @@
         color: var(--icon-btn-hover);
     }
 
+    table.nice-table {
+        --td-padding: 0.5em 0.5em;
+        --th-padding: 1em 0.5em 0.1em 0.5em;
 
+        th {
+            /*border-bottom: 1px dotted #e3e3e3;*/
+            color: #c6c6c6;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .highlighted {
+            animation: flash2 1s ease-in-out;
+        }
+
+    }
 
 }
 
@@ -185,7 +199,6 @@
         align-items: center;
     }
 }
-
 
 
 .settings-popover {
@@ -234,11 +247,13 @@
 .save-changes-popover {
     .popover-body {
         padding: 1em;
+
         p.notice {
             padding: 0;
             font-weight: bold;
             margin-bottom: 0.5em;
         }
+
         ul {
             list-style: none;
             padding: 0;

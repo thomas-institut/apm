@@ -72,7 +72,7 @@ export default function WitnessesPanel({
   const witnessesTableColumnDefs: NiceTableColumnDef<WitnessData>[] = [
     {
       key: "n",
-      title: 'N',
+      title: '#',
       width: '2em',
       cellContent: (_witnessData, witnessIndex) => <>{witnessIndex + 1}</>,
     },

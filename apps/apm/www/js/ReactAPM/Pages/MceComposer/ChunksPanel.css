@@ -3,18 +3,9 @@
     height: 100%;
     overflow: auto;
 
-    table.nice-table {
-        --td-padding: 1em 0.5em;
-        --th-padding: 2em 0.5em 1em 0.5em;
 
-        th {
-            border-bottom: 1px solid #ececec;
-        }
-
-        .highlighted {
-            animation: flashBackground 1.5s ease-in-out;
-        }
-
+    td.version {
+        font-size: 0.8em;
     }
 
     .chunk-table-arrows {
@@ -44,7 +35,7 @@
 }
 
 :root {
-    --flash-background-color: var(--warning, #fff3ac);
+    --flash-background-color: var(--warning, #c4ffac);
 }
 
 @keyframes flashBackground {
@@ -60,6 +51,16 @@
     30% {
         background-color: var(--flash-background-color);
     }
+}
+
+@keyframes flash2 {
+    0% {
+        background-color: var(--flash-background-color);
+    }
+    100% {
+        background-color: initial;
+    }
+
 }
 
 @keyframes fadeIn {

@@ -50,8 +50,13 @@ import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {urlGen} from "@/pages/common/SiteUrlGen";
 
-// TODO 2026-07-21
+// TODO 2026-07-22
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
+//  - Implement load active chunks table and adding chunks from it
+//  - Implement update chunk action
+
+
+// TODO: for later
 //  - Implement versions panel
 //  - Implement showing tags in chunks panel
 

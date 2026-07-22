@@ -19,6 +19,8 @@ vi.mock('react-bootstrap', () => {
   const PopoverComponent = ({children}: {children: React.ReactNode}) => <div>{children}</div>;
   const PopoverHeader = ({children}: {children: React.ReactNode}) => <div>{children}</div>;
   const PopoverBody = ({children}: {children: React.ReactNode}) => <div>{children}</div>;
+  // Simple mock for Spinner to avoid missing export errors in tests
+  const Spinner = (props: any) => <span {...props} data-testid="spinner-mock"/>;
 
   return {
     Form: {
@@ -30,7 +32,8 @@ vi.mock('react-bootstrap', () => {
     Popover: Object.assign(PopoverComponent, {
       Header: PopoverHeader,
       Body: PopoverBody
-    })
+    }),
+    Spinner,
   };
 });
 
@@ -102,6 +105,10 @@ vi.mock('react-bootstrap-icons', () => {
     ChevronRight: Icon,
     LayoutSplit: Icon,
     Gear: Icon,
+    // Icons used in SessionPanel and other components
+    CheckCircleFill: Icon,
+    Circle: Icon,
+    Save: Icon,
   };
 });
 
@@ -113,6 +120,16 @@ vi.mock('@/ReactAPM/Pages/MceComposer/MainTextPanel', () => ({
   default: ({onClickRegenerate}: {onClickRegenerate: () => void}) => (
     <button type="button" onClick={onClickRegenerate}>Regenerate</button>
   )
+}));
+
+// Mock SessionPanel to avoid interval timers in tests
+vi.mock('@/ReactAPM/Pages/MceComposer/SessionPanel', () => ({
+  default: () => <div>session</div>
+}));
+
+// Mock PreviewPanel to avoid stylesheet errors and heavy rendering
+vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel', () => ({
+  default: () => <div>preview</div>
 }));
 
 // @ts-expect-error test-only global binding

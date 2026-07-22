@@ -25,6 +25,7 @@ import {ChangeTitleAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeTitl
 import {DeleteChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteChunkAction";
 import {MoveChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/MoveChunkAction";
 import {SetChunkBreakAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetChunkBreakAction";
+import {AddChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/AddChunkAction";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 import WitnessesPanel, {WitnessData} from "@/ReactAPM/Pages/MceComposer/WitnessesPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
@@ -49,6 +50,7 @@ import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {urlGen} from "@/pages/common/SiteUrlGen";
+import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel";
 
 // TODO 2026-07-22
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
@@ -397,6 +399,32 @@ export default function MceComposer() {
     return true;
   };
 
+  const addChunk = async (tableId: number, version: string = ''): Promise<boolean> => {
+    console.log(`Add chunk from table ${tableId}, version '${version}'`);
+    try {
+      const chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, version);
+      const getDocTitle = async (docId: number): Promise<string> => {
+        return appContext.apiClient.getEntityName(docId);
+      };
+      const getSourceTitle = async (sourceId: number): Promise<string> => {
+        return appContext.apiClient.getEntityName(sourceId);
+      };
+      history.do(new AddChunkAction(
+        tableId,
+        chunkApiData.ctData,
+        chunkApiData.timeStamp,
+        getDocTitle,
+        getSourceTitle,
+      ));
+    } catch (error) {
+      reportActionBug('AddChunkAction', error);
+      return false;
+    }
+    setHistoryVersion(v => v + 1);
+    setChunksPanelVersion(v => v + 1);
+    return true;
+  };
+
   const moveChunk = (chunkPosition: number, direction: 'up' | 'down') => {
     console.log(`Move chunk at position ${chunkPosition} '${direction}'`);
     try {
@@ -654,7 +682,8 @@ export default function MceComposer() {
       key: 'addChunks',
       title: 'Add Chunks',
       expandable: true,
-      content: <>Add chunks will be here...</>
+      content: <AddChunksPanel addChunk={(tableId, version) => { return addChunk(tableId, version); }} currentChunkTableIds={mceData.chunks.map(chunk => chunk.chunkEditionTableId) ?? []}/>,
+      tabbable: true,
     },
     // {
     //   panel: 'two',

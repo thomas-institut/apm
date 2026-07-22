@@ -3,6 +3,7 @@ import { ChangeTitleAction } from '@/ReactAPM/Pages/MceComposer/Actions/ChangeTi
 import { MoveChunkAction } from '@/ReactAPM/Pages/MceComposer/Actions/MoveChunkAction';
 import { DeleteChunkAction } from '@/ReactAPM/Pages/MceComposer/Actions/DeleteChunkAction';
 import { SetChunkBreakAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetChunkBreakAction';
+import { AddChunkAction } from '@/ReactAPM/Pages/MceComposer/Actions/AddChunkAction';
 import { SetSiglumAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetSiglumAction';
 import { SetIncludeInAutoMarginalFoliationAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction';
 import { MceDataInterface } from '@/MceData/MceDataInterface';
@@ -106,6 +107,47 @@ describe('MCE Actions', () => {
 
       const result = action.execute(state);
       expect(result.mceData.chunks[1].break).toBe('paragraph');
+    });
+  });
+
+  describe('AddChunkAction', () => {
+    it('should add chunk', () => {
+      const state = makeState(makeBaseMceData());
+      const action = new AddChunkAction(
+        10,
+        {
+          lang: 'la',
+          witnesses: [{ witnessType: 'edition', ApmWitnessId: 'edition', tokens: [] } as any],
+          editionWitnessIndex: 0,
+          witnessTitles: ['Edition'],
+          witnessOrder: [0],
+          sigla: ['E'],
+          siglaGroups: [],
+          chunkId: '1',
+          tableId: 10,
+          customApparatuses: [],
+          schemaVersion: '1.0',
+          type: 'ctable',
+          title: 'Chunk 1',
+          collationMatrix: [],
+          groupedColumns: [],
+          automaticNormalizationsApplied: [],
+          excludeFromAutoCriticalApparatus: [],
+          includeInAutoMarginalFoliation: [],
+          archived: false,
+        },
+        '2025-01-01',
+        async (_docId) => 'Doc',
+        async (_sourceId) => 'Source',
+      );
+
+      const result = action.execute(state);
+      expect(result.mceData.chunks.length).toBe(1);
+      expect(result.mceData.chunks[0].chunkId).toBe('1');
+      expect(result.mceData.chunks[0].chunkEditionTableId).toBe(10);
+      expect(result.mceData.chunks[0].version).toBe('2025-01-01');
+      expect(result.mceData.chunkOrder).toEqual([0]);
+      expect(action.description()).toBe('Add chunk 1 to edition');
     });
   });
 

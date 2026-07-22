@@ -21,6 +21,7 @@ vi.mock('react-bootstrap', () => {
   const PopoverBody = ({children}: {children: React.ReactNode}) => <div>{children}</div>;
   // Simple mock for Spinner to avoid missing export errors in tests
   const Spinner = (props: any) => <span {...props} data-testid="spinner-mock"/>;
+  const Button = ({children, ...props}: any) => <button {...props}>{children}</button>;
 
   return {
     Form: {
@@ -34,6 +35,7 @@ vi.mock('react-bootstrap', () => {
       Body: PopoverBody
     }),
     Spinner,
+    Button,
   };
 });
 

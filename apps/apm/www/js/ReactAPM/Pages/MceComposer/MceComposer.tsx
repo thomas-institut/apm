@@ -46,6 +46,7 @@ import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeSiglaGroupAction";
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteSiglaGroupAction";
 import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel";
+import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 
 // TODO 2026-07-21
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
@@ -118,7 +119,6 @@ export default function MceComposer() {
   const [chunksPanelVersion, setChunksPanelVersion] = useState<number>(0);
   const [foundBug, setFoundBug] = useState<boolean>(false);
   const [foundBugDescription, setFoundBugDescription] = useState<string>('');
-
   const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
 
 
@@ -491,6 +491,14 @@ export default function MceComposer() {
     setExpandedTab(null);
   };
 
+  const getPdfUrl = async (data: ApiTypesetPdfRequestData) => {
+    const apiResponse = await appContext.apiClient.getPdfDownloadUrl(data);
+    if (apiResponse.url !== null) {
+      return apiResponse.url;
+    }
+    throw apiResponse.errorMsg;
+  }
+
   const handleOnClickRevertChanges = () => {
     console.log(`Click on revert changes`);
     const savedIndex = history.getHistory().findIndex(item => item.signature === savedStateSignature);
@@ -599,7 +607,7 @@ export default function MceComposer() {
       title: 'Preview',
       expandable: true,
       className: 'preview-panel',
-      content: <PreviewPanel edition={edition}/>,
+      content: <PreviewPanel edition={edition} getPdfUrl={getPdfUrl}/>,
       tabbable: true,
     },
     {

@@ -13,9 +13,17 @@ import {CanvasTextBoxMeasurer} from "@/lib/CanvasTextBoxMeasurer";
 import {isRtl} from "@/toolbox/Util";
 import {ApparatusInterface} from "@/Edition/EditionInterface";
 import {BasicProfiler} from "@/toolbox/BasicProfiler";
+import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 
-export async function getTypesetEdition(edition: Edition, styleSheet: StyleSheet): Promise<TypesetterDocument> {
+interface TypesettingParameters {
+  options: BasicTypesetterOptions<ApparatusInterface>,
+  helper: EditionTypesettingHelper,
+  helperOptions: EditionTypesettingHelperOptions,
+  mainTextList: ItemList,
+  extraData: { apparatuses: ApparatusInterface[] }
+}
 
+export async function getTypesettingParameters(edition: Edition, styleSheet: StyleSheet, styleId: string): Promise<TypesettingParameters> {
   let strings = styleSheet.getStrings();
   let defaultStyleDef = styleSheet.getStyleDef('default');
   let apparatusStyleDef = styleSheet.getStyleDef('apparatus');
@@ -33,6 +41,7 @@ export async function getTypesetEdition(edition: Edition, styleSheet: StyleSheet
     edition: edition,
     editionStyleSheet: styleSheet,
     textBoxMeasurer: new CanvasTextBoxMeasurer(),
+    styleId: styleId,
     debug: false
   };
 
@@ -103,7 +112,7 @@ export async function getTypesetEdition(edition: Edition, styleSheet: StyleSheet
 
   const helper = new EditionTypesettingHelper(helperOptions);
 
-  const typesettingParameters: BasicTypesetterOptions<ApparatusInterface> = {
+  const typesetterOptions: BasicTypesetterOptions<ApparatusInterface> = {
     pageWidth: geometry.pageWidth,
     pageHeight: geometry.pageHeight,
     marginTop: geometry.margin.top,
@@ -164,10 +173,44 @@ export async function getTypesetEdition(edition: Edition, styleSheet: StyleSheet
   const extraData = { apparatuses: edition.apparatuses }
 
   await helper.setup();
-  const verticalListToTypeset = await helper.generateListToTypesetFromMainText();
-  const typesetter = new BasicTypesetter(typesettingParameters);
+  const mainTextList = await helper.generateListToTypesetFromMainText();
+
+  return {
+    options: typesetterOptions,
+    helper,
+    helperOptions,
+    mainTextList,
+    extraData
+  }
+}
+
+export async function getTypesetEdition(edition: Edition, styleSheet: StyleSheet, styleId: string): Promise<TypesetterDocument> {
+  const params = await getTypesettingParameters(edition, styleSheet, styleId);
+  const typesetter = new BasicTypesetter(params.options);
   const profiler = new BasicProfiler('Typesetting', true);
-  const doc = await typesetter.typeset(verticalListToTypeset, extraData);
+  const doc = await typesetter.typeset(params.mainTextList, params.extraData);
   profiler.stop();
   return doc;
+}
+
+export async function getApiPdfData(edition: Edition, styleSheet: StyleSheet, styleId: string): Promise<ApiTypesetPdfRequestData> {
+  const params = await getTypesettingParameters(edition, styleSheet, styleId);
+
+  // TODO: check if this is needed
+  // delete browser-specific options, these will be set by the server-side process
+  params.options.textBoxMeasurer = undefined;
+  params.options.getApparatusListToTypeset = undefined;
+  params.options.preTypesetApparatuses = undefined;
+  // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
+  params.helperOptions.textBoxMeasurer = undefined;
+  params.options.pageNumbersOptions.textBoxMeasurer = undefined;
+  params.options.marginaliaOptions.textBoxMeasurer  = undefined;
+  params.options.lineNumbersOptions.textBoxMeasurer = undefined;
+
+  return {
+    options: params.options,
+    helperOptions: params.helperOptions,
+    mainTextList: params.mainTextList.getExportObject(),
+    extraData: params.extraData
+  }
 }

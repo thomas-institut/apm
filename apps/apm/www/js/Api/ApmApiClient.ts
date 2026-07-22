@@ -37,7 +37,7 @@ import {
 import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
-import {ApiClientPdfUrlResponse, ApiTypesetPdfResponse} from "@/Api/DataSchema/ApiPdfUrlResponse";
+import {ApiClientPdfUrlResponse, ApiTypesetPdfRequestData, ApiTypesetPdfResponse} from "@/Api/DataSchema/ApiPdfUrl";
 import {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 import {DocInfo, DocumentData, PageInfo} from "@/Api/DataSchema/ApiDocuments";
 import {AllPeopleDataForPeoplePageItem, PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
@@ -195,9 +195,9 @@ export class ApmApiClient {
     return await this.getApmEntityData('Person', 'essential', personId, 'local');
   }
 
-  async getPdfDownloadUrl(rawData: any): Promise<ApiClientPdfUrlResponse> {
+  async getPdfDownloadUrl(pdfRequestData: ApiTypesetPdfRequestData): Promise<ApiClientPdfUrlResponse> {
     try {
-      const resp = await this.post(urlGen.apiTypesetPdf(), rawData, true) as ApiTypesetPdfResponse | ApiErrorResponse;
+      const resp = await this.post(urlGen.apiTypesetPdf(), pdfRequestData, true) as ApiTypesetPdfResponse | ApiErrorResponse;
       this.verbose && console.log(`Got PDF download resp`, resp);
       if (resp.result === 'Error') {
         return {

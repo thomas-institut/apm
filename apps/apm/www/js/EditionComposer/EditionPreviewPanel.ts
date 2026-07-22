@@ -27,6 +27,7 @@ import {Dimension} from '@thomas-inst/typesetter';
 import {SystemStyles, SystemStyleSheet} from '@/defaults/EditionStyles/SystemStyleSheet';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {StyleSheet} from "@thomas-inst/typesetter";
+import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>', updatePreview: '<i class="bi bi-arrow-counterclockwise"></i>'
@@ -274,7 +275,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       typesettingParameters.typesetterOptions.marginaliaOptions.textBoxMeasurer  = undefined;
       typesettingParameters.typesetterOptions.lineNumbersOptions.textBoxMeasurer = undefined;
 
-      let data = {
+      let data: ApiTypesetPdfRequestData = {
         options: typesettingParameters.typesetterOptions,
         helperOptions: typesettingParameters.helperOptions,
         mainTextList: this.viewer.getMainTextListToTypeset(),

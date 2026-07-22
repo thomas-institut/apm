@@ -6,7 +6,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {act} from 'react';
 import {describe, expect, it, vi} from 'vitest';
-import HistoryPanel from '@/ReactAPM/Pages/MceComposer/HistoryPanel';
+import SessionPanel from '@/ReactAPM/Pages/MceComposer/SessionPanel';
 import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 
 // Mock ApmFormats
@@ -60,7 +60,7 @@ describe('HistoryPanel', () => {
 
     await act(async () => {
       root.render(
-        <HistoryPanel
+        <SessionPanel
           history={history}
           savedStateSignature={savedSignature}
           onGoTo={vi.fn()}
@@ -82,7 +82,7 @@ describe('HistoryPanel', () => {
 
     await act(async () => {
       root.render(
-        <HistoryPanel
+        <SessionPanel
           history={history}
           savedStateSignature={savedSignature}
           onGoTo={vi.fn()}
@@ -104,7 +104,7 @@ describe('HistoryPanel', () => {
 
     await act(async () => {
       root.render(
-        <HistoryPanel
+        <SessionPanel
           history={history}
           savedStateSignature={savedSignature}
           onGoTo={vi.fn()}
@@ -130,7 +130,7 @@ describe('HistoryPanel', () => {
 
     await act(async () => {
       root.render(
-        <HistoryPanel
+        <SessionPanel
           history={history}
           savedStateSignature={savedSignature}
           onGoTo={vi.fn()}

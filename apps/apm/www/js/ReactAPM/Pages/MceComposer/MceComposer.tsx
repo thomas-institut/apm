@@ -34,7 +34,7 @@ import {BasicProfiler} from "@/toolbox/BasicProfiler";
 import MainTextPanel from "@/ReactAPM/Pages/MceComposer/MainTextPanel";
 import ApmLogo from "@/ReactAPM/Components/ApmLogo/ApmLogo";
 import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
-import HistoryPanel from "@/ReactAPM/Pages/MceComposer/HistoryPanel";
+import SessionPanel from "@/ReactAPM/Pages/MceComposer/SessionPanel";
 import MultiToggle from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import './MceComposer.css';
 import {hashString} from "@/ReactAPM/ToolBox/Hash";
@@ -48,6 +48,7 @@ import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/Delet
 import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
+import {urlGen} from "@/pages/common/SiteUrlGen";
 
 // TODO 2026-07-21
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
@@ -555,7 +556,8 @@ export default function MceComposer() {
       }
       console.log(`Saved MCE data`, response);
       if (mceDataId === -1) {
-        // TODO: reload with right id
+        // TODO: make sure this redirects to the right place!
+        window.location.href = urlGen.siteMultiChunkEdition(response.editionId);
       }
       // reset history
       history.reset(history.getCurrentState(), 'Last save');
@@ -637,7 +639,7 @@ export default function MceComposer() {
       panel: 'two',
       key: 'preview',
       title: 'Preview',
-      expandable: true,
+      expandable: false,
       className: 'preview-panel',
       content: <PreviewPanel edition={edition} getPdfUrl={getPdfUrl}/>,
       tabbable: true,
@@ -649,18 +651,18 @@ export default function MceComposer() {
       expandable: true,
       content: <>Add chunks will be here...</>
     },
+    // {
+    //   panel: 'two',
+    //   key: 'versions',
+    //   title: 'Versions',
+    //   expandable: true,
+    //   content: <>Versions will be here...</>
+    // },
     {
       panel: 'two',
-      key: 'versions',
-      title: 'Versions',
-      expandable: true,
-      content: <>Versions will be here...</>
-    },
-    {
-      panel: 'two',
-      key: 'history',
-      title: 'History',
-      content: <HistoryPanel history={history}
+      key: 'session',
+      title: 'Session',
+      content: <SessionPanel history={history}
                              savedStateSignature={savedStateSignature}
                              historyVersion={historyVersion}
                              onGoTo={(idx) => {

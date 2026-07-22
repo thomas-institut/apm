@@ -5,9 +5,9 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 import {CheckCircleFill, Circle, Save} from "react-bootstrap-icons";
 import React, {useEffect, useState} from "react";
 import {Button} from "react-bootstrap";
-import './HistoryPanel.css';
+import './SessionPanel.css';
 
-interface HistoryPanelProps {
+interface SessionPanelProps {
   history: StateHistory<HistoryState>;
   savedStateSignature: string;
   onGoTo: (index: number) => void;
@@ -25,7 +25,7 @@ interface HistoryTableRow {
   signature: string;
 }
 
-export default function HistoryPanel({history, savedStateSignature, onGoTo, onClearHistory, historyVersion}: HistoryPanelProps) {
+export default function SessionPanel({history, savedStateSignature, onGoTo, onClearHistory, historyVersion}: SessionPanelProps) {
   const [_refreshTick, setRefreshTick] = useState(0);
 
   // Re-render when history changes externally

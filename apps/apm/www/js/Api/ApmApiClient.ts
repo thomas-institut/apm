@@ -56,8 +56,7 @@ import {TimeString} from "@/toolbox/TimeString";
 import {CtData} from "@/CtData/CtData";
 import {ApiErrorResponse} from "@/Api/DataSchema/ApiResponse";
 import {ApiLoginRequest, ApiLoginResponse} from "@/Api/DataSchema/ApiLogin";
-import {MceDataInterface} from "@/MceData/MceDataInterface";
-import {ApiMceData} from "@/Api/DataSchema/ApiMceData";
+import {ApiMceData, ApiMceSaveRequest, ApiMceSaveResponse, ApiMceSaveResponseOld} from "@/Api/DataSchema/ApiMceData";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -238,8 +237,18 @@ export class ApmApiClient {
     }
   }
 
-  async getMceData(editionId: number) : Promise<ApiMceData> {
+  async apiMceGetData(editionId: number) : Promise<ApiMceData> {
     return await this.get(urlGen.apiGetMultiChunkEdition(editionId));
+  }
+
+  async apiMceSave(request: ApiMceSaveRequest) : Promise<ApiMceSaveResponse|ApiErrorResponse> {
+    try {
+      return await this.post(urlGen.apiSaveMultiChunkEdition(),request, true);
+    } catch (error) {
+      console.warn(`Error saving multi chunk edition`, error);
+      // @ts-ignore
+      return error.data as ApiErrorResponse;
+    }
   }
 
 

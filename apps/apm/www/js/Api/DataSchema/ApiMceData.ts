@@ -1,4 +1,5 @@
 import {MceDataInterface} from "@/MceData/MceDataInterface";
+import {ApiResponse} from "@/Api/DataSchema/ApiResponse";
 
 
 export interface ApiMceData {
@@ -8,4 +9,32 @@ export interface ApiMceData {
   validFrom: string;
   validUntil: string;
   versionDescription: string;
+}
+
+
+
+export interface ApiMceSaveResponse extends ApiResponse{
+  result: 'Success';
+  editionId: number;
+  mceData: MceDataInterface;
+  description: string;
+}
+
+export interface ApiMceSaveRequest {
+  /**
+   * Edition ID
+   *
+   * If it's -1, this is a new edition.
+   */
+  editionId: number;
+  mceData: MceDataInterface;
+  description: string;
+}
+
+export interface ApiMceSaveResponseOld {
+  status: 'OK' | 'Error',
+  editionId: number,
+  saveTimeStamp: string,
+  error?: string,
+  message?: string,
 }

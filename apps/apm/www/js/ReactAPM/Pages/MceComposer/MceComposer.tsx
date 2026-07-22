@@ -12,7 +12,7 @@ import {
   ChevronRight,
   Gear
 } from "react-bootstrap-icons";
-import {Form, OverlayTrigger, Popover} from "react-bootstrap";
+import {Form, OverlayTrigger, Popover, Spinner} from "react-bootstrap";
 import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
 import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel";
@@ -47,10 +47,10 @@ import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/Chang
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteSiglaGroupAction";
 import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
+import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 
 // TODO 2026-07-21
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
-//  - Implement getPDF in preview panel
 //  - Implement versions panel
 //  - Implement showing tags in chunks panel
 
@@ -100,7 +100,6 @@ export default function MceComposer() {
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
   const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
   const [edition, setEdition] = useState<Edition | null>(null);
-
   const [editionGenerationProgress, setEditionGenerationProgress] = useState<number | null>(null);
   const [settings, setSettings] = useState<MceSettings>({
     autoRegenerate: true,
@@ -120,6 +119,8 @@ export default function MceComposer() {
   const [foundBug, setFoundBug] = useState<boolean>(false);
   const [foundBugDescription, setFoundBugDescription] = useState<string>('');
   const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
+  const [saving, setSaving] = useState<boolean>(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
 
 
   const singleChunkEditionCache = useRef<Record<string, Edition>>({});
@@ -169,7 +170,7 @@ export default function MceComposer() {
       }
 
       let ignore = false;
-      appContext.apiClient.getMceData(mceDataId)
+      appContext.apiClient.apiMceGetData(mceDataId)
         .then((resp) => {
           if (ignore) {
             return; // avoid problems with React strict mode
@@ -433,7 +434,7 @@ export default function MceComposer() {
     }
     setHistoryVersion(v => v + 1);
     return true;
-  }
+  };
 
   const handleSetIncludeInAutoMarginalFoliation = (witnessIndex: number, newState: boolean) => {
     try {
@@ -444,7 +445,7 @@ export default function MceComposer() {
     }
     setHistoryVersion(v => v + 1);
     return true;
-  }
+  };
 
   const handleDeleteSiglaGroup = (siglaGroupIndex: number) => {
     try {
@@ -455,7 +456,7 @@ export default function MceComposer() {
     }
     setHistoryVersion(v => v + 1);
     return true;
-  }
+  };
 
   const handleChangeSiglaGroup = (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => {
     try {
@@ -466,7 +467,7 @@ export default function MceComposer() {
     }
     setHistoryVersion(v => v + 1);
     return true;
-  }
+  };
 
   const handleConfirmTitleEdit = (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
@@ -497,7 +498,7 @@ export default function MceComposer() {
       return apiResponse.url;
     }
     throw apiResponse.errorMsg;
-  }
+  };
 
   const handleOnClickRevertChanges = () => {
     console.log(`Click on revert changes`);
@@ -533,7 +534,38 @@ export default function MceComposer() {
     regenerateEdition();
   };
 
-  const getDataForWitnessPanel = () : WitnessData[] => {
+  const handleOnClickSaveButton = () => {
+    console.log(`Click on save`);
+    if (changes.length === 0) {
+      console.warn(`Cannot save MCE data because there are no changes`);
+      return;
+    }
+    setSaving(true);
+    setSaveError(null);
+    setTimeout( async () => {
+      const response = await appContext.apiClient.apiMceSave({
+        editionId: mceDataId,
+        mceData,
+        description: changes.join('. ')
+      });
+      if (response.result === 'Error') {
+        setSaveError(response.message ?? 'Error saving');
+        setSaving(false);
+        return;
+      }
+      console.log(`Saved MCE data`, response);
+      if (mceDataId === -1) {
+        // TODO: reload with right id
+      }
+      // reset history
+      history.reset(history.getCurrentState(), 'Last save');
+      setSavedStateSignature(history.getHistory()[0].signature);
+      setChanges([]);
+      setSaving(false);
+    }, 0);
+  };
+
+  const getDataForWitnessPanel = (): WitnessData[] => {
     return mceData.witnesses.map((w, index) => {
       let title = w.title;
       if (w.localWitnessId !== undefined && w.localWitnessId !== 'A') {
@@ -542,7 +574,7 @@ export default function MceComposer() {
       const includeInAutoMarginalFoliationState = mceData.includeInAutoMarginalFoliation?.includes(index) ?? false;
       return {siglum: mceData.sigla[index], title, includeInAutoMarginalFoliation: includeInAutoMarginalFoliationState};
     });
-  }
+  };
 
 
   const panelSpecs: PanelSpec[] = [
@@ -738,7 +770,9 @@ export default function MceComposer() {
     <Popover id="bug-popover" className="bug-popover">
       <Popover.Header>Oops!</Popover.Header>
       <Popover.Body>
-        <p>You have discovered a bug in the software! Please click <a href={'https://github.com/thomas-institut/apm/issues/new'} target="_blank">here to report it on Github</a>.</p>
+        <p>You have discovered a bug in the software! Please click <a
+          href={'https://github.com/thomas-institut/apm/issues/new'} target="_blank">here to report it on Github</a>.
+        </p>
         <p>Include the following description:</p>
         <p className={'bug-description'}>{foundBugDescription}</p>
         <p>Be sure to include the following information as well:</p>
@@ -767,7 +801,9 @@ export default function MceComposer() {
                                      setChunksPanelVersion(v => v + 1);
                                    }}/>}
 
-    {!foundBug && <MceComposerSaveButton changes={changes}/>}
+    {!foundBug && <ComponentWithPending pending={saving} pendingElement={<span>Saving... <Spinner size={'sm'}/></span>}>
+      <MceComposerSaveButton changes={changes} onClick={handleOnClickSaveButton} saveError={saveError}/>
+    </ComponentWithPending>  }
     {!foundBug && <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
                                          onClick={() => handleOnClickRevertChanges()}
                                          title={'Click to revert to last saved version'}/>}

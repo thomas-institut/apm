@@ -31,8 +31,8 @@ export class StateHistory<T> {
   private stateHistory: StateHistoryItem<T>[];
   private currentStateIndex: number;
 
-  constructor(initialState: T) {
-    this.stateHistory = [{ state: initialState, signature: this.getStateSignature(initialState), actionDescription: 'Initial State', executionTimestamp: Date.now() }];
+  constructor(initialState: T, initialStateDescription?: string) {
+    this.stateHistory = [{ state: initialState, signature: this.getStateSignature(initialState), actionDescription: initialStateDescription ? initialStateDescription : 'Initial State', executionTimestamp: Date.now() }];
     this.currentStateIndex = 0;
   }
 
@@ -201,6 +201,11 @@ export class StateHistory<T> {
     }
     const state = this.stateHistory[newInitialStateIndex];
     this.stateHistory = [state];
+    this.currentStateIndex = 0;
+  }
+
+  reset(newInitialState: T, initialStateDescription?: string) {
+    this.stateHistory = [{ state: newInitialState, signature: this.getStateSignature(newInitialState), actionDescription: initialStateDescription ? initialStateDescription : 'Initial State', executionTimestamp: Date.now() }];
     this.currentStateIndex = 0;
   }
 

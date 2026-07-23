@@ -64,7 +64,8 @@ const buildCtDataStatus = (chunk: ChunkInMceData): CtDataStatus => ({
     isLatestVersion: true,
   } as any,
   ctDataState: 'loaded',
-  errorMsg: ''
+  errorMsg: '',
+  lastVersionTimeStamp: null
 });
 
 describe('ChunksPanel', () => {
@@ -206,7 +207,7 @@ describe('ChunksPanel', () => {
     expect(container.querySelector('.highlighted')).toBeNull();
 
     // 3. Perform another action (Update)
-    const updateButton = container.querySelector('[title="Click to update chunk C2"]') as HTMLButtonElement;
+    const updateButton = container.querySelector('[title*="Click to update chunk C2"]') as HTMLButtonElement;
     await act(async () => {
       updateButton.click();
     });
@@ -367,5 +368,63 @@ describe('ChunksPanel', () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it('updates the "last check for updates" time ago every minute', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    vi.useFakeTimers();
+
+    const chunk = buildChunk();
+    const checkForChunkUpdates = vi.fn().mockResolvedValue(undefined);
+
+    await act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk]}
+          chunkOrder={[0]}
+          ctDataStatusArray={[buildCtDataStatus(chunk)]}
+          checkForChunkUpdates={checkForChunkUpdates}
+        />
+      );
+    });
+
+    const checkNowButton = container.querySelector('button.btn-outline-secondary') as HTMLButtonElement;
+    
+    // Set a fixed time for "now"
+    const now = new Date('2026-07-23T20:27:00Z');
+    vi.setSystemTime(now);
+
+    await act(async () => {
+      checkNowButton.click();
+    });
+
+    // Wait for the async checkForChunkUpdates and state updates
+    await act(async () => {
+      vi.advanceTimersByTime(0);
+    });
+
+    // We check for the relative time which is what the useEffect refreshes
+    expect(container.textContent).toContain('(<1min ago)');
+
+    // Advance 1 minute
+    await act(async () => {
+      vi.advanceTimersByTime(60000);
+    });
+
+    expect(container.textContent).toContain('(1 min ago)');
+
+    // Advance another minute
+    await act(async () => {
+      vi.advanceTimersByTime(60000);
+    });
+
+    expect(container.textContent).toContain('(2 mins ago)');
+
+    await act(async () => {
+      root.unmount();
+    });
+    vi.useRealTimers();
   });
 });

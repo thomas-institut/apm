@@ -17,7 +17,7 @@ interface ChunksPanelProps extends TabbableElementProps {
   chunks: ChunkInMceData[];
   chunkOrder: number[];
   deleteChunk?: (chunkIndex: number) => boolean | Promise<boolean>;
-  updateChunk?: (chunkIndex: number) => boolean | Promise<boolean>;
+  updateChunk?: (chunkIndex: number) => Promise<true|string>;
   /**
    * Move a chunk up or down in the list.
    * @param chunkIndex The index of the chunk to move.
@@ -74,6 +74,16 @@ export default function ChunksPanel({
   const [pendingHighlightChunkId, setPendingHighlightChunkId] = useState<string | null>(null);
   const [checkingForUpdates, setCheckingForUpdates] = useState<boolean>(false);
   const [lastCheckForUpdates, setLastCheckForUpdates] = useState<Date|null>(null);
+  const [_refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => setRefreshTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    setRefreshTick(t => t + 1);
+  }, [version]);
 
 
   useEffect(() => {
@@ -391,7 +401,7 @@ export default function ChunksPanel({
     <ComponentWithPending pending={checkingForUpdates} pendingElement={
       <div className={'check-for-updates'}>Checking for updates...<Spinner size={'sm'}/></div>}>
       <div className={'check-for-updates'}>
-        <span>Last manual check for updates: {lastCheckForUpdates === null ? 'Never' : ApmFormats.time(lastCheckForUpdates)}</span>
+        <span>Last check for updates: {lastCheckForUpdates === null ? 'Never' : `${ApmFormats.time(lastCheckForUpdates)} (${ApmFormats.timeAgo(lastCheckForUpdates)})`}</span>
         <Button variant={'outline-secondary'} size={'sm'} onClick={handleOnClickCheckForUpdates}>
           Check now
         </Button>

@@ -52,6 +52,7 @@ import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {urlGen} from "@/pages/common/SiteUrlGen";
 import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel";
 import {ApmFormats} from "@/pages/common/ApmFormats";
+import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
 
 // TODO 2026-07-22
 //  - Implement load active chunks table and adding chunks from it
@@ -405,6 +406,13 @@ export default function MceComposer() {
     return true;
   };
 
+  const getDocTitle = async (docId: number): Promise<string> => {
+    return appContext.apiClient.getEntityName(docId);
+  };
+  const getSourceTitle = async (sourceId: number): Promise<string> => {
+    return appContext.apiClient.getEntityName(sourceId);
+  };
+
   const addChunk = async (tableId: number, version: string = ''): Promise<true | string> => {
     console.log(`Add chunk from table ${tableId}, version '${version}'`);
     let chunkApiData: SingleChunkApiData;
@@ -417,12 +425,6 @@ export default function MceComposer() {
       const errorString = error as String;
       return errorString.toString();
     }
-    const getDocTitle = async (docId: number): Promise<string> => {
-      return appContext.apiClient.getEntityName(docId);
-    };
-    const getSourceTitle = async (sourceId: number): Promise<string> => {
-      return appContext.apiClient.getEntityName(sourceId);
-    };
 
     try {
       await history.do(new AddChunkAction(
@@ -465,11 +467,30 @@ export default function MceComposer() {
     return true;
   };
 
-  const updateChunk = (chunkIndex: number) => {
+  const updateChunk = async (chunkIndex: number):Promise<true|string> => {
     console.log(`Update chunk index ${chunkIndex}`);
+    const tableId = mceData.chunks[chunkIndex].chunkEditionTableId;
+    let chunkApiData: SingleChunkApiData;
+    try {
+      chunkApiData = await appContext.apiClient.getSingleChunkData(tableId,'');
+      if (chunkApiData.ctData.lang !== mceData.lang) {
+        return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
+      }
+    } catch (error) {
+      const errorString = error as String;
+      return errorString.toString();
+    }
+    try {
+      await history.do(new UpdateChunkAction(  tableId,
+        chunkApiData,
+        getDocTitle,
+        getSourceTitle,));
+    } catch (error) {
+      reportActionBug('UpdateChunkAction', error);
+      return 'Bug found';
+    }
 
-    console.log(`Update chunk not implemented yet`);
-    // No action implemented yet for update chunk in history
+    setHistoryVersion(v => v + 1);
     setChunksPanelVersion(v => v + 1);
     return true;
   };

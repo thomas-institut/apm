@@ -1,10 +1,10 @@
 import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
-import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {getSiglaGroupString} from '@/ReactAPM/Pages/MceComposer/SiglaGroupUtil';
 
-export class DeleteSiglaGroupAction implements StateTransformAction<HistoryState> {
+export class DeleteSiglaGroupAction implements StateTransformAction<MceComposerHistoryState> {
 
   private title: string;
 
@@ -12,7 +12,7 @@ export class DeleteSiglaGroupAction implements StateTransformAction<HistoryState
     this.title = 'Delete sigla group';
   }
 
-  execute(state: HistoryState): HistoryState {
+  async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const group = state.mceData.siglaGroups[this.siglaGroupIndex];
     if (!group) {
       throw `Sigla group at index ${this.siglaGroupIndex} does not exist`;
@@ -24,7 +24,7 @@ export class DeleteSiglaGroupAction implements StateTransformAction<HistoryState
     return newState;
   }
 
-  description(_state: HistoryState): string {
+  description(_state: MceComposerHistoryState): string {
     return this.title;
   }
 }

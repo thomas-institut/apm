@@ -74,7 +74,7 @@ describe('ChunksPanel', () => {
     const root = createRoot(container);
 
     const chunk = buildChunk();
-    const deleteChunk = vi.fn(() => true);
+    const deleteChunk = vi.fn().mockResolvedValue(true);
 
     await act(async () => {
       root.render(
@@ -115,7 +115,7 @@ describe('ChunksPanel', () => {
     const root = createRoot(container);
 
     const chunk = buildChunk();
-    const deleteChunk = vi.fn(() => true);
+    const deleteChunk = vi.fn().mockResolvedValue(true);
 
     await act(async () => {
       root.render(
@@ -156,8 +156,8 @@ describe('ChunksPanel', () => {
     const chunk2Status = buildCtDataStatus(chunk2);
     // @ts-expect-error test-only property override
     chunk2Status.apiData.isLatestVersion = false;
-    const moveChunk = vi.fn(() => true);
-    const updateChunk = vi.fn(() => true);
+    const moveChunk = vi.fn().mockResolvedValue(true);
+    const updateChunk = vi.fn().mockResolvedValue(true);
 
     const render = (order: number[], active = true) => act(async () => {
       root.render(
@@ -269,7 +269,7 @@ describe('ChunksPanel', () => {
 
     const chunk1 = buildChunk();
     const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
-    const moveChunk = vi.fn(() => true);
+    const moveChunk = vi.fn().mockResolvedValue(true);
 
     const render = (order: number[], active: boolean) => act(async () => {
       root.render(
@@ -321,7 +321,7 @@ describe('ChunksPanel', () => {
 
     const chunk1 = buildChunk();
     const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
-    const moveChunk = vi.fn(() => false);
+    const moveChunk = vi.fn().mockResolvedValue(false);
 
     await act(async () => {
       root.render(
@@ -334,18 +334,31 @@ describe('ChunksPanel', () => {
       );
     });
 
-    const moveDownButton = container.querySelector('[title="Click to move chunk C1 one row down"]') as HTMLButtonElement;
+    const moveDownButtonTitle = '[title="Click to move chunk C1 one row down"]';
+    const getMoveDownButton = () => container.querySelector(moveDownButtonTitle) as HTMLButtonElement;
 
     await act(async () => {
-      moveDownButton.click();
+      getMoveDownButton().click();
+    });
+    // Wait for the async handler to complete and state to update
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
     });
 
     expect(moveChunk).toHaveBeenCalledTimes(1);
     expect(moveChunk).toHaveBeenCalledWith(0, 'down');
     expect(container.querySelector('.highlighted')).toBeNull();
 
+    // The button was unmounted during pending state, so we must find it again
+    const moveDownButton2 = getMoveDownButton();
+    expect(moveDownButton2).not.toBeNull();
+
     await act(async () => {
-      moveDownButton.click();
+      moveDownButton2.click();
+    });
+    // Wait for the async handler to complete and state to update
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
     });
 
     expect(moveChunk).toHaveBeenCalledTimes(2);

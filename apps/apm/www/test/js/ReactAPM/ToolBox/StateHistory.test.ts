@@ -8,15 +8,15 @@ const actionTo = (nextState: TestState, description = `to ${nextState.value}`): 
   description: () => description,
 });
 
-const buildHistoryWithRepeatedStates = (): StateHistory<TestState> => {
+const buildHistoryWithRepeatedStates = async (): Promise<StateHistory<TestState>> => {
   const history = new StateHistory<TestState>({ value: 'a' });
-  history.do(actionTo({ value: 'x' }, 'a->x'));
-  history.do(actionTo({ value: 'b' }, 'x->b'));
-  history.do(actionTo({ value: 'a' }, 'b->a'));
-  history.do(actionTo({ value: 'c' }, 'a->c'));
-  history.do(actionTo({ value: 'd' }, 'c->d'));
-  history.do(actionTo({ value: 'x' }, 'd->x'));
-  history.do(actionTo({ value: 'e' }, 'x->e'));
+  await history.do(actionTo({ value: 'x' }, 'a->x'));
+  await history.do(actionTo({ value: 'b' }, 'x->b'));
+  await history.do(actionTo({ value: 'a' }, 'b->a'));
+  await history.do(actionTo({ value: 'c' }, 'a->c'));
+  await history.do(actionTo({ value: 'd' }, 'c->d'));
+  await history.do(actionTo({ value: 'x' }, 'd->x'));
+  await history.do(actionTo({ value: 'e' }, 'x->e'));
   return history;
 };
 
@@ -35,12 +35,12 @@ describe('StateHistory', () => {
     });
   });
 
-  it('should append a new state and action description when do changes the state', () => {
+  it('should append a new state and action description when do changes the state', async () => {
     const history = new StateHistory<TestState>({ value: 'a' });
-    const execute = vi.fn().mockReturnValue({ value: 'b' });
+    const execute = vi.fn().mockResolvedValue({ value: 'b' });
     const description = vi.fn().mockReturnValue('a->b');
 
-    const newState = history.do({ execute, description });
+    const newState = await history.do({ execute, description });
 
     expect(newState).toEqual({ value: 'b' });
     expect(history.getCurrentState()).toEqual({ value: 'b' });
@@ -50,11 +50,11 @@ describe('StateHistory', () => {
     expect(description).toHaveBeenCalledWith({ value: 'a' });
   });
 
-  it('should not append history when do does not change state signature', () => {
+  it('should not append history when do does not change state signature', async () => {
     const history = new StateHistory<TestState>({ value: 'a' });
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
-    const newState = history.do(actionTo({ value: 'a' }, 'no-op'));
+    const newState = await history.do(actionTo({ value: 'a' }, 'no-op'));
 
     expect(newState).toEqual({ value: 'a' });
     expect(history.getCurrentState()).toEqual({ value: 'a' });
@@ -64,27 +64,27 @@ describe('StateHistory', () => {
     consoleSpy.mockRestore();
   });
 
-  it('should throw and keep history intact when action execute fails', () => {
+  it('should throw and keep history intact when action execute fails', async () => {
     const history = new StateHistory<TestState>({ value: 'a' });
-    history.do(actionTo({ value: 'b' }, 'a->b'));
+    await history.do(actionTo({ value: 'b' }, 'a->b'));
 
     const executeError = new Error('execute failed');
-    const execute = vi.fn().mockImplementation(() => {
+    const execute = vi.fn().mockImplementation(async () => {
       throw executeError;
     });
     const description = vi.fn().mockReturnValue('should not be used');
 
-    expect(() => history.do({ execute, description })).toThrow(executeError);
+    await expect(history.do({ execute, description })).rejects.toThrow(executeError);
     expect(history.getCurrentState()).toEqual({ value: 'b' });
     expect(history.getHistory()).toHaveLength(2);
     expect(history.getHistory().map(item => item.state.value)).toEqual(['a', 'b']);
     expect(description).not.toHaveBeenCalled();
   });
 
-  it('should undo and redo, and throw when boundaries are exceeded', () => {
+  it('should undo and redo, and throw when boundaries are exceeded', async () => {
     const history = new StateHistory<TestState>({ value: 'a' });
-    history.do(actionTo({ value: 'b' }, 'a->b'));
-    history.do(actionTo({ value: 'c' }, 'b->c'));
+    await history.do(actionTo({ value: 'b' }, 'a->b'));
+    await history.do(actionTo({ value: 'c' }, 'b->c'));
 
     expect(history.undo()).toEqual({ value: 'b' });
     expect(history.undo()).toEqual({ value: 'a' });
@@ -95,13 +95,13 @@ describe('StateHistory', () => {
     expect(() => history.redo()).toThrow('Cannot redo further');
   });
 
-  it('should detect an effective redo when do reaches the next state', () => {
+  it('should detect an effective redo when do reaches the next state', async () => {
     const history = new StateHistory<TestState>({ value: 'a' });
-    history.do(actionTo({ value: 'b' }, 'a->b'));
-    history.do(actionTo({ value: 'c' }, 'b->c'));
+    await history.do(actionTo({ value: 'b' }, 'a->b'));
+    await history.do(actionTo({ value: 'c' }, 'b->c'));
     history.undo();
 
-    const newState = history.do(actionTo({ value: 'c' }, 'b->c again'));
+    const newState = await history.do(actionTo({ value: 'c' }, 'b->c again'));
 
     expect(newState).toEqual({ value: 'c' });
     expect(history.getCurrentState()).toEqual({ value: 'c' });
@@ -111,12 +111,12 @@ describe('StateHistory', () => {
     expect(history.getHistory()[2].actionDescription).toBe('b->c');
   });
 
-  it('should detect an effective undo when do reaches the previous state', () => {
+  it('should detect an effective undo when do reaches the previous state', async () => {
     const history = new StateHistory<TestState>({ value: 'a' });
-    history.do(actionTo({ value: 'b' }, 'a->b'));
-    history.do(actionTo({ value: 'c' }, 'b->c'));
+    await history.do(actionTo({ value: 'b' }, 'a->b'));
+    await history.do(actionTo({ value: 'c' }, 'b->c'));
 
-    const newState = history.do(actionTo({ value: 'b' }, 'c->b again'));
+    const newState = await history.do(actionTo({ value: 'b' }, 'c->b again'));
 
     expect(newState).toEqual({ value: 'b' });
     expect(history.getCurrentState()).toEqual({ value: 'b' });
@@ -126,13 +126,13 @@ describe('StateHistory', () => {
     expect(history.getHistory()[1].actionDescription).toBe('a->b');
   });
 
-  it('should erase future history and append at the end for a divergent do action', () => {
+  it('should erase future history and append at the end for a divergent do action', async () => {
     const history = new StateHistory<TestState>({ value: 'a' });
-    history.do(actionTo({ value: 'b' }, 'a->b'));
-    history.do(actionTo({ value: 'c' }, 'b->c'));
+    await history.do(actionTo({ value: 'b' }, 'a->b'));
+    await history.do(actionTo({ value: 'c' }, 'b->c'));
     history.undo();
 
-    const newState = history.do(actionTo({ value: 'd' }, 'b->d'));
+    const newState = await history.do(actionTo({ value: 'd' }, 'b->d'));
 
     expect(newState).toEqual({ value: 'd' });
     expect(history.getCurrentState()).toEqual({ value: 'd' });
@@ -142,10 +142,10 @@ describe('StateHistory', () => {
     expect(history.getHistory()[2].actionDescription).toBe('b->d');
   });
 
-  it('should go to a valid state index and throw for invalid indices', () => {
+  it('should go to a valid state index and throw for invalid indices', async () => {
     const history = new StateHistory<TestState>({ value: 'a' });
-    history.do(actionTo({ value: 'b' }, 'a->b'));
-    history.do(actionTo({ value: 'c' }, 'b->c'));
+    await history.do(actionTo({ value: 'b' }, 'a->b'));
+    await history.do(actionTo({ value: 'c' }, 'b->c'));
 
     expect(history.goToState(1)).toEqual({ value: 'b' });
     expect(history.getCurrentState()).toEqual({ value: 'b' });
@@ -154,15 +154,15 @@ describe('StateHistory', () => {
     expect(() => history.goToState(99)).toThrow('Invalid state index');
   });
 
-  it('should return expected minimal history for defaults and single-candidate path', () => {
-    const history = buildHistoryWithRepeatedStates();
+  it('should return expected minimal history for defaults and single-candidate path', async () => {
+    const history = await buildHistoryWithRepeatedStates();
 
     expect(history.getMinimalHistory().map(item => item.state.value)).toEqual(['a', 'c', 'd', 'x', 'e']);
     expect(history.getMinimalHistory({ value: 'c' }, { value: 'd' }).map(item => item.state.value)).toEqual(['c', 'd']);
   });
 
-  it('should return one state when from and to signatures are the same', () => {
-    const history = buildHistoryWithRepeatedStates();
+  it('should return one state when from and to signatures are the same', async () => {
+    const history = await buildHistoryWithRepeatedStates();
     const xSignature = history.getHistory().find(item => item.state.value === 'x')!.signature;
     const firstMatchingState = history.getHistory().find(item => item.signature === xSignature)!;
 
@@ -173,14 +173,14 @@ describe('StateHistory', () => {
     expect(minimal[0]).toBe(firstMatchingState);
   });
 
-  it('should choose the shortest path when several minimal histories exist', () => {
-    const history = buildHistoryWithRepeatedStates();
+  it('should choose the shortest path when several minimal histories exist', async () => {
+    const history = await buildHistoryWithRepeatedStates();
 
     expect(history.getMinimalHistory({ value: 'a' }, { value: 'x' }).map(item => item.state.value)).toEqual(['a', 'x']);
   });
 
-  it('should return empty array and warn when from or to state is not found', () => {
-    const history = buildHistoryWithRepeatedStates();
+  it('should return empty array and warn when from or to state is not found', async () => {
+    const history = await buildHistoryWithRepeatedStates();
     const consoleSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
 
     expect(history.getMinimalHistory('missing-from', { value: 'x' })).toEqual([]);

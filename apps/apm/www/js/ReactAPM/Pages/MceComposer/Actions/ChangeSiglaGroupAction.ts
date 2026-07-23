@@ -1,11 +1,11 @@
 import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
-import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {SiglaGroupInterface} from '@/CtData/CtDataInterface';
 import {getSiglaGroupString} from '@/ReactAPM/Pages/MceComposer/SiglaGroupUtil';
 
-export class ChangeSiglaGroupAction implements StateTransformAction<HistoryState> {
+export class ChangeSiglaGroupAction implements StateTransformAction<MceComposerHistoryState> {
 
   private title: string;
 
@@ -16,7 +16,7 @@ export class ChangeSiglaGroupAction implements StateTransformAction<HistoryState
     this.title = 'Change sigla group';
   }
 
-  execute(state: HistoryState): HistoryState {
+  async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const newState = deepCopy(state);
 
     if (this.siglaGroupIndex === -1) {
@@ -32,7 +32,7 @@ export class ChangeSiglaGroupAction implements StateTransformAction<HistoryState
     return newState;
   }
 
-  description(_state: HistoryState): string {
+  description(_state: MceComposerHistoryState): string {
     return this.title;
   }
 }

@@ -27,7 +27,7 @@ vi.mock('react-bootstrap', () => ({
 }));
 
 describe('HistoryPanel', () => {
-  const createMockHistory = (statesCount = 1, currentIndex = 0) => {
+  const createMockHistory = async (statesCount = 1, currentIndex = 0) => {
     const initialState = {
       actionDescription: 'Initial State',
       signature: 'sig-initial',
@@ -38,8 +38,8 @@ describe('HistoryPanel', () => {
     const history = new StateHistory(initialState);
     
     for (let i = 1; i < statesCount; i++) {
-      history.do({
-        execute: (s: any) => ({...s, signature: `sig-${i}`}),
+      await history.do({
+        execute: async (s: any) => ({...s, signature: `sig-${i}`}),
         description: () => `Action ${i}`
       });
     }
@@ -55,7 +55,7 @@ describe('HistoryPanel', () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
-    const history = createMockHistory(1);
+    const history = await createMockHistory(1);
     const savedSignature = history.getCurrentStateSignature();
 
     await act(async () => {
@@ -77,7 +77,7 @@ describe('HistoryPanel', () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
-    const history = createMockHistory(2, 1); // 2 states, current is the 2nd one
+    const history = await createMockHistory(2, 1); // 2 states, current is the 2nd one
     const savedSignature = history.getHistory()[0].signature; // saved is the 1st one
 
     await act(async () => {
@@ -99,7 +99,7 @@ describe('HistoryPanel', () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
-    const history = createMockHistory(2, 0); // 2 states, current is the 1st one (saved)
+    const history = await createMockHistory(2, 0); // 2 states, current is the 1st one (saved)
     const savedSignature = history.getCurrentStateSignature();
 
     await act(async () => {
@@ -124,7 +124,7 @@ describe('HistoryPanel', () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
-    const history = createMockHistory(2, 0);
+    const history = await createMockHistory(2, 0);
     const savedSignature = history.getCurrentStateSignature();
     const onClearHistory = vi.fn();
 

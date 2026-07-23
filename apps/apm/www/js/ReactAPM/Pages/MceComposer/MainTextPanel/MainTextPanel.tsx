@@ -6,7 +6,7 @@ interface MainTextPanelProps {
   edition: Edition | null;
   generationProgress: number | null;
   editionOutOfDate: boolean;
-  onClickRegenerate: () => void;
+  onClickRegenerate: () => void | Promise<void>;
 }
 
 export default function MainTextPanel({

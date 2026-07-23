@@ -1,5 +1,5 @@
 import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
-import {HistoryState} from "@/ReactAPM/Pages/MceComposer/MceComposer";
+import {MceComposerHistoryState} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {CheckCircleFill, Circle, Save} from "react-bootstrap-icons";
@@ -8,7 +8,7 @@ import {Button} from "react-bootstrap";
 import './SessionPanel.css';
 
 interface SessionPanelProps {
-  history: StateHistory<HistoryState>;
+  history: StateHistory<MceComposerHistoryState>;
   savedStateSignature: string;
   onGoTo: (index: number) => void;
   onClearHistory: () => void;

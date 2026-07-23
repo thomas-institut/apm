@@ -15,16 +15,16 @@ import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 interface ChunksPanelProps extends TabbableElementProps {
   chunks: ChunkInMceData[];
   chunkOrder: number[];
-  deleteChunk?: (chunkIndex: number) => boolean;
-  updateChunk?: (chunkIndex: number) => boolean;
+  deleteChunk?: (chunkIndex: number) => boolean | Promise<boolean>;
+  updateChunk?: (chunkIndex: number) => boolean | Promise<boolean>;
   /**
    * Move a chunk up or down in the list.
    * @param chunkIndex The index of the chunk to move.
    * @param direction The direction to move the chunk.
    * @returns True if the chunk was moved, false if it was not.
    */
-  moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => boolean;
-  setChunkBreak?: (chunkIndex: number, breakAfter: string) => boolean;
+  moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => boolean | Promise<boolean>;
+  setChunkBreak?: (chunkIndex: number, breakAfter: string) => boolean | Promise<boolean>;
   ctDataStatusArray: CtDataStatus[];
   /**
    * A version number that is incremented whenever the panel needs to be redrawn.
@@ -162,7 +162,7 @@ export default function ChunksPanel({
     setConfirmDeleteChunkIndex(chunkIndex);
   };
 
-  const handleAcceptDeleteChunk = () => {
+  const handleAcceptDeleteChunk = async () => {
     if (confirmDeleteChunkIndex === null || !deleteChunk || isAnyPending) {
       return;
     }
@@ -171,46 +171,49 @@ export default function ChunksPanel({
     setConfirmDeleteChunkIndex(null);
 
     setPendingDeleteChunkIndex(chunkIndex);
-    const deleteSuccess = deleteChunk(chunkIndex);
-    if (!deleteSuccess) {
-      setPendingDeleteChunkIndex(null);
-    }
+    await deleteChunk(chunkIndex);
+    setPendingDeleteChunkIndex(null);
   };
 
   const handleCancelDeleteChunk = () => {
     setConfirmDeleteChunkIndex(null);
   };
 
-  const handleUpdateChunk = (chunkIndex: number) => {
+  const handleUpdateChunk = async (chunkIndex: number) => {
     setHighlightedChunkId(null);
     setPendingHighlightChunkId(null);
     if (!updateChunk || isAnyPending) {
       return;
     }
     setPendingUpdateChunkIndex(chunkIndex);
-    updateChunk(chunkIndex);
+    await updateChunk(chunkIndex);
+    setPendingUpdateChunkIndex(null);
   };
 
-  const handleMoveChunk = (chunkIndex: number, direction: 'up' | 'down') => {
+  const handleMoveChunk = async (chunkIndex: number, direction: 'up' | 'down') => {
     if (!moveChunk || isAnyPending) {
       return;
     }
+    setHighlightedChunkId(null);
     setPendingHighlightChunkId(chunks[chunkOrder[chunkIndex]].chunkId);
     setPendingMoveChunkIndex(chunkIndex);
-    if (!moveChunk(chunkIndex, direction)){
+    const result = await moveChunk(chunkIndex, direction);
+    if (!result){
       setPendingHighlightChunkId(null);
-      setPendingMoveChunkIndex(null);
+      setHighlightedChunkId(null);
     }
+    setPendingMoveChunkIndex(null);
   };
 
-  const handleSetChunkBreak = (chunkIndex: number, breakAfter: string) => {
+  const handleSetChunkBreak = async (chunkIndex: number, breakAfter: string) => {
     setHighlightedChunkId(null);
     setPendingHighlightChunkId(null);
     if (!setChunkBreak || isAnyPending) {
       return;
     }
     setPendingSetChunkBreakIndex(chunkIndex);
-    setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
+    await setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
+    setPendingSetChunkBreakIndex(null);
   };
 
   const chunkBreakMultiToggleOptionSpecs: MultiToggleOptionSpec[] = [

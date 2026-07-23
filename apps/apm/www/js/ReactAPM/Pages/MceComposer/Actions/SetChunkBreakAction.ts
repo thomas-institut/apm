@@ -1,14 +1,14 @@
 import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
-import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
 const BreakLabels : Record<string, string> = {
     '': 'None',
     'paragraph': 'Paragraph',
 }
 
-export class SetChunkBreakAction implements StateTransformAction<HistoryState> {
+export class SetChunkBreakAction implements StateTransformAction<MceComposerHistoryState> {
   private title: string;
 
   constructor(
@@ -18,7 +18,7 @@ export class SetChunkBreakAction implements StateTransformAction<HistoryState> {
     this.title = `Set break for chunk at position ${this.chunkPosition + 1} to '${this.newBreak}'`;
   }
 
-  execute(state: HistoryState): HistoryState {
+  async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const chunkOrder = state.mceData.chunkOrder;
     if (chunkOrder === undefined) {
       throw `Chunk order is undefined`;

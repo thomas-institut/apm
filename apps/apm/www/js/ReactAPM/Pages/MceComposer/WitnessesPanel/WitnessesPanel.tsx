@@ -21,18 +21,18 @@ export interface WitnessData {
 interface WitnessesPanelProps extends TabbableElementProps {
   witnesses: WitnessData[],
   siglaGroups: SiglaGroupInterface[],
-  onChangeSiglum?: (witnessIndex: number, newSiglum: string) => boolean,
-  onChangeIncludeInAutoMarginalFoliation?: (witnessIndex: number, newState: boolean) => boolean,
+  onChangeSiglum?: (witnessIndex: number, newSiglum: string) => boolean | Promise<boolean>,
+  onChangeIncludeInAutoMarginalFoliation?: (witnessIndex: number, newState: boolean) => boolean | Promise<boolean>,
   /**
    * Callback to delete a sigla group
    */
-  onDeleteSiglaGroup?: (siglaGroupIndex: number) => boolean,
+  onDeleteSiglaGroup?: (siglaGroupIndex: number) => boolean | Promise<boolean>,
   /**
    * Callback to change a sigla group
    *
    * If siglaGroupIndex is -1, then the sigla group is being added
    */
-  onChangeSiglaGroup?: (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => boolean,
+  onChangeSiglaGroup?: (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => boolean | Promise<boolean>,
   /**
    * Callback to validate a sigla group
    *
@@ -87,9 +87,9 @@ export default function WitnessesPanel({
       width: '5em',
       tdClassName: 'siglum',
       cellContent: (witnessData, witnessIndex) => <EditableTextField text={witnessData.siglum}
-                                                                     onConfirm={(newSiglum) => {
+                                                                     onConfirm={async (newSiglum) => {
                                                                        if (onChangeSiglum) {
-                                                                         onChangeSiglum(witnessIndex, newSiglum);
+                                                                         await onChangeSiglum(witnessIndex, newSiglum);
                                                                        }
                                                                      }}/>
     },
@@ -100,9 +100,9 @@ export default function WitnessesPanel({
         isOn={witnessData.includeInAutoMarginalFoliation}
         onTitle={`Click to exclude ${witnessData.title} from auto marginal foliation`}
         offTitle={`Click to include ${witnessData.title} in auto marginal foliation`}
-        onClick={(newState) => {
+        onClick={async (newState) => {
           if (onChangeIncludeInAutoMarginalFoliation) {
-            onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
+            await onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
           }
         }}
       />
@@ -150,11 +150,12 @@ export default function WitnessesPanel({
     }
   ];
 
-  const handleAcceptDeleteSiglaGroup = () => {
+  const handleAcceptDeleteSiglaGroup = async () => {
     if (confirmDeleteSiglaGroupIndex === null || onDeleteSiglaGroup === undefined) {
       return;
     }
-    onDeleteSiglaGroup(confirmDeleteSiglaGroupIndex);
+    await onDeleteSiglaGroup(confirmDeleteSiglaGroupIndex);
+    setConfirmDeleteSiglaGroupIndex(null);
   }
 
   const handleCancelDeleteSiglaGroup = () => {
@@ -201,12 +202,12 @@ export default function WitnessesPanel({
           }
           return isSiglaGroupValid(siglaGroupIndex, group);
         }}
-        onClickConfirm={(siglaGroupIndex, group) => {
+        onClickConfirm={async (siglaGroupIndex, group) => {
           if (onChangeSiglaGroup === undefined) {
             setEditingSiglaGroupData(null);
             return;
           }
-          const result = onChangeSiglaGroup(siglaGroupIndex, group);
+          const result = await onChangeSiglaGroup(siglaGroupIndex, group);
           if (result) {
             setEditingSiglaGroupData(null);
           }

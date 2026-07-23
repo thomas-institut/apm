@@ -2,9 +2,9 @@ import {MceData} from '@/MceData/MceData';
 import {CtDataInterface} from '@/CtData/CtDataInterface';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
-import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
-export class AddChunkAction implements StateTransformAction<HistoryState> {
+export class AddChunkAction implements StateTransformAction<MceComposerHistoryState> {
 
   private title: string;
 
@@ -18,9 +18,9 @@ export class AddChunkAction implements StateTransformAction<HistoryState> {
     this.title = 'Add chunk';
   }
 
-  execute(state: HistoryState): HistoryState {
+  async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const newState = deepCopy(state);
-    void MceData.addChunk(newState.mceData, this.tableId, this.ctData, this.chunkTimeString, this.getDocTitle, this.getSourceTitle);
+    await MceData.addChunk(newState.mceData, this.tableId, this.ctData, this.chunkTimeString, this.getDocTitle, this.getSourceTitle);
     this.title = `Add chunk ${this.ctData.chunkId} to edition`;
     return newState;
   }

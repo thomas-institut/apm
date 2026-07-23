@@ -1,10 +1,10 @@
 import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
-import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
 
-export class SetSiglumAction implements StateTransformAction<HistoryState> {
+export class SetSiglumAction implements StateTransformAction<MceComposerHistoryState> {
   private title: string;
 
   constructor(
@@ -14,7 +14,7 @@ export class SetSiglumAction implements StateTransformAction<HistoryState> {
     this.title = `Set siglum for witness ${witnessIndex + 1} to '${newSiglum}'`;
   }
 
-  execute(state: HistoryState): HistoryState {
+  async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
 
     if (this.witnessIndex < 0 || this.witnessIndex >= state.mceData.witnesses.length) {
       throw `Witness index ${this.witnessIndex} is out of bounds`;

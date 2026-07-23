@@ -1,9 +1,9 @@
 import {MceData} from '@/MceData/MceData';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
-import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {deepCopy} from '@/toolbox/Util';
 
-export class DeleteChunkAction implements StateTransformAction<HistoryState> {
+export class DeleteChunkAction implements StateTransformAction<MceComposerHistoryState> {
 
   private title: string;
   constructor(
@@ -12,7 +12,7 @@ export class DeleteChunkAction implements StateTransformAction<HistoryState> {
     this.title = `Delete chunk`;
   }
 
-  execute(state: HistoryState): HistoryState {
+  async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const newState = deepCopy(state);
     const chunkOrder = state.mceData.chunkOrder;
     if (chunkOrder === undefined) {
@@ -30,7 +30,7 @@ export class DeleteChunkAction implements StateTransformAction<HistoryState> {
     return newState
   }
 
-  description(_state: HistoryState): string {
+  description(_state: MceComposerHistoryState): string {
    return this.title;
   }
 }

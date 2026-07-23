@@ -5,7 +5,7 @@ import {OverlayTrigger} from "react-bootstrap";
 
 interface SaveButtonProps {
   changes: string[],
-  onClick: () => void,
+  onClick: () => void | Promise<void>,
   saveError: string | null
 }
 

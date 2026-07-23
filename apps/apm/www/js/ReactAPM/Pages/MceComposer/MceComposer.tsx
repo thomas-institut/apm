@@ -82,7 +82,7 @@ export interface CtDataStatus {
   errorMsg: string;
 }
 
-export interface HistoryState {
+export interface MceComposerHistoryState {
   mceData: MceDataInterface;
   ctDataStatusArray: CtDataStatus[];
 }
@@ -119,7 +119,7 @@ export default function MceComposer() {
   const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('mainText');
   const [changes, setChanges] = useState<string[]>([]);
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
-  const [history, setHistory] = useState(() => new StateHistory<HistoryState>({
+  const [history, setHistory] = useState(() => new StateHistory<MceComposerHistoryState>({
     mceData: MceData.createEmpty(),
     ctDataStatusArray: [],
   }));
@@ -223,7 +223,7 @@ export default function MceComposer() {
     const hasErrors = ctDataStatusArray.some(st => st.ctDataState === 'error');
 
     if (allLoaded || ctDataStatusArray.length === 0) {
-      const initialHistory = new StateHistory<HistoryState>(deepCopy({mceData, ctDataStatusArray}));
+      const initialHistory = new StateHistory<MceComposerHistoryState>(deepCopy({mceData, ctDataStatusArray}));
       setHistory(initialHistory);
       setSavedStateSignature(initialHistory.getCurrentStateSignature());
       setHistoryVersion(v => v + 1);
@@ -385,10 +385,10 @@ export default function MceComposer() {
     setFoundBugDescription(`${actionName} failed. ${error}`);
   };
 
-  const deleteChunk = (chunkIndex: number): boolean => {
+  const deleteChunk = async (chunkIndex: number): Promise<boolean> => {
     console.log("deleteChunk", chunkIndex);
     try {
-      history.do(new DeleteChunkAction(chunkIndex));
+      await history.do(new DeleteChunkAction(chunkIndex));
     } catch (error) {
       reportActionBug('DeleteChunkAction', error);
       return false;
@@ -417,7 +417,7 @@ export default function MceComposer() {
     };
 
     try {
-      history.do(new AddChunkAction(
+      await history.do(new AddChunkAction(
         tableId,
         chunkApiData.ctData,
         chunkApiData.timeStamp,
@@ -433,10 +433,10 @@ export default function MceComposer() {
     return true;
   };
 
-  const moveChunk = (chunkPosition: number, direction: 'up' | 'down') => {
+  const moveChunk = async (chunkPosition: number, direction: 'up' | 'down'): Promise<boolean> => {
     console.log(`Move chunk at position ${chunkPosition} '${direction}'`);
     try {
-      history.do(new MoveChunkAction(chunkPosition, direction === 'up' ? 'backwards' : 'forwards'));
+      await history.do(new MoveChunkAction(chunkPosition, direction === 'up' ? 'backwards' : 'forwards'));
     } catch (error) {
       reportActionBug('MoveChunkAction', error);
       return false;
@@ -445,10 +445,10 @@ export default function MceComposer() {
     return true;
   };
 
-  const setChunkBreak = (chunkPosition: number, newBreak: string) => {
+  const setChunkBreak = async (chunkPosition: number, newBreak: string): Promise<boolean> => {
     console.log(`Set break for chunk at position ${chunkPosition} to '${newBreak}'`);
     try {
-      history.do(new SetChunkBreakAction(chunkPosition, newBreak));
+      await history.do(new SetChunkBreakAction(chunkPosition, newBreak));
     } catch (error) {
       reportActionBug('SetChunkBreakAction', error);
       return false;
@@ -467,9 +467,9 @@ export default function MceComposer() {
     return true;
   };
 
-  const handleSetSiglum = (witnessIndex: number, newSiglum: string) => {
+  const handleSetSiglum = async (witnessIndex: number, newSiglum: string) => {
     try {
-      history.do(new SetSiglumAction(witnessIndex, newSiglum));
+      await history.do(new SetSiglumAction(witnessIndex, newSiglum));
     } catch (error) {
       reportActionBug('SetSiglumAction', error);
       return false;
@@ -478,9 +478,9 @@ export default function MceComposer() {
     return true;
   };
 
-  const handleSetIncludeInAutoMarginalFoliation = (witnessIndex: number, newState: boolean) => {
+  const handleSetIncludeInAutoMarginalFoliation = async (witnessIndex: number, newState: boolean) => {
     try {
-      history.do(new SetIncludeInAutoMarginalFoliationAction(witnessIndex, newState));
+      await history.do(new SetIncludeInAutoMarginalFoliationAction(witnessIndex, newState));
     } catch (error) {
       reportActionBug('SetIncludeInAutoMarginalFoliationAction', error);
       return false;
@@ -489,9 +489,9 @@ export default function MceComposer() {
     return true;
   };
 
-  const handleDeleteSiglaGroup = (siglaGroupIndex: number) => {
+  const handleDeleteSiglaGroup = async (siglaGroupIndex: number) => {
     try {
-      history.do(new DeleteSiglaGroupAction(siglaGroupIndex));
+      await history.do(new DeleteSiglaGroupAction(siglaGroupIndex));
     } catch (error) {
       reportActionBug('DeleteSiglaGroupAction', error);
       return false;
@@ -500,9 +500,9 @@ export default function MceComposer() {
     return true;
   };
 
-  const handleChangeSiglaGroup = (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => {
+  const handleChangeSiglaGroup = async (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => {
     try {
-      history.do(new ChangeSiglaGroupAction(siglaGroupIndex, newGroup));
+      await history.do(new ChangeSiglaGroupAction(siglaGroupIndex, newGroup));
     } catch (error) {
       reportActionBug('ChangeSiglaGroupAction', error);
       return false;
@@ -511,12 +511,12 @@ export default function MceComposer() {
     return true;
   };
 
-  const handleConfirmTitleEdit = (newTitle: string) => {
+  const handleConfirmTitleEdit = async (newTitle: string) => {
     const sanitizedTitle = newTitle.trim();
     if (sanitizedTitle === mceData.title) return;
 
     try {
-      history.do(new ChangeTitleAction(sanitizedTitle));
+      await history.do(new ChangeTitleAction(sanitizedTitle));
     } catch (error) {
       reportActionBug('ChangeTitleAction', error);
       return false;

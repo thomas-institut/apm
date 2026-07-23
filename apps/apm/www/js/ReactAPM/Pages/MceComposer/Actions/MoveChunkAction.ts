@@ -1,9 +1,9 @@
 import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
-import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
-export class MoveChunkAction implements StateTransformAction<HistoryState> {
+export class MoveChunkAction implements StateTransformAction<MceComposerHistoryState> {
 
   private title: string;
   constructor(
@@ -13,7 +13,7 @@ export class MoveChunkAction implements StateTransformAction<HistoryState> {
     this.title = 'Move chunk';
   }
 
-  execute(state: HistoryState): HistoryState {
+  async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     // throw new Error('Simulating a bug');
     const newState = deepCopy(state);
     const chunkOrder = state.mceData.chunkOrder;
@@ -30,7 +30,7 @@ export class MoveChunkAction implements StateTransformAction<HistoryState> {
     return newState;
   }
 
-  description(_state: HistoryState): string {
+  description(_state: MceComposerHistoryState): string {
    return this.title;
   }
 }

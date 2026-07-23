@@ -7,7 +7,7 @@ import { AddChunkAction } from '@/ReactAPM/Pages/MceComposer/Actions/AddChunkAct
 import { SetSiglumAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetSiglumAction';
 import { SetIncludeInAutoMarginalFoliationAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction';
 import { MceDataInterface } from '@/MceData/MceDataInterface';
-import {HistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
 const makeBaseMceData = (): MceDataInterface => ({
   title: 'Test',
@@ -24,7 +24,7 @@ const makeBaseMceData = (): MceDataInterface => ({
   schemaVersion: '1.0'
 });
 
-const makeState = (mceData: MceDataInterface): HistoryState => ({
+const makeState = (mceData: MceDataInterface): MceComposerHistoryState => ({
   mceData,
   ctDataStatusArray: mceData.chunks.map(chunk => ({
     ctDataId: chunk.chunkEditionTableId,
@@ -37,18 +37,18 @@ const makeState = (mceData: MceDataInterface): HistoryState => ({
 
 describe('MCE Actions', () => {
   describe('ChangeTitleAction', () => {
-    it('should change title', () => {
+    it('should change title', async () => {
       const state = makeState({...makeBaseMceData(), title: 'Old'});
       const action = new ChangeTitleAction('New');
 
-      const result = action.execute(state);
+      const result = await action.execute(state);
       expect(result.mceData.title).toBe('New');
       expect(action.description(state)).toBe('Change title to "New"');
     });
   });
 
   describe('MoveChunkAction', () => {
-    it('should move chunk', () => {
+    it('should move chunk', async () => {
       const mceData: MceDataInterface = {
         ...makeBaseMceData(),
         chunks: [
@@ -61,13 +61,13 @@ describe('MCE Actions', () => {
       const state = makeState(mceData);
       const action = new MoveChunkAction(0, 'forwards');
 
-      const result = action.execute(state);
+      const result = await action.execute(state);
       expect(result.mceData.chunkOrder).toEqual([1, 0, 2]);
     });
   });
 
   describe('DeleteChunkAction', () => {
-    it('should delete chunk and update chunkOrder and ct data statuses', () => {
+    it('should delete chunk and update chunkOrder and ct data statuses', async () => {
       const chunk1 = { chunkId: '1', break: '', chunkEditionTableId: 10, version: '1', title: 'C1', witnessIndices: [] as number[] } as any;
       const chunk2 = { chunkId: '2', break: '', chunkEditionTableId: 20, version: '1', title: 'C2', witnessIndices: [] as number[] } as any;
       const chunk3 = { chunkId: '3', break: '', chunkEditionTableId: 30, version: '1', title: 'C3', witnessIndices: [] as number[] } as any;
@@ -80,7 +80,7 @@ describe('MCE Actions', () => {
       const state = makeState(mceData);
       const action = new DeleteChunkAction(1);
 
-      const result = action.execute(state);
+      const result = await action.execute(state);
       expect(result.mceData.chunks.length).toBe(2);
       expect(result.mceData.chunks[0].title).toBe('C1');
       expect(result.mceData.chunks[1].title).toBe('C3');
@@ -92,7 +92,7 @@ describe('MCE Actions', () => {
   });
 
   describe('SetChunkBreakAction', () => {
-    it('should set break', () => {
+    it('should set break', async () => {
       const mceData: MceDataInterface = {
         ...makeBaseMceData(),
         chunks: [
@@ -105,13 +105,13 @@ describe('MCE Actions', () => {
       const state = makeState(mceData);
       const action = new SetChunkBreakAction(1, 'paragraph');
 
-      const result = action.execute(state);
+      const result = await action.execute(state);
       expect(result.mceData.chunks[1].break).toBe('paragraph');
     });
   });
 
   describe('AddChunkAction', () => {
-    it('should add chunk', () => {
+    it('should add chunk', async () => {
       const state = makeState(makeBaseMceData());
       const action = new AddChunkAction(
         10,
@@ -141,7 +141,7 @@ describe('MCE Actions', () => {
         async (_sourceId) => 'Source',
       );
 
-      const result = action.execute(state);
+      const result = await action.execute(state);
       expect(result.mceData.chunks.length).toBe(1);
       expect(result.mceData.chunks[0].chunkId).toBe('1');
       expect(result.mceData.chunks[0].chunkEditionTableId).toBe(10);
@@ -152,7 +152,7 @@ describe('MCE Actions', () => {
   });
 
   describe('SetSiglumAction', () => {
-    it('should set siglum and update description', () => {
+    it('should set siglum and update description', async () => {
       const mceData: MceDataInterface = {
         ...makeBaseMceData(),
         witnesses: [
@@ -165,12 +165,12 @@ describe('MCE Actions', () => {
       const state = makeState(mceData);
       const action = new SetSiglumAction(1, 'C');
 
-      const result = action.execute(state);
+      const result = await action.execute(state);
       expect(result.mceData.sigla).toEqual(['A', 'C']);
       expect(action.description()).toBe("Change siglum for Witness B from 'B' to 'C'");
     });
 
-    it('should throw when witness index is out of bounds', () => {
+    it('should throw when witness index is out of bounds', async () => {
       const mceData: MceDataInterface = {
         ...makeBaseMceData(),
         witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
@@ -179,11 +179,11 @@ describe('MCE Actions', () => {
 
       const state = makeState(mceData);
 
-      expect(() => new SetSiglumAction(-1, 'B').execute(state)).toThrow('Witness index -1 is out of bounds');
-      expect(() => new SetSiglumAction(1, 'B').execute(state)).toThrow('Witness index 1 is out of bounds');
+      await expect(new SetSiglumAction(-1, 'B').execute(state)).rejects.toBe('Witness index -1 is out of bounds');
+      await expect(new SetSiglumAction(1, 'B').execute(state)).rejects.toBe('Witness index 1 is out of bounds');
     });
 
-    it('should throw when siglum is empty', () => {
+    it('should throw when siglum is empty', async () => {
       const mceData: MceDataInterface = {
         ...makeBaseMceData(),
         witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
@@ -192,12 +192,12 @@ describe('MCE Actions', () => {
 
       const state = makeState(mceData);
 
-      expect(() => new SetSiglumAction(0, '   ').execute(state)).toThrow('Siglum cannot be empty');
+      await expect(new SetSiglumAction(0, '   ').execute(state)).rejects.toBe('Siglum cannot be empty');
     });
   });
 
   describe('SetIncludeInAutoMarginalFoliationAction', () => {
-    it('should include witness index and update description', () => {
+    it('should include witness index and update description', async () => {
       const mceData: MceDataInterface = {
         ...makeBaseMceData(),
         witnesses: [
@@ -210,12 +210,12 @@ describe('MCE Actions', () => {
       const state = makeState(mceData);
       const action = new SetIncludeInAutoMarginalFoliationAction(1, true);
 
-      const result = action.execute(state);
+      const result = await action.execute(state);
       expect(result.mceData.includeInAutoMarginalFoliation).toEqual([0, 1]);
       expect(action.description()).toBe('Include Witness B in auto marginal foliation');
     });
 
-    it('should exclude witness index and update description', () => {
+    it('should exclude witness index and update description', async () => {
       const mceData: MceDataInterface = {
         ...makeBaseMceData(),
         witnesses: [
@@ -228,12 +228,12 @@ describe('MCE Actions', () => {
       const state = makeState(mceData);
       const action = new SetIncludeInAutoMarginalFoliationAction(1, false);
 
-      const result = action.execute(state);
+      const result = await action.execute(state);
       expect(result.mceData.includeInAutoMarginalFoliation).toEqual([0]);
       expect(action.description()).toBe('Exclude Witness B from auto marginal foliation');
     });
 
-    it('should throw when witness index is out of bounds', () => {
+    it('should throw when witness index is out of bounds', async () => {
       const mceData: MceDataInterface = {
         ...makeBaseMceData(),
         witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
@@ -241,8 +241,8 @@ describe('MCE Actions', () => {
 
       const state = makeState(mceData);
 
-      expect(() => new SetIncludeInAutoMarginalFoliationAction(-1, true).execute(state)).toThrow('Witness index -1 is out of bounds');
-      expect(() => new SetIncludeInAutoMarginalFoliationAction(1, false).execute(state)).toThrow('Witness index 1 is out of bounds');
+      await expect(new SetIncludeInAutoMarginalFoliationAction(-1, true).execute(state)).rejects.toBe('Witness index -1 is out of bounds');
+      await expect(new SetIncludeInAutoMarginalFoliationAction(1, false).execute(state)).rejects.toBe('Witness index 1 is out of bounds');
     });
   });
 });

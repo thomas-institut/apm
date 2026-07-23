@@ -8,7 +8,7 @@ export interface StateTransformAction<T> {
    *
    * @param state
    */
-  execute(state:T): T;
+  execute(state:T): Promise<T>;
 
 
   /**
@@ -148,9 +148,9 @@ export class StateHistory<T> {
     return this.stateHistory.findIndex(s => s.signature === signature);
   }
 
-  do(action: StateTransformAction<T>): T {
+  async do(action: StateTransformAction<T>): Promise<T> {
     const initialState = this.getCurrentState();
-    const newState = action.execute(initialState);
+    const newState = await action.execute(initialState);
     const newSignature = this.getStateSignature(newState);
     const newActionDescription = action.description(initialState);
 

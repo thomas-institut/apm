@@ -1,8 +1,8 @@
 import {MceData} from '@/MceData/MceData';
-import {CtDataInterface} from '@/CtData/CtDataInterface';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
 
 export class AddChunkAction implements StateTransformAction<MceComposerHistoryState> {
 
@@ -10,8 +10,7 @@ export class AddChunkAction implements StateTransformAction<MceComposerHistorySt
 
   constructor(
     private readonly tableId: number,
-    private readonly ctData: CtDataInterface,
-    private readonly chunkTimeString: string,
+    private readonly singleChunkData: SingleChunkApiData,
     private readonly getDocTitle: (docId: number) => Promise<string>,
     private readonly getSourceTitle: (sourceId: number) => Promise<string>,
   ) {
@@ -20,8 +19,28 @@ export class AddChunkAction implements StateTransformAction<MceComposerHistorySt
 
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const newState = deepCopy(state);
-    await MceData.addChunk(newState.mceData, this.tableId, this.ctData, this.chunkTimeString, this.getDocTitle, this.getSourceTitle);
-    this.title = `Add chunk ${this.ctData.chunkId} to edition`;
+    await MceData.addChunk(newState.mceData, this.tableId, this.singleChunkData.ctData, this.singleChunkData.timeStamp, this.getDocTitle, this.getSourceTitle);
+
+    const indexInCtDataStatusArray = newState.ctDataStatusArray.findIndex((ctDataStatus) => ctDataStatus.ctDataId === this.tableId);
+    if (indexInCtDataStatusArray !== -1) {
+      throw new Error('CT data already exists');
+    }
+
+    const indexInMceData = newState.mceData.chunks.findIndex( (chunk) => chunk.chunkEditionTableId === this.tableId);
+
+    if (indexInMceData === -1) {
+      throw new Error('Chunk not properly added to MceData');
+    }
+
+    newState.ctDataStatusArray.push({
+      ctDataId: this.tableId,
+      ctDataState: 'loaded',
+      apiData: this.singleChunkData,
+      errorMsg: '',
+      chunkInMceData: newState.mceData.chunks[indexInMceData]
+    });
+
+    this.title = `Add chunk ${this.singleChunkData.ctData.chunkId} to edition`;
     return newState;
   }
 

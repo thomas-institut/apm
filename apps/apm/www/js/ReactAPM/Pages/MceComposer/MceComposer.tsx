@@ -51,7 +51,6 @@ import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {urlGen} from "@/pages/common/SiteUrlGen";
 import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel";
-import {getLangName} from "@/constants/TranscriptionLanguages";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 
 // TODO 2026-07-22
@@ -419,8 +418,7 @@ export default function MceComposer() {
     try {
       await history.do(new AddChunkAction(
         tableId,
-        chunkApiData.ctData,
-        chunkApiData.timeStamp,
+        chunkApiData,
         getDocTitle,
         getSourceTitle,
       ));

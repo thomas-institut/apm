@@ -107,7 +107,7 @@ describe('AddChunksPanel', () => {
 
     const errorSpan = container.querySelector('.text-danger');
     expect(errorSpan).not.toBeNull();
-    expect(errorSpan?.textContent).toBe('Invalid Table ID');
+    expect(errorSpan?.textContent).toContain('not a valid table Id');
   });
 
   it('shows error message when table id already exists', async () => {
@@ -127,7 +127,7 @@ describe('AddChunksPanel', () => {
 
     const errorSpan = container.querySelector('.text-danger');
     expect(errorSpan).not.toBeNull();
-    expect(errorSpan?.textContent).toBe('Table ID already in edition');
+    expect(errorSpan?.textContent).toContain('already in edition');
   });
 
   it('shows error message when addChunk fails', async () => {

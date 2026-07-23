@@ -218,15 +218,11 @@ export default function MceComposer() {
     if (mceComposerStatus !== 'loadingSingleChunks') {
       return;
     }
-    if (ctDataStatusArray.length === 0) {
-      return;
-    }
-
     // Check if we are fully done
     const allLoaded = ctDataStatusArray.every(st => st.ctDataState === 'loaded');
     const hasErrors = ctDataStatusArray.some(st => st.ctDataState === 'error');
 
-    if (allLoaded) {
+    if (allLoaded || ctDataStatusArray.length === 0) {
       const initialHistory = new StateHistory<HistoryState>(deepCopy({mceData, ctDataStatusArray}));
       setHistory(initialHistory);
       setSavedStateSignature(initialHistory.getCurrentStateSignature());
@@ -368,7 +364,7 @@ export default function MceComposer() {
     if (!isEditionInCache(mceData, mceDataId)) {
       console.log(`mceData change: edition hash ${getMceDataHash(mceData, mceDataId)} not in cache`, mceData);
       setEditionOutOfDate(true);
-      if (settings.autoRegenerate) {
+      if (settings.autoRegenerate && mceData.chunks.length > 0) {
         regenerateEdition();
       }
     } else {

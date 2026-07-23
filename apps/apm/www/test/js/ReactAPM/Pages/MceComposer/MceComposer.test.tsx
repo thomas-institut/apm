@@ -59,11 +59,11 @@ vi.mock('@/ReactAPM/Components/PanelUI/PanelContent', () => ({
   default: ({children}: {children: React.ReactNode}) => <div>{children}</div>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/ChunksPanel', () => ({
+vi.mock('@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel', () => ({
   default: () => <div>chunks</div>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/WitnessesPanel', () => ({
+vi.mock('@/ReactAPM/Pages/MceComposer/WitnessesPanel/WitnessesPanel', () => ({
   default: ({onDeleteSiglaGroup, onChangeSiglaGroup}: {
     onDeleteSiglaGroup?: (siglaGroupIndex: number) => boolean,
     onChangeSiglaGroup?: (siglaGroupIndex: number, group: {siglum: string, witnesses: number[]}) => boolean
@@ -74,8 +74,8 @@ vi.mock('@/ReactAPM/Pages/MceComposer/WitnessesPanel', () => ({
   </div>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/HistoryPanel', () => ({
-  default: () => <div>history</div>
+vi.mock('@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel', () => ({
+  default: () => <div>add chunks</div>
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/MceComposerSaveButton', () => ({
@@ -118,19 +118,19 @@ vi.mock('@/ReactAPM/Components/ProgressBar/ProgressBar', () => ({
   default: ({className}: {className?: string}) => <div data-testid={className ?? 'progress-bar'}>progress</div>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/MainTextPanel', () => ({
+vi.mock('@/ReactAPM/Pages/MceComposer/MainTextPanel/MainTextPanel', () => ({
   default: ({onClickRegenerate}: {onClickRegenerate: () => void}) => (
     <button type="button" onClick={onClickRegenerate}>Regenerate</button>
   )
 }));
 
 // Mock SessionPanel to avoid interval timers in tests
-vi.mock('@/ReactAPM/Pages/MceComposer/SessionPanel', () => ({
+vi.mock('@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel', () => ({
   default: () => <div>session</div>
 }));
 
 // Mock PreviewPanel to avoid stylesheet errors and heavy rendering
-vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel', () => ({
+vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel', () => ({
   default: () => <div>preview</div>
 }));
 
@@ -156,7 +156,7 @@ describe('MceComposer', () => {
       reactAppBaseUrl: '',
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
-        getMceData: vi.fn(),
+        apiMceGetData: vi.fn(),
         getSingleChunkData: vi.fn(),
       } as any,
       versionTag: 'test',
@@ -209,7 +209,7 @@ describe('MceComposer', () => {
       reactAppBaseUrl: '',
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
-        getMceData: vi.fn(),
+        apiMceGetData: vi.fn(),
         getSingleChunkData: vi.fn(),
       } as any,
       versionTag: 'test',
@@ -279,7 +279,7 @@ describe('MceComposer', () => {
       reactAppBaseUrl: '',
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
-        getMceData: vi.fn(),
+        apiMceGetData: vi.fn(),
         getSingleChunkData: vi.fn(),
       } as any,
       versionTag: 'test',
@@ -332,7 +332,7 @@ describe('MceComposer', () => {
       reactAppBaseUrl: '',
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
-        getMceData: vi.fn(),
+        apiMceGetData: vi.fn(),
         getSingleChunkData: vi.fn(),
       } as any,
       versionTag: 'test',

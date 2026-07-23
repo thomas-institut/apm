@@ -6,7 +6,7 @@ import React from 'react';
 import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {describe, expect, it, vi} from 'vitest';
-import EditSiglaGroup from '@/ReactAPM/Pages/MceComposer/EditSiglaGroup';
+import EditSiglaGroup from '@/ReactAPM/Pages/MceComposer/WitnessesPanel/EditSiglaGroup';
 
 vi.mock('react-bootstrap', () => {
   const Modal = ({show, onHide, children}: any) => {

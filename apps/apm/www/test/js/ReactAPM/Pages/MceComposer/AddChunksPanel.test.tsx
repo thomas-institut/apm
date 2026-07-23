@@ -6,7 +6,7 @@ import React from 'react';
 import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {describe, expect, it, vi} from 'vitest';
-import AddChunksPanel from '@/ReactAPM/Pages/MceComposer/AddChunksPanel';
+import AddChunksPanel from '@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel';
 
 vi.mock('react-bootstrap', () => ({
   Button: ({children, ...props}: any) => <button {...props}>{children}</button>,
@@ -88,5 +88,76 @@ describe('AddChunksPanel', () => {
     });
 
     expect(addChunk).toHaveBeenCalledWith(10, '');
+  });
+
+  it('shows error message when table id is <= 0', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={vi.fn().mockResolvedValue(true)}/>);
+    });
+
+    const input = container.querySelector('input[type="number"]') as HTMLInputElement;
+
+    await act(async () => {
+      setInputValue(input, '0');
+    });
+
+    const errorSpan = container.querySelector('.text-danger');
+    expect(errorSpan).not.toBeNull();
+    expect(errorSpan?.textContent).toBe('Invalid Table ID');
+  });
+
+  it('shows error message when table id already exists', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<AddChunksPanel currentChunkTableIds={[7, 9]} addChunk={vi.fn().mockResolvedValue(true)}/>);
+    });
+
+    const input = container.querySelector('input[type="number"]') as HTMLInputElement;
+
+    await act(async () => {
+      setInputValue(input, '7');
+    });
+
+    const errorSpan = container.querySelector('.text-danger');
+    expect(errorSpan).not.toBeNull();
+    expect(errorSpan?.textContent).toBe('Table ID already in edition');
+  });
+
+  it('shows error message when addChunk fails', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const addChunk = vi.fn().mockResolvedValue('Server Error');
+
+    await act(async () => {
+      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={addChunk}/>);
+    });
+
+    const input = container.querySelector('input[type="number"]') as HTMLInputElement;
+    const addButton = container.querySelector('button') as HTMLButtonElement;
+
+    await act(async () => {
+      setInputValue(input, '10');
+    });
+
+    await act(async () => {
+      addButton.click();
+    });
+
+    // Wait for the async addChunk call
+    await act(async () => {
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    const errorSpan = container.querySelector('.text-danger');
+    expect(errorSpan).not.toBeNull();
+    expect(errorSpan?.textContent).toBe('Error: Server Error');
   });
 });

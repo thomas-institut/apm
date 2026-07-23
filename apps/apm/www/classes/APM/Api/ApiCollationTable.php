@@ -26,6 +26,7 @@ use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
 use APM\Api\DataSchema\ApiCollationTableVersionInfo;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
+use APM\CollationTable\TableNotFoundException;
 use APM\Core\Collation\CollationTable;
 use APM\Core\Witness\EditionWitness;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
@@ -122,23 +123,27 @@ class ApiCollationTable extends ApiController
             $timeStamp = TimeString::now();
         } else {
             if (!$this->isValidCompactTimeString($compactEncodedTimeStamp)) {
-                return $this->responseWithText($response, "Bad timestamp", 400);
+                return $this->responseFactory->badRequest($response, "Bad timestamp");
             }
             $timeStamp = TimeString::compactDecode($compactEncodedTimeStamp);
         }
 
-        $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
-        $data = new ApiCollationTableVersionInfo();
-        $data->tableId = $tableId;
-        $data->type = $ctInfo->type;
-        $data->title = $ctInfo->title;
-        $data->timeFrom = $ctInfo->timeFrom;
-        $data->timeUntil = $ctInfo->timeUntil;
-        $data->archived = $ctInfo->archived;
-        $data->isLatestVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
-
-
-        return $this->responseWithJson($response, $data);
+        try {
+            $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
+            $data = new ApiCollationTableVersionInfo();
+            $data->tableId = $tableId;
+            $data->type = $ctInfo->type;
+            $data->title = $ctInfo->title;
+            $data->timeFrom = $ctInfo->timeFrom;
+            $data->timeUntil = $ctInfo->timeUntil;
+            $data->archived = $ctInfo->archived;
+            $data->isLatestVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
+            return $this->responseFactory->success($response, $data);
+        } catch (TableNotFoundException $e) {
+            return $this->responseFactory->notFound($response, $e->getMessage());
+        } catch (Exception $e) {
+            return $this->responseFactory->internalServerError($response, $e->getMessage());
+        }
     }
 
 

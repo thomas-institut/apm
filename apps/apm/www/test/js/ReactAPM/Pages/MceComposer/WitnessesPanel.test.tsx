@@ -6,7 +6,7 @@ import React from 'react';
 import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {describe, expect, it, vi} from 'vitest';
-import WitnessesPanel from '@/ReactAPM/Pages/MceComposer/WitnessesPanel';
+import WitnessesPanel from '@/ReactAPM/Pages/MceComposer/WitnessesPanel/WitnessesPanel';
 
 vi.mock('@/ReactAPM/Components/NiceTable/NiceTable', () => ({
   default: ({rows, columnDefs}: {rows: any[]; columnDefs: any[]}) => <div>

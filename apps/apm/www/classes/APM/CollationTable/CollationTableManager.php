@@ -92,6 +92,7 @@ abstract class CollationTableManager implements ErrorReporter
      * @param int $id
      * @param string $timeStamp
      * @return CollationTableInfo
+     * @throws TableNotFoundException
      */
     abstract public function getCollationTableInfo(int $id, string $timeStamp = '') : CollationTableInfo;
 

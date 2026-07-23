@@ -15,7 +15,7 @@ import {
 import {Form, OverlayTrigger, Popover, Spinner} from "react-bootstrap";
 import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
-import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel";
+import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
@@ -27,15 +27,15 @@ import {MoveChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/MoveChunkAct
 import {SetChunkBreakAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetChunkBreakAction";
 import {AddChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/AddChunkAction";
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
-import WitnessesPanel, {WitnessData} from "@/ReactAPM/Pages/MceComposer/WitnessesPanel";
+import WitnessesPanel, {WitnessData} from "@/ReactAPM/Pages/MceComposer/WitnessesPanel/WitnessesPanel";
 import ProgressBar from "@/ReactAPM/Components/ProgressBar/ProgressBar";
 import {Edition} from "@/Edition/Edition";
 import {MceDataEditionGenerator} from "@/MceData/MceDataEditionGenerator";
 import {BasicProfiler} from "@/toolbox/BasicProfiler";
-import MainTextPanel from "@/ReactAPM/Pages/MceComposer/MainTextPanel";
+import MainTextPanel from "@/ReactAPM/Pages/MceComposer/MainTextPanel/MainTextPanel";
 import ApmLogo from "@/ReactAPM/Components/ApmLogo/ApmLogo";
 import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
-import SessionPanel from "@/ReactAPM/Pages/MceComposer/SessionPanel";
+import SessionPanel from "@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel";
 import MultiToggle from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import './MceComposer.css';
 import {hashString} from "@/ReactAPM/ToolBox/Hash";
@@ -46,11 +46,13 @@ import {
 import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeSiglaGroupAction";
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteSiglaGroupAction";
-import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel";
+import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {urlGen} from "@/pages/common/SiteUrlGen";
-import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel";
+import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel";
+import {getLangName} from "@/constants/TranscriptionLanguages";
+import {ApmFormats} from "@/pages/common/ApmFormats";
 
 // TODO 2026-07-22
 //  - Implement add chunk action and quick add button in "Add Chunk" panel
@@ -399,16 +401,26 @@ export default function MceComposer() {
     return true;
   };
 
-  const addChunk = async (tableId: number, version: string = ''): Promise<boolean> => {
+  const addChunk = async (tableId: number, version: string = ''): Promise<true|string> => {
     console.log(`Add chunk from table ${tableId}, version '${version}'`);
+    let chunkApiData: SingleChunkApiData;
     try {
-      const chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, version);
-      const getDocTitle = async (docId: number): Promise<string> => {
-        return appContext.apiClient.getEntityName(docId);
-      };
-      const getSourceTitle = async (sourceId: number): Promise<string> => {
-        return appContext.apiClient.getEntityName(sourceId);
-      };
+      chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, version);
+      if (chunkApiData.ctData.lang !== mceData.lang) {
+        return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
+      }
+    } catch (error) {
+      const errorString = error as String;
+      return errorString.toString();
+    }
+    const getDocTitle = async (docId: number): Promise<string> => {
+      return appContext.apiClient.getEntityName(docId);
+    };
+    const getSourceTitle = async (sourceId: number): Promise<string> => {
+      return appContext.apiClient.getEntityName(sourceId);
+    };
+
+    try {
       history.do(new AddChunkAction(
         tableId,
         chunkApiData.ctData,
@@ -418,7 +430,7 @@ export default function MceComposer() {
       ));
     } catch (error) {
       reportActionBug('AddChunkAction', error);
-      return false;
+      return 'Bug found';
     }
     setHistoryVersion(v => v + 1);
     setChunksPanelVersion(v => v + 1);

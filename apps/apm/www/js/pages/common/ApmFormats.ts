@@ -173,12 +173,50 @@ export class ApmFormats {
   }
 
   /**
-   * Set the clients time zone
+   * Set the client's time zone
    * @param {string }tz
    *
    */
   static setTimeZone(tz: string) {
     timeZone = tz;
+  }
+
+  static getLangName(langCode: string, useLowercase: boolean = false) : string {
+    let name = langCode;
+    switch (langCode) {
+      case 'ar':
+        name = 'Arabic';
+        break;
+
+      case 'la':
+        name = 'Latin';
+        break;
+
+      case 'he':
+        name = 'Hebrew';
+        break;
+
+      case 'jrb':
+        name = 'Judeo-Arabic';
+        break;
+
+      case 'en':
+        name = 'English';
+        break;
+
+      case 'de':
+        name = 'German';
+        break;
+
+      case 'fr':
+        name = 'French';
+        break;
+
+      case 'es':
+        name = 'Spanish';
+        break;
+    }
+    return useLowercase ? name.toLowerCase() : name;
   }
 }
 

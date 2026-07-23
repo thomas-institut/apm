@@ -1,4 +1,5 @@
 import {CtDataInterface} from "@/CtData/CtDataInterface";
+import {ApiResponse} from "@/Api/DataSchema/ApiResponse";
 
 export interface ApiCollationTableAuto {
   type: string;
@@ -60,7 +61,8 @@ export interface ApiCollationTable_convertToEdition_input {
 /**
  * Data returned by the collationTable versionInfo API call
  */
-export interface ApiCollationTableVersionInfo {
+export interface ApiCollationTableVersionInfo extends ApiResponse {
+  result: 'Success';
   tableId: number;
   type: string;
   title: string;

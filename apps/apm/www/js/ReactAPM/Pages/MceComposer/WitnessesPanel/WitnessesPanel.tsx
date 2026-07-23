@@ -7,7 +7,7 @@ import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {Pencil, Trash} from "react-bootstrap-icons";
 import {Button} from "react-bootstrap";
 import {useState} from "react";
-import EditSiglaGroup from "@/ReactAPM/Pages/MceComposer/EditSiglaGroup";
+import EditSiglaGroup from "@/ReactAPM/Pages/MceComposer/WitnessesPanel/EditSiglaGroup";
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 import {getSiglaGroupString} from "@/ReactAPM/Pages/MceComposer/SiglaGroupUtil";
 

@@ -230,9 +230,12 @@ export class ApmApiClient {
   async collationTableVersionInfo(tableId: number, versionTimeString: string): Promise<ApiCollationTableVersionInfo | null> {
 
     try {
-      return await this.get(urlGen.apiCollationTable_versionInfo(tableId, versionTimeString));
+      const apiResponse = await this.get(urlGen.apiCollationTable_versionInfo(tableId, versionTimeString));
+      if (apiResponse.result === 'Success') {
+        return apiResponse;
+      }
+      return null;
     } catch (error) {
-      console.error(`Error getting collation table version info ${tableId}, ${versionTimeString}`, error);
       return null;
     }
   }
@@ -258,7 +261,7 @@ export class ApmApiClient {
     if (lookingForLatestVersion) {
       const latestVersionInfo = await this.collationTableVersionInfo(tableId, 'latest');
       if (latestVersionInfo === null) {
-        throw new Error('Table does not exist, no latest version found');
+        throw `Table ${tableId} does not exist`;
       }
       version = latestVersionInfo.timeFrom;
     }

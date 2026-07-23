@@ -21,6 +21,7 @@ namespace APM\CollationTable;
 
 
 use InvalidArgumentException;
+use LogicException;
 use PDO;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -290,9 +291,6 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $idArray;
     }
 
-    /**
-     * @throws InvalidWhereClauseException
-     */
     public function getCollationTableInfo(int $id, string $timeStamp = ''): CollationTableInfo
     {
         $mySqlDataTableClass = MySqlUnitemporalDataTable::class;
@@ -306,21 +304,22 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             /** @var MySqlUnitemporalDataTable $ctTable */
             $ctTable = $this->ctTable;
 
-            $result = $ctTable->select('id, title, type, archived, valid_from, valid_until',
-                "id='$id' AND valid_from <='$timeStamp' and valid_until>'$timeStamp'",
-                0,
-                '',
-                "getCollationTableInfo");
-
+            try {
+                $result = $ctTable->select('id, title, type, archived, valid_from, valid_until',
+                    "id='$id' AND valid_from <='$timeStamp' and valid_until>'$timeStamp'",
+                    0,
+                    '',
+                    "getCollationTableInfo");
+            } catch (InvalidWhereClauseException $e) {
+                // if this happens, the code is wrong!
+                throw new LogicException("Invalid where clause", 0, $e);
+            }
             $rows = new PdoResultsIterator($result, 'id');
-
-//            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $rows = $this->ctTable->findRowsWithTime(['id' => $id], 0,  $timeStamp);
         }
-
         if (count($rows)=== 0) {
-            throw new InvalidArgumentException("Table does not exist");
+            throw new TableNotFoundException("Table does not exist");
         }
 
         return CollationTableInfo::createFromDbRow($rows->getFirst());

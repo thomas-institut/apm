@@ -6,7 +6,7 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {act} from 'react';
 import {describe, expect, it, vi} from 'vitest';
-import SessionPanel from '@/ReactAPM/Pages/MceComposer/SessionPanel';
+import SessionPanel from '@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel';
 import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 
 // Mock ApmFormats

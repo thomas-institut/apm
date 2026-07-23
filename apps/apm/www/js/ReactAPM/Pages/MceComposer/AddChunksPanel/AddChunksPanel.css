@@ -1,0 +1,16 @@
+
+
+.add-chunks-panel {
+
+    padding: 1em;
+
+
+    .quick-add-form {
+        margin-left: 1em;
+        display: flex;
+        flex-direction: row;
+        gap: 1em;
+        align-items: center;
+    }
+
+}

@@ -58,7 +58,7 @@ export class MceData {
 
   static setTitle(mceData: MceDataInterface, newTitle: string) {
     newTitle = newTitle.trim();
-    if (newTitle === '')   {
+    if (newTitle === '') {
       console.warn(`Invalid title '${newTitle}'`);
       return mceData;
     }
@@ -66,9 +66,9 @@ export class MceData {
     return mceData;
   }
 
-  static deleteSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number) {
+  static deleteSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number): MceDataInterface {
     if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
-      throw(`Invalid sigla group index ${siglaGroupIndex}`);
+      throw (`Invalid sigla group index ${siglaGroupIndex}`);
     }
     mceData.siglaGroups.splice(siglaGroupIndex, 1);
     return mceData;
@@ -103,12 +103,12 @@ export class MceData {
     }
 
     // check if the witnesses are valid
-    if (group.witnesses.some( index => index >= mceData.witnesses.length || index < 0 )) {
+    if (group.witnesses.some(index => index >= mceData.witnesses.length || index < 0)) {
       return 'Sigla group contains invalid witnesses';
     }
 
     // check if the group is duplicated
-    const otherGroups = mceData.siglaGroups.filter( (g,i) => i !== siglaGroupIndex);
+    const otherGroups = mceData.siglaGroups.filter((g, i) => i !== siglaGroupIndex);
 
     if (otherGroups.some(g => g.siglum.trim() === trimmedSiglum)) {
       return 'Sigla group siglum is duplicated';
@@ -118,7 +118,7 @@ export class MceData {
       return 'Sigla group siglum is a witness siglum';
     }
 
-    if (otherGroups.some( g => g.witnesses.every( s => group.witnesses.includes(s) ) )) {
+    if (otherGroups.some(g => g.witnesses.every(s => group.witnesses.includes(s)))) {
       return 'Sigla group is duplicated';
     }
 
@@ -127,25 +127,27 @@ export class MceData {
 
   static changeSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface) {
     if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
-      throw(`Invalid sigla group index ${siglaGroupIndex}`);
+      throw (`Invalid sigla group index ${siglaGroupIndex}`);
     }
     const isValid = this.isSiglaGroupValid(mceData, siglaGroupIndex, group);
     if (isValid !== true) {
-      throw(`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
+      throw (`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
     }
 
     mceData.siglaGroups[siglaGroupIndex] = deepCopy(group);
+    return mceData;
   }
 
-  static addSiglaGroup(mceData: MceDataInterface, group: SiglaGroupInterface) {
+  static addSiglaGroup(mceData: MceDataInterface, group: SiglaGroupInterface): MceDataInterface {
     const isValid = this.isSiglaGroupValid(mceData, -1, group);
     if (isValid !== true) {
-      throw(`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
+      throw (`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
     }
     mceData.siglaGroups.push(deepCopy(group));
+    return mceData;
   }
 
-  static setChunkBreak(mceData: MceDataInterface, chunkIndex: number, newBreak: string) {
+  static setChunkBreak(mceData: MceDataInterface, chunkIndex: number, newBreak: string): MceDataInterface {
     if (chunkIndex < 0 || chunkIndex >= mceData.chunks.length) {
       console.warn(`Invalid chunk index ${chunkIndex}`);
       return mceData;
@@ -160,7 +162,7 @@ export class MceData {
     return mceData;
   }
 
-  static setSiglum(mceData: MceDataInterface, witnessIndex: number, newSiglum: string) {
+  static setSiglum(mceData: MceDataInterface, witnessIndex: number, newSiglum: string): MceDataInterface {
     if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
       console.warn(`Invalid witness index ${witnessIndex}`);
       return mceData;
@@ -174,7 +176,7 @@ export class MceData {
     return mceData;
   }
 
-  static setAutoMarginalFoliation(mceData: MceDataInterface, witnessIndex: number, newState: boolean) {
+  static setAutoMarginalFoliation(mceData: MceDataInterface, witnessIndex: number, newState: boolean): MceDataInterface {
     if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
       console.warn(`Invalid witness index ${witnessIndex}`);
       return mceData;
@@ -196,14 +198,13 @@ export class MceData {
     return mceData;
   }
 
-
   /**
    * Moves a chunk in the chunk order array from the current position to the next position in the specified direction.
    * @param mceData
    * @param chunkPosition
    * @param direction
    */
-  static moveChunk(mceData: MceDataInterface, chunkPosition: number, direction: 'forwards' | 'backwards') {
+  static moveChunk(mceData: MceDataInterface, chunkPosition: number, direction: 'forwards' | 'backwards'): MceDataInterface {
 
     if (mceData.chunkOrder === undefined) {
       mceData.chunkOrder = this.getDefaultChunkOrder(mceData);
@@ -221,6 +222,108 @@ export class MceData {
     return mceData;
   }
 
+  /**
+   * Updates a chunk in the MCE data
+   *
+   * @param mceData
+   * @param tableId the system id of the edition
+   * @param ctData
+   * @param version
+   * @param getDocTitle a function to get the title of a document in case the updated chunk adds a new fullTx witness
+   * @param getSourceTitle a function to get the title of a source in case the updated chunk adds a new source witness
+   */
+  static async updateChunk(mceData: MceDataInterface, tableId: number, ctData: CtDataInterface, version: string,
+                           getDocTitle: (docId: number) => Promise<string>,
+                           getSourceTitle: (sourceId: number) => Promise<string>): Promise<MceDataInterface> {
+
+    const chunkIndex = mceData.chunks.findIndex((chunk) => chunk.chunkEditionTableId === tableId);
+
+    if (chunkIndex === -1) {
+      throw new Error(`Attempt to update chunk with id ${tableId} which does not exist`);
+    }
+
+    if (ctData.type !== 'edition') {
+      throw new Error(`Attempt to update chunk with id ${tableId} which is not an edition`);
+    }
+
+    if (ctData.lang !== mceData.lang) {
+      // this should never happen, but if it does, it will break a lot of things, so let's throw an error right away
+      throw new Error(`Attempt to update chunk with id ${tableId} which is not in the same language`);
+    }
+
+    if (ctData.archived) {
+      console.warn(`Updating chunk with archived table id ${tableId}`);
+    }
+
+    mceData.chunks[chunkIndex].version = version;
+    mceData.chunks[chunkIndex].title = ctData.title;
+
+    const chunk = mceData.chunks[chunkIndex];
+    chunk.witnessIndices = [];
+
+    for (let ctDataWitnessIndex = 0; ctDataWitnessIndex < ctData.witnesses.length; ctDataWitnessIndex++) {
+      let ctDataWitnessInfo = ctData.witnesses[ctDataWitnessIndex];
+      if (ctDataWitnessInfo.witnessType === 'edition') {
+        chunk.witnessIndices.push(-1);
+        continue;
+      }
+
+      switch (ctDataWitnessInfo.witnessType) {
+        case 'fullTx': {
+          if (ctDataWitnessInfo.docId === undefined) {
+            console.warn(`Full TX witness info does not have docId, this should never happen!`, ctDataWitnessInfo);
+            break;
+          }
+          const localWitnessId = ctDataWitnessInfo.localWitnessId ?? 'A';
+          const witnessId = `${ctDataWitnessInfo.witnessType}-${ctDataWitnessInfo.docId}-${localWitnessId}`;
+          const witnessIndex = this.getWitnessIndexByWitnessId(mceData, witnessId);
+          if (witnessIndex === -1) {
+            const siglum = ctData.sigla[ctDataWitnessIndex] ?? `W${mceData.witnesses.length}`;
+            const title = await getDocTitle(ctDataWitnessInfo.docId);
+            const newWitnessIndex = this.addNewWitnessInfo(mceData, {
+              type: 'fullTx',
+              witnessId: witnessId,
+              docId: ctDataWitnessInfo.docId,
+              localWitnessId: localWitnessId,
+              title: title
+            }, siglum);
+            chunk.witnessIndices.push(newWitnessIndex);
+          } else {
+            chunk.witnessIndices.push(witnessIndex);
+          }
+          break;
+        }
+
+        case 'source': {
+          const witnessId = ctDataWitnessInfo.ApmWitnessId;
+          const witnessIndex = this.getWitnessIndexByWitnessId(mceData, witnessId);
+          if (witnessIndex === -1) {
+            let [, tidStr] = witnessId.split(':');
+            const tid = parseInt(tidStr);
+            const title = await getSourceTitle(tid);
+            const siglum = ctData.sigla[ctDataWitnessIndex] ?? `W${mceData.witnesses.length}`;
+            const newWitnessIndex = this.addNewWitnessInfo(mceData, {
+              type: 'source',
+              witnessId: witnessId,
+              tid: tid,
+              title: title
+            }, siglum);
+            chunk.witnessIndices.push(newWitnessIndex);
+          } else {
+            chunk.witnessIndices.push(witnessIndex);
+          }
+          break;
+        }
+
+        default:
+          console.warn(`Unknown witness type '${ctDataWitnessInfo['witnessType']}' found in ctData, witness index ${ctDataWitnessIndex}`);
+          console.log(ctData);
+      }
+    }
+
+    return this.removeUnusedWitnessesAndReindex(mceData);
+  }
+
   static deleteChunk(mceData: MceDataInterface, chunkIndex: number): MceDataInterface {
     if (mceData.chunks.length === 0) {
       console.warn(`Attempt to delete chunks from empty edition`);
@@ -233,7 +336,7 @@ export class MceData {
     }
 
     if (mceData.chunks.length === 1) {
-      // deleting the only chunk 
+      // deleting the only chunk
       mceData.chunks = [];
       mceData.witnesses = [];
       mceData.sigla = [];
@@ -257,6 +360,159 @@ export class MceData {
       return index !== -1;
     });
 
+    return this.removeUnusedWitnessesAndReindex(mceData);
+  }
+
+  static async addChunk(mceData: MceDataInterface, tableId: number,
+                        ctData: CtDataInterface, chunkTimeString: string,
+                        getDocTitle: (docId: number) => Promise<string>,
+                        getSourceTitle: (sourceId: number) => Promise<string>
+  ): Promise<MceDataInterface> {
+    console.log(`Adding chunk ${ctData.chunkId} to MceData`);
+    // first, see if the exact chunk edition is already in
+    for (let chunkIndex = 0; chunkIndex < mceData.chunks.length; chunkIndex++) {
+      const chunk = mceData.chunks[chunkIndex];
+      if (chunk.chunkEditionTableId === tableId && chunk.version === chunkTimeString) {
+        console.warn(`Table ${tableId} already included`);
+        return mceData;
+      }
+    }
+    // new chunk, check if it's the same language
+    if (mceData.chunks.length !== 0 && mceData.lang !== ctData['lang']) {
+      throw new Error(`Attempt to add chunk with id ${tableId} which is not in the same language`);
+    }
+
+    if (ctData.type !== 'edition') {
+      // reject non-editions
+      throw new Error(`Attempt to update chunk with id ${tableId} which is not an edition`);
+    }
+
+    if (mceData.chunks.length === 0) {
+      // the first chunk in the edition
+      mceData.lang = ctData.lang;
+    }
+
+    const newChunk: ChunkInMceData = {
+      chunkId: ctData.chunkId,
+      chunkEditionTableId: tableId,
+      version: chunkTimeString,
+      break: 'paragraph',
+      lineNumbersRestart: false,
+      witnessIndices: [],
+      title: ctData.title
+    };
+    // add it to the end of the list
+    if (mceData.chunkOrder === undefined) {
+      mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
+    }
+    mceData.chunks.push(newChunk);
+    mceData.chunkOrder.push(mceData.chunks.length - 1);
+
+    // add new witnesses and sigla
+    for (let ctDataWitnessIndex = 0; ctDataWitnessIndex < ctData.witnesses.length; ctDataWitnessIndex++) {
+      let ctDataWitnessInfo = ctData.witnesses[ctDataWitnessIndex];
+
+      switch (ctDataWitnessInfo.witnessType) {
+        case 'edition':
+          newChunk.witnessIndices.push(-1);
+          break;
+
+        case 'fullTx': {
+          if (ctDataWitnessInfo.docId === undefined) {
+            console.warn(`Full TX witness info does not have docId, this should never happen!`, ctDataWitnessInfo);
+            break;
+          }
+          const witnessId = `${ctDataWitnessInfo.witnessType}-${ctDataWitnessInfo.docId}-${ctDataWitnessInfo.localWitnessId}`;
+          const witnessIndex = this.getWitnessIndexByWitnessId(mceData, witnessId);
+          if (witnessIndex === -1) {
+            // new witness
+            const title = await getDocTitle(ctDataWitnessInfo.docId);
+            let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex];
+            let newWitnessIndex = this.addNewWitnessInfo(mceData, {
+              type: 'fullTx',
+              witnessId: witnessId,
+              docId: ctDataWitnessInfo.docId,
+              localWitnessId: ctDataWitnessInfo.localWitnessId ?? 'A',
+              title: title
+            }, newWitnessSiglum);
+            newChunk.witnessIndices.push(newWitnessIndex);
+          } else {
+            // witness already exists
+            newChunk.witnessIndices.push(witnessIndex);
+          }
+          break;
+        }
+
+        case 'source': {
+          const witnessId = ctDataWitnessInfo.ApmWitnessId;
+          const witnessIndex = this.getWitnessIndexByWitnessId(mceData, witnessId);
+          if (witnessIndex === -1) {
+            // new witness
+            let [, tidStr] = witnessId.split(':');
+            const tid = parseInt(tidStr);
+            let title = await getSourceTitle(tid);
+            let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex];
+            let newWitnessIndex = this.addNewWitnessInfo(mceData, {
+              type: 'source', witnessId: witnessId, tid: tid, title: title
+            }, newWitnessSiglum);
+            newChunk.witnessIndices.push(newWitnessIndex);
+          } else {
+            // witness already exists
+            newChunk.witnessIndices.push(witnessIndex);
+          }
+          break;
+        }
+
+        default:
+          console.warn(`Unknown witness type '${ctDataWitnessInfo['witnessType']}' found in ctData, witness index ${ctDataWitnessIndex}`);
+          console.log(ctData);
+      }
+    }
+    return mceData;
+  }
+
+  /**
+   * Returns the index of the witness with the given `witnessId`, or `-1` when it is not present.
+   */
+  private static getWitnessIndexByWitnessId(mceData: MceDataInterface, witnessId: string): number {
+    for (let i = 0; i < mceData.witnesses.length; i++) {
+      if (witnessId === mceData.witnesses[i].witnessId) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  /**
+   * Appends a new witness and its siglum, ensuring the stored siglum is unique inside `mceData.sigla`.
+   *
+   * When the requested siglum already exists, a fallback siglum (`W{index}`) is generated.
+   *
+   * @returns The index assigned to the newly added witness.
+   */
+  private static addNewWitnessInfo(mceData: MceDataInterface, witnessInfo: WitnessInMceData, siglum: string): number {
+    mceData.witnesses.push(witnessInfo);
+    let witnessIndex = mceData.witnesses.length - 1;
+    // add witness siglum at the end of this.mceData.sigla
+    if (mceData.sigla.indexOf(siglum) !== -1) {
+      // siglum already exists; since we don't want duplicate sigla,
+      // we need to create a new unique one that the user will surely
+      // change later on
+      mceData.sigla.push(`W${witnessIndex}`);
+    } else {
+      // just push it
+      mceData.sigla.push(siglum);
+    }
+    return witnessIndex;
+  }
+
+  /**
+   * Removes witnesses that are no longer referenced by any chunk and reindexes all witness references.
+   *
+   * This updates `chunks[].witnessIndices`, `siglaGroups[].witnesses`, and
+   * `includeInAutoMarginalFoliation` (when defined) to match the compacted witness list.
+   */
+  private static removeUnusedWitnessesAndReindex(mceData: MceDataInterface): MceDataInterface {
     const usedWitnessIndices = new Set<number>();
     mceData.chunks.forEach(chunk => {
       chunk.witnessIndices.forEach(idx => {
@@ -295,142 +551,14 @@ export class MceData {
         .filter(newIndex => newIndex !== undefined) as number[];
     });
 
+    if (mceData.includeInAutoMarginalFoliation !== undefined) {
+      mceData.includeInAutoMarginalFoliation = mceData.includeInAutoMarginalFoliation
+        .map(oldIndex => oldToNewIndexMap.get(oldIndex))
+        .filter(newIndex => newIndex !== undefined) as number[];
+    }
+
     return mceData;
   }
-
-  static async addChunk(mceData: MceDataInterface, tableId: number,
-                        ctData: CtDataInterface, chunkTimeString: string,
-                        getDocTitle: (docId: number) => Promise<string>,
-                        getSourceTitle: (sourceId: number) => Promise<string>
-  ): Promise<MceDataInterface> {
-    console.log(`Adding chunk ${ctData.chunkId} to MceData`);
-    // first, see if the exact chunk edition is already in
-    for (let chunkIndex = 0; chunkIndex < mceData.chunks.length; chunkIndex++) {
-      const chunk = mceData.chunks[chunkIndex];
-      if (chunk.chunkEditionTableId === tableId && chunk.version === chunkTimeString) {
-        console.warn(`Table ${tableId} already included`);
-        return mceData;
-      }
-    }
-    // new chunk, check if it's the same language
-    if (mceData.chunks.length !== 0 && mceData.lang !== ctData['lang']) {
-      console.warn(`Wrong language (${ctData.lang})`);
-      return mceData;
-    }
-
-    if (mceData.chunks.length === 0) {
-      // the first chunk in the edition
-      mceData.lang = ctData.lang;
-    }
-
-    const newChunk: ChunkInMceData = {
-      chunkId: ctData.chunkId,
-      chunkEditionTableId: tableId,
-      version: chunkTimeString,
-      break: 'paragraph',
-      lineNumbersRestart: false,
-      witnessIndices: [],
-      title: ctData.title
-    };
-    // add it to the end of the list
-    if (mceData.chunkOrder === undefined) {
-      mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
-    }
-    mceData.chunks.push(newChunk);
-    mceData.chunkOrder.push(mceData.chunks.length - 1);
-
-    const addNewWitnessInfo = (witnessInfo: WitnessInMceData, siglum: string): number => {
-      mceData.witnesses.push(witnessInfo);
-      let witnessIndex = mceData.witnesses.length - 1;
-      // add witness siglum at the end of this.mceData.sigla
-      if (mceData.sigla.indexOf(siglum) !== -1) {
-        // siglum already exists; since we don't want duplicate sigla,
-        // we need to create a new unique one that the user will surely
-        // change later on
-        mceData.sigla.push(`W${witnessIndex}`);
-      } else {
-        // just push it
-        mceData.sigla.push(siglum);
-      }
-      return witnessIndex;
-    };
-
-    /**
-     * Returns the index of the witness with the given witnessId in `mceData.witnesses`, or -1 if it doesn't exist
-     * @param witnessId
-     */
-    const getWitnessIndexByWitnessId = (witnessId: string): number => {
-      for (let i = 0; i < mceData.witnesses.length; i++) {
-        if (witnessId === mceData.witnesses[i].witnessId) {
-          return i;
-        }
-      }
-      return -1;
-    }
-
-    // add new witnesses and sigla
-    for (let ctDataWitnessIndex = 0; ctDataWitnessIndex < ctData.witnesses.length; ctDataWitnessIndex++) {
-      let ctDataWitnessInfo = ctData.witnesses[ctDataWitnessIndex];
-
-      switch (ctDataWitnessInfo.witnessType) {
-        case 'edition':
-          newChunk.witnessIndices.push(-1);
-          break;
-
-        case 'fullTx': {
-          if (ctDataWitnessInfo.docId === undefined) {
-            console.warn(`Full TX witness info does not have docId, this should never happen!`, ctDataWitnessInfo);
-            break;
-          }
-          const witnessId = `${ctDataWitnessInfo.witnessType}-${ctDataWitnessInfo.docId}-${ctDataWitnessInfo.localWitnessId}`;
-          const witnessIndex = getWitnessIndexByWitnessId(witnessId);
-          if (witnessIndex === -1) {
-            // new witness
-            const title = await getDocTitle(ctDataWitnessInfo.docId);
-            let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex];
-            let newWitnessIndex = addNewWitnessInfo({
-              type: 'fullTx',
-              witnessId: witnessId,
-              docId: ctDataWitnessInfo.docId,
-              localWitnessId: ctDataWitnessInfo.localWitnessId ?? 'A',
-              title: title
-            }, newWitnessSiglum);
-            newChunk.witnessIndices.push(newWitnessIndex);
-          } else {
-            // witness already exists
-            newChunk.witnessIndices.push(witnessIndex);
-          }
-          break;
-        }
-
-        case 'source': {
-          const witnessId = ctDataWitnessInfo.ApmWitnessId;
-          const witnessIndex = getWitnessIndexByWitnessId(witnessId);
-          if (witnessIndex === -1) {
-            // new witness
-            let [, tidStr] = witnessId.split(':');
-            const tid = parseInt(tidStr);
-            let title = await getSourceTitle(tid);
-            let newWitnessSiglum = ctData.sigla[ctDataWitnessIndex];
-            let newWitnessIndex = addNewWitnessInfo({
-              type: 'source', witnessId: witnessId, tid: tid, title: title
-            }, newWitnessSiglum);
-            newChunk.witnessIndices.push(newWitnessIndex);
-          } else {
-            // witness already exists
-            newChunk.witnessIndices.push(witnessIndex);
-          }
-          break;
-        }
-
-        default:
-          console.warn(`Unknown witness type '${ctDataWitnessInfo['witnessType']}' found in ctData, witness index ${ctDataWitnessIndex}`);
-          console.log(ctData);
-      }
-    }
-    return mceData;
-  }
-
 
 }
 

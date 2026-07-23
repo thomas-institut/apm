@@ -54,14 +54,14 @@ import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunk
 import {ApmFormats} from "@/pages/common/ApmFormats";
 
 // TODO 2026-07-22
-//  - Implement add chunk action and quick add button in "Add Chunk" panel
 //  - Implement load active chunks table and adding chunks from it
 //  - Implement update chunk action
 
 
 // TODO: for later
-//  - Implement versions panel
-//  - Implement showing tags in chunks panel
+//  - Implement versions/admin panel with clone and archive buttons
+//  - Implement tags panel
+
 
 
 export type CtDataState = 'notLoaded' | 'loading' | 'loaded' | 'error';

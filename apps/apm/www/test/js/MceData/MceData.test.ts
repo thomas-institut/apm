@@ -132,6 +132,167 @@ describe('MceData', () => {
     });
   });
 
+  describe('updateChunk', () => {
+    const getDocTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Doc ${id}`));
+    const getSourceTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Source ${id}`));
+
+    it('updates version/title and synchronizes witnesses', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.lang = 'la';
+      mceData.witnesses = [
+        { witnessId: 'source:10', type: 'source', tid: 10, title: 'Source 10' } as any,
+        { witnessId: 'source:20', type: 'source', tid: 20, title: 'Source 20' } as any
+      ];
+      mceData.sigla = ['S10', 'S20'];
+      mceData.siglaGroups = [
+        { siglum: 'G1', witnesses: [0, 1] }
+      ];
+      mceData.chunks = [
+        {
+          chunkId: 'c0',
+          chunkEditionTableId: 1,
+          version: 'v1',
+          title: 'Old title',
+          break: 'paragraph',
+          lineNumbersRestart: false,
+          witnessIndices: [0]
+        } as any,
+        {
+          chunkId: 'c1',
+          chunkEditionTableId: 2,
+          version: 'v1',
+          title: 'Chunk 1',
+          break: 'paragraph',
+          lineNumbersRestart: false,
+          witnessIndices: [1]
+        } as any
+      ];
+
+      const ctData = {
+        archived: false,
+        type: 'edition',
+        lang: 'la',
+        title: 'New title',
+        witnesses: [
+          { witnessType: 'source', ApmWitnessId: 'source:20', title: 'Source 20' },
+          { witnessType: 'source', ApmWitnessId: 'source:30', title: 'Source 30' },
+          { witnessType: 'edition' }
+        ],
+        sigla: ['S20', 'S30', 'Ed']
+      } as any;
+
+      await MceData.updateChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle);
+
+      expect(mceData.chunks[0].version).toBe('v2');
+      expect(mceData.chunks[0].title).toBe('New title');
+      expect(mceData.witnesses).toEqual([
+        { witnessId: 'source:20', type: 'source', tid: 20, title: 'Source 20' },
+        { witnessId: 'source:30', type: 'source', tid: 30, title: 'Source 30' }
+      ]);
+      expect(mceData.sigla).toEqual(['S20', 'S30']);
+      expect(mceData.chunks[0].witnessIndices).toEqual([0, 1, -1]);
+      expect(mceData.chunks[1].witnessIndices).toEqual([0]);
+      expect(mceData.siglaGroups).toEqual([{ siglum: 'G1', witnesses: [0] }]);
+      expect(getSourceTitle).toHaveBeenCalledWith(30);
+    });
+
+    it('uses title resolvers for new witnesses when ct witness title is missing', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.lang = 'la';
+      mceData.witnesses = [
+        { witnessId: 'source:20', type: 'source', tid: 20, title: 'Source 20' } as any
+      ];
+      mceData.sigla = ['S20'];
+      mceData.chunks = [
+        {
+          chunkId: 'c0',
+          chunkEditionTableId: 1,
+          version: 'v1',
+          title: 'Old title',
+          break: 'paragraph',
+          lineNumbersRestart: false,
+          witnessIndices: [0]
+        } as any
+      ];
+
+      const ctData = {
+        archived: false,
+        type: 'edition',
+        lang: 'la',
+        title: 'New title',
+        witnesses: [
+          { witnessType: 'source', ApmWitnessId: 'source:30', title: '' },
+          { witnessType: 'fullTx', docId: 10, localWitnessId: 'A', title: '' }
+        ],
+        sigla: ['S30', 'A']
+      } as any;
+
+      await MceData.updateChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle);
+
+      expect(mceData.witnesses).toEqual([
+        { witnessId: 'source:30', type: 'source', tid: 30, title: 'Source 30' },
+        { witnessId: 'fullTx-10-A', type: 'fullTx', docId: 10, localWitnessId: 'A', title: 'Doc 10' }
+      ]);
+      expect(getSourceTitle).toHaveBeenCalledWith(30);
+      expect(getDocTitle).toHaveBeenCalledWith(10);
+    });
+
+    it('throws when chunk table id does not exist', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.chunks = [
+        { chunkId: 'c0', chunkEditionTableId: 1, version: 'v1', title: 'Chunk 0', witnessIndices: [] } as any
+      ];
+
+      const ctData = { archived: false, title: 'New title', witnesses: [], sigla: [] } as any;
+
+      await expect(MceData.updateChunk(mceData, 999, ctData, 'v2', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Attempt to update chunk with id 999 which does not exist');
+    });
+
+    it('throws when updating a non-edition chunk', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.lang = 'la';
+      mceData.chunks = [
+        { chunkId: 'c0', chunkEditionTableId: 1, version: 'v1', title: 'Chunk 0', witnessIndices: [] } as any
+      ];
+
+      const ctData = {
+        archived: false,
+        type: 'translation',
+        lang: 'la',
+        title: 'New title',
+        witnesses: [],
+        sigla: []
+      } as any;
+
+      await expect(MceData.updateChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Attempt to update chunk with id 1 which is not an edition');
+    });
+
+    it('throws when updating a chunk with different language', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.lang = 'la';
+      mceData.chunks = [
+        { chunkId: 'c0', chunkEditionTableId: 1, version: 'v1', title: 'Chunk 0', witnessIndices: [] } as any
+      ];
+
+      const ctData = {
+        archived: false,
+        type: 'edition',
+        lang: 'en',
+        title: 'New title',
+        witnesses: [],
+        sigla: []
+      } as any;
+
+      await expect(MceData.updateChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Attempt to update chunk with id 1 which is not in the same language');
+    });
+  });
+
   describe('deleteChunk', () => {
     it('handles deleting the only chunk', () => {
       const mceData = MceData.createEmpty();
@@ -586,15 +747,28 @@ describe('MceData', () => {
       expect(result.chunks.length).toBe(1);
     });
 
-    it('prevents adding chunks with different language', async () => {
+    it('throws when adding chunks with different language', async () => {
       const mceData = MceData.createEmpty();
       mceData.lang = 'en';
       mceData.chunks = [{ chunkId: 'c1' } as any];
 
-      const ctData = { chunkId: 'c2', lang: 'fr' } as any;
-      const result = await MceData.addChunk(mceData, 2, ctData, 'v1', getDocTitle, getSourceTitle);
+      const ctData = { chunkId: 'c2', lang: 'fr', type: 'edition' } as any;
 
-      expect(result.chunks.length).toBe(1);
+      await expect(MceData.addChunk(mceData, 2, ctData, 'v1', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Attempt to add chunk with id 2 which is not in the same language');
+    });
+
+    it('throws when adding a non-edition chunk', async () => {
+      const mceData = MceData.createEmpty();
+      mceData.lang = 'la';
+      mceData.chunks = [{ chunkId: 'c1' } as any];
+
+      const ctData = { chunkId: 'c2', lang: 'la', type: 'translation', witnesses: [], sigla: [] } as any;
+
+      await expect(MceData.addChunk(mceData, 2, ctData, 'v1', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Attempt to update chunk with id 2 which is not an edition');
     });
 
     it('sets language and adds first chunk correctly', async () => {
@@ -602,6 +776,7 @@ describe('MceData', () => {
       const ctData = {
         chunkId: 'c1',
         lang: 'la',
+        type: 'edition',
         title: 'Chunk Title',
         witnesses: [
           { witnessType: 'edition' },
@@ -651,6 +826,7 @@ describe('MceData', () => {
       const ctData = {
         chunkId: 'c2',
         lang: 'la',
+        type: 'edition',
         witnesses: [{ witnessType: 'fullTx', docId: 10, localWitnessId: 'A' }],
         sigla: ['A']
       } as any;
@@ -670,6 +846,7 @@ describe('MceData', () => {
       const ctData = {
         chunkId: 'c1',
         lang: 'en',
+        type: 'edition',
         witnesses: [{ witnessType: 'fullTx', docId: 10, localWitnessId: 'B' }],
         sigla: ['A']
       } as any;
@@ -684,7 +861,7 @@ describe('MceData', () => {
       const mceData = MceData.createEmpty();
       delete mceData.chunkOrder;
 
-      const ctData = { chunkId: 'c1', lang: 'en', witnesses: [], sigla: [] } as any;
+      const ctData = { chunkId: 'c1', lang: 'en', type: 'edition', witnesses: [], sigla: [] } as any;
       await MceData.addChunk(mceData, 1, ctData, 'v1', getDocTitle, getSourceTitle);
 
       expect(mceData.chunkOrder).toEqual([0]);

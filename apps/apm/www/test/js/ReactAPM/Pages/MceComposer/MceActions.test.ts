@@ -130,7 +130,7 @@ describe('MCE Actions', () => {
             tableId: 10,
             customApparatuses: [],
             schemaVersion: '1.0',
-            type: 'ctable',
+            type: 'edition',
             title: 'Chunk 1',
             collationMatrix: [],
             groupedColumns: [],

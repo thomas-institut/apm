@@ -32,6 +32,21 @@
         justify-content: start;
     }
 
+    .check-for-updates {
+        margin-top: 2em;
+        font-size: 0.9em;
+        font-style: italic;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5em;
+        justify-content: start;
+
+        .btn-sm {
+            font-size: 0.9em;
+        }
+    }
+
 }
 
 :root {

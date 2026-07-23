@@ -56,7 +56,7 @@ import {TimeString} from "@/toolbox/TimeString";
 import {CtData} from "@/CtData/CtData";
 import {ApiErrorResponse} from "@/Api/DataSchema/ApiResponse";
 import {ApiLoginRequest, ApiLoginResponse} from "@/Api/DataSchema/ApiLogin";
-import {ApiMceData, ApiMceSaveRequest, ApiMceSaveResponse, ApiMceSaveResponseOld} from "@/Api/DataSchema/ApiMceData";
+import {ApiMceData, ApiMceSaveRequest, ApiMceSaveResponse} from "@/Api/DataSchema/ApiMceData";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -240,13 +240,13 @@ export class ApmApiClient {
     }
   }
 
-  async apiMceGetData(editionId: number) : Promise<ApiMceData> {
+  async apiMceGetData(editionId: number): Promise<ApiMceData> {
     return await this.get(urlGen.apiGetMultiChunkEdition(editionId));
   }
 
-  async apiMceSave(request: ApiMceSaveRequest) : Promise<ApiMceSaveResponse|ApiErrorResponse> {
+  async apiMceSave(request: ApiMceSaveRequest): Promise<ApiMceSaveResponse | ApiErrorResponse> {
     try {
-      return await this.post(urlGen.apiSaveMultiChunkEdition(),request, true);
+      return await this.post(urlGen.apiSaveMultiChunkEdition(), request, true);
     } catch (error) {
       console.warn(`Error saving multi chunk edition`, error);
       // @ts-ignore
@@ -268,17 +268,12 @@ export class ApmApiClient {
 
     let dbKey = `CtData-${tableId}-${TimeString.compactEncode(version)}`;
     if (useCache) {
-      let cachedData = await this.caches.longTerm.retrieve(dbKey);
+      let cachedData = await this.caches.longTerm.retrieve(dbKey) as SingleChunkApiData;
       if (cachedData !== null) {
         if (lookingForLatestVersion) {
           cachedData.isLatestVersion = true;
-          return cachedData;
         }
-        const versionInfo = await this.collationTableVersionInfo(tableId, version);
-        if (versionInfo !== null) {
-          cachedData.isLatestVersion = versionInfo.isLatestVersion;
-          return cachedData;
-        }
+        return cachedData;
       }
     }
     // really get from server

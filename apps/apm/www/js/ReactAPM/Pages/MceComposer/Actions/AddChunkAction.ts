@@ -37,7 +37,8 @@ export class AddChunkAction implements StateTransformAction<MceComposerHistorySt
       ctDataState: 'loaded',
       apiData: this.singleChunkData,
       errorMsg: '',
-      chunkInMceData: newState.mceData.chunks[indexInMceData]
+      chunkInMceData: newState.mceData.chunks[indexInMceData],
+      lastVersionTimeStamp: null
     });
 
     this.title = `Add chunk ${this.singleChunkData.ctData.chunkId} to edition`;

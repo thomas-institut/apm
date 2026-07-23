@@ -11,6 +11,7 @@ import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/Nic
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 import './ChunksPanel.css';
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
+import {Button, Spinner} from "react-bootstrap";
 
 interface ChunksPanelProps extends TabbableElementProps {
   chunks: ChunkInMceData[];
@@ -25,6 +26,7 @@ interface ChunksPanelProps extends TabbableElementProps {
    */
   moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => boolean | Promise<boolean>;
   setChunkBreak?: (chunkIndex: number, breakAfter: string) => boolean | Promise<boolean>;
+  checkForChunkUpdates?: () => Promise<void>;
   ctDataStatusArray: CtDataStatus[];
   /**
    * A version number that is incremented whenever the panel needs to be redrawn.
@@ -45,6 +47,7 @@ interface ChunkTableRow {
   errorMessage: string | null;
   warningMessage: string | null;
   buttons: ControlButton[];
+  lastVersionTimeStamp: string|null;
 }
 
 export default function ChunksPanel({
@@ -55,6 +58,7 @@ export default function ChunksPanel({
                                       updateChunk,
                                       moveChunk,
                                       setChunkBreak,
+                                      checkForChunkUpdates,
                                       version,
                                       active
                                     }: ChunksPanelProps) {
@@ -68,6 +72,9 @@ export default function ChunksPanel({
   const [confirmDeleteChunkIndex, setConfirmDeleteChunkIndex] = useState<number | null>(null);
   const [highlightedChunkId, setHighlightedChunkId] = useState<string | null>(null);
   const [pendingHighlightChunkId, setPendingHighlightChunkId] = useState<string | null>(null);
+  const [checkingForUpdates, setCheckingForUpdates] = useState<boolean>(false);
+  const [lastCheckForUpdates, setLastCheckForUpdates] = useState<Date|null>(null);
+
 
   useEffect(() => {
     setPendingDeleteChunkIndex(null);
@@ -131,7 +138,8 @@ export default function ChunksPanel({
       breakAfter: chunk.break === '' ? 'none' : chunk.break,
       errorMessage: null,
       warningMessage: null,
-      buttons: []
+      buttons: [],
+      lastVersionTimeStamp: null,
     };
     const ctDataStatus = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataId === chunk.chunkEditionTableId);
     if (!ctDataStatus) {
@@ -145,6 +153,7 @@ export default function ChunksPanel({
     }
 
     chunkTableRow.version = ctDataStatus.apiData.timeStamp;
+    chunkTableRow.lastVersionTimeStamp = ctDataStatus.lastVersionTimeStamp;
     chunkTableRow.buttons.push('delete');
 
     if (!ctDataStatus.apiData.isLatestVersion) {
@@ -215,6 +224,17 @@ export default function ChunksPanel({
     await setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
     setPendingSetChunkBreakIndex(null);
   };
+
+  const handleOnClickCheckForUpdates = () => {
+    if (checkForChunkUpdates !== undefined) {
+      setCheckingForUpdates(true);
+      setTimeout( async () => {
+        await checkForChunkUpdates();
+        setLastCheckForUpdates(new Date());
+        setCheckingForUpdates(false);
+      }, 0);
+    }
+  }
 
   const chunkBreakMultiToggleOptionSpecs: MultiToggleOptionSpec[] = [
     {
@@ -334,7 +354,7 @@ export default function ChunksPanel({
                 return <ComponentWithPending key={'update'} pending={pendingUpdateChunkIndex === index}
                                              pendingTitle={`Updating chunk ${row.chunkId}`}>
                   <ArrowClockwise key={'update'} className={'icon-btn'}
-                                  title={`Click to update chunk ${row.chunkId}`}
+                                  title={`Click to update chunk ${row.chunkId} to ${row.lastVersionTimeStamp == null ? 'latest version' : ApmFormats.time(row.lastVersionTimeStamp)}`}
                                   onClick={() => handleUpdateChunk(index)}/>
                 </ComponentWithPending>;
               default:
@@ -368,6 +388,15 @@ export default function ChunksPanel({
     <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true}
                getRowKey={(row, index) => `${row.chunkId}-${index}`}
                highlightedRow={highlightedRow}/>
+    <ComponentWithPending pending={checkingForUpdates} pendingElement={
+      <div className={'check-for-updates'}>Checking for updates...<Spinner size={'sm'}/></div>}>
+      <div className={'check-for-updates'}>
+        <span>Last manual check for updates: {lastCheckForUpdates === null ? 'Never' : ApmFormats.time(lastCheckForUpdates)}</span>
+        <Button variant={'outline-secondary'} size={'sm'} onClick={handleOnClickCheckForUpdates}>
+          Check now
+        </Button>
+      </div>
+    </ComponentWithPending>
   </div>;
 }
 

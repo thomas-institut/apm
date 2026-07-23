@@ -63,7 +63,6 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 //  - Implement tags panel
 
 
-
 export type CtDataState = 'notLoaded' | 'loading' | 'loaded' | 'error';
 
 type MceComposerStatus =
@@ -79,6 +78,7 @@ export interface CtDataStatus {
   apiData: null | SingleChunkApiData;
   ctDataState: CtDataState;
   errorMsg: string;
+  lastVersionTimeStamp: string | null;
 }
 
 export interface MceComposerHistoryState {
@@ -186,12 +186,13 @@ export default function MceComposer() {
           }
           MceData.fix(resp.mceData);
 
-          const initialCtDataStatusArray = resp.mceData.chunks.map((chunk) => ({
+          const initialCtDataStatusArray = resp.mceData.chunks.map((chunk): CtDataStatus => ({
             ctDataId: chunk.chunkEditionTableId,
             chunkInMceData: chunk,
             apiData: null,
             ctDataState: 'notLoaded' as CtDataState,
-            errorMsg: ''
+            errorMsg: '',
+            lastVersionTimeStamp: null,
           }));
           setMceData(resp.mceData);
           setCtDataStatusArray(initialCtDataStatusArray);
@@ -222,6 +223,7 @@ export default function MceComposer() {
     const hasErrors = ctDataStatusArray.some(st => st.ctDataState === 'error');
 
     if (allLoaded || ctDataStatusArray.length === 0) {
+      // console.log('All chunks loaded', ctDataStatusArray);
       const initialHistory = new StateHistory<MceComposerHistoryState>(deepCopy({mceData, ctDataStatusArray}));
       setHistory(initialHistory);
       setSavedStateSignature(initialHistory.getCurrentStateSignature());
@@ -253,7 +255,13 @@ export default function MceComposer() {
     // Fetch the data
     console.log(`Fetching chunk index ${nextChunkIndex} (${chunkToLoad.ctDataId}) from server`);
     appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.chunkInMceData.version)
-      .then((apiResponse) => {
+      .then(async (apiResponse) => {
+        let lastVersionTimeStamp = apiResponse.timeStamp;
+        if (!apiResponse.isLatestVersion) {
+          console.log(`Chunk ${chunkToLoad.ctDataId} is not the latest version`);
+          const latestData = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, '');
+          lastVersionTimeStamp = latestData.timeStamp;
+        }
         setCtDataStatusArray(prev => {
           const next = [...prev];
           const index = next.findIndex(st => st.ctDataId === chunkToLoad.ctDataId);
@@ -261,7 +269,8 @@ export default function MceComposer() {
             next[index] = {
               ...next[index],
               apiData: apiResponse,
-              ctDataState: 'loaded'
+              ctDataState: 'loaded',
+              lastVersionTimeStamp,
             };
           }
           return next;
@@ -396,7 +405,7 @@ export default function MceComposer() {
     return true;
   };
 
-  const addChunk = async (tableId: number, version: string = ''): Promise<true|string> => {
+  const addChunk = async (tableId: number, version: string = ''): Promise<true | string> => {
     console.log(`Add chunk from table ${tableId}, version '${version}'`);
     let chunkApiData: SingleChunkApiData;
     try {
@@ -550,6 +559,31 @@ export default function MceComposer() {
     }
   };
 
+  const checkForChunkUpdates = async () => {
+    const updatePromises = ctDataStatusArray.map(async (ctDataStatus) => {
+      if (ctDataStatus.ctDataState !== 'loaded') {
+        return ctDataStatus;
+      }
+      if (ctDataStatus.apiData === null) {
+        return ctDataStatus;
+      }
+      const tableId = ctDataStatus.ctDataId;
+      console.log(`Checking for chunk updates for table ${tableId}`);
+      const latestVersionInfo = await appContext.apiClient.collationTableVersionInfo(tableId, 'latest');
+      if (latestVersionInfo !== null) {
+        ctDataStatus.lastVersionTimeStamp = latestVersionInfo.timeFrom;
+        if (ctDataStatus.apiData.timeStamp !== latestVersionInfo.timeFrom) {
+            console.log(`Table ${tableId} has a newer version: ${latestVersionInfo.timeFrom}`);
+          ctDataStatus.apiData.isLatestVersion = false;
+        }
+      } else {
+        console.warn('No latest version info for table', tableId);
+      }
+      return ctDataStatus;
+    });
+    setCtDataStatusArray(await Promise.all(updatePromises));
+  };
+
 
   const isSiglaGroupValid: (siglaGroupIndex: number, group: SiglaGroupInterface) => true | string = (siglaGroupIndex, group) => {
     return MceData.isSiglaGroupValid(mceData, siglaGroupIndex, group);
@@ -582,7 +616,7 @@ export default function MceComposer() {
     }
     setSaving(true);
     setSaveError(null);
-    setTimeout( async () => {
+    setTimeout(async () => {
       const response = await appContext.apiClient.apiMceSave({
         editionId: mceDataId,
         mceData,
@@ -637,6 +671,7 @@ export default function MceComposer() {
                             deleteChunk={(chunkIndex) => {
                               return deleteChunk(chunkIndex);
                             }}
+                            checkForChunkUpdates={checkForChunkUpdates}
                             setChunkBreak={(chunkIndex, breakAfter) => {
                               return setChunkBreak(chunkIndex, breakAfter);
                             }}
@@ -688,7 +723,9 @@ export default function MceComposer() {
       key: 'addChunks',
       title: 'Add Chunks',
       expandable: true,
-      content: <AddChunksPanel addChunk={(tableId, version) => { return addChunk(tableId, version); }} currentChunkTableIds={mceData.chunks.map(chunk => chunk.chunkEditionTableId) ?? []}/>,
+      content: <AddChunksPanel addChunk={(tableId, version) => {
+        return addChunk(tableId, version);
+      }} currentChunkTableIds={mceData.chunks.map(chunk => chunk.chunkEditionTableId) ?? []}/>,
       tabbable: true,
     },
     // {
@@ -845,7 +882,7 @@ export default function MceComposer() {
 
     {!foundBug && <ComponentWithPending pending={saving} pendingElement={<span>Saving... <Spinner size={'sm'}/></span>}>
       <MceComposerSaveButton changes={changes} onClick={handleOnClickSaveButton} saveError={saveError}/>
-    </ComponentWithPending>  }
+    </ComponentWithPending>}
     {!foundBug && <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
                                          onClick={() => handleOnClickRevertChanges()}
                                          title={'Click to revert to last saved version'}/>}

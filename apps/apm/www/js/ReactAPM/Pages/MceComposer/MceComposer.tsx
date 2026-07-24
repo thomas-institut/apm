@@ -144,7 +144,7 @@ export default function MceComposer() {
 
 
 
-  const singleChunkEditionCache = useRef<Record<string, Edition>>({});
+  // const singleChunkEditionCache = useRef<Record<string, Edition>>({});
   /**
    * Cache of generated editions, indexed by data's hash
    */
@@ -324,10 +324,10 @@ export default function MceComposer() {
     }
     console.log(`getEdition ${mceDataHash}: cache miss`);
     const profiler = new BasicProfiler('RegenerateEdition', true);
-    const singleChunkEditionCacheKey = (chunkIndex: number) => {
-      const chunkInfo = mceData.chunks[chunkIndex];
-      return `${chunkInfo.chunkId}:${chunkInfo.chunkEditionTableId}:${chunkInfo.version}`;
-    };
+    // const singleChunkEditionCacheKey = (chunkIndex: number) => {
+    //   const chunkInfo = mceData.chunks[chunkIndex];
+    //   return `${chunkInfo.chunkId}:${chunkInfo.chunkEditionTableId}:${chunkInfo.version}`;
+    // };
 
     const generator = new MceDataEditionGenerator({
       ctDataGetter: async (mceData: MceDataInterface, chunkIndex: number) => {
@@ -335,11 +335,12 @@ export default function MceComposer() {
         const data = await appContext.apiClient.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
         return data.ctData;
       },
-      singleChunkEditionGetter: async (_mceData: MceDataInterface, chunkIndex: number) => {
-        return singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] ?? null;
+      singleChunkEditionGetter: async (_mceData: MceDataInterface, _chunkIndex: number) => {
+        return null;
+        // return singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] ?? null;
       },
-      singleChunkEditionSaver: async (_mceData: MceDataInterface, chunkIndex: number, edition) => {
-        singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] = new Edition().setFromInterface(edition);
+      singleChunkEditionSaver: async (_mceData: MceDataInterface, _chunkIndex: number, _edition) => {
+        // singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] = new Edition().setFromInterface(edition);
       },
       onProgressUpdate: (step, numSteps) => {
         setEditionGenerationProgress(step / numSteps);
@@ -383,6 +384,7 @@ export default function MceComposer() {
     if (mceComposerStatus !== 'loaded') {
       return;
     }
+    console.log(`mceData change effect: ${mceDataId}, mceData hash ${getMceDataHash(mceData, mceDataId)}`);
     if (!isEditionInCache(mceData, mceDataId)) {
       console.log(`mceData change: edition hash ${getMceDataHash(mceData, mceDataId)} not in cache`, mceData);
       setEditionOutOfDate(true);

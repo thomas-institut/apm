@@ -41,6 +41,7 @@ export interface MainTextTokenInterface {
   editionWitnessTokenIndex: number;
   style: string;
   lang?: string;
+  chunkId?: string;
 }
 
 export type MainTextTokenType =
@@ -49,7 +50,10 @@ export type MainTextTokenType =
   | 'empty'
   | 'paragraph_end'
   | 'numbering_label'
-  | 'foliation_change_marker';
+  | 'foliation_change_marker'
+  | 'chunk_start'
+  | 'chunk_end'
+  ;
 
 export interface MetadataInterface {
   [key: string]: any;

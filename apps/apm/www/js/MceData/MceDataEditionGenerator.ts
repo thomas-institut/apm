@@ -107,6 +107,9 @@ export class MceDataEditionGenerator {
 
       currentMainTextIndexShift = nextChunkShift;
 
+      // Add chunk start
+      edition.mainText.push(MainTextTokenFactory.createChunkStart(mceData.chunks[chunkIndex].chunkId));
+
       // Add main text
       edition.mainText.push(...singleChunkEdition.mainText.map((mainTextToken) => {
         let newToken = MainTextTokenFactory.clone(mainTextToken);
@@ -143,6 +146,9 @@ export class MceDataEditionGenerator {
         default:
         // nothing to do!
       }
+
+      // add chunk end
+      edition.mainText.push(MainTextTokenFactory.createChunkEnd(mceData.chunks[chunkIndex].chunkId));
 
       // process apparatuses
       for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {

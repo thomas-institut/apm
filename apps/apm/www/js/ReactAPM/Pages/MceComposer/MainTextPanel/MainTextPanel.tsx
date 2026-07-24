@@ -1,12 +1,20 @@
 import {Edition} from "@/Edition/Edition";
 import './MainTextPanel.css';
 import {Button} from "react-bootstrap";
+import {MainTextToken} from "@/Edition/MainTextToken";
+import {JSX} from "react";
+import {Diamond} from "react-bootstrap-icons";
 
 interface MainTextPanelProps {
   edition: Edition | null;
   generationProgress: number | null;
   editionOutOfDate: boolean;
   onClickRegenerate: () => void | Promise<void>;
+}
+
+interface Paragraph {
+  style: string;
+  tokens: MainTextToken[];
 }
 
 export default function MainTextPanel({
@@ -16,29 +24,57 @@ export default function MainTextPanel({
                                         onClickRegenerate
                                       }: MainTextPanelProps) {
 
-  const getText = (edition: Edition): string[] => {
-    const paragraphs: string[] = [];
-
-    let currentParagraph: string = "";
-    edition.mainText.forEach((token) => {
+  const getParagraphs = (edition: Edition): Paragraph[] => {
+    const paragraphs: Paragraph[] = [];
+    let currentParagraph: Paragraph = {
+      style: '',
+      tokens: []
+    };
+    edition.mainText.forEach( (token) => {
       switch (token.type) {
         case 'text':
         case 'glue':
-          currentParagraph += token.getPlainText();
+          currentParagraph.tokens.push(token);
           break;
         case 'paragraph_end':
+          currentParagraph.style = token.style
           paragraphs.push(currentParagraph);
-          currentParagraph = "";
+          currentParagraph = {
+            style: '',
+            tokens: []
+          };
           break;
+
+          case 'chunk_start':
+          case 'chunk_end':
+            currentParagraph.tokens.push(token);
+            break;
       }
     });
-    if (currentParagraph !== "") {
+    if (currentParagraph.tokens.length > 0) {
       paragraphs.push(currentParagraph);
     }
-
     return paragraphs;
-  };
+  }
 
+  const getParagraphText = (p: Paragraph): JSX.Element[] => {
+    const elementArray: JSX.Element[] = [];
+    p.tokens.forEach((token) => {
+      if (token.type === 'text' || token.type === 'glue') {
+        elementArray.push(<>{token.getPlainText()}</>);
+        return;
+      }
+      if (token.type === 'chunk_start') {
+        elementArray.push(<span className={'chunk-mark'}>{token.chunkId}</span>);
+      }
+
+    });
+    return elementArray;
+  }
+
+  const ParagraphComponent = (props: { p: Paragraph }) => {
+    return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
+  }
   if (edition === null) {
     return <div className={'main-text-panel initializing'}>Initializing...</div>;
   }
@@ -54,7 +90,7 @@ export default function MainTextPanel({
         </div>}
       <div className={mainTextClasses.join(' ')}>
         <div className={'left-margin'}></div>
-        <div>{getText(edition).map((p, i) => <p key={i}>{p}</p>)}</div>
+        <div>{getParagraphs(edition).map((p, i) => <ParagraphComponent p={p} key={i}/>)}</div>
         <div className={'right-margin'}></div>
       </div>
     </div>

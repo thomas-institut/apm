@@ -277,13 +277,21 @@ abstract class CollationTableManager implements ErrorReporter
      * @param string|null $workId if not null, only tables for the given work id are listed.
      *        The method does not check if the given work id is valid. If workId is '', an empty
      *        array will be returned
-     * @return array
+     * @return TableInfo[]
      */
     abstract public function getTablesInfo(bool $includeArchived = false, ?string $workId = null) : array;
+
+    /**
+     * @return TableInfo[]
+     */
     abstract public function getActiveEditionTableInfo(): array;
 
 
     abstract public function checkDataConsistency($ids = []) : array;
 
+    /**
+     * @param string $workId
+     * @return TableInfo[]
+     */
     abstract public function getActiveTablesByWorkId(string $workId) : array;
 }

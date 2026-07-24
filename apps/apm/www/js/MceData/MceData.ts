@@ -56,6 +56,10 @@ export class MceData {
     return mceData.chunks.map((_c, i) => i);
   }
 
+  static getWorkIds(mceData: MceDataInterface): string[] {
+    return mceData.chunks.map(c => c.chunkId.split('-')[0]);
+  }
+
   static setTitle(mceData: MceDataInterface, newTitle: string) {
     newTitle = newTitle.trim();
     if (newTitle === '') {

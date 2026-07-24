@@ -72,6 +72,12 @@ export interface ApiCollationTableVersionInfo extends ApiResponse {
   archived: boolean;
 }
 
+
+export interface ApiCollationTableTableInfoArray extends ApiResponse {
+  result: 'Success';
+  tableInfoArray: ApiCollationTableInfo[];
+}
+
 export interface ApiCollationTableInfo {
   id: number;
   title: string;
@@ -80,7 +86,8 @@ export interface ApiCollationTableInfo {
   chunkNumber: number;
   type: string;
   lastChange: string;
-  lastVersion: any;
+  lastVersion: any|null;
+  witnesses: string[];
 }
 
 export interface SingleChunkApiData {

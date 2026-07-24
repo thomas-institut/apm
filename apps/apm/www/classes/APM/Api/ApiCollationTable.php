@@ -21,6 +21,7 @@
 namespace APM\Api;
 
 
+use APM\Api\DataSchema\ApiCollationTableTableInfoArray;
 use APM\Api\DataSchema\ApiCollationTableAuto;
 use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
 use APM\Api\DataSchema\ApiCollationTableVersionInfo;
@@ -72,18 +73,21 @@ class ApiCollationTable extends ApiController
 
 
 
-    public function  activeEditions(Response $response): Response
+    public function activeEditions(Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $activeEditions = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
+        $apiResponse = new ApiCollationTableTableInfoArray();
+        $apiResponse->tableInfoArray = $activeEditions;
+        return $this->responseFactory->success($response, $apiResponse);
         // fill in version info for each table
-        $infoArray = [];
-        foreach ($activeEditions as $info) {
-            $versions = $this->systemManager->getCollationTableManager()->getCollationTableVersions($info['id']);
-            $info['lastVersion'] = $versions[count($versions)-1];
-            $infoArray[] = $info;
-        }
-        return $this->responseWithJson($response, $infoArray);
+//        $infoArray = [];
+//        foreach ($activeEditions as $info) {
+//            $versions = $this->systemManager->getCollationTableManager()->getCollationTableVersions($info['id']);
+//            $info['lastVersion'] = $versions[count($versions)-1];
+//            $infoArray[] = $info;
+//        }
+//        return $this->responseWithJson($response, $infoArray);
     }
 
     public function activeForWork(Request $request, Response $response) : Response {

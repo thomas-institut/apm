@@ -221,9 +221,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
      *
      * @param array $row
      * @param bool $withVersionInfo
-     * @return array|bool
+     * @return TableInfo|bool
      */
-    private function getTableInfoFromDbRow(array $row, bool $withVersionInfo = true) : array|bool {
+    private function getTableInfoFromDbRow(array $row, bool $withVersionInfo = true) : TableInfo|bool {
         $id = intval($row['id']);
         if ($withVersionInfo) {
             $versionInfoArray = $this->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1);
@@ -236,16 +236,29 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $lastVersionInfo = null;
         }
 
-        return [
-            'id' => $id,
-            'title' => $row['title'],
-            'workId' => $row['work_id'] ?? '',
-            'chunkId' => $row['chunk_id'],
-            'chunkNumber' => $row['chunk_number'],
-            'type' => $row['type'],
-            'lastChange' => $row['valid_from'] ?? '',
-            'lastVersion' => $lastVersionInfo
-        ];
+        $tableInfo = new TableInfo();
+        $tableInfo->id = $id;
+        $tableInfo->title = $row['title'];
+        $tableInfo->workId = $row['work_id'] ?? '';
+        $tableInfo->chunkId = $row['chunk_id'];
+        $tableInfo->chunkNumber = intval($row['chunk_number'] ?? -1);
+        $tableInfo->type = $row['type'];
+        $tableInfo->lastChange = $row['valid_from'] ?? '';
+        $tableInfo->witnesses = json_decode($row['witnesses_json'] ?? '', true) ?? [];
+        $tableInfo->lastVersion = $lastVersionInfo;
+
+        return $tableInfo;
+
+//        return [
+//            'id' => $id,
+//            'title' => $row['title'],
+//            'workId' => $row['work_id'] ?? '',
+//            'chunkId' => $row['chunk_id'],
+//            'chunkNumber' => $row['chunk_number'],
+//            'type' => $row['type'],
+//            'lastChange' => $row['valid_from'] ?? '',
+//            'lastVersion' => $lastVersionInfo
+//        ];
     }
 
 
@@ -395,10 +408,19 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     }
 
 
+    /**
+     * @inheritDoc
+     */
     public function getActiveEditionTableInfo(): array {
-        return array_values(array_filter($this->getTablesInfo(), function ($tableInfo) {
-            return $tableInfo['type'] === 'edition';
-        }));
+        $tableInfoArray = $this->getTablesInfo();
+        $outputArray = [];
+
+        foreach($tableInfoArray as $tableInfo) {
+            if ($tableInfo->type === 'edition') {
+                $outputArray[] = $tableInfo;
+            }
+        }
+        return $outputArray;
     }
 
 }

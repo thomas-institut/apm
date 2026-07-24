@@ -29,7 +29,7 @@ import {
   ApiCollationTable_convertToEdition_input,
   ApiCollationTableAuto,
   ApiCollationTableConvertToEdition,
-  ApiCollationTableInfo,
+  ApiCollationTableInfo, ApiCollationTableTableInfoArray,
   ApiCollationTableVersionInfo,
   AutomaticCollationSettings,
   SingleChunkApiData
@@ -362,6 +362,15 @@ export class ApmApiClient {
 
   async getCollationTablesActiveForWork(workId: string): Promise<ApiCollationTableInfo[]> {
     return await this.get(urlGen.apiCollationTable_activeForWork(workId), false, TtlOneMinute);
+  }
+
+  async getActiveEditions(): Promise<ApiCollationTableInfo[]> {
+    const apiResponse = await this.get(urlGen.apiCollationTable_activeEditions(), false, TtlOneMinute) as ApiCollationTableTableInfoArray | ApiErrorResponse;
+    if (apiResponse.result === 'Success') {
+      return apiResponse.tableInfoArray;
+    } else {
+      throw new Error(`Error getting active editions: ${apiResponse.message} (HTTP ${apiResponse.httpStatus})`)
+    }
   }
 
   async getLegacySystemLanguagesArray(): Promise<any> {

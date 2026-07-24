@@ -1,8 +1,10 @@
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
-import {useState, useEffect} from "react";
-import {Button} from "react-bootstrap";
+import {useEffect, useMemo, useState} from "react";
+import {Button, Spinner} from "react-bootstrap";
 import './AddChunksPanel.css';
+import {ApiCollationTableInfo} from "@/Api/DataSchema/ApiCollationTable";
+import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 
 
 interface AddChunksPanelProps extends TabbableElementProps {
@@ -12,20 +14,30 @@ interface AddChunksPanelProps extends TabbableElementProps {
    *
    * If the chunk is successfully added, it returns true. If there is a problem, it returns a string describing the problem.
    */
-  addChunk: (tableId: number, version?: string) => Promise<true|string>;
+  addChunk: (tableId: number, version?: string) => Promise<true | string>;
+
+  /**
+   * A function to fetch the list of active editions.
+   *
+   * It is up to the parent component to decide which editions to fetch, e.g. all or just some selected ones.
+   *
+   */
+  getActiveEditions: () => Promise<ApiCollationTableInfo[] | string>;
 }
 
 
-export default function AddChunksPanel({addChunk, currentChunkTableIds}: AddChunksPanelProps) {
+export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiveEditions}: AddChunksPanelProps) {
 
-  const [addingChunk, setAddingChunk] = useState(false);
+  const [addingTableId, setAddingTableId] = useState<number | null>(null);
   const [tableIdInput, setTableIdInput] = useState<string>('');
-  const [addChunkError, setAddChunkError] = useState<string|null>(null);
+  const [addChunkError, setAddChunkError] = useState<string | null>(null);
+  const [editionArray, setEditionArray] = useState<ApiCollationTableInfo[] | null>(null);
+  const [fetchingEditions, setFetchingEditions] = useState(false);
 
   const parsedTableId = parseInt(tableIdInput, 10);
   const isValidTableId = !isNaN(parsedTableId) && parsedTableId > 0;
   const tableIdAlreadyInEdition = isValidTableId && currentChunkTableIds.includes(parsedTableId);
-  const isAddDisabled = addingChunk || !isValidTableId || tableIdAlreadyInEdition;
+  const isQuickAddButtonDisabled = addingTableId !== null || !isValidTableId || tableIdAlreadyInEdition;
 
   useEffect(() => {
     if (tableIdInput === '') {
@@ -43,28 +55,88 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds}: AddChun
     setAddChunkError(null);
   }, [tableIdInput, tableIdAlreadyInEdition, isValidTableId]);
 
-  const onClickAddButton = () => {
-    if (isAddDisabled) {
+  const onClickAddButton = (tableId: number, quickAdd: boolean = false) => {
+    console.log(`Adding table ${tableId}`);
+    if (quickAdd && isQuickAddButtonDisabled) {
+      console.log('Add button is disabled');
       return;
     }
-    setAddingChunk(true);
+    if (!quickAdd && addingTableId === tableId) {
+      console.log('Table already being added');
+      return;
+    }
+    setAddingTableId(tableId);
     setAddChunkError(null);
-    setTimeout( async () => {
-      const result = await addChunk(parsedTableId, "");
-      setAddingChunk(false);
+    setTimeout(async () => {
+      const result = await addChunk(tableId, "");
+      setAddingTableId(null);
       if (result === true) {
         setTableIdInput('');
       } else {
         setAddChunkError(`Error: ${result}`);
       }
-    },0)
+    }, 0);
   };
+
+  const sortedRows = useMemo(() => editionArray?.sort((a, b) => {
+    const workIdCmp = a.workId.localeCompare(b.workId);
+    if (workIdCmp !== 0) {
+      return workIdCmp;
+    }
+    return a.chunkNumber - b.chunkNumber;
+  }), [editionArray]);
+
+  const onClickLoadEditions = async () => {
+    setFetchingEditions(true);
+    const result = await getActiveEditions();
+    setFetchingEditions(false);
+    if (typeof result === 'string') {
+      console.log(`Error: ${result}`);
+      return;
+    }
+    setEditionArray(result);
+  };
+
+  const editionTableDef: NiceTableColumnDef<ApiCollationTableInfo>[] = [
+    {
+      key: 'n',
+      title: '#',
+      cellContent: (_row, index) => <>{index + 1}</>,
+    },
+    {
+      key: 'tableId',
+      title: 'Table Id',
+      cellContent: (row) => <>{row.id}</>,
+    },
+    {
+      key: 'chunkId',
+      title: 'Chunk Id',
+      cellContent: (row) => <>{row.chunkId}</>,
+    },
+    {
+      key: 'title',
+      title: 'Title',
+      cellContent: (row) => <>{row.title}</>,
+    },
+    {
+      key: 'controls',
+      title: '',
+      cellContent: (row) => <>
+        {currentChunkTableIds.includes(row.id) && <span className={'text-muted'}>Already added</span>}
+        {!currentChunkTableIds.includes(row.id) &&
+          <ComponentWithPending pending={addingTableId === row.id}>
+            <Button variant={'primary'} size="sm" onClick={() => onClickAddButton(row.id)}> Add</Button>
+          </ComponentWithPending>}
+      </>
+    }
+  ];
+
 
   return (
     <div className={'add-chunks-panel'}>
       <div className={'section quick-add'}>
         <h1>Quick Add</h1>
-        <ComponentWithPending pending={addingChunk}>
+        <ComponentWithPending pending={addingTableId === parsedTableId}>
           <div className="quick-add-form">
             <div>
               Table Id: <input
@@ -74,10 +146,21 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds}: AddChun
               onChange={(e) => setTableIdInput(e.target.value)}
             />
             </div>
-            <Button variant={'primary'} size="sm" disabled={isAddDisabled} onClick={onClickAddButton}>Add</Button>
+            <Button variant={'primary'} size="sm" disabled={isQuickAddButtonDisabled}
+                    onClick={() => onClickAddButton(parsedTableId)}>Add</Button>
             {addChunkError && <span className="text-danger">{addChunkError}</span>}
           </div>
         </ComponentWithPending>
+      </div>
+      <div className={'section editions-table-div' + (editionArray === null ? ' no-data' : '')}>
+        <h1>Available Editions</h1>
+        {editionArray === null && <ComponentWithPending pending={fetchingEditions}
+                                                        pendingElement={<span>Fetching editions...<Spinner size={'sm'}/></span>}>
+          <Button variant={'primary'} size="sm" onClick={onClickLoadEditions}>Load Data</Button>
+        </ComponentWithPending>}
+        {editionArray !== null &&
+          <div className={'editions-table-container'}><NiceTable columnDefs={editionTableDef} rows={sortedRows ?? []}
+                                                                 stickyHeader={true}/></div>}
       </div>
     </div>
   );

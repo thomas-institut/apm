@@ -54,14 +54,27 @@ import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunk
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
 
-// TODO 2026-07-22
-//  - Implement load active chunks table and adding chunks from it
-//  - Implement update chunk action
+// TODO before release (2026-07-24))
+//  - Feature: Implement load active chunks table and adding chunks from it
+//  - Feature: preview "remembers" settings in browser's cache
+//  - Feature: main text panel shows chunk boundaries
+//  - Bug: preview resets when in expanded mode
+//  - Bug: main text panel seems to have problems with text with angle brackets <, >
+//  - Safeguard: buttons/actions should not be functional when loading or saving
+//  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
+//    testing that simulates server failures. Maybe a mock api client that fails in different ways
+
+// TODO final checks before release
+//  - Run an audit with a couple of "smart" LLMs looking for potential bugs, and holes in testing in all code touched
+//    by MceComposer.
+//  - Try to attain 100% coverage in functionality testing: come up with tests without LLM help first
 
 
 // TODO: for later
-//  - Implement versions/admin panel with clone and archive buttons
-//  - Implement tags panel
+//  - Implement admin panel with versions
+//  - Issue #429: implement clone button in admin panel
+//  - Issue #430: implement archive button in admin panel
+//  - Issue #399: Implement tags panel
 
 
 export type CtDataState = 'notLoaded' | 'loading' | 'loaded' | 'error';
@@ -467,12 +480,12 @@ export default function MceComposer() {
     return true;
   };
 
-  const updateChunk = async (chunkIndex: number):Promise<true|string> => {
+  const updateChunk = async (chunkIndex: number): Promise<true | string> => {
     console.log(`Update chunk index ${chunkIndex}`);
     const tableId = mceData.chunks[chunkIndex].chunkEditionTableId;
     let chunkApiData: SingleChunkApiData;
     try {
-      chunkApiData = await appContext.apiClient.getSingleChunkData(tableId,'');
+      chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, '');
       if (chunkApiData.ctData.lang !== mceData.lang) {
         return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
       }
@@ -481,7 +494,7 @@ export default function MceComposer() {
       return errorString.toString();
     }
     try {
-      await history.do(new UpdateChunkAction(  tableId,
+      await history.do(new UpdateChunkAction(tableId,
         chunkApiData,
         getDocTitle,
         getSourceTitle,));
@@ -594,7 +607,7 @@ export default function MceComposer() {
       if (latestVersionInfo !== null) {
         ctDataStatus.lastVersionTimeStamp = latestVersionInfo.timeFrom;
         if (ctDataStatus.apiData.timeStamp !== latestVersionInfo.timeFrom) {
-            console.log(`Table ${tableId} has a newer version: ${latestVersionInfo.timeFrom}`);
+          console.log(`Table ${tableId} has a newer version: ${latestVersionInfo.timeFrom}`);
           ctDataStatus.apiData.isLatestVersion = false;
         }
       } else {
@@ -672,6 +685,18 @@ export default function MceComposer() {
     });
   };
 
+  const getActiveEditions = async () => {
+    // ignoring workId for now
+    try {
+      const activeEditions = await appContext.apiClient.getActiveEditions();
+      const workIds = MceData.getWorkIds(mceData);
+      return activeEditions.filter(e => workIds.includes(e.workId));
+    } catch (e) {
+      const error = e as Error;
+      return error.message;
+    }
+  };
+
 
   const panelSpecs: PanelSpec[] = [
     {
@@ -746,7 +771,10 @@ export default function MceComposer() {
       expandable: true,
       content: <AddChunksPanel addChunk={(tableId, version) => {
         return addChunk(tableId, version);
-      }} currentChunkTableIds={mceData.chunks.map(chunk => chunk.chunkEditionTableId) ?? []}/>,
+      }}
+                               currentChunkTableIds={mceData.chunks.map(chunk => chunk.chunkEditionTableId) ?? []}
+                               getActiveEditions={getActiveEditions}
+      />,
       tabbable: true,
     },
     // {

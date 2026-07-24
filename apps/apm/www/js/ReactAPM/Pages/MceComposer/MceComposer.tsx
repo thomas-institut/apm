@@ -55,10 +55,7 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
 
 // TODO before release (2026-07-24))
-//  - Feature: Implement load active chunks table and adding chunks from it
-//  - Feature: preview "remembers" settings in browser's cache
 //  - Feature: main text panel shows chunk boundaries
-//  - Bug: preview resets when in expanded mode
 //  - Bug: main text panel seems to have problems with text with angle brackets <, >
 //  - Safeguard: buttons/actions should not be functional when loading or saving
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
@@ -146,6 +143,7 @@ export default function MceComposer() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
 
+
   const singleChunkEditionCache = useRef<Record<string, Edition>>({});
   /**
    * Cache of generated editions, indexed by data's hash
@@ -177,6 +175,8 @@ export default function MceComposer() {
       }
     }
   }
+
+  const editionKey = `mce-${mceDataId}`;
 
   // 1. Hook to load MceData (Phase: start -> loadingMce -> loadingSingleChunks)
   useEffect(() => {
@@ -761,7 +761,7 @@ export default function MceComposer() {
       title: 'Preview',
       expandable: false,
       className: 'preview-panel',
-      content: <PreviewPanel edition={edition} getPdfUrl={getPdfUrl}/>,
+      content: <PreviewPanel editionKey={editionKey} edition={edition} getPdfUrl={getPdfUrl}/>,
       tabbable: true,
     },
     {

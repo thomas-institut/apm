@@ -16,13 +16,22 @@ import PreviewPageControls from "@/ReactAPM/Pages/MceComposer/PreviewPanel/Previ
 import PreviewZoomControls from "@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewZoomControls";
 import {Spinner} from "react-bootstrap";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
+import {WebStorageKeyCache} from "@/toolbox/KeyCache/WebStorageKeyCache";
 
 interface PreviewPanelProps extends TabbableElementProps {
+  /**
+   * A string to identify the preview panel's edition
+   */
+  editionKey: string | null;
   edition: EditionInterface | null;
-  getPdfUrl: (data: ApiTypesetPdfRequestData) => Promise<string>
+  getPdfUrl: (data: ApiTypesetPdfRequestData) => Promise<string>;
 }
 
-export default function PreviewPanel({edition, getPdfUrl}: PreviewPanelProps) {
+interface PreviewPanelSettings {
+  styleSheetId: string | null;
+}
+
+export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPanelProps) {
 
   const [page, setPage] = useState(0);
   const [zoom, setZoom] = useState(1);
@@ -35,14 +44,17 @@ export default function PreviewPanel({edition, getPdfUrl}: PreviewPanelProps) {
   const [pdfDownloadError, setPdfDownloadError] = useState<string | null>(null);
   const [pdfDownloadUrl, setPdfDownloadUrl] = useState<string | null>(null);
 
+  const webCacheDataId = 'ppc-202607241309';
+  const cacheKey = `ppc-settings-${editionKey ?? 'ppc-setting-default'}`;
+  const webCache = new WebStorageKeyCache('local', webCacheDataId, editionKey ?? 'default');
+
   useEffect(() => {
     if (edition === null) {
       return;
     }
     const styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(edition.lang);
-    const styleSheetIds = Object.keys(styleSheets);
     setSystemStyles(styleSheets);
-    setStyleSheetId(styleSheetIds[0]);
+    setStyleSheetId(null);
   }, [edition?.lang]);
 
   useEffect(() => {
@@ -50,6 +62,35 @@ export default function PreviewPanel({edition, getPdfUrl}: PreviewPanelProps) {
     setPdfDownloadUrl(null);
     setRefreshingPreview(false);
   }, [styleSheetId, edition]);
+
+
+  /**
+   * Save styleSheetId to settings
+   */
+  useEffect(() => {
+    if (edition === null) {
+      return;
+    }
+    if (styleSheetId !== null) {
+      const currentSettings = webCache.retrieve(cacheKey) as PreviewPanelSettings | null;
+      if (currentSettings !== null) {
+        if (currentSettings.styleSheetId !== styleSheetId) {
+          console.log(`Settings ${editionKey}: updating styleSheetId from ${currentSettings.styleSheetId} to ${styleSheetId}`);
+          webCache.store(cacheKey, {...currentSettings, styleSheetId});
+        }
+      } else {
+        console.log(`Settings ${editionKey}: saving styleSheetId ${styleSheetId} for the first time`);
+        webCache.store(cacheKey, {styleSheetId});
+      }
+    } else {
+      console.log('styleSheetId is null');
+      const currentSettings = webCache.retrieve(cacheKey) as PreviewPanelSettings | null;
+      if (currentSettings !== null) {
+        console.log(`Settings ${editionKey}: setting stylesheeId to ${currentSettings.styleSheetId} from cached settings`);
+        setStyleSheetId(currentSettings.styleSheetId);
+      }
+    }
+  }, [edition, styleSheetId]);
 
   if (edition === null || systemStyles === null) {
     return <Panel className={'preview-panel'}>
@@ -116,7 +157,7 @@ export default function PreviewPanel({edition, getPdfUrl}: PreviewPanelProps) {
 
     setDownloadingPDF(true);
     setPdfDownloadError(null);
-    setTimeout( async () => {
+    setTimeout(async () => {
       const editionObject = (new Edition()).setFromInterface(edition);
       const styleSheet = SystemStyleSheet.getStyleSheet(edition.lang, styleSheetId);
       const apiRequestData = await getApiPdfData(editionObject, styleSheet, styleSheetId);
@@ -131,9 +172,9 @@ export default function PreviewPanel({edition, getPdfUrl}: PreviewPanelProps) {
       }
       setDownloadingPDF(false);
     }, 0);
-  }
+  };
 
-  const styleSheetSelect = <select defaultValue={styleSheetId ?? undefined}
+  const styleSheetSelect = <select value={styleSheetId ?? undefined}
                                    onChange={e => setStyleSheetId(e.target.value)}>
     {Object.keys(systemStyles).map((id) => <option key={id} value={id}>{systemStyles[id]._metaData.name}</option>)}
   </select>;
@@ -157,9 +198,13 @@ export default function PreviewPanel({edition, getPdfUrl}: PreviewPanelProps) {
             <span className={'tb-btn'} onClick={handleClickOnRefresh}
                   title={'Click to refresh preview'}>Out of date <ArrowClockwise/></span>
           </ComponentWithPending>}
-        {previewUpToDate && <ComponentWithPending pending={downloadingPDF} pendingElement={<span>Generating PDF... <Spinner size={'sm'}/></span>}>
-          <div onClick={() => handleOnClickDownloadPDF()} className={'tb-btn'} title={pdfDownloadUrl === null ? 'Click to generate PDF in server' : 'Download PDF'}>
-            {pdfDownloadError && <span className={'text-danger'} style={{marginRight: '1em'}}>PDF generation failed</span>}
+        {previewUpToDate && <ComponentWithPending pending={downloadingPDF}
+                                                  pendingElement={<span>Generating PDF... <Spinner
+                                                    size={'sm'}/></span>}>
+          <div onClick={() => handleOnClickDownloadPDF()} className={'tb-btn'}
+               title={pdfDownloadUrl === null ? 'Click to generate PDF in server' : 'Download PDF'}>
+            {pdfDownloadError &&
+              <span className={'text-danger'} style={{marginRight: '1em'}}>PDF generation failed</span>}
             <small>PDF</small><Download/>
           </div>
         </ComponentWithPending>}

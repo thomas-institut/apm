@@ -32,7 +32,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
            'update <id> [version]' => 'updates a publication by id (version is a timestring and is optional, defaults to the current version)',
            'del <id>' => 'removes a publication by id',
            'show <id>' => 'shows a publication by id',
-           'preview <type> <id>' => 'shows a preview of a publication by id'
+           'export <type> <id>' => 'exports a publication by id as JSON file'
             ];
         return implode("\n", array_map(function($key, $value) { return "  $key: $value"; }, array_keys($options), $options));
     }
@@ -58,7 +58,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             'update' => $this->update((int)$argv[2], $argv[3] ?? 'current'),
             'del' => $this->remove((int)$argv[2]),
             'show' => $this->show((int)$argv[2]),
-            'preview' => $this->preview($argv[2], (int)$argv[3]),
+            'export' => $this->export((int)$argv[2]),
             default => 0,
         };
     }
@@ -185,34 +185,40 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
     }
 
 
-    private function preview(string $type, int $resourceId) : int {
-        if ($resourceId <= 0) {
-            print "Error: resource id must be greater than 0\n";
-            return 1;
-        }
-        if ($type === 'tx' || $type === 'tx-full' ) {
-            $type = PublicationType::Transcription->value;
-        }
-
-        if ($type !== PublicationType::Transcription->value) {
-            print "Sorry, only transcription publications are supported at this time\n";
+    private function export(int $pubId) : int {
+        if ($pubId <= 0) {
+            print "Error: publication id must be greater than 0\n";
             return 1;
         }
 
         try {
-            $ci = $this->container;
-            $action = new GetTranscriptionDataForDocument($ci->get(PublicationManagerInterface::class));
-            $data = $action->getTranscriptionDataForDocument($resourceId);
-            $this->printTranscriptionData($data);
+            /** @var PublicationManagerInterface $pm */
+            $pm = $this->container->get(PublicationManagerInterface::class);
+            $data = $pm->getPublication($pubId);
+
+            $json = json_encode(
+                    $data,
+                    JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
+                ) . "\n";
+
+            $fileName = sprintf('%s_%d_export.json', $data->type->value, $pubId);
+
+            if (@file_put_contents($fileName, $json . "\n") === false) {
+                print "Error: could not write publication JSON to file '$fileName'\n";
+                return 1;
+            }
+
+            print "Publication $pubId exported to '$fileName'\n";
             return 0;
+
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
             print "Error initializing system\n";
             return 1;
-        } catch (ResourceNotFoundException $e) {
-            print "Error: resource not found" . $e->getMessage() . "\n";
+        } catch (PublicationNotFoundException) {
+            print "Error: publication not found\n";
             return 1;
-        } catch (RuntimeException $e) {
-            print "Error: Run time error: " . $e->getMessage() . "\n";
+        } catch (JsonException $e) {
+            print "Error: could not encode publication as JSON: " . $e->getMessage() . "\n";
             return 1;
         }
     }

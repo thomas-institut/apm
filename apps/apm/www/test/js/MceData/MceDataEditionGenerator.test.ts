@@ -311,7 +311,15 @@ describe('MceDataEditionGenerator', () => {
       const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
       const edition = await generator.generate(mceData, 1);
 
-      expect(edition.mainText.map((t) => t.type)).toEqual(['text', 'paragraph_end', 'text']);
+      expect(edition.mainText.map((t) => t.type)).toEqual([
+        'chunk_start',
+        'text',
+        'paragraph_end',
+        'chunk_end',
+        'chunk_start',
+        'text',
+        'chunk_end',
+      ]);
     });
 
     it('adds glue token between non-final chunks with empty break', async () => {
@@ -349,7 +357,15 @@ describe('MceDataEditionGenerator', () => {
       const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
       const edition = await generator.generate(mceData, 1);
 
-      expect(edition.mainText.map((t) => t.type)).toEqual(['text', 'glue', 'text']);
+      expect(edition.mainText.map((t) => t.type)).toEqual([
+        'chunk_start',
+        'text',
+        'glue',
+        'chunk_end',
+        'chunk_start',
+        'text',
+        'chunk_end',
+      ]);
     });
 
     it('shifts mainText editionWitnessTokenIndex by cumulative output length', async () => {
@@ -360,9 +376,9 @@ describe('MceDataEditionGenerator', () => {
       const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
       const edition = await generator.generate(buildMceData(), 1);
 
-      expect(edition.mainText[0].editionWitnessTokenIndex).toBe(0);
-      expect(edition.mainText[1].editionWitnessTokenIndex).toBe(1);
-      expect(edition.mainText[3].editionWitnessTokenIndex).toBe(3);
+      expect(edition.mainText[1].editionWitnessTokenIndex).toBe(0);
+      expect(edition.mainText[2].editionWitnessTokenIndex).toBe(1);
+      expect(edition.mainText[6].editionWitnessTokenIndex).toBe(3);
     });
 
     it('maps apparatus witness indices to global indices and shifts entry from/to', async () => {
@@ -454,7 +470,7 @@ describe('MceDataEditionGenerator', () => {
       expect(chunkOrderSpy).toHaveBeenCalledWith(mceData);
       expect(mceData.chunkOrder).toEqual([1, 0]);
       // @ts-ignore
-      expect(edition.mainText[0].getPlainText()).toBe('t10');
+      expect(edition.mainText[1].getPlainText()).toBe('t10');
     });
 
     it('merges foliation changes between chunk iterations', async () => {

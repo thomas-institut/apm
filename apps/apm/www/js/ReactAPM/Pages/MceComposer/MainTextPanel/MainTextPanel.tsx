@@ -2,8 +2,8 @@ import {Edition} from "@/Edition/Edition";
 import './MainTextPanel.css';
 import {Button} from "react-bootstrap";
 import {MainTextToken} from "@/Edition/MainTextToken";
-import {JSX} from "react";
-import {Diamond} from "react-bootstrap-icons";
+import {Fragment, JSX} from "react";
+import {SignpostSplit} from "react-bootstrap-icons";
 
 interface MainTextPanelProps {
   edition: Edition | null;
@@ -30,14 +30,14 @@ export default function MainTextPanel({
       style: '',
       tokens: []
     };
-    edition.mainText.forEach( (token) => {
+    edition.mainText.forEach((token) => {
       switch (token.type) {
         case 'text':
         case 'glue':
           currentParagraph.tokens.push(token);
           break;
         case 'paragraph_end':
-          currentParagraph.style = token.style
+          currentParagraph.style = token.style;
           paragraphs.push(currentParagraph);
           currentParagraph = {
             style: '',
@@ -45,36 +45,41 @@ export default function MainTextPanel({
           };
           break;
 
-          case 'chunk_start':
-          case 'chunk_end':
-            currentParagraph.tokens.push(token);
-            break;
+        case 'chunk_start':
+        case 'chunk_end':
+          currentParagraph.tokens.push(token);
+          break;
       }
     });
     if (currentParagraph.tokens.length > 0) {
       paragraphs.push(currentParagraph);
     }
     return paragraphs;
-  }
+  };
 
   const getParagraphText = (p: Paragraph): JSX.Element[] => {
     const elementArray: JSX.Element[] = [];
-    p.tokens.forEach((token) => {
+    p.tokens.forEach((token, i) => {
       if (token.type === 'text' || token.type === 'glue') {
-        elementArray.push(<>{token.getPlainText()}</>);
+        elementArray.push(<Fragment key={`token-${i}`}>{token.getPlainText()}</Fragment>);
         return;
       }
       if (token.type === 'chunk_start') {
-        elementArray.push(<span className={'chunk-mark'}>{token.chunkId}</span>);
+        elementArray.push(
+          <span className={'chunk-mark'} key={`chunk-mark-${i}-${token.chunkId ?? ''}`}>
+            <span className={'chunk-mark-icon'} title={`Start of chunk ${token.chunkId ?? ''}`}>{'::'} </span>
+            <span className={'chunk-mark-label'}>{token.chunkId}</span>
+          </span>
+        );
       }
 
     });
     return elementArray;
-  }
+  };
 
   const ParagraphComponent = (props: { p: Paragraph }) => {
     return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
-  }
+  };
   if (edition === null) {
     return <div className={'main-text-panel initializing'}>Initializing...</div>;
   }
@@ -90,7 +95,8 @@ export default function MainTextPanel({
         </div>}
       <div className={mainTextClasses.join(' ')}>
         <div className={'left-margin'}></div>
-        <div>{getParagraphs(edition).map((p, i) => <ParagraphComponent p={p} key={i}/>)}</div>
+        <div className={'main-text-content'}>{getParagraphs(edition).map((p, i) => <ParagraphComponent p={p}
+                                                                                                       key={i}/>)}</div>
         <div className={'right-margin'}></div>
       </div>
     </div>

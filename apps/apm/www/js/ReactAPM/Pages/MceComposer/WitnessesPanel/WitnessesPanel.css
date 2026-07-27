@@ -7,20 +7,20 @@
         margin-top: 0;
 
         .section-content {
-            display: flex;
-            flex-direction: column;
-            gap: 2em;
 
             .add-sigla-group {
-                width: 10em;
+                margin-top: 2em;
             }
         }
+
+        .controls {
+            display: flex;
+            padding: 0;
+            flex-direction: row;
+            align-items: center;
+            gap: 0.5em;
+            justify-content: start;
+        }
     }
-
-    table.nice-table {
-        --td-padding: 0.25em 0.25em;
-    }
-
-
 
 }

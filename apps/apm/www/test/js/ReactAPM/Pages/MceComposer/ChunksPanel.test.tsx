@@ -358,6 +358,17 @@ describe('ChunksPanel', () => {
     const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
     const moveChunk = vi.fn().mockResolvedValue(false);
 
+    const flushMoveHandler = async () => {
+      for (let i = 0; i < 20; i++) {
+        if (container.querySelector('[title="Moving chunk C1"]') === null) {
+          break;
+        }
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1);
+        });
+      }
+    };
+
     await act(async () => {
       root.render(
         <ChunksPanel
@@ -374,12 +385,8 @@ describe('ChunksPanel', () => {
 
     await act(async () => {
       getMoveDownButton().click();
-      await vi.advanceTimersByTimeAsync(0);
     });
-    // Wait for the async handler to complete and state to update
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
+    await flushMoveHandler();
 
     expect(moveChunk).toHaveBeenCalledTimes(1);
     expect(moveChunk).toHaveBeenCalledWith(0, 'down');
@@ -391,12 +398,8 @@ describe('ChunksPanel', () => {
 
     await act(async () => {
       moveDownButton2.click();
-      await vi.advanceTimersByTimeAsync(0);
     });
-    // Wait for the async handler to complete and state to update
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(0);
-    });
+    await flushMoveHandler();
 
     expect(moveChunk).toHaveBeenCalledTimes(2);
     expect(container.querySelector('.highlighted')).toBeNull();

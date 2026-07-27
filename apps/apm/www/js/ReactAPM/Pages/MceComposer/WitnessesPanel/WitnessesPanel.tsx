@@ -78,6 +78,7 @@ export default function WitnessesPanel({
       setChangingMarginalFoliationIndex(witnessIndex);
       await nextTick();
       await onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
+      await nextTick();
       setChangingMarginalFoliationIndex(null);
     }
   };
@@ -147,17 +148,17 @@ export default function WitnessesPanel({
     {
       key: 'controls',
       title: '',
-      cellContent: (_siglumData, rowIndex) => <>
-        <Trash onClick={() => {
-          setConfirmDeleteSiglaGroupIndex(rowIndex);
-        }}/>
-        <Pencil onClick={() => {
+      cellContent: (siglumData, rowIndex) => <div className="controls">
+        <Pencil className={'icon-btn'}  title={`Click to edit sigla group ${siglumData.siglum}`} onClick={() => {
           setEditingSiglaGroupData({
             siglaGroupIndex: rowIndex,
             siglaGroup: siglaGroups[rowIndex]
           });
         }}/>
-      </>
+        <Trash className={'icon-btn'} title={`Click to delete sigla group ${siglumData.siglum}`} onClick={() => {
+          setConfirmDeleteSiglaGroupIndex(rowIndex);
+        }}/>
+      </div>
     }
   ];
 

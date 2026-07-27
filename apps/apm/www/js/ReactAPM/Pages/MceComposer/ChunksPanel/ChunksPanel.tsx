@@ -197,6 +197,7 @@ export default function ChunksPanel({
     setPendingDeleteChunkIndex(chunkIndex);
     await nextTick();
     await deleteChunk(chunkIndex);
+    await nextTick();
     setPendingDeleteChunkIndex(null);
   };
 
@@ -213,6 +214,7 @@ export default function ChunksPanel({
     setPendingUpdateChunkIndex(chunkIndex);
     await nextTick();
     await updateChunk(chunkIndex);
+    await nextTick();
     setPendingUpdateChunkIndex(null);
   };
 
@@ -225,6 +227,7 @@ export default function ChunksPanel({
     setPendingMoveChunkIndex(chunkIndex);
     await nextTick();
     const result = await moveChunk(chunkIndex, direction);
+    await nextTick();
     if (!result){
       setPendingHighlightChunkId(null);
       setHighlightedChunkId(null);
@@ -241,6 +244,7 @@ export default function ChunksPanel({
     setPendingSetChunkBreakIndex(chunkIndex);
     await nextTick();
     await setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
+    await nextTick();
     setPendingSetChunkBreakIndex(null);
   };
 

@@ -5,14 +5,16 @@
 import React from 'react';
 import {act} from 'react';
 import {createRoot} from 'react-dom/client';
-import {describe, expect, it, vi} from 'vitest';
+import {afterEach, describe, expect, it, vi} from 'vitest';
 import MceComposer from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {AppContext, AppContextProps} from '@/ReactAPM/App';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
+import {MceData} from '@/MceData/MceData';
 
+const mockRouteParams = vi.hoisted(() => ({id: 'new'}));
 vi.mock('react-router', () => ({
-  useParams: () => ({id: 'new'})
+  useParams: () => mockRouteParams
 }));
 
 vi.mock('react-bootstrap', () => {
@@ -137,6 +139,43 @@ vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel', () => ({
 // @ts-expect-error test-only global binding
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
+interface DeferredPromise<T> {
+  promise: Promise<T>;
+  resolve: (value: T) => void;
+  reject: (reason?: unknown) => void;
+}
+
+const createDeferredPromise = <T,>(): DeferredPromise<T> => {
+  let resolve!: (value: T) => void;
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res;
+    reject = rej;
+  });
+  return {promise, resolve, reject};
+};
+
+const flushEffects = async (times: number = 4) => {
+  for (let i = 0; i < times; i += 1) {
+    await Promise.resolve();
+  }
+};
+
+const getChunkApiResponse = (tableId: number) => {
+  return {
+    ctData: {
+      chunkId: `chunk-${tableId}`,
+      lang: 'la',
+    },
+    isLatestVersion: true,
+    timeStamp: `2026-01-01 00:00:${(tableId % 60).toString().padStart(2, '0')}`,
+  };
+};
+
+afterEach(() => {
+  mockRouteParams.id = 'new';
+});
+
 describe('MceComposer', () => {
   it('shows edition generation progress when regenerate is clicked', async () => {
     vi.useFakeTimers();
@@ -191,6 +230,94 @@ describe('MceComposer', () => {
     });
 
     vi.useRealTimers();
+  });
+
+  it('loads chunks in batches of five while initializing an existing MCE', async () => {
+    mockRouteParams.id = '123';
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const mceData = MceData.createEmpty();
+    mceData.lang = 'la';
+    mceData.chunks = Array.from({length: 12}, (_value, index) => {
+      return {
+        chunkId: `chunk-${index + 1}`,
+        break: '',
+        chunkEditionTableId: 100 + index,
+        lineNumbersRestart: false,
+        title: `Chunk ${index + 1}`,
+        version: '',
+        witnessIndices: [],
+      };
+    });
+    mceData.chunkOrder = mceData.chunks.map((_chunk, index) => index);
+
+    const pendingChunkResponses = new Map<number, DeferredPromise<any>>();
+    const getSingleChunkDataMock = vi.fn((tableId: number) => {
+      let pendingResponse = pendingChunkResponses.get(tableId);
+      if (pendingResponse === undefined) {
+        pendingResponse = createDeferredPromise<any>();
+        pendingChunkResponses.set(tableId, pendingResponse);
+      }
+      return pendingResponse.promise;
+    });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn().mockResolvedValue({mceData}),
+        getSingleChunkData: getSingleChunkDataMock,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await flushEffects();
+    });
+
+    expect(getSingleChunkDataMock).toHaveBeenCalledTimes(5);
+    expect(getSingleChunkDataMock.mock.calls.slice(0, 5).map((call) => call[0])).toEqual([100, 101, 102, 103, 104]);
+
+    await act(async () => {
+      [100, 101, 102, 103, 104].forEach((tableId) => {
+        pendingChunkResponses.get(tableId)!.resolve(getChunkApiResponse(tableId));
+      });
+      await flushEffects();
+    });
+
+    expect(getSingleChunkDataMock).toHaveBeenCalledTimes(10);
+    expect(getSingleChunkDataMock.mock.calls.slice(5, 10).map((call) => call[0])).toEqual([105, 106, 107, 108, 109]);
+
+    await act(async () => {
+      [105, 106, 107, 108, 109].forEach((tableId) => {
+        pendingChunkResponses.get(tableId)!.resolve(getChunkApiResponse(tableId));
+      });
+      await flushEffects();
+    });
+
+    expect(getSingleChunkDataMock).toHaveBeenCalledTimes(12);
+    expect(getSingleChunkDataMock.mock.calls.slice(10, 12).map((call) => call[0])).toEqual([110, 111]);
+
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   it('updates undo/redo titles when actions are performed', async () => {
@@ -318,7 +445,7 @@ describe('MceComposer', () => {
     const container = document.getElementById('root')!;
     const root = createRoot(container);
 
-    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do').mockImplementation(() => {
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do').mockImplementation(async () => {
     });
 
     const appContext: AppContextProps = {

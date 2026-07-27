@@ -113,6 +113,8 @@ interface PanelSpec {
   tabbable?: boolean;
 }
 
+const CHUNK_FETCH_BATCH_SIZE = 5;
+
 export default function MceComposer() {
 
   const [mceComposerStatus, setMceComposerStatus] = useState<MceComposerStatus>('loadingMce');
@@ -253,56 +255,86 @@ export default function MceComposer() {
       return;
     }
 
-    // Find the next chunk to load
-    const nextChunkIndex = ctDataStatusArray.findIndex(st => st.ctDataState === 'notLoaded');
-    if (nextChunkIndex === -1) {
-      return; // Currently loading some, waiting for promises to resolve
+    if (ctDataStatusArray.some(st => st.ctDataState === 'loading')) {
+      return;
     }
-    const chunkToLoad = ctDataStatusArray[nextChunkIndex];
 
-    // Instantly mark it as 'loading' in local state so the next render cycle knows not to double-trigger it
+    const chunkIndexesToLoad = ctDataStatusArray
+      .map((status, index) => {
+        return status.ctDataState === 'notLoaded' ? index : -1;
+      })
+      .filter((index) => index !== -1)
+      .slice(0, CHUNK_FETCH_BATCH_SIZE);
+
+    if (chunkIndexesToLoad.length === 0) {
+      return;
+    }
+
+    const chunksToLoad = chunkIndexesToLoad.map((chunkIndex) => ctDataStatusArray[chunkIndex]);
+
+    // Instantly mark the selected batch as 'loading' in local state so the next render cycle knows not to
+    // double-trigger it.
     setCtDataStatusArray(prev => {
       const next = [...prev];
-      next[nextChunkIndex] = {...next[nextChunkIndex], ctDataState: 'loading'};
+      chunkIndexesToLoad.forEach((chunkIndex) => {
+        next[chunkIndex] = {...next[chunkIndex], ctDataState: 'loading'};
+      });
       return next;
     });
 
-    // Fetch the data
-    console.log(`Fetching chunk index ${nextChunkIndex} (${chunkToLoad.ctDataId})`);
-    appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.requestedVersion)
-      .then(async (apiResponse) => {
+    Promise.all(chunksToLoad.map(async (chunkToLoad) => {
+      try {
+        console.log(`Fetching chunk ${chunkToLoad.ctDataId}`);
+        const apiResponse = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.requestedVersion);
         let lastVersionTimeStamp = apiResponse.timeStamp;
         if (!apiResponse.isLatestVersion) {
           console.log(`Chunk ${chunkToLoad.ctDataId} is not the latest version`);
           const latestData = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, '');
           lastVersionTimeStamp = latestData.timeStamp;
         }
+
+        return {
+          ctDataId: chunkToLoad.ctDataId,
+          loadedVersionTimeStamp: apiResponse.timeStamp,
+          isLatestVersion: apiResponse.isLatestVersion,
+          lastVersionTimeStamp,
+          errorMsg: null,
+        };
+      } catch (error) {
+        return {
+          ctDataId: chunkToLoad.ctDataId,
+          loadedVersionTimeStamp: null,
+          isLatestVersion: null,
+          lastVersionTimeStamp: null,
+          errorMsg: error instanceof Error ? error.message : `${error}`,
+        };
+      }
+    }))
+      .then((results) => {
         setCtDataStatusArray(prev => {
           const next = [...prev];
-          const index = next.findIndex(st => st.ctDataId === chunkToLoad.ctDataId);
-          if (index !== -1) {
-            next[index] = {
-              ...next[index],
-              ctDataState: 'loaded',
-              loadedVersionTimeStamp: apiResponse.timeStamp,
-              isLatestVersion: apiResponse.isLatestVersion,
-              lastVersionTimeStamp,
-            };
-          }
-          return next;
-        });
-      })
-      .catch((error) => {
-        setCtDataStatusArray(prev => {
-          const next = [...prev];
-          const index = next.findIndex(st => st.ctDataId === chunkToLoad.ctDataId);
-          if (index !== -1) {
-            next[index] = {
-              ...next[index],
-              ctDataState: 'error',
-              errorMsg: error.message
-            };
-          }
+          results.forEach((result) => {
+            const index = next.findIndex(st => st.ctDataId === result.ctDataId);
+            if (index === -1) {
+              return;
+            }
+            if (result.errorMsg !== null) {
+              next[index] = {
+                ...next[index],
+                ctDataState: 'error',
+                errorMsg: result.errorMsg,
+              };
+            } else {
+              next[index] = {
+                ...next[index],
+                ctDataState: 'loaded',
+                loadedVersionTimeStamp: result.loadedVersionTimeStamp,
+                isLatestVersion: result.isLatestVersion,
+                lastVersionTimeStamp: result.lastVersionTimeStamp,
+                errorMsg: '',
+              };
+            }
+          });
           return next;
         });
       });

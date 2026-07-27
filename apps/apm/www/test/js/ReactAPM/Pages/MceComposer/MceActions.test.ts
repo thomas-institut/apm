@@ -26,16 +26,6 @@ const makeBaseMceData = (): MceDataInterface => ({
 
 const makeState = (mceData: MceDataInterface): MceComposerHistoryState => ({
   mceData,
-  ctDataStatusArray: mceData.chunks.map(chunk => ({
-    ctDataId: chunk.chunkEditionTableId,
-    chunkId: chunk.chunkId,
-    requestedVersion: chunk.version,
-    loadedVersionTimeStamp: chunk.version,
-    isLatestVersion: true,
-    ctDataState: 'loaded',
-    errorMsg: '',
-    lastVersionTimeStamp: chunk.version,
-  }))
 });
 
 describe('MCE Actions', () => {
@@ -70,7 +60,7 @@ describe('MCE Actions', () => {
   });
 
   describe('DeleteChunkAction', () => {
-    it('should delete chunk and update chunkOrder and ct data statuses', async () => {
+    it('should delete chunk and update chunkOrder', async () => {
       const chunk1 = { chunkId: '1', break: '', chunkEditionTableId: 10, version: '1', title: 'C1', witnessIndices: [] as number[] } as any;
       const chunk2 = { chunkId: '2', break: '', chunkEditionTableId: 20, version: '1', title: 'C2', witnessIndices: [] as number[] } as any;
       const chunk3 = { chunkId: '3', break: '', chunkEditionTableId: 30, version: '1', title: 'C3', witnessIndices: [] as number[] } as any;
@@ -88,9 +78,6 @@ describe('MCE Actions', () => {
       expect(result.mceData.chunks[0].title).toBe('C1');
       expect(result.mceData.chunks[1].title).toBe('C3');
       expect(result.mceData.chunkOrder).toEqual([0, 1]);
-      expect(result.ctDataStatusArray.length).toBe(2);
-      expect(result.ctDataStatusArray[0].ctDataId).toBe(10);
-      expect(result.ctDataStatusArray[1].ctDataId).toBe(30);
     });
   });
 

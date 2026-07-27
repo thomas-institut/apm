@@ -14,7 +14,6 @@ const buildState = (): MceComposerHistoryState => ({
       {siglum: 'G2', witnesses: [1, 2]},
     ],
   },
-  ctDataStatusArray: [],
 });
 
 describe('Sigla group actions', () => {

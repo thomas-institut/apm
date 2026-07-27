@@ -33,7 +33,6 @@ describe('HistoryPanel', () => {
       signature: 'sig-initial',
       executionTimestamp: Date.now(),
       mceData: {} as any,
-      ctDataStatusArray: []
     };
     const history = new StateHistory(initialState);
     

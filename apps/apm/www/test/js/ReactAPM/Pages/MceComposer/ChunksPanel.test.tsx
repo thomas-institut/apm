@@ -145,6 +145,36 @@ describe('ChunksPanel', () => {
     });
   });
 
+  it('renders chunks even when ctDataStatusArray has extra entries', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const chunk = buildChunk();
+    const extraStatus: CtDataStatus = {
+      ...buildCtDataStatus(chunk),
+      ctDataId: 999,
+      chunkId: 'C999',
+    };
+
+    await act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk]}
+          chunkOrder={[0]}
+          ctDataStatusArray={[buildCtDataStatus(chunk), extraStatus]}
+        />
+      );
+    });
+
+    expect(container.textContent).toContain('C1');
+    expect(container.textContent).not.toContain('Chunks and CtDataStatusArray length mismatch!');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it('highlights a moved chunk once when panel is active and clears highlight on other actions', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;

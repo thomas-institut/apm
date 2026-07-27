@@ -21,26 +21,10 @@ export class UpdateChunkAction implements StateTransformAction<MceComposerHistor
     const newState = deepCopy(state);
     await MceData.updateChunk(newState.mceData, this.tableId, this.singleChunkData.ctData, this.singleChunkData.timeStamp, this.getDocTitle, this.getSourceTitle);
 
-    const indexInCtDataStatusArray = newState.ctDataStatusArray.findIndex((ctDataStatus) => ctDataStatus.ctDataId === this.tableId);
-    if (indexInCtDataStatusArray === -1) {
-      throw new Error('Chunk not in CtDataStatusArray');
-    }
-
     const indexInMceData = newState.mceData.chunks.findIndex( (chunk) => chunk.chunkEditionTableId === this.tableId);
     if (indexInMceData === -1) {
       throw new Error('Chunk not in MceData');
     }
-
-    newState.ctDataStatusArray[indexInCtDataStatusArray] = ({
-      ctDataId: this.tableId,
-      chunkId: this.singleChunkData.ctData.chunkId,
-      requestedVersion: this.singleChunkData.timeStamp,
-      loadedVersionTimeStamp: this.singleChunkData.timeStamp,
-      isLatestVersion: this.singleChunkData.isLatestVersion,
-      ctDataState: 'loaded',
-      errorMsg: '',
-      lastVersionTimeStamp: this.singleChunkData.timeStamp
-    });
 
     this.title = `Update chunk ${this.singleChunkData.ctData.chunkId} to version ${this.singleChunkData.timeStamp}`;
     return newState;

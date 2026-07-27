@@ -21,27 +21,11 @@ export class AddChunkAction implements StateTransformAction<MceComposerHistorySt
     const newState = deepCopy(state);
     await MceData.addChunk(newState.mceData, this.tableId, this.singleChunkData.ctData, this.singleChunkData.timeStamp, this.getDocTitle, this.getSourceTitle);
 
-    const indexInCtDataStatusArray = newState.ctDataStatusArray.findIndex((ctDataStatus) => ctDataStatus.ctDataId === this.tableId);
-    if (indexInCtDataStatusArray !== -1) {
-      throw new Error('CT data already exists');
-    }
-
     const indexInMceData = newState.mceData.chunks.findIndex( (chunk) => chunk.chunkEditionTableId === this.tableId);
 
     if (indexInMceData === -1) {
       throw new Error('Chunk not properly added to MceData');
     }
-
-    newState.ctDataStatusArray.push({
-      ctDataId: this.tableId,
-      chunkId: this.singleChunkData.ctData.chunkId,
-      requestedVersion: this.singleChunkData.timeStamp,
-      loadedVersionTimeStamp: this.singleChunkData.timeStamp,
-      isLatestVersion: this.singleChunkData.isLatestVersion,
-      ctDataState: 'loaded',
-      errorMsg: '',
-      lastVersionTimeStamp: null
-    });
 
     this.title = `Add chunk ${this.singleChunkData.ctData.chunkId} to edition`;
     return newState;

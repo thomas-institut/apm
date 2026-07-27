@@ -95,7 +95,6 @@ export interface CtDataStatus {
 
 export interface MceComposerHistoryState {
   mceData: MceDataInterface;
-  ctDataStatusArray: CtDataStatus[];
 }
 
 interface MceSettings {
@@ -132,7 +131,6 @@ export default function MceComposer() {
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
   const [history, setHistory] = useState(() => new StateHistory<MceComposerHistoryState>({
     mceData: MceData.createEmpty(),
-    ctDataStatusArray: [],
   }));
   const [historyVersion, setHistoryVersion] = useState(0);
   const [savedStateSignature, setSavedStateSignature] = useState(history.getHistory()[0].signature);
@@ -241,7 +239,7 @@ export default function MceComposer() {
 
     if (allLoaded || ctDataStatusArray.length === 0) {
       // console.log('All chunks loaded', ctDataStatusArray);
-      const initialHistory = new StateHistory<MceComposerHistoryState>(deepCopy({mceData, ctDataStatusArray}));
+      const initialHistory = new StateHistory<MceComposerHistoryState>(deepCopy({mceData}));
       setHistory(initialHistory);
       setSavedStateSignature(initialHistory.getCurrentStateSignature());
       setHistoryVersion(v => v + 1);
@@ -380,7 +378,6 @@ export default function MceComposer() {
     checkForChanges();
     const currentHistoryState = history.getCurrentState();
     setMceData(currentHistoryState.mceData);
-    setCtDataStatusArray(currentHistoryState.ctDataStatusArray);
   }, [historyVersion]);
 
   /**
@@ -434,6 +431,18 @@ export default function MceComposer() {
     return appContext.apiClient.getEntityName(sourceId);
   };
 
+  const upsertCtDataStatus = (ctDataStatus: CtDataStatus) => {
+    setCtDataStatusArray(prev => {
+      const index = prev.findIndex(status => status.ctDataId === ctDataStatus.ctDataId);
+      if (index === -1) {
+        return [...prev, ctDataStatus];
+      }
+      const next = [...prev];
+      next[index] = ctDataStatus;
+      return next;
+    });
+  };
+
   const addChunk = async (tableId: number, version: string = ''): Promise<true | string> => {
     console.log(`Add chunk from table ${tableId}, version '${version}'`);
     let chunkApiData: SingleChunkApiData;
@@ -458,6 +467,18 @@ export default function MceComposer() {
       reportActionBug('AddChunkAction', error);
       return 'Bug found';
     }
+
+    upsertCtDataStatus({
+      ctDataId: tableId,
+      chunkId: chunkApiData.ctData.chunkId,
+      requestedVersion: chunkApiData.timeStamp,
+      loadedVersionTimeStamp: chunkApiData.timeStamp,
+      isLatestVersion: chunkApiData.isLatestVersion,
+      ctDataState: 'loaded',
+      errorMsg: '',
+      lastVersionTimeStamp: null,
+    });
+
     setHistoryVersion(v => v + 1);
     setChunksPanelVersion(v => v + 1);
     return true;
@@ -510,6 +531,17 @@ export default function MceComposer() {
       reportActionBug('UpdateChunkAction', error);
       return 'Bug found';
     }
+
+    upsertCtDataStatus({
+      ctDataId: tableId,
+      chunkId: chunkApiData.ctData.chunkId,
+      requestedVersion: chunkApiData.timeStamp,
+      loadedVersionTimeStamp: chunkApiData.timeStamp,
+      isLatestVersion: chunkApiData.isLatestVersion,
+      ctDataState: 'loaded',
+      errorMsg: '',
+      lastVersionTimeStamp: chunkApiData.timeStamp,
+    });
 
     setHistoryVersion(v => v + 1);
     setChunksPanelVersion(v => v + 1);

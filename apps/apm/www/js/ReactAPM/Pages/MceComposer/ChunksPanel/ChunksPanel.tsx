@@ -128,12 +128,7 @@ export default function ChunksPanel({
     pendingSetChunkBreakIndex !== null;
 
 
-  if (chunks.length !== ctDataStatusArray.length) {
-    return <div className={'text-danger'}>Chunks and CtDataStatusArray length mismatch!</div>;
-  }
-
-  const numChunks = ctDataStatusArray.length;
-  if (numChunks === 0) {
+  if (chunks.length === 0) {
     return <div>No chunks, add some in the "Add Chunks panel"</div>;
   }
   const lastChunkIndex = chunks.length - 1;

@@ -24,9 +24,7 @@ export class DeleteChunkAction implements StateTransformAction<MceComposerHistor
       throw `Chunk at position ${this.chunkPosition} does not exist`;
     }
     const chunkId = chunk.chunkId;
-    const chunkTableId = chunk.chunkEditionTableId;
     MceData.deleteChunk(newState.mceData, chunkIndex);
-    newState.ctDataStatusArray = newState.ctDataStatusArray.filter(s => s.ctDataId !== chunkTableId);
     this.title = `Remove chunk ${chunkId} from edition`;
     return newState
   }

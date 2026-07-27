@@ -57,7 +57,6 @@ import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
 // TODO before release (2026-07-27))
 //  - Check potential problems in typesetting, lots of "line number" not found warnings
-//  - Safeguard: buttons/actions should not be functional when loading or saving
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
 //    testing that simulates server failures. Maybe a mock api client that fails in different ways
 
@@ -76,12 +75,16 @@ import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
 export type CtDataState = 'notLoaded' | 'loading' | 'loaded' | 'error';
 
-type MceComposerStatus =
+export type MceComposerStatus =
   'start'
   | 'loadingMce'
   | 'loadingSingleChunks'
   | 'loaded'
   | 'error';
+
+export const isMceDataEditingAllowed = (mceComposerStatus: MceComposerStatus): boolean => {
+  return mceComposerStatus === 'loaded';
+};
 
 export interface CtDataStatus {
   ctDataId: number;
@@ -115,6 +118,9 @@ interface PanelSpec {
 }
 
 const CHUNK_FETCH_BATCH_SIZE = 5;
+const MCE_DATA_NOT_LOADED_ERROR = 'Cannot modify MCE data until it is loaded';
+const SAVING_EDIT_ERROR = 'Cannot modify MCE data while saving';
+const EDIT_IN_PROGRESS_ERROR = 'Cannot modify MCE data while another edit is in progress';
 
 export default function MceComposer() {
 
@@ -147,6 +153,8 @@ export default function MceComposer() {
 
 
   const singleChunkEditionCache = useRef<Record<string, Edition>>({});
+  const savingRef = useRef(false);
+  const mceDataEditInProgressRef = useRef(false);
   /**
    * Cache of generated editions, indexed by data's hash
    */
@@ -450,16 +458,46 @@ export default function MceComposer() {
     setFoundBugDescription(`${actionName} failed. ${error}`);
   };
 
-  const deleteChunk = async (chunkIndex: number): Promise<boolean> => {
-    console.log("deleteChunk", chunkIndex);
-    try {
-      await history.do(new DeleteChunkAction(chunkIndex));
-    } catch (error) {
-      reportActionBug('DeleteChunkAction', error);
+  const startMceDataEdit = () => {
+    if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current) {
       return false;
     }
-    setHistoryVersion(v => v + 1);
+    mceDataEditInProgressRef.current = true;
     return true;
+  };
+
+  const finishMceDataEdit = () => {
+    mceDataEditInProgressRef.current = false;
+  };
+
+  const getMceDataEditError = () => {
+    if (!isMceDataEditingAllowed(mceComposerStatus)) {
+      return MCE_DATA_NOT_LOADED_ERROR;
+    }
+    return savingRef.current ? SAVING_EDIT_ERROR : EDIT_IN_PROGRESS_ERROR;
+  };
+
+  const isMceDataEditBlocked = () => {
+    return !isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current;
+  };
+
+  const deleteChunk = async (chunkIndex: number): Promise<boolean> => {
+    console.log("deleteChunk", chunkIndex);
+    if (!startMceDataEdit()) {
+      return false;
+    }
+    try {
+      try {
+        await history.do(new DeleteChunkAction(chunkIndex));
+      } catch (error) {
+        reportActionBug('DeleteChunkAction', error);
+        return false;
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const getDocTitle = async (docId: number): Promise<string> => {
@@ -484,164 +522,229 @@ export default function MceComposer() {
 
   const addChunk = async (tableId: number, version: string = ''): Promise<true | string> => {
     console.log(`Add chunk from table ${tableId}, version '${version}'`);
-    let chunkApiData: SingleChunkApiData;
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
     try {
-      chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, version);
-      if (mceData.chunks.length !== 0 && chunkApiData.ctData.lang !== mceData.lang) {
-        return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
+      let chunkApiData: SingleChunkApiData;
+      try {
+        chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, version);
+        if (mceData.chunks.length !== 0 && chunkApiData.ctData.lang !== mceData.lang) {
+          return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
+        }
+      } catch (error) {
+        const errorString = error as String;
+        return errorString.toString();
       }
-    } catch (error) {
-      const errorString = error as String;
-      return errorString.toString();
+
+      try {
+        await history.do(new AddChunkAction(
+          tableId,
+          chunkApiData,
+          getDocTitle,
+          getSourceTitle,
+        ));
+      } catch (error) {
+        reportActionBug('AddChunkAction', error);
+        return 'Bug found';
+      }
+
+      upsertCtDataStatus({
+        ctDataId: tableId,
+        chunkId: chunkApiData.ctData.chunkId,
+        requestedVersion: chunkApiData.timeStamp,
+        loadedVersionTimeStamp: chunkApiData.timeStamp,
+        isLatestVersion: chunkApiData.isLatestVersion,
+        ctDataState: 'loaded',
+        errorMsg: '',
+        lastVersionTimeStamp: null,
+      });
+
+      setHistoryVersion(v => v + 1);
+      setChunksPanelVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
     }
-
-    try {
-      await history.do(new AddChunkAction(
-        tableId,
-        chunkApiData,
-        getDocTitle,
-        getSourceTitle,
-      ));
-    } catch (error) {
-      reportActionBug('AddChunkAction', error);
-      return 'Bug found';
-    }
-
-    upsertCtDataStatus({
-      ctDataId: tableId,
-      chunkId: chunkApiData.ctData.chunkId,
-      requestedVersion: chunkApiData.timeStamp,
-      loadedVersionTimeStamp: chunkApiData.timeStamp,
-      isLatestVersion: chunkApiData.isLatestVersion,
-      ctDataState: 'loaded',
-      errorMsg: '',
-      lastVersionTimeStamp: null,
-    });
-
-    setHistoryVersion(v => v + 1);
-    setChunksPanelVersion(v => v + 1);
-    return true;
   };
 
   const moveChunk = async (chunkPosition: number, direction: 'up' | 'down'): Promise<boolean> => {
     console.log(`Move chunk at position ${chunkPosition} '${direction}'`);
-    try {
-      await history.do(new MoveChunkAction(chunkPosition, direction === 'up' ? 'backwards' : 'forwards'));
-    } catch (error) {
-      reportActionBug('MoveChunkAction', error);
+    if (!startMceDataEdit()) {
       return false;
     }
-    setHistoryVersion(v => v + 1);
-    return true;
+    try {
+      try {
+        await history.do(new MoveChunkAction(chunkPosition, direction === 'up' ? 'backwards' : 'forwards'));
+      } catch (error) {
+        reportActionBug('MoveChunkAction', error);
+        return false;
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const setChunkBreak = async (chunkPosition: number, newBreak: string): Promise<boolean> => {
     console.log(`Set break for chunk at position ${chunkPosition} to '${newBreak}'`);
-    try {
-      await history.do(new SetChunkBreakAction(chunkPosition, newBreak));
-    } catch (error) {
-      reportActionBug('SetChunkBreakAction', error);
+    if (!startMceDataEdit()) {
       return false;
     }
-    setHistoryVersion(v => v + 1);
-    setChunksPanelVersion(v => v + 1);
-    return true;
+    try {
+      try {
+        await history.do(new SetChunkBreakAction(chunkPosition, newBreak));
+      } catch (error) {
+        reportActionBug('SetChunkBreakAction', error);
+        return false;
+      }
+      setHistoryVersion(v => v + 1);
+      setChunksPanelVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const updateChunk = async (chunkIndex: number): Promise<true | string> => {
     console.log(`Update chunk index ${chunkIndex}`);
-    const tableId = mceData.chunks[chunkIndex].chunkEditionTableId;
-    let chunkApiData: SingleChunkApiData;
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
     try {
-      chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, '');
-      if (chunkApiData.ctData.lang !== mceData.lang) {
-        return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
+      const tableId = mceData.chunks[chunkIndex].chunkEditionTableId;
+      let chunkApiData: SingleChunkApiData;
+      try {
+        chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, '');
+        if (chunkApiData.ctData.lang !== mceData.lang) {
+          return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
+        }
+      } catch (error) {
+        const errorString = error as String;
+        return errorString.toString();
       }
-    } catch (error) {
-      const errorString = error as String;
-      return errorString.toString();
-    }
-    try {
-      await history.do(new UpdateChunkAction(tableId,
-        chunkApiData,
-        getDocTitle,
-        getSourceTitle,));
-    } catch (error) {
-      reportActionBug('UpdateChunkAction', error);
-      return 'Bug found';
-    }
 
-    upsertCtDataStatus({
-      ctDataId: tableId,
-      chunkId: chunkApiData.ctData.chunkId,
-      requestedVersion: chunkApiData.timeStamp,
-      loadedVersionTimeStamp: chunkApiData.timeStamp,
-      isLatestVersion: chunkApiData.isLatestVersion,
-      ctDataState: 'loaded',
-      errorMsg: '',
-      lastVersionTimeStamp: chunkApiData.timeStamp,
-    });
+      try {
+        await history.do(new UpdateChunkAction(tableId,
+          chunkApiData,
+          getDocTitle,
+          getSourceTitle,));
+      } catch (error) {
+        reportActionBug('UpdateChunkAction', error);
+        return 'Bug found';
+      }
 
-    setHistoryVersion(v => v + 1);
-    setChunksPanelVersion(v => v + 1);
-    return true;
+      upsertCtDataStatus({
+        ctDataId: tableId,
+        chunkId: chunkApiData.ctData.chunkId,
+        requestedVersion: chunkApiData.timeStamp,
+        loadedVersionTimeStamp: chunkApiData.timeStamp,
+        isLatestVersion: chunkApiData.isLatestVersion,
+        ctDataState: 'loaded',
+        errorMsg: '',
+        lastVersionTimeStamp: chunkApiData.timeStamp,
+      });
+
+      setHistoryVersion(v => v + 1);
+      setChunksPanelVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const handleSetSiglum = async (witnessIndex: number, newSiglum: string) => {
-    try {
-      await history.do(new SetSiglumAction(witnessIndex, newSiglum));
-    } catch (error) {
-      reportActionBug('SetSiglumAction', error);
+    if (!startMceDataEdit()) {
       return false;
     }
-    setHistoryVersion(v => v + 1);
-    return true;
+    try {
+      try {
+        await history.do(new SetSiglumAction(witnessIndex, newSiglum));
+      } catch (error) {
+        reportActionBug('SetSiglumAction', error);
+        return false;
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const handleSetIncludeInAutoMarginalFoliation = async (witnessIndex: number, newState: boolean) => {
-    try {
-      await history.do(new SetIncludeInAutoMarginalFoliationAction(witnessIndex, newState));
-    } catch (error) {
-      reportActionBug('SetIncludeInAutoMarginalFoliationAction', error);
+    if (!startMceDataEdit()) {
       return false;
     }
-    setHistoryVersion(v => v + 1);
-    return true;
+    try {
+      try {
+        await history.do(new SetIncludeInAutoMarginalFoliationAction(witnessIndex, newState));
+      } catch (error) {
+        reportActionBug('SetIncludeInAutoMarginalFoliationAction', error);
+        return false;
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const handleDeleteSiglaGroup = async (siglaGroupIndex: number) => {
-    try {
-      await history.do(new DeleteSiglaGroupAction(siglaGroupIndex));
-    } catch (error) {
-      reportActionBug('DeleteSiglaGroupAction', error);
+    if (!startMceDataEdit()) {
       return false;
     }
-    setHistoryVersion(v => v + 1);
-    return true;
+    try {
+      try {
+        await history.do(new DeleteSiglaGroupAction(siglaGroupIndex));
+      } catch (error) {
+        reportActionBug('DeleteSiglaGroupAction', error);
+        return false;
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const handleChangeSiglaGroup = async (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => {
-    try {
-      await history.do(new ChangeSiglaGroupAction(siglaGroupIndex, newGroup));
-    } catch (error) {
-      reportActionBug('ChangeSiglaGroupAction', error);
+    if (!startMceDataEdit()) {
       return false;
     }
-    setHistoryVersion(v => v + 1);
-    return true;
+    try {
+      try {
+        await history.do(new ChangeSiglaGroupAction(siglaGroupIndex, newGroup));
+      } catch (error) {
+        reportActionBug('ChangeSiglaGroupAction', error);
+        return false;
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const handleConfirmTitleEdit = async (newTitle: string) => {
-    const sanitizedTitle = newTitle.trim();
-    if (sanitizedTitle === mceData.title) return;
-
-    try {
-      await history.do(new ChangeTitleAction(sanitizedTitle));
-    } catch (error) {
-      reportActionBug('ChangeTitleAction', error);
+    if (!startMceDataEdit()) {
       return false;
     }
-    setHistoryVersion(v => v + 1);
+    try {
+      const sanitizedTitle = newTitle.trim();
+      if (sanitizedTitle === mceData.title) return;
+
+      try {
+        await history.do(new ChangeTitleAction(sanitizedTitle));
+      } catch (error) {
+        reportActionBug('ChangeTitleAction', error);
+        return false;
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
   };
 
   const handleOnClickTabExpand = (tabKey: string) => {
@@ -664,6 +767,9 @@ export default function MceComposer() {
 
   const handleOnClickRevertChanges = () => {
     console.log(`Click on revert changes`);
+    if (isMceDataEditBlocked()) {
+      return;
+    }
     const savedIndex = history.getHistory().findIndex(item => item.signature === savedStateSignature);
     if (savedIndex >= 0) {
       history.goToState(savedIndex);
@@ -725,10 +831,11 @@ export default function MceComposer() {
 
   const handleOnClickSaveButton = async () => {
     console.log(`Click on save`);
-    if (changes.length === 0) {
+    if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current || changes.length === 0) {
       console.warn(`Cannot save MCE data because there are no changes`);
       return;
     }
+    savingRef.current = true;
     setSaving(true);
     setSaveError(null);
     await nextTick();
@@ -739,6 +846,7 @@ export default function MceComposer() {
     });
     if (response.result === 'Error') {
       setSaveError(response.message ?? 'Error saving');
+      savingRef.current = false;
       setSaving(false);
       return;
     }
@@ -751,6 +859,7 @@ export default function MceComposer() {
     history.reset(history.getCurrentState(), 'Last save');
     setSavedStateSignature(history.getHistory()[0].signature);
     setChanges([]);
+    savingRef.current = false;
     setSaving(false);
   };
 
@@ -874,10 +983,16 @@ export default function MceComposer() {
                              savedStateSignature={savedStateSignature}
                              historyVersion={historyVersion}
                              onGoTo={(idx) => {
+                               if (isMceDataEditBlocked()) {
+                                 return;
+                               }
                                history.goToState(idx);
                                setHistoryVersion(v => v + 1);
                              }}
                              onClearHistory={() => {
+                               if (isMceDataEditBlocked()) {
+                                 return;
+                               }
                                const savedIndex = history.getHistory().findIndex(item => item.signature === savedStateSignature);
                                if (savedIndex >= 0) {
                                  history.clear(savedIndex);
@@ -999,6 +1114,9 @@ export default function MceComposer() {
     {!foundBug && <Arrow90degLeft className={'icon-btn' + (canUndo ? '' : ' disabled')}
                                   title={undoTitle}
                                   onClick={() => {
+                                    if (isMceDataEditBlocked()) {
+                                      return;
+                                    }
                                     history.undo();
                                     setHistoryVersion(v => v + 1);
                                     setChunksPanelVersion(v => v + 1);
@@ -1006,6 +1124,9 @@ export default function MceComposer() {
     {!foundBug && <Arrow90degRight className={'icon-btn' + (canRedo ? '' : ' disabled')}
                                    title={redoTitle}
                                    onClick={() => {
+                                     if (isMceDataEditBlocked()) {
+                                       return;
+                                     }
                                      history.redo();
                                      setHistoryVersion(v => v + 1);
                                      setChunksPanelVersion(v => v + 1);

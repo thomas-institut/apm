@@ -6,7 +6,7 @@ import React from 'react';
 import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {afterEach, describe, expect, it, vi} from 'vitest';
-import MceComposer from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import MceComposer, {isMceDataEditingAllowed} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {AppContext, AppContextProps} from '@/ReactAPM/App';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
@@ -15,6 +15,20 @@ import {MceData} from '@/MceData/MceData';
 const mockRouteParams = vi.hoisted(() => ({id: 'new'}));
 const mockedAddChunk = vi.hoisted(() => ({
   callback: undefined as undefined | ((tableId: number, version?: string) => Promise<true | string>),
+}));
+const mockedEditorHandlers = vi.hoisted(() => ({
+  changeTitle: undefined as undefined | ((title: string) => Promise<boolean | undefined>),
+  changeSiglaGroup: undefined as undefined | ((siglaGroupIndex: number, group: {siglum: string, witnesses: number[]}) => Promise<boolean>),
+  clearHistory: undefined as undefined | (() => void),
+  deleteChunk: undefined as undefined | ((chunkIndex: number) => Promise<boolean>),
+  deleteSiglaGroup: undefined as undefined | ((siglaGroupIndex: number) => Promise<boolean>),
+  moveChunk: undefined as undefined | ((chunkPosition: number, direction: 'up' | 'down') => Promise<boolean>),
+  onGoTo: undefined as undefined | ((index: number) => void),
+  save: undefined as undefined | (() => Promise<void>),
+  setChunkBreak: undefined as undefined | ((chunkPosition: number, newBreak: string) => Promise<boolean>),
+  setIncludeInAutoMarginalFoliation: undefined as undefined | ((witnessIndex: number, newState: boolean) => Promise<boolean>),
+  setSiglum: undefined as undefined | ((witnessIndex: number, newSiglum: string) => Promise<boolean>),
+  updateChunk: undefined as undefined | ((chunkIndex: number) => Promise<true | string>),
 }));
 vi.mock('react-router', () => ({
   useParams: () => mockRouteParams
@@ -65,18 +79,37 @@ vi.mock('@/ReactAPM/Components/PanelUI/PanelContent', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel', () => ({
-  default: () => <div>chunks</div>
+  default: ({deleteChunk, moveChunk, setChunkBreak, updateChunk}: {
+    deleteChunk: (chunkIndex: number) => Promise<boolean>,
+    moveChunk: (chunkPosition: number, direction: 'up' | 'down') => Promise<boolean>,
+    setChunkBreak: (chunkPosition: number, newBreak: string) => Promise<boolean>,
+    updateChunk: (chunkIndex: number) => Promise<true | string>,
+  }) => {
+    mockedEditorHandlers.deleteChunk = deleteChunk;
+    mockedEditorHandlers.moveChunk = moveChunk;
+    mockedEditorHandlers.setChunkBreak = setChunkBreak;
+    mockedEditorHandlers.updateChunk = updateChunk;
+    return <div>chunks</div>;
+  }
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/WitnessesPanel/WitnessesPanel', () => ({
-  default: ({onDeleteSiglaGroup, onChangeSiglaGroup}: {
-    onDeleteSiglaGroup?: (siglaGroupIndex: number) => boolean,
-    onChangeSiglaGroup?: (siglaGroupIndex: number, group: {siglum: string, witnesses: number[]}) => boolean
-  }) => <div>
-    <button type="button" data-testid="delete-sigla-group" onClick={() => onDeleteSiglaGroup?.(0)}>delete group</button>
-    <button type="button" data-testid="change-sigla-group"
-            onClick={() => onChangeSiglaGroup?.(-1, {siglum: 'Gx', witnesses: [0, 1]})}>change group</button>
-  </div>
+  default: ({onChangeIncludeInAutoMarginalFoliation, onChangeSiglaGroup, onChangeSiglum, onDeleteSiglaGroup}: {
+    onChangeIncludeInAutoMarginalFoliation?: (witnessIndex: number, newState: boolean) => Promise<boolean>,
+    onDeleteSiglaGroup?: (siglaGroupIndex: number) => Promise<boolean>,
+    onChangeSiglaGroup?: (siglaGroupIndex: number, group: {siglum: string, witnesses: number[]}) => Promise<boolean>,
+    onChangeSiglum?: (witnessIndex: number, newSiglum: string) => Promise<boolean>,
+  }) => {
+    mockedEditorHandlers.changeSiglaGroup = onChangeSiglaGroup;
+    mockedEditorHandlers.deleteSiglaGroup = onDeleteSiglaGroup;
+    mockedEditorHandlers.setIncludeInAutoMarginalFoliation = onChangeIncludeInAutoMarginalFoliation;
+    mockedEditorHandlers.setSiglum = onChangeSiglum;
+    return <div>
+      <button type="button" data-testid="delete-sigla-group" onClick={() => onDeleteSiglaGroup?.(0)}>delete group</button>
+      <button type="button" data-testid="change-sigla-group"
+              onClick={() => onChangeSiglaGroup?.(-1, {siglum: 'Gx', witnesses: [0, 1]})}>change group</button>
+    </div>;
+  }
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel', () => ({
@@ -87,13 +120,17 @@ vi.mock('@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/MceComposerSaveButton', () => ({
-  default: () => <div>save</div>
+  default: ({onClick}: {onClick: () => Promise<void>}) => {
+    mockedEditorHandlers.save = onClick;
+    return <div>save</div>;
+  }
 }));
 
 vi.mock('@/ReactAPM/Components/EditableTextField', () => ({
-  default: ({text, onConfirm}: {text: string, onConfirm: (t: string) => void}) => (
-    <div data-testid="editable-text-field" onClick={() => onConfirm('New Title Action')}>{text}</div>
-  )
+  default: ({text, onConfirm}: {text: string, onConfirm: (t: string) => Promise<boolean | undefined>}) => {
+    mockedEditorHandlers.changeTitle = onConfirm;
+    return <div data-testid="editable-text-field" onClick={() => onConfirm('New Title Action')}>{text}</div>;
+  }
 }));
 
 vi.mock('@/ReactAPM/Components/ApmLogo/ApmLogo', () => ({
@@ -134,7 +171,11 @@ vi.mock('@/ReactAPM/Pages/MceComposer/MainTextPanel/MainTextPanel', () => ({
 
 // Mock SessionPanel to avoid interval timers in tests
 vi.mock('@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel', () => ({
-  default: () => <div>session</div>
+  default: ({onClearHistory, onGoTo}: {onClearHistory: () => void, onGoTo: (index: number) => void}) => {
+    mockedEditorHandlers.clearHistory = onClearHistory;
+    mockedEditorHandlers.onGoTo = onGoTo;
+    return <div>session</div>;
+  }
 }));
 
 // Mock PreviewPanel to avoid stylesheet errors and heavy rendering
@@ -172,6 +213,10 @@ const getChunkApiResponse = (tableId: number) => {
     ctData: {
       chunkId: `chunk-${tableId}`,
       lang: 'la',
+      type: 'edition',
+      title: `Chunk ${tableId}`,
+      witnesses: [],
+      sigla: [],
     },
     isLatestVersion: true,
     timeStamp: `2026-01-01 00:00:${(tableId % 60).toString().padStart(2, '0')}`,
@@ -180,6 +225,18 @@ const getChunkApiResponse = (tableId: number) => {
 
 afterEach(() => {
   mockRouteParams.id = 'new';
+});
+
+describe('isMceDataEditingAllowed', () => {
+  it.each([
+    ['start', false],
+    ['loadingMce', false],
+    ['loadingSingleChunks', false],
+    ['loaded', true],
+    ['error', false],
+  ] as const)('allows editing for status %s: %s', (mceComposerStatus, expected) => {
+    expect(isMceDataEditingAllowed(mceComposerStatus)).toBe(expected);
+  });
 });
 
 describe('MceComposer', () => {
@@ -448,6 +505,154 @@ describe('MceComposer', () => {
     expect(redoBtn.getAttribute('title')).toBe('Redo');
   });
 
+  it('prevents concurrent mceData edits', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const chunkResponse = createDeferredPromise<ReturnType<typeof getChunkApiResponse>>();
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do');
+    const getSingleChunkData = vi.fn(() => chunkResponse.promise);
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      (container.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+    });
+
+    const firstAddPromise = mockedAddChunk.callback!(1);
+    await flushEffects();
+
+    await act(async () => {
+      await expect(mockedAddChunk.callback!(2)).resolves.toBe('Cannot modify MCE data while another edit is in progress');
+      await expect(mockedEditorHandlers.changeTitle!('Concurrent title')).resolves.toBe(false);
+    });
+
+    expect(getSingleChunkData).toHaveBeenCalledTimes(1);
+    expect(historyDoSpy).not.toHaveBeenCalled();
+
+    await act(async () => {
+      chunkResponse.resolve(getChunkApiResponse(1));
+      await expect(firstAddPromise).resolves.toBe(true);
+    });
+
+    expect(historyDoSpy).toHaveBeenCalledTimes(1);
+    historyDoSpy.mockRestore();
+  });
+
+  it('prevents all mceData edits while saving', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const saveRequest = createDeferredPromise<{result: string, id: number}>();
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do');
+    const historyUndoSpy = vi.spyOn(StateHistory.prototype, 'undo');
+    const historyRedoSpy = vi.spyOn(StateHistory.prototype, 'redo');
+    const historyGoToStateSpy = vi.spyOn(StateHistory.prototype, 'goToState');
+    const historyClearSpy = vi.spyOn(StateHistory.prototype, 'clear');
+    const getSingleChunkData = vi.fn();
+    const apiMceSave = vi.fn(() => saveRequest.promise);
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        apiMceSave,
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      await mockedEditorHandlers.changeTitle!('Changed title');
+    });
+    historyDoSpy.mockClear();
+
+    let savePromise!: Promise<void>;
+    await act(async () => {
+      savePromise = mockedEditorHandlers.save!();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(apiMceSave).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await expect(mockedAddChunk.callback!(1)).resolves.toBe('Cannot modify MCE data while saving');
+      await expect(mockedEditorHandlers.deleteChunk!(0)).resolves.toBe(false);
+      await expect(mockedEditorHandlers.moveChunk!(0, 'up')).resolves.toBe(false);
+      await expect(mockedEditorHandlers.setChunkBreak!(0, 'paragraph')).resolves.toBe(false);
+      await expect(mockedEditorHandlers.updateChunk!(0)).resolves.toBe('Cannot modify MCE data while saving');
+      await expect(mockedEditorHandlers.setSiglum!(0, 'A')).resolves.toBe(false);
+      await expect(mockedEditorHandlers.setIncludeInAutoMarginalFoliation!(0, true)).resolves.toBe(false);
+      await expect(mockedEditorHandlers.deleteSiglaGroup!(0)).resolves.toBe(false);
+      await expect(mockedEditorHandlers.changeSiglaGroup!(-1, {siglum: 'G', witnesses: []})).resolves.toBe(false);
+      await mockedEditorHandlers.changeTitle!('Another title');
+      mockedEditorHandlers.onGoTo!(0);
+      mockedEditorHandlers.clearHistory!();
+      (container.querySelector('.icon-btn[title^="Undo"]') as HTMLElement).click();
+      (container.querySelector('.icon-btn[title^="Redo"]') as HTMLElement).click();
+      (container.querySelector('.icon-btn[title="Click to revert to last saved version"]') as HTMLElement).click();
+    });
+
+    expect(historyDoSpy).not.toHaveBeenCalled();
+    expect(historyUndoSpy).not.toHaveBeenCalled();
+    expect(historyRedoSpy).not.toHaveBeenCalled();
+    expect(historyGoToStateSpy).not.toHaveBeenCalled();
+    expect(historyClearSpy).not.toHaveBeenCalled();
+    expect(getSingleChunkData).not.toHaveBeenCalled();
+
+    await act(async () => {
+      saveRequest.resolve({result: 'Success', id: 1});
+      await savePromise;
+    });
+
+    historyDoSpy.mockRestore();
+    historyUndoSpy.mockRestore();
+    historyRedoSpy.mockRestore();
+    historyGoToStateSpy.mockRestore();
+    historyClearSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
   it('shows a bug icon and message when an action throws', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
@@ -542,7 +747,12 @@ describe('MceComposer', () => {
 
     await act(async () => {
       (container.querySelector('[data-testid="change-sigla-group"]') as HTMLButtonElement).click();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
       (container.querySelector('[data-testid="delete-sigla-group"]') as HTMLButtonElement).click();
+      await Promise.resolve();
     });
 
     expect(historyDoSpy).toHaveBeenCalledTimes(2);

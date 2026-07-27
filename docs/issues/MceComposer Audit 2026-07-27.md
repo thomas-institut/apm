@@ -1,37 +1,8 @@
 # MCE Composer audit — 2026-07-27
 
-## Scope and method
-
-This is a read-only audit of the React MCE Composer implementation, its action and state-management code, child panels, directly used helpers, and their existing tests under `apps/apm/www/test/js`. No code was changed and no tests were run as part of the audit.
-
-The review covered:
-
-- `Pages/MceComposer/MceComposer.tsx` and its root tests;
-- MCE actions, `MceData`, `StateHistory`, and sigla-group utilities;
-- chunk, add-chunk, witnesses, main-text, preview, session, save-button, and status panels;
-- small shared controls directly used by those panels.
-
 ## Critical findings
 
-### First chunk cannot be added to a new edition
 
-**Evidence:** `MceComposer.tsx:479-486` rejects a chunk whenever its language differs from `mceData.lang`. A new edition starts with `mceData.lang === ''`, while a real chunk has a language such as `la`, so its first chunk is always rejected. `MceData.addChunk` already applies the correct rule: language mismatch matters only once the edition has chunks.
-
-**Impact:** The primary workflow for creating a new multi-chunk edition is blocked. The resulting message is also confusing because the permitted language is empty.
-
-**Recommendation:** Apply the language comparison only when the MCE already contains a chunk, or centralize the validation in `MceData.addChunk` so the UI cannot diverge from the domain rule.
-
-**Required regression test:** Create an MCE with route ID `new`, add a Latin chunk, and assert that the operation succeeds and the new MCE adopts `lang: 'la'`.
-
-### Saving can mark unsaved data as persisted
-
-**Evidence:** `MceComposer.tsx:720-749` submits the current `mceData`, but resets history using `history.getCurrentState()` only after the save promise resolves. Undo, redo, and other editor actions remain available during the request (`MceComposer.tsx:991-1011`).
-
-**Impact:** If state A is saved and the user moves to state B before the request completes, the UI resets B as the saved baseline although the server stored A. The editor then reports no changes for data that has not been saved.
-
-**Recommendation:** Capture the submitted history state/signature before making the request and reset only against that snapshot. Alternatively, prevent all state-changing controls while saving. The safer solution should also retain later edits as unsaved changes.
-
-**Required regression test:** Defer `apiMceSave`, start saving A, perform undo/redo or another edit to B, resolve the request, then assert that the saved baseline is A and B still appears as unsaved.
 
 ### Deleting the only chunk preserves invalid index state
 
@@ -43,15 +14,6 @@ The review covered:
 
 **Required regression test:** Delete the sole chunk, assert empty `chunkOrder` and marginal-foliation arrays, add a chunk, then assert `chunkOrder` is exactly `[0]`.
 
-### `ChunksPanel` conditionally calls a hook
-
-**Evidence:** `ChunksPanel.tsx:80-138` returns early for an empty chunk list before its later `useMemo` call.
-
-**Impact:** Rendering the same mounted panel first empty and then non-empty, or in reverse, changes the hook order and can cause React to throw a Rules of Hooks error or corrupt component state.
-
-**Recommendation:** Invoke all hooks unconditionally before any conditional return, with memoized logic handling empty data safely.
-
-**Required regression test:** Re-render one mounted panel from empty to non-empty and from non-empty to empty; assert it renders without hook-order errors.
 
 ### `em` typesetting distances are converted to zero
 

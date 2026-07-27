@@ -53,6 +53,7 @@ import {urlGen} from "@/pages/common/SiteUrlGen";
 import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
+import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
 // TODO before release (2026-07-24))
 //  - Feature: main text panel shows chunk boundaries
@@ -625,18 +626,16 @@ export default function MceComposer() {
     return MceData.isSiglaGroupValid(mceData, siglaGroupIndex, group);
   };
 
-  const regenerateEdition = () => {
+  const regenerateEdition = async () => {
     if (editionGenerationProgress !== null) return;
     setEditionGenerationProgress(0);
-    setTimeout(() => {
-      getEdition(mceData, mceDataId).then((newEdition) => {
-        if (newEdition !== null) {
-          setEdition(newEdition);
-          setEditionGenerationProgress(null);
-          setEditionOutOfDate(false);
-        }
-      });
-    }, 0);
+    await nextTick();
+    const newEdition = await getEdition(mceData, mceDataId);
+    if (newEdition !== null) {
+      setEdition(newEdition);
+      setEditionGenerationProgress(null);
+      setEditionOutOfDate(false);
+    }
   };
 
   const handleOnClickRegenerate = () => {
@@ -644,7 +643,7 @@ export default function MceComposer() {
     regenerateEdition();
   };
 
-  const handleOnClickSaveButton = () => {
+  const handleOnClickSaveButton = async () => {
     console.log(`Click on save`);
     if (changes.length === 0) {
       console.warn(`Cannot save MCE data because there are no changes`);
@@ -652,28 +651,27 @@ export default function MceComposer() {
     }
     setSaving(true);
     setSaveError(null);
-    setTimeout(async () => {
-      const response = await appContext.apiClient.apiMceSave({
-        editionId: mceDataId,
-        mceData,
-        description: changes.join('. ')
-      });
-      if (response.result === 'Error') {
-        setSaveError(response.message ?? 'Error saving');
-        setSaving(false);
-        return;
-      }
-      console.log(`Saved MCE data`, response);
-      if (mceDataId === -1) {
-        // TODO: make sure this redirects to the right place!
-        window.location.href = urlGen.siteMultiChunkEdition(response.editionId);
-      }
-      // reset history
-      history.reset(history.getCurrentState(), 'Last save');
-      setSavedStateSignature(history.getHistory()[0].signature);
-      setChanges([]);
+    await nextTick();
+    const response = await appContext.apiClient.apiMceSave({
+      editionId: mceDataId,
+      mceData,
+      description: changes.join('. ')
+    });
+    if (response.result === 'Error') {
+      setSaveError(response.message ?? 'Error saving');
       setSaving(false);
-    }, 0);
+      return;
+    }
+    console.log(`Saved MCE data`, response);
+    if (mceDataId === -1) {
+      // TODO: make sure this redirects to the right place!
+      window.location.href = urlGen.siteMultiChunkEdition(response.editionId);
+    }
+    // reset history
+    history.reset(history.getCurrentState(), 'Last save');
+    setSavedStateSignature(history.getHistory()[0].signature);
+    setChanges([]);
+    setSaving(false);
   };
 
   const getDataForWitnessPanel = (): WitnessData[] => {

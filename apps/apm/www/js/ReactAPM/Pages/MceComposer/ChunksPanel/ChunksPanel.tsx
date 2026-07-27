@@ -12,6 +12,7 @@ import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 import './ChunksPanel.css';
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {Button, Spinner} from "react-bootstrap";
+import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
 interface ChunksPanelProps extends TabbableElementProps {
   chunks: ChunkInMceData[];
@@ -190,6 +191,7 @@ export default function ChunksPanel({
     setConfirmDeleteChunkIndex(null);
 
     setPendingDeleteChunkIndex(chunkIndex);
+    await nextTick();
     await deleteChunk(chunkIndex);
     setPendingDeleteChunkIndex(null);
   };
@@ -205,6 +207,7 @@ export default function ChunksPanel({
       return;
     }
     setPendingUpdateChunkIndex(chunkIndex);
+    await nextTick();
     await updateChunk(chunkIndex);
     setPendingUpdateChunkIndex(null);
   };
@@ -216,6 +219,7 @@ export default function ChunksPanel({
     setHighlightedChunkId(null);
     setPendingHighlightChunkId(chunks[chunkOrder[chunkIndex]].chunkId);
     setPendingMoveChunkIndex(chunkIndex);
+    await nextTick();
     const result = await moveChunk(chunkIndex, direction);
     if (!result){
       setPendingHighlightChunkId(null);
@@ -231,18 +235,18 @@ export default function ChunksPanel({
       return;
     }
     setPendingSetChunkBreakIndex(chunkIndex);
+    await nextTick();
     await setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
     setPendingSetChunkBreakIndex(null);
   };
 
-  const handleOnClickCheckForUpdates = () => {
+  const handleOnClickCheckForUpdates = async () => {
     if (checkForChunkUpdates !== undefined) {
       setCheckingForUpdates(true);
-      setTimeout( async () => {
-        await checkForChunkUpdates();
-        setLastCheckForUpdates(new Date());
-        setCheckingForUpdates(false);
-      }, 0);
+      await nextTick();
+      await checkForChunkUpdates();
+      setLastCheckForUpdates(new Date());
+      setCheckingForUpdates(false);
     }
   }
 

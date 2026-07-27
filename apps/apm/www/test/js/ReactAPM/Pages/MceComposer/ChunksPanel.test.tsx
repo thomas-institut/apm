@@ -180,6 +180,7 @@ describe('ChunksPanel', () => {
     // 1. Move chunk C1 down
     await act(async () => {
       moveDownButton.click();
+      vi.advanceTimersByTime(0);
     });
 
     expect(moveChunk).toHaveBeenCalledWith(0, 'down');
@@ -210,6 +211,7 @@ describe('ChunksPanel', () => {
     const updateButton = container.querySelector('[title*="Click to update chunk C2"]') as HTMLButtonElement;
     await act(async () => {
       updateButton.click();
+      vi.advanceTimersByTime(0);
     });
 
     expect(updateChunk).toHaveBeenCalled();
@@ -225,6 +227,7 @@ describe('ChunksPanel', () => {
     expect(moveUpButton).not.toBeNull();
     await act(async () => {
       moveUpButton.click();
+      vi.advanceTimersByTime(0);
     });
     expect(container.querySelector('.highlighted')).not.toBeNull();
 
@@ -242,6 +245,7 @@ describe('ChunksPanel', () => {
     const moveDownButton2 = container.querySelector('[title="Click to move chunk C2 one row down"]') as HTMLButtonElement;
     await act(async () => {
       moveDownButton2.click();
+      vi.advanceTimersByTime(0);
     });
     expect(container.querySelector('.highlighted')).not.toBeNull();
 
@@ -289,6 +293,7 @@ describe('ChunksPanel', () => {
     const moveDownButton = container.querySelector('[title="Click to move chunk C1 one row down"]') as HTMLButtonElement;
     await act(async () => {
       moveDownButton.click();
+      vi.advanceTimersByTime(0);
     });
 
     expect(moveChunk).toHaveBeenCalledWith(0, 'down');
@@ -319,6 +324,7 @@ describe('ChunksPanel', () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
+    vi.useFakeTimers();
 
     const chunk1 = buildChunk();
     const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
@@ -340,10 +346,11 @@ describe('ChunksPanel', () => {
 
     await act(async () => {
       getMoveDownButton().click();
+      await vi.advanceTimersByTimeAsync(0);
     });
     // Wait for the async handler to complete and state to update
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.advanceTimersByTimeAsync(0);
     });
 
     expect(moveChunk).toHaveBeenCalledTimes(1);
@@ -356,10 +363,11 @@ describe('ChunksPanel', () => {
 
     await act(async () => {
       moveDownButton2.click();
+      await vi.advanceTimersByTimeAsync(0);
     });
     // Wait for the async handler to complete and state to update
     await act(async () => {
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await vi.advanceTimersByTimeAsync(0);
     });
 
     expect(moveChunk).toHaveBeenCalledTimes(2);
@@ -368,6 +376,7 @@ describe('ChunksPanel', () => {
     await act(async () => {
       root.unmount();
     });
+    vi.useRealTimers();
   });
 
   it('updates the "last check for updates" time ago every minute', async () => {
@@ -390,19 +399,20 @@ describe('ChunksPanel', () => {
       );
     });
 
-    const checkNowButton = container.querySelector('button.btn-outline-secondary') as HTMLButtonElement;
+    const checkNowButton = container.querySelector('button.btn-outline-secondary') || container.querySelector('button');
     
     // Set a fixed time for "now"
     const now = new Date('2026-07-23T20:27:00Z');
     vi.setSystemTime(now);
 
     await act(async () => {
-      checkNowButton.click();
+      (checkNowButton as HTMLButtonElement).click();
+      await vi.advanceTimersByTimeAsync(0);
     });
 
     // Wait for the async checkForChunkUpdates and state updates
     await act(async () => {
-      vi.advanceTimersByTime(0);
+      await vi.advanceTimersByTimeAsync(0);
     });
 
     // We check for the relative time which is what the useEffect refreshes

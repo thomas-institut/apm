@@ -3,6 +3,7 @@ import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {useEffect, useMemo, useState} from "react";
 import {Button, Spinner} from "react-bootstrap";
 import './AddChunksPanel.css';
+import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {ApiCollationTableInfo} from "@/Api/DataSchema/ApiCollationTable";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 
@@ -55,7 +56,7 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiv
     setAddChunkError(null);
   }, [tableIdInput, tableIdAlreadyInEdition, isValidTableId]);
 
-  const onClickAddButton = (tableId: number, quickAdd: boolean = false) => {
+  const onClickAddButton = async (tableId: number, quickAdd: boolean = false) => {
     console.log(`Adding table ${tableId}`);
     if (quickAdd && isQuickAddButtonDisabled) {
       console.log('Add button is disabled');
@@ -67,15 +68,14 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiv
     }
     setAddingTableId(tableId);
     setAddChunkError(null);
-    setTimeout(async () => {
-      const result = await addChunk(tableId, "");
-      setAddingTableId(null);
-      if (result === true) {
-        setTableIdInput('');
-      } else {
-        setAddChunkError(`Error: ${result}`);
-      }
-    }, 0);
+    await nextTick();
+    const result = await addChunk(tableId, "");
+    setAddingTableId(null);
+    if (result === true) {
+      setTableIdInput('');
+    } else {
+      setAddChunkError(`Error: ${result}`);
+    }
   };
 
   const sortedRows = useMemo(() => editionArray?.sort((a, b) => {

@@ -17,6 +17,7 @@ import PreviewZoomControls from "@/ReactAPM/Pages/MceComposer/PreviewPanel/Previ
 import {Spinner} from "react-bootstrap";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import {WebStorageKeyCache} from "@/toolbox/KeyCache/WebStorageKeyCache";
+import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
 interface PreviewPanelProps extends TabbableElementProps {
   /**
@@ -128,15 +129,14 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
   const handleClickOnRefresh = async () => {
     setPreviewUpToDate(false);
     setRefreshingPreview(true);
-    setTimeout(async () => {
-      const newlyTypesetEdition = await doTypeset();
-      if (newlyTypesetEdition !== null) {
-        setPage(Math.min(page, newlyTypesetEdition.getPageCount() - 1));
-      }
-      setTypesetEdition(newlyTypesetEdition);
-      setRefreshingPreview(false);
-      setPreviewUpToDate(true);
-    }, 0);
+    await nextTick();
+    const newlyTypesetEdition = await doTypeset();
+    if (newlyTypesetEdition !== null) {
+      setPage(Math.min(page, newlyTypesetEdition.getPageCount() - 1));
+    }
+    setTypesetEdition(newlyTypesetEdition);
+    setRefreshingPreview(false);
+    setPreviewUpToDate(true);
   };
 
   const handleOnClickDownloadPDF = async () => {
@@ -157,21 +157,20 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
 
     setDownloadingPDF(true);
     setPdfDownloadError(null);
-    setTimeout(async () => {
-      const editionObject = (new Edition()).setFromInterface(edition);
-      const styleSheet = SystemStyleSheet.getStyleSheet(edition.lang, styleSheetId);
-      const apiRequestData = await getApiPdfData(editionObject, styleSheet, styleSheetId);
-      try {
-        const pdfUrl = await getPdfUrl(apiRequestData);
-        console.log(`PDF url: ${pdfUrl}`);
-        setPdfDownloadUrl(pdfUrl);
-        window.open(pdfUrl);
-      } catch (e) {
-        console.warn(`Error getting PDF url from server`, e);
-        setPdfDownloadError('Error');
-      }
-      setDownloadingPDF(false);
-    }, 0);
+    await nextTick();
+    const editionObject = (new Edition()).setFromInterface(edition);
+    const styleSheet = SystemStyleSheet.getStyleSheet(edition.lang, styleSheetId);
+    const apiRequestData = await getApiPdfData(editionObject, styleSheet, styleSheetId);
+    try {
+      const pdfUrl = await getPdfUrl(apiRequestData);
+      console.log(`PDF url: ${pdfUrl}`);
+      setPdfDownloadUrl(pdfUrl);
+      window.open(pdfUrl);
+    } catch (e) {
+      console.warn(`Error getting PDF url from server`, e);
+      setPdfDownloadError('Error');
+    }
+    setDownloadingPDF(false);
   };
 
   const styleSheetSelect = <select value={styleSheetId ?? undefined}

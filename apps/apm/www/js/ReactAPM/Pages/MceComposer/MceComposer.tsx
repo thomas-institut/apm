@@ -55,7 +55,8 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
-// TODO before release (2026-07-24))
+// TODO before release (2026-07-27))
+//  - Check potential problems in typesetting, lots of "line number" not found warnings
 //  - Safeguard: buttons/actions should not be functional when loading or saving
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
 //    testing that simulates server failures. Maybe a mock api client that fails in different ways
@@ -233,6 +234,11 @@ export default function MceComposer() {
 // 2. Hook to fetch chunks (Phase: loadingSingleChunks)
   useEffect(() => {
     if (mceComposerStatus !== 'loadingSingleChunks') {
+      return;
+    }
+
+    if (mceData.chunks.length === 0) {
+      setMceComposerStatus('loaded');
       return;
     }
     // Check if we are fully done
@@ -424,7 +430,7 @@ export default function MceComposer() {
       console.log(`mceData change: edition hash ${getMceDataHash(mceData, mceDataId)} not in cache`, mceData);
       setEditionOutOfDate(true);
       if (settings.autoRegenerate && mceData.chunks.length > 0) {
-        regenerateEdition();
+        regenerateEdition().then();
       }
     } else {
       getEdition(mceData, mceDataId).then((generatedEdition) => {
@@ -457,7 +463,8 @@ export default function MceComposer() {
   };
 
   const getDocTitle = async (docId: number): Promise<string> => {
-    return appContext.apiClient.getEntityName(docId);
+    const docInfo = await appContext.apiClient.getDocumentInfo(docId, false, false);
+    return docInfo.title;
   };
   const getSourceTitle = async (sourceId: number): Promise<string> => {
     return appContext.apiClient.getEntityName(sourceId);
@@ -480,7 +487,7 @@ export default function MceComposer() {
     let chunkApiData: SingleChunkApiData;
     try {
       chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, version);
-      if (chunkApiData.ctData.lang !== mceData.lang) {
+      if (mceData.chunks.length !== 0 && chunkApiData.ctData.lang !== mceData.lang) {
         return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
       }
     } catch (error) {
@@ -713,7 +720,7 @@ export default function MceComposer() {
 
   const handleOnClickRegenerate = () => {
     console.log(`Click on regenerate`);
-    regenerateEdition();
+    regenerateEdition().then();
   };
 
   const handleOnClickSaveButton = async () => {
@@ -738,7 +745,7 @@ export default function MceComposer() {
     console.log(`Saved MCE data`, response);
     if (mceDataId === -1) {
       // TODO: make sure this redirects to the right place!
-      window.location.href = urlGen.siteMultiChunkEdition(response.editionId);
+      window.location.href = urlGen.siteMultiChunkEdition(response.id);
     }
     // reset history
     history.reset(history.getCurrentState(), 'Last save');
@@ -759,10 +766,12 @@ export default function MceComposer() {
   };
 
   const getActiveEditions = async () => {
-    // ignoring workId for now
     try {
       const activeEditions = await appContext.apiClient.getActiveEditions();
       const workIds = MceData.getWorkIds(mceData);
+      if (mceData.chunks.length === 0){
+        return activeEditions;
+      }
       return activeEditions.filter(e => workIds.includes(e.workId));
     } catch (e) {
       const error = e as Error;

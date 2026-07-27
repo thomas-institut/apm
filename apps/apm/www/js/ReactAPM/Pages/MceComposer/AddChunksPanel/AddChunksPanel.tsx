@@ -89,6 +89,7 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiv
   const onClickLoadEditions = async () => {
     setFetchingEditions(true);
     const result = await getActiveEditions();
+    console.log(`Got active editions`, result);
     setFetchingEditions(false);
     if (typeof result === 'string') {
       console.log(`Error: ${result}`);

@@ -13,6 +13,9 @@ import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceData} from '@/MceData/MceData';
 
 const mockRouteParams = vi.hoisted(() => ({id: 'new'}));
+const mockedAddChunk = vi.hoisted(() => ({
+  callback: undefined as undefined | ((tableId: number, version?: string) => Promise<true | string>),
+}));
 vi.mock('react-router', () => ({
   useParams: () => mockRouteParams
 }));
@@ -77,7 +80,10 @@ vi.mock('@/ReactAPM/Pages/MceComposer/WitnessesPanel/WitnessesPanel', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel', () => ({
-  default: () => <div>add chunks</div>
+  default: ({addChunk}: {addChunk: (tableId: number, version?: string) => Promise<true | string>}) => {
+    mockedAddChunk.callback = addChunk;
+    return <div>add chunks</div>;
+  }
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/MceComposerSaveButton', () => ({
@@ -177,6 +183,62 @@ afterEach(() => {
 });
 
 describe('MceComposer', () => {
+  it('accepts a non-Latin first chunk', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const getSingleChunkData = vi.fn().mockResolvedValue({
+      ctData: {
+        chunkId: 'greek-chunk',
+        lang: 'grc',
+        type: 'edition',
+        title: 'Greek chunk',
+        witnesses: [],
+        sigla: [],
+      },
+      isLatestVersion: true,
+      timeStamp: '2026-01-01 00:00:00',
+    });
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData,
+        getEntityName: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      (container.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+    });
+
+    let result: true | string | undefined;
+    await act(async () => {
+      result = await mockedAddChunk.callback!(42);
+    });
+
+    expect(result).toBe(true);
+    expect(getSingleChunkData).toHaveBeenCalledWith(42, '');
+  });
+
   it('shows edition generation progress when regenerate is clicked', async () => {
     vi.useFakeTimers();
 

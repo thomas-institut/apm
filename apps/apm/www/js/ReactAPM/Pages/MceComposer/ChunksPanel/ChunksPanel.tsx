@@ -122,6 +122,10 @@ export default function ChunksPanel({
     };
   }, [highlightedChunkId]);
 
+  const ctDataStatusById = useMemo(() => {
+    return new Map(ctDataStatusArray.map((status) => [status.ctDataId, status]));
+  }, [ctDataStatusArray]);
+
   const isAnyPending = pendingDeleteChunkIndex !== null ||
     pendingUpdateChunkIndex !== null ||
     pendingMoveChunkIndex !== null ||
@@ -133,9 +137,6 @@ export default function ChunksPanel({
   }
   const lastChunkIndex = chunks.length - 1;
 
-  const ctDataStatusById = useMemo(() => {
-    return new Map(ctDataStatusArray.map((status) => [status.ctDataId, status]));
-  }, [ctDataStatusArray]);
 
   const getChunkTableRow = (chunk: ChunkInMceData, chunkPosition: number): ChunkTableRow => {
     const chunkTableRow: ChunkTableRow = {

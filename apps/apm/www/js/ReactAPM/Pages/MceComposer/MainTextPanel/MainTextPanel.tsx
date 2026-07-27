@@ -3,7 +3,6 @@ import './MainTextPanel.css';
 import {Button} from "react-bootstrap";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {Fragment, JSX} from "react";
-import {SignpostSplit} from "react-bootstrap-icons";
 
 interface MainTextPanelProps {
   edition: Edition | null;
@@ -81,7 +80,7 @@ export default function MainTextPanel({
     return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
   };
   if (edition === null) {
-    return <div className={'main-text-panel initializing'}>Initializing...</div>;
+    return <div className={'main-text-panel initializing'}>No edition available yet</div>;
   }
 
   const mainTextClasses = ['main-text', 'text-' + edition?.lang];

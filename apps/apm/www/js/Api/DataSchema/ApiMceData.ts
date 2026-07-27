@@ -15,9 +15,8 @@ export interface ApiMceData {
 
 export interface ApiMceSaveResponse extends ApiResponse{
   result: 'Success';
-  editionId: number;
-  mceData: MceDataInterface;
-  description: string;
+  id: number;
+  saveTimeStamp: string
 }
 
 export interface ApiMceSaveRequest {
@@ -29,12 +28,4 @@ export interface ApiMceSaveRequest {
   editionId: number;
   mceData: MceDataInterface;
   description: string;
-}
-
-export interface ApiMceSaveResponseOld {
-  status: 'OK' | 'Error',
-  editionId: number,
-  saveTimeStamp: string,
-  error?: string,
-  message?: string,
 }

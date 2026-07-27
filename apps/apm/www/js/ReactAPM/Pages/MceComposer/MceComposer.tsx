@@ -145,7 +145,7 @@ export default function MceComposer() {
 
 
 
-  // const singleChunkEditionCache = useRef<Record<string, Edition>>({});
+  const singleChunkEditionCache = useRef<Record<string, Edition>>({});
   /**
    * Cache of generated editions, indexed by data's hash
    */
@@ -325,10 +325,13 @@ export default function MceComposer() {
     }
     console.log(`getEdition ${mceDataHash}: cache miss`);
     const profiler = new BasicProfiler('RegenerateEdition', true);
-    // const singleChunkEditionCacheKey = (chunkIndex: number) => {
-    //   const chunkInfo = mceData.chunks[chunkIndex];
-    //   return `${chunkInfo.chunkId}:${chunkInfo.chunkEditionTableId}:${chunkInfo.version}`;
-    // };
+    const singleChunkEditionCacheKey = (chunkIndex: number) => {
+      const chunkInfo = mceData.chunks[chunkIndex];
+      const margFoliationArray = mceData.includeInAutoMarginalFoliation ?? [];
+      const marginalKey = margFoliationArray.length === 0 ? 'no_marginals' : margFoliationArray.join('');
+
+      return `${chunkInfo.chunkId}:${chunkInfo.chunkEditionTableId}:${chunkInfo.version}:${marginalKey}`;
+    };
 
     const generator = new MceDataEditionGenerator({
       ctDataGetter: async (mceData: MceDataInterface, chunkIndex: number) => {
@@ -336,12 +339,11 @@ export default function MceComposer() {
         const data = await appContext.apiClient.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
         return data.ctData;
       },
-      singleChunkEditionGetter: async (_mceData: MceDataInterface, _chunkIndex: number) => {
-        return null;
-        // return singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] ?? null;
+      singleChunkEditionGetter: async (_mceData: MceDataInterface, chunkIndex: number) => {
+        return singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] ?? null;
       },
-      singleChunkEditionSaver: async (_mceData: MceDataInterface, _chunkIndex: number, _edition) => {
-        // singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] = new Edition().setFromInterface(edition);
+      singleChunkEditionSaver: async (_mceData: MceDataInterface, chunkIndex: number, edition) => {
+        singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] = new Edition().setFromInterface(edition);
       },
       onProgressUpdate: (step, numSteps) => {
         setEditionGenerationProgress(step / numSteps);

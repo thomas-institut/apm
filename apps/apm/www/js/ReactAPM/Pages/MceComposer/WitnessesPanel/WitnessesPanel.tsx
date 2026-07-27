@@ -10,6 +10,8 @@ import {useState} from "react";
 import EditSiglaGroup from "@/ReactAPM/Pages/MceComposer/WitnessesPanel/EditSiglaGroup";
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 import {getSiglaGroupString} from "@/ReactAPM/Pages/MceComposer/SiglaGroupUtil";
+import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
+import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 
 
 export interface WitnessData {
@@ -62,12 +64,23 @@ export default function WitnessesPanel({
     siglaGroup: SiglaGroupInterface
   }>(null);
   const [confirmDeleteSiglaGroupIndex, setConfirmDeleteSiglaGroupIndex] = useState<number | null>(null);
+  const [changingMarginalFoliationIndex, setChangingMarginalFoliationIndex] = useState<number | null>(null);
 
   if (witnesses.length === 0) {
     return <>No witnesses defined</>;
   }
 
   const sigla = witnesses.map(witness => witness.siglum);
+
+  const onClickMarginalFoliation = async (witnessIndex: number, newState: boolean) => {
+    console.log(`onClickMarginalFoliation(${witnessIndex}, ${newState})`);
+    if (onChangeIncludeInAutoMarginalFoliation && changingMarginalFoliationIndex === null) {
+      setChangingMarginalFoliationIndex(witnessIndex);
+      await nextTick();
+      await onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
+      setChangingMarginalFoliationIndex(null);
+    }
+  };
 
   const witnessesTableColumnDefs: NiceTableColumnDef<WitnessData>[] = [
     {
@@ -96,16 +109,14 @@ export default function WitnessesPanel({
     {
       key: "margFol",
       title: 'Marg. Fol.',
-      cellContent: (witnessData, witnessIndex) => <NiceToggle
-        isOn={witnessData.includeInAutoMarginalFoliation}
-        onTitle={`Click to exclude ${witnessData.title} from auto marginal foliation`}
-        offTitle={`Click to include ${witnessData.title} in auto marginal foliation`}
-        onClick={async (newState) => {
-          if (onChangeIncludeInAutoMarginalFoliation) {
-            await onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
-          }
-        }}
-      />
+      cellContent: (witnessData, witnessIndex) => <ComponentWithPending pending={changingMarginalFoliationIndex === witnessIndex}>
+        <NiceToggle
+          isOn={witnessData.includeInAutoMarginalFoliation}
+          onTitle={`Click to exclude ${witnessData.title} from auto marginal foliation`}
+          offTitle={`Click to include ${witnessData.title} in auto marginal foliation`}
+          onClick={(newState) => onClickMarginalFoliation(witnessIndex, newState)}
+        />
+      </ComponentWithPending>
     }
   ];
 
@@ -156,11 +167,11 @@ export default function WitnessesPanel({
     }
     await onDeleteSiglaGroup(confirmDeleteSiglaGroupIndex);
     setConfirmDeleteSiglaGroupIndex(null);
-  }
+  };
 
   const handleCancelDeleteSiglaGroup = () => {
     setConfirmDeleteSiglaGroupIndex(null);
-  }
+  };
 
   const siglaGroupToDelete = confirmDeleteSiglaGroupIndex === null ? null : siglaGroups[confirmDeleteSiglaGroupIndex] ?? null;
   const siglaGroupToDeleteLabel = siglaGroupToDelete === null ? '' : getSiglaGroupString(siglaGroupToDelete, sigla);

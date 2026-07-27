@@ -17,7 +17,7 @@ import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
 import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
-import {ChunkInMceData, MceDataInterface} from "@/MceData/MceDataInterface";
+import {MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import MceComposerSaveButton from "@/ReactAPM/Pages/MceComposer/MceComposerSaveButton";
 import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
@@ -56,8 +56,6 @@ import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChun
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
 // TODO before release (2026-07-24))
-//  - Feature: main text panel shows chunk boundaries
-//  - Bug: main text panel seems to have problems with text with angle brackets <, >
 //  - Safeguard: buttons/actions should not be functional when loading or saving
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
 //    testing that simulates server failures. Maybe a mock api client that fails in different ways
@@ -86,8 +84,10 @@ type MceComposerStatus =
 
 export interface CtDataStatus {
   ctDataId: number;
-  chunkInMceData: ChunkInMceData;
-  apiData: null | SingleChunkApiData;
+  chunkId: string;
+  requestedVersion: string;
+  loadedVersionTimeStamp: string | null;
+  isLatestVersion: boolean | null;
   ctDataState: CtDataState;
   errorMsg: string;
   lastVersionTimeStamp: string | null;
@@ -203,8 +203,10 @@ export default function MceComposer() {
 
           const initialCtDataStatusArray = resp.mceData.chunks.map((chunk): CtDataStatus => ({
             ctDataId: chunk.chunkEditionTableId,
-            chunkInMceData: chunk,
-            apiData: null,
+            chunkId: chunk.chunkId,
+            requestedVersion: chunk.version,
+            loadedVersionTimeStamp: null,
+            isLatestVersion: null,
             ctDataState: 'notLoaded' as CtDataState,
             errorMsg: '',
             lastVersionTimeStamp: null,
@@ -268,8 +270,8 @@ export default function MceComposer() {
     });
 
     // Fetch the data
-    console.log(`Fetching chunk index ${nextChunkIndex} (${chunkToLoad.ctDataId}) from server`);
-    appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.chunkInMceData.version)
+    console.log(`Fetching chunk index ${nextChunkIndex} (${chunkToLoad.ctDataId})`);
+    appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.requestedVersion)
       .then(async (apiResponse) => {
         let lastVersionTimeStamp = apiResponse.timeStamp;
         if (!apiResponse.isLatestVersion) {
@@ -283,8 +285,9 @@ export default function MceComposer() {
           if (index !== -1) {
             next[index] = {
               ...next[index],
-              apiData: apiResponse,
               ctDataState: 'loaded',
+              loadedVersionTimeStamp: apiResponse.timeStamp,
+              isLatestVersion: apiResponse.isLatestVersion,
               lastVersionTimeStamp,
             };
           }
@@ -603,18 +606,22 @@ export default function MceComposer() {
       if (ctDataStatus.ctDataState !== 'loaded') {
         return ctDataStatus;
       }
-      if (ctDataStatus.apiData === null) {
+      if (ctDataStatus.loadedVersionTimeStamp === null) {
         return ctDataStatus;
       }
       const tableId = ctDataStatus.ctDataId;
       console.log(`Checking for chunk updates for table ${tableId}`);
       const latestVersionInfo = await appContext.apiClient.collationTableVersionInfo(tableId, 'latest');
       if (latestVersionInfo !== null) {
-        ctDataStatus.lastVersionTimeStamp = latestVersionInfo.timeFrom;
-        if (ctDataStatus.apiData.timeStamp !== latestVersionInfo.timeFrom) {
+        const isLatestVersion = ctDataStatus.loadedVersionTimeStamp === latestVersionInfo.timeFrom;
+        if (!isLatestVersion) {
           console.log(`Table ${tableId} has a newer version: ${latestVersionInfo.timeFrom}`);
-          ctDataStatus.apiData.isLatestVersion = false;
         }
+        return {
+          ...ctDataStatus,
+          lastVersionTimeStamp: latestVersionInfo.timeFrom,
+          isLatestVersion,
+        };
       } else {
         console.warn('No latest version info for table', tableId);
       }

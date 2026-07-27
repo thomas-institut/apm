@@ -28,10 +28,13 @@ const makeState = (mceData: MceDataInterface): MceComposerHistoryState => ({
   mceData,
   ctDataStatusArray: mceData.chunks.map(chunk => ({
     ctDataId: chunk.chunkEditionTableId,
-    chunkInMceData: chunk,
-    apiData: null,
+    chunkId: chunk.chunkId,
+    requestedVersion: chunk.version,
+    loadedVersionTimeStamp: chunk.version,
+    isLatestVersion: true,
     ctDataState: 'loaded',
-    errorMsg: ''
+    errorMsg: '',
+    lastVersionTimeStamp: chunk.version,
   }))
 });
 

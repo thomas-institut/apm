@@ -58,11 +58,10 @@ const buildChunk = (): ChunkInMceData => ({
 
 const buildCtDataStatus = (chunk: ChunkInMceData): CtDataStatus => ({
   ctDataId: chunk.chunkEditionTableId,
-  chunkInMceData: chunk,
-  apiData: {
-    timeStamp: '2026-07-13 00:00:00',
-    isLatestVersion: true,
-  } as any,
+  chunkId: chunk.chunkId,
+  requestedVersion: chunk.version,
+  loadedVersionTimeStamp: '2026-07-13 00:00:00',
+  isLatestVersion: true,
   ctDataState: 'loaded',
   errorMsg: '',
   lastVersionTimeStamp: null
@@ -155,8 +154,7 @@ describe('ChunksPanel', () => {
     const chunk1 = buildChunk();
     const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
     const chunk2Status = buildCtDataStatus(chunk2);
-    // @ts-expect-error test-only property override
-    chunk2Status.apiData.isLatestVersion = false;
+    chunk2Status.isLatestVersion = false;
     const moveChunk = vi.fn().mockResolvedValue(true);
     const updateChunk = vi.fn().mockResolvedValue(true);
 

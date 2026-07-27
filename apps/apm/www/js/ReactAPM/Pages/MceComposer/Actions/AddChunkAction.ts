@@ -34,10 +34,12 @@ export class AddChunkAction implements StateTransformAction<MceComposerHistorySt
 
     newState.ctDataStatusArray.push({
       ctDataId: this.tableId,
+      chunkId: this.singleChunkData.ctData.chunkId,
+      requestedVersion: this.singleChunkData.timeStamp,
+      loadedVersionTimeStamp: this.singleChunkData.timeStamp,
+      isLatestVersion: this.singleChunkData.isLatestVersion,
       ctDataState: 'loaded',
-      apiData: this.singleChunkData,
       errorMsg: '',
-      chunkInMceData: newState.mceData.chunks[indexInMceData],
       lastVersionTimeStamp: null
     });
 

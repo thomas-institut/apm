@@ -1,6 +1,6 @@
 import {ChunkInMceData, ValidChunkBreaks} from "@/MceData/MceDataInterface";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {ArrowClockwise, ArrowDownShort, ArrowUpShort, Trash} from "react-bootstrap-icons";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
@@ -138,6 +138,10 @@ export default function ChunksPanel({
   }
   const lastChunkIndex = chunks.length - 1;
 
+  const ctDataStatusById = useMemo(() => {
+    return new Map(ctDataStatusArray.map((status) => [status.ctDataId, status]));
+  }, [ctDataStatusArray]);
+
   const getChunkTableRow = (chunk: ChunkInMceData, chunkPosition: number): ChunkTableRow => {
     const chunkTableRow: ChunkTableRow = {
       chunkId: chunk.chunkId,
@@ -152,22 +156,27 @@ export default function ChunksPanel({
       buttons: [],
       lastVersionTimeStamp: null,
     };
-    const ctDataStatus = ctDataStatusArray.find((ctDataStatus) => ctDataStatus.ctDataId === chunk.chunkEditionTableId);
+    const ctDataStatus = ctDataStatusById.get(chunk.chunkEditionTableId);
     if (!ctDataStatus) {
       chunkTableRow.errorMessage = 'No data found';
       return chunkTableRow;
     }
 
-    if (!ctDataStatus.apiData) {
+    if (ctDataStatus.ctDataState !== 'loaded') {
       chunkTableRow.warningMessage = `${ctDataStatus.ctDataState}...`;
       return chunkTableRow;
     }
 
-    chunkTableRow.version = ctDataStatus.apiData.timeStamp;
+    if (ctDataStatus.loadedVersionTimeStamp === null) {
+      chunkTableRow.warningMessage = 'loaded...';
+      return chunkTableRow;
+    }
+
+    chunkTableRow.version = ctDataStatus.loadedVersionTimeStamp;
     chunkTableRow.lastVersionTimeStamp = ctDataStatus.lastVersionTimeStamp;
     chunkTableRow.buttons.push('delete');
 
-    if (!ctDataStatus.apiData.isLatestVersion) {
+    if (ctDataStatus.isLatestVersion === false) {
       chunkTableRow.buttons.push('update');
     }
     return chunkTableRow;
@@ -400,7 +409,7 @@ export default function ChunksPanel({
       size={'sm'}
     />
     <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true}
-               getRowKey={(row, index) => `${row.chunkId}-${index}`}
+               getRowKey={(row) => `${row.tableId ?? 'no-table'}-${row.chunkId}`}
                highlightedRow={highlightedRow}/>
     <ComponentWithPending pending={checkingForUpdates} pendingElement={
       <div className={'check-for-updates'}>Checking for updates...<Spinner size={'sm'}/></div>}>

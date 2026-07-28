@@ -11,6 +11,7 @@ import {AppContext, AppContextProps} from '@/ReactAPM/App';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceData} from '@/MceData/MceData';
+import {MceDataEditionGenerator} from '@/MceData/MceDataEditionGenerator';
 
 const mockRouteParams = vi.hoisted(() => ({id: 'new'}));
 const mockedAddChunk = vi.hoisted(() => ({
@@ -31,7 +32,8 @@ const mockedEditorHandlers = vi.hoisted(() => ({
   updateChunk: undefined as undefined | ((chunkIndex: number) => Promise<true | string>),
 }));
 vi.mock('react-router', () => ({
-  useParams: () => mockRouteParams
+  useParams: () => mockRouteParams,
+  useNavigate: () => vi.fn(),
 }));
 
 vi.mock('react-bootstrap', () => {
@@ -165,8 +167,20 @@ vi.mock('@/ReactAPM/Components/ProgressBar/ProgressBar', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/MainTextPanel/MainTextPanel', () => ({
-  default: ({onClickRegenerate}: {onClickRegenerate: () => void}) => (
-    <button type="button" onClick={onClickRegenerate}>Regenerate</button>
+  default: ({
+              onClickRegenerate,
+              editionOutOfDate,
+              generationProgress,
+            }: {
+    onClickRegenerate: () => void,
+    editionOutOfDate: boolean,
+    generationProgress: number | null,
+  }) => (
+    <div>
+      <button type="button" onClick={onClickRegenerate}>Regenerate</button>
+      <span data-testid="main-text-out-of-date">{editionOutOfDate ? 'true' : 'false'}</span>
+      <span data-testid="main-text-generation-progress">{generationProgress === null ? 'null' : `${generationProgress}`}</span>
+    </div>
   )
 }));
 
@@ -350,6 +364,97 @@ describe('MceComposer', () => {
     });
 
     vi.useRealTimers();
+  });
+
+  it('regenerates the latest data when a stale generation completes', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const firstGenerationResponse = createDeferredPromise<any>();
+    const createEditionResult = (label: string) => ({
+      lang: 'la',
+      info: {
+        source: 'test',
+        tableId: -1,
+        singleChunk: false,
+        chunkId: label,
+        baseWitnessIndex: 0,
+        editionId: -1,
+      },
+      mainText: [],
+      apparatuses: [],
+      witnesses: [],
+      siglaGroups: [],
+      foliationChanges: null,
+      metadata: {},
+    });
+
+    const generateEditionSpy = vi.spyOn(MceDataEditionGenerator.prototype, 'generate').mockImplementation((nextMceData) => {
+      if (nextMceData.chunks.length === 1) {
+        return firstGenerationResponse.promise;
+      }
+      return Promise.resolve(createEditionResult('B'));
+    });
+
+    const getSingleChunkData = vi.fn((tableId: number) => {
+      return Promise.resolve(getChunkApiResponse(tableId));
+    });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      await expect(mockedAddChunk.callback!(1)).resolves.toBe(true);
+      await flushEffects();
+    });
+
+    expect(container.querySelector('[data-testid="main-text-out-of-date"]')?.textContent).toBe('true');
+
+    await act(async () => {
+      await expect(mockedAddChunk.callback!(2)).resolves.toBe(true);
+      await flushEffects();
+    });
+
+    expect(container.querySelector('[data-testid="main-text-out-of-date"]')?.textContent).toBe('true');
+
+    await act(async () => {
+      firstGenerationResponse.resolve(createEditionResult('A'));
+      await flushEffects(10);
+    });
+
+    expect(generateEditionSpy).toHaveBeenCalledTimes(2);
+    expect(generateEditionSpy.mock.calls[0][0].chunks.length).toBe(1);
+    expect(generateEditionSpy.mock.calls[1][0].chunks.length).toBe(2);
+    expect(container.querySelector('[data-testid="main-text-out-of-date"]')?.textContent).toBe('false');
+
+    await act(async () => {
+      root.unmount();
+    });
+    generateEditionSpy.mockRestore();
   });
 
   it('loads chunks in batches of five while initializing an existing MCE', async () => {

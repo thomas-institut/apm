@@ -119,6 +119,12 @@ interface PanelSpec {
   tabbable?: boolean;
 }
 
+interface PendingEditionGenerationRequest {
+  signature: string;
+  mceData: MceDataInterface;
+  mceDataId: number;
+}
+
 const CHUNK_FETCH_BATCH_SIZE = 5;
 const MCE_DATA_NOT_LOADED_ERROR = 'Cannot modify MCE data until it is loaded';
 const SAVING_EDIT_ERROR = 'Cannot modify MCE data while saving';
@@ -156,6 +162,11 @@ export default function MceComposer() {
   const singleChunkEditionCache = useRef<Record<string, Edition>>({});
   const savingRef = useRef(false);
   const mceDataEditInProgressRef = useRef(false);
+  const editionGenerationInProgressRef = useRef(false);
+  const pendingEditionGenerationRequestRef = useRef<PendingEditionGenerationRequest | null>(null);
+  const latestMceDataRef = useRef<MceDataInterface>(mceData);
+  const latestMceDataIdRef = useRef<number>(-1);
+  const latestAutoRegenerateRef = useRef<boolean>(settings.autoRegenerate);
   const editorSessionRef = useRef(0);
   /**
    * Cache of generated editions, indexed by data's hash
@@ -203,8 +214,12 @@ export default function MceComposer() {
     editionCache.current = {};
     savingRef.current = false;
     mceDataEditInProgressRef.current = false;
+    editionGenerationInProgressRef.current = false;
+    pendingEditionGenerationRequestRef.current = null;
 
     const initialMceData = MceData.createEmpty();
+    latestMceDataRef.current = initialMceData;
+    latestMceDataIdRef.current = mceDataId;
     const initialHistory = new StateHistory<MceComposerHistoryState>({mceData: initialMceData});
     setMceComposerStatus('loadingMce');
     setErrorMsg('');
@@ -487,7 +502,7 @@ export default function MceComposer() {
       console.log(`mceData change: edition hash ${getMceDataHash(mceData, mceDataId)} not in cache`, mceData);
       setEditionOutOfDate(true);
       if (settings.autoRegenerate && mceData.chunks.length > 0) {
-        regenerateEdition().then();
+        regenerateEdition(mceData, mceDataId).then();
       }
     } else {
       const editorSession = editorSessionRef.current;
@@ -500,6 +515,15 @@ export default function MceComposer() {
       });
     }
   }, [mceData, mceDataId, settings.autoRegenerate]);
+
+  useEffect(() => {
+    latestMceDataRef.current = mceData;
+    latestMceDataIdRef.current = mceDataId;
+  }, [mceData, mceDataId]);
+
+  useEffect(() => {
+    latestAutoRegenerateRef.current = settings.autoRegenerate;
+  }, [settings.autoRegenerate]);
 
   useEffect(() => {
     document.title = `MCE: ${mceData.title}`;
@@ -865,22 +889,59 @@ export default function MceComposer() {
     return MceData.isSiglaGroupValid(mceData, siglaGroupIndex, group);
   };
 
-  const regenerateEdition = async () => {
-    if (editionGenerationProgress !== null) return;
-    const editorSession = editorSessionRef.current;
-    setEditionGenerationProgress(0);
-    await nextTick();
-    const newEdition = await getEdition(mceData, mceDataId);
-    if (editorSession === editorSessionRef.current && newEdition !== null) {
-      setEdition(newEdition);
-      setEditionGenerationProgress(null);
-      setEditionOutOfDate(false);
+  const regenerateEdition = async (requestedMceData: MceDataInterface = mceData, requestedMceDataId: number = mceDataId) => {
+    pendingEditionGenerationRequestRef.current = {
+      signature: getMceDataHash(requestedMceData, requestedMceDataId),
+      mceData: requestedMceData,
+      mceDataId: requestedMceDataId,
+    };
+
+    if (editionGenerationInProgressRef.current) {
+      return;
+    }
+
+    while (pendingEditionGenerationRequestRef.current !== null) {
+      const generationRequest: PendingEditionGenerationRequest | null = pendingEditionGenerationRequestRef.current;
+      pendingEditionGenerationRequestRef.current = null;
+      const editorSession = editorSessionRef.current;
+      editionGenerationInProgressRef.current = true;
+      try {
+        setEditionGenerationProgress(0);
+        await nextTick();
+        const newEdition = await getEdition(generationRequest.mceData, generationRequest.mceDataId);
+        if (editorSession !== editorSessionRef.current || newEdition === null) {
+          continue;
+        }
+
+        const currentMceData = latestMceDataRef.current;
+        const currentMceDataId = latestMceDataIdRef.current;
+        const currentSignature = getMceDataHash(currentMceData, currentMceDataId);
+        if (generationRequest.signature === currentSignature) {
+          setEdition(newEdition);
+          setEditionOutOfDate(false);
+          continue;
+        }
+
+        setEditionOutOfDate(true);
+        if (latestAutoRegenerateRef.current && currentMceData.chunks.length > 0) {
+          pendingEditionGenerationRequestRef.current = {
+            signature: currentSignature,
+            mceData: currentMceData,
+            mceDataId: currentMceDataId,
+          };
+        }
+      } finally {
+        if (editorSession === editorSessionRef.current) {
+          setEditionGenerationProgress(null);
+        }
+        editionGenerationInProgressRef.current = false;
+      }
     }
   };
 
   const handleOnClickRegenerate = () => {
     console.log(`Click on regenerate`);
-    regenerateEdition().then();
+    regenerateEdition(mceData, mceDataId).then();
   };
 
   const handleOnClickSaveButton = async () => {

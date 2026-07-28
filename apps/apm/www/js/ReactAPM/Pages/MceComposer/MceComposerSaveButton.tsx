@@ -1,6 +1,8 @@
 import {CloudArrowUp} from "react-bootstrap-icons";
 import Popover from "react-bootstrap/Popover";
 import {OverlayTrigger} from "react-bootstrap";
+import {useState} from "react";
+import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
 
 interface SaveButtonProps {
@@ -10,10 +12,23 @@ interface SaveButtonProps {
 }
 
 export default function MceComposerSaveButton({changes, onClick, saveError}: SaveButtonProps) {
+
+  const [saving, setSaving] = useState(true);
+
+  const handleOnClick = async () => {
+    if (saving){
+      return;
+    }
+    setSaving(false);
+    await nextTick();
+    await onClick();
+    setSaving(true);
+  }
+
   if (changes.length > 0) {
     changes.join('\n');
     const popover = (
-      <Popover className={'save-changes-popover'}>
+      <Popover className={'save-changes-popover'} show={saving}>
         <Popover.Header>Save changes</Popover.Header>
         <Popover.Body>
           { saveError !== null && <p className={'notice text-danger'}>{saveError === '' ? 'An error occurred' : saveError}. Please try saving again!</p> }
@@ -29,8 +44,8 @@ export default function MceComposerSaveButton({changes, onClick, saveError}: Sav
                            trigger={['hover', 'focus']}>
       {
         saveError !== null ?
-          <CloudArrowUp className={'icon-btn text-danger'} onClick={onClick}/> :
-          <CloudArrowUp className={'icon-btn highlighted'} onClick={onClick}/>
+          <CloudArrowUp className={'icon-btn text-danger'} onClick={handleOnClick}/> :
+          <CloudArrowUp className={'icon-btn highlighted'} onClick={handleOnClick}/>
       }
     </OverlayTrigger>;
   }

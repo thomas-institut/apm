@@ -57,8 +57,10 @@ import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 
 // TODO before release (2026-07-27))
 //  - Check potential problems in typesetting, lots of "line number" not found warnings
+//  - Fix looks of saving spinner... needs to use info area in toolbar
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
-//    testing that simulates server failures. Maybe a mock api client that fails in different ways
+//    testing that simulates server failures. Maybe a mock api client that fails in different ways. Server failures
+//    may need a general message in the toolbar info area.
 
 // TODO final checks before release
 //  - Run an audit with a couple of "smart" LLMs looking for potential bugs, and holes in testing in all code touched
@@ -151,7 +153,6 @@ export default function MceComposer() {
   const [saveError, setSaveError] = useState<string | null>(null);
 
 
-
   const singleChunkEditionCache = useRef<Record<string, Edition>>({});
   const savingRef = useRef(false);
   const mceDataEditInProgressRef = useRef(false);
@@ -237,7 +238,6 @@ export default function MceComposer() {
       }; // Resilient to Strict Mode double-firing
     }
   }, [mceComposerStatus, mceDataId]);
-
 
 // 2. Hook to fetch chunks (Phase: loadingSingleChunks)
   useEffect(() => {
@@ -403,7 +403,6 @@ export default function MceComposer() {
     editionCache.current[mceDataHash] = generatedEdition;
     return generatedEdition;
   };
-
 
   const checkForChanges = () => {
     // console.log(`Check for changes, savedState ${savedStateSignature}`, history);
@@ -654,7 +653,7 @@ export default function MceComposer() {
     }
   };
 
-  const handleSetSiglum = async (witnessIndex: number, newSiglum: string) => {
+  const setSiglum = async (witnessIndex: number, newSiglum: string) => {
     if (!startMceDataEdit()) {
       return false;
     }
@@ -672,7 +671,7 @@ export default function MceComposer() {
     }
   };
 
-  const handleSetIncludeInAutoMarginalFoliation = async (witnessIndex: number, newState: boolean) => {
+  const setIncludeInAutoMarginalFoliation = async (witnessIndex: number, newState: boolean) => {
     if (!startMceDataEdit()) {
       return false;
     }
@@ -690,7 +689,7 @@ export default function MceComposer() {
     }
   };
 
-  const handleDeleteSiglaGroup = async (siglaGroupIndex: number) => {
+  const deleteSiglaGroup = async (siglaGroupIndex: number) => {
     if (!startMceDataEdit()) {
       return false;
     }
@@ -708,7 +707,7 @@ export default function MceComposer() {
     }
   };
 
-  const handleChangeSiglaGroup = async (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => {
+  const changeSiglaGroup = async (siglaGroupIndex: number, newGroup: SiglaGroupInterface) => {
     if (!startMceDataEdit()) {
       return false;
     }
@@ -726,7 +725,7 @@ export default function MceComposer() {
     }
   };
 
-  const handleConfirmTitleEdit = async (newTitle: string) => {
+  const confirmTitleEdit = async (newTitle: string) => {
     if (!startMceDataEdit()) {
       return false;
     }
@@ -878,7 +877,7 @@ export default function MceComposer() {
     try {
       const activeEditions = await appContext.apiClient.getActiveEditions();
       const workIds = MceData.getWorkIds(mceData);
-      if (mceData.chunks.length === 0){
+      if (mceData.chunks.length === 0) {
         return activeEditions;
       }
       return activeEditions.filter(e => workIds.includes(e.workId));
@@ -887,7 +886,6 @@ export default function MceComposer() {
       return error.message;
     }
   };
-
 
   const panelSpecs: PanelSpec[] = [
     {
@@ -899,20 +897,11 @@ export default function MceComposer() {
                             version={chunksPanelVersion}
                             chunkOrder={mceData.chunkOrder ?? MceData.getDefaultChunkOrder(mceData)}
                             ctDataStatusArray={ctDataStatusArray}
-                            moveChunk={(chunkIndex, direction) => {
-                              return moveChunk(chunkIndex, direction);
-                            }}
-                            updateChunk={(chunkIndex) => {
-                              return updateChunk(chunkIndex);
-                            }}
-                            deleteChunk={(chunkIndex) => {
-                              return deleteChunk(chunkIndex);
-                            }}
+                            moveChunk={moveChunk}
+                            updateChunk={updateChunk}
+                            deleteChunk={deleteChunk}
                             checkForChunkUpdates={checkForChunkUpdates}
-                            setChunkBreak={(chunkIndex, breakAfter) => {
-                              return setChunkBreak(chunkIndex, breakAfter);
-                            }}
-      />,
+                            setChunkBreak={setChunkBreak}/>,
       tabbable: true,
     },
     {
@@ -921,11 +910,11 @@ export default function MceComposer() {
       title: 'Witnesses',
       content: <WitnessesPanel witnesses={getDataForWitnessPanel()}
                                siglaGroups={mceData.siglaGroups}
-                               onChangeSiglum={handleSetSiglum}
+                               onChangeSiglum={setSiglum}
                                isSiglaGroupValid={isSiglaGroupValid}
-                               onDeleteSiglaGroup={handleDeleteSiglaGroup}
-                               onChangeSiglaGroup={handleChangeSiglaGroup}
-                               onChangeIncludeInAutoMarginalFoliation={handleSetIncludeInAutoMarginalFoliation}/>,
+                               onDeleteSiglaGroup={deleteSiglaGroup}
+                               onChangeSiglaGroup={changeSiglaGroup}
+                               onChangeIncludeInAutoMarginalFoliation={setIncludeInAutoMarginalFoliation}/>,
       tabbable: true,
     },
 
@@ -960,12 +949,9 @@ export default function MceComposer() {
       key: 'addChunks',
       title: 'Add Chunks',
       expandable: true,
-      content: <AddChunksPanel addChunk={(tableId, version) => {
-        return addChunk(tableId, version);
-      }}
+      content: <AddChunksPanel addChunk={addChunk}
                                currentChunkTableIds={mceData.chunks.map(chunk => chunk.chunkEditionTableId) ?? []}
-                               getActiveEditions={getActiveEditions}
-      />,
+                               getActiveEditions={getActiveEditions}/>,
       tabbable: true,
     },
     // {
@@ -1089,6 +1075,7 @@ export default function MceComposer() {
   const notificationsDiv = <div className={'notifications'}>
     {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
+    {saving && <span className={'text-primary'}>Saving... <Spinner size={'sm'}/></span>}
   </div>;
 
   const bugPopover = (
@@ -1132,7 +1119,7 @@ export default function MceComposer() {
                                      setChunksPanelVersion(v => v + 1);
                                    }}/>}
 
-    {!foundBug && <ComponentWithPending pending={saving} pendingElement={<span>Saving... <Spinner size={'sm'}/></span>}>
+    {!foundBug && <ComponentWithPending pending={saving}>
       <MceComposerSaveButton changes={changes} onClick={handleOnClickSaveButton} saveError={saveError}/>
     </ComponentWithPending>}
     {!foundBug && <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
@@ -1196,7 +1183,7 @@ export default function MceComposer() {
     <div className="header">
       <ApmLogo height={30} className={'logo'}/>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={mceData.title}
-                         onConfirm={handleConfirmTitleEdit}/>
+                         onConfirm={confirmTitleEdit}/>
       {notificationsDiv}
       {controlsDiv}
     </div>

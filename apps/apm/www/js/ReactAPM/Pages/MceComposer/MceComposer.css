@@ -5,11 +5,23 @@
     --icon-btn-disabled: silver;
     --icon-btn-highlighted: var(--link-color-hover, blue);
 
+    --empty-message-font-size: 1.1rem;
+
     display: grid;
     grid-template-rows: auto 1fr;
     height: 100dvh;
     overflow: hidden;
     box-sizing: border-box;
+
+
+    .no-edition p {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5em;
+        font-size: var(--empty-message-font-size);
+        margin: 2em;
+    }
 
     .header {
         padding: 5px;

@@ -5,15 +5,6 @@
 
 ## High-priority correctness and resilience findings
 
-### Navigation to another MCE ID can retain the old edition
-
-**Evidence:** The load effect in `MceComposer.tsx:184-231` only fetches data while status is `loadingMce`. Once an edition has loaded, changing the route parameter without unmounting leaves status as `loaded`, so the new ID does not initiate a fresh load.
-
-**Impact:** The previous edition may remain visible and may be regenerated or cached under the newly selected ID.
-
-**Recommendation:** Treat a route-ID change as a new editor session: reset load-specific state, history, caches as appropriate, and begin loading the new ID. Guard asynchronous responses against stale route sessions.
-
-**Required regression test:** Change the mocked route parameter from one valid ID to another while the component remains mounted; assert a second fetch and the newly fetched title and chunks.
 
 ### Regeneration can publish an obsolete edition as current
 

@@ -67,7 +67,7 @@ export default function WitnessesPanel({
   const [changingMarginalFoliationIndex, setChangingMarginalFoliationIndex] = useState<number | null>(null);
 
   if (witnesses.length === 0) {
-    return <>No witnesses defined</>;
+    return  <div className={'witnesses-panel no-edition'}><p>No witnesses defined</p></div>;
   }
 
   const sigla = witnesses.map(witness => witness.siglum);

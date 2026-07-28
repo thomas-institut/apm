@@ -94,8 +94,8 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
   }, [edition, styleSheetId]);
 
   if (edition === null || systemStyles === null) {
-    return <Panel className={'preview-panel'}>
-      Edition not ready yet...
+    return <Panel className={'preview-panel no-edition'}>
+      <p>No edition to preview yet</p>
     </Panel>;
   }
 

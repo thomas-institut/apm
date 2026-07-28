@@ -159,6 +159,9 @@ a:hover {
     color: var(--link-color-hover);
 }
 
+.text-warning {
+    color: #d39b2d !important;
+}
 
 /* Top Bar */
 .navbar {

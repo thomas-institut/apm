@@ -80,7 +80,7 @@ export default function MainTextPanel({
     return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
   };
   if (edition === null) {
-    return <div className={'main-text-panel initializing'}>No edition available yet</div>;
+    return <div className={'main-text-panel no-edition'}><p>No main text to show yet</p></div>;
   }
 
   const mainTextClasses = ['main-text', 'text-' + edition?.lang];

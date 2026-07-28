@@ -1,7 +1,7 @@
 import {ChunkInMceData, ValidChunkBreaks} from "@/MceData/MceDataInterface";
 import {CtDataStatus} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import {useEffect, useMemo, useState} from "react";
-import {ArrowClockwise, ArrowDownShort, ArrowUpShort, Trash} from "react-bootstrap-icons";
+import {ArrowClockwise, ArrowDownShort, ArrowUpShort, ExclamationTriangle, Trash} from "react-bootstrap-icons";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import MultiToggle, {MultiToggleOptionSpec} from "@/ReactAPM/Components/MultiToggle/MultiToggle";
@@ -133,7 +133,10 @@ export default function ChunksPanel({
 
 
   if (chunks.length === 0) {
-    return <div>No chunks, add some in the "Add Chunks panel"</div>;
+    return  <div className={'chunks-panel no-edition'}>
+      <p><ExclamationTriangle/><span>There aren't any chunks in this edition</span></p>
+      <p>Add some in the <b>Add Chunks</b> panel</p>
+    </div>;
   }
   const lastChunkIndex = chunks.length - 1;
 

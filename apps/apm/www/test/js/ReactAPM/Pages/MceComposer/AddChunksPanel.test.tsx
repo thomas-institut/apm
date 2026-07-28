@@ -22,6 +22,10 @@ const setInputValue = (input: HTMLInputElement, value: string) => {
   input.dispatchEvent(new Event('input', {bubbles: true}));
 };
 
+const getButtonByText = (container: HTMLElement, text: string): HTMLButtonElement | undefined => {
+  return Array.from(container.querySelectorAll('button')).find((button) => button.textContent === text) as HTMLButtonElement | undefined;
+};
+
 describe('AddChunksPanel', () => {
   it('disables Add button when table id is <= 0', async () => {
     document.body.innerHTML = '<div id="root"></div>';
@@ -29,7 +33,8 @@ describe('AddChunksPanel', () => {
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={vi.fn().mockResolvedValue(true)}/>);
+      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={vi.fn().mockResolvedValue(true)}
+                                 getActiveEditions={vi.fn().mockResolvedValue([])}/>);
     });
 
     const input = container.querySelector('input[type="number"]') as HTMLInputElement;
@@ -50,7 +55,8 @@ describe('AddChunksPanel', () => {
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AddChunksPanel currentChunkTableIds={[7, 9]} addChunk={vi.fn().mockResolvedValue(true)}/>);
+      root.render(<AddChunksPanel currentChunkTableIds={[7, 9]} addChunk={vi.fn().mockResolvedValue(true)}
+                                 getActiveEditions={vi.fn().mockResolvedValue([])}/>);
     });
 
     const input = container.querySelector('input[type="number"]') as HTMLInputElement;
@@ -70,7 +76,8 @@ describe('AddChunksPanel', () => {
     const addChunk = vi.fn().mockResolvedValue(true);
 
     await act(async () => {
-      root.render(<AddChunksPanel currentChunkTableIds={[7, 9]} addChunk={addChunk}/>);
+      root.render(<AddChunksPanel currentChunkTableIds={[7, 9]} addChunk={addChunk}
+                                 getActiveEditions={vi.fn().mockResolvedValue([])}/>);
     });
 
     const input = container.querySelector('input[type="number"]') as HTMLInputElement;
@@ -96,7 +103,8 @@ describe('AddChunksPanel', () => {
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={vi.fn().mockResolvedValue(true)}/>);
+      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={vi.fn().mockResolvedValue(true)}
+                                 getActiveEditions={vi.fn().mockResolvedValue([])}/>);
     });
 
     const input = container.querySelector('input[type="number"]') as HTMLInputElement;
@@ -116,7 +124,8 @@ describe('AddChunksPanel', () => {
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AddChunksPanel currentChunkTableIds={[7, 9]} addChunk={vi.fn().mockResolvedValue(true)}/>);
+      root.render(<AddChunksPanel currentChunkTableIds={[7, 9]} addChunk={vi.fn().mockResolvedValue(true)}
+                                 getActiveEditions={vi.fn().mockResolvedValue([])}/>);
     });
 
     const input = container.querySelector('input[type="number"]') as HTMLInputElement;
@@ -137,7 +146,8 @@ describe('AddChunksPanel', () => {
     const addChunk = vi.fn().mockResolvedValue('Server Error');
 
     await act(async () => {
-      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={addChunk}/>);
+      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={addChunk}
+                                 getActiveEditions={vi.fn().mockResolvedValue([])}/>);
     });
 
     const input = container.querySelector('input[type="number"]') as HTMLInputElement;
@@ -159,5 +169,52 @@ describe('AddChunksPanel', () => {
     const errorSpan = container.querySelector('.text-danger');
     expect(errorSpan).not.toBeNull();
     expect(errorSpan?.textContent).toBe('Error: Server Error');
+  });
+
+  it('shows error message when loading editions fails and clears it on successful retry', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const getActiveEditions = vi.fn()
+      .mockResolvedValueOnce('Edition service unavailable')
+      .mockResolvedValueOnce([
+        {
+          id: 10,
+          title: 'Chunk 10',
+          workId: 'W1',
+          chunkId: 'C10',
+          chunkNumber: 10,
+          type: 'manual',
+          lastChange: '',
+          lastVersion: null,
+          witnesses: []
+        }
+      ]);
+
+    await act(async () => {
+      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={vi.fn().mockResolvedValue(true)}
+                                 getActiveEditions={getActiveEditions}/>);
+    });
+
+    const loadDataButton = getButtonByText(container, 'Load Data');
+    expect(loadDataButton).not.toBeUndefined();
+
+    await act(async () => {
+      loadDataButton?.click();
+    });
+
+    const errorDiv = container.querySelector('.editions-table-div .text-danger');
+    expect(errorDiv).not.toBeNull();
+    expect(errorDiv?.textContent).toBe('Error: Edition service unavailable');
+
+    const retryButton = getButtonByText(container, 'Load Data');
+    expect(retryButton).not.toBeUndefined();
+
+    await act(async () => {
+      retryButton?.click();
+    });
+
+    expect(getActiveEditions).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('.editions-table-div .text-danger')).toBeNull();
   });
 });

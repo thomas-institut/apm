@@ -15,16 +15,6 @@
 **Required regression tests:** Reject one version-info request and one generation fetch; assert visible failure/recovery behavior and cleared progress state.
 
 
-### Added witnesses can receive an undefined siglum
-
-**Evidence:** `MceData.addChunk` uses `ctData.sigla[ctDataWitnessIndex]` directly (`MceData.ts:434, 458`), while `updateChunk` uses a `W…` fallback (`MceData.ts:285, 308`).
-
-**Impact:** A short or misaligned source sigla array inserts `undefined` into a declared `string[]`, later breaking validation that calls string methods.
-
-**Recommendation:** Apply the existing fallback consistently in `addChunk` and enforce the `string[]` invariant.
-
-**Required regression test:** Add a chunk whose sigla list is shorter than its witnesses and assert a generated fallback siglum.
-
 ### Preview settings can restore a stylesheet invalid for the current language
 
 **Evidence:** `PreviewPanel.tsx:52-94` resets a style ID on language change, then restores cached settings keyed only by edition. The cached ID may not exist in the newly selected language's stylesheet set.
@@ -35,15 +25,6 @@
 
 **Required regression test:** Switch languages with an incompatible cached stylesheet and assert a valid fallback is selected.
 
-### Loading active editions fails silently
-
-**Evidence:** `AddChunksPanel.tsx:89-98` logs an error returned by `getActiveEditions` but does not render it.
-
-**Impact:** Users cannot distinguish a failed request from an empty/not-yet-loaded list.
-
-**Recommendation:** Store and display an error with a clear retry action.
-
-**Required regression test:** Return an error string and assert visible error and retry feedback.
 
 
 ### Pending container measurements can be permanently wrong

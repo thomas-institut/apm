@@ -34,6 +34,7 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiv
   const [addChunkError, setAddChunkError] = useState<string | null>(null);
   const [editionArray, setEditionArray] = useState<ApiCollationTableInfo[] | null>(null);
   const [fetchingEditions, setFetchingEditions] = useState(false);
+  const [fetchEditionsError, setFetchEditionsError] = useState<string | null>(null);
 
   const parsedTableId = parseInt(tableIdInput, 10);
   const isValidTableId = !isNaN(parsedTableId) && parsedTableId > 0;
@@ -88,11 +89,13 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiv
 
   const onClickLoadEditions = async () => {
     setFetchingEditions(true);
+    setFetchEditionsError(null);
     const result = await getActiveEditions();
     console.log(`Got active editions`, result);
     setFetchingEditions(false);
     if (typeof result === 'string') {
       console.log(`Error: ${result}`);
+      setFetchEditionsError(`Error: ${result}`);
       return;
     }
     setEditionArray(result);
@@ -155,10 +158,14 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiv
       </div>
       <div className={'section editions-table-div' + (editionArray === null ? ' no-data' : '')}>
         <h1>Available Editions</h1>
-        {editionArray === null && <ComponentWithPending pending={fetchingEditions}
-                                                        pendingElement={<span>Fetching editions...<Spinner size={'sm'}/></span>}>
-          <Button variant={'primary'} size="sm" onClick={onClickLoadEditions}>Load Data</Button>
-        </ComponentWithPending>}
+        {editionArray === null && <div className={'load-editions-div'}>
+          <ComponentWithPending pending={fetchingEditions}
+                                pendingElement={<span>Loading editions data, this might take a while...<Spinner
+                                  size={'sm'}/></span>}>
+            <Button variant={'primary'} size="sm" onClick={onClickLoadEditions}>Load Data</Button>
+          </ComponentWithPending>
+          {fetchEditionsError && <div className="text-danger">{fetchEditionsError}</div>}
+        </div>}
         {editionArray !== null &&
           <div className={'editions-table-container'}><NiceTable columnDefs={editionTableDef} rows={sortedRows ?? []}
                                                                  stickyHeader={true}/></div>}

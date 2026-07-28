@@ -3,15 +3,6 @@
 
 ## Medium-priority findings
 
-### Chunk loads may be duplicated in React Strict Mode
-
-**Evidence:** The initial MCE load effect contains an ignore cleanup guard (`MceComposer.tsx:184-231`), while the batch chunk-fetch effect (`MceComposer.tsx:235-343`) has none. Its state-based `loading` marker need not be committed before a second strict-mode effect invocation observes the old statuses.
-
-**Impact:** Development and double-invocation scenarios can request the same chunks more than once.
-
-**Recommendation:** Add cleanup/cancellation or request-session tracking to batch loading, and ignore results for obsolete batches.
-
-**Required regression test:** Render in `React.StrictMode` and assert each initial chunk is fetched exactly once.
 
 ### Asynchronous update checking and regeneration lack recovery paths
 

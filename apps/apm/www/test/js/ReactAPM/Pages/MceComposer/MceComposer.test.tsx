@@ -380,6 +380,137 @@ describe('MceComposer', () => {
     });
   });
 
+  it('returns a stable error when add chunk fetch rejects with undefined', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const getSingleChunkData = vi.fn().mockRejectedValue(undefined);
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      await expect(mockedAddChunk.callback!(42)).resolves.toBe('Unknown error');
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('returns error name and message when add chunk fetch rejects with Error', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const getSingleChunkData = vi.fn().mockRejectedValue(new TypeError('Chunk request failed'));
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      await expect(mockedAddChunk.callback!(42)).resolves.toBe('TypeError: Chunk request failed');
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('returns a stable error when update chunk fetch rejects with undefined', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const getSingleChunkData = vi.fn()
+      .mockResolvedValueOnce(getChunkApiResponse(42))
+      .mockRejectedValueOnce(undefined);
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      (container.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+    });
+
+    await act(async () => {
+      await expect(mockedAddChunk.callback!(42)).resolves.toBe(true);
+    });
+
+    await act(async () => {
+      await expect(mockedEditorHandlers.updateChunk!(0)).resolves.toBe('Unknown error');
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it('shows edition generation progress when regenerate is clicked', async () => {
     vi.useFakeTimers();
 

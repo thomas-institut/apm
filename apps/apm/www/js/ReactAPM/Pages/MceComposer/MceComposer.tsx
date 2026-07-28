@@ -138,6 +138,14 @@ const MCE_DATA_NOT_LOADED_ERROR = 'Cannot modify MCE data until it is loaded';
 const SAVING_EDIT_ERROR = 'Cannot modify MCE data while saving';
 const EDIT_IN_PROGRESS_ERROR = 'Cannot modify MCE data while another edit is in progress';
 
+const getMessageFromThrownError = (error: unknown): string => {
+  if (error instanceof Error) {
+    return `${error.name}: ${error.message}`;
+  }
+
+  return String(error ?? 'Unknown error');
+};
+
 export default function MceComposer() {
 
   const [mceComposerStatus, setMceComposerStatus] = useState<MceComposerStatus>('loadingMce');
@@ -287,7 +295,7 @@ export default function MceComposer() {
             return; // avoid problems with React strict mode
           }
           setMceComposerStatus('error');
-          setErrorMsg(`Failed to load MCE data from server: ${error.message}`);
+          setErrorMsg(`Failed to load MCE data from server: ${getMessageFromThrownError(error)}`);
         });
 
       return () => {
@@ -384,7 +392,7 @@ export default function MceComposer() {
               loadedVersionTimeStamp: null,
               isLatestVersion: null,
               lastVersionTimeStamp: null,
-              errorMsg: error instanceof Error ? error.message : `${error}`,
+              errorMsg: getMessageFromThrownError(error),
             };
           }
         })()
@@ -637,8 +645,7 @@ export default function MceComposer() {
           return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(currentMceData.lang)} tables are allowed`;
         }
       } catch (error) {
-        const errorString = error as String;
-        return errorString.toString();
+        return getMessageFromThrownError(error);
       }
 
       try {
@@ -725,8 +732,7 @@ export default function MceComposer() {
           return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
         }
       } catch (error) {
-        const errorString = error as String;
-        return errorString.toString();
+        return getMessageFromThrownError(error);
       }
 
       try {
@@ -1011,8 +1017,8 @@ export default function MceComposer() {
       setSavedStateSignature(history.getHistory()[0].signature);
       setChanges([]);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error ?? 'Error saving');
-      setSaveError(errorMessage === '' ? 'Error saving' : errorMessage);
+      const errorMessage = getMessageFromThrownError(error);
+      setSaveError(errorMessage === '' || errorMessage === 'Unknown error' ? 'Error saving' : errorMessage);
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -1039,8 +1045,7 @@ export default function MceComposer() {
       }
       return activeEditions.filter(e => workIds.includes(e.workId));
     } catch (e) {
-      const error = e as Error;
-      return error.message;
+      return getMessageFromThrownError(e);
     }
   };
 

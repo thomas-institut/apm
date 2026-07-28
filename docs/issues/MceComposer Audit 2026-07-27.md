@@ -3,28 +3,6 @@
 ## Critical findings
 
 
-
-### Deleting the only chunk preserves invalid index state
-
-**Evidence:** `MceData.ts:342-349` empties chunks, witnesses, sigla, and sigla groups when the only chunk is removed, but leaves `chunkOrder` and `includeInAutoMarginalFoliation` unchanged.
-
-**Impact:** Adding a replacement chunk can make `chunkOrder` become `[0, 0]` instead of `[0]`. A retained marginal-foliation index can also be applied to a newly unrelated witness.
-
-**Recommendation:** Reset both index-based arrays when deleting the final chunk, and add invariant checks around coordinated `MceData` arrays.
-
-**Required regression test:** Delete the sole chunk, assert empty `chunkOrder` and marginal-foliation arrays, add a chunk, then assert `chunkOrder` is exactly `[0]`.
-
-
-### `em` typesetting distances are converted to zero
-
-**Evidence:** `PreviewPanel/EditionTypesettingUtilities.ts:74-75` calls `Dimension.str2cm` for apparatus and inter-apparatus distances without the font-size argument, unlike adjacent conversions. The typesetter defaults that `em` size to zero.
-
-**Impact:** Stylesheets using `em` values for these distances collapse spacing to `0cm`, allowing the apparatus or marginalia to overlap the main text in preview and PDF output.
-
-**Recommendation:** Pass the default font size to both calls, consistently with the surrounding calculations.
-
-**Required regression test:** With `2em` apparatus-distance settings, assert positive calculated dimensions proportional to the selected font size.
-
 ## High-priority correctness and resilience findings
 
 ### Navigation to another MCE ID can retain the old edition

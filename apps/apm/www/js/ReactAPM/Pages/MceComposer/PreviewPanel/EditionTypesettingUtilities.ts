@@ -71,8 +71,8 @@ export async function getTypesettingParameters(edition: Edition, styleSheet: Sty
     apparatusLineHeightInPts: Dimension.str2pt(apparatusStyleDef.paragraph?.lineSkip ?? '20pt', apparatusFontSize),
     normalSpaceWidthInEms: 0.25,  // TODO: Check usages and change to glue
     textToLineNumbersInCm: Dimension.str2cm(defaultStyleDef.page?.lineNumbersToTextDistance ?? '1cm', defaultFontSize),
-    textToApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minDistanceFromApparatusToText ?? '1cm'),
-    interApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minInterApparatusDistance ?? '1cm'),
+    textToApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minDistanceFromApparatusToText ?? '1cm', defaultFontSize),
+    interApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minInterApparatusDistance ?? '1cm', defaultFontSize),
     textToMarginaliaInCm: Dimension.str2cm('0.3cm'), // TODO: add to stylesheet
     debug: true
   };

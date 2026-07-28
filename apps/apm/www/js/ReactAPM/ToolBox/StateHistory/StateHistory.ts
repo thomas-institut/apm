@@ -104,6 +104,7 @@ export class StateHistory<T> {
             histories.push(currentHistory);
             fsmState = 0;
             currentHistory = [];
+            break;
           }
           if (state.signature === fromSignature) {
             // found a later fromSignature, need to reset the current history

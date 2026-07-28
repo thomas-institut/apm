@@ -3,7 +3,9 @@ import { StateHistory, StateTransformAction } from '@/ReactAPM/ToolBox/StateHist
 
 type TestState = { value: string };
 
+
 const actionTo = (nextState: TestState, description = `to ${nextState.value}`): StateTransformAction<TestState> => ({
+  // @ts-ignore
   execute: () => nextState,
   description: () => description,
 });
@@ -17,6 +19,18 @@ const buildHistoryWithRepeatedStates = async (): Promise<StateHistory<TestState>
   await history.do(actionTo({ value: 'd' }, 'c->d'));
   await history.do(actionTo({ value: 'x' }, 'd->x'));
   await history.do(actionTo({ value: 'e' }, 'x->e'));
+  return history;
+};
+
+const buildHistoryWithRepeatedTargetBeforeNextSource = async (): Promise<StateHistory<TestState>> => {
+  const history = new StateHistory<TestState>({ value: 'd' });
+  await history.do(actionTo({ value: 'p' }, 'd->p'));
+  await history.do(actionTo({ value: 'q' }, 'p->q'));
+  await history.do(actionTo({ value: 'r' }, 'q->r'));
+  await history.do(actionTo({ value: 'b' }, 'r->b'));
+  await history.do(actionTo({ value: 'd' }, 'b->d'));
+  await history.do(actionTo({ value: 'z' }, 'd->z'));
+  await history.do(actionTo({ value: 'b' }, 'z->b'));
   return history;
 };
 
@@ -177,6 +191,12 @@ describe('StateHistory', () => {
     const history = await buildHistoryWithRepeatedStates();
 
     expect(history.getMinimalHistory({ value: 'a' }, { value: 'x' }).map(item => item.state.value)).toEqual(['a', 'x']);
+  });
+
+  it('should return a minimal path that starts at source when target signature repeats', async () => {
+    const history = await buildHistoryWithRepeatedTargetBeforeNextSource();
+
+    expect(history.getMinimalHistory({ value: 'd' }, { value: 'b' }).map(item => item.state.value)).toEqual(['d', 'z', 'b']);
   });
 
   it('should return empty array and warn when from or to state is not found', async () => {

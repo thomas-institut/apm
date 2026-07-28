@@ -614,6 +614,73 @@ describe('MceComposer', () => {
     });
   });
 
+  it('fetches each initial chunk once in React.StrictMode', async () => {
+    mockRouteParams.id = '123';
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const mceData = MceData.createEmpty();
+    mceData.lang = 'la';
+    mceData.chunks = [100, 101, 102].map((tableId) => {
+      return {
+        chunkId: `chunk-${tableId}`,
+        break: '',
+        chunkEditionTableId: tableId,
+        lineNumbersRestart: false,
+        title: `Chunk ${tableId}`,
+        version: '',
+        witnessIndices: [],
+      };
+    });
+    mceData.chunkOrder = mceData.chunks.map((_chunk, index) => index);
+
+    const pendingChunkResponses = new Map<number, DeferredPromise<any>>();
+    const getSingleChunkDataMock = vi.fn((tableId: number) => {
+      let pendingResponse = pendingChunkResponses.get(tableId);
+      if (pendingResponse === undefined) {
+        pendingResponse = createDeferredPromise<any>();
+        pendingChunkResponses.set(tableId, pendingResponse);
+      }
+      return pendingResponse.promise;
+    });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn().mockResolvedValue({mceData}),
+        getSingleChunkData: getSingleChunkDataMock,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <React.StrictMode>
+          <AppContext.Provider value={appContext}>
+            <MceComposer/>
+          </AppContext.Provider>
+        </React.StrictMode>,
+      );
+      await flushEffects(8);
+    });
+
+    expect(getSingleChunkDataMock.mock.calls).toHaveLength(3);
+    expect(getSingleChunkDataMock.mock.calls.map((call) => call[0])).toEqual([100, 101, 102]);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it.each(['12junk', '1.5', '1e2'])('rejects malformed numeric-looking route ID %s', async (invalidId) => {
     mockRouteParams.id = invalidId;
     document.body.innerHTML = '<div id="root"></div>';

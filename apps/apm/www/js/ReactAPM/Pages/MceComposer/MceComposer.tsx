@@ -99,6 +99,14 @@ export interface CtDataStatus {
   lastVersionTimeStamp: string | null;
 }
 
+interface ChunkLoadResult {
+  ctDataId: number;
+  loadedVersionTimeStamp: string | null;
+  isLatestVersion: boolean | null;
+  lastVersionTimeStamp: string | null;
+  errorMsg: string | null;
+}
+
 export interface MceComposerHistoryState {
   mceData: MceDataInterface;
 }
@@ -168,6 +176,8 @@ export default function MceComposer() {
   const latestMceDataIdRef = useRef<number>(-1);
   const latestAutoRegenerateRef = useRef<boolean>(settings.autoRegenerate);
   const editorSessionRef = useRef(0);
+  const inFlightChunkLoadRequestsRef = useRef<Record<string, Promise<ChunkLoadResult>>>({});
+  const chunkLoadBatchRequestRef = useRef(0);
   /**
    * Cache of generated editions, indexed by data's hash
    */
@@ -210,6 +220,8 @@ export default function MceComposer() {
     mceDataEditInProgressRef.current = false;
     editionGenerationInProgressRef.current = false;
     pendingEditionGenerationRequestRef.current = null;
+    inFlightChunkLoadRequestsRef.current = {};
+    chunkLoadBatchRequestRef.current = 0;
 
     const initialMceData = MceData.createEmpty();
     latestMceDataRef.current = initialMceData;
@@ -331,6 +343,8 @@ export default function MceComposer() {
 
     const chunksToLoad = chunkIndexesToLoad.map((chunkIndex) => ctDataStatusArray[chunkIndex]);
     const editorSession = editorSessionRef.current;
+    const batchRequest = chunkLoadBatchRequestRef.current + 1;
+    chunkLoadBatchRequestRef.current = batchRequest;
 
     // Instantly mark the selected batch as 'loading' in local state so the next render cycle knows not to
     // double-trigger it.
@@ -342,36 +356,50 @@ export default function MceComposer() {
       return next;
     });
 
-    Promise.all(chunksToLoad.map(async (chunkToLoad) => {
-      try {
-        console.log(`Fetching chunk ${chunkToLoad.ctDataId}`);
-        const apiResponse = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.requestedVersion);
-        let lastVersionTimeStamp = apiResponse.timeStamp;
-        if (!apiResponse.isLatestVersion) {
-          console.log(`Chunk ${chunkToLoad.ctDataId} is not the latest version`);
-          const latestData = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, '');
-          lastVersionTimeStamp = latestData.timeStamp;
-        }
+    const getChunkLoadPromise = (chunkToLoad: CtDataStatus): Promise<ChunkLoadResult> => {
+      const requestKey = `${chunkToLoad.ctDataId}:${chunkToLoad.requestedVersion}`;
+      let chunkLoadPromise = inFlightChunkLoadRequestsRef.current[requestKey];
+      if (chunkLoadPromise === undefined) {
+        chunkLoadPromise = (async () => {
+          try {
+            console.log(`Fetching chunk ${chunkToLoad.ctDataId}`);
+            const apiResponse = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.requestedVersion);
+            let lastVersionTimeStamp = apiResponse.timeStamp;
+            if (!apiResponse.isLatestVersion) {
+              console.log(`Chunk ${chunkToLoad.ctDataId} is not the latest version`);
+              const latestData = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, '');
+              lastVersionTimeStamp = latestData.timeStamp;
+            }
 
-        return {
-          ctDataId: chunkToLoad.ctDataId,
-          loadedVersionTimeStamp: apiResponse.timeStamp,
-          isLatestVersion: apiResponse.isLatestVersion,
-          lastVersionTimeStamp,
-          errorMsg: null,
-        };
-      } catch (error) {
-        return {
-          ctDataId: chunkToLoad.ctDataId,
-          loadedVersionTimeStamp: null,
-          isLatestVersion: null,
-          lastVersionTimeStamp: null,
-          errorMsg: error instanceof Error ? error.message : `${error}`,
-        };
+            return {
+              ctDataId: chunkToLoad.ctDataId,
+              loadedVersionTimeStamp: apiResponse.timeStamp,
+              isLatestVersion: apiResponse.isLatestVersion,
+              lastVersionTimeStamp,
+              errorMsg: null,
+            };
+          } catch (error) {
+            return {
+              ctDataId: chunkToLoad.ctDataId,
+              loadedVersionTimeStamp: null,
+              isLatestVersion: null,
+              lastVersionTimeStamp: null,
+              errorMsg: error instanceof Error ? error.message : `${error}`,
+            };
+          }
+        })()
+          .finally(() => {
+            delete inFlightChunkLoadRequestsRef.current[requestKey];
+          });
+        inFlightChunkLoadRequestsRef.current[requestKey] = chunkLoadPromise;
       }
-    }))
+
+      return chunkLoadPromise;
+    };
+
+    Promise.all(chunksToLoad.map((chunkToLoad) => getChunkLoadPromise(chunkToLoad)))
       .then((results) => {
-        if (editorSession !== editorSessionRef.current) {
+        if (editorSession !== editorSessionRef.current || batchRequest !== chunkLoadBatchRequestRef.current) {
           return;
         }
         setCtDataStatusArray(prev => {

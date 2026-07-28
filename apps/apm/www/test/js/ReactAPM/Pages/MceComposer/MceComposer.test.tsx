@@ -314,6 +314,62 @@ describe('MceComposer', () => {
     expect(getSingleChunkData).toHaveBeenCalledWith(42, '');
   });
 
+  it('prevents adding an already included table', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const getSingleChunkData = vi.fn().mockResolvedValue(getChunkApiResponse(42));
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData,
+        getEntityName: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      (container.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+    });
+
+    let firstResult: true | string | undefined;
+    await act(async () => {
+      firstResult = await mockedAddChunk.callback!(42);
+    });
+
+    let secondResult: true | string | undefined;
+    await act(async () => {
+      secondResult = await mockedAddChunk.callback!(42);
+    });
+
+    expect(firstResult).toBe(true);
+    expect(secondResult).toBe('Table 42 is already included in this MCE');
+    expect(getSingleChunkData).toHaveBeenCalledTimes(1);
+    expect(getSingleChunkData).toHaveBeenCalledWith(42, '');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it('shows edition generation progress when regenerate is clicked', async () => {
     vi.useFakeTimers();
 

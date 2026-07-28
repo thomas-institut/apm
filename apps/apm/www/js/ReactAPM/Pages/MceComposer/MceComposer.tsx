@@ -603,11 +603,16 @@ export default function MceComposer() {
       return getMceDataEditError();
     }
     try {
+      const currentMceData = history.getCurrentState().mceData;
+      if (currentMceData.chunks.some( (chunk) => chunk.chunkEditionTableId === tableId)) {
+        return `Table ${tableId} is already included in this MCE`;
+      }
+
       let chunkApiData: SingleChunkApiData;
       try {
         chunkApiData = await appContext.apiClient.getSingleChunkData(tableId, version);
-        if (mceData.chunks.length !== 0 && chunkApiData.ctData.lang !== mceData.lang) {
-          return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(mceData.lang)} tables are allowed`;
+        if (currentMceData.chunks.length !== 0 && chunkApiData.ctData.lang !== currentMceData.lang) {
+          return `Table ${tableId} is in ${ApmFormats.getLangName(chunkApiData.ctData.lang)}, only ${ApmFormats.getLangName(currentMceData.lang)} tables are allowed`;
         }
       } catch (error) {
         const errorString = error as String;

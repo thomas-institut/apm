@@ -775,14 +775,14 @@ describe('MceData', () => {
     const getDocTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Doc ${id}`));
     const getSourceTitle = vi.fn().mockImplementation((id) => Promise.resolve(`Source ${id}`));
 
-    it('prevents adding duplicate chunks', async () => {
+    it('throws when adding duplicate chunks', async () => {
       const mceData = MceData.createEmpty();
       mceData.chunks = [{ chunkEditionTableId: 1, version: 'v1' } as any];
 
       const ctData = { chunkId: 'c2', lang: 'en' } as any;
-      const result = await MceData.addChunk(mceData, 1, ctData, 'v1', getDocTitle, getSourceTitle);
-
-      expect(result.chunks.length).toBe(1);
+      await expect(MceData.addChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Table 1 already included');
     });
 
     it('throws when adding chunks with different language', async () => {

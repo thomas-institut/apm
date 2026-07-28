@@ -6,26 +6,6 @@
 ## High-priority correctness and resilience findings
 
 
-### Rejected save promises are not handled
-
-**Evidence:** `handleOnClickSaveButton` only handles a resolved response whose `result` is `Error`; there is no `try`/`catch`/`finally` around `apiMceSave` (`MceComposer.tsx:720-749`).
-
-**Impact:** A network rejection leaves the UI in the saving state, produces an unhandled rejection, and provides no recovery path.
-
-**Recommendation:** Catch rejected requests, show a user-visible error, and clear pending state in `finally` without resetting history.
-
-**Required regression test:** Reject `apiMceSave` and assert the saving state clears, the data remains unsaved, and an error is displayed.
-
-### Chunk identity is ambiguous when one table is included at multiple versions
-
-**Evidence:** `MceData.addChunk` permits the same collation-table ID at different versions, but `MceData.updateChunk` (`MceData.ts:243`) and action checks identify a chunk only by `chunkEditionTableId`. The first matching chunk is selected.
-
-**Impact:** Updating or acting on the second version can silently modify the first version instead.
-
-**Recommendation:** Introduce a stable chunk reference that includes table ID and version, or explicitly disallow duplicate table IDs. Use that identity consistently in data methods, status tracking, actions, and UI callbacks.
-
-**Required regression test:** Add two versions of one table, update the second, and assert only the selected version changes.
-
 ### `StateHistory.getMinimalHistory` can retain a stray target state
 
 **Evidence:** `StateHistory.ts:101-113` pushes a matching `toSignature`, resets `currentHistory`, and then unconditionally pushes that same state into the new candidate segment.

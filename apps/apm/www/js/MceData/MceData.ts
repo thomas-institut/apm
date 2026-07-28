@@ -378,9 +378,8 @@ export class MceData {
     // first, see if the exact chunk edition is already in
     for (let chunkIndex = 0; chunkIndex < mceData.chunks.length; chunkIndex++) {
       const chunk = mceData.chunks[chunkIndex];
-      if (chunk.chunkEditionTableId === tableId && chunk.version === chunkTimeString) {
-        console.warn(`Table ${tableId} already included`);
-        return mceData;
+      if (chunk.chunkEditionTableId === tableId) {
+        throw new Error(`Table ${tableId} already included`);
       }
     }
     // new chunk, check if it's the same language

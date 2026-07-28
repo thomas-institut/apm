@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, CSSProperties, KeyboardEvent } from 'react';
-import { Pencil, Check, X } from 'react-bootstrap-icons';
+import { Pencil, Check, X, ExclamationTriangle } from 'react-bootstrap-icons';
 
 interface EditableTextFieldProps {
   text: string;
@@ -7,6 +7,7 @@ interface EditableTextFieldProps {
   editingClassName?: string;
   style?: CSSProperties;
   onConfirm: (newText: string) => void;
+  validator?: (text: string) => true | string;
 }
 
 /**
@@ -19,7 +20,8 @@ export default function EditableTextField(props: EditableTextFieldProps) {
     className,
     editingClassName,
     style,
-    onConfirm
+    onConfirm,
+    validator
   } = props;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -48,6 +50,9 @@ export default function EditableTextField(props: EditableTextFieldProps) {
     setIsHovered(false);
   };
 
+  const validationResult = validator === undefined ? true : validator(editedText);
+  const isTextValid = validationResult === true;
+
   const handleCancel = () => {
     setEditedText(text);
     setIsHovered(false);
@@ -56,7 +61,9 @@ export default function EditableTextField(props: EditableTextFieldProps) {
 
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
-      handleConfirm();
+      if (isTextValid) {
+        handleConfirm();
+      }
       e.stopPropagation();
     } else if (e.key === 'Escape') {
       handleCancel();
@@ -80,15 +87,22 @@ export default function EditableTextField(props: EditableTextFieldProps) {
           style={{ width: `${size + 1}ch` }}
         />
         &nbsp;
-        <Check
-          className="confirmButton"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleConfirm();
-          }}
-          style={{ cursor: 'pointer' }}
-          title="Confirm"
-        />
+        {isTextValid ? (
+          <Check
+            className="confirmButton"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleConfirm();
+            }}
+            style={{ cursor: 'pointer' }}
+            title="Confirm"
+          />
+        ) : (
+          <ExclamationTriangle
+            className="validationError text-danger"
+            title={typeof validationResult === 'string' ? validationResult : ''}
+          />
+        )}
         &nbsp;
         <X
           className="cancelButton"

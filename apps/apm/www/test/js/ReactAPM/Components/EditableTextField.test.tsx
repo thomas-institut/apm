@@ -94,6 +94,120 @@ describe('EditableTextField', () => {
     expect(container.querySelector('.etf-normal')).not.toBeNull();
   });
 
+  it('shows a validation error and hides confirm when validator rejects the text', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const validator = (value: string) => value.trim().length >= 3 ? true : 'Text must have at least 3 non-space characters';
+
+    await act(async () => {
+      root.render(<EditableTextField text="No" onConfirm={() => {}} validator={validator} />);
+    });
+
+    await act(async () => {
+      (container.querySelector('.etf-normal') as HTMLElement).click();
+    });
+
+    expect(container.querySelector('.confirmButton')).toBeNull();
+    const validationError = container.querySelector('.validationError') as HTMLElement;
+    expect(validationError).not.toBeNull();
+    expect(validationError.classList.contains('text-danger')).toBe(true);
+    const validationTitle = validationError.getAttribute('title') ?? validationError.querySelector('title')?.textContent;
+    expect(validationTitle).toBe('Text must have at least 3 non-space characters');
+  });
+
+  it('shows confirm and allows confirm when validator accepts edited text', async () => {
+    const onConfirm = vi.fn();
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const validator = (value: string) => value.trim().length >= 3 ? true : 'Text must have at least 3 non-space characters';
+
+    await act(async () => {
+      root.render(<EditableTextField text="No" onConfirm={onConfirm} validator={validator} />);
+    });
+
+    await act(async () => {
+      (container.querySelector('.etf-normal') as HTMLElement).click();
+    });
+
+    const input = container.querySelector('input.textInput') as HTMLInputElement;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+      setter.call(input, 'Valid Text');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    expect(container.querySelector('.validationError')).toBeNull();
+    const confirmBtn = container.querySelector('.confirmButton') as HTMLElement;
+    expect(confirmBtn).not.toBeNull();
+
+    await act(async () => {
+      confirmBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onConfirm).toHaveBeenCalledWith('Valid Text');
+  });
+
+  it('does not confirm on Enter when validator rejects the text', async () => {
+    const onConfirm = vi.fn();
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const validator = (value: string) => value.trim().length >= 3 ? true : 'Text must have at least 3 non-space characters';
+
+    await act(async () => {
+      root.render(<EditableTextField text="No" onConfirm={onConfirm} validator={validator} />);
+    });
+
+    await act(async () => {
+      (container.querySelector('.etf-normal') as HTMLElement).click();
+    });
+
+    const input = container.querySelector('input.textInput') as HTMLInputElement;
+    await act(async () => {
+      input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+    });
+
+    expect(onConfirm).not.toHaveBeenCalled();
+    expect(container.querySelector('.etf-editing')).not.toBeNull();
+  });
+
+  it('accepts all strings when validator is omitted', async () => {
+    const onConfirm = vi.fn();
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<EditableTextField text="Initial" onConfirm={onConfirm} />);
+    });
+
+    await act(async () => {
+      (container.querySelector('.etf-normal') as HTMLElement).click();
+    });
+
+    const input = container.querySelector('input.textInput') as HTMLInputElement;
+    await act(async () => {
+      const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+      setter.call(input, '');
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    expect(container.querySelector('.validationError')).toBeNull();
+    const confirmBtn = container.querySelector('.confirmButton') as HTMLElement;
+    expect(confirmBtn).not.toBeNull();
+
+    await act(async () => {
+      confirmBtn.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    expect(onConfirm).toHaveBeenCalledWith('');
+  });
+
   it('shows edit button on hover', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;

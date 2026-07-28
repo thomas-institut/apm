@@ -166,17 +166,37 @@ export class MceData {
     return mceData;
   }
 
-  static setSiglum(mceData: MceDataInterface, witnessIndex: number, newSiglum: string): MceDataInterface {
+  static isSiglumValid(mceData: MceDataInterface, witnessIndex: number, siglum: string): true | string {
     if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
-      console.warn(`Invalid witness index ${witnessIndex}`);
-      return mceData;
+      return 'Invalid witness index';
     }
-    newSiglum = newSiglum.trim();
-    if (newSiglum === '') {
-      console.warn(`Invalid siglum '${newSiglum}'`);
-      return mceData;
+
+    const trimmedSiglum = siglum.trim();
+
+    if (trimmedSiglum === '') {
+      return 'Siglum must have a non-empty value';
     }
-    mceData.sigla[witnessIndex] = newSiglum;
+
+    const otherSigla = mceData.sigla.filter((_siglum, index) => index !== witnessIndex);
+
+    if (otherSigla.some(existingSiglum => existingSiglum.trim() === trimmedSiglum)) {
+      return 'Siglum is duplicated';
+    }
+
+    if (mceData.siglaGroups.some(group => group.siglum.trim() === trimmedSiglum)) {
+      return 'Siglum is a sigla group siglum';
+    }
+
+    return true;
+  }
+
+  static setSiglum(mceData: MceDataInterface, witnessIndex: number, newSiglum: string): MceDataInterface {
+    const isValid = this.isSiglumValid(mceData, witnessIndex, newSiglum);
+    if (isValid !== true) {
+      throw new Error(`Invalid siglum '${newSiglum}' for witness index ${witnessIndex}: ${isValid}`);
+    }
+
+    mceData.sigla[witnessIndex] = newSiglum.trim();
     return mceData;
   }
 

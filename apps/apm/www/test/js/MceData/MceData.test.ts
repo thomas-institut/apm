@@ -717,25 +717,46 @@ describe('MceData', () => {
       expect(mceData.sigla).toEqual(['A', 'C']);
     });
 
-    it('does nothing when witness index is invalid', () => {
+    it('throws when witness index is invalid', () => {
       const mceData = MceData.createEmpty();
       mceData.witnesses = [{ witnessId: 'w0' } as any];
       mceData.sigla = ['A'];
 
-      MceData.setSiglum(mceData, -1, 'B');
-      MceData.setSiglum(mceData, 1, 'C');
+      expect(() => MceData.setSiglum(mceData, -1, 'B')).toThrow(Error);
+      expect(() => MceData.setSiglum(mceData, 1, 'C')).toThrow(Error);
 
       expect(mceData.sigla).toEqual(['A']);
     });
 
-    it('does nothing when siglum is empty after trimming', () => {
+    it('throws when siglum is empty after trimming', () => {
       const mceData = MceData.createEmpty();
       mceData.witnesses = [{ witnessId: 'w0' } as any];
       mceData.sigla = ['A'];
 
-      MceData.setSiglum(mceData, 0, '   ');
+      expect(() => MceData.setSiglum(mceData, 0, '   ')).toThrow(Error);
 
       expect(mceData.sigla).toEqual(['A']);
+    });
+
+    it('throws when siglum is duplicated in witness sigla', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+      mceData.sigla = ['A', 'B'];
+
+      expect(() => MceData.setSiglum(mceData, 1, ' A ')).toThrow(Error);
+
+      expect(mceData.sigla).toEqual(['A', 'B']);
+    });
+
+    it('throws when siglum is duplicated in sigla groups', () => {
+      const mceData = MceData.createEmpty();
+      mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
+      mceData.sigla = ['A', 'B'];
+      mceData.siglaGroups = [{ siglum: ' G1 ', witnesses: [0, 1] }];
+
+      expect(() => MceData.setSiglum(mceData, 1, 'G1')).toThrow(Error);
+
+      expect(mceData.sigla).toEqual(['A', 'B']);
     });
   });
 

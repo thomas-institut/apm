@@ -123,9 +123,12 @@ vi.mock('@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/MceComposerSaveButton', () => ({
-  default: ({onClick}: {onClick: () => Promise<void>}) => {
+  default: ({onClick, saveError}: {onClick: () => Promise<void>, saveError: string | null}) => {
     mockedEditorHandlers.save = onClick;
-    return <div>save</div>;
+    return <div>
+      save
+      {saveError !== null && <div data-testid="save-error">{saveError}</div>}
+    </div>;
   }
 }));
 
@@ -852,6 +855,68 @@ describe('MceComposer', () => {
     historyRedoSpy.mockRestore();
     historyGoToStateSpy.mockRestore();
     historyClearSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('handles rejected save requests and keeps unsaved changes', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const saveRequest = createDeferredPromise<{result: string, id: number}>();
+    const apiMceSave = vi.fn(() => saveRequest.promise);
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        apiMceSave,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      await mockedEditorHandlers.changeTitle!('Changed title');
+    });
+
+    const revertButtonSelector = '.icon-btn[title="Click to revert to last saved version"]';
+    expect((container.querySelector(revertButtonSelector) as HTMLElement).className).toContain('highlighted');
+
+    let savePromise!: Promise<void>;
+    await act(async () => {
+      savePromise = mockedEditorHandlers.save!();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    await act(async () => {
+      saveRequest.reject(new Error('Network down'));
+      await savePromise;
+    });
+
+    expect(apiMceSave).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('[data-testid="save-error"]')?.textContent).toContain('Network down');
+    expect((container.querySelector(revertButtonSelector) as HTMLElement).className).toContain('highlighted');
+
+    await act(async () => {
+      await expect(mockedEditorHandlers.changeTitle!('Changed title after failed save')).resolves.toBe(true);
+    });
+
     vi.useRealTimers();
   });
 

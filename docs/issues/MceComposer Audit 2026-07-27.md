@@ -6,16 +6,6 @@
 ## High-priority correctness and resilience findings
 
 
-### Regeneration can publish an obsolete edition as current
-
-**Evidence:** `MceComposer.tsx:417-434` and `703-718` suppress a new regeneration while `editionGenerationProgress` is set. If generation for state A is in progress and the user edits to B, completing A clears `editionOutOfDate` even though the current state is B.
-
-**Impact:** The preview/main text can show a stale edition as current, with no later trigger to generate B.
-
-**Recommendation:** Associate generation with a data signature/session token. On completion, use the result only if it matches the current signature; otherwise leave the edition marked out of date and queue or perform another generation.
-
-**Required regression test:** Defer generation for A, mutate data to B, resolve A, and assert B is generated or the UI remains explicitly out of date.
-
 ### Rejected save promises are not handled
 
 **Evidence:** `handleOnClickSaveButton` only handles a resolved response whose `result` is `Error`; there is no `try`/`catch`/`finally` around `apiMceSave` (`MceComposer.tsx:720-749`).

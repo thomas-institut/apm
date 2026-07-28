@@ -953,28 +953,32 @@ export default function MceComposer() {
     savingRef.current = true;
     setSaving(true);
     setSaveError(null);
-    await nextTick();
-    const response = await appContext.apiClient.apiMceSave({
-      editionId: mceDataId,
-      mceData,
-      description: changes.join('. ')
-    });
-    if (response.result === 'Error') {
-      setSaveError(response.message ?? 'Error saving');
+    try {
+      await nextTick();
+      const response = await appContext.apiClient.apiMceSave({
+        editionId: mceDataId,
+        mceData,
+        description: changes.join('. ')
+      });
+      if (response.result === 'Error') {
+        setSaveError(response.message ?? 'Error saving');
+        return;
+      }
+      console.log(`Saved MCE data`, response);
+      if (mceDataId === -1) {
+        navigate(RouteUrls.multiChunkEdition(response.id));
+      }
+      // reset history
+      history.reset(history.getCurrentState(), 'Last save');
+      setSavedStateSignature(history.getHistory()[0].signature);
+      setChanges([]);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error ?? 'Error saving');
+      setSaveError(errorMessage === '' ? 'Error saving' : errorMessage);
+    } finally {
       savingRef.current = false;
       setSaving(false);
-      return;
     }
-    console.log(`Saved MCE data`, response);
-    if (mceDataId === -1) {
-      navigate(RouteUrls.multiChunkEdition(response.id));
-    }
-    // reset history
-    history.reset(history.getCurrentState(), 'Last save');
-    setSavedStateSignature(history.getHistory()[0].signature);
-    setChanges([]);
-    savingRef.current = false;
-    setSaving(false);
   };
 
   const getDataForWitnessPanel = (): WitnessData[] => {

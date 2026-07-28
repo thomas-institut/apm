@@ -55,8 +55,8 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
     }
     const styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(edition.lang);
     setSystemStyles(styleSheets);
-    setStyleSheetId(null);
-  }, [edition?.lang]);
+    setStyleSheetId(Object.keys(styleSheets)[0]);
+  }, [edition]);
 
   useEffect(() => {
     setPreviewUpToDate(false);
@@ -102,10 +102,12 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
 
   const doTypeset = async () => {
     if (edition === null) {
+      console.log('Edition is null, no typesetting necessary');
       return null;
     }
 
     if (styleSheetId === null) {
+      console.log('styleSheetId is null, no typesetting possible');
       return null;
     }
 

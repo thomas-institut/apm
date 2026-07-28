@@ -156,6 +156,7 @@ export default function MceComposer() {
   const singleChunkEditionCache = useRef<Record<string, Edition>>({});
   const savingRef = useRef(false);
   const mceDataEditInProgressRef = useRef(false);
+  const editorSessionRef = useRef(0);
   /**
    * Cache of generated editions, indexed by data's hash
    */
@@ -188,6 +189,39 @@ export default function MceComposer() {
   }
 
   const editionKey = `mce-${mceDataId}`;
+  const isMceDataIdValid = id === 'new' || mceDataId > 0;
+
+  // Start a fresh editor session whenever the route selects another MCE.
+  useEffect(() => {
+    if (!isMceDataIdValid) {
+      return;
+    }
+
+    editorSessionRef.current += 1;
+    singleChunkEditionCache.current = {};
+    editionCache.current = {};
+    savingRef.current = false;
+    mceDataEditInProgressRef.current = false;
+
+    const initialMceData = MceData.createEmpty();
+    const initialHistory = new StateHistory<MceComposerHistoryState>({mceData: initialMceData});
+    setMceComposerStatus('loadingMce');
+    setErrorMsg('');
+    setCtDataStatusArray([]);
+    setMceData(initialMceData);
+    setEdition(null);
+    setEditionGenerationProgress(null);
+    setHistory(initialHistory);
+    setHistoryVersion(v => v + 1);
+    setSavedStateSignature(initialHistory.getCurrentStateSignature());
+    setChunksPanelVersion(v => v + 1);
+    setChanges([]);
+    setFoundBug(false);
+    setFoundBugDescription('');
+    setEditionOutOfDate(true);
+    setSaving(false);
+    setSaveError(null);
+  }, [id, isMceDataIdValid]);
 
   // 1. Hook to load MceData (Phase: start -> loadingMce -> loadingSingleChunks)
   useEffect(() => {
@@ -204,9 +238,10 @@ export default function MceComposer() {
       }
 
       let ignore = false;
+      const editorSession = editorSessionRef.current;
       appContext.apiClient.apiMceGetData(mceDataId)
         .then((resp) => {
-          if (ignore) {
+          if (ignore || editorSession !== editorSessionRef.current) {
             return; // avoid problems with React strict mode
           }
           MceData.fix(resp.mceData);
@@ -226,7 +261,7 @@ export default function MceComposer() {
           setMceComposerStatus('loadingSingleChunks');
         })
         .catch((error) => {
-          if (ignore) {
+          if (ignore || editorSession !== editorSessionRef.current) {
             return; // avoid problems with React strict mode
           }
           setMceComposerStatus('error');
@@ -285,6 +320,7 @@ export default function MceComposer() {
     }
 
     const chunksToLoad = chunkIndexesToLoad.map((chunkIndex) => ctDataStatusArray[chunkIndex]);
+    const editorSession = editorSessionRef.current;
 
     // Instantly mark the selected batch as 'loading' in local state so the next render cycle knows not to
     // double-trigger it.
@@ -325,6 +361,9 @@ export default function MceComposer() {
       }
     }))
       .then((results) => {
+        if (editorSession !== editorSessionRef.current) {
+          return;
+        }
         setCtDataStatusArray(prev => {
           const next = [...prev];
           results.forEach((result) => {
@@ -363,11 +402,14 @@ export default function MceComposer() {
   };
 
   const getEdition = async (mceData: MceDataInterface, mceDataId: number) => {
+    const editorSession = editorSessionRef.current;
 
     const mceDataHash = getMceDataHash(mceData, mceDataId);
     if (editionCache.current[mceDataHash] !== undefined) {
       console.log(`getEdition ${mceDataHash}: cache hit`);
-      setEditionGenerationProgress(null);
+      if (editorSession === editorSessionRef.current) {
+        setEditionGenerationProgress(null);
+      }
       return editionCache.current[mceDataHash];
     }
     console.log(`getEdition ${mceDataHash}: cache miss`);
@@ -390,14 +432,21 @@ export default function MceComposer() {
         return singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] ?? null;
       },
       singleChunkEditionSaver: async (_mceData: MceDataInterface, chunkIndex: number, edition) => {
-        singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] = new Edition().setFromInterface(edition);
+        if (editorSession === editorSessionRef.current) {
+          singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] = new Edition().setFromInterface(edition);
+        }
       },
       onProgressUpdate: (step, numSteps) => {
-        setEditionGenerationProgress(step / numSteps);
+        if (editorSession === editorSessionRef.current) {
+          setEditionGenerationProgress(step / numSteps);
+        }
       }
     });
     const generatedEdition = new Edition().setFromInterface(await generator.generate(mceData, mceDataId));
     profiler.stop();
+    if (editorSession !== editorSessionRef.current) {
+      return generatedEdition;
+    }
     setEditionGenerationProgress(null);
     console.log(`getEdition ${mceDataHash}: edition generated`);
     editionCache.current[mceDataHash] = generatedEdition;
@@ -440,7 +489,11 @@ export default function MceComposer() {
         regenerateEdition().then();
       }
     } else {
+      const editorSession = editorSessionRef.current;
       getEdition(mceData, mceDataId).then((generatedEdition) => {
+        if (editorSession !== editorSessionRef.current) {
+          return;
+        }
         setEdition(generatedEdition);
         setEditionOutOfDate(false);
       });
@@ -813,10 +866,11 @@ export default function MceComposer() {
 
   const regenerateEdition = async () => {
     if (editionGenerationProgress !== null) return;
+    const editorSession = editorSessionRef.current;
     setEditionGenerationProgress(0);
     await nextTick();
     const newEdition = await getEdition(mceData, mceDataId);
-    if (newEdition !== null) {
+    if (editorSession === editorSessionRef.current && newEdition !== null) {
       setEdition(newEdition);
       setEditionGenerationProgress(null);
       setEditionOutOfDate(false);

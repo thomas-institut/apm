@@ -79,7 +79,8 @@ vi.mock('@/ReactAPM/Components/PanelUI/PanelContent', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel', () => ({
-  default: ({deleteChunk, moveChunk, setChunkBreak, updateChunk}: {
+  default: ({chunks, deleteChunk, moveChunk, setChunkBreak, updateChunk}: {
+    chunks: {chunkId: string, title: string}[],
     deleteChunk: (chunkIndex: number) => Promise<boolean>,
     moveChunk: (chunkPosition: number, direction: 'up' | 'down') => Promise<boolean>,
     setChunkBreak: (chunkPosition: number, newBreak: string) => Promise<boolean>,
@@ -89,7 +90,7 @@ vi.mock('@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel', () => ({
     mockedEditorHandlers.moveChunk = moveChunk;
     mockedEditorHandlers.setChunkBreak = setChunkBreak;
     mockedEditorHandlers.updateChunk = updateChunk;
-    return <div>chunks</div>;
+    return <div>{chunks.map((chunk) => <div key={chunk.chunkId}>{chunk.title}</div>)}</div>;
   }
 }));
 
@@ -433,6 +434,102 @@ describe('MceComposer', () => {
 
     expect(getSingleChunkDataMock).toHaveBeenCalledTimes(12);
     expect(getSingleChunkDataMock.mock.calls.slice(10, 12).map((call) => call[0])).toEqual([110, 111]);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('loads the newly selected MCE when the route ID changes while mounted', async () => {
+    mockRouteParams.id = '1';
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const apiMceGetData = vi.fn((mceId: number) => {
+      const mceData = MceData.createEmpty();
+      mceData.title = mceId === 1 ? 'First MCE' : 'Second MCE';
+      mceData.lang = 'la';
+      mceData.chunks = [{
+        chunkId: mceId === 1 ? 'first-chunk' : 'second-chunk',
+        break: '',
+        chunkEditionTableId: mceId === 1 ? 101 : 202,
+        lineNumbersRestart: false,
+        title: mceId === 1 ? 'First chunk' : 'Second chunk',
+        version: '',
+        witnessIndices: [],
+      }];
+      mceData.chunkOrder = [0];
+      return Promise.resolve({mceData});
+    });
+    const chunkResponses = new Map<number, DeferredPromise<ReturnType<typeof getChunkApiResponse>>>();
+    const getSingleChunkData = vi.fn((tableId: number) => {
+      let chunkResponse = chunkResponses.get(tableId);
+      if (chunkResponse === undefined) {
+        chunkResponse = createDeferredPromise<ReturnType<typeof getChunkApiResponse>>();
+        chunkResponses.set(tableId, chunkResponse);
+      }
+      return chunkResponse.promise;
+    });
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData,
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects(8);
+    });
+
+    expect(apiMceGetData).toHaveBeenCalledTimes(1);
+    expect(apiMceGetData).toHaveBeenLastCalledWith(1);
+    expect(container.textContent).toContain('First MCE');
+    expect(container.textContent).toContain('First chunk');
+    expect(getSingleChunkData).toHaveBeenCalledWith(101, '');
+
+    await act(async () => {
+      (container.querySelector('input[type="checkbox"]') as HTMLInputElement).click();
+      chunkResponses.get(101)!.resolve(getChunkApiResponse(101));
+      await flushEffects(8);
+    });
+
+    mockRouteParams.id = '2';
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects(8);
+    });
+
+    expect(apiMceGetData).toHaveBeenCalledTimes(2);
+    expect(apiMceGetData).toHaveBeenLastCalledWith(2);
+    expect(container.textContent).toContain('Second MCE');
+    expect(container.textContent).toContain('Second chunk');
+    expect(container.textContent).not.toContain('First MCE');
+    expect(container.textContent).not.toContain('First chunk');
+    expect(getSingleChunkData).toHaveBeenCalledWith(202, '');
+
+    await act(async () => {
+      chunkResponses.get(202)!.resolve(getChunkApiResponse(202));
+      await flushEffects(8);
+    });
 
     await act(async () => {
       root.unmount();

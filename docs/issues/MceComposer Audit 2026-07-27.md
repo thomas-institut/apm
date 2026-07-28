@@ -15,31 +15,8 @@
 **Required regression tests:** Reject one version-info request and one generation fetch; assert visible failure/recovery behavior and cleared progress state.
 
 
-### Preview settings can restore a stylesheet invalid for the current language
-
-**Evidence:** `PreviewPanel.tsx:52-94` resets a style ID on language change, then restores cached settings keyed only by edition. The cached ID may not exist in the newly selected language's stylesheet set.
-
-**Impact:** The select can hold an invalid value and preview/PDF typesetting can fail.
-
-**Recommendation:** Scope persisted preview settings by language, or validate cached IDs against the available styles before restoring them.
-
-**Required regression test:** Switch languages with an incompatible cached stylesheet and assert a valid fallback is selected.
-
-
-
-### Pending container measurements can be permanently wrong
-
-**Evidence:** `ComponentWithPending.tsx:38-45` measures dimensions only once because its effect depends on a stable ref object.
-
-**Impact:** If the component mounts pending, it can permanently retain spinner dimensions instead of the loaded content dimensions.
-
-**Recommendation:** Re-measure when pending state/content dimensions change, ideally with a resize observer where appropriate.
-
-**Required regression test:** Mount pending, switch to larger content, and assert the wrapper updates to content dimensions.
-
 ## Lower-priority and usability findings
 
-- `MainTextPanel.tsx:48-77` stores `chunk_end` tokens but never renders them. The unused `SignpostSplit` import suggests a missing end-of-chunk marker; confirm intended product behavior before treating this as a functional defect.
 - `MceComposerSaveButton.tsx:13-34` contains a discarded `changes.join('\n')`, and active save icons lack the tooltip supplied by the disabled state.
 - `MoveChunkAction.ts:27-29` constructs a move description before detecting a boundary no-op, producing misleading text such as movement to position zero.
 - Several controls are clickable SVGs without button semantics, tab stops, or keyboard handlers: chunk/witness actions, preview navigation and zoom, save, and other panel controls. Keyboard-only users cannot reliably operate them.

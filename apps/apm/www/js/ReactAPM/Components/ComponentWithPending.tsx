@@ -33,16 +33,41 @@ export default function ComponentWithPending(props: ComponentWithPendingProps){
 
   const smartContainer = props.smartContainer ?? false;
 
-
-
   useLayoutEffect(() => {
-    if (ref.current === null) {
+    if (!smartContainer || ref.current === null || props.pending) {
       return;
     }
-    if (dimensions.width === -1) {
-      setDimensions({width: ref.current.offsetWidth, height: ref.current.offsetHeight});
+
+    const updateDimensions = () => {
+      if (ref.current === null) {
+        return;
+      }
+      const width = ref.current.offsetWidth;
+      const height = ref.current.offsetHeight;
+
+      setDimensions((currentDimensions) => {
+        if (currentDimensions.width === width && currentDimensions.height === height) {
+          return currentDimensions;
+        }
+        return { width, height };
+      });
+    };
+
+    updateDimensions();
+
+    if (typeof ResizeObserver === 'undefined') {
+      return;
     }
-  }, [ref]);
+
+    const resizeObserver = new ResizeObserver(() => {
+      updateDimensions();
+    });
+    resizeObserver.observe(ref.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [smartContainer, props.pending, props.children]);
 
   const content = <>
     { props.pending && props.pendingElement && props.pendingElement}

@@ -24,6 +24,13 @@ interface WitnessesPanelProps extends TabbableElementProps {
   witnesses: WitnessData[],
   siglaGroups: SiglaGroupInterface[],
   onChangeSiglum?: (witnessIndex: number, newSiglum: string) => boolean | Promise<boolean>,
+  /**
+   * Callback to validate a witness siglum
+   *
+   * Must return true if the witness siglum at witnessIndex can be changed to the given siglum
+   * or a string with the error message if it cannot.
+   */
+  isSiglumValid: (witnessIndex: number, siglum: string) => true | string,
   onChangeIncludeInAutoMarginalFoliation?: (witnessIndex: number, newState: boolean) => boolean | Promise<boolean>,
   /**
    * Callback to delete a sigla group
@@ -53,6 +60,7 @@ export default function WitnessesPanel({
                                          witnesses,
                                          siglaGroups,
                                          onChangeSiglum,
+                                         isSiglumValid,
                                          onChangeIncludeInAutoMarginalFoliation,
                                          onDeleteSiglaGroup,
                                          onChangeSiglaGroup,
@@ -101,6 +109,7 @@ export default function WitnessesPanel({
       width: '5em',
       tdClassName: 'siglum',
       cellContent: (witnessData, witnessIndex) => <EditableTextField text={witnessData.siglum}
+                                                                     validator={(newSiglum) => isSiglumValid(witnessIndex, newSiglum)}
                                                                      onConfirm={async (newSiglum) => {
                                                                        if (onChangeSiglum) {
                                                                          await onChangeSiglum(witnessIndex, newSiglum);

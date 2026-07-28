@@ -19,7 +19,9 @@ vi.mock('@/ReactAPM/Components/NiceTable/NiceTable', () => ({
 }));
 
 vi.mock('@/ReactAPM/Components/EditableTextField', () => ({
-  default: () => <div/>
+  default: ({validator}: {validator?: (text: string) => true | string}) => <div className={'editable-text-field-mock'}>
+    {validator === undefined ? 'no-validator' : String(validator('NEW'))}
+  </div>
 }));
 
 vi.mock('@/ReactAPM/Components/NiceToggle/NiceToggle', () => ({
@@ -63,6 +65,38 @@ vi.mock('react-bootstrap-icons', () => {
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('WitnessesPanel', () => {
+  it('passes witness siglum validation to EditableTextField', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const isSiglumValid = vi.fn((witnessIndex: number, siglum: string) => `invalid ${witnessIndex}:${siglum}`);
+
+    await act(async () => {
+      root.render(
+        <WitnessesPanel
+          witnesses={[
+            {
+              siglum: 'A',
+              title: 'Witness A',
+              includeInAutoMarginalFoliation: true,
+            }
+          ]}
+          siglaGroups={[]}
+          isSiglumValid={isSiglumValid}
+          isSiglaGroupValid={() => true}
+        />
+      );
+    });
+
+    expect(isSiglumValid).toHaveBeenCalledWith(0, 'NEW');
+    expect(container.textContent).toContain('invalid 0:NEW');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it('opens a confirmation dialog before deleting a sigla group and only deletes on accept', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
@@ -86,6 +120,7 @@ describe('WitnessesPanel', () => {
               witnesses: [0],
             }
           ]}
+          isSiglumValid={() => true}
           isSiglaGroupValid={() => true}
           onDeleteSiglaGroup={onDeleteSiglaGroup}
         />
@@ -134,6 +169,7 @@ describe('WitnessesPanel', () => {
               witnesses: [0],
             }
           ]}
+          isSiglumValid={() => true}
           isSiglaGroupValid={() => true}
           onDeleteSiglaGroup={onDeleteSiglaGroup}
         />

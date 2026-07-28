@@ -888,6 +888,10 @@ export default function MceComposer() {
     return MceData.isSiglaGroupValid(mceData, siglaGroupIndex, group);
   };
 
+  const isSiglumValid: (witnessIndex: number, siglum: string) => true | string = (witnessIndex, siglum) => {
+    return MceData.isSiglumValid(mceData, witnessIndex, siglum);
+  };
+
   const regenerateEdition = async (requestedMceData: MceDataInterface = mceData, requestedMceDataId: number = mceDataId) => {
     pendingEditionGenerationRequestRef.current = {
       signature: getMceDataHash(requestedMceData, requestedMceDataId),
@@ -1029,6 +1033,7 @@ export default function MceComposer() {
       content: <WitnessesPanel witnesses={getDataForWitnessPanel()}
                                siglaGroups={mceData.siglaGroups}
                                onChangeSiglum={setSiglum}
+                               isSiglumValid={isSiglumValid}
                                isSiglaGroupValid={isSiglaGroupValid}
                                onDeleteSiglaGroup={deleteSiglaGroup}
                                onChangeSiglaGroup={changeSiglaGroup}

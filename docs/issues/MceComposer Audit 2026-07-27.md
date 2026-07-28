@@ -33,16 +33,6 @@
 
 **Required regression test:** Reject `getSingleChunkData` with `undefined` for both flows and assert a stable error result.
 
-### Route IDs accept malformed numeric text
-
-**Evidence:** `MceComposer.tsx:165-173` relies on `parseInt`, accepting values such as `12junk`, `1.5`, and `1e2` as valid IDs.
-
-**Impact:** Malformed routes can load an unintended edition instead of reporting invalid input.
-
-**Recommendation:** Require the complete route value to be a positive safe integer, for example by validating the full string before converting it.
-
-**Required regression test:** Assert malformed numeric-looking IDs show the invalid-ID status and make no API request.
-
 ### Single-chunk edition-cache keys can collide
 
 **Evidence:** `MceComposer.tsx:367-373` derives its marginal-foliation part with `.join('')`. Index arrays `[1, 23]` and `[12, 3]` both produce `123`.

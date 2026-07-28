@@ -54,10 +54,10 @@ import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunk
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
+import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 
 // TODO before release (2026-07-27))
 //  - Check potential problems in typesetting, lots of "line number" not found warnings
-//  - Fix looks of saving spinner... needs to use info area in toolbar
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
 //    testing that simulates server failures. Maybe a mock api client that fails in different ways. Server failures
 //    may need a general message in the toolbar info area.
@@ -178,30 +178,24 @@ export default function MceComposer() {
   const navigate = useNavigate();
   const appContext = useContext(AppContext);
   let mceDataId = -1;
+  let routeErrorMsg: string | null = null;
 
   if (id === undefined) {
-    setMceComposerStatus('error');
-    setErrorMsg('MCE ID is undefined');
+    routeErrorMsg = 'MCE ID is undefined';
   } else {
     if (id !== 'new') {
-      // should be a valid numerical id
-      if (isNaN(parseInt(id))) {
-        console.log('Invalid MCE ID: NaN');
-        setMceComposerStatus('error');
-        setErrorMsg('Invalid MCE ID');
+      const parsedMceDataId = parseValidNumericalId(id);
+      if (parsedMceDataId === null) {
+        console.log(`Invalid MCE ID: ${id}`);
+        routeErrorMsg = 'Invalid MCE ID';
       } else {
-        mceDataId = parseInt(id);
-        if (mceDataId <= 0) {
-          console.log('Invalid MCE ID: negative or zero');
-          setMceComposerStatus('error');
-          setErrorMsg('Invalid MCE ID');
-        }
+        mceDataId = parsedMceDataId;
       }
     }
   }
 
   const editionKey = `mce-${mceDataId}`;
-  const isMceDataIdValid = id === 'new' || mceDataId > 0;
+  const isMceDataIdValid = routeErrorMsg === null && (id === 'new' || mceDataId > 0);
 
   // Start a fresh editor session whenever the route selects another MCE.
   useEffect(() => {
@@ -1113,6 +1107,14 @@ export default function MceComposer() {
       tabbable: true,
     },
   ];
+
+  if (routeErrorMsg !== null) {
+    return <StatusPage label={'Error'}>
+      <h2>Oops!</h2>
+      <p className={'text-danger'}>{routeErrorMsg}</p>
+      <p>This may be a bug, please report it.</p>
+    </StatusPage>;
+  }
 
   if (mceComposerStatus === 'error') {
     return <StatusPage label={'Error'}>

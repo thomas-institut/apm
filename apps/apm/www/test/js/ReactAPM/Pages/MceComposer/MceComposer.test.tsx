@@ -604,6 +604,49 @@ describe('MceComposer', () => {
     });
   });
 
+  it.each(['12junk', '1.5', '1e2'])('rejects malformed numeric-looking route ID %s', async (invalidId) => {
+    mockRouteParams.id = invalidId;
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const apiMceGetData = vi.fn();
+    const getSingleChunkData = vi.fn();
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData,
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    expect(container.textContent).toContain('Oops!');
+    expect(container.textContent).toContain('Invalid MCE ID');
+    expect(apiMceGetData).not.toHaveBeenCalled();
+    expect(getSingleChunkData).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it('loads the newly selected MCE when the route ID changes while mounted', async () => {
     mockRouteParams.id = '1';
     document.body.innerHTML = '<div id="root"></div>';

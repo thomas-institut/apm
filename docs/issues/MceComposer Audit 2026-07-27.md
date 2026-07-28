@@ -53,16 +53,6 @@
 
 **Required regression test:** Add a chunk whose sigla list is shorter than its witnesses and assert a generated fallback siglum.
 
-### Siglum uniqueness is inconsistently enforced
-
-**Evidence:** Group validation rejects a group siglum that collides with a witness, but `setSiglum` does not reject a witness collision with another witness or a group.
-
-**Impact:** The generated apparatus can contain ambiguous sigla.
-
-**Recommendation:** Decide and document the intended uniqueness invariant, then enforce it uniformly in witness creation, witness editing, and group editing.
-
-**Required regression test:** Attempt witness-to-witness and witness-to-group collisions through actions/UI and assert the chosen invariant.
-
 ### Preview settings can restore a stylesheet invalid for the current language
 
 **Evidence:** `PreviewPanel.tsx:52-94` resets a style ID on language change, then restores cached settings keyed only by edition. The cached ID may not exist in the newly selected language's stylesheet set.

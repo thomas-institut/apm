@@ -892,6 +892,13 @@ export default function MceComposer() {
     return MceData.isSiglumValid(mceData, witnessIndex, siglum);
   };
 
+  const isTitleValid: (title: string) => true | string = (title) => {
+    if (title.trim() === '') {
+      return 'Title must have a non-empty value';
+    }
+    return true;
+  };
+
   const regenerateEdition = async (requestedMceData: MceDataInterface = mceData, requestedMceDataId: number = mceDataId) => {
     pendingEditionGenerationRequestRef.current = {
       signature: getMceDataHash(requestedMceData, requestedMceDataId),
@@ -1314,6 +1321,7 @@ export default function MceComposer() {
     <div className="header">
       <ApmLogo height={30} className={'logo'}/>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={mceData.title}
+                         validator={isTitleValid}
                          onConfirm={confirmTitleEdit}/>
       {notificationsDiv}
       {controlsDiv}

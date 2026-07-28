@@ -29,6 +29,7 @@ const mockedEditorHandlers = vi.hoisted(() => ({
   setChunkBreak: undefined as undefined | ((chunkPosition: number, newBreak: string) => Promise<boolean>),
   setIncludeInAutoMarginalFoliation: undefined as undefined | ((witnessIndex: number, newState: boolean) => Promise<boolean>),
   setSiglum: undefined as undefined | ((witnessIndex: number, newSiglum: string) => Promise<boolean>),
+  titleValidator: undefined as undefined | ((title: string) => true | string),
   updateChunk: undefined as undefined | ((chunkIndex: number) => Promise<true | string>),
 }));
 vi.mock('react-router', () => ({
@@ -133,8 +134,17 @@ vi.mock('@/ReactAPM/Pages/MceComposer/MceComposerSaveButton', () => ({
 }));
 
 vi.mock('@/ReactAPM/Components/EditableTextField', () => ({
-  default: ({text, onConfirm}: {text: string, onConfirm: (t: string) => Promise<boolean | undefined>}) => {
+  default: ({
+              text,
+              onConfirm,
+              validator,
+            }: {
+    text: string,
+    onConfirm: (t: string) => Promise<boolean | undefined>,
+    validator?: (text: string) => true | string,
+  }) => {
     mockedEditorHandlers.changeTitle = onConfirm;
+    mockedEditorHandlers.titleValidator = validator;
     return <div data-testid="editable-text-field" onClick={() => onConfirm('New Title Action')}>{text}</div>;
   }
 }));
@@ -807,6 +817,50 @@ describe('MceComposer', () => {
 
     expect(undoBtn.getAttribute('title')).toBe('Undo Change title to "New Title Action"');
     expect(redoBtn.getAttribute('title')).toBe('Redo');
+  });
+
+  it('passes a validator for title edits that rejects empty trimmed titles', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    expect(mockedEditorHandlers.titleValidator).toBeDefined();
+    expect(mockedEditorHandlers.titleValidator?.('   ')).toBe('Title must have a non-empty value');
+    expect(mockedEditorHandlers.titleValidator?.('  Valid title  ')).toBe(true);
+
+    await act(async () => {
+      root.unmount();
+    });
   });
 
   it('prevents concurrent mceData edits', async () => {

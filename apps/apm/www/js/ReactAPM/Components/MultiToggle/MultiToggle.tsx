@@ -17,11 +17,11 @@ interface MultiToggleProps {
 
 export default function MultiToggle(props: MultiToggleProps) {
 
-  const selected = props.selected ?? props.options[0].key;
   const options = props.options;
   if (options.length === 0) {
     return null;
   }
+  const selected = props.selected ?? options[0].key;
 
   const className = 'multi-toggle ' + (props.className ?? '');
 

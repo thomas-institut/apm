@@ -1,20 +1,5 @@
 # MCE Composer audit — 2026-07-27
 
-## Critical findings
-
-
-## High-priority correctness and resilience findings
-
-
-### `StateHistory.getMinimalHistory` can retain a stray target state
-
-**Evidence:** `StateHistory.ts:101-113` pushes a matching `toSignature`, resets `currentHistory`, and then unconditionally pushes that same state into the new candidate segment.
-
-**Impact:** With repeated signatures, the selected change path and descriptions can include an erroneous extra state. Existing tests hide the defect because they contain a shorter valid route.
-
-**Recommendation:** Avoid the unconditional push after a completed target match, and add a repeated-signature test that makes the affected path the only candidate.
-
-**Required regression test:** Construct a repeated-signature history whose only valid minimal path crosses the repeat and assert the returned segment starts at the requested source state without an extra leading target state.
 
 ## Medium-priority findings
 
@@ -108,15 +93,6 @@
 
 **Required regression test:** Return an error string and assert visible error and retry feedback.
 
-### `MultiToggle` crashes for empty options
-
-**Evidence:** `MultiToggle.tsx:20-24` evaluates `options[0].key` before checking `options.length === 0`.
-
-**Impact:** Any caller that reaches an empty-options state without explicitly passing `selected` crashes.
-
-**Recommendation:** Return early before deriving a default selection.
-
-**Required regression test:** Render `<MultiToggle options={[]} />` and assert it safely renders no UI.
 
 ### Pending container measurements can be permanently wrong
 

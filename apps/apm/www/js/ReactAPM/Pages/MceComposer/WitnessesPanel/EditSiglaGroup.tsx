@@ -92,7 +92,7 @@ export default function EditSiglaGroup({
       <Button className={'cancel-btn'} variant={'secondary'} onClick={onClickCancel}>Cancel</Button>
       <Button
         className={'confirm-btn'}
-        variant={'danger'}
+        variant={'primary'}
         disabled={validationResult !== true}
         onClick={() => {
           onClickConfirm(siglaGroupIndex, {

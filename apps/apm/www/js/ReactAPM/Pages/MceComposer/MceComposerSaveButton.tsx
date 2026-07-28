@@ -26,7 +26,6 @@ export default function MceComposerSaveButton({changes, onClick, saveError}: Sav
   }
 
   if (changes.length > 0) {
-    changes.join('\n');
     const popover = (
       <Popover className={'save-changes-popover'} show={saving}>
         <Popover.Header>Save changes</Popover.Header>

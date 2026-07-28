@@ -13,7 +13,6 @@ export class DeleteChunkAction implements StateTransformAction<MceComposerHistor
   }
 
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
-    const newState = deepCopy(state);
     const chunkOrder = state.mceData.chunkOrder;
     if (chunkOrder === undefined) {
       throw `Chunk order is undefined`;
@@ -23,6 +22,7 @@ export class DeleteChunkAction implements StateTransformAction<MceComposerHistor
     if (!chunk) {
       throw `Chunk at position ${this.chunkPosition} does not exist`;
     }
+    const newState = deepCopy(state);
     const chunkId = chunk.chunkId;
     MceData.deleteChunk(newState.mceData, chunkIndex);
     this.title = `Remove chunk ${chunkId} from edition`;

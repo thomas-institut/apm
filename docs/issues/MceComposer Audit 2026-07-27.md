@@ -15,14 +15,6 @@
 **Required regression tests:** Reject one version-info request and one generation fetch; assert visible failure/recovery behavior and cleared progress state.
 
 
-## Lower-priority and usability findings
-
-- `MceComposerSaveButton.tsx:13-34` contains a discarded `changes.join('\n')`, and active save icons lack the tooltip supplied by the disabled state.
-- `MoveChunkAction.ts:27-29` constructs a move description before detecting a boundary no-op, producing misleading text such as movement to position zero.
-- Several controls are clickable SVGs without button semantics, tab stops, or keyboard handlers: chunk/witness actions, preview navigation and zoom, save, and other panel controls. Keyboard-only users cannot reliably operate them.
-- `EditSiglaGroup` styles its non-destructive confirm button as danger/red. This is a small UI inconsistency worth design review.
-- `MceComposer.tsx:160-179` performs state updates during rendering for invalid route IDs. It is fragile and does not recover if the route becomes valid without remounting.
-- The 32-bit hash used for history signatures and cache keys has a low-probability collision risk for correctness-sensitive saved-state and cached-edition identity.
 
 ## Test-suite gaps
 
@@ -33,7 +25,6 @@ The existing suite has meaningful unit coverage for happy-path actions and some 
 - Existing panel tests mock several integrations, leaving real siglum editing, pending marginal-foliation updates, and dialog behavior unexercised together.
 - Action tests omit update/action boundary cases, invalid group changes, stale state cleanup, missing sigla, duplicate table versions, and repeated-history paths.
 - `SessionPanel` tests do not cover row navigation, saved/current indicators, timed refresh, or `historyVersion` refresh.
-- There is no accessibility coverage for keyboard operation and semantic roles of interactive icon controls.
 
 ## Improvement opportunities
 

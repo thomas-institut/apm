@@ -14,25 +14,6 @@
 
 **Required regression tests:** Reject one version-info request and one generation fetch; assert visible failure/recovery behavior and cleared progress state.
 
-### Error handlers for adding and updating chunks can throw
-
-**Evidence:** `MceComposer.tsx:487-490` and `554-557` cast unknown rejection values to `String` and call `.toString()`. A rejection with `null` or `undefined` throws inside the catch block.
-
-**Impact:** Instead of a meaningful failure result, the action produces an unhandled error.
-
-**Recommendation:** Normalize unknown errors safely, for example with `String(error ?? 'Unknown error')` or a shared error-message helper.
-
-**Required regression test:** Reject `getSingleChunkData` with `undefined` for both flows and assert a stable error result.
-
-### Single-chunk edition-cache keys can collide
-
-**Evidence:** `MceComposer.tsx:367-373` derives its marginal-foliation part with `.join('')`. Index arrays `[1, 23]` and `[12, 3]` both produce `123`.
-
-**Impact:** A generated single-chunk edition may be reused for a different marginal-foliation selection.
-
-**Recommendation:** Serialize the index array unambiguously, for example with `JSON.stringify` or a delimiter not valid in numeric indexes.
-
-**Required regression test:** Generate/cache both selections and assert distinct keys and results.
 
 ### Added witnesses can receive an undefined siglum
 

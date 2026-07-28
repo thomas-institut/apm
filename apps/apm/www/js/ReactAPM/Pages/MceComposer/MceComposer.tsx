@@ -463,7 +463,7 @@ export default function MceComposer() {
     const singleChunkEditionCacheKey = (chunkIndex: number) => {
       const chunkInfo = mceData.chunks[chunkIndex];
       const margFoliationArray = mceData.includeInAutoMarginalFoliation ?? [];
-      const marginalKey = margFoliationArray.length === 0 ? 'no_marginals' : margFoliationArray.join('');
+      const marginalKey = margFoliationArray.length === 0 ? 'no_marginals' : margFoliationArray.join('_');
 
       return `${chunkInfo.chunkId}:${chunkInfo.chunkEditionTableId}:${chunkInfo.version}:${marginalKey}`;
     };

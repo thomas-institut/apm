@@ -345,6 +345,8 @@ export class MceData {
       mceData.witnesses = [];
       mceData.sigla = [];
       mceData.siglaGroups = [];
+      mceData.chunkOrder = [];
+      mceData.includeInAutoMarginalFoliation = [];
       return mceData;
     }
     if (mceData.chunkOrder === undefined) {

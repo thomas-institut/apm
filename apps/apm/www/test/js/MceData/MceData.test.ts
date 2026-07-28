@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MceData } from '@/MceData/MceData.js';
 import { MceDataInterface } from '@/MceData/MceDataInterface.js';
+import { CtDataInterface } from '@/CtData/CtDataInterface.js';
 
 describe('MceData', () => {
 
@@ -294,13 +295,22 @@ describe('MceData', () => {
   });
 
   describe('deleteChunk', () => {
-    it('handles deleting the only chunk', () => {
+    it('resets index-based arrays after deleting the only chunk', async () => {
       const mceData = MceData.createEmpty();
-      mceData.chunks = [{ chunkId: 'c1' } as any];
-      mceData.witnesses = [{ witnessId: 'w1' } as any];
+      mceData.chunks = [{
+        chunkId: 'c1',
+        break: 'paragraph',
+        chunkEditionTableId: 1,
+        lineNumbersRestart: false,
+        title: 'Chunk 1',
+        version: 'v1',
+        witnessIndices: [0]
+      }];
+      mceData.witnesses = [{ witnessId: 'w1', title: 'Witness 1' }];
       mceData.sigla = ['W1'];
       mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0] }];
       mceData.chunkOrder = [0];
+      mceData.includeInAutoMarginalFoliation = [0];
 
       MceData.deleteChunk(mceData, 0);
 
@@ -308,6 +318,34 @@ describe('MceData', () => {
       expect(mceData.witnesses).toEqual([]);
       expect(mceData.sigla).toEqual([]);
       expect(mceData.siglaGroups).toEqual([]);
+      expect(mceData.chunkOrder).toEqual([]);
+      expect(mceData.includeInAutoMarginalFoliation).toEqual([]);
+
+      const replacementChunkData: CtDataInterface = {
+        lang: 'la',
+        witnesses: [],
+        editionWitnessIndex: 0,
+        witnessTitles: [],
+        witnessOrder: [],
+        sigla: [],
+        siglaGroups: [],
+        chunkId: 'c2',
+        tableId: 2,
+        customApparatuses: [],
+        schemaVersion: '1.0',
+        type: 'edition',
+        title: 'Replacement chunk',
+        collationMatrix: [],
+        groupedColumns: [],
+        automaticNormalizationsApplied: [],
+        excludeFromAutoCriticalApparatus: [],
+        includeInAutoMarginalFoliation: [],
+        archived: false
+      };
+
+      await MceData.addChunk(mceData, 2, replacementChunkData, 'v2', async () => '', async () => '');
+
+      expect(mceData.chunkOrder).toEqual([0]);
     });
 
     it('deletes a chunk and updates chunkOrder', () => {

@@ -1,4 +1,4 @@
-import {useParams} from "react-router";
+import {useParams, useNavigate} from "react-router";
 import {cloneElement, JSX, useContext, useEffect, useRef, useState} from "react";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
@@ -49,7 +49,7 @@ import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/Delet
 import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
-import {urlGen} from "@/pages/common/SiteUrlGen";
+import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
@@ -164,6 +164,7 @@ export default function MceComposer() {
   const shimWidth = 5;
 
   const {id} = useParams();
+  const navigate = useNavigate();
   const appContext = useContext(AppContext);
   let mceDataId = -1;
 
@@ -905,8 +906,7 @@ export default function MceComposer() {
     }
     console.log(`Saved MCE data`, response);
     if (mceDataId === -1) {
-      // TODO: make sure this redirects to the right place!
-      window.location.href = urlGen.siteMultiChunkEdition(response.id);
+      navigate(RouteUrls.multiChunkEdition(response.id));
     }
     // reset history
     history.reset(history.getCurrentState(), 'Last save');

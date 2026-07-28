@@ -13,7 +13,7 @@ interface SaveButtonProps {
 
 export default function MceComposerSaveButton({changes, onClick, saveError}: SaveButtonProps) {
 
-  const [saving, setSaving] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const handleOnClick = async () => {
     if (saving){

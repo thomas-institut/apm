@@ -66,6 +66,6 @@ describe('Sigla group actions', () => {
     const state = buildState();
     const action = new DeleteSiglaGroupAction(5);
 
-    await expect(action.execute(state)).rejects.toBe('Sigla group at index 5 does not exist');
+    await expect(action.execute(state)).rejects.toThrow('Sigla group at index 5 does not exist');
   });
 });

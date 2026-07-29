@@ -12,6 +12,7 @@ import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceData} from '@/MceData/MceData';
 import {MceDataEditionGenerator} from '@/MceData/MceDataEditionGenerator';
+import {ConflictError, OperationalError} from '@/lib/Error/SystemError';
 
 const mockRouteParams = vi.hoisted(() => ({id: 'new'}));
 const mockedAddChunk = vi.hoisted(() => ({
@@ -1321,6 +1322,172 @@ describe('MceComposer', () => {
     expect(container.querySelector('.icon-btn[title="Settings"]')).not.toBeNull();
     expect(container.textContent).toContain('You have discovered a bug in the software');
     expect(container.textContent).toContain('ChangeTitleAction failed');
+
+    historyDoSpy.mockRestore();
+  });
+
+  it('shows operational action errors in the toolbar and clears them after a timeout', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do').mockImplementation(() => {
+      throw new OperationalError('temporary issue');
+    });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (container.querySelector('[data-testid="editable-text-field"]') as HTMLElement).click();
+    });
+
+    expect(container.querySelector('.bug-icon')).toBeNull();
+    expect(container.querySelector('.action-error-message')?.textContent).toContain('ChangeTitleAction failed. OperationalError: temporary issue');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(5000);
+    });
+
+    expect(container.querySelector('.action-error-message')).toBeNull();
+
+    historyDoSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('clears operational action errors as soon as a new action is initiated', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do')
+      .mockImplementationOnce(() => {
+        throw new OperationalError('temporary issue');
+      })
+      .mockImplementation(async () => {
+      });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (container.querySelector('[data-testid="editable-text-field"]') as HTMLElement).click();
+    });
+
+    expect(container.querySelector('.action-error-message')?.textContent).toContain('ChangeTitleAction failed. OperationalError: temporary issue');
+
+    await act(async () => {
+      (container.querySelector('[data-testid="editable-text-field"]') as HTMLElement).click();
+      await Promise.resolve();
+    });
+
+    expect(container.querySelector('.action-error-message')).toBeNull();
+    expect(container.querySelector('.bug-icon')).toBeNull();
+
+    historyDoSpy.mockRestore();
+  });
+
+  it('treats non-operational system errors as bugs', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do').mockImplementation(() => {
+      throw new ConflictError('conflict');
+    });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      (container.querySelector('[data-testid="editable-text-field"]') as HTMLElement).click();
+    });
+
+    expect(container.querySelector('.bug-icon')).not.toBeNull();
+    expect(container.querySelector('.icon-btn[title^="Undo"]')).toBeNull();
+    expect(container.textContent).toContain('ChangeTitleAction failed. ConflictError: conflict');
 
     historyDoSpy.mockRestore();
   });

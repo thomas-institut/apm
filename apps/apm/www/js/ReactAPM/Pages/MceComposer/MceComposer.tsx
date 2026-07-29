@@ -55,6 +55,7 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
+import {OperationalError} from "@/lib/Error/SystemError";
 
 // TODO before release (2026-07-29))
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
@@ -134,6 +135,7 @@ const CHUNK_FETCH_BATCH_SIZE = 5;
 const MCE_DATA_NOT_LOADED_ERROR = 'Cannot modify MCE data until it is loaded';
 const SAVING_EDIT_ERROR = 'Cannot modify MCE data while saving';
 const EDIT_IN_PROGRESS_ERROR = 'Cannot modify MCE data while another edit is in progress';
+const OPERATIONAL_ACTION_ERROR_TIMEOUT_MS = 5000;
 
 const getMessageFromThrownError = (error: unknown): string => {
   if (error instanceof Error) {
@@ -167,6 +169,7 @@ export default function MceComposer() {
   const [chunksPanelVersion, setChunksPanelVersion] = useState<number>(0);
   const [foundBug, setFoundBug] = useState<boolean>(false);
   const [foundBugDescription, setFoundBugDescription] = useState<string>('');
+  const [operationalActionErrorMsg, setOperationalActionErrorMsg] = useState<string | null>(null);
   const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -183,6 +186,7 @@ export default function MceComposer() {
   const editorSessionRef = useRef(0);
   const inFlightChunkLoadRequestsRef = useRef<Record<string, Promise<ChunkLoadResult>>>({});
   const chunkLoadBatchRequestRef = useRef(0);
+  const operationalActionErrorTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   /**
    * Cache of generated editions, indexed by data's hash
    */
@@ -245,6 +249,11 @@ export default function MceComposer() {
     setChanges([]);
     setFoundBug(false);
     setFoundBugDescription('');
+    if (operationalActionErrorTimeoutRef.current !== null) {
+      clearTimeout(operationalActionErrorTimeoutRef.current);
+      operationalActionErrorTimeoutRef.current = null;
+    }
+    setOperationalActionErrorMsg(null);
     setEditionOutOfDate(true);
     setSaving(false);
     setSaveError(null);
@@ -556,13 +565,52 @@ export default function MceComposer() {
     document.title = `MCE: ${mceData.title}`;
   }, [mceData]);
 
+  useEffect(() => {
+    return () => {
+      if (operationalActionErrorTimeoutRef.current !== null) {
+        clearTimeout(operationalActionErrorTimeoutRef.current);
+        operationalActionErrorTimeoutRef.current = null;
+      }
+    };
+  }, []);
+
+  const clearOperationalActionError = () => {
+    if (operationalActionErrorTimeoutRef.current !== null) {
+      clearTimeout(operationalActionErrorTimeoutRef.current);
+      operationalActionErrorTimeoutRef.current = null;
+    }
+    setOperationalActionErrorMsg(null);
+  };
+
+  const reportOperationalActionError = (actionName: string, error: OperationalError) => {
+    console.warn(`${actionName} failed`, error);
+    clearOperationalActionError();
+    const errorMessage = getMessageFromThrownError(error);
+    setOperationalActionErrorMsg(`${actionName} failed. ${errorMessage}`);
+    operationalActionErrorTimeoutRef.current = setTimeout(() => {
+      setOperationalActionErrorMsg(null);
+      operationalActionErrorTimeoutRef.current = null;
+    }, OPERATIONAL_ACTION_ERROR_TIMEOUT_MS);
+  };
+
   const reportActionBug = (actionName: string, error: unknown) => {
-    console.error(`${actionName} failed`, error);
+    console.warn(`${actionName} failed`, error);
     setFoundBug(true);
-    setFoundBugDescription(`${actionName} failed. ${error}`);
+    setFoundBugDescription(`${actionName} failed. ${getMessageFromThrownError(error)}`);
+  };
+
+  const reportActionError = (actionName: string, error: unknown): boolean => {
+    if (error instanceof OperationalError) {
+      reportOperationalActionError(actionName, error);
+      return false;
+    }
+
+    reportActionBug(actionName, error);
+    return true;
   };
 
   const startMceDataEdit = () => {
+    clearOperationalActionError();
     if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current) {
       return false;
     }
@@ -594,7 +642,7 @@ export default function MceComposer() {
       try {
         await history.do(new DeleteChunkAction(chunkIndex));
       } catch (error) {
-        reportActionBug('DeleteChunkAction', error);
+        reportActionError('DeleteChunkAction', error);
         return false;
       }
       setHistoryVersion(v => v + 1);
@@ -653,8 +701,10 @@ export default function MceComposer() {
           getSourceTitle,
         ));
       } catch (error) {
-        reportActionBug('AddChunkAction', error);
-        return 'Bug found';
+        if (reportActionError('AddChunkAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
       }
 
       upsertCtDataStatus({
@@ -685,7 +735,7 @@ export default function MceComposer() {
       try {
         await history.do(new MoveChunkAction(chunkPosition, direction === 'up' ? 'backwards' : 'forwards'));
       } catch (error) {
-        reportActionBug('MoveChunkAction', error);
+        reportActionError('MoveChunkAction', error);
         return false;
       }
       setHistoryVersion(v => v + 1);
@@ -704,7 +754,7 @@ export default function MceComposer() {
       try {
         await history.do(new SetChunkBreakAction(chunkPosition, newBreak));
       } catch (error) {
-        reportActionBug('SetChunkBreakAction', error);
+        reportActionError('SetChunkBreakAction', error);
         return false;
       }
       setHistoryVersion(v => v + 1);
@@ -738,8 +788,10 @@ export default function MceComposer() {
           getDocTitle,
           getSourceTitle,));
       } catch (error) {
-        reportActionBug('UpdateChunkAction', error);
-        return 'Bug found';
+        if (reportActionError('UpdateChunkAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
       }
 
       upsertCtDataStatus({
@@ -769,7 +821,7 @@ export default function MceComposer() {
       try {
         await history.do(new SetSiglumAction(witnessIndex, newSiglum));
       } catch (error) {
-        reportActionBug('SetSiglumAction', error);
+        reportActionError('SetSiglumAction', error);
         return false;
       }
       setHistoryVersion(v => v + 1);
@@ -787,7 +839,7 @@ export default function MceComposer() {
       try {
         await history.do(new SetIncludeInAutoMarginalFoliationAction(witnessIndex, newState));
       } catch (error) {
-        reportActionBug('SetIncludeInAutoMarginalFoliationAction', error);
+        reportActionError('SetIncludeInAutoMarginalFoliationAction', error);
         return false;
       }
       setHistoryVersion(v => v + 1);
@@ -805,7 +857,7 @@ export default function MceComposer() {
       try {
         await history.do(new DeleteSiglaGroupAction(siglaGroupIndex));
       } catch (error) {
-        reportActionBug('DeleteSiglaGroupAction', error);
+        reportActionError('DeleteSiglaGroupAction', error);
         return false;
       }
       setHistoryVersion(v => v + 1);
@@ -823,7 +875,7 @@ export default function MceComposer() {
       try {
         await history.do(new ChangeSiglaGroupAction(siglaGroupIndex, newGroup));
       } catch (error) {
-        reportActionBug('ChangeSiglaGroupAction', error);
+        reportActionError('ChangeSiglaGroupAction', error);
         return false;
       }
       setHistoryVersion(v => v + 1);
@@ -844,7 +896,7 @@ export default function MceComposer() {
       try {
         await history.do(new ChangeTitleAction(sanitizedTitle));
       } catch (error) {
-        reportActionBug('ChangeTitleAction', error);
+        reportActionError('ChangeTitleAction', error);
         return false;
       }
       setHistoryVersion(v => v + 1);
@@ -1243,6 +1295,7 @@ export default function MceComposer() {
   const notificationsDiv = <div className={'notifications'}>
     {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
+    {operationalActionErrorMsg !== null && <span className={'text-danger action-error-message'}>{operationalActionErrorMsg}</span>}
     {saving && <span className={'text-primary'}>Saving... <Spinner size={'sm'}/></span>}
   </div>;
 

@@ -18,7 +18,6 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker';
 import {CtData} from '../../CtData/CtData.js';
 import {
   CtDataInterface,
@@ -29,7 +28,7 @@ import {
 } from "../../CtData/CtDataInterface.js";
 import * as ApparatusType from '../../constants/ApparatusType.js';
 
-import {EditionGenerator} from './EditionGenerator.js';
+import {EditionGenerator, EditionGeneratorOptions} from './EditionGenerator.js';
 import {CriticalApparatusGenerator} from './CriticalApparatusGenerator.js';
 import {EditionWitnessInfo} from '../EditionWitnessInfo.js';
 import {ApparatusTools} from '../ApparatusTools.js';
@@ -48,24 +47,28 @@ import * as MainTextTokenType from "../MainTextTokenType.js";
 import {Punctuation} from "../../defaults/Punctuation.js";
 import {Apparatus} from "../../Edition/Apparatus.js";
 
+interface CtDataEditionGeneratorOptions extends EditionGeneratorOptions {
+  ctData: CtDataInterface;
+  lastFoliationChanges?: FoliationChangeInfoInterface[];
+}
+
 export class CtDataEditionGenerator extends EditionGenerator {
-  private options: any;
+  private options: Required<CtDataEditionGeneratorOptions>;
   private readonly ctData: CtDataInterface;
   private readonly lastFoliationChanges: FoliationChangeInfoInterface[];
 
-  constructor(options: any) {
+  constructor(options: CtDataEditionGeneratorOptions) {
     super(options);
-    let optionsSpec = {
-      ctData: {type: 'object', required: true}, lastFoliationChanges: {type: 'array', default: []},
+    const defaultOptions = {
+      lastFoliationChanges: [],
+      debug: false,
+      verbose: false
     };
-
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'CtDataEditionGenerator'});
-
-    this.options = oc.getCleanOptions(options);
+    this.options = {...defaultOptions, ...options};
     this.lastFoliationChanges = this.options.lastFoliationChanges;
     this.ctData = this.options.ctData;
     this.verbose = false;
-    this.debug = false
+    this.debug = false;
   }
 
 

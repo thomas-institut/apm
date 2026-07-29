@@ -231,7 +231,7 @@ function getFoliationForToken(token: WitnessTokenInterface, items: FullTxItemInt
 /**
  * Returns the last foliation found in the given array of foliation change info objects.
  *
- * If no foliation is found in the array, returns an empty string
+ * If no foliation is found in the array, it returns an empty string
  *
  * @param {FoliationChangeInfoInterface[]}foliationChangeInfoArray
  * @param {number}witnessIndex

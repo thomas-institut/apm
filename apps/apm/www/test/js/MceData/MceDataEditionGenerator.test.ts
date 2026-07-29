@@ -162,6 +162,22 @@ describe('MceDataEditionGenerator', () => {
 
       expect(generator.mergeFoliationChanges([], current)).toEqual(current);
     });
+
+    it('converts chunk witness indices before merging foliation changes', () => {
+      const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn()});
+      const previous: FoliationChangeInfoInterface[] = [
+        {collationTableColumn: 2, witnessIndex: 5, previousFoliation: '1r', newFoliation: '1v'},
+      ];
+      const current: FoliationChangeInfoInterface[] = [
+        {collationTableColumn: 3, witnessIndex: 0, previousFoliation: '1v', newFoliation: '2r'},
+      ];
+
+      const merged = generator.mergeFoliationChanges(previous, current, [5, 3]);
+
+      expect(merged).toEqual([
+        {collationTableColumn: 3, witnessIndex: 5, previousFoliation: '1v', newFoliation: '2r'},
+      ]);
+    });
   });
 
   describe('regenerateSingleChunkEdition', () => {

@@ -2,7 +2,7 @@
  * Interface representing information related to a foliation change
  * associated with a column in the collation table.
  *
- * For example:
+ * For example,
  * ```
  * {
  *  collationTableColumn: 20,
@@ -21,5 +21,9 @@ export interface FoliationChangeInfoInterface {
   previousFoliation: string;
 }
 
+
+export function fcToStr(foliationChangeInfo: FoliationChangeInfoInterface): string {
+  return `W ${foliationChangeInfo.witnessIndex}: '${foliationChangeInfo.previousFoliation}' → '${foliationChangeInfo.newFoliation}' @ ${foliationChangeInfo.collationTableColumn}`;
+}
 
 

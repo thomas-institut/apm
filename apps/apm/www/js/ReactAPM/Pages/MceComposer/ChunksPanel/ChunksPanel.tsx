@@ -27,7 +27,8 @@ interface ChunksPanelProps extends TabbableElementProps {
    */
   moveChunk?: (chunkIndex: number, direction: 'up' | 'down') => boolean | Promise<boolean>;
   setChunkBreak?: (chunkIndex: number, breakAfter: string) => boolean | Promise<boolean>;
-  checkForChunkUpdates?: () => Promise<void>;
+  checkForChunkUpdates?: () => Promise<true | string>;
+  lastFullChunkLoadTime?: Date | null;
   ctDataStatusArray: CtDataStatus[];
   /**
    * A version number that is incremented whenever the panel needs to be redrawn.
@@ -60,6 +61,7 @@ export default function ChunksPanel({
                                       moveChunk,
                                       setChunkBreak,
                                       checkForChunkUpdates,
+                                      lastFullChunkLoadTime,
                                       version,
                                       active
                                     }: ChunksPanelProps) {
@@ -74,8 +76,13 @@ export default function ChunksPanel({
   const [highlightedChunkId, setHighlightedChunkId] = useState<string | null>(null);
   const [pendingHighlightChunkId, setPendingHighlightChunkId] = useState<string | null>(null);
   const [checkingForUpdates, setCheckingForUpdates] = useState<boolean>(false);
-  const [lastCheckForUpdates, setLastCheckForUpdates] = useState<Date|null>(null);
+  const [lastCheckForUpdates, setLastCheckForUpdates] = useState<Date | null>(lastFullChunkLoadTime ?? null);
+  const [checkForUpdatesError, setCheckForUpdatesError] = useState<string | null>(null);
   const [_refreshTick, setRefreshTick] = useState(0);
+
+  useEffect(() => {
+    setLastCheckForUpdates(lastFullChunkLoadTime ?? null);
+  }, [lastFullChunkLoadTime]);
 
   useEffect(() => {
     const interval = setInterval(() => setRefreshTick(t => t + 1), 60000);
@@ -255,10 +262,22 @@ export default function ChunksPanel({
   const handleOnClickCheckForUpdates = async () => {
     if (checkForChunkUpdates !== undefined) {
       setCheckingForUpdates(true);
-      await nextTick();
-      await checkForChunkUpdates();
-      setLastCheckForUpdates(new Date());
-      setCheckingForUpdates(false);
+      setCheckForUpdatesError(null);
+      try {
+        await nextTick();
+        const checkResult = await checkForChunkUpdates();
+        if (checkResult === true) {
+          setLastCheckForUpdates(new Date());
+          setCheckForUpdatesError(null);
+        } else {
+          setCheckForUpdatesError(checkResult);
+        }
+      } catch (error) {
+        console.error('Error checking for chunk updates', error);
+        setCheckForUpdatesError('Could not retrieve chunk status: unexpected error');
+      } finally {
+        setCheckingForUpdates(false);
+      }
     }
   }
 
@@ -318,7 +337,7 @@ export default function ChunksPanel({
                                                          smartContainer={true}
                                                          pendingTitle={`Setting break for chunk ${row.chunkId}`}>
         <MultiToggle options={chunkBreakMultiToggleOptionSpecs}
-                     className={row.isLast ? 'grayed-out' : ''}
+                     className={(row.isLast || isAnyPending) ? 'grayed-out' : ''}
                      onChange={(breakAfter) => handleSetChunkBreak(index, breakAfter)}
                      selected={row.breakAfter ?? 'none'}/>
       </ComponentWithPending>,
@@ -328,11 +347,11 @@ export default function ChunksPanel({
       title: '',
       cellContent: (row, index) => {
         const arrowUpClasses = ['icon-btn'];
-        if (row.isFirst) {
+        if (row.isFirst || isAnyPending) {
           arrowUpClasses.push('disabled');
         }
         const arrowDownClasses = ['icon-btn'];
-        if (row.isLast) {
+        if (row.isLast || isAnyPending) {
           arrowDownClasses.push('disabled');
         }
         const getArrowTitle = (direction: 'up' | 'down') => {
@@ -372,14 +391,14 @@ export default function ChunksPanel({
               case 'delete':
                 return <ComponentWithPending key={'delete'} pending={pendingDeleteChunkIndex === index}
                                              pendingTitle={`Removing chunk ${row.chunkId}`}>
-                  <Trash className={'icon-btn'}
+                  <Trash className={'icon-btn' + (isAnyPending ? ' disabled' : '')}
                          title={isAnyPending ? '' : `Click to remove chunk ${row.chunkId} from the edition`}
                          onClick={() => handleDeleteChunk(index)}/>
                 </ComponentWithPending>;
               case 'update':
                 return <ComponentWithPending key={'update'} pending={pendingUpdateChunkIndex === index}
                                              pendingTitle={`Updating chunk ${row.chunkId}`}>
-                  <ArrowClockwise key={'update'} className={'icon-btn'}
+                  <ArrowClockwise key={'update'} className={'icon-btn' + (isAnyPending ? ' disabled' : '')}
                                   title={`Click to update chunk ${row.chunkId} to ${row.lastVersionTimeStamp == null ? 'latest version' : ApmFormats.time(row.lastVersionTimeStamp)}`}
                                   onClick={() => handleUpdateChunk(index)}/>
                 </ComponentWithPending>;
@@ -421,6 +440,7 @@ export default function ChunksPanel({
         <Button variant={'outline-secondary'} size={'sm'} onClick={handleOnClickCheckForUpdates}>
           Check now
         </Button>
+        {checkForUpdatesError !== null ? <span className={'chunk-table-error'}>{checkForUpdatesError}</span> : null}
       </div>
     </ComponentWithPending>
   </div>;

@@ -1272,6 +1272,116 @@ describe('MceComposer', () => {
     vi.useRealTimers();
   });
 
+  it('does not block page unload when there are no unsaved changes', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    const beforeUnloadListenerCalls = addEventListenerSpy.mock.calls.filter((call) => call[0] === 'beforeunload');
+    // @ts-ignore
+    const beforeUnloadListener = beforeUnloadListenerCalls.at(-1)?.[1] as ((event: BeforeUnloadEvent) => void) | undefined;
+    expect(beforeUnloadListener).toBeDefined();
+
+    const beforeUnloadEvent = {
+      preventDefault: vi.fn(),
+      returnValue: undefined,
+    } as unknown as BeforeUnloadEvent;
+
+    beforeUnloadListener!(beforeUnloadEvent);
+    expect(beforeUnloadEvent.preventDefault).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+
+    addEventListenerSpy.mockRestore();
+  });
+
+  it('blocks page unload when there are unsaved changes', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const addEventListenerSpy = vi.spyOn(window, 'addEventListener');
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    await act(async () => {
+      await mockedEditorHandlers.changeTitle!('Changed title');
+      await flushEffects();
+    });
+
+    const beforeUnloadListenerCalls = addEventListenerSpy.mock.calls.filter((call) => call[0] === 'beforeunload');
+    // @ts-ignore
+    const beforeUnloadListener = beforeUnloadListenerCalls.at(-1)?.[1] as ((event: BeforeUnloadEvent) => void) | undefined;
+    expect(beforeUnloadListener).toBeDefined();
+
+    const beforeUnloadEvent = {
+      preventDefault: vi.fn(),
+      returnValue: undefined,
+    } as unknown as BeforeUnloadEvent;
+
+    beforeUnloadListener!(beforeUnloadEvent);
+    expect(beforeUnloadEvent.preventDefault).toHaveBeenCalledTimes(1);
+    expect(beforeUnloadEvent.returnValue).toBe('true');
+
+    await act(async () => {
+      root.unmount();
+    });
+
+    addEventListenerSpy.mockRestore();
+  });
+
   it('shows a bug icon and message when an action throws', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;

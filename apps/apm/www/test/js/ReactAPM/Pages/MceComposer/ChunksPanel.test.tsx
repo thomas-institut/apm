@@ -410,6 +410,38 @@ describe('ChunksPanel', () => {
     vi.useRealTimers();
   });
 
+  it('shows the last full chunk load time as initial last check for updates', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    vi.useFakeTimers();
+
+    const now = new Date('2026-07-23T20:27:00Z');
+    const lastFullChunkLoadTime = new Date('2026-07-23T20:25:00Z');
+    vi.setSystemTime(now);
+
+    const chunk = buildChunk();
+
+    await act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk]}
+          chunkOrder={[0]}
+          ctDataStatusArray={[buildCtDataStatus(chunk)]}
+          lastFullChunkLoadTime={lastFullChunkLoadTime}
+        />
+      );
+    });
+
+    expect(container.textContent).not.toContain('Last check for updates: Never');
+    expect(container.textContent).toContain('(2 mins ago)');
+
+    await act(async () => {
+      root.unmount();
+    });
+    vi.useRealTimers();
+  });
+
   it('updates the "last check for updates" time ago every minute', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
@@ -417,7 +449,7 @@ describe('ChunksPanel', () => {
     vi.useFakeTimers();
 
     const chunk = buildChunk();
-    const checkForChunkUpdates = vi.fn().mockResolvedValue(undefined);
+    const checkForChunkUpdates = vi.fn().mockResolvedValue(true);
 
     await act(async () => {
       root.render(
@@ -462,6 +494,47 @@ describe('ChunksPanel', () => {
     });
 
     expect(container.textContent).toContain('(2 mins ago)');
+
+    await act(async () => {
+      root.unmount();
+    });
+    vi.useRealTimers();
+  });
+
+  it('shows a check error next to the button and does not set last check time when check fails', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    vi.useFakeTimers();
+
+    const chunk = buildChunk();
+    const checkForChunkUpdates = vi.fn().mockResolvedValue('Could not retrieve chunk status: Network Error');
+
+    await act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk]}
+          chunkOrder={[0]}
+          ctDataStatusArray={[buildCtDataStatus(chunk)]}
+          checkForChunkUpdates={checkForChunkUpdates}
+        />
+      );
+    });
+
+    const checkNowButton = container.querySelector('button.btn-outline-secondary') || container.querySelector('button');
+
+    await act(async () => {
+      (checkNowButton as HTMLButtonElement).click();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    expect(checkForChunkUpdates).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain('Last check for updates: Never');
+    expect(container.textContent).toContain('Could not retrieve chunk status: Network Error');
 
     await act(async () => {
       root.unmount();

@@ -48,6 +48,10 @@
         }
     }
 
+    .multi-toggle.grayed-out {
+        opacity: 0.5;
+    }
+
 }
 
 :root {

@@ -56,6 +56,7 @@ import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChun
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 import {OperationalError} from "@/lib/Error/SystemError";
+import {ApmApiClientError} from "@/Api/ApmApiClient";
 
 // TODO before release (2026-07-29))
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
@@ -173,6 +174,7 @@ export default function MceComposer() {
   const [editionOutOfDate, setEditionOutOfDate] = useState<boolean>(true);
   const [saving, setSaving] = useState<boolean>(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [lastFullChunkLoadTime, setLastFullChunkLoadTime] = useState<Date | null>(null);
 
 
   const singleChunkEditionCache = useRef<Record<string, Edition>>({});
@@ -257,6 +259,7 @@ export default function MceComposer() {
     setEditionOutOfDate(true);
     setSaving(false);
     setSaveError(null);
+    setLastFullChunkLoadTime(null);
   }, [id, isMceDataIdValid]);
 
   // 1. Hook to load MceData (Phase: start -> loadingMce -> loadingSingleChunks)
@@ -326,6 +329,9 @@ export default function MceComposer() {
 
     if (allLoaded || ctDataStatusArray.length === 0) {
       // console.log('All chunks loaded', ctDataStatusArray);
+      if (allLoaded) {
+        setLastFullChunkLoadTime(new Date());
+      }
       const initialHistory = new StateHistory<MceComposerHistoryState>(deepCopy({mceData}));
       setHistory(initialHistory);
       setSavedStateSignature(initialHistory.getCurrentStateSignature());
@@ -564,6 +570,24 @@ export default function MceComposer() {
   useEffect(() => {
     document.title = `MCE: ${mceData.title}`;
   }, [mceData]);
+
+  useEffect(() => {
+    const hasUnsavedChanges = changes.length > 0;
+
+    const handleBeforeUnload = (event: BeforeUnloadEvent) => {
+      if (!hasUnsavedChanges) {
+        return;
+      }
+      event.preventDefault();
+      event.returnValue = 'true';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [changes]);
 
   useEffect(() => {
     return () => {
@@ -937,33 +961,42 @@ export default function MceComposer() {
     }
   };
 
-  const checkForChunkUpdates = async () => {
-    const updatePromises = ctDataStatusArray.map(async (ctDataStatus) => {
-      if (ctDataStatus.ctDataState !== 'loaded') {
-        return ctDataStatus;
-      }
-      if (ctDataStatus.loadedVersionTimeStamp === null) {
-        return ctDataStatus;
-      }
-      const tableId = ctDataStatus.ctDataId;
-      console.log(`Checking for chunk updates for table ${tableId}`);
-      const latestVersionInfo = await appContext.apiClient.collationTableVersionInfo(tableId, 'latest');
-      if (latestVersionInfo !== null) {
-        const isLatestVersion = ctDataStatus.loadedVersionTimeStamp === latestVersionInfo.timeFrom;
-        if (!isLatestVersion) {
-          console.log(`Table ${tableId} has a newer version: ${latestVersionInfo.timeFrom}`);
+  const checkForChunkUpdates = async (): Promise<true | string> => {
+    try {
+      const updatePromises = ctDataStatusArray.map(async (ctDataStatus) => {
+        if (ctDataStatus.ctDataState !== 'loaded') {
+          return ctDataStatus;
         }
-        return {
-          ...ctDataStatus,
-          lastVersionTimeStamp: latestVersionInfo.timeFrom,
-          isLatestVersion,
-        };
-      } else {
-        console.warn('No latest version info for table', tableId);
+        if (ctDataStatus.loadedVersionTimeStamp === null) {
+          return ctDataStatus;
+        }
+        const tableId = ctDataStatus.ctDataId;
+        console.log(`Checking for chunk updates for table ${tableId}`);
+        const latestVersionInfo = await appContext.apiClient.collationTableVersionInfo(tableId, 'latest');
+        if (latestVersionInfo !== null) {
+          const isLatestVersion = ctDataStatus.loadedVersionTimeStamp === latestVersionInfo.timeFrom;
+          if (!isLatestVersion) {
+            console.log(`Table ${tableId} has a newer version: ${latestVersionInfo.timeFrom}`);
+          }
+          return {
+            ...ctDataStatus,
+            lastVersionTimeStamp: latestVersionInfo.timeFrom,
+            isLatestVersion,
+          };
+        } else {
+          console.warn('No latest version info for table', tableId);
+        }
+        return ctDataStatus;
+      });
+      setCtDataStatusArray(await Promise.all(updatePromises));
+      return true;
+    } catch (error) {
+      console.error('Could not check for chunk updates', error);
+      if (error instanceof ApmApiClientError && error.errorType === 'network') {
+        return 'Could not retrieve chunk status: Network Error';
       }
-      return ctDataStatus;
-    });
-    setCtDataStatusArray(await Promise.all(updatePromises));
+      return 'Could not retrieve chunk status: unexpected error';
+    }
   };
 
 
@@ -1106,6 +1139,7 @@ export default function MceComposer() {
       expandable: true,
       content: <ChunksPanel chunks={mceData.chunks}
                             version={chunksPanelVersion}
+                            lastFullChunkLoadTime={lastFullChunkLoadTime}
                             chunkOrder={mceData.chunkOrder ?? MceData.getDefaultChunkOrder(mceData)}
                             ctDataStatusArray={ctDataStatusArray}
                             moveChunk={moveChunk}

@@ -2,6 +2,7 @@ import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {InvalidDataStructureError, ValidationError} from "@/lib/Error/SystemError";
 
 const BreakLabels : Record<string, string> = {
     '': 'None',
@@ -21,12 +22,12 @@ export class SetChunkBreakAction implements StateTransformAction<MceComposerHist
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const chunkOrder = state.mceData.chunkOrder;
     if (chunkOrder === undefined) {
-      throw `Chunk order is undefined`;
+      throw new InvalidDataStructureError(`Chunk order is undefined`);
     }
     const chunkIndex = chunkOrder[this.chunkPosition];
     const chunk = state.mceData.chunks[chunkIndex];
     if (!chunk) {
-      throw `Chunk at position ${this.chunkPosition} does not exist`;
+      throw new ValidationError(`Chunk at position ${this.chunkPosition} does not exist`);
     }
     if (state.mceData.chunks[chunkIndex].break === this.newBreak) {
       // nothing to do

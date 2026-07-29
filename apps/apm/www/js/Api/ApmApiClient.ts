@@ -57,6 +57,7 @@ import {CtData} from "@/CtData/CtData";
 import {ApiErrorResponse} from "@/Api/DataSchema/ApiResponse";
 import {ApiLoginRequest, ApiLoginResponse} from "@/Api/DataSchema/ApiLogin";
 import {ApiMceData, ApiMceSaveRequest, ApiMceSaveResponse} from "@/Api/DataSchema/ApiMceData";
+import {OperationalError} from "@/lib/Error/SystemError";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -74,11 +75,19 @@ const MaxSystemEntityId = 10000000;
 
 export type EntityNameTuple = [number, string];
 
-export interface ApmApiClientError {
-  errorType: 'http' | 'authentication' | 'method' | 'network' | 'other';
-  httpStatus: number;
-  message: string;
-  data?: any;
+export type ApiClientErrorType = 'http' | 'authentication' | 'method' | 'network' | 'other';
+
+export class ApmApiClientError extends OperationalError {
+  public errorType: ApiClientErrorType;
+  public httpStatus: number;
+  public receivedData: any;
+  constructor(message: string, errorType: ApiClientErrorType, httpStatus: number, receivedData?: any) {
+    super(message);
+    this.name = 'ApmApiClientError';
+    this.errorType = errorType;
+    this.httpStatus = httpStatus;
+    this.receivedData = receivedData;
+  }
 }
 
 export interface ChunkInWorkInfo {
@@ -249,8 +258,10 @@ export class ApmApiClient {
       return await this.post(urlGen.apiSaveMultiChunkEdition(), request, true);
     } catch (error) {
       console.warn(`Error saving multi chunk edition`, error);
-      // @ts-ignore
-      return error.data as ApiErrorResponse;
+      if (error instanceof ApmApiClientError) {
+        return error.receivedData as ApiErrorResponse;
+      }
+      throw error;
     }
   }
 
@@ -261,7 +272,7 @@ export class ApmApiClient {
     if (lookingForLatestVersion) {
       const latestVersionInfo = await this.collationTableVersionInfo(tableId, 'latest');
       if (latestVersionInfo === null) {
-        throw `Table ${tableId} does not exist`;
+        throw new ApmApiClientError(`Table ${tableId} does not exist`, 'network', 404);
       }
       version = latestVersionInfo.timeFrom;
     }
@@ -369,7 +380,7 @@ export class ApmApiClient {
     if (apiResponse.result === 'Success') {
       return apiResponse.tableInfoArray;
     } else {
-      throw new Error(`Error getting active editions: ${apiResponse.message} (HTTP ${apiResponse.httpStatus})`)
+      throw new ApmApiClientError(apiResponse.message, 'network', apiResponse.httpStatus, apiResponse);
     }
   }
 
@@ -384,7 +395,7 @@ export class ApmApiClient {
   /**
    * Makes an API call to whoami and returns the user data.
    *
-   * If the API returns a non-authorized stats (401), returns null.
+   * If the API returns a non-authorized status (401), it returns null.
    *
    */
   async whoAmI(): Promise<any> {
@@ -399,10 +410,12 @@ export class ApmApiClient {
       // this results in a long TTL is bearer authentication is used, and effectively no caching otherwise
       const tokenFingerprint = ':' + await fingerprintToken(token ?? `Random${Math.floor(Math.random() * 1000000)}`);
       return await this.get(urlGen.apiWhoAmI(), false, TtlOneMinute * 15, true, tokenFingerprint);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.warn(`Error getting whoami`, error);
-      if (error.httpStatus === 401) {
-        return null;
+      if (error instanceof ApmApiClientError) {
+        if (error.httpStatus === 401) {
+          return null;
+        }
       }
       throw error;
     }
@@ -489,7 +502,7 @@ export class ApmApiClient {
     if (this.useBearerAuthentication) {
       const token = await this.getBearerToken();
       if (token === null) {
-        throw new Error('No authentication token available');
+        throw new ApmApiClientError('No authentication token available', "authentication", 401);
       }
       headers['Authorization'] = `Bearer ${token}`;
     }
@@ -503,7 +516,7 @@ export class ApmApiClient {
     });
 
     if (!response.ok) {
-      throw new Error(`Error ${response.status} fetching ${urlGen.apiBulkPageSettings()}`);
+      throw new ApmApiClientError(`Error ${response.status} fetching ${urlGen.apiBulkPageSettings()}`, "network", response.status);
     }
 
     const responseText = await response.text();
@@ -655,7 +668,6 @@ export class ApmApiClient {
 
   async apiEntityStatementsEdit(commands: StatementEditCommand[]): Promise<StatementEditResponse> {
     return this.post(urlGen.apiEntityStatementsEdit(), commands, true);
-    // return $.post(urlGen.apiEntityStatementsEdit(), JSON.stringify(commands));
   }
 
   /**
@@ -792,10 +804,10 @@ export class ApmApiClient {
 
   /**
    * Gets edition source information from server
-   * @param tid
+   * @param id
    */
-  getEditionSource(tid: number): Promise<any> {
-    return this.fetch(urlGen.apiEditionSourcesGet(tid), 'GET', {}, false, false, TtlOneHour);
+  getEditionSource(id: number): Promise<any> {
+    return this.fetch(urlGen.apiEditionSourcesGet(id), 'GET', {}, false, false, TtlOneHour);
   }
 
   private getEntityNameCacheKey(id: number) {
@@ -836,66 +848,66 @@ export class ApmApiClient {
    * @return {Promise<any>}
    * @throws {ApmApiClientError}
    */
-  private fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true, cacheKeyPostfix: string = ''): Promise<any> {
+  private async fetch(url: string, method: string = 'GET', payload: any, forceActualFetch: boolean = false, useRawData: boolean = false, ttl: number = -1, sessionCache = true, cacheKeyPostfix: string = ''): Promise<any> {
     let key = encodeURI(url) + cacheKeyPostfix;
     let fetcher = sessionCache ? this.cachedFetcher : this.localCachedFetcher;
-    return fetcher.fetch(key, () => {
-      return new Promise(async (resolve, reject: (e: ApmApiClientError) => void) => {
-        if (['GET', 'POST'].indexOf(method) === -1) {
-          reject({
-            errorType: 'method', httpStatus: -1, message: `Invalid method ${method} for URL ${url}`
-          });
-        }
-        let fetchOptions: any = {method: method};
-        if (this.useBearerAuthentication) {
-          const token = await this.getBearerToken();
-          if (token === null) {
-            reject({
-              errorType: 'authentication', httpStatus: -1, message: `No authentication token available`
-            });
-            return;
-          }
-          fetchOptions['headers'] = {'Authorization': `Bearer ${token}`};
-        }
-        const actualPayload = useRawData ? payload : {data: JSON.stringify(payload)};
+    return fetcher.fetch(key, async () => {
+      if (['GET', 'POST'].indexOf(method) === -1) {
+        throw new ApmApiClientError(`Invalid method ${method} for URL ${url}`, 'method', -1);
+      }
 
-        const fetchFunction = method === 'GET' ? () => {
-          return fetch(url, fetchOptions);
-        } : () => {
-          fetchOptions['headers'] = fetchOptions['headers'] || {};
-          fetchOptions['headers']['Content-Type'] = 'application/json';
-          fetchOptions['body'] = JSON.stringify(actualPayload);
-          //  this.verbose && console.log(`Sending POST request to ${url}. Fetch options`, fetchOptions);
-          return fetch(url, fetchOptions);
-        };
+      let fetchOptions: any = {method: method};
+      if (this.useBearerAuthentication) {
+        const token = await this.getBearerToken();
+        if (token === null) {
+          throw new ApmApiClientError('No authentication token available', 'authentication', -1);
+        }
+        fetchOptions['headers'] = {'Authorization': `Bearer ${token}`};
+      }
 
-        fetchFunction().then(async (response) => {
-          const responseText = await response.text();
-          let responseData: any;
-          try {
-            responseData = JSON.parse(responseText);
-          } catch (e) {
-            // no valid json
-            responseData = null;
-          }
-          if (response.status === 200) {
-            if (responseData !== null) {
-              resolve(responseData);
-            } else {
-              resolve(responseText);
-            }
-          } else {
-            console.warn(`Error fetching ${url}`, response);
-            const data = responseData ? responseData : {errorMsg: responseText};
-            reject({
-              errorType: 'http',
-              httpStatus: response.status,
-              data: data,
-              message: `Error ${response.status} fetching ${url}`
-            });
-          }
-        });
-      });
+      const actualPayload = useRawData ? payload : {data: JSON.stringify(payload)};
+
+      const fetchFunction = method === 'GET' ? () => {
+        return fetch(url, fetchOptions);
+      } : () => {
+        fetchOptions['headers'] = fetchOptions['headers'] || {};
+        fetchOptions['headers']['Content-Type'] = 'application/json';
+        fetchOptions['body'] = JSON.stringify(actualPayload);
+        //  this.verbose && console.log(`Sending POST request to ${url}. Fetch options`, fetchOptions);
+        return fetch(url, fetchOptions);
+      };
+
+      let response: Response;
+      try {
+        response = await fetchFunction();
+      } catch (error: unknown) {
+        throw new ApmApiClientError(`Network error fetching ${url}`, 'network', -1, error);
+      }
+
+      const responseText = await response.text();
+      let responseData: any;
+      try {
+        responseData = JSON.parse(responseText);
+      } catch (e) {
+        // no valid json
+        responseData = null;
+      }
+
+      if (response.status === 200) {
+        if (responseData !== null) {
+          return responseData;
+        }
+        return responseText;
+      }
+
+      console.warn(`Error fetching ${url}`, response);
+      const data = responseData ? responseData : {errorMsg: responseText};
+      throw new ApmApiClientError(
+        `Error ${response.status} fetching ${url}`,
+        'http',
+        response.status,
+        data
+      );
     }, forceActualFetch, ttl);
   }
 

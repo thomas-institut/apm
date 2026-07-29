@@ -28,7 +28,7 @@ Use a **hybrid model**:
 
 ### Current Implementation (from repository)
 - `../../apps/ape-frontend/src/Api/ApiClient.ts` avoids throwing and returns a normalized `ApiClientResponse<T>` (`result: 'Success' | 'Error'`), with `catch` using `error instanceof Error`.
-- `../../apps/apm/www/js/Api/ApmApiClient.ts` defines `ApmApiClientError` with `errorType: 'http' | 'authentication' | 'method' | 'network' | 'other'`, but rejects plain objects rather than `Error` instances in its internal `fetch(...)` flow.
+- `../../apps/apm/www/js/Api/ApmApiClient.ts` defines `ApmApiClientErrorOld` with `errorType: 'http' | 'authentication' | 'method' | 'network' | 'other'`, but rejects plain objects rather than `Error` instances in its internal `fetch(...)` flow.
 - Across TS code, most failures are currently `throw new Error(...)`; there are no `class ... extends Error` implementations yet.
 - Existing code already performs name/type checks in places (e.g. `AbortError` handling in `../../apps/apm/www/js/ReactAPM/Pages/Search/Search.tsx`).
 

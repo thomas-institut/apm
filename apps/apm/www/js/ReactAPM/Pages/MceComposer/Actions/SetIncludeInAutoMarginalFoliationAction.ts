@@ -2,6 +2,7 @@ import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {ValidationError} from "@/lib/Error/SystemError";
 
 
 export class SetIncludeInAutoMarginalFoliationAction implements StateTransformAction<MceComposerHistoryState> {
@@ -17,7 +18,7 @@ export class SetIncludeInAutoMarginalFoliationAction implements StateTransformAc
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
 
     if (this.witnessIndex < 0 || this.witnessIndex >= state.mceData.witnesses.length) {
-      throw `Witness index ${this.witnessIndex} is out of bounds`;
+      throw new ValidationError(`Witness index ${this.witnessIndex} is out of bounds` );
     }
 
     const newState = deepCopy(state);

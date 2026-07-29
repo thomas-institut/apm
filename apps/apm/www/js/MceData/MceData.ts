@@ -66,8 +66,7 @@ export class MceData {
   static setTitle(mceData: MceDataInterface, newTitle: string) {
     newTitle = newTitle.trim();
     if (newTitle === '') {
-      console.warn(`Invalid title '${newTitle}'`);
-      return mceData;
+      throw new ValidationError(`Invalid title '${newTitle}'`);
     }
     mceData.title = newTitle;
     return mceData;
@@ -132,6 +131,13 @@ export class MceData {
     return true;
   }
 
+  /**
+   *
+   * @param mceData
+   * @param siglaGroupIndex
+   * @param group
+   * @throws ValidationError
+   */
   static changeSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface) {
     if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
       throw new ValidationError(`Invalid sigla group index ${siglaGroupIndex}`);
@@ -145,6 +151,12 @@ export class MceData {
     return mceData;
   }
 
+  /**
+   *
+   * @param mceData
+   * @param group
+   * @throws ValidationError
+   */
   static addSiglaGroup(mceData: MceDataInterface, group: SiglaGroupInterface): MceDataInterface {
     const isValid = this.isSiglaGroupValid(mceData, -1, group);
     if (isValid !== true) {
@@ -154,15 +166,20 @@ export class MceData {
     return mceData;
   }
 
+  /**
+   *
+   * @param mceData
+   * @param chunkIndex
+   * @param newBreak
+   * @throws ValidationError
+   */
   static setChunkBreak(mceData: MceDataInterface, chunkIndex: number, newBreak: string): MceDataInterface {
     if (chunkIndex < 0 || chunkIndex >= mceData.chunks.length) {
-      console.warn(`Invalid chunk index ${chunkIndex}`);
-      return mceData;
+      throw new ValidationError(`Invalid chunk index ${chunkIndex}`);
     }
 
     if (!ValidChunkBreaks.includes(newBreak)) {
-      console.warn(`Invalid chunk break '${newBreak}'`);
-      return mceData;
+      throw new ValidationError(`Invalid chunk break '${newBreak}'`)
     }
 
     mceData.chunks[chunkIndex].break = newBreak;
@@ -193,6 +210,13 @@ export class MceData {
     return true;
   }
 
+  /**
+   *
+   * @param mceData
+   * @param witnessIndex
+   * @param newSiglum
+   * @throws ValidationError
+   */
   static setSiglum(mceData: MceDataInterface, witnessIndex: number, newSiglum: string): MceDataInterface {
     const isValid = this.isSiglumValid(mceData, witnessIndex, newSiglum);
     if (isValid !== true) {
@@ -203,10 +227,15 @@ export class MceData {
     return mceData;
   }
 
+  /**
+   *
+   * @param mceData
+   * @param witnessIndex
+   * @param newState
+   */
   static setAutoMarginalFoliation(mceData: MceDataInterface, witnessIndex: number, newState: boolean): MceDataInterface {
     if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
-      console.warn(`Invalid witness index ${witnessIndex}`);
-      return mceData;
+      throw new ValidationError(`Invalid witness index ${witnessIndex}`)
     }
     if (mceData.includeInAutoMarginalFoliation === undefined) {
       mceData.includeInAutoMarginalFoliation = [];
@@ -358,8 +387,7 @@ export class MceData {
     }
 
     if (chunkIndex >= mceData.chunks.length || chunkIndex < 0) {
-      console.warn(`Chunk delete on out of range index ${chunkIndex}`);
-      return mceData;
+      throw new ValidationError(`Chunk delete on out of range index ${chunkIndex}`)
     }
 
     if (mceData.chunks.length === 1) {

@@ -26,6 +26,13 @@ export class NetworkError extends OperationalError {
   }
 }
 
+export class InvalidDataStructureError extends ValidationError {
+  constructor(message: string) {
+    super(message);
+    this.name = 'InvalidDataStructureError'
+  }
+}
+
 export class ConflictError extends SystemError {
   constructor(message: string) {
     super(message);

@@ -2,6 +2,7 @@ import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {InvalidDataStructureError, ValidationError} from "@/lib/Error/SystemError";
 
 export class MoveChunkAction implements StateTransformAction<MceComposerHistoryState> {
 
@@ -16,11 +17,11 @@ export class MoveChunkAction implements StateTransformAction<MceComposerHistoryS
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const chunkOrder = state.mceData.chunkOrder;
     if (chunkOrder === undefined) {
-       throw `Chunk order is undefined`;
+       throw new InvalidDataStructureError(`Chunk order is undefined`);
     }
     const chunk = state.mceData.chunks[chunkOrder[this.chunkPosition]];
     if (!chunk) {
-      throw `Chunk at position ${this.chunkPosition} does not exist`;
+      throw new ValidationError(`Chunk at position ${this.chunkPosition} does not exist`);
     }
     const newState = deepCopy(state);
     const newPosition = this.chunkPosition + (this.direction === 'forwards' ? 1 : -1);

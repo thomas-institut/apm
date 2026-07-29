@@ -3,6 +3,7 @@ import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {getSiglaGroupString} from '@/ReactAPM/Pages/MceComposer/SiglaGroupUtil';
+import {ValidationError} from "@/lib/Error/SystemError";
 
 export class DeleteSiglaGroupAction implements StateTransformAction<MceComposerHistoryState> {
 
@@ -15,7 +16,7 @@ export class DeleteSiglaGroupAction implements StateTransformAction<MceComposerH
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const group = state.mceData.siglaGroups[this.siglaGroupIndex];
     if (!group) {
-      throw `Sigla group at index ${this.siglaGroupIndex} does not exist`;
+      throw new ValidationError(`Sigla group at index ${this.siglaGroupIndex} does not exist`);
     }
 
     const newState = deepCopy(state);

@@ -2,6 +2,7 @@ import {MceData} from '@/MceData/MceData';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {deepCopy} from '@/toolbox/Util';
+import {InvalidDataStructureError, ValidationError} from "@/lib/Error/SystemError";
 
 export class DeleteChunkAction implements StateTransformAction<MceComposerHistoryState> {
 
@@ -15,12 +16,12 @@ export class DeleteChunkAction implements StateTransformAction<MceComposerHistor
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const chunkOrder = state.mceData.chunkOrder;
     if (chunkOrder === undefined) {
-      throw `Chunk order is undefined`;
+      throw new InvalidDataStructureError(`Chunk order is undefined`);
     }
     const chunkIndex = chunkOrder[this.chunkPosition];
     const chunk = state.mceData.chunks[chunkIndex];
     if (!chunk) {
-      throw `Chunk at position ${this.chunkPosition} does not exist`;
+      throw new ValidationError(`Chunk at position ${this.chunkPosition} does not exist`);
     }
     const newState = deepCopy(state);
     const chunkId = chunk.chunkId;

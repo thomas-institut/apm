@@ -3,6 +3,7 @@ import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
+import {ValidationError} from "@/lib/Error/SystemError";
 
 export class UpdateChunkAction implements StateTransformAction<MceComposerHistoryState> {
 
@@ -20,12 +21,10 @@ export class UpdateChunkAction implements StateTransformAction<MceComposerHistor
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const newState = deepCopy(state);
     await MceData.updateChunk(newState.mceData, this.tableId, this.singleChunkData.ctData, this.singleChunkData.timeStamp, this.getDocTitle, this.getSourceTitle);
-
     const indexInMceData = newState.mceData.chunks.findIndex( (chunk) => chunk.chunkEditionTableId === this.tableId);
     if (indexInMceData === -1) {
-      throw new Error('Chunk not in MceData');
+      throw new ValidationError('Chunk not in MceData');
     }
-
     this.title = `Update chunk ${this.singleChunkData.ctData.chunkId} to version ${this.singleChunkData.timeStamp}`;
     return newState;
   }

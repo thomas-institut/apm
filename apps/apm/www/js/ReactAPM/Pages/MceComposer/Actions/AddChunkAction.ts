@@ -3,6 +3,7 @@ import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {SingleChunkApiData} from "@/Api/DataSchema/ApiCollationTable";
+import {ConflictError} from "@/lib/Error/SystemError";
 
 export class AddChunkAction implements StateTransformAction<MceComposerHistoryState> {
 
@@ -24,7 +25,7 @@ export class AddChunkAction implements StateTransformAction<MceComposerHistorySt
     const indexInMceData = newState.mceData.chunks.findIndex( (chunk) => chunk.chunkEditionTableId === this.tableId);
 
     if (indexInMceData === -1) {
-      throw new Error('Chunk not properly added to MceData');
+      throw new ConflictError('Chunk not properly added to MceData');
     }
 
     this.title = `Add chunk ${this.singleChunkData.ctData.chunkId} to edition`;

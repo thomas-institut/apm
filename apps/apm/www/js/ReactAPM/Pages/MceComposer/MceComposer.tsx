@@ -56,15 +56,12 @@ import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChun
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 
-// TODO before release (2026-07-27))
-//  - Check potential problems in typesetting, lots of "line number" not found warnings
+// TODO before release (2026-07-29))
 //  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
 //    testing that simulates server failures. Maybe a mock api client that fails in different ways. Server failures
 //    may need a general message in the toolbar info area.
 
 // TODO final checks before release
-//  - Run an audit with a couple of "smart" LLMs looking for potential bugs, and holes in testing in all code touched
-//    by MceComposer.
 //  - Try to attain 100% coverage in functionality testing: come up with tests without LLM help first
 
 

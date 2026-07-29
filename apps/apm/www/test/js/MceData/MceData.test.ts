@@ -654,11 +654,12 @@ describe('MceData', () => {
       expect(mceData.title).toBe('Trimmed Title');
     });
 
-    it('does not change the title when given an empty string after trim', () => {
+    it('throws when given an empty string after trim', () => {
       const mceData = MceData.createEmpty();
       mceData.title = 'Original';
 
-      MceData.setTitle(mceData, '   ');
+      expect(() => MceData.setTitle(mceData, '   ')).toThrow(ValidationError);
+      expect(() => MceData.setTitle(mceData, '   ')).toThrow("Invalid title ''");
       expect(mceData.title).toBe('Original');
     });
 
@@ -685,35 +686,38 @@ describe('MceData', () => {
       expect(mceData.chunks[1].break).toBe('');
     });
 
-    it('does nothing when chunkIndex is negative', () => {
+    it('throws when chunkIndex is negative', () => {
       const mceData = MceData.createEmpty();
       mceData.chunks = [{ break: 'paragraph' } as any];
 
-      MceData.setChunkBreak(mceData, -1, '');
+      expect(() => MceData.setChunkBreak(mceData, -1, '')).toThrow(ValidationError);
+      expect(() => MceData.setChunkBreak(mceData, -1, '')).toThrow('Invalid chunk index -1');
       expect(mceData.chunks[0].break).toBe('paragraph');
     });
 
-    it('does nothing when chunkIndex is out of range', () => {
+    it('throws when chunkIndex is out of range', () => {
       const mceData = MceData.createEmpty();
       mceData.chunks = [{ break: 'paragraph' } as any];
 
-      MceData.setChunkBreak(mceData, 1, '');
+      expect(() => MceData.setChunkBreak(mceData, 1, '')).toThrow(ValidationError);
+      expect(() => MceData.setChunkBreak(mceData, 1, '')).toThrow('Invalid chunk index 1');
       expect(mceData.chunks[0].break).toBe('paragraph');
     });
 
-    it('does nothing when break value is invalid', () => {
+    it('throws when break value is invalid', () => {
       const mceData = MceData.createEmpty();
       mceData.chunks = [{ break: 'paragraph' } as any];
 
-      MceData.setChunkBreak(mceData, 0, 'invalid');
+      expect(() => MceData.setChunkBreak(mceData, 0, 'invalid')).toThrow(ValidationError);
+      expect(() => MceData.setChunkBreak(mceData, 0, 'invalid')).toThrow("Invalid chunk break 'invalid'");
       expect(mceData.chunks[0].break).toBe('paragraph');
     });
 
-    it('does nothing when chunks array is empty', () => {
+    it('throws when chunks array is empty', () => {
       const mceData = MceData.createEmpty();
 
-      MceData.setChunkBreak(mceData, 0, 'paragraph');
-      // Should not throw, mceData remains empty
+      expect(() => MceData.setChunkBreak(mceData, 0, 'paragraph')).toThrow(ValidationError);
+      expect(() => MceData.setChunkBreak(mceData, 0, 'paragraph')).toThrow('Invalid chunk index 0');
       expect(mceData.chunks).toEqual([]);
     });
 
@@ -800,13 +804,15 @@ describe('MceData', () => {
       expect(mceData.includeInAutoMarginalFoliation).toEqual([0]);
     });
 
-    it('does nothing when witness index is invalid', () => {
+    it('throws when witness index is invalid', () => {
       const mceData = MceData.createEmpty();
       mceData.witnesses = [{ witnessId: 'w0' } as any];
       mceData.includeInAutoMarginalFoliation = [0];
 
-      MceData.setAutoMarginalFoliation(mceData, -1, true);
-      MceData.setAutoMarginalFoliation(mceData, 1, false);
+      expect(() => MceData.setAutoMarginalFoliation(mceData, -1, true)).toThrow(ValidationError);
+      expect(() => MceData.setAutoMarginalFoliation(mceData, -1, true)).toThrow('Invalid witness index -1');
+      expect(() => MceData.setAutoMarginalFoliation(mceData, 1, false)).toThrow(ValidationError);
+      expect(() => MceData.setAutoMarginalFoliation(mceData, 1, false)).toThrow('Invalid witness index 1');
 
       expect(mceData.includeInAutoMarginalFoliation).toEqual([0]);
     });

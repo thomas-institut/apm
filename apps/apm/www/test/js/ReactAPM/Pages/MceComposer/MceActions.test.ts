@@ -8,6 +8,7 @@ import { SetSiglumAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetSiglumA
 import { SetIncludeInAutoMarginalFoliationAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction';
 import { MceDataInterface } from '@/MceData/MceDataInterface';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
+import {ValidationError} from '@/lib/Error/SystemError';
 
 const makeBaseMceData = (): MceDataInterface => ({
   title: 'Test',
@@ -172,8 +173,10 @@ describe('MCE Actions', () => {
 
       const state = makeState(mceData);
 
-      await expect(new SetSiglumAction(-1, 'B').execute(state)).rejects.toBe('Witness index -1 is out of bounds');
-      await expect(new SetSiglumAction(1, 'B').execute(state)).rejects.toBe('Witness index 1 is out of bounds');
+      await expect(new SetSiglumAction(-1, 'B').execute(state)).rejects.toThrow(ValidationError);
+      await expect(new SetSiglumAction(-1, 'B').execute(state)).rejects.toThrow('Witness index -1 is out of bounds');
+      await expect(new SetSiglumAction(1, 'B').execute(state)).rejects.toThrow(ValidationError);
+      await expect(new SetSiglumAction(1, 'B').execute(state)).rejects.toThrow('Witness index 1 is out of bounds');
     });
 
     it('should throw when siglum is empty', async () => {
@@ -185,7 +188,8 @@ describe('MCE Actions', () => {
 
       const state = makeState(mceData);
 
-      await expect(new SetSiglumAction(0, '   ').execute(state)).rejects.toBe('Siglum cannot be empty');
+      await expect(new SetSiglumAction(0, '   ').execute(state)).rejects.toThrow(ValidationError);
+      await expect(new SetSiglumAction(0, '   ').execute(state)).rejects.toThrow('Siglum cannot be empty');
     });
   });
 
@@ -234,8 +238,10 @@ describe('MCE Actions', () => {
 
       const state = makeState(mceData);
 
-      await expect(new SetIncludeInAutoMarginalFoliationAction(-1, true).execute(state)).rejects.toBe('Witness index -1 is out of bounds');
-      await expect(new SetIncludeInAutoMarginalFoliationAction(1, false).execute(state)).rejects.toBe('Witness index 1 is out of bounds');
+      await expect(new SetIncludeInAutoMarginalFoliationAction(-1, true).execute(state)).rejects.toThrow(ValidationError);
+      await expect(new SetIncludeInAutoMarginalFoliationAction(-1, true).execute(state)).rejects.toThrow('Witness index -1 is out of bounds');
+      await expect(new SetIncludeInAutoMarginalFoliationAction(1, false).execute(state)).rejects.toThrow(ValidationError);
+      await expect(new SetIncludeInAutoMarginalFoliationAction(1, false).execute(state)).rejects.toThrow('Witness index 1 is out of bounds');
     });
   });
 });

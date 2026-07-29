@@ -19,13 +19,18 @@ vi.mock('@/ReactAPM/Components/NiceTable/NiceTable', () => ({
 }));
 
 vi.mock('@/ReactAPM/Components/EditableTextField', () => ({
-  default: ({validator}: {validator?: (text: string) => true | string}) => <div className={'editable-text-field-mock'}>
+  default: ({validator, onConfirm}: {
+    validator?: (text: string) => true | string,
+    onConfirm?: (text: string) => void | Promise<void>
+  }) => <div className={'editable-text-field-mock'}>
     {validator === undefined ? 'no-validator' : String(validator('NEW'))}
+    <button type="button" className="editable-confirm-btn" onClick={() => onConfirm?.('NEW')}>Confirm</button>
   </div>
 }));
 
 vi.mock('@/ReactAPM/Components/NiceToggle/NiceToggle', () => ({
-  default: () => <div/>
+  default: ({isOn, onClick}: {isOn: boolean, onClick?: (newState: boolean) => void | Promise<void>}) =>
+    <button type="button" className="nice-toggle-btn" onClick={() => onClick?.(!isOn)}>Toggle</button>
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/EditSiglaGroup', () => ({
@@ -186,6 +191,67 @@ describe('WitnessesPanel', () => {
 
     expect(onDeleteSiglaGroup).not.toHaveBeenCalled();
     expect(container.querySelector('.accept-btn')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('does not execute another witness action while one action is pending', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    let resolveSiglumChange: (() => void) | null = null;
+    const onChangeSiglum = vi.fn(() => new Promise<boolean>((resolve) => {
+      resolveSiglumChange = () => resolve(true);
+    }));
+    const onChangeIncludeInAutoMarginalFoliation = vi.fn(() => true);
+
+    await act(async () => {
+      root.render(
+        <WitnessesPanel
+          witnesses={[
+            {
+              siglum: 'A',
+              title: 'Witness A',
+              includeInAutoMarginalFoliation: true,
+            }
+          ]}
+          siglaGroups={[]}
+          isSiglumValid={() => true}
+          isSiglaGroupValid={() => true}
+          onChangeSiglum={onChangeSiglum}
+          onChangeIncludeInAutoMarginalFoliation={onChangeIncludeInAutoMarginalFoliation}
+        />
+      );
+    });
+
+    await act(async () => {
+      (container.querySelector('.editable-confirm-btn') as HTMLButtonElement).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onChangeSiglum).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      (container.querySelector('.nice-toggle-btn') as HTMLButtonElement).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onChangeIncludeInAutoMarginalFoliation).not.toHaveBeenCalled();
+
+    await act(async () => {
+      resolveSiglumChange?.();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    await act(async () => {
+      (container.querySelector('.nice-toggle-btn') as HTMLButtonElement).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onChangeIncludeInAutoMarginalFoliation).toHaveBeenCalledOnce();
 
     await act(async () => {
       root.unmount();

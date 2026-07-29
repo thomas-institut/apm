@@ -73,21 +73,36 @@ export default function WitnessesPanel({
   }>(null);
   const [confirmDeleteSiglaGroupIndex, setConfirmDeleteSiglaGroupIndex] = useState<number | null>(null);
   const [changingMarginalFoliationIndex, setChangingMarginalFoliationIndex] = useState<number | null>(null);
+  const [changingSiglumIndex, setChangingSiglumIndex] = useState<number | null>(null);
 
   if (witnesses.length === 0) {
-    return  <div className={'witnesses-panel no-edition'}><p>No witnesses defined</p></div>;
+    return <div className={'witnesses-panel no-edition'}><p>No witnesses defined</p></div>;
   }
 
   const sigla = witnesses.map(witness => witness.siglum);
 
+
+  const isAnyPending = changingSiglumIndex !== null || changingMarginalFoliationIndex !== null;
+
   const onClickMarginalFoliation = async (witnessIndex: number, newState: boolean) => {
     console.log(`onClickMarginalFoliation(${witnessIndex}, ${newState})`);
-    if (onChangeIncludeInAutoMarginalFoliation && changingMarginalFoliationIndex === null) {
+    if (onChangeIncludeInAutoMarginalFoliation && !isAnyPending) {
       setChangingMarginalFoliationIndex(witnessIndex);
       await nextTick();
       await onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
       await nextTick();
       setChangingMarginalFoliationIndex(null);
+    }
+  };
+
+  const onConfirmEditSiglum = async (witnessIndex: number, newSiglum: string) => {
+    console.log(`onConfirmEditSiglum(${witnessIndex}, ${newSiglum})`);
+    if (onChangeSiglum && !isAnyPending) {
+      setChangingSiglumIndex(witnessIndex);
+      await nextTick();
+      await onChangeSiglum(witnessIndex, newSiglum);
+      await nextTick();
+      setChangingSiglumIndex(null);
     }
   };
 
@@ -108,19 +123,19 @@ export default function WitnessesPanel({
       title: 'Siglum',
       width: '5em',
       tdClassName: 'siglum',
-      cellContent: (witnessData, witnessIndex) => <EditableTextField text={witnessData.siglum}
-                                                                     validator={(newSiglum) => isSiglumValid(witnessIndex, newSiglum)}
-                                                                     onConfirm={async (newSiglum) => {
-                                                                       if (onChangeSiglum) {
-                                                                         await onChangeSiglum(witnessIndex, newSiglum);
-                                                                       }
-                                                                     }}/>
+      cellContent: (witnessData, witnessIndex) => <ComponentWithPending pending={changingSiglumIndex === witnessIndex}>
+        <EditableTextField text={witnessData.siglum}
+                           validator={(newSiglum) => isSiglumValid(witnessIndex, newSiglum)}
+                           onConfirm={(newSiglum) => onConfirmEditSiglum(witnessIndex, newSiglum)}/>
+      </ComponentWithPending>
     },
     {
       key: "margFol",
       title: 'Marg. Fol.',
-      cellContent: (witnessData, witnessIndex) => <ComponentWithPending pending={changingMarginalFoliationIndex === witnessIndex}>
+      cellContent: (witnessData, witnessIndex) => <ComponentWithPending
+        pending={changingMarginalFoliationIndex === witnessIndex}>
         <NiceToggle
+          className={isAnyPending ? 'grayed-out': ''}
           isOn={witnessData.includeInAutoMarginalFoliation}
           onTitle={`Click to exclude ${witnessData.title} from auto marginal foliation`}
           offTitle={`Click to include ${witnessData.title} in auto marginal foliation`}
@@ -158,21 +173,25 @@ export default function WitnessesPanel({
       key: 'controls',
       title: '',
       cellContent: (siglumData, rowIndex) => <div className="controls">
-        <Pencil className={'icon-btn'}  title={`Click to edit sigla group ${siglumData.siglum}`} onClick={() => {
-          setEditingSiglaGroupData({
-            siglaGroupIndex: rowIndex,
-            siglaGroup: siglaGroups[rowIndex]
-          });
+        <Pencil className={'icon-btn'} title={`Click to edit sigla group ${siglumData.siglum}`} onClick={() => {
+          if (!isAnyPending) {
+            setEditingSiglaGroupData({
+              siglaGroupIndex: rowIndex,
+              siglaGroup: siglaGroups[rowIndex]
+            });
+          }
         }}/>
         <Trash className={'icon-btn'} title={`Click to delete sigla group ${siglumData.siglum}`} onClick={() => {
-          setConfirmDeleteSiglaGroupIndex(rowIndex);
+          if (!isAnyPending) {
+            setConfirmDeleteSiglaGroupIndex(rowIndex);
+          }
         }}/>
       </div>
     }
   ];
 
   const handleAcceptDeleteSiglaGroup = async () => {
-    if (confirmDeleteSiglaGroupIndex === null || onDeleteSiglaGroup === undefined) {
+    if (isAnyPending || confirmDeleteSiglaGroupIndex === null || onDeleteSiglaGroup === undefined) {
       return;
     }
     await onDeleteSiglaGroup(confirmDeleteSiglaGroupIndex);

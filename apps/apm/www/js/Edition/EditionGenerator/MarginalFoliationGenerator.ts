@@ -161,8 +161,22 @@ export class MarginalFoliationGenerator {
     return app;
   }
 
-  private getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtText {
+  /**
+   *
+   * @param {number}ctIndex
+   * @param {MainTextToken[]} mainText
+   * @return {number}
+   */
+  getMainTextIndexFromCtIndex(ctIndex: number, mainText: MainTextToken[]): number {
+    for (let i = 0; i < mainText.length; i++) {
+      if (mainText[i].editionWitnessTokenIndex === this.ctData.collationMatrix[this.ctData.editionWitnessIndex][ctIndex]) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
+  private getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtText {
     if (this.ctData.lang === 'ar') {
 
       let fmtText: FmtText = [];
@@ -192,23 +206,6 @@ export class MarginalFoliationGenerator {
     }
 
     return fromString(`${siglum}:${foliation}`);
-  }
-
-  /**
-   *
-   * @param {number}ctIndex
-   * @param {MainTextToken[]} mainText
-   * @return {number}
-   */
-  getMainTextIndexFromCtIndex(ctIndex: number, mainText: MainTextToken[]): number {
-
-
-    for (let i = 0; i < mainText.length; i++) {
-      if (mainText[i].editionWitnessTokenIndex === this.ctData.collationMatrix[this.ctData.editionWitnessIndex][ctIndex]) {
-        return i;
-      }
-    }
-    return -1;
   }
 }
 

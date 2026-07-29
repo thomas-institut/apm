@@ -1,7 +1,9 @@
+// noinspection ES6PreferShortImport
+
 import {ChunkInMceData, MceDataInterface, ValidChunkBreaks, WitnessInMceData} from "./MceDataInterface.js";
 import * as ArrayUtil from "../lib/ToolBox/ArrayUtil.js";
-import {CtDataInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
-import {deepCopy} from "@/toolbox/Util";
+import {CtDataInterface, SiglaGroupInterface} from "../CtData/CtDataInterface.js";
+import {deepCopy} from "../toolbox/Util.js";
 
 
 export class MceData {

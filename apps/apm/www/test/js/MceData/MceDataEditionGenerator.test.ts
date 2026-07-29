@@ -9,6 +9,7 @@ import {ApparatusSubEntry} from '@/Edition/ApparatusSubEntry.js';
 import {WitnessDataItem} from '@/Edition/WitnessDataItem.js';
 import {MceData} from '@/MceData/MceData.js';
 import {FoliationChangeInfoInterface} from '@/Edition/FoliationChangeInfoInterface.js';
+import {fromString, getPlainText} from '@thomas-inst/fmt-text';
 
 const mockCtDataGeneratorState = vi.hoisted(() => {
   return {
@@ -94,6 +95,41 @@ function makeSingleChunkEdition(options: {
   });
   edition.apparatuses = options.apparatuses ?? [];
   return edition;
+}
+
+/**
+ * Creates a marginalia apparatus using the provided entries data.
+ *
+ * @param {Array<Object>} entries - An array of entry data objects.
+ * @param {number} entries[].from - The starting position for the entry.
+ * @param {number} entries[].witnessIndex - The index of the witness associated with the entry.
+ * @param {boolean} entries[].realFoliationChange - Indicates if the entry involves a real foliation change.
+ * @param {string} entries[].foliationText - The formatted foliation text (`siglum:foliation`) for the sub-entry.
+ * @return {Apparatus} A newly created marginalia apparatus object with the processed entries.
+ */
+function makeMarginaliaApparatus(entries: Array<{
+  from: number,
+  witnessIndex: number,
+  realFoliationChange: boolean,
+  foliationText: string,
+}>): Apparatus {
+  const apparatus = new Apparatus();
+  apparatus.type = 'marginalia';
+  apparatus.entries = entries.map((entryData) => {
+    const entry = new ApparatusEntry();
+    entry.from = entryData.from;
+    entry.to = entryData.from;
+
+    const subEntry = new ApparatusSubEntry();
+    subEntry.type = 'auto_foliation';
+    subEntry.fmtText = fromString(entryData.foliationText);
+    const witnessData = new WitnessDataItem().setWitnessIndex(entryData.witnessIndex).setHand(0);
+    witnessData.realFoliationChange = entryData.realFoliationChange;
+    subEntry.witnessData = [witnessData];
+    entry.subEntries = [subEntry];
+    return entry;
+  });
+  return apparatus;
 }
 
 describe('MceDataEditionGenerator', () => {
@@ -274,8 +310,8 @@ describe('MceDataEditionGenerator', () => {
       mockCtDataGeneratorState.generatedEditionsQueue.push(generatedEdition);
 
       const getter = vi.fn()
-      .mockResolvedValueOnce(cachedEdition)
-      .mockResolvedValueOnce(null);
+        .mockResolvedValueOnce(cachedEdition)
+        .mockResolvedValueOnce(null);
       const saver = vi.fn().mockResolvedValue(undefined);
 
       const generator = new MceDataEditionGenerator({
@@ -392,9 +428,9 @@ describe('MceDataEditionGenerator', () => {
       const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
       const edition = await generator.generate(buildMceData(), 1);
 
-      expect(edition.mainText[1].editionWitnessTokenIndex).toBe(0);
-      expect(edition.mainText[2].editionWitnessTokenIndex).toBe(1);
-      expect(edition.mainText[6].editionWitnessTokenIndex).toBe(3);
+      expect(edition.mainText[1].editionWitnessTokenIndex).toBe(1);
+      expect(edition.mainText[2].editionWitnessTokenIndex).toBe(2);
+      expect(edition.mainText[6].editionWitnessTokenIndex).toBe(6);
     });
 
     it('maps apparatus witness indices to global indices and shifts entry from/to', async () => {
@@ -445,8 +481,8 @@ describe('MceDataEditionGenerator', () => {
 
       expect(edition.apparatuses).toHaveLength(1);
       expect(edition.apparatuses[0].entries).toHaveLength(1);
-      expect(edition.apparatuses[0].entries[0].from).toBe(3);
-      expect(edition.apparatuses[0].entries[0].to).toBe(3);
+      expect(edition.apparatuses[0].entries[0].from).toBe(6);
+      expect(edition.apparatuses[0].entries[0].to).toBe(6);
       expect(edition.apparatuses[0].entries[0].subEntries[0].witnessData[0].witnessIndex).toBe(1);
       expect(edition.apparatuses[0].entries[0].subEntries[0].witnessData[0].hand).toBe(2);
     });
@@ -520,6 +556,143 @@ describe('MceDataEditionGenerator', () => {
         1,
         [{collationTableColumn: 1, witnessIndex: 0, previousFoliation: '', newFoliation: '1r'}]
       );
+    });
+
+    it('keeps auto marginal foliation witness mapping and positions correct across chunk witness permutations', async () => {
+      const mceData = buildMceData({
+        chunks: [
+          {
+            chunkId: 'c1',
+            break: '',
+            chunkEditionTableId: 100,
+            lineNumbersRestart: false,
+            title: 'Chunk 1',
+            version: 'v1',
+            witnessIndices: [2, 0, 1, -1],
+          },
+          {
+            chunkId: 'c2',
+            break: '',
+            chunkEditionTableId: 101,
+            lineNumbersRestart: false,
+            title: 'Chunk 2',
+            version: 'v1',
+            witnessIndices: [1, 2, 0, -1],
+          },
+          {
+            chunkId: 'c3',
+            break: '',
+            chunkEditionTableId: 102,
+            lineNumbersRestart: false,
+            title: 'Chunk 3',
+            version: 'v1',
+            witnessIndices: [0, 2, 1, -1],
+          }
+        ],
+        chunkOrder: [0, 1, 2],
+        witnesses: [
+          {title: 'Witness A', witnessId: 'A'},
+          {title: 'Witness B', witnessId: 'B'},
+          {title: 'Witness C', witnessId: 'C'},
+        ],
+        sigla: ['A', 'B', 'C'],
+        includeInAutoMarginalFoliation: [0, 1, 2],
+      });
+
+      const chunkOne = makeSingleChunkEdition({
+        tokenIndices: [0, 1],
+        apparatuses: [makeMarginaliaApparatus([
+          {from: 0, witnessIndex: 1, realFoliationChange: false, foliationText: 'A:Af1'},
+          {from: 0, witnessIndex: 2, realFoliationChange: false, foliationText: 'B:Bf1'},
+          {from: 1, witnessIndex: 2, realFoliationChange: true, foliationText: 'B:Bf2'},
+          {from: 0, witnessIndex: 0, realFoliationChange: false, foliationText: 'C:Cf1'},
+          {from: 1, witnessIndex: 0, realFoliationChange: true, foliationText: 'C:Cf2'},
+        ])],
+        foliationChanges: [
+          {collationTableColumn: 0, witnessIndex: 1, previousFoliation: '', newFoliation: 'Af1'},
+          {collationTableColumn: 0, witnessIndex: 2, previousFoliation: '', newFoliation: 'Bf1'},
+          {collationTableColumn: 1, witnessIndex: 2, previousFoliation: 'Bf1', newFoliation: 'Bf2'},
+          {collationTableColumn: 0, witnessIndex: 0, previousFoliation: '', newFoliation: 'Cf1'},
+          {collationTableColumn: 1, witnessIndex: 0, previousFoliation: 'Cf1', newFoliation: 'Cf2'},
+        ]
+      });
+
+      const chunkTwo = makeSingleChunkEdition({
+        tokenIndices: [0, 1],
+        apparatuses: [makeMarginaliaApparatus([
+          {from: 0, witnessIndex: 0, realFoliationChange: true, foliationText: 'B:Bf3'},
+          {from: 1, witnessIndex: 1, realFoliationChange: true, foliationText: 'C:Cf3'},
+        ])],
+        foliationChanges: [
+          {collationTableColumn: 0, witnessIndex: 0, previousFoliation: 'Bf2', newFoliation: 'Bf3'},
+          {collationTableColumn: 1, witnessIndex: 1, previousFoliation: 'Cf2', newFoliation: 'Cf3'},
+        ]
+      });
+
+      const chunkThree = makeSingleChunkEdition({
+        tokenIndices: [0, 1],
+        apparatuses: [makeMarginaliaApparatus([
+          {from: 1, witnessIndex: 2, realFoliationChange: true, foliationText: 'B:Bf4'},
+          {from: 0, witnessIndex: 1, realFoliationChange: true, foliationText: 'C:Cf4'},
+        ])],
+        foliationChanges: [
+          {collationTableColumn: 1, witnessIndex: 2, previousFoliation: 'Bf3', newFoliation: 'Bf4'},
+          {collationTableColumn: 0, witnessIndex: 1, previousFoliation: 'Cf3', newFoliation: 'Cf4'},
+        ]
+      });
+
+      mockCtDataGeneratorState.generatedEditionsQueue.push(chunkOne, chunkTwo, chunkThree);
+      const ctDataPerChunk = [{}, {}, {}] as any[];
+      const ctDataGetter = vi.fn().mockImplementation((_data, chunkIndex) => Promise.resolve(ctDataPerChunk[chunkIndex]));
+
+      const generator = new MceDataEditionGenerator({ctDataGetter});
+      const edition = await generator.generate(mceData, 99);
+
+      expect(ctDataGetter).toHaveBeenCalledTimes(3);
+      expect(ctDataPerChunk[0].includeInAutoMarginalFoliation).toEqual([1, 2, 0]);
+      expect(ctDataPerChunk[1].includeInAutoMarginalFoliation).toEqual([2, 0, 1]);
+      expect(ctDataPerChunk[2].includeInAutoMarginalFoliation).toEqual([0, 2, 1]);
+
+      expect(mockCtDataGeneratorState.constructorOptions[2].lastFoliationChanges.map((c: any) => c.witnessIndex)).toEqual([0, 2, 1]);
+
+      expect(edition.apparatuses).toHaveLength(1);
+      const marginalia = edition.apparatuses[0];
+      expect(marginalia.type).toBe('marginalia');
+
+      const flattenedEntries = marginalia.entries.map((entry) => {
+        const witnessData = entry.subEntries[0].witnessData[0];
+        return {
+          from: entry.from,
+          to: entry.to,
+          witnessIndex: witnessData.witnessIndex,
+          realFoliationChange: witnessData.realFoliationChange,
+          type: entry.subEntries[0].type,
+          foliationText: getPlainText(entry.subEntries[0].fmtText),
+        };
+      });
+
+      expect(flattenedEntries.every((entry) => entry.from === entry.to)).toBe(true);
+      expect(flattenedEntries.every((entry) => entry.type === 'auto_foliation')).toBe(true);
+
+      const witness0 = flattenedEntries.filter((entry) => entry.witnessIndex === 0);
+      const witness1 = flattenedEntries.filter((entry) => entry.witnessIndex === 1);
+      const witness2 = flattenedEntries.filter((entry) => entry.witnessIndex === 2);
+
+      expect(witness0).toEqual([
+        {from: 1, to: 1, witnessIndex: 0, realFoliationChange: false, type: 'auto_foliation', foliationText: 'A:Af1'},
+      ]);
+      expect(witness1).toEqual([
+        {from: 1, to: 1, witnessIndex: 1, realFoliationChange: false, type: 'auto_foliation', foliationText: 'B:Bf1'},
+        {from: 2, to: 2, witnessIndex: 1, realFoliationChange: true, type: 'auto_foliation', foliationText: 'B:Bf2'},
+        {from: 6, to: 6, witnessIndex: 1, realFoliationChange: true, type: 'auto_foliation', foliationText: 'B:Bf3'},
+        {from: 12, to: 12, witnessIndex: 1, realFoliationChange: true, type: 'auto_foliation', foliationText: 'B:Bf4'},
+      ]);
+      expect(witness2).toEqual([
+        {from: 1, to: 1, witnessIndex: 2, realFoliationChange: false, type: 'auto_foliation', foliationText: 'C:Cf1'},
+        {from: 2, to: 2, witnessIndex: 2, realFoliationChange: true, type: 'auto_foliation', foliationText: 'C:Cf2'},
+        {from: 7, to: 7, witnessIndex: 2, realFoliationChange: true, type: 'auto_foliation', foliationText: 'C:Cf3'},
+        {from: 11, to: 11, witnessIndex: 2, realFoliationChange: true, type: 'auto_foliation', foliationText: 'C:Cf4'},
+      ]);
     });
   });
 });

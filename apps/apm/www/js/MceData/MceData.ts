@@ -4,6 +4,7 @@ import {ChunkInMceData, MceDataInterface, ValidChunkBreaks, WitnessInMceData} fr
 import * as ArrayUtil from "../lib/ToolBox/ArrayUtil.js";
 import {CtDataInterface, SiglaGroupInterface} from "../CtData/CtDataInterface.js";
 import {deepCopy} from "../toolbox/Util.js";
+import {ValidationError} from "../lib/Error/SystemError.js";
 
 
 export class MceData {
@@ -74,7 +75,7 @@ export class MceData {
 
   static deleteSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number): MceDataInterface {
     if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
-      throw (`Invalid sigla group index ${siglaGroupIndex}`);
+      throw new ValidationError(`Invalid sigla group index ${siglaGroupIndex}`);
     }
     mceData.siglaGroups.splice(siglaGroupIndex, 1);
     return mceData;
@@ -133,11 +134,11 @@ export class MceData {
 
   static changeSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface) {
     if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
-      throw (`Invalid sigla group index ${siglaGroupIndex}`);
+      throw new ValidationError(`Invalid sigla group index ${siglaGroupIndex}`);
     }
     const isValid = this.isSiglaGroupValid(mceData, siglaGroupIndex, group);
     if (isValid !== true) {
-      throw (`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
+      throw new ValidationError(`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
     }
 
     mceData.siglaGroups[siglaGroupIndex] = deepCopy(group);
@@ -147,7 +148,7 @@ export class MceData {
   static addSiglaGroup(mceData: MceDataInterface, group: SiglaGroupInterface): MceDataInterface {
     const isValid = this.isSiglaGroupValid(mceData, -1, group);
     if (isValid !== true) {
-      throw (`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
+      throw new ValidationError(`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
     }
     mceData.siglaGroups.push(deepCopy(group));
     return mceData;
@@ -195,7 +196,7 @@ export class MceData {
   static setSiglum(mceData: MceDataInterface, witnessIndex: number, newSiglum: string): MceDataInterface {
     const isValid = this.isSiglumValid(mceData, witnessIndex, newSiglum);
     if (isValid !== true) {
-      throw new Error(`Invalid siglum '${newSiglum}' for witness index ${witnessIndex}: ${isValid}`);
+      throw new ValidationError(`Invalid siglum '${newSiglum}' for witness index ${witnessIndex}: ${isValid}`);
     }
 
     mceData.sigla[witnessIndex] = newSiglum.trim();
@@ -265,16 +266,16 @@ export class MceData {
     const chunkIndex = mceData.chunks.findIndex((chunk) => chunk.chunkEditionTableId === tableId);
 
     if (chunkIndex === -1) {
-      throw new Error(`Attempt to update chunk with id ${tableId} which does not exist`);
+      throw new ValidationError(`Chunk with table id ${tableId} which does not exist`);
     }
 
     if (ctData.type !== 'edition') {
-      throw new Error(`Attempt to update chunk with id ${tableId} which is not an edition`);
+      throw new ValidationError(`Table id ${tableId} used to update a chunk is not an edition`);
     }
 
     if (ctData.lang !== mceData.lang) {
       // this should never happen, but if it does, it will break a lot of things, so let's throw an error right away
-      throw new Error(`Attempt to update chunk with id ${tableId} which is not in the same language`);
+      throw new ValidationError(`Table id ${tableId} is not in the same language as the multi-chunk edition: '${ctData.lang}' (must be '${mceData.lang}')`);
     }
 
     if (ctData.archived) {
@@ -401,17 +402,17 @@ export class MceData {
     for (let chunkIndex = 0; chunkIndex < mceData.chunks.length; chunkIndex++) {
       const chunk = mceData.chunks[chunkIndex];
       if (chunk.chunkEditionTableId === tableId) {
-        throw new Error(`Table ${tableId} already included`);
+        throw new ValidationError(`Table ${tableId} already included`);
       }
     }
     // new chunk, check if it's the same language
-    if (mceData.chunks.length !== 0 && mceData.lang !== ctData['lang']) {
-      throw new Error(`Attempt to add chunk with id ${tableId} which is not in the same language`);
+    if (mceData.chunks.length !== 0 && mceData.lang !== ctData.lang) {
+      throw new ValidationError(`Table id ${tableId} is not in the same language as the multi-chunk edition: '${ctData.lang}' (must be '${mceData.lang}')`);
     }
 
     if (ctData.type !== 'edition') {
       // reject non-editions
-      throw new Error(`Attempt to update chunk with id ${tableId} which is not an edition`);
+      throw new ValidationError(`Table id ${tableId} used to add a chunk is not an edition`);
     }
 
     if (mceData.chunks.length === 0) {

@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { MceData } from '@/MceData/MceData.js';
 import { MceDataInterface } from '@/MceData/MceDataInterface.js';
 import { CtDataInterface } from '@/CtData/CtDataInterface.js';
+import { ValidationError } from '@/lib/Error/SystemError.js';
 
 describe('MceData', () => {
 
@@ -248,7 +249,10 @@ describe('MceData', () => {
 
       await expect(MceData.updateChunk(mceData, 999, ctData, 'v2', getDocTitle, getSourceTitle))
         .rejects
-        .toThrow('Attempt to update chunk with id 999 which does not exist');
+        .toThrow(ValidationError);
+      await expect(MceData.updateChunk(mceData, 999, ctData, 'v2', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Chunk with table id 999 which does not exist');
     });
 
     it('throws when updating a non-edition chunk', async () => {
@@ -269,7 +273,10 @@ describe('MceData', () => {
 
       await expect(MceData.updateChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
         .rejects
-        .toThrow('Attempt to update chunk with id 1 which is not an edition');
+        .toThrow(ValidationError);
+      await expect(MceData.updateChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Table id 1 used to update a chunk is not an edition');
     });
 
     it('throws when updating a chunk with different language', async () => {
@@ -290,7 +297,10 @@ describe('MceData', () => {
 
       await expect(MceData.updateChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
         .rejects
-        .toThrow('Attempt to update chunk with id 1 which is not in the same language');
+        .toThrow(ValidationError);
+      await expect(MceData.updateChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow("Table id 1 is not in the same language as the multi-chunk edition: 'en' (must be 'la')");
     });
   });
 
@@ -467,7 +477,9 @@ describe('MceData', () => {
       const mceData = MceData.createEmpty();
       mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
 
+      expect(() => MceData.deleteSiglaGroup(mceData, -1)).toThrow(ValidationError);
       expect(() => MceData.deleteSiglaGroup(mceData, -1)).toThrow("Invalid sigla group index -1");
+      expect(() => MceData.deleteSiglaGroup(mceData, 1)).toThrow(ValidationError);
       expect(() => MceData.deleteSiglaGroup(mceData, 1)).toThrow("Invalid sigla group index 1");
     });
   });
@@ -569,7 +581,11 @@ describe('MceData', () => {
       mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
 
       expect(() => MceData.changeSiglaGroup(mceData, -1, { siglum: 'G2', witnesses: [0, 1] }))
+        .toThrow(ValidationError);
+      expect(() => MceData.changeSiglaGroup(mceData, -1, { siglum: 'G2', witnesses: [0, 1] }))
         .toThrow('Invalid sigla group index -1');
+      expect(() => MceData.changeSiglaGroup(mceData, 1, { siglum: 'G2', witnesses: [0, 1] }))
+        .toThrow(ValidationError);
       expect(() => MceData.changeSiglaGroup(mceData, 1, { siglum: 'G2', witnesses: [0, 1] }))
         .toThrow('Invalid sigla group index 1');
     });
@@ -592,6 +608,8 @@ describe('MceData', () => {
       mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
 
       expect(() => MceData.changeSiglaGroup(mceData, 0, { siglum: 'G2', witnesses: [0] }))
+        .toThrow(ValidationError);
+      expect(() => MceData.changeSiglaGroup(mceData, 0, { siglum: 'G2', witnesses: [0] }))
         .toThrow('Invalid sigla group {"siglum":"G2","witnesses":[0]}: Sigla group must have at least two witnesses');
     });
   });
@@ -612,6 +630,8 @@ describe('MceData', () => {
       const mceData = MceData.createEmpty();
       mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
 
+      expect(() => MceData.addSiglaGroup(mceData, { siglum: 'G1', witnesses: [0] }))
+        .toThrow(ValidationError);
       expect(() => MceData.addSiglaGroup(mceData, { siglum: 'G1', witnesses: [0] }))
         .toThrow('Invalid sigla group {"siglum":"G1","witnesses":[0]}: Sigla group must have at least two witnesses');
       expect(mceData.siglaGroups).toEqual([]);
@@ -722,8 +742,8 @@ describe('MceData', () => {
       mceData.witnesses = [{ witnessId: 'w0' } as any];
       mceData.sigla = ['A'];
 
-      expect(() => MceData.setSiglum(mceData, -1, 'B')).toThrow(Error);
-      expect(() => MceData.setSiglum(mceData, 1, 'C')).toThrow(Error);
+      expect(() => MceData.setSiglum(mceData, -1, 'B')).toThrow(ValidationError);
+      expect(() => MceData.setSiglum(mceData, 1, 'C')).toThrow(ValidationError);
 
       expect(mceData.sigla).toEqual(['A']);
     });
@@ -733,7 +753,7 @@ describe('MceData', () => {
       mceData.witnesses = [{ witnessId: 'w0' } as any];
       mceData.sigla = ['A'];
 
-      expect(() => MceData.setSiglum(mceData, 0, '   ')).toThrow(Error);
+      expect(() => MceData.setSiglum(mceData, 0, '   ')).toThrow(ValidationError);
 
       expect(mceData.sigla).toEqual(['A']);
     });
@@ -743,7 +763,7 @@ describe('MceData', () => {
       mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
       mceData.sigla = ['A', 'B'];
 
-      expect(() => MceData.setSiglum(mceData, 1, ' A ')).toThrow(Error);
+      expect(() => MceData.setSiglum(mceData, 1, ' A ')).toThrow(ValidationError);
 
       expect(mceData.sigla).toEqual(['A', 'B']);
     });
@@ -754,7 +774,7 @@ describe('MceData', () => {
       mceData.sigla = ['A', 'B'];
       mceData.siglaGroups = [{ siglum: ' G1 ', witnesses: [0, 1] }];
 
-      expect(() => MceData.setSiglum(mceData, 1, 'G1')).toThrow(Error);
+      expect(() => MceData.setSiglum(mceData, 1, 'G1')).toThrow(ValidationError);
 
       expect(mceData.sigla).toEqual(['A', 'B']);
     });
@@ -803,6 +823,9 @@ describe('MceData', () => {
       const ctData = { chunkId: 'c2', lang: 'en' } as any;
       await expect(MceData.addChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
         .rejects
+        .toThrow(ValidationError);
+      await expect(MceData.addChunk(mceData, 1, ctData, 'v2', getDocTitle, getSourceTitle))
+        .rejects
         .toThrow('Table 1 already included');
     });
 
@@ -815,7 +838,10 @@ describe('MceData', () => {
 
       await expect(MceData.addChunk(mceData, 2, ctData, 'v1', getDocTitle, getSourceTitle))
         .rejects
-        .toThrow('Attempt to add chunk with id 2 which is not in the same language');
+        .toThrow(ValidationError);
+      await expect(MceData.addChunk(mceData, 2, ctData, 'v1', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow("Table id 2 is not in the same language as the multi-chunk edition: 'fr' (must be 'en')");
     });
 
     it('throws when adding a non-edition chunk', async () => {
@@ -827,7 +853,10 @@ describe('MceData', () => {
 
       await expect(MceData.addChunk(mceData, 2, ctData, 'v1', getDocTitle, getSourceTitle))
         .rejects
-        .toThrow('Attempt to update chunk with id 2 which is not an edition');
+        .toThrow(ValidationError);
+      await expect(MceData.addChunk(mceData, 2, ctData, 'v1', getDocTitle, getSourceTitle))
+        .rejects
+        .toThrow('Table id 2 used to add a chunk is not an edition');
     });
 
     it('sets language and adds first chunk correctly', async () => {

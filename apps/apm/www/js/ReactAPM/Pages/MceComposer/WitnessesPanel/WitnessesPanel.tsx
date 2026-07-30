@@ -89,9 +89,14 @@ export default function WitnessesPanel({
     if (onChangeIncludeInAutoMarginalFoliation && !isAnyPending) {
       setChangingMarginalFoliationIndex(witnessIndex);
       await nextTick();
-      await onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
-      await nextTick();
-      setChangingMarginalFoliationIndex(null);
+      try {
+        await onChangeIncludeInAutoMarginalFoliation(witnessIndex, newState);
+        await nextTick();
+      } catch (error) {
+        console.error(`Error changing marginal foliation for witness at index ${witnessIndex}`, error);
+      } finally {
+        setChangingMarginalFoliationIndex(null);
+      }
     }
   };
 
@@ -100,9 +105,14 @@ export default function WitnessesPanel({
     if (onChangeSiglum && !isAnyPending) {
       setChangingSiglumIndex(witnessIndex);
       await nextTick();
-      await onChangeSiglum(witnessIndex, newSiglum);
-      await nextTick();
-      setChangingSiglumIndex(null);
+      try {
+        await onChangeSiglum(witnessIndex, newSiglum);
+        await nextTick();
+      } catch (error) {
+        console.error(`Error changing siglum for witness at index ${witnessIndex}`, error);
+      } finally {
+        setChangingSiglumIndex(null);
+      }
     }
   };
 

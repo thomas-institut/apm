@@ -410,6 +410,68 @@ describe('ChunksPanel', () => {
     vi.useRealTimers();
   });
 
+  it('clears pending move state when moveChunk throws', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    vi.useFakeTimers();
+
+    const chunk1 = buildChunk();
+    const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
+    const moveChunk = vi.fn().mockRejectedValue(new Error('Move failed'));
+
+    const flushMoveHandler = async () => {
+      for (let i = 0; i < 20; i++) {
+        if (container.querySelector('[title="Moving chunk C1"]') === null) {
+          break;
+        }
+        await act(async () => {
+          await vi.advanceTimersByTimeAsync(1);
+        });
+      }
+    };
+
+    await act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk1, chunk2]}
+          chunkOrder={[0, 1]}
+          ctDataStatusArray={[buildCtDataStatus(chunk1), buildCtDataStatus(chunk2)]}
+          moveChunk={moveChunk}
+        />
+      );
+    });
+
+    const moveDownButtonTitle = '[title="Click to move chunk C1 one row down"]';
+    const getMoveDownButton = () => container.querySelector(moveDownButtonTitle) as HTMLButtonElement;
+
+    await act(async () => {
+      getMoveDownButton().click();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await flushMoveHandler();
+
+    expect(moveChunk).toHaveBeenCalledTimes(1);
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    const moveDownButton2 = getMoveDownButton();
+    expect(moveDownButton2).not.toBeNull();
+
+    await act(async () => {
+      moveDownButton2.click();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await flushMoveHandler();
+
+    expect(moveChunk).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('.highlighted')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+    vi.useRealTimers();
+  });
+
   it('shows the last full chunk load time as initial last check for updates', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;

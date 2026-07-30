@@ -70,8 +70,16 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiv
     setAddingTableId(tableId);
     setAddChunkError(null);
     await nextTick();
-    const result = await addChunk(tableId, "");
-    setAddingTableId(null);
+    let result: true | string;
+    try {
+      result = await addChunk(tableId, "");
+    } catch (error) {
+      console.error(`Error adding table ${tableId}`, error);
+      setAddChunkError('Error: unexpected error');
+      return;
+    } finally {
+      setAddingTableId(null);
+    }
     if (result === true) {
       setTableIdInput('');
     } else {
@@ -90,9 +98,17 @@ export default function AddChunksPanel({addChunk, currentChunkTableIds, getActiv
   const onClickLoadEditions = async () => {
     setFetchingEditions(true);
     setFetchEditionsError(null);
-    const result = await getActiveEditions();
-    console.log(`Got active editions`, result);
-    setFetchingEditions(false);
+    let result: ApiCollationTableInfo[] | string;
+    try {
+      result = await getActiveEditions();
+      console.log(`Got active editions`, result);
+    } catch (error) {
+      console.error('Error getting active editions', error);
+      setFetchEditionsError('Error: unexpected error');
+      return;
+    } finally {
+      setFetchingEditions(false);
+    }
     if (typeof result === 'string') {
       console.log(`Error: ${result}`);
       setFetchEditionsError(`Error: ${result}`);

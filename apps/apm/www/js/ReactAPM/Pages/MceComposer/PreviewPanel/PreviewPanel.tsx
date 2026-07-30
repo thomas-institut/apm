@@ -132,13 +132,19 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
     setPreviewUpToDate(false);
     setRefreshingPreview(true);
     await nextTick();
-    const newlyTypesetEdition = await doTypeset();
-    if (newlyTypesetEdition !== null) {
-      setPage(Math.min(page, newlyTypesetEdition.getPageCount() - 1));
+    try {
+      const newlyTypesetEdition = await doTypeset();
+      if (newlyTypesetEdition !== null) {
+        setPage(Math.min(page, newlyTypesetEdition.getPageCount() - 1));
+      }
+      setTypesetEdition(newlyTypesetEdition);
+      setPreviewUpToDate(true);
+    } catch (error) {
+      console.warn('Error refreshing preview', error);
+      setPreviewUpToDate(false);
+    } finally {
+      setRefreshingPreview(false);
     }
-    setTypesetEdition(newlyTypesetEdition);
-    setRefreshingPreview(false);
-    setPreviewUpToDate(true);
   };
 
   const handleOnClickDownloadPDF = async () => {
@@ -160,10 +166,10 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
     setDownloadingPDF(true);
     setPdfDownloadError(null);
     await nextTick();
-    const editionObject = (new Edition()).setFromInterface(edition);
-    const styleSheet = SystemStyleSheet.getStyleSheet(edition.lang, styleSheetId);
-    const apiRequestData = await getApiPdfData(editionObject, styleSheet, styleSheetId);
     try {
+      const editionObject = (new Edition()).setFromInterface(edition);
+      const styleSheet = SystemStyleSheet.getStyleSheet(edition.lang, styleSheetId);
+      const apiRequestData = await getApiPdfData(editionObject, styleSheet, styleSheetId);
       const pdfUrl = await getPdfUrl(apiRequestData);
       console.log(`PDF url: ${pdfUrl}`);
       setPdfDownloadUrl(pdfUrl);
@@ -171,8 +177,9 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
     } catch (e) {
       console.warn(`Error getting PDF url from server`, e);
       setPdfDownloadError('Error');
+    } finally {
+      setDownloadingPDF(false);
     }
-    setDownloadingPDF(false);
   };
 
   const styleSheetSelect = <select value={styleSheetId ?? undefined}

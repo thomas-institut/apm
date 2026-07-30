@@ -207,9 +207,14 @@ export default function ChunksPanel({
 
     setPendingDeleteChunkIndex(chunkIndex);
     await nextTick();
-    await deleteChunk(chunkIndex);
-    await nextTick();
-    setPendingDeleteChunkIndex(null);
+    try {
+      await deleteChunk(chunkIndex);
+      await nextTick();
+    } catch (error) {
+      console.error(`Error deleting chunk at index ${chunkIndex}`, error);
+    } finally {
+      setPendingDeleteChunkIndex(null);
+    }
   };
 
   const handleCancelDeleteChunk = () => {
@@ -224,9 +229,14 @@ export default function ChunksPanel({
     }
     setPendingUpdateChunkIndex(chunkIndex);
     await nextTick();
-    await updateChunk(chunkIndex);
-    await nextTick();
-    setPendingUpdateChunkIndex(null);
+    try {
+      await updateChunk(chunkIndex);
+      await nextTick();
+    } catch (error) {
+      console.error(`Error updating chunk at index ${chunkIndex}`, error);
+    } finally {
+      setPendingUpdateChunkIndex(null);
+    }
   };
 
   const handleMoveChunk = async (chunkIndex: number, direction: 'up' | 'down') => {
@@ -237,13 +247,20 @@ export default function ChunksPanel({
     setPendingHighlightChunkId(chunks[chunkOrder[chunkIndex]].chunkId);
     setPendingMoveChunkIndex(chunkIndex);
     await nextTick();
-    const result = await moveChunk(chunkIndex, direction);
-    await nextTick();
-    if (!result){
+    try {
+      const result = await moveChunk(chunkIndex, direction);
+      await nextTick();
+      if (!result) {
+        setPendingHighlightChunkId(null);
+        setHighlightedChunkId(null);
+      }
+    } catch (error) {
+      console.error(`Error moving chunk at index ${chunkIndex}`, error);
       setPendingHighlightChunkId(null);
       setHighlightedChunkId(null);
+    } finally {
+      setPendingMoveChunkIndex(null);
     }
-    setPendingMoveChunkIndex(null);
   };
 
   const handleSetChunkBreak = async (chunkIndex: number, breakAfter: string) => {
@@ -254,9 +271,14 @@ export default function ChunksPanel({
     }
     setPendingSetChunkBreakIndex(chunkIndex);
     await nextTick();
-    await setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
-    await nextTick();
-    setPendingSetChunkBreakIndex(null);
+    try {
+      await setChunkBreak(chunkIndex, breakAfter === 'none' ? '' : breakAfter);
+      await nextTick();
+    } catch (error) {
+      console.error(`Error setting chunk break at index ${chunkIndex}`, error);
+    } finally {
+      setPendingSetChunkBreakIndex(null);
+    }
   };
 
   const handleOnClickCheckForUpdates = async () => {

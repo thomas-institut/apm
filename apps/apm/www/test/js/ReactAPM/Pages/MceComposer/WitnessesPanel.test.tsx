@@ -257,4 +257,50 @@ describe('WitnessesPanel', () => {
       root.unmount();
     });
   });
+
+  it('clears pending witness action when siglum change throws', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const onChangeSiglum = vi.fn().mockRejectedValue(new Error('Could not update siglum'));
+    const onChangeIncludeInAutoMarginalFoliation = vi.fn(() => true);
+
+    await act(async () => {
+      root.render(
+        <WitnessesPanel
+          witnesses={[
+            {
+              siglum: 'A',
+              title: 'Witness A',
+              includeInAutoMarginalFoliation: true,
+            }
+          ]}
+          siglaGroups={[]}
+          isSiglumValid={() => true}
+          isSiglaGroupValid={() => true}
+          onChangeSiglum={onChangeSiglum}
+          onChangeIncludeInAutoMarginalFoliation={onChangeIncludeInAutoMarginalFoliation}
+        />
+      );
+    });
+
+    await act(async () => {
+      (container.querySelector('.editable-confirm-btn') as HTMLButtonElement).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onChangeSiglum).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      (container.querySelector('.nice-toggle-btn') as HTMLButtonElement).click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(onChangeIncludeInAutoMarginalFoliation).toHaveBeenCalledOnce();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });

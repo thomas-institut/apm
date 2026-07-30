@@ -171,6 +171,33 @@ describe('AddChunksPanel', () => {
     expect(errorSpan?.textContent).toBe('Error: Server Error');
   });
 
+  it('clears pending state and shows generic error when addChunk throws', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const addChunk = vi.fn().mockRejectedValue(new Error('Unexpected failure'));
+
+    await act(async () => {
+      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={addChunk}
+                                 getActiveEditions={vi.fn().mockResolvedValue([])}/>);
+    });
+
+    const input = container.querySelector('input[type="number"]') as HTMLInputElement;
+    await act(async () => {
+      setInputValue(input, '10');
+    });
+
+    const addButton = container.querySelector('button') as HTMLButtonElement;
+    await act(async () => {
+      addButton.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(addChunk).toHaveBeenCalledWith(10, '');
+    expect(container.querySelector('.quick-add-form .text-danger')?.textContent).toBe('Error: unexpected error');
+    expect((container.querySelector('button') as HTMLButtonElement).disabled).toBe(false);
+  });
+
   it('shows error message when loading editions fails and clears it on successful retry', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
@@ -212,6 +239,41 @@ describe('AddChunksPanel', () => {
 
     await act(async () => {
       retryButton?.click();
+    });
+
+    expect(getActiveEditions).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('.editions-table-div .text-danger')).toBeNull();
+  });
+
+  it('clears pending state and allows retry when loading editions throws', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const getActiveEditions = vi.fn()
+      .mockRejectedValueOnce(new Error('Request failed'))
+      .mockResolvedValueOnce([]);
+
+    await act(async () => {
+      root.render(<AddChunksPanel currentChunkTableIds={[]} addChunk={vi.fn().mockResolvedValue(true)}
+                                 getActiveEditions={getActiveEditions}/>);
+    });
+
+    const firstLoadButton = getButtonByText(container, 'Load Data');
+    expect(firstLoadButton).not.toBeUndefined();
+
+    await act(async () => {
+      firstLoadButton?.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(container.querySelector('.editions-table-div .text-danger')?.textContent).toBe('Error: unexpected error');
+
+    const retryButton = getButtonByText(container, 'Load Data');
+    expect(retryButton).not.toBeUndefined();
+
+    await act(async () => {
+      retryButton?.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
     });
 
     expect(getActiveEditions).toHaveBeenCalledTimes(2);

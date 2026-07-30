@@ -200,10 +200,17 @@ vi.mock('@/ReactAPM/Pages/MceComposer/MainTextPanel/MainTextPanel', () => ({
 
 // Mock SessionPanel to avoid interval timers in tests
 vi.mock('@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel', () => ({
-  default: ({onClearHistory, onGoTo}: {onClearHistory: () => void, onGoTo: (index: number) => void}) => {
+  default: ({onClearHistory, onGoTo, savedStateSignature}: {
+    onClearHistory: () => void,
+    onGoTo: (index: number) => void,
+    savedStateSignature: string,
+  }) => {
     mockedEditorHandlers.clearHistory = onClearHistory;
     mockedEditorHandlers.onGoTo = onGoTo;
-    return <div>session</div>;
+    return <div>
+      session
+      <span data-testid="session-saved-signature">{savedStateSignature}</span>
+    </div>;
   }
 }));
 
@@ -813,6 +820,104 @@ describe('MceComposer', () => {
     });
   });
 
+  it('shows an error page when the initial MCE fetch fails', async () => {
+    mockRouteParams.id = '123';
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const apiMceGetData = vi.fn().mockRejectedValue(new Error('API unavailable'));
+    const getSingleChunkData = vi.fn();
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData,
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects(8);
+    });
+
+    expect(container.textContent).toContain('Oops!');
+    expect(container.textContent).toContain('Failed to load MCE data from server');
+    expect(container.textContent).toContain('API unavailable');
+    expect(getSingleChunkData).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('transitions to the global error state when initial chunk loading fails', async () => {
+    mockRouteParams.id = '123';
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const mceData = MceData.createEmpty();
+    mceData.lang = 'la';
+    mceData.chunks = [{
+      chunkId: 'chunk-100',
+      break: '',
+      chunkEditionTableId: 100,
+      lineNumbersRestart: false,
+      title: 'Chunk 100',
+      version: '',
+      witnessIndices: [],
+    }];
+    mceData.chunkOrder = [0];
+
+    const getSingleChunkData = vi.fn().mockRejectedValue(new Error('Chunk load failed'));
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn().mockResolvedValue({mceData}),
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects(10);
+    });
+
+    expect(getSingleChunkData).toHaveBeenCalledWith(100, '');
+    expect(container.textContent).toContain('Oops!');
+    expect(container.textContent).toContain('Error loading chunks');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it.each(['12junk', '1.5', '1e2'])('rejects malformed numeric-looking route ID %s', async (invalidId) => {
     mockRouteParams.id = invalidId;
     document.body.innerHTML = '<div id="root"></div>';
@@ -848,6 +953,49 @@ describe('MceComposer', () => {
 
     expect(container.textContent).toContain('Oops!');
     expect(container.textContent).toContain('Invalid MCE ID');
+    expect(apiMceGetData).not.toHaveBeenCalled();
+    expect(getSingleChunkData).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('renders an explicit status message when the route ID is undefined', async () => {
+    mockRouteParams.id = undefined as unknown as string;
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const apiMceGetData = vi.fn();
+    const getSingleChunkData = vi.fn();
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData,
+        getSingleChunkData,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    expect(container.textContent).toContain('Oops!');
+    expect(container.textContent).toContain('MCE ID is undefined');
     expect(apiMceGetData).not.toHaveBeenCalled();
     expect(getSingleChunkData).not.toHaveBeenCalled();
 
@@ -1207,6 +1355,89 @@ describe('MceComposer', () => {
     historyRedoSpy.mockRestore();
     historyGoToStateSpy.mockRestore();
     historyClearSpy.mockRestore();
+    vi.useRealTimers();
+  });
+
+  it('clears save errors and resets unsaved state after a successful save', async () => {
+    vi.useFakeTimers();
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const firstSaveRequest = createDeferredPromise<{result: string, id: number}>();
+    const secondSaveRequest = createDeferredPromise<{result: string, id: number}>();
+    const apiMceSave = vi.fn()
+      .mockImplementationOnce(() => firstSaveRequest.promise)
+      .mockImplementationOnce(() => secondSaveRequest.promise);
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        apiMceSave,
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects();
+    });
+
+    const revertButtonSelector = '.icon-btn[title="Click to revert to last saved version"]';
+    const getSavedSignature = () => container.querySelector('[data-testid="session-saved-signature"]')?.textContent ?? '';
+    const initialSavedSignature = getSavedSignature();
+
+    await act(async () => {
+      await mockedEditorHandlers.changeTitle!('Changed title');
+    });
+
+    expect((container.querySelector(revertButtonSelector) as HTMLElement).className).toContain('highlighted');
+    expect(getSavedSignature()).toBe(initialSavedSignature);
+
+    let firstSavePromise!: Promise<void>;
+    await act(async () => {
+      firstSavePromise = mockedEditorHandlers.save!();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    await act(async () => {
+      firstSaveRequest.reject(new Error('Network down'));
+      await firstSavePromise;
+    });
+
+    expect(container.querySelector('[data-testid="save-error"]')?.textContent).toContain('Network down');
+    expect((container.querySelector(revertButtonSelector) as HTMLElement).className).toContain('highlighted');
+
+    let secondSavePromise!: Promise<void>;
+    await act(async () => {
+      secondSavePromise = mockedEditorHandlers.save!();
+      await vi.advanceTimersByTimeAsync(0);
+    });
+
+    await act(async () => {
+      secondSaveRequest.resolve({result: 'Success', id: 1});
+      await secondSavePromise;
+    });
+
+    expect(apiMceSave).toHaveBeenCalledTimes(2);
+    expect(container.querySelector('[data-testid="save-error"]')).toBeNull();
+    expect((container.querySelector(revertButtonSelector) as HTMLElement).className).not.toContain('highlighted');
+    expect(getSavedSignature()).not.toBe(initialSavedSignature);
+
+    await act(async () => {
+      root.unmount();
+    });
     vi.useRealTimers();
   });
 

@@ -25,21 +25,6 @@ Coverage is already good for several core behaviors:
 
 ### Main Gaps (Prioritized) and How to Fill
 
-#### 1) No coverage for preview/typesetting workflow (highest gap)
-
-There are currently no dedicated tests for preview behavior under `MceComposer`.
-
-Why this matters:
-
-- The preview stack carries high user impact (typeset refresh, PDF generation, related error feedback) and async-state complexity.
-
-How to fill:
-
-- Add a `PreviewPanel` suite covering:
-  - refresh success path (pending state on/off, “up to date” transitions),
-  - refresh failure path (error UI, pending cleanup),
-  - PDF download success and failure messages,
-  - repeat clicks while pending (guard behavior).
 
 #### 2) Root `MceComposer` load/save matrix is still incomplete
 

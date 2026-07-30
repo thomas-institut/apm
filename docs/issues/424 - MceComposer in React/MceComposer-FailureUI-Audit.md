@@ -14,84 +14,9 @@
 
 ### Findings
 
-#### 1) Global error pages over-classify failures as bugs
 
-- Evidence:
-  - Route and load error pages always include “This may be a bug, please report it.”
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/MceComposer.tsx:1153-1167`
-- Why this is a problem:
-  - Route parse errors, invalid IDs, chunk fetch failures, and transport/server failures are not necessarily software defects.
-  - This encourages incorrect bug filing and reduces diagnostic quality.
-- Impact:
-  - User confusion; noisy issue tracker; harder triage.
 
-#### 2) Action exceptions are funneled into a “bug found” channel too aggressively
 
-- Evidence:
-  - `reportActionBug` sets `foundBug=true` and a bug description for action failures:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/MceComposer.tsx:559-563`
-  - Many action handlers call `reportActionBug(...)` when `history.do(...)` throws:
-    - delete/move/break/siglum/group/title/update/add paths around `:588-855`.
-  - Bug UI explicitly asks user to report software bug on GitHub:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/MceComposer.tsx:1249-1298`
-- Why this is a problem:
-  - Not all thrown failures here are guaranteed product defects (e.g., stale state, remote fetch dependency errors, invariant mismatches from external data).
-- Impact:
-  - “Everything is a bug” anti-pattern; poor failure taxonomy.
-
-#### 3) Guarded actions can silently no-op with no immediate user feedback
-
-- Evidence:
-  - Edit lock guard returns only booleans/strings (`startMceDataEdit`, `isMceDataEditBlocked`, `getMceDataEditError`) and many callers just return:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/MceComposer.tsx:565-586`
-  - Silent early-return examples:
-    - Revert: `:875-886`
-    - Session go-to / clear-history callback guards: `:1131-1147`
-    - Undo/redo onClick guard returns: `:1269-1288`
-    - Save button click guard only warns in console: `:990-993`
-- Why this is a problem:
-  - User clicks can appear ignored when saving/editing is in progress.
-- Impact:
-  - Poor UX trust; users retry actions unnecessarily.
-
-#### 4) Chunk load errors are stored but rendered as generic status text
-
-- Evidence:
-  - Chunk fetch failures populate `CtDataStatus.errorMsg` and state `'error'`:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/MceComposer.tsx:364-436`
-  - In `ChunksPanel`, non-`loaded` state is shown as warning text `${ctDataState}...`, not explicit error details:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel.tsx:164-167`
-  - `errorMsg` from status is not shown in chunk row message branch.
-- Why this is a problem:
-  - Users lose actionable detail (network/server/version mismatch message).
-- Impact:
-  - Harder recovery and support.
-
-#### 5) `checkForChunkUpdates` failure path has no UI feedback and can leave pending state stuck
-
-- Evidence:
-  - Parent function has no `try/catch`; errors from `collationTableVersionInfo` bubble:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/MceComposer.tsx:888-915`
-  - Child handler sets pending true, awaits callback, then clears pending only on success:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel.tsx:255-263`
-- Why this is a problem:
-  - On throw, `checkingForUpdates` may remain `true`; user gets spinner without clear failure message.
-- Impact:
-  - Potential “stuck loading” perception.
-
-#### 6) Several sub-panel async handlers do not `try/finally` pending cleanup
-
-- Evidence:
-  - `ChunksPanel`: update/delete/set-break handlers set pending, await callback, clear pending afterward without catch/finally:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel.tsx:193-223`, `:242-253`
-  - `AddChunksPanel`: similar pattern for `onClickAddButton` and `onClickLoadEditions`:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel.tsx:60-80`, `:90-102`
-  - `PreviewPanel`: refresh/download handlers set pending and clear afterward, but refresh path has no catch:
-    - `apps/apm/www/js/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel.tsx:131-142`, `:160-176`
-- Why this is a problem:
-  - Thrown callback/operation errors can bypass cleanup and leave UI in pending mode.
-- Impact:
-  - Stale spinner, blocked controls, missing terminal error state.
 
 #### 7) Preview refresh failure has no user-visible error message
 

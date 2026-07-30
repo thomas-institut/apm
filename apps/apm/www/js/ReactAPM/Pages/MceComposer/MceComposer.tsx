@@ -58,15 +58,6 @@ import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 import {OperationalError} from "@/lib/Error/SystemError";
 import {ApmApiClientError} from "@/Api/ApmApiClient";
 
-// TODO before release (2026-07-29))
-//  - Error handling: all actions/buttons should show error messages when failing, no silent fails. This requires
-//    testing that simulates server failures. Maybe a mock api client that fails in different ways. Server failures
-//    may need a general message in the toolbar info area.
-
-// TODO final checks before release
-//  - Try to attain 100% coverage in functionality testing: come up with tests without LLM help first
-
-
 // TODO: for later
 //  - Implement admin panel with versions
 //  - Issue #429: implement clone button in admin panel

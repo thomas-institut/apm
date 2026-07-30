@@ -65,10 +65,18 @@
             display: contents;
 
             .chunk-mark-icon {
-                color: #bd0202;
+
                 /*font-size: 0.7em;*/
                 cursor: pointer;
                 /*font-weight: bold;*/
+            }
+
+            .chunk-start {
+                color: #bd0202;
+            }
+
+            .chunk-end {
+                color: dodgerblue;
             }
 
             .chunk-mark-label {

@@ -6,7 +6,10 @@ import React from 'react';
 import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {describe, expect, it, vi} from 'vitest';
-import MainTextPanel from '@/ReactAPM/Pages/MceComposer/MainTextPanel/MainTextPanel';
+import MainTextPanel, {
+  fullyContainedFirstChunkMarker,
+  fullyContainedLastChunkMarker
+} from '@/ReactAPM/Pages/MceComposer/MainTextPanel/MainTextPanel';
 import {Edition} from '@/Edition/Edition';
 import {MainTextToken} from '@/Edition/MainTextToken';
 
@@ -54,11 +57,15 @@ const makeEditionWithChunkParagraphs = (paragraphCount: number): Edition => {
   for (let i = 1; i <= paragraphCount; i++) {
     mainText.push(makeChunkStartToken(`AW47-${i}`));
     mainText.push(makeTextToken(`Paragraph ${i}`));
+    mainText.push(makeChunkEndToken(`AW47-${i}`));
     mainText.push(makeParagraphEndToken());
   }
 
   return new Edition().setLang('en').setMainText(mainText);
 };
+
+const makeFullContainedPageLabel = (firstChunkId: string, lastChunkId: string): string =>
+  `${fullyContainedFirstChunkMarker}${firstChunkId} → ${lastChunkId}${fullyContainedLastChunkMarker}`;
 
 const renderMainTextPanel = async ({
                                      edition,
@@ -66,18 +73,16 @@ const renderMainTextPanel = async ({
                                      editionOutOfDate,
                                      onClickRegenerate = vi.fn(),
                                      paginationThreshold,
-                                     parsPerPage,
-                                     minLastPageParCount,
-                                     showSelectThreshold
+                                     minParsPerPage,
+                                     maxParsPerPage
                                    }: {
   edition: Edition | null;
   generationProgress: number | null;
   editionOutOfDate: boolean;
   onClickRegenerate?: () => void | Promise<void>;
   paginationThreshold?: number;
-  parsPerPage?: number;
-  minLastPageParCount?: number;
-  showSelectThreshold?: number;
+  minParsPerPage?: number;
+  maxParsPerPage?: number;
 }) => {
   document.body.innerHTML = '<div id="root"></div>';
   const container = document.getElementById('root')!;
@@ -91,9 +96,8 @@ const renderMainTextPanel = async ({
         editionOutOfDate={editionOutOfDate}
         onClickRegenerate={onClickRegenerate}
         paginationThreshold={paginationThreshold}
-        parsPerPage={parsPerPage}
-        minLastPageParCount={minLastPageParCount}
-        showSelectThreshold={showSelectThreshold}
+        minParsPerPage={minParsPerPage}
+        maxParsPerPage={maxParsPerPage}
       />
     );
   });
@@ -155,9 +159,8 @@ describe('MainTextPanel', () => {
       generationProgress: null,
       editionOutOfDate: false,
       paginationThreshold: 25,
-      parsPerPage: 10,
-      minLastPageParCount: 3,
-      showSelectThreshold: 5
+      minParsPerPage: 10,
+      maxParsPerPage: 15
     });
 
     const paragraphs = container.querySelectorAll('.main-text-content p');
@@ -168,7 +171,7 @@ describe('MainTextPanel', () => {
     expect(paragraphs[1].textContent).toContain('Second paragraph');
   });
 
-  it('shows paginated buttons with chunk-id range labels when page count is low', async () => {
+  it('shows page select with chunk-id range labels when page count is low', async () => {
     const edition = makeEditionWithChunkParagraphs(28);
 
     const {container} = await renderMainTextPanel({
@@ -176,26 +179,56 @@ describe('MainTextPanel', () => {
       generationProgress: null,
       editionOutOfDate: false,
       paginationThreshold: 25,
-      parsPerPage: 10,
-      minLastPageParCount: 3,
-      showSelectThreshold: 5
+      minParsPerPage: 10,
+      maxParsPerPage: 15
     });
 
     expect(container.querySelector('.main-text-pagination')).not.toBeNull();
-    expect(container.querySelector('.main-text-pagination-select')).toBeNull();
-
-    const pageButtons = Array.from(container.querySelectorAll('.main-text-pagination-page-button'));
-    expect(pageButtons).toHaveLength(3);
-    expect(pageButtons.map((button) => button.textContent)).toEqual([
-      'AW47-1 → AW47-10',
-      'AW47-11 → AW47-20',
-      'AW47-21 → AW47-28'
+    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    expect(container.querySelectorAll('.main-text-pagination-page-button')).toHaveLength(0);
+    expect(Array.from(select.options).map((option) => option.textContent)).toEqual([
+      makeFullContainedPageLabel('AW47-1', 'AW47-10'),
+      makeFullContainedPageLabel('AW47-11', 'AW47-20'),
+      makeFullContainedPageLabel('AW47-21', 'AW47-28')
     ]);
 
     const paragraphs = container.querySelectorAll('.main-text-content p');
     expect(paragraphs).toHaveLength(10);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 1');
     expect(container.querySelector('.main-text-content')?.textContent).not.toContain('Paragraph 11');
+  });
+
+  it('marks fully contained first/last chunks with markers in page labels', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeChunkStartToken('AW47-1'),
+      makeTextToken('Paragraph 1'),
+      makeParagraphEndToken(),
+      makeTextToken('Paragraph 2'),
+      makeChunkEndToken('AW47-1'),
+      makeChunkStartToken('AW47-2'),
+      makeParagraphEndToken(),
+      makeTextToken('Paragraph 3'),
+      makeChunkEndToken('AW47-2'),
+      makeChunkStartToken('AW47-3'),
+      makeChunkEndToken('AW47-3'),
+      makeParagraphEndToken()
+    ]);
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      generationProgress: null,
+      editionOutOfDate: false,
+      paginationThreshold: 1,
+      minParsPerPage: 2,
+      maxParsPerPage: 2
+    });
+
+    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    expect(Array.from(select.options).map((option) => option.textContent)).toEqual([
+      `${fullyContainedFirstChunkMarker}AW47-1 → AW47-2`,
+      `AW47-2 → AW47-3${fullyContainedLastChunkMarker}`
+    ]);
   });
 
   it('navigates paginated pages with first/previous/next/last controls', async () => {
@@ -206,9 +239,8 @@ describe('MainTextPanel', () => {
       generationProgress: null,
       editionOutOfDate: false,
       paginationThreshold: 25,
-      parsPerPage: 10,
-      minLastPageParCount: 3,
-      showSelectThreshold: 5
+      minParsPerPage: 10,
+      maxParsPerPage: 15
     });
 
     await act(async () => {
@@ -233,7 +265,7 @@ describe('MainTextPanel', () => {
     expect(paragraphTexts).not.toContain('Paragraph 11');
   });
 
-  it('rebalances pagination so the last page is not shorter than the minimum target', async () => {
+  it('allows a short last page when previous pages end at chunk boundaries', async () => {
     const edition = makeEditionWithChunkParagraphs(31);
 
     const {container} = await renderMainTextPanel({
@@ -241,22 +273,51 @@ describe('MainTextPanel', () => {
       generationProgress: null,
       editionOutOfDate: false,
       paginationThreshold: 25,
-      parsPerPage: 10,
-      minLastPageParCount: 3,
-      showSelectThreshold: 5
+      minParsPerPage: 10,
+      maxParsPerPage: 15
     });
 
-    const pageButtons = Array.from(container.querySelectorAll('.main-text-pagination-page-button'));
-    expect(pageButtons.map((button) => button.textContent)).toEqual([
-      'AW47-1 → AW47-10',
-      'AW47-11 → AW47-19',
-      'AW47-20 → AW47-28',
-      'AW47-29 → AW47-31'
+    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    expect(Array.from(select.options).map((option) => option.textContent)).toEqual([
+      makeFullContainedPageLabel('AW47-1', 'AW47-10'),
+      makeFullContainedPageLabel('AW47-11', 'AW47-20'),
+      makeFullContainedPageLabel('AW47-21', 'AW47-30'),
+      makeFullContainedPageLabel('AW47-31', 'AW47-31')
     ]);
 
     await act(async () => {
       (container.querySelector('.main-text-pagination-last') as HTMLButtonElement).click();
     });
+    expect(container.querySelectorAll('.main-text-content p')).toHaveLength(1);
+    expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 31');
+  });
+
+  it('extends pages beyond the minimum when needed to end on a fully contained chunk', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeChunkStartToken('AW47-1'),
+      makeTextToken('Paragraph 1'),
+      makeParagraphEndToken(),
+      makeTextToken('Paragraph 2'),
+      makeChunkEndToken('AW47-1'),
+      makeChunkStartToken('AW47-2'),
+      makeParagraphEndToken(),
+      makeTextToken('Paragraph 3'),
+      makeChunkEndToken('AW47-2'),
+      makeParagraphEndToken()
+    ]);
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      generationProgress: null,
+      editionOutOfDate: false,
+      paginationThreshold: 1,
+      minParsPerPage: 2,
+      maxParsPerPage: 4
+    });
+
+    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    expect(select.options).toHaveLength(1);
+    expect(select.options[0].textContent).toBe(makeFullContainedPageLabel('AW47-1', 'AW47-2'));
     expect(container.querySelectorAll('.main-text-content p')).toHaveLength(3);
   });
 
@@ -268,9 +329,8 @@ describe('MainTextPanel', () => {
       generationProgress: null,
       editionOutOfDate: false,
       paginationThreshold: 25,
-      parsPerPage: 10,
-      minLastPageParCount: 3,
-      showSelectThreshold: 5
+      minParsPerPage: 10,
+      maxParsPerPage: 15
     });
 
     expect(container.querySelectorAll('.main-text-pagination-page-button')).toHaveLength(0);
@@ -278,8 +338,8 @@ describe('MainTextPanel', () => {
     const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
     expect(select).not.toBeNull();
     expect(select.options).toHaveLength(6);
-    expect(select.options[0].textContent).toBe('AW47-1 → AW47-10');
-    expect(select.options[5].textContent).toBe('AW47-51 → AW47-60');
+    expect(select.options[0].textContent).toBe(makeFullContainedPageLabel('AW47-1', 'AW47-10'));
+    expect(select.options[5].textContent).toBe(makeFullContainedPageLabel('AW47-51', 'AW47-60'));
 
     await act(async () => {
       select.value = '5';
@@ -299,9 +359,8 @@ describe('MainTextPanel', () => {
       generationProgress: null,
       editionOutOfDate: false,
       paginationThreshold: 0,
-      parsPerPage: 10,
-      minLastPageParCount: 3,
-      showSelectThreshold: 5
+      minParsPerPage: 10,
+      maxParsPerPage: 15
     });
 
     expect(container.querySelector('.main-text-pagination')).toBeNull();

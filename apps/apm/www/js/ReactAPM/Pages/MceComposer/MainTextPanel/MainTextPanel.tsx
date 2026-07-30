@@ -3,6 +3,7 @@ import './MainTextPanel.css';
 import {Button, Form} from "react-bootstrap";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {Fragment, JSX, useEffect, useMemo, useState} from "react";
+import {TriangleFill} from "react-bootstrap-icons";
 
 interface MainTextPanelProps {
   edition: Edition | null;
@@ -10,15 +11,20 @@ interface MainTextPanelProps {
   editionOutOfDate: boolean;
   onClickRegenerate: () => void | Promise<void>;
   paginationThreshold?: number;
-  parsPerPage?: number;
-  minLastPageParCount?: number;
-  showSelectThreshold?: number;
+  minParsPerPage?: number;
+  maxParsPerPage?: number;
 }
 
 interface Paragraph {
   style: string;
   tokens: MainTextToken[];
-  chunkStartIds: string[];
+  chunks: ParagraphChunk[];
+}
+
+interface ParagraphChunk {
+  chunkId: string;
+  hasStart: boolean;
+  hasEnd: boolean;
 }
 
 interface ParagraphPage {
@@ -26,10 +32,14 @@ interface ParagraphPage {
   label: string;
 }
 
-const defaultPaginationThreshold = 40;
-const defaultParsPerPage = 20;
-const defaultMinLastPageParCount = 3;
-const defaultShowSelectThreshold = 5;
+const defaultPaginationThreshold = 25;
+const defaultMinParsPerPage = 20;
+const defaultMaxParsPerPage = 30;
+export const fullyContainedFirstChunkMarker = '‣ ';
+export const fullyContainedLastChunkMarker = ' ∷';
+
+const chunkStartMarker = '| ';
+const chunkEndMarker = '☐';
 
 export default function MainTextPanel({
                                         edition,
@@ -37,16 +47,62 @@ export default function MainTextPanel({
                                         editionOutOfDate,
                                         onClickRegenerate,
                                         paginationThreshold = defaultPaginationThreshold,
-                                        parsPerPage = defaultParsPerPage,
-                                        minLastPageParCount = defaultMinLastPageParCount,
-                                        showSelectThreshold = defaultShowSelectThreshold
+                                        minParsPerPage = defaultMinParsPerPage,
+                                        maxParsPerPage = defaultMaxParsPerPage
                                       }: MainTextPanelProps) {
 
-  const getPageLabel = (chunkIds: string[]): string => {
-    if (chunkIds.length === 0) {
+
+
+  const getPageChunks = (paragraphs: Paragraph[]): ParagraphChunk[] => {
+    const pageChunks: ParagraphChunk[] = [];
+    const pageChunksById = new Map<string, ParagraphChunk>();
+
+    paragraphs.forEach((paragraph) => {
+      paragraph.chunks.forEach((chunk) => {
+        const existingChunk = pageChunksById.get(chunk.chunkId);
+        if (existingChunk === undefined) {
+          const newChunk: ParagraphChunk = {
+            chunkId: chunk.chunkId,
+            hasStart: chunk.hasStart,
+            hasEnd: chunk.hasEnd
+          };
+          pageChunksById.set(chunk.chunkId, newChunk);
+          pageChunks.push(newChunk);
+          return;
+        }
+
+        existingChunk.hasStart = existingChunk.hasStart || chunk.hasStart;
+        existingChunk.hasEnd = existingChunk.hasEnd || chunk.hasEnd;
+      });
+    });
+
+    return pageChunks;
+  };
+
+  const isLastChunkFullyContained = (paragraphs: Paragraph[]): boolean => {
+    const pageChunks = getPageChunks(paragraphs);
+    if (pageChunks.length === 0) {
+      return true;
+    }
+
+    const lastChunk = pageChunks[pageChunks.length - 1];
+    return lastChunk.hasEnd;
+  };
+
+  const getPageLabel = (paragraphs: Paragraph[]): string => {
+    const pageChunks = getPageChunks(paragraphs);
+
+    if (pageChunks.length === 0) {
       return '— → —';
     }
-    return `${chunkIds[0]} → ${chunkIds[chunkIds.length - 1]}`;
+
+    const firstChunk = pageChunks[0];
+    const lastChunk = pageChunks[pageChunks.length - 1];
+
+    const firstChunkLabel = `${firstChunk.hasStart ? fullyContainedFirstChunkMarker : ''}${firstChunk.chunkId}`;
+    const lastChunkLabel = `${lastChunk.chunkId}${lastChunk.hasEnd ? fullyContainedLastChunkMarker : ''}`;
+
+    return `${firstChunkLabel} → ${lastChunkLabel}`;
   };
 
   const getParagraphPages = (paragraphs: Paragraph[]): ParagraphPage[] => {
@@ -56,49 +112,32 @@ export default function MainTextPanel({
     if (paginationThreshold < 1 || paragraphs.length <= paginationThreshold) {
       return [{
         paragraphs,
-        label: getPageLabel(paragraphs.flatMap((paragraph) => paragraph.chunkStartIds))
+        label: getPageLabel(paragraphs)
       }];
     }
 
-    const pageSizes: number[] = [];
-    let remainingParagraphs = paragraphs.length;
-    while (remainingParagraphs > 0) {
-      const pageSize = Math.min(parsPerPage, remainingParagraphs);
-      pageSizes.push(pageSize);
-      remainingParagraphs -= pageSize;
-    }
-
-    const lastPageIndex = pageSizes.length - 1;
-    if (pageSizes.length > 1 && pageSizes[lastPageIndex] < minLastPageParCount) {
-      let paragraphsNeeded = minLastPageParCount - pageSizes[lastPageIndex];
-      while (paragraphsNeeded > 0) {
-        let paragraphsMoved = false;
-        for (let i = pageSizes.length - 2; i >= 0 && paragraphsNeeded > 0; i--) {
-          if (pageSizes[i] <= 1) {
-            continue;
-          }
-          pageSizes[i] -= 1;
-          pageSizes[lastPageIndex] += 1;
-          paragraphsNeeded -= 1;
-          paragraphsMoved = true;
-        }
-        if (!paragraphsMoved) {
-          break;
-        }
-      }
-    }
+    const normalizedMinParsPerPage = Math.max(1, minParsPerPage);
+    const normalizedMaxParsPerPage = Math.max(normalizedMinParsPerPage, maxParsPerPage);
 
     const pages: ParagraphPage[] = [];
     let start = 0;
-    pageSizes.forEach((size) => {
-      const pageParagraphs = paragraphs.slice(start, start + size);
-      const pageChunkIds = pageParagraphs.flatMap((paragraph) => paragraph.chunkStartIds);
+    while (start < paragraphs.length) {
+      let end = Math.min(start + normalizedMinParsPerPage, paragraphs.length);
+
+      while (end < paragraphs.length
+      && end - start < normalizedMaxParsPerPage
+      && !isLastChunkFullyContained(paragraphs.slice(start, end))) {
+        end += 1;
+      }
+
+      const pageParagraphs = paragraphs.slice(start, end);
       pages.push({
         paragraphs: pageParagraphs,
-        label: getPageLabel(pageChunkIds)
+        label: getPageLabel(pageParagraphs)
       });
-      start += size;
-    });
+      start = end;
+    }
+
     return pages;
   };
 
@@ -107,31 +146,55 @@ export default function MainTextPanel({
     let currentParagraph: Paragraph = {
       style: '',
       tokens: [],
-      chunkStartIds: []
+      chunks: []
     };
+
+    const registerChunkToken = (chunkId: string, tokenType: 'chunk_start' | 'chunk_end') => {
+      const existingChunk = currentParagraph.chunks.find((chunk) => chunk.chunkId === chunkId);
+      if (existingChunk === undefined) {
+        currentParagraph.chunks.push({
+          chunkId,
+          hasStart: tokenType === 'chunk_start',
+          hasEnd: tokenType === 'chunk_end'
+        });
+        return;
+      }
+
+      if (tokenType === 'chunk_start') {
+        existingChunk.hasStart = true;
+      } else {
+        existingChunk.hasEnd = true;
+      }
+    };
+
     edition.mainText.forEach((token) => {
       switch (token.type) {
         case 'text':
         case 'glue':
           currentParagraph.tokens.push(token);
           break;
+
         case 'paragraph_end':
           currentParagraph.style = token.style;
           paragraphs.push(currentParagraph);
           currentParagraph = {
             style: '',
             tokens: [],
-            chunkStartIds: []
+            chunks: []
           };
           break;
 
         case 'chunk_start':
           if (token.chunkId !== undefined && token.chunkId !== '') {
-            currentParagraph.chunkStartIds.push(token.chunkId);
+            registerChunkToken(token.chunkId, token.type);
           }
           currentParagraph.tokens.push(token);
           break;
+
         case 'chunk_end':
+          if (token.chunkId !== undefined && token.chunkId !== '') {
+            registerChunkToken(token.chunkId, token.type);
+          }
           currentParagraph.tokens.push(token);
           break;
       }
@@ -151,13 +214,19 @@ export default function MainTextPanel({
       }
       if (token.type === 'chunk_start') {
         elementArray.push(
-          <span className={'chunk-mark'} key={`chunk-mark-${i}-${token.chunkId ?? ''}`}>
-            <span className={'chunk-mark-icon'} title={`Start of chunk ${token.chunkId ?? ''}`}>{'::'} </span>
+          <span className={'chunk-mark'} key={`chunk-mark-start-${i}-${token.chunkId ?? ''}`}>
+            <span className={'chunk-mark-icon chunk-start'} title={`Start of chunk ${token.chunkId ?? ''}`}>{chunkStartMarker}</span>
             <span className={'chunk-mark-label'}>{token.chunkId}</span>
           </span>
         );
       }
-
+      if (token.type === 'chunk_end') {
+        elementArray.push(
+          <span className={'chunk-mark'} key={`chunk-mark-end-${i}-${token.chunkId ?? ''}`}>
+            <span className={'chunk-mark-icon chunk-end'} title={`End of chunk ${token.chunkId ?? ''}`}>{chunkEndMarker}</span>
+          </span>
+        );
+      }
     });
     return elementArray;
   };
@@ -166,7 +235,7 @@ export default function MainTextPanel({
     return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
   };
   const paragraphs = useMemo(() => edition === null ? [] : getParagraphs(edition), [edition]);
-  const paragraphPages = useMemo(() => getParagraphPages(paragraphs), [paragraphs]);
+  const paragraphPages = useMemo(() => getParagraphPages(paragraphs), [paragraphs, paginationThreshold, minParsPerPage, maxParsPerPage]);
   const isPaginated = paginationThreshold > 0 && paragraphs.length > paginationThreshold;
   const pageCount = paragraphPages.length;
 
@@ -236,20 +305,12 @@ export default function MainTextPanel({
                     onClick={() => goToPage(pageCount - 1)}>{'Last'}</Button>
           </div>
           <div className={'main-text-pagination-jump'}>
-            {pageCount < showSelectThreshold
-              ? paragraphPages.map((page, index) => (
-                <Button key={page.label + index}
-                        size="sm"
-                        className={'main-text-pagination-page-button'}
-                        variant={index === currentPage ? 'secondary' : 'outline-secondary'}
-                        onClick={() => goToPage(index)}>{page.label}</Button>
-              ))
-              : <Form.Select size="sm"
-                             className={'main-text-pagination-select'}
-                             value={currentPage}
-                             onChange={(e) => goToPage(parseInt(e.target.value))}>
-                {paragraphPages.map((page, index) => <option key={page.label + index} value={index}>{page.label}</option>)}
-              </Form.Select>}
+            <Form.Select size="sm"
+                         className={'main-text-pagination-select'}
+                         value={currentPage}
+                         onChange={(e) => goToPage(parseInt(e.target.value))}>
+              {paragraphPages.map((page, index) => <option key={page.label + index} value={index}>{page.label}</option>)}
+            </Form.Select>
           </div>
         </div>}
       <div className={mainTextClasses.join(' ')}>

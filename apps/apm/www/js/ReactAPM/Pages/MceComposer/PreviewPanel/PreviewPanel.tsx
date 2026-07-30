@@ -55,7 +55,9 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
     }
     const styleSheets = SystemStyleSheet.getStyleSheetsForLanguage(edition.lang);
     setSystemStyles(styleSheets);
-    setStyleSheetId(Object.keys(styleSheets)[0]);
+    if (styleSheetId === null) {
+      setStyleSheetId(Object.keys(styleSheets)[0]);
+    }
   }, [edition]);
 
   useEffect(() => {
@@ -76,18 +78,18 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
       const currentSettings = webCache.retrieve(cacheKey) as PreviewPanelSettings | null;
       if (currentSettings !== null) {
         if (currentSettings.styleSheetId !== styleSheetId) {
-          console.log(`Settings ${editionKey}: updating styleSheetId from ${currentSettings.styleSheetId} to ${styleSheetId}`);
+          // console.log(`Settings ${editionKey}: updating styleSheetId from ${currentSettings.styleSheetId} to ${styleSheetId}`);
           webCache.store(cacheKey, {...currentSettings, styleSheetId});
         }
       } else {
-        console.log(`Settings ${editionKey}: saving styleSheetId ${styleSheetId} for the first time`);
+        // console.log(`Settings ${editionKey}: saving styleSheetId ${styleSheetId} for the first time`);
         webCache.store(cacheKey, {styleSheetId});
       }
     } else {
-      console.log('styleSheetId is null');
+      // console.log('styleSheetId is null');
       const currentSettings = webCache.retrieve(cacheKey) as PreviewPanelSettings | null;
       if (currentSettings !== null) {
-        console.log(`Settings ${editionKey}: setting stylesheeId to ${currentSettings.styleSheetId} from cached settings`);
+        // console.log(`Settings ${editionKey}: setting stylesheeId to ${currentSettings.styleSheetId} from cached settings`);
         setStyleSheetId(currentSettings.styleSheetId);
       }
     }
@@ -102,19 +104,19 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
 
   const doTypeset = async () => {
     if (edition === null) {
-      console.log('Edition is null, no typesetting necessary');
+      // console.log('Edition is null, no typesetting necessary');
       return null;
     }
 
     if (styleSheetId === null) {
-      console.log('styleSheetId is null, no typesetting possible');
+      // console.log('styleSheetId is null, no typesetting possible');
       return null;
     }
 
     const editionObject = (new Edition()).setFromInterface(edition);
     const styleSheet = SystemStyleSheet.getStyleSheet(edition.lang, styleSheetId);
     // Load fonts
-    console.log(`Loading fonts`);
+    // console.log(`Loading fonts`);
     let fontsToLoad: string[] = [];
     styleSheet.getFontFamilies().forEach((fontFamily) => {
       fontsToLoad.push(`1em ${fontFamily}`, `bold 1em ${fontFamily}`, `italic 1em ${fontFamily}`, `bold italic 1em ${fontFamily}`);
@@ -122,7 +124,7 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
 
     for (let i = 0; i < fontsToLoad.length; i++) {
       await document.fonts.load(fontsToLoad[i]);
-      console.log(` Loaded ${fontsToLoad[i]} `);
+      // console.log(` Loaded ${fontsToLoad[i]} `);
     }
 
     return getTypesetEdition(editionObject, styleSheet, styleSheetId);
@@ -171,7 +173,7 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
       const styleSheet = SystemStyleSheet.getStyleSheet(edition.lang, styleSheetId);
       const apiRequestData = await getApiPdfData(editionObject, styleSheet, styleSheetId);
       const pdfUrl = await getPdfUrl(apiRequestData);
-      console.log(`PDF url: ${pdfUrl}`);
+      // console.log(`PDF url: ${pdfUrl}`);
       setPdfDownloadUrl(pdfUrl);
       window.open(pdfUrl);
     } catch (e) {

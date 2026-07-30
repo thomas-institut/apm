@@ -366,8 +366,8 @@ describe('MceDataEditionGenerator', () => {
       expect(edition.mainText.map((t) => t.type)).toEqual([
         'chunk_start',
         'text',
-        'paragraph_end',
         'chunk_end',
+        'paragraph_end',
         'chunk_start',
         'text',
         'chunk_end',
@@ -412,8 +412,8 @@ describe('MceDataEditionGenerator', () => {
       expect(edition.mainText.map((t) => t.type)).toEqual([
         'chunk_start',
         'text',
-        'glue',
         'chunk_end',
+        'glue',
         'chunk_start',
         'text',
         'chunk_end',

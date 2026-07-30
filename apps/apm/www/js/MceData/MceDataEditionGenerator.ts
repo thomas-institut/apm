@@ -116,6 +116,10 @@ export class MceDataEditionGenerator {
         return newToken;
       }));
 
+      // add chunk end
+      edition.mainText.push(MainTextTokenFactory.createChunkEnd(mceData.chunks[chunkIndex].chunkId));
+      nextChunkShift++;
+
       nextChunkShift += singleChunkEdition.mainText.length;
       switch (mceData.chunks[chunkIndex].break) {
         case 'paragraph':
@@ -146,9 +150,7 @@ export class MceDataEditionGenerator {
         // nothing to do!
       }
 
-      // add chunk end
-      edition.mainText.push(MainTextTokenFactory.createChunkEnd(mceData.chunks[chunkIndex].chunkId));
-      nextChunkShift++;
+
 
       // process apparatuses
       for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {

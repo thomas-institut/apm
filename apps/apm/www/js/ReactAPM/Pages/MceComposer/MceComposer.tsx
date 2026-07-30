@@ -198,7 +198,7 @@ export default function MceComposer() {
     if (id !== 'new') {
       const parsedMceDataId = parseValidNumericalId(id);
       if (parsedMceDataId === null) {
-        console.log(`Invalid MCE ID: ${id}`);
+        console.warn(`Invalid MCE ID: ${id}`);
         routeErrorMsg = 'Invalid MCE ID';
       } else {
         mceDataId = parsedMceDataId;
@@ -373,11 +373,11 @@ export default function MceComposer() {
       if (chunkLoadPromise === undefined) {
         chunkLoadPromise = (async () => {
           try {
-            console.log(`Fetching chunk ${chunkToLoad.ctDataId}`);
+            // console.log(`Fetching chunk ${chunkToLoad.ctDataId}`);
             const apiResponse = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, chunkToLoad.requestedVersion);
             let lastVersionTimeStamp = apiResponse.timeStamp;
             if (!apiResponse.isLatestVersion) {
-              console.log(`Chunk ${chunkToLoad.ctDataId} is not the latest version`);
+              // console.log(`Chunk ${chunkToLoad.ctDataId} is not the latest version`);
               const latestData = await appContext.apiClient.getSingleChunkData(chunkToLoad.ctDataId, '');
               lastVersionTimeStamp = latestData.timeStamp;
             }
@@ -455,13 +455,13 @@ export default function MceComposer() {
 
     const mceDataHash = getMceDataHash(mceData, mceDataId);
     if (editionCache.current[mceDataHash] !== undefined) {
-      console.log(`getEdition ${mceDataHash}: cache hit`);
+      // console.log(`getEdition ${mceDataHash}: cache hit`);
       if (editorSession === editorSessionRef.current) {
         setEditionGenerationProgress(null);
       }
       return editionCache.current[mceDataHash];
     }
-    console.log(`getEdition ${mceDataHash}: cache miss`);
+    // console.log(`getEdition ${mceDataHash}: cache miss`);
     const profiler = new BasicProfiler('RegenerateEdition', true);
     const singleChunkEditionCacheKey = (chunkIndex: number) => {
       const chunkInfo = mceData.chunks[chunkIndex];
@@ -497,7 +497,7 @@ export default function MceComposer() {
       return generatedEdition;
     }
     setEditionGenerationProgress(null);
-    console.log(`getEdition ${mceDataHash}: edition generated`);
+    // console.log(`getEdition ${mceDataHash}: edition generated`);
     editionCache.current[mceDataHash] = generatedEdition;
     return generatedEdition;
   };
@@ -530,9 +530,9 @@ export default function MceComposer() {
     if (mceComposerStatus !== 'loaded') {
       return;
     }
-    console.log(`mceData change effect: ${mceDataId}, mceData hash ${getMceDataHash(mceData, mceDataId)}`);
+    // console.log(`mceData change effect: ${mceDataId}, mceData hash ${getMceDataHash(mceData, mceDataId)}`);
     if (!isEditionInCache(mceData, mceDataId)) {
-      console.log(`mceData change: edition hash ${getMceDataHash(mceData, mceDataId)} not in cache`, mceData);
+      // console.log(`mceData change: edition hash ${getMceDataHash(mceData, mceDataId)} not in cache`, mceData);
       setEditionOutOfDate(true);
       if (settings.autoRegenerate && mceData.chunks.length > 0) {
         regenerateEdition(mceData, mceDataId).then();
@@ -649,7 +649,7 @@ export default function MceComposer() {
   };
 
   const deleteChunk = async (chunkIndex: number): Promise<boolean> => {
-    console.log("deleteChunk", chunkIndex);
+    // console.log("deleteChunk", chunkIndex);
     if (!startMceDataEdit()) {
       return false;
     }
@@ -688,7 +688,7 @@ export default function MceComposer() {
   };
 
   const addChunk = async (tableId: number, version: string = ''): Promise<true | string> => {
-    console.log(`Add chunk from table ${tableId}, version '${version}'`);
+    // console.log(`Add chunk from table ${tableId}, version '${version}'`);
     if (!startMceDataEdit()) {
       return getMceDataEditError();
     }
@@ -742,7 +742,7 @@ export default function MceComposer() {
   };
 
   const moveChunk = async (chunkPosition: number, direction: 'up' | 'down'): Promise<boolean> => {
-    console.log(`Move chunk at position ${chunkPosition} '${direction}'`);
+    // console.log(`Move chunk at position ${chunkPosition} '${direction}'`);
     if (!startMceDataEdit()) {
       return false;
     }
@@ -761,7 +761,7 @@ export default function MceComposer() {
   };
 
   const setChunkBreak = async (chunkPosition: number, newBreak: string): Promise<boolean> => {
-    console.log(`Set break for chunk at position ${chunkPosition} to '${newBreak}'`);
+    // console.log(`Set break for chunk at position ${chunkPosition} to '${newBreak}'`);
     if (!startMceDataEdit()) {
       return false;
     }
@@ -781,7 +781,7 @@ export default function MceComposer() {
   };
 
   const updateChunk = async (chunkIndex: number): Promise<true | string> => {
-    console.log(`Update chunk index ${chunkIndex}`);
+    // console.log(`Update chunk index ${chunkIndex}`);
     if (!startMceDataEdit()) {
       return getMceDataEditError();
     }
@@ -922,12 +922,12 @@ export default function MceComposer() {
   };
 
   const handleOnClickTabExpand = (tabKey: string) => {
-    console.log(`Click on expand tab ${tabKey}`);
+    // console.log(`Click on expand tab ${tabKey}`);
     setExpandedTab(tabKey);
   };
 
   const handleOnClickCollapseTab = () => {
-    console.log(`Click on collapse icon`);
+    // console.log(`Click on collapse icon`);
     setExpandedTab(null);
   };
 
@@ -940,7 +940,7 @@ export default function MceComposer() {
   };
 
   const handleOnClickRevertChanges = () => {
-    console.log(`Click on revert changes`);
+    // console.log(`Click on revert changes`);
     if (isMceDataEditBlocked()) {
       return;
     }
@@ -962,7 +962,7 @@ export default function MceComposer() {
           return ctDataStatus;
         }
         const tableId = ctDataStatus.ctDataId;
-        console.log(`Checking for chunk updates for table ${tableId}`);
+        // console.log(`Checking for chunk updates for table ${tableId}`);
         const latestVersionInfo = await appContext.apiClient.collationTableVersionInfo(tableId, 'latest');
         if (latestVersionInfo !== null) {
           const isLatestVersion = ctDataStatus.loadedVersionTimeStamp === latestVersionInfo.timeFrom;
@@ -1057,12 +1057,12 @@ export default function MceComposer() {
   };
 
   const handleOnClickRegenerate = () => {
-    console.log(`Click on regenerate`);
+    // console.log(`Click on regenerate`);
     regenerateEdition(mceData, mceDataId).then();
   };
 
   const handleOnClickSaveButton = async () => {
-    console.log(`Click on save`);
+    // console.log(`Click on save`);
     if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current || changes.length === 0) {
       console.warn(`Cannot save MCE data because there are no changes`);
       return;

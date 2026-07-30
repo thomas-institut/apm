@@ -1,9 +1,11 @@
 import { defineConfig } from 'vitest/config'
-import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
-    plugins: [tsconfigPaths()],
     test: {
-        setupFiles: ['test/js/setup/webLocks.polyfill.ts']
+        setupFiles: ['test/js/setup/webLocks.polyfill.ts'],
+      alias: {
+        // @ts-ignore
+        '@/': new URL('./js/', import.meta.url).pathname,
+      }
     }
 })

@@ -13,21 +13,30 @@ interface SaveButtonProps {
 
 export default function MceComposerSaveButton({changes, onClick, saveError}: SaveButtonProps) {
 
+
   const [saving, setSaving] = useState(false);
+
+  const popoverEnabled = !saving && changes.length > 0;
 
   const handleOnClick = async () => {
     if (saving){
       return;
     }
-    setSaving(false);
-    await nextTick();
-    await onClick();
     setSaving(true);
+    await nextTick();
+    try {
+      await onClick();
+    } catch (e) {
+      console.warn(`Unexpected error`, e);
+    } finally {
+      setSaving(false);
+    }
+    setSaving(false);
   }
 
   if (changes.length > 0) {
     const popover = (
-      <Popover className={'save-changes-popover'} show={saving}>
+      <Popover className={'save-changes-popover'} show={popoverEnabled}>
         <Popover.Header>Save changes</Popover.Header>
         <Popover.Body>
           { saveError !== null && <p className={'notice text-danger'}>{saveError === '' ? 'An error occurred' : saveError}. Please try saving again!</p> }

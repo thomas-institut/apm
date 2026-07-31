@@ -16,7 +16,7 @@ test('Basic Navigation', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).fill(testAccountPassword);
   await page.getByRole('button', { name: 'Login' }).click();
   await expect(page).toHaveTitle(/Dashboard/);
-  await page.goto('http://localhost:8888/beta/multiChunkEdition/1');
+  await page.goto('http://localhost:8888/multiChunkEdition/1');
   await expect(page).toHaveTitle(/^MCE*/, { timeout: 10000 });
   await expect(page.getByText('Chunks', { exact: true })).toBeVisible();
   await expect(page.locator('span').filter({ hasText: 'Witnesses' })).toBeVisible();

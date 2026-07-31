@@ -61,80 +61,80 @@ logger.setFileName(LogFile);
 const nodeServiceServer = express();
 nodeServiceServer.use(bodyParser.json({limit: '50mb'}));
 
-nodeServiceServer.get('/api/measure', (req, res) => {
-  let text = req.query.text?.toString() ?? 'Sample string';
-  let fontFamily = req.query.font?.toString() ?? 'Arial';
-  let fontSize = parseInt(req.query.size?.toString() ?? '12');
-  try {
-    res.json(new Measure().execute({text, fontFamily, fontSize}));
-  } catch (error) {
-    logger.error(`Error measuring text: ${error}`);
-    res.status(500).json({error: 'Error measuring text'});
-    return;
-  }
-});
-nodeServiceServer.post('/api/typeset', async (req, res) => {
-  const callStart = hrtime.bigint();
-
-  let data = req.body;
-  if (data === undefined) {
-    logger.error(`Error typesetting: No JSON in input`);
-    res.json({error: true, errorMsg: "No JSON in input"});
-    return;
-  }
-  let outputType = req.query.output ?? 'pdf';
-  const typesetAction = new Typeset(logger);
-
-  let outputData = await typesetAction.execute(data);
-  const inputId = outputData.id;
-  if (outputData.error) {
-    logger.error(`${inputId}: Error typesetting: ${outputData.errorMsg}`);
-    res.status(401).json({error: true, errorMsg: outputData.errorMsg});
-    return;
-  }
-  const typesettingEnd = hrtime.bigint();
-  const typesetterSignature = outputData.output?.metadata?.typesetter ?? 'unknown';
-  const typesetterVersion = outputData.output?.metadata?.typesetterVersion ?? 'unknown';
-
-  logger.info(`${inputId}: Typesetting done in ${getDurationInMs(typesettingEnd, callStart)} ms. Typesetter: '${typesetterSignature}', version: '${typesetterVersion}'`);
-
-  if (outputType === 'json') {
-    logger.info(`${inputId}: Sending JSON out`);
-    res.json(outputData);
-    return;
-  }
-
-  // go on with PDF
-
-  const generatePdfAction = new GeneratePdf({logger, pdfRendererPath: PdfRenderer, tmpDir: TmpDir});
-  const generatePdfOutput = await generatePdfAction.execute(outputData);
-  if (generatePdfOutput.error) {
-    logger.error(`${inputId}: Error generating PDF: ${generatePdfOutput.errorMessage}`);
-    res.status(500).json({error: true, errorMsg: generatePdfOutput.errorMessage});
-    return;
-  }
-
-  const pdfGenerationEnd = hrtime.bigint();
-  logger.info(`${inputId}: PDF generation done in ${getDurationInMs(pdfGenerationEnd, typesettingEnd)} ms, file size is ${Math.round(generatePdfOutput.fileSize / 1024)} K`);
-
-  res.sendFile(generatePdfOutput.fileName, async (err) => {
-    if (err) {
-      logger.error(`${inputId}: Error sending file '${generatePdfOutput.fileName}': ${err}`);
-      res.status(500).send("Internal Server Error: could not send generated PDF File");
-      return;
-    } else {
-      // all good
-      try {
-        await unlink(generatePdfOutput.fileName);
-      } catch (err) {
-        logger.warn(`${inputId}: Could not delete tmp PDF file '${generatePdfOutput.fileName}'`);
-      }
-      let end = hrtime.bigint();
-      logger.info(`${inputId}: PDF sent successfully in ${getDurationInMs(end, pdfGenerationEnd)} ms`);
-      logger.info(`${inputId}: Total processing time = ${getDurationInMs(end, callStart)} ms`);
-    }
-  });
-});
+// nodeServiceServer.get('/api/measure', (req, res) => {
+//   let text = req.query.text?.toString() ?? 'Sample string';
+//   let fontFamily = req.query.font?.toString() ?? 'Arial';
+//   let fontSize = parseInt(req.query.size?.toString() ?? '12');
+//   try {
+//     res.json(new Measure().execute({text, fontFamily, fontSize}));
+//   } catch (error) {
+//     logger.error(`Error measuring text: ${error}`);
+//     res.status(500).json({error: 'Error measuring text'});
+//     return;
+//   }
+// });
+// nodeServiceServer.post('/api/typeset', async (req, res) => {
+//   const callStart = hrtime.bigint();
+//
+//   let data = req.body;
+//   if (data === undefined) {
+//     logger.error(`Error typesetting: No JSON in input`);
+//     res.json({error: true, errorMsg: "No JSON in input"});
+//     return;
+//   }
+//   let outputType = req.query.output ?? 'pdf';
+//   const typesetAction = new Typeset(logger);
+//
+//   let outputData = await typesetAction.execute(data);
+//   const inputId = outputData.id;
+//   if (outputData.error) {
+//     logger.error(`${inputId}: Error typesetting: ${outputData.errorMsg}`);
+//     res.status(401).json({error: true, errorMsg: outputData.errorMsg});
+//     return;
+//   }
+//   const typesettingEnd = hrtime.bigint();
+//   const typesetterSignature = outputData.output?.metadata?.typesetter ?? 'unknown';
+//   const typesetterVersion = outputData.output?.metadata?.typesetterVersion ?? 'unknown';
+//
+//   logger.info(`${inputId}: Typesetting done in ${getDurationInMs(typesettingEnd, callStart)} ms. Typesetter: '${typesetterSignature}', version: '${typesetterVersion}'`);
+//
+//   if (outputType === 'json') {
+//     logger.info(`${inputId}: Sending JSON out`);
+//     res.json(outputData);
+//     return;
+//   }
+//
+//   // go on with PDF
+//
+//   const generatePdfAction = new GeneratePdf({logger, pdfRendererPath: PdfRenderer, tmpDir: TmpDir});
+//   const generatePdfOutput = await generatePdfAction.execute(outputData);
+//   if (generatePdfOutput.error) {
+//     logger.error(`${inputId}: Error generating PDF: ${generatePdfOutput.errorMessage}`);
+//     res.status(500).json({error: true, errorMsg: generatePdfOutput.errorMessage});
+//     return;
+//   }
+//
+//   const pdfGenerationEnd = hrtime.bigint();
+//   logger.info(`${inputId}: PDF generation done in ${getDurationInMs(pdfGenerationEnd, typesettingEnd)} ms, file size is ${Math.round(generatePdfOutput.fileSize / 1024)} K`);
+//
+//   res.sendFile(generatePdfOutput.fileName, async (err) => {
+//     if (err) {
+//       logger.error(`${inputId}: Error sending file '${generatePdfOutput.fileName}': ${err}`);
+//       res.status(500).send("Internal Server Error: could not send generated PDF File");
+//       return;
+//     } else {
+//       // all good
+//       try {
+//         await unlink(generatePdfOutput.fileName);
+//       } catch (err) {
+//         logger.warn(`${inputId}: Could not delete tmp PDF file '${generatePdfOutput.fileName}'`);
+//       }
+//       let end = hrtime.bigint();
+//       logger.info(`${inputId}: PDF sent successfully in ${getDurationInMs(end, pdfGenerationEnd)} ms`);
+//       logger.info(`${inputId}: Total processing time = ${getDurationInMs(end, callStart)} ms`);
+//     }
+//   });
+// });
 nodeServiceServer.post('/api/edition/publication/fromMceData', async (req, res) => {
   let data = req.body;
   if (data === undefined) {

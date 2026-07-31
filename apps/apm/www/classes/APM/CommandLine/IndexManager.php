@@ -1584,6 +1584,7 @@ END;
         $data = $ctm->getCollationTableById($tableID);
 
         if ($data['type'] === 'edition' && !$data['archived']) {
+
             $edition_data['table_id'] = $data['tableId']; // equals $tableID
             $edition_data['edition_witness_index'] = $data['witnessOrder'][0];
             $edition_json = $data['witnesses'][$edition_data['edition_witness_index']];

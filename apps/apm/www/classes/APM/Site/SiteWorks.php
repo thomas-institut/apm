@@ -128,7 +128,7 @@ class SiteWorks extends SiteController
             $tableInfoArray = $systemManager->getCollationTableManager()->getTablesInfo();
             $debug && $logger->debug('BuildWorkData: Found ' . count($tableInfoArray) . ' active collation tables / editions');
             foreach ($tableInfoArray as $index => $table) {
-                $workId = $table['workId'];
+                $workId = $table->workId;
                 if (!isset($works[$workId])) {
                     $works[$workId] = self::getWorkDataBasicInfo($workId, $systemManager);
                     if (!$works[$workId]['isValid']) {
@@ -139,11 +139,11 @@ class SiteWorks extends SiteController
                     }
                 }
                 if ($works[$workId]['isValid']) {
-                    $chunkNumber = $table['chunkNumber'];
+                    $chunkNumber = $table->chunkNumber;
                     if (!isset($works[$workId]['chunks'][$chunkNumber])) {
                         $works[$workId]['chunks'][$chunkNumber] = self::getChunkBasicArray($chunkNumber);
                     }
-                    if ($table['type'] === 'edition') {
+                    if ($table->type === 'edition') {
                         $works[$workId]['chunks'][$chunkNumber]['ed'] = true;
                     } else {
                         $works[$workId]['chunks'][$chunkNumber]['ct'] = true;

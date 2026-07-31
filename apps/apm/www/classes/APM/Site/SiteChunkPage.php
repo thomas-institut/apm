@@ -169,8 +169,8 @@ class SiteChunkPage extends SiteController
         $validChunks = $this->systemManager->getTranscriptionManager()->getChunksWithTranscriptionForWorkId($workId);
         $tablesInfo = $this->systemManager->getCollationTableManager()->getTablesInfo(false, $workId);
         foreach ($tablesInfo as $tableInfo) {
-            if (!in_array($tableInfo['chunkNumber'], $validChunks)) {
-                $validChunks[] = $tableInfo['chunkNumber'];
+            if (!in_array($tableInfo->chunkNumber, $validChunks)) {
+                $validChunks[] = $tableInfo->chunkNumber;
             }
         }
         sort($validChunks, SORT_NUMERIC);

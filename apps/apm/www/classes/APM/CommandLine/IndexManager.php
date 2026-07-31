@@ -468,7 +468,7 @@ END;
         $editionIds = [];
 
         foreach ($tablesInfo as $tableInfo) {
-            if ($tableInfo['type'] === 'edition') {
+            if ($tableInfo->type === 'edition') {
                 $editionIds[] = $tableInfo['id'];
             }
         }
@@ -639,8 +639,8 @@ END;
         $editionIds = [];
 
         foreach ($tablesInfo as $tableInfo) {
-            if ($tableInfo['type'] === 'edition') {
-                $editionIds[] = $tableInfo['id'];
+            if ($tableInfo->type === 'edition') {
+                $editionIds[] = $tableInfo->id;
             }
         }
 

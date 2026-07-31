@@ -21,7 +21,6 @@ use APM\NodeService\NodeServiceClient;
 use APM\Site\SiteChunkPage;
 use APM\Site\SiteCollationTable;
 use APM\Site\SiteDocuments;
-use APM\Site\SiteMultiChunkEdition;
 use APM\Site\SitePageViewer;
 use APM\Site\SitePeople;
 use APM\Site\SiteReact;
@@ -196,20 +195,6 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
             function (Request $request, Response $response) use ($container) {
                 return (new SiteCollationTable($container))->editCollationTable($request, $response);
             })->setName('chunk-edition.edit');
-
-
-        // MULTI-CHUNK EDITION
-        $group->get('/multi-chunk-edition/new',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response, true);
-            }
-        )->setName('mce.new');
-
-        $group->get('/multi-chunk-edition/{editionId}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteMultiChunkEdition($container))->getMultiChunkEdition($request, $response, false);
-            }
-        )->setName('mce.edit');
 
         // transcription editor
         $group->get('/doc/{doc}/page/{n}/view[/c/{col}]',

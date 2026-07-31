@@ -84,9 +84,8 @@ export default function EntityLink(props: EntityLinkProps) {
       break;
 
     case 'multiChunkEdition':
-      // url = RouteUrls.multiChunkEdition(id);
-      url = urlGen.siteMultiChunkEdition(id);
-      isReactRoute = false;
+      url = RouteUrls.multiChunkEdition(id);
+      isReactRoute = true;
       defaultEntityName = `MultiChunkEdition ${id}`;
       realTitle = title ?? `MultiChunkEdition ${id}`;
       break;
@@ -149,7 +148,8 @@ export default function EntityLink(props: EntityLinkProps) {
       label = <>{label} <small><BoxArrowUpRight/></small></>;
     }
     if (isActive) {
-      if (def.isReactRoute) {
+      if (def.isReactRoute && !def.openInNewTab) {
+        // only use the React route if it is not supposed to open in a new tab
         return (<Link to={url} title={def.title ?? ''}>{label}</Link>);
       }
       return def.openInNewTab ? <a href={url} target={'_blank'} title={def.title ?? ''}>{label}</a> :

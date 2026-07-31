@@ -76,11 +76,11 @@ export class RouteUrls {
   }
 
   static patternMultiChunkEdition() {
-    return baseUrl + betaPathInfix + '/multiChunkEdition/:id';
+    return baseUrl + '/multiChunkEdition/:id';
   }
 
   static multiChunkEdition(id: number | 'new') {
-    return baseUrl + betaPathInfix +  '/multiChunkEdition/' + id;
+    return baseUrl + '/multiChunkEdition/' + id;
   }
 
 

@@ -134,11 +134,11 @@ export class ApmUrlGenerator {
   }
 
   siteMultiChunkEdition(editionId: number) {
-    return `${this.base}/multi-chunk-edition/${editionId}`;
+    return `${this.base}/multiChunkEdition/${editionId}`;
   }
 
   siteMultiChunkEditionNew() {
-    return `${this.base}/multi-chunk-edition/new`;
+    return `${this.base}/multiChunkEdition/new`;
   }
 
   siteCollationTableAutomatic(work: string, chunkNumber: number, lang: string, ids: (number | string)[] = []) {

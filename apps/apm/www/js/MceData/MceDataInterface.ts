@@ -3,20 +3,39 @@
 import {SiglaGroupInterface} from "../CtData/CtDataInterface.js";
 
 
-export interface MceDataInterface {
-  chunks: ChunkInMceData[],
-  chunkOrder?: number[],
+interface MceDataInterface {
+  schemaVersion: '1.0' | '2';
   title: string,
+  lang: string,
+  archived: boolean,
+  siglaGroups: SiglaGroupInterface[],
+  stylesheetId: string,
+}
+
+export interface MceDataInterface_v1  extends  MceDataInterface {
+  schemaVersion: '1.0',
+
+  chunks: ChunkInMceData[],
   initialSpace: string,
   preamble: any[],
   witnesses: WitnessInMceData[],
   sigla: string[],
-  siglaGroups: SiglaGroupInterface[],
-  lang: string,
-  stylesheetId: string,
-  archived: boolean,
-  schemaVersion: string,
+
+  chunkOrder?: number[],
   includeInAutoMarginalFoliation?: number[];
+}
+
+export interface MceDataInterface_v2 extends MceDataInterface {
+  schemaVersion: '2',
+
+  chunks: ChunkInMceData[],
+  initialSpace: string,
+  preamble: any[],
+  witnesses: WitnessInMceData[],
+  sigla: string[],
+
+  chunkOrder: number[],
+  includeInAutoMarginalFoliation: number[];
 }
 
 export interface WitnessInMceData {

@@ -56,7 +56,7 @@ export class MceData {
 
     const newMceData: MceDataInterface_v2 = {...mceDataV1, schemaVersion: '2', chunkOrder: [], includeInAutoMarginalFoliation: []};
     if (mceDataV1.chunkOrder === undefined) {
-      newMceData.chunkOrder = this.getDefaultChunkOrderFromChunks(mceDataV1.chunks);
+      newMceData.chunkOrder =mceDataV1.chunks.map((_c, i) => i);
     } else {
       newMceData.chunkOrder = mceDataV1.chunkOrder;
     }
@@ -70,14 +70,6 @@ export class MceData {
 
   private static updateV2toV3(mceDataV2: MceDataInterface_v2) : MceDataInterface_v3 {
     return {...mceDataV2, schemaVersion: '3', standardizedStrings: []};
-  }
-
-  static getDefaultChunkOrder(mceData: MceDataInterface) {
-    return this.getDefaultChunkOrderFromChunks(mceData.chunks);
-  }
-
-  private static getDefaultChunkOrderFromChunks(chunkArray: any[]) {
-    return chunkArray.map((_c, i) => i);
   }
 
   static getWorkIds(mceData: MceDataInterface): string[] {
@@ -418,9 +410,7 @@ export class MceData {
       mceData.includeInAutoMarginalFoliation = [];
       return mceData;
     }
-    if (mceData.chunkOrder === undefined) {
-      mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
-    }
+
     console.log(`Deleting chunk ${chunkIndex}`);
     mceData.chunks.splice(chunkIndex, 1);
     mceData.chunkOrder = mceData.chunkOrder.map((index) => {
@@ -475,10 +465,7 @@ export class MceData {
       witnessIndices: [],
       title: ctData.title
     };
-    // add it to the end of the list
-    if (mceData.chunkOrder === undefined) {
-      mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
-    }
+
     mceData.chunks.push(newChunk);
     mceData.chunkOrder.push(mceData.chunks.length - 1);
 

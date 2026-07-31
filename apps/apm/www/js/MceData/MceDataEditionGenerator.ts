@@ -9,7 +9,6 @@ import {Edition} from "../Edition/Edition.js";
 import {SiglaGroup} from "../Edition/SiglaGroup.js";
 import {EditionWitnessInfo} from "../Edition/EditionWitnessInfo.js";
 import {FoliationChangeInfoInterface} from "../Edition/FoliationChangeInfoInterface.js";
-import {MceData} from "../MceData/MceData.js";
 import {MainTextTokenFactory} from "../Edition/MainTextTokenFactory.js";
 import {ApparatusTools} from "../Edition/ApparatusTools.js";
 import {Apparatus} from "../Edition/Apparatus.js";
@@ -81,10 +80,6 @@ export class MceDataEditionGenerator {
     let currentMainTextIndexShift = 0;
     let nextChunkShift = 0;
     let currentFoliationChanges: FoliationChangeInfoInterface[] = [];
-    if (mceData.chunkOrder === undefined) {
-      // console.warn(`No chunk order in MceData`);
-      mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
-    }
 
     // merge main text
     for (let chunkOrderIndex = 0; chunkOrderIndex < mceData.chunkOrder.length; chunkOrderIndex++) {

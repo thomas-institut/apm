@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MceData } from '@/MceData/MceData.js';
-import {MceDataInterface_v1, MceDataInterface_v2, MceDataInterface} from '@/MceData/MceDataInterface.js';
+import {MceDataInterface_v1, MceDataInterface_v2} from '@/MceData/MceDataInterface.js';
 import { CtDataInterface } from '@/CtData/CtDataInterface.js';
 import { ValidationError } from '@/lib/Error/SystemError.js';
 
@@ -151,16 +151,6 @@ describe('MceData', () => {
     });
   });
 
-
-  describe('getDefaultChunkOrder', () => {
-    it('returns a sequence of indices based on the number of chunks', () => {
-      const mceData = {
-        chunks: [{}, {}, {}]
-      } as unknown as MceDataInterface;
-
-      expect(MceData.getDefaultChunkOrder(mceData)).toEqual([0, 1, 2]);
-    });
-  });
 
   describe('moveChunk', () => {
     it('moves a chunk forwards', () => {

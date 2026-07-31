@@ -7,7 +7,6 @@ import {Apparatus} from '@/Edition/Apparatus.js';
 import {ApparatusEntry} from '@/Edition/ApparatusEntry.js';
 import {ApparatusSubEntry} from '@/Edition/ApparatusSubEntry.js';
 import {WitnessDataItem} from '@/Edition/WitnessDataItem.js';
-import {MceData} from '@/MceData/MceData.js';
 import {FoliationChangeInfoInterface} from '@/Edition/FoliationChangeInfoInterface.js';
 import {fromString, getPlainText} from '@thomas-inst/fmt-text';
 
@@ -506,24 +505,6 @@ describe('MceDataEditionGenerator', () => {
       const edition = await generator.generate(buildMceData(), 1);
 
       expect(edition.apparatuses[0].entries).toEqual([]);
-    });
-
-    it('uses MceData.getDefaultChunkOrder when chunkOrder is undefined', async () => {
-      const mceData = buildMceData({chunkOrder: undefined});
-      const chunkOrderSpy = vi.spyOn(MceData, 'getDefaultChunkOrder').mockReturnValue([1, 0]);
-
-      mockCtDataGeneratorState.generatedEditionsQueue.push(
-        makeSingleChunkEdition({tokenIndices: [10]}),
-        makeSingleChunkEdition({tokenIndices: [20]}),
-      );
-
-      const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
-      const edition = await generator.generate(mceData, 1);
-
-      expect(chunkOrderSpy).toHaveBeenCalledWith(mceData);
-      expect(mceData.chunkOrder).toEqual([1, 0]);
-      // @ts-ignore
-      expect(edition.mainText[1].getPlainText()).toBe('t10');
     });
 
     it('merges foliation changes between chunk iterations', async () => {

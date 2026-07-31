@@ -1131,7 +1131,7 @@ export default function MceComposer() {
       content: <ChunksPanel chunks={mceData.chunks}
                             version={chunksPanelVersion}
                             lastFullChunkLoadTime={lastFullChunkLoadTime}
-                            chunkOrder={mceData.chunkOrder ?? MceData.getDefaultChunkOrder(mceData)}
+                            chunkOrder={mceData.chunkOrder}
                             ctDataStatusArray={ctDataStatusArray}
                             moveChunk={moveChunk}
                             updateChunk={updateChunk}

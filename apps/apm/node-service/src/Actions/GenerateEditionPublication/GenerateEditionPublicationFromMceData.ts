@@ -1,5 +1,5 @@
 import { Action } from "#src/Actions/Action.js"
-import {MceDataInterface_v2} from "#www-js/MceData/MceDataInterface.js";
+import {MceDataInterface} from "#www-js/MceData/MceDataInterface.js";
 import {CtDataInterface} from "#www-js/CtData/CtDataInterface.js";
 import {LoggerInterface} from "#www-js/lib/Logger/LoggerInterface.js";
 import {EditionInterface} from "#www-js/Edition/EditionInterface.js";
@@ -12,7 +12,7 @@ import {getDurationInMs} from "#src/util/getDurationInMs.js";
 
 
 interface GenerateEditionInput {
-  mceData: MceDataInterface_v2;
+  mceData: MceDataInterface;
   editionId: number;
   publicationId: number;
   versionString: string;

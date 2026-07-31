@@ -85,7 +85,10 @@ export type MainTextTokenType =
   | 'empty'
   | 'paragraph_end'
   | 'numbering_label'
-  | 'foliation_change_marker';
+  | 'foliation_change_marker'
+  | 'chunk_start'
+  | 'chunk_end'
+
 
 /**
  * Mirrors \ThomasInstitut\ApmPublicationApi\EditionPublication\MainTextToken

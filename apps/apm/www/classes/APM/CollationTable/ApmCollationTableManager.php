@@ -21,6 +21,7 @@ namespace APM\CollationTable;
 
 
 use InvalidArgumentException;
+use LogicException;
 use PDO;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
@@ -220,9 +221,9 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
      *
      * @param array $row
      * @param bool $withVersionInfo
-     * @return array|bool
+     * @return TableInfo|bool
      */
-    private function getTableInfoFromDbRow(array $row, bool $withVersionInfo = true) : array|bool {
+    private function getTableInfoFromDbRow(array $row, bool $withVersionInfo = true) : TableInfo|bool {
         $id = intval($row['id']);
         if ($withVersionInfo) {
             $versionInfoArray = $this->getCollationTableVersionManager()->getCollationTableVersionInfo($id, 1);
@@ -235,16 +236,29 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             $lastVersionInfo = null;
         }
 
-        return [
-            'id' => $id,
-            'title' => $row['title'],
-            'workId' => $row['work_id'] ?? '',
-            'chunkId' => $row['chunk_id'],
-            'chunkNumber' => $row['chunk_number'],
-            'type' => $row['type'],
-            'lastChange' => $row['valid_from'] ?? '',
-            'lastVersion' => $lastVersionInfo
-        ];
+        $tableInfo = new TableInfo();
+        $tableInfo->id = $id;
+        $tableInfo->title = $row['title'];
+        $tableInfo->workId = $row['work_id'] ?? '';
+        $tableInfo->chunkId = $row['chunk_id'];
+        $tableInfo->chunkNumber = intval($row['chunk_number'] ?? -1);
+        $tableInfo->type = $row['type'];
+        $tableInfo->lastChange = $row['valid_from'] ?? '';
+        $tableInfo->witnesses = json_decode($row['witnesses_json'] ?? '', true) ?? [];
+        $tableInfo->lastVersion = $lastVersionInfo;
+
+        return $tableInfo;
+
+//        return [
+//            'id' => $id,
+//            'title' => $row['title'],
+//            'workId' => $row['work_id'] ?? '',
+//            'chunkId' => $row['chunk_id'],
+//            'chunkNumber' => $row['chunk_number'],
+//            'type' => $row['type'],
+//            'lastChange' => $row['valid_from'] ?? '',
+//            'lastVersion' => $lastVersionInfo
+//        ];
     }
 
 
@@ -290,9 +304,6 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
         return $idArray;
     }
 
-    /**
-     * @throws InvalidWhereClauseException
-     */
     public function getCollationTableInfo(int $id, string $timeStamp = ''): CollationTableInfo
     {
         $mySqlDataTableClass = MySqlUnitemporalDataTable::class;
@@ -306,21 +317,22 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
             /** @var MySqlUnitemporalDataTable $ctTable */
             $ctTable = $this->ctTable;
 
-            $result = $ctTable->select('id, title, type, archived, valid_from, valid_until',
-                "id='$id' AND valid_from <='$timeStamp' and valid_until>'$timeStamp'",
-                0,
-                '',
-                "getCollationTableInfo");
-
+            try {
+                $result = $ctTable->select('id, title, type, archived, valid_from, valid_until',
+                    "id='$id' AND valid_from <='$timeStamp' and valid_until>'$timeStamp'",
+                    0,
+                    '',
+                    "getCollationTableInfo");
+            } catch (InvalidWhereClauseException $e) {
+                // if this happens, the code is wrong!
+                throw new LogicException("Invalid where clause", 0, $e);
+            }
             $rows = new PdoResultsIterator($result, 'id');
-
-//            $rows = $result->fetchAll(PDO::FETCH_ASSOC);
         } else {
             $rows = $this->ctTable->findRowsWithTime(['id' => $id], 0,  $timeStamp);
         }
-
         if (count($rows)=== 0) {
-            throw new InvalidArgumentException("Table does not exist");
+            throw new TableNotFoundException("Table does not exist");
         }
 
         return CollationTableInfo::createFromDbRow($rows->getFirst());
@@ -396,10 +408,19 @@ class ApmCollationTableManager extends CollationTableManager implements LoggerAw
     }
 
 
+    /**
+     * @inheritDoc
+     */
     public function getActiveEditionTableInfo(): array {
-        return array_values(array_filter($this->getTablesInfo(), function ($tableInfo) {
-            return $tableInfo['type'] === 'edition';
-        }));
+        $tableInfoArray = $this->getTablesInfo();
+        $outputArray = [];
+
+        foreach($tableInfoArray as $tableInfo) {
+            if ($tableInfo->type === 'edition') {
+                $outputArray[] = $tableInfo;
+            }
+        }
+        return $outputArray;
     }
 
 }

@@ -1,0 +1,38 @@
+
+
+.add-chunks-panel {
+
+    padding: 1em;
+    height: 100%;
+    min-height: 0;
+
+    display: grid;
+    grid-template-rows: auto 1fr;
+
+
+
+    .quick-add-form {
+        margin-left: 1em;
+        display: flex;
+        flex-direction: row;
+        gap: 1em;
+        align-items: center;
+    }
+
+    .editions-table-div {
+        height: 100%;
+        min-height: 0;
+        display: grid;
+        grid-template-rows: auto 1fr;
+
+        .editions-table-container {
+            height: 100%;
+            overflow-y: auto;
+        }
+    }
+
+    .editions-table-div.no-data {
+        display: block;
+    }
+
+}

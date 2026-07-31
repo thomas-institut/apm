@@ -59,23 +59,10 @@ export class ApmFormats {
       'es' : ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'],
     }
 
-    let d;
-    switch(typeof dateTimeVar) {
-      case 'number': // a timestamp
-        d = new Date(dateTimeVar * 1000);
-        break;
-
-      case 'string': // a string that can be parsed into a UTC date
-        d = new Date(dateTimeVar + 'UTC+00');
-        break;
-
-      case 'object':
-        d = dateTimeVar;
-        break;
-
-      default:
-        console.warn(`Wrong parameter type to dateTimeString`);
-        return '????';
+    const d = this.dateTimeVarToDate(dateTimeVar);
+    if (!d || isNaN(d.getTime())) {
+      console.warn(`Wrong parameter type to dateTimeString`);
+      return '????';
     }
     let year = utc ? d.getUTCFullYear() : d.getFullYear();
     let monthNumber = utc ? d.getUTCMonth() : d.getMonth();
@@ -130,6 +117,89 @@ export class ApmFormats {
   }
 
   /**
+   * Returns a human-readable string describing how long ago a timestamp was.
+   * Rounds up to the closest minute.
+   *
+   * @param dateTimeVar - timestamp in seconds, date string or Date object
+   * @returns string like '<1min ago', 'N mins ago', or 'Xh Ymin ago'
+   */
+  static timeAgo(dateTimeVar: string | number | Date): string {
+    const d = this.dateTimeVarToDate(dateTimeVar);
+    if (!d || isNaN(d.getTime())) {
+      return '????';
+    }
+
+    const timestamp = d.getTime() / 1000;
+    const now = Date.now() / 1000;
+    const diffSeconds = now - timestamp;
+
+    if (diffSeconds <= 45) {
+      return '<1min ago';
+    }
+
+    const diffMinutes = Math.ceil(diffSeconds / 60);
+
+    if (diffMinutes < 1) {
+      return '<1min ago';
+    }
+
+    if (diffMinutes < 60) {
+      return `${diffMinutes} ${diffMinutes === 1 ? 'min' : 'mins'} ago`;
+    }
+
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+
+    if (minutes === 0) {
+      return `${hours}h ago`;
+    }
+
+    return `${hours}h ${minutes}min ago`;
+  }
+
+  /**
+   * Internal helper to convert a string, number or Date to a Date object.
+   * Numbers are treated as timestamps in seconds.
+   * Strings are treated as UTC dates.
+   *
+   * @param dateTimeVar
+   * @private
+   */
+  private static dateTimeVarToDate(dateTimeVar: string | number | Date): Date | null {
+    switch (typeof dateTimeVar) {
+      case 'number': // a timestamp in seconds
+        return new Date(dateTimeVar * 1000);
+
+      case 'string': // a string that can be parsed into a UTC date
+        if (dateTimeVar === '') {
+          return null;
+        }
+        let d = new Date(dateTimeVar + ' UTC+00');
+        if (!isNaN(d.getTime())) {
+          return d;
+        }
+        d = new Date(dateTimeVar + 'UTC+00');
+        if (!isNaN(d.getTime())) {
+          return d;
+        }
+        d = new Date(dateTimeVar);
+        if (!isNaN(d.getTime())) {
+          return d;
+        }
+        return null;
+
+      case 'object':
+        if (dateTimeVar instanceof Date) {
+          return dateTimeVar;
+        }
+        return null;
+
+      default:
+        return null;
+    }
+  }
+
+  /**
    * Sets the language to us in all format
    * @param {string} languageCode
    */
@@ -138,12 +208,50 @@ export class ApmFormats {
   }
 
   /**
-   * Set the clients time zone
+   * Set the client's time zone
    * @param {string }tz
    *
    */
   static setTimeZone(tz: string) {
     timeZone = tz;
+  }
+
+  static getLangName(langCode: string, useLowercase: boolean = false) : string {
+    let name = langCode;
+    switch (langCode) {
+      case 'ar':
+        name = 'Arabic';
+        break;
+
+      case 'la':
+        name = 'Latin';
+        break;
+
+      case 'he':
+        name = 'Hebrew';
+        break;
+
+      case 'jrb':
+        name = 'Judeo-Arabic';
+        break;
+
+      case 'en':
+        name = 'English';
+        break;
+
+      case 'de':
+        name = 'German';
+        break;
+
+      case 'fr':
+        name = 'French';
+        break;
+
+      case 'es':
+        name = 'Spanish';
+        break;
+    }
+    return useLowercase ? name.toLowerCase() : name;
   }
 }
 

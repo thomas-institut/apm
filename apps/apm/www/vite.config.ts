@@ -28,8 +28,6 @@ import react from '@vitejs/plugin-react'
 
 
 export default defineConfig({
-
-  // plugins: [react({}), reactAPM()],
   plugins: [react({})],
   build: {
     outDir: 'dist',
@@ -59,7 +57,6 @@ export default defineConfig({
       }
     },
   },
-  // @ts-ignore
   test: {
     globals: true,
     projects: ['test/js'],

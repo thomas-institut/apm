@@ -4,7 +4,7 @@
     /* DEFAULT FONT */
     --default-font-family: var(--bs-font-sans-serif), sans-serif;
     --default-font-size: 10.5pt;
-    --default-font-color: #323232;
+    --default-font-color: #0d0d0d;
     --monospace-font-family: "Noto Mono", monospace;
 
     /* TEXT ICON FONT */
@@ -159,6 +159,9 @@ a:hover {
     color: var(--link-color-hover);
 }
 
+.text-warning {
+    color: #d39b2d !important;
+}
 
 /* Top Bar */
 .navbar {

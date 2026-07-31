@@ -1,27 +1,21 @@
 import {
   Children,
-  cloneElement,
+  // cloneElement,
   type CSSProperties,
-  isValidElement,
-  type MouseEvent,
+  isValidElement, type MouseEvent,
   type MouseEventHandler,
   ReactElement,
-  type ReactNode,
   type RefObject,
   useRef,
   useState,
 } from "react";
-import Panel from "@/ReactAPM/Components/PanelUI/Panel";
-import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
+import './PanelUI.css';
 
+type StylableChild = ReactElement<{style?: CSSProperties, className?: string}>
 
-type SplitPanelsChild = ReactElement<{}, typeof Panel> | ReactElement<{}, typeof TabPanel>;
-
-const ValidTypes = [Panel, TabPanel];
-
-interface Props {
+interface SplitPanelsProps {
   direction: "horizontal" | "vertical";
-  children?: ReactNode;
+  children?: StylableChild | StylableChild[];
   dividerWidth?: number;
   outerMargin?: number;
   className?: string;
@@ -32,14 +26,35 @@ interface Props {
 const Granularity = 1;
 const DefaultDividerWidth = 5;
 
-export default function SplitPanels(props: Props) {
+/**
+ * A SplitPanels component is a container that splits its children into two resizable panels.
+ *
+ * It **MUST** contain exactly two children.
+ *
+ * Any element can be a child and will work as intended as long as it has its height set to 100%, and it is not allowed
+ * to grow beyond its parent's height. For a simple div, this can be achieved with the following CSS styles:
+ *
+ * ```css
+ *     overflow: auto;
+ *     height: 100%;
+ *     min-height: 0;
+ *     box-sizing: border-box;
+ * ```
+ *
+ * More complex arrangements require using ``min-height`` and ``overflow`` properties in the right places.
+ * The components `PanelContent`, `Panel` and `TabPanel` comply with these styles and work out of the box.
+ *
+ * @param props
+ * @constructor
+ */
+export default function SplitPanels(props: SplitPanelsProps) {
 
   const direction = props.direction;
   const dividerWidth = props.dividerWidth ?? DefaultDividerWidth;
   const outerMargin = props.outerMargin ?? dividerWidth;
 
 
-  const children = Children.toArray(props.children) as SplitPanelsChild[];
+  const children = Children.toArray(props.children);
 
   if (children.length !== 2) {
     throw new Error("SplitPanels must have exactly two children");
@@ -49,22 +64,17 @@ export default function SplitPanels(props: Props) {
     if (!isValidElement(child)) {
       throw new Error('SplitPanels children must be valid React elements');
     }
-    if (!ValidTypes.includes(child.type)) {
-      throw new Error(`SplitPanels children must be Panel or TabPanel components`);
-    }
   });
 
-  const firstPanel = children[0];
-  const secondPanel = children[1];
+  const childOne = children[0];
+  const childTwo = children[1];
 
-  const containerClass = props.className ?? "";
-  const dividerClass = props.dividerClass ?? "";
+  const containerClass = props.className ?? '';
+  const dividerClass = props.dividerClass ?? '';
 
 
   const [isResizing, setResizing] = useState(false);
   const [gridTemplate, setGridTemplate] = useState(`0.5fr ${dividerWidth}px 0.5fr`);
-
-  // console.log(`Split panels with direction '${direction}', grid template is '${gridTemplate}'`);
 
   const lastXY = useRef(-1);
   const firstRatio = useRef(0.5);
@@ -74,7 +84,6 @@ export default function SplitPanels(props: Props) {
     display: "grid",
     gridTemplateColumns: direction === 'vertical' ? gridTemplate : '',
     gridTemplateRows: direction === 'horizontal' ? gridTemplate : '',
-    // height:  `calc(100% - ${outerMargin * 2}px)`,
     height: "100%",
     boxSizing: "border-box",
     padding: outerMargin,
@@ -87,10 +96,8 @@ export default function SplitPanels(props: Props) {
 
   const startResizing: MouseEventHandler = (ev: MouseEvent) => {
     ev.preventDefault();
-    // console.log("startResizing");
     setResizing(true);
   };
-
   const stopResizing: MouseEventHandler = (ev: MouseEvent) => {
     if (isResizing) {
       // console.log("stopResizing");
@@ -101,7 +108,6 @@ export default function SplitPanels(props: Props) {
       }
     }
   };
-
   const handleMouseMove: MouseEventHandler = (e: MouseEvent) => {
     if (isResizing) {
       if (containerRef.current === null) {
@@ -121,28 +127,25 @@ export default function SplitPanels(props: Props) {
       lastXY.current = newXY;
     }
   };
-  const firstPanelStyle = {};
-  const secondPanelStyle = {};
   return <div ref={containerRef} style={containerStyle} className={containerClass}
               onMouseUp={stopResizing} onMouseMove={handleMouseMove}>
-    {addStyleToChild(firstPanel, firstPanelStyle)}
+    {childOne}
     <div style={dividerStyle} className={dividerClass} onMouseDown={startResizing} onMouseUp={stopResizing}></div>
-    {addStyleToChild(secondPanel, secondPanelStyle)}
+    {childTwo}
   </div>;
 }
 
-
-function addStyleToChild(child: ReactNode, extraStyle: CSSProperties) {
-  if (!isValidElement(child)) {
-    return child;
-  }
-
-  return cloneElement(child, {
-    // @ts-ignore
-    style: {
-      // @ts-ignore
-      ...(child.props.style ?? {}),
-      ...extraStyle,
-    },
-  });
-}
+// function childWithStyle(child: ReactNode, extraStyle: CSSProperties) {
+//   if (!isValidElement(child)) {
+//     return child;
+//   }
+//
+//   return cloneElement(child, {
+//     // @ts-ignore
+//     style: {
+//       // @ts-ignore
+//       ...(child.props.style ?? {}),
+//       ...extraStyle,
+//     },
+//   });
+// }

@@ -21,11 +21,13 @@
 namespace APM\Api;
 
 
+use APM\Api\DataSchema\ApiCollationTableTableInfoArray;
 use APM\Api\DataSchema\ApiCollationTableAuto;
 use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
 use APM\Api\DataSchema\ApiCollationTableVersionInfo;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\CtData;
+use APM\CollationTable\TableNotFoundException;
 use APM\Core\Collation\CollationTable;
 use APM\Core\Witness\EditionWitness;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
@@ -71,18 +73,21 @@ class ApiCollationTable extends ApiController
 
 
 
-    public function  activeEditions(Response $response): Response
+    public function activeEditions(Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $activeEditions = $this->systemManager->getCollationTableManager()->getActiveEditionTableInfo();
+        $apiResponse = new ApiCollationTableTableInfoArray();
+        $apiResponse->tableInfoArray = $activeEditions;
+        return $this->responseFactory->success($response, $apiResponse);
         // fill in version info for each table
-        $infoArray = [];
-        foreach ($activeEditions as $info) {
-            $versions = $this->systemManager->getCollationTableManager()->getCollationTableVersions($info['id']);
-            $info['lastVersion'] = $versions[count($versions)-1];
-            $infoArray[] = $info;
-        }
-        return $this->responseWithJson($response, $infoArray);
+//        $infoArray = [];
+//        foreach ($activeEditions as $info) {
+//            $versions = $this->systemManager->getCollationTableManager()->getCollationTableVersions($info['id']);
+//            $info['lastVersion'] = $versions[count($versions)-1];
+//            $infoArray[] = $info;
+//        }
+//        return $this->responseWithJson($response, $infoArray);
     }
 
     public function activeForWork(Request $request, Response $response) : Response {
@@ -122,23 +127,27 @@ class ApiCollationTable extends ApiController
             $timeStamp = TimeString::now();
         } else {
             if (!$this->isValidCompactTimeString($compactEncodedTimeStamp)) {
-                return $this->responseWithText($response, "Bad timestamp", 400);
+                return $this->responseFactory->badRequest($response, "Bad timestamp");
             }
             $timeStamp = TimeString::compactDecode($compactEncodedTimeStamp);
         }
 
-        $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
-        $data = new ApiCollationTableVersionInfo();
-        $data->tableId = $tableId;
-        $data->type = $ctInfo->type;
-        $data->title = $ctInfo->title;
-        $data->timeFrom = $ctInfo->timeFrom;
-        $data->timeUntil = $ctInfo->timeUntil;
-        $data->archived = $ctInfo->archived;
-        $data->isLatestVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
-
-
-        return $this->responseWithJson($response, $data);
+        try {
+            $ctInfo = $ctManager->getCollationTableInfo($tableId, $timeStamp);
+            $data = new ApiCollationTableVersionInfo();
+            $data->tableId = $tableId;
+            $data->type = $ctInfo->type;
+            $data->title = $ctInfo->title;
+            $data->timeFrom = $ctInfo->timeFrom;
+            $data->timeUntil = $ctInfo->timeUntil;
+            $data->archived = $ctInfo->archived;
+            $data->isLatestVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
+            return $this->responseFactory->success($response, $data);
+        } catch (TableNotFoundException $e) {
+            return $this->responseFactory->notFound($response, $e->getMessage());
+        } catch (Exception $e) {
+            return $this->responseFactory->internalServerError($response, $e->getMessage());
+        }
     }
 
 

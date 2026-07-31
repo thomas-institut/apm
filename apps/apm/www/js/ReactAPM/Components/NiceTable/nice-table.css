@@ -1,0 +1,38 @@
+
+table.nice-table {
+    /* Some variables */
+    --even-row-background: white;
+    --odd-row-background: #f5f5f5;
+    --td-padding: 0.5em;
+    --th-padding: var(--td-padding);
+    --th-background: white;
+    --sticky-top-offset: 0;
+    --sticky-z-index: 2;
+
+    border-collapse: separate;
+    border-spacing: 0;
+
+    th.sticky {
+        position: sticky;
+        top: var(--sticky-top-offset);
+        z-index: var(--sticky-z-index);
+    }
+
+    tr.odd {
+        background: var(--odd-row-background);
+    }
+
+    tr.even {
+        background: var(--even-row-background);
+    }
+
+    td {
+        padding: var(--td-padding);
+    }
+
+    th {
+        background: var(--th-background);
+        padding: var(--th-padding);
+    }
+}
+

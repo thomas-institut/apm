@@ -1,11 +1,11 @@
-import {Children, CSSProperties, isValidElement, ReactElement, ReactNode} from "react";
+import {Children, CSSProperties, isValidElement, ReactElement, ReactNode, Fragment} from "react";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
+import './PanelUI.css';
+import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 
 
-interface PanelProps {
-  tabKey?: string;
-  tabTitle?: string;
+interface PanelProps extends TabbableElementProps{
   // className to apply to the panel content
   className?: string;
   style?: CSSProperties;
@@ -16,10 +16,10 @@ interface PanelProps {
  * A panel that can be used to display information.
  *
  * The panel can be used as a tab in a TabPanel or on its own with a parent
- * that set its height.
+ * that sets its height.
  *
  * If the first child is a Toolbar, only another child is allowed. The Toolbar will be displayed
- * at the top and the second child will be displayed below it as panel content. Use PanelContent to avoid
+ * at the top, and the second child will be displayed below it as panel content. Use PanelContent to avoid
  * having to wrap the content in a div.
  *
  * Otherwise, all children will be displayed in a scrollable area.
@@ -27,7 +27,12 @@ interface PanelProps {
  * @constructor
  */
 export default function Panel(props: PanelProps) {
-  const children = Children.toArray(props.children);
+  let children = Children.toArray(props.children);
+
+  if (children.length === 1 && isValidElement(children[0]) && children[0].type === Fragment) {
+    // @ts-ignore
+    children = Children.toArray(children[0].props.children);
+  }
 
   if (children.length > 1 && isValidElement(children[0]) && (children[0] as ReactElement).type === Toolbar) {
     if (children.length > 2) {

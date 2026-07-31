@@ -1,0 +1,101 @@
+.main-text-panel {
+    padding: 1em;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow-y: hidden;
+    overflow-x: auto;
+
+    .main-text-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 0.5rem;
+        margin-bottom: 0.8rem;
+        flex-wrap: wrap;
+
+        .main-text-pagination-nav,
+        .main-text-pagination-jump {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+        }
+
+        .main-text-pagination-select {
+            min-width: 18rem;
+        }
+    }
+
+
+    p.h1 {
+        font-size: 1.2em;
+        font-weight: bold;
+        text-align: center;
+        margin: 2em 0 1em 0;
+    }
+
+    p {
+        text-align: justify;
+        position: relative;
+    }
+
+    .out-of-date {
+        color: #0a53be;
+        padding: 1em;
+        font-size: 1.2em;
+        border: 1px solid #0a53be;
+        margin-bottom: 1em;
+    }
+
+    .main-text {
+        display: grid;
+        grid-template-columns: 1fr 40em 1fr;
+        gap: 1em;
+        width: auto;
+        min-width: 52em;
+        overflow-y: auto;
+        min-height: 0;
+
+        .main-text-content {
+            position: relative;
+            line-height: 1.8rem;
+        }
+
+        .chunk-mark {
+            display: contents;
+
+            .chunk-mark-icon {
+
+                /*font-size: 0.7em;*/
+                cursor: pointer;
+                /*font-weight: bold;*/
+            }
+
+            .chunk-start {
+                color: #bd0202;
+            }
+
+            .chunk-end {
+                color: dodgerblue;
+            }
+
+            .chunk-mark-label {
+                position: absolute;
+                left: calc(100% + 1rem);
+                top: auto;
+                white-space: nowrap;
+                font-family: monospace;
+                font-weight: normal;
+                color: gray;
+                font-size: 0.8rem;
+                line-height: 1.8rem;
+            }
+        }
+    }
+}
+
+
+.main-text-panel.initializing {
+    padding: 2em;
+    font-size: 1.5em;
+}

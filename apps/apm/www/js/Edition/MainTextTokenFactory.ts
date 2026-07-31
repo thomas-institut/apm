@@ -60,7 +60,7 @@ export class MainTextTokenFactory {
     let t = new MainTextToken();
     t.type = EditionMainTextTokenType.GLUE;
     t.space = 'normal';
-    t.fmtText = [ newGlueToken()];
+    t.fmtText = [newGlueToken()];
     return t;
   }
 
@@ -68,6 +68,20 @@ export class MainTextTokenFactory {
     let t = new MainTextToken();
     t.type = EditionMainTextTokenType.PARAGRAPH_END;
     return t.setStyle(style);
+  }
+
+  static createChunkStart(chunkId: string) {
+    let t = new MainTextToken();
+    t.type = 'chunk_start';
+    t.chunkId = chunkId;
+    return t;
+  }
+
+  static createChunkEnd(chunkId: string) {
+    let t = new MainTextToken();
+    t.type = 'chunk_end';
+    t.chunkId = chunkId;
+    return t;
   }
 
   /**

@@ -1,0 +1,30 @@
+.witnesses-panel {
+    overflow: auto;
+    height: 100%;
+    padding: 1em;
+
+    .section.sigla-groups {
+        margin-top: 0;
+
+        .section-content {
+
+            .add-sigla-group {
+                margin-top: 2em;
+            }
+        }
+
+        .controls {
+            display: flex;
+            padding: 0;
+            flex-direction: row;
+            align-items: center;
+            gap: 0.5em;
+            justify-content: start;
+        }
+    }
+
+    .grayed-out {
+        opacity: 0.8;
+    }
+
+}

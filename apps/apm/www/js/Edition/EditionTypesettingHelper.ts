@@ -274,12 +274,12 @@ export class EditionTypesettingHelper {
                 markerItems[0].addMetadata(MainTextOriginalIndex, mainTextToken.originalIndex);
               }
               textItems.push(...markerItems);
-              // the next token needs to be a glue in order for this penalty to work but this is what
+              // the next token needs to be a Glue in order for this penalty to work, but this is what
               // an editor will naturally do in the text, so there's no need to do further checks.
               textItems.push(this.createPenalty(InfinitePenalty));
               paragraphToTypeset.pushItemArray(textItems);
             } else {
-              // Add foliation change markers if needed
+              // Add foliation change markers if needed (only real foliation changes are considered)
               let witnessIndices = this.getWitnessIndicesWithFoliationChanges(mainTextToken.originalIndex);
               if (witnessIndices.length > 0) {
                 textItems.push(...await this.tokenRenderer.renderWithStyle(fromString('|'), paragraphStyle));
@@ -292,7 +292,7 @@ export class EditionTypesettingHelper {
               textItems.push(...await this.tokenRenderer.renderWithStyle(mainTextToken.fmtText, paragraphStyle));
               if (textItems.length > 0) {
                 // tag the first item with the original index, this will be used to associate main text tokens
-                // with their line numbers in order to construct the apparatuses.
+                // with their line numbers to construct the apparatuses.
                 textItems[firstActualTextTokenIndex].addMetadata(MainTextOriginalIndex, mainTextToken.originalIndex);
                 // detect text direction for text boxes
                 textItems = textItems.map((item) => {
@@ -340,7 +340,7 @@ export class EditionTypesettingHelper {
 
 
   /**
-   * Retrieves the indices of witnesses that have foliation changes for a given main text token index.
+   * Retrieves the indices of witnesses that have real foliation changes for a given main text token index.
    *
    * @param {number | undefined} mainTextTokenIndex - The index of the main text token to check for foliation changes.
    * If undefined, the function will return an empty array.
@@ -438,6 +438,9 @@ export class EditionTypesettingHelper {
       let entriesWithLineInfo = this.appEntries[apparatus.type].map((entry) => {
         let lineFrom = this.getLineNumberForMainTextIndex(entry.from);
         let lineTo = this.getLineNumberForMainTextIndex(entry.to);
+        if (lineFrom === -1 || lineTo === -1) {
+          console.warn(`Could not find line number for range ${entry.from} - ${entry.to}`, this.edition.mainText[entry.from], this.edition.mainText[entry.to], entry);
+        }
         return {
           key: this.getRangeKey(lineFrom.toString(), lineTo.toString()),
           lineFrom: lineFrom,
@@ -980,7 +983,7 @@ export class EditionTypesettingHelper {
 
     if (infoIndex === -1) {
       // not found!
-      console.warn(`Could not find line number for mainTextIndex ${mainTextIndex}`);
+      console.warn(`Could not find line number for mainTextIndex ${mainTextIndex}`, this.edition.mainText[mainTextIndex]);
       return -1;
     }
 

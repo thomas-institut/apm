@@ -4,7 +4,28 @@
     --tool-bar-bg-color: #e9ecef;
 }
 
-div.tab-panel {
+
+.panel-content {
+    overflow: auto;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+}
+
+.panel-with-toolbar {
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 0;
+    height: 100%;
+    overflow: hidden;
+    box-sizing: border-box;
+}
+
+.panel-toolbar {
+    overflow: hidden;
+}
+
+.tab-panel {
     display: grid;
     grid-template-rows: auto 1fr;
     gap: 0;
@@ -26,11 +47,20 @@ div.tab-panel {
     border-top-left-radius: 0.25rem;
     border-top-right-radius: 0.25rem;
     margin-bottom: -1px;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-direction: row;
 
     &.active {
         border: solid 1px;
         border-color: var(--tab-border-color) var(--tab-border-color) #fff;
         background-color: var(--active-tab-bg-color);
+        cursor: default;
+    }
+
+    .tab-button {
+        cursor: pointer;
     }
 }
 
@@ -50,24 +80,6 @@ div.tab-panel {
     }
 }
 
-.panel-with-toolbar {
-    display: grid;
-    grid-template-rows: auto 1fr;
-    gap: 0;
-    height: 100%;
-    overflow: hidden;
-    box-sizing: border-box;
-}
-
-.panel-toolbar {
-
-}
-.panel-content {
-    overflow: auto;
-    height: 100%;
-    min-height: 0;
-    box-sizing: border-box;
-}
 
 .no-padding {
     padding: 0;

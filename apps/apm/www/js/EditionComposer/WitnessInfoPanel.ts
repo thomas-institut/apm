@@ -333,13 +333,14 @@ export class WitnessInfoPanel extends Panel {
       }
       let modalSelector = '#convert-to-edition-modal';
       $('body').remove(modalSelector)
-      .append(this.getConvertToEditionDialogHtml(this.ctData['witnessTitles'][this.ctData.witnessOrder[0]]));
+        .append(this.getConvertToEditionDialogHtml(this.ctData['witnessTitles'][this.ctData.witnessOrder[0]]));
       let cancelButton = $(`${modalSelector} .cancel-btn`);
       let submitButton = $(`${modalSelector} .submit-btn`);
       let resultSpan = $(`${modalSelector} .result`);
       let mostCommonVariantCheck = $(`${modalSelector} .most-common-variant-check`);
       let topWitnessCheck = $(`${modalSelector} .top-witness-check`);
       cancelButton.on('click', () => {
+        // @ts-ignore
         $(modalSelector).modal('hide');
       });
       submitButton.on('click', async () => {
@@ -357,20 +358,22 @@ export class WitnessInfoPanel extends Panel {
           });
           resultSpan.html(`<b>Done!</b> The new edition is available <b><a href="${urlGen.siteChunkEdition(this.ctData.tableId)}">here</a></b>`);
           resultSpan.removeClass('text-warning')
-          .addClass('text-success');
+            .addClass('text-success');
           this.convertingToEdition = false;
         } catch (e: unknown) {
           const error = e as ApmApiClientError;
-          resultSpan.html(`<b>Error! Please report to administrator.<br/>Error type ${error.errorType}, status ${error.httpStatus}`)
-          .removeClass('text-warning')
-          .addClass('text-danger');
+          resultSpan.html(`<b>Error! Please report it to the administrator.<br/>Error type ${error.errorType}, status ${error.httpStatus}`)
+            .removeClass('text-warning')
+            .addClass('text-danger');
           cancelButton.removeClass('hidden');
           this.convertingToEdition = false;
         }
       });
+      // @ts-ignore
       $(modalSelector).modal({
         backdrop: 'static', keyboard: false, show: false
       });
+      // @ts-ignore
       $(modalSelector).modal('show');
     };
   }
@@ -541,6 +544,7 @@ export class WitnessInfoPanel extends Panel {
       $(`${modalSelector} .sigla-table-body`).html(siglaTableBody);
 
       cancelButton.on('click', () => {
+        // @ts-ignore
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
       });
@@ -611,6 +615,7 @@ export class WitnessInfoPanel extends Panel {
       });
 
       // go!
+      // @ts-ignore
       $(modalSelector).modal({
         backdrop: 'static', keyboard: false, show: true
       });
@@ -662,17 +667,20 @@ export class WitnessInfoPanel extends Panel {
             this.ctData['sigla'][w.index] = w.presetSiglum;
           }
         });
+        // @ts-ignore
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
         await Promise.all([this.updateWitnessInfoDiv(), this.onSiglaChange(this.ctData.sigla)]);
       });
 
       cancelButton.on('click', () => {
+        // @ts-ignore
         $(modalSelector).modal('hide');
         $(modalSelector).remove();
       });
 
       // go!
+      // @ts-ignore
       $(modalSelector).modal({
         backdrop: 'static', keyboard: false, show: true
       });
@@ -682,20 +690,20 @@ export class WitnessInfoPanel extends Panel {
   getWitnessSiglaArrayFromPreset(preset: ApiSiglaPreset) {
     // console.log(`Getting sigla array from preset ${preset.presetId}`, preset);
     return this.ctData.witnesses
-    .filter(w => {
-      return w['witnessType'] === 'fullTx';
-    })
-    .map((w, i) => {
-      let shortId = w['ApmWitnessId'].split('-').slice(2, 5).join('-');
+      .filter(w => {
+        return w['witnessType'] === 'fullTx';
+      })
+      .map((w, i) => {
+        let shortId = w['ApmWitnessId'].split('-').slice(2, 5).join('-');
 
-      return {
-        title: this.ctData['witnessTitles'][i],
-        id: shortId,
-        index: i,
-        currentSiglum: this.ctData.sigla[i],
-        presetSiglum: preset.data.witnesses[shortId]
-      };
-    });
+        return {
+          title: this.ctData['witnessTitles'][i],
+          id: shortId,
+          index: i,
+          currentSiglum: this.ctData.sigla[i],
+          presetSiglum: preset.data.witnesses[shortId]
+        };
+      });
   }
 
   _genHtmlLoadSiglaPresetDialog() {
@@ -823,8 +831,8 @@ export class WitnessInfoPanel extends Panel {
     }
 
     button.html('Check now')
-    .attr('title', 'Click to check for updates to witness transcriptions')
-    .prop('disabled', false);
+      .attr('title', 'Click to check for updates to witness transcriptions')
+      .prop('disabled', false);
 
   }
 

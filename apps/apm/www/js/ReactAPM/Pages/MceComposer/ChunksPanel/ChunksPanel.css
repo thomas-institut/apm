@@ -1,0 +1,89 @@
+.chunks-panel {
+    padding: 0 1em 1em 1em;
+    height: 100%;
+    overflow: auto;
+
+
+    td.version {
+        font-size: 0.8em;
+    }
+
+
+    .chunk-table-arrows {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5em;
+    }
+
+    .chunk-table-error {
+        color: var(--danger);
+    }
+
+    .chunk-table-warning {
+        color: var(--warning);
+    }
+
+    .chunk-table-control-buttons {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5em;
+        justify-content: start;
+    }
+
+    .check-for-updates {
+        margin-top: 2em;
+        font-size: 0.9em;
+        font-style: italic;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        gap: 0.5em;
+        justify-content: start;
+
+        .btn-sm {
+            font-size: 0.9em;
+        }
+    }
+
+    .multi-toggle.grayed-out {
+        opacity: 0.5;
+    }
+
+}
+
+:root {
+    --flash-background-color: var(--warning, #c4ffac);
+}
+
+@keyframes flashBackground {
+    0%, 100% {
+        background-color: initial; /* Ends and starts with element's normal background */
+    }
+    10% {
+        background-color: var(--flash-background-color);
+    }
+    20% {
+        background-color: initial;
+    }
+    30% {
+        background-color: var(--flash-background-color);
+    }
+}
+
+@keyframes flash2 {
+    0% {
+        background-color: var(--flash-background-color);
+    }
+    100% {
+        background-color: initial;
+    }
+
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

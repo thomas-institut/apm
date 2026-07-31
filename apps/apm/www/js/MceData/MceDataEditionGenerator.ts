@@ -22,6 +22,7 @@ import {uniq} from "../lib/ToolBox/ArrayUtil.js";
 export type CtDataGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<CtDataInterface>;
 export type SingleChunkEditionSaver = (mceData: MceDataInterface, chunkIndex: number, edition: EditionInterface) => Promise<void>;
 export type SingleChunkEditionGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<EditionInterface|null>;
+export type OnProgressUpdateHandler = (step: number, numSteps: number) => void | null;
 
 export interface MceDataEditionGeneratorOptions {
   /**
@@ -40,14 +41,17 @@ export interface MceDataEditionGeneratorOptions {
   /**
    * Logger for logging information and errors during edition generation.
    */
-  logger?: LoggerInterface
+  logger?: LoggerInterface,
+
+  onProgressUpdate?: OnProgressUpdateHandler;
 }
 
 export class MceDataEditionGenerator {
-  private ctDataGetter: CtDataGetter;
+  private readonly ctDataGetter: CtDataGetter;
   private logger: LoggerInterface;
-  private singleChunkEditionSaver: SingleChunkEditionSaver;
-  private singleChunkEditionGetter: SingleChunkEditionGetter;
+  private readonly singleChunkEditionSaver: SingleChunkEditionSaver;
+  private readonly singleChunkEditionGetter: SingleChunkEditionGetter;
+  private readonly onProgressUpdate: OnProgressUpdateHandler | null;
 
   constructor(options: MceDataEditionGeneratorOptions) {
    this.ctDataGetter = options.ctDataGetter;
@@ -56,6 +60,8 @@ export class MceDataEditionGenerator {
      (async (_mceData: MceDataInterface, _chunkIndex: number, _edition: EditionInterface) => {});
    this.singleChunkEditionGetter = options.singleChunkEditionGetter ?? 
      (async (_mceData: MceDataInterface, _chunkIndex: number) => null);
+
+   this.onProgressUpdate = options.onProgressUpdate ?? null;
   }
 
   async generate(mceData: MceDataInterface, editionId: number) : Promise<EditionInterface> {
@@ -71,7 +77,7 @@ export class MceDataEditionGenerator {
     edition.witnesses = mceData.witnesses.map((w, i) => {
       return (new EditionWitnessInfo()).setSiglum(mceData.sigla[i]).setTitle(w.title);
     });
-    // merge main text
+
     let currentMainTextIndexShift = 0;
     let nextChunkShift = 0;
     let currentFoliationChanges: FoliationChangeInfoInterface[] = [];
@@ -79,7 +85,10 @@ export class MceDataEditionGenerator {
       // console.warn(`No chunk order in MceData`);
       mceData.chunkOrder = MceData.getDefaultChunkOrder(mceData);
     }
+
+    // merge main text
     for (let chunkOrderIndex = 0; chunkOrderIndex < mceData.chunkOrder.length; chunkOrderIndex++) {
+      this.onProgressUpdate?.(chunkOrderIndex, numChunks);
       let chunkIndex = mceData.chunkOrder[chunkOrderIndex];
       const cachedEdition = await this.singleChunkEditionGetter(mceData, chunkIndex);
       const singleChunkEdition = cachedEdition !== null ? cachedEdition :
@@ -88,13 +97,15 @@ export class MceDataEditionGenerator {
       if (cachedEdition === null) {
         await this.singleChunkEditionSaver(mceData, chunkIndex, singleChunkEdition);
       }
-
-
-      currentFoliationChanges = this.mergeFoliationChanges(currentFoliationChanges, singleChunkEdition.foliationChanges ?? []);
+      currentFoliationChanges = this.mergeFoliationChanges(currentFoliationChanges, singleChunkEdition.foliationChanges ?? [], mceData.chunks[chunkIndex].witnessIndices);
 
       if (chunkOrderIndex === 0) {
         edition.lang = singleChunkEdition.lang;
       }
+
+      // Add chunk start
+      edition.mainText.push(MainTextTokenFactory.createChunkStart(mceData.chunks[chunkIndex].chunkId));
+      nextChunkShift++;
 
       currentMainTextIndexShift = nextChunkShift;
 
@@ -104,6 +115,10 @@ export class MceDataEditionGenerator {
         newToken.editionWitnessTokenIndex = mainTextToken.editionWitnessTokenIndex + currentMainTextIndexShift;
         return newToken;
       }));
+
+      // add chunk end
+      edition.mainText.push(MainTextTokenFactory.createChunkEnd(mceData.chunks[chunkIndex].chunkId));
+      nextChunkShift++;
 
       nextChunkShift += singleChunkEdition.mainText.length;
       switch (mceData.chunks[chunkIndex].break) {
@@ -134,6 +149,8 @@ export class MceDataEditionGenerator {
         default:
         // nothing to do!
       }
+
+
 
       // process apparatuses
       for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {
@@ -187,7 +204,7 @@ export class MceDataEditionGenerator {
     
   }
 
-  async regenerateSingleChunkEdition(mceData: MceDataInterface, chunkIndex: number, currentFoliationChanges: FoliationChangeInfoInterface[]) : Promise<EditionInterface> {
+  async regenerateSingleChunkEdition(mceData: MceDataInterface, chunkIndex: number, currentMceFoliationChanges: FoliationChangeInfoInterface[]) : Promise<EditionInterface> {
     const chunk = mceData.chunks[chunkIndex];
     if (chunk === undefined) {
       this.logger.warn(`Attempt to regenerate non-existent chunk ${chunkIndex}`);
@@ -197,8 +214,10 @@ export class MceDataEditionGenerator {
     let singleChunkCtData = await this.ctDataGetter(mceData, chunkIndex);
 
     singleChunkCtData.includeInAutoMarginalFoliation = this.getSingleChunkIncludeInAutoFoliationArray(mceData, chunkIndex);
+    // convert foliation changes to be relative to the chunk
+    const chunkFoliationChanges = currentMceFoliationChanges.map(f => { return {...f, witnessIndex: chunk.witnessIndices.indexOf(f.witnessIndex)}});
     let eg = new CtDataEditionGenerator({
-      ctData: singleChunkCtData, lastFoliationChanges: currentFoliationChanges
+      ctData: singleChunkCtData, lastFoliationChanges: chunkFoliationChanges
     });
     try {
       return eg.generateEdition();
@@ -211,7 +230,7 @@ export class MceDataEditionGenerator {
   }
 
   /**
-   * Returns the CtData's includeInAutoFoliation array that is needed to include the witnesses
+   * Returns the CtData's includeInAutoFoliation array needed to include the witnesses
    * given in the MceData
    * @return {number[]}
    * @param {MceDataInterface}mceData
@@ -232,31 +251,46 @@ export class MceDataEditionGenerator {
   }
 
   /**
-   * Merges previous with current foliation changes making sure that the last foliation changes of
-   * a witness is copied into the result if there are no changes in that witness in the new foliation changes
+   * Merges a single chunk foliation changes array in an MCE foliation changes array making sure there are no duplicates
    *
-   * @param {FoliationChangeInfoInterface[]}previousFoliationChanges
-   * @param {FoliationChangeInfoInterface[]}currentFoliationChanges
+   * @param {FoliationChangeInfoInterface[]}mceFoliationChanges
+   * @param {FoliationChangeInfoInterface[]}chunkFoliationChanges
+   * @param {number[]}chunkWitnessIndices an array that associates the witness indices in the chunk to the witness indices in the MCE, if empty, no conversion is applied
    * @return {FoliationChangeInfoInterface[]}
    */
-  mergeFoliationChanges(previousFoliationChanges: FoliationChangeInfoInterface[], currentFoliationChanges: FoliationChangeInfoInterface[]): FoliationChangeInfoInterface[] {
+  mergeFoliationChanges(mceFoliationChanges: FoliationChangeInfoInterface[], chunkFoliationChanges: FoliationChangeInfoInterface[], chunkWitnessIndices: number[] = []): FoliationChangeInfoInterface[] {
 
-    let indicesInPrevious: number[] = [];
-    previousFoliationChanges.forEach((previousFoliationChange) => {
-      indicesInPrevious.push(previousFoliationChange.witnessIndex);
-    });
-    indicesInPrevious = uniq(indicesInPrevious);
 
-    let indicesInCurrent: number[] = [];
-    currentFoliationChanges.forEach((currentFoliationChange) => {
-      indicesInCurrent.push(currentFoliationChange.witnessIndex);
+    let indicesInMce: number[] = [];
+    mceFoliationChanges.forEach((mceFoliationChange) => {
+      indicesInMce.push(mceFoliationChange.witnessIndex);
     });
-    indicesInCurrent = uniq(indicesInCurrent);
+    indicesInMce = uniq(indicesInMce);
+
+    if (chunkWitnessIndices.length !== 0) {
+      // apply conversion in chunkFoliationChanges
+      chunkFoliationChanges = chunkFoliationChanges.map((chunkFoliationChange) => {
+        const convertedWitnessIndex = chunkWitnessIndices[chunkFoliationChange.witnessIndex];
+        if (convertedWitnessIndex === undefined) {
+          return chunkFoliationChange;
+        }
+        return {
+          ...chunkFoliationChange,
+          witnessIndex: convertedWitnessIndex,
+        };
+      });
+    }
+
+    let indicesInSingleChunk: number[] = [];
+    chunkFoliationChanges.forEach((currentFoliationChange) => {
+      indicesInSingleChunk.push(currentFoliationChange.witnessIndex);
+    });
+    indicesInSingleChunk = uniq(indicesInSingleChunk);
 
     const mergedChanges = [];
-    indicesInPrevious.forEach((previousWitnessIndex) => {
-      if (indicesInCurrent.indexOf(previousWitnessIndex) === -1) {
-        const changes = previousFoliationChanges.filter((previousFoliationChange) => {
+    indicesInMce.forEach((previousWitnessIndex) => {
+      if (indicesInSingleChunk.indexOf(previousWitnessIndex) === -1) {
+        const changes = mceFoliationChanges.filter((previousFoliationChange) => {
           return previousFoliationChange.witnessIndex === previousWitnessIndex;
         });
         if (changes.length > 0) {
@@ -264,9 +298,10 @@ export class MceDataEditionGenerator {
         }
       }
     });
-    mergedChanges.push(...currentFoliationChanges);
+    mergedChanges.push(...chunkFoliationChanges);
     return mergedChanges;
   }
 
 
 }
+

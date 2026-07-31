@@ -28,7 +28,12 @@ export interface WitnessInMceData {
   tid?: number,
 }
 
+export const ValidChunkBreaks = ['', 'paragraph'];
+
 export interface ChunkInMceData {
+  /**
+   * Chunk id as 'docId-chunkNumber', e.g. 'AW47-24'
+   */
   chunkId: string,
   break: string,
   chunkEditionTableId: number,

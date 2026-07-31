@@ -27,6 +27,7 @@ import {Dimension} from '@thomas-inst/typesetter';
 import {SystemStyles, SystemStyleSheet} from '@/defaults/EditionStyles/SystemStyleSheet';
 import {WebStorageKeyCache} from '@/toolbox/KeyCache/WebStorageKeyCache';
 import {StyleSheet} from "@thomas-inst/typesetter";
+import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 
 const defaultIcons = {
   busy: '<i class="fas fa-circle-notch fa-spin"></i>', updatePreview: '<i class="bi bi-arrow-counterclockwise"></i>'
@@ -206,12 +207,12 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     let strings = this.currentStyleSheet.getStrings();
     let defaultStyleDef = this.currentStyleSheet.getStyleDef('default');
     let apparatusStyleDef = this.currentStyleSheet.getStyleDef('apparatus');
-    let defaultFontSize = Dimension.str2px(defaultStyleDef.text?.fontSize);
+    let defaultFontSize = Dimension.str2px(defaultStyleDef.text?.fontSize ?? 0);
     if (defaultFontSize === 0) {
       console.warn(`Default font size is not well defined in stylesheet: '${defaultStyleDef.text?.fontSize}'`);
       defaultFontSize = 16;
     }
-    let apparatusFontSize = Dimension.str2px(apparatusStyleDef.text?.fontSize, defaultFontSize);
+    let apparatusFontSize = Dimension.str2px(apparatusStyleDef.text?.fontSize ?? 0, defaultFontSize);
     if (apparatusFontSize === 0) {
       console.warn(`Apparatus font size is not well defined in stylesheet: '${this.currentStyleSheet.getStyleDef('apparatus').text?.fontSize}'`);
       apparatusFontSize = 14;
@@ -234,24 +235,24 @@ export class EditionPreviewPanel extends PanelWithToolbar {
       scale: initialScale,
       entrySeparator: strings['entrySeparator'],
       apparatusLineSeparator: strings['lineRangeSeparator'],
-      pageWidthInCm: Dimension.str2cm(defaultStyleDef.page?.width, defaultFontSize),
-      pageHeightInCm: Dimension.str2cm(defaultStyleDef.page?.height, defaultFontSize),
+      pageWidthInCm: Dimension.str2cm(defaultStyleDef.page?.width ?? '20cm', defaultFontSize),
+      pageHeightInCm: Dimension.str2cm(defaultStyleDef.page?.height ?? '30cm', defaultFontSize),
       marginInCm: {
-        top: Dimension.str2cm(defaultStyleDef.page?.marginTop, defaultFontSize),
-        left: Dimension.str2cm(defaultStyleDef.page?.marginLeft, defaultFontSize),
-        bottom: Dimension.str2cm(defaultStyleDef.page?.marginBottom, defaultFontSize),
-        right: Dimension.str2cm(defaultStyleDef.page?.marginRight, defaultFontSize),
+        top: Dimension.str2cm(defaultStyleDef.page?.marginTop ?? '2cm', defaultFontSize),
+        left: Dimension.str2cm(defaultStyleDef.page?.marginLeft ?? '2cm', defaultFontSize),
+        bottom: Dimension.str2cm(defaultStyleDef.page?.marginBottom ?? '2cm', defaultFontSize),
+        right: Dimension.str2cm(defaultStyleDef.page?.marginRight ?? '2cm', defaultFontSize),
       },
       mainTextFontSizeInPts: Dimension.px2pt(defaultFontSize),
-      lineNumbersFontSizeInPts: Dimension.str2pt(defaultStyleDef.page?.lineNumbersFontSize, defaultFontSize),
+      lineNumbersFontSizeInPts: Dimension.str2pt(defaultStyleDef.page?.lineNumbersFontSize ?? '0.8em', defaultFontSize),
       resetLineNumbersEachPage: defaultStyleDef.page?.resetLineNumbersEachPage ?? false,
       apparatusFontSizeInPts: Dimension.px2pt(apparatusFontSize),
-      mainTextLineHeightInPts: Dimension.str2pt(defaultStyleDef.paragraph?.lineSkip, defaultFontSize),
-      apparatusLineHeightInPts: Dimension.str2pt(apparatusStyleDef.paragraph?.lineSkip, apparatusFontSize),
+      mainTextLineHeightInPts: Dimension.str2pt(defaultStyleDef.paragraph?.lineSkip ?? '24pt', defaultFontSize),
+      apparatusLineHeightInPts: Dimension.str2pt(apparatusStyleDef.paragraph?.lineSkip ?? '20pt', apparatusFontSize),
       normalSpaceWidthInEms: 0.25,  // TODO: Check usages and change to glue
-      textToLineNumbersInCm: Dimension.str2cm(defaultStyleDef.page?.lineNumbersToTextDistance, defaultFontSize),
-      textToApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minDistanceFromApparatusToText),
-      interApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minInterApparatusDistance),
+      textToLineNumbersInCm: Dimension.str2cm(defaultStyleDef.page?.lineNumbersToTextDistance ?? '1cm', defaultFontSize),
+      textToApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minDistanceFromApparatusToText ?? '1cm'),
+      interApparatusInCm: Dimension.str2cm(defaultStyleDef.page?.minInterApparatusDistance ?? '1cm'),
       debug: true
     };
   }
@@ -263,22 +264,18 @@ export class EditionPreviewPanel extends PanelWithToolbar {
         console.log(`Edition typesetting not ready yet`);
         return;
       }
-      // delete browser specific options, these will be set by the server-side process
-      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
+      // delete browser-specific options, these will be set by the server-side process
       typesettingParameters.typesetterOptions.textBoxMeasurer = undefined;
       typesettingParameters.typesetterOptions.getApparatusListToTypeset = undefined;
       typesettingParameters.typesetterOptions.preTypesetApparatuses = undefined;
       // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
       typesettingParameters.helperOptions.textBoxMeasurer = undefined;
       typesettingParameters.helperOptions.styleId = this.currentStyleSheetId;
-      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
       typesettingParameters.typesetterOptions.pageNumbersOptions.textBoxMeasurer = undefined;
-      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
       typesettingParameters.typesetterOptions.marginaliaOptions.textBoxMeasurer  = undefined;
-      // @ts-expect-error textBoxMeasurer should be defined, but we're deleting it on purpose
       typesettingParameters.typesetterOptions.lineNumbersOptions.textBoxMeasurer = undefined;
 
-      let data = {
+      let data: ApiTypesetPdfRequestData = {
         options: typesettingParameters.typesetterOptions,
         helperOptions: typesettingParameters.helperOptions,
         mainTextList: this.viewer.getMainTextListToTypeset(),
@@ -307,7 +304,7 @@ export class EditionPreviewPanel extends PanelWithToolbar {
     wait(100).then(() => {
       let profiler = new BasicProfiler('Update preview');
       profiler.start();
-      // adjust the current scale to the device's  pixel ratio
+      // adjust the current scale to the device's pixel ratio
       let currentScale = this.viewer.getCurrentScale() * window.devicePixelRatio;
       this.viewer = new EditionViewerCanvas(this.getViewerOptions(currentScale));
       this.viewer.render().then(() => {

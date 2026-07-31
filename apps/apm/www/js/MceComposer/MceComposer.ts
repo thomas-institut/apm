@@ -881,8 +881,6 @@ export class MceComposer extends ApmPage {
           console.warn(`Unknown witness type '${ctDataWitnessInfo['witnessType']}' found in ctData, witness index ${ctDataWitnessIndex}`);
           console.log(ctData);
       }
-
-
     }
     console.log(`MceData updated`);
     console.log(this.mceData);

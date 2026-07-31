@@ -137,7 +137,7 @@
 
 | Route | Handler | Data Method | TS Interface | Status | Notes |
 |---|---|---|---|---|---|
-| `GET /api/typeset/raw` | `ApiTypesetPdf::generatePDF` | ad-hoc `{url}` or `{errorMsg}` | `PdfUrlResponse` in `ApiPdfUrlResponse.ts` | ⚠️ | TS expects `{url: string|null, errorMsg?: string}`, PHP returns `{url: ...}` on success or `{errorMsg: ...}` on error — not always both fields present |
+| `GET /api/typeset/raw` | `ApiTypesetPdf::generatePDF` | ad-hoc `{url}` or `{errorMsg}` | `PdfUrlResponse` in `ApiPdfUrl.ts` | ⚠️ | TS expects `{url: string|null, errorMsg?: string}`, PHP returns `{url: ...}` on success or `{errorMsg: ...}` on error — not always both fields present |
 
 #### Admin
 

@@ -98,7 +98,7 @@ export class MarginalFoliationGenerator {
   getCurrentFoliationChanges(): FoliationChangeInfoInterface[] {
     if (this.currentFoliationChanges === null) {
       this.currentFoliationChanges = MarginalFoliationGenerator.getFoliationChangeInfoArray(this.ctData, this.lastFoliations);
-      console.log(`Current foliation changes`, this.currentFoliationChanges);
+      // console.log(`Current foliation changes`, this.currentFoliationChanges);
     }
     return this.currentFoliationChanges;
   }
@@ -161,8 +161,22 @@ export class MarginalFoliationGenerator {
     return app;
   }
 
-  private getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtText {
+  /**
+   *
+   * @param {number}ctIndex
+   * @param {MainTextToken[]} mainText
+   * @return {number}
+   */
+  getMainTextIndexFromCtIndex(ctIndex: number, mainText: MainTextToken[]): number {
+    for (let i = 0; i < mainText.length; i++) {
+      if (mainText[i].editionWitnessTokenIndex === this.ctData.collationMatrix[this.ctData.editionWitnessIndex][ctIndex]) {
+        return i;
+      }
+    }
+    return -1;
+  }
 
+  private getMarginalSubEntryFmtText(siglum: string, foliation: string): FmtText {
     if (this.ctData.lang === 'ar') {
 
       let fmtText: FmtText = [];
@@ -193,23 +207,6 @@ export class MarginalFoliationGenerator {
 
     return fromString(`${siglum}:${foliation}`);
   }
-
-  /**
-   *
-   * @param {number}ctIndex
-   * @param {MainTextToken[]} mainText
-   * @return {number}
-   */
-  getMainTextIndexFromCtIndex(ctIndex: number, mainText: MainTextToken[]): number {
-
-
-    for (let i = 0; i < mainText.length; i++) {
-      if (mainText[i].editionWitnessTokenIndex === this.ctData.collationMatrix[this.ctData.editionWitnessIndex][ctIndex]) {
-        return i;
-      }
-    }
-    return -1;
-  }
 }
 
 /**
@@ -231,7 +228,7 @@ function getFoliationForToken(token: WitnessTokenInterface, items: FullTxItemInt
 /**
  * Returns the last foliation found in the given array of foliation change info objects.
  *
- * If no foliation is found in the array, returns an empty string
+ * If no foliation is found in the array, it returns an empty string
  *
  * @param {FoliationChangeInfoInterface[]}foliationChangeInfoArray
  * @param {number}witnessIndex

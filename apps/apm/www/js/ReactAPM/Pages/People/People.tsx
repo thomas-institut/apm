@@ -10,7 +10,7 @@ import EntityLink from "@/ReactAPM/Components/EntityLink";
 import TableStateSummary from "@/ReactAPM/Components/TableStateSummary";
 import {Button, Form} from "react-bootstrap";
 import {TablePaginationControls} from "@/ReactAPM/Components/TablePaginationControls";
-import GridTable from "@/ReactAPM/Components/GridTable";
+import TanstackGridReactTable from "@/ReactAPM/Components/TanstackGridReactTable";
 import './people.css';
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
 import EntityCreationDialog, {ParameterValue} from "@/ReactAPM/Components/EntityCreationDialog";
@@ -126,9 +126,9 @@ export default function People() {
                                       onChange={e => table.setGlobalFilter(e.target.value.trim())}/></div>
       <TablePaginationControls className="tableNavigationDiv" table={table} key="pagination"/>
     </div>);
-    content = <GridTable table={table} tableId="peopleTable" key="table"
-                         style={{margin: '1em', overflow: 'auto'}}
-                         gridColumnDef={'1fr 1fr 1fr 1fr 0.5fr'}/>;
+    content = <TanstackGridReactTable table={table} tableId="peopleTable" key="table"
+                                      style={{margin: '1em', overflow: 'auto'}}
+                                      gridColumnDef={'1fr 1fr 1fr 1fr 0.5fr'}/>;
   }
 
   switch (queryResult.status) {

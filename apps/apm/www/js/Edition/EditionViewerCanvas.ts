@@ -88,7 +88,7 @@ interface TypesettingParameters {
   mainTextVerticalListToTypeset: ItemList;
   typesetterOptions: BasicTypesetterOptions<ApparatusInterface>;
   helperOptions: EditionTypesettingHelperOptions;
-  extraData: { [p: string]: any;}
+  extraData: { apparatuses: ApparatusInterface[]}
 }
 
 export class EditionViewerCanvas {
@@ -102,9 +102,9 @@ export class EditionViewerCanvas {
   private readonly canvasMeasurer: CanvasTextBoxMeasurer;
   private currentScale: number;
   private editionDoc: TypesetterDocument | null;
-  private rawMainTextVerticalListToTypeset!: { [p: string]: any; };
-  // private mainTextVerticalListToTypeset!: ItemList;
+  private mainTextVerticalListToTypeset!: ItemList;
   private typesettingParameters: TypesettingParameters | null = null;
+  private rawMainTextVerticalListToTypeset!: Record<string, any>;
 
   constructor(options: EditionViewerCanvasOptions) {
 
@@ -257,6 +257,7 @@ export class EditionViewerCanvas {
       let editionTypesettingHelper = new EditionTypesettingHelper(helperOptions);
       editionTypesettingHelper.setup().then(async () => {
         let verticalListToTypeset = await editionTypesettingHelper.generateListToTypesetFromMainText();
+        this.mainTextVerticalListToTypeset = verticalListToTypeset;
         this.rawMainTextVerticalListToTypeset = verticalListToTypeset.getExportObject();
         this.debug && console.log(`List to typeset`,verticalListToTypeset);
         const pageStyle = helperOptions.editionStyleSheet.getStyleDef('default').page;

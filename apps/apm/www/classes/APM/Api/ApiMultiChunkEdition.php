@@ -2,6 +2,7 @@
 
 namespace APM\Api;
 
+use APM\Api\DataSchema\ApiMceSaveResponse;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -13,7 +14,7 @@ class ApiMultiChunkEdition extends ApiController
 
     const string CLASS_NAME = 'MultiChunkEditions';
 
-    public function  getEdition(Request $request, Response $response, array $args): Response
+    public function getEdition(Request $request, Response $response, array $args): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $editionId = intval($request->getAttribute('editionId'));
@@ -35,18 +36,13 @@ class ApiMultiChunkEdition extends ApiController
 
     public function saveEdition(Request $request, Response $response): Response
     {
+        $inputJson = $request->getBody()->getContents();
+        $inputData = json_decode($inputJson, true);
 
-
-        $requiredFields = [ 'editionId', 'mceData', 'description'];
-        $inputDataObject = $this->checkAndGetInputData($request, $response, $requiredFields);
-        if (!is_array($inputDataObject)) {
-            return $inputDataObject;
-        }
-
-        $editionId = intval($inputDataObject['editionId']);
+        $editionId = intval($inputData['editionId']);
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $editionId);
-        $description = $inputDataObject['description'];
-        $mceData = $inputDataObject['mceData'];
+        $description = $inputData['description'];
+        $mceData = $inputData['mceData'];
         $authorTid = $this->apiUserId;
 
         try {
@@ -55,13 +51,10 @@ class ApiMultiChunkEdition extends ApiController
             $this->logger->error("Error saving multi chunk edition", [
                 'id' => $editionId,
                 'author'=> $authorTid,
-                'description' => $description
+                'description' => $description,
+                'msg' => $e->getMessage()
                 ]);
-            return $this->responseWithJson($response,  [
-                'status' => 'Error',
-                'error' => 'Cannot save',
-                'message' => $e->getMessage()
-            ], 502);
+            return $this->responseFactory->internalServerError($response, 'Error saving multi chunk edition');
         }
         // get the edition's data to report timestamp
 
@@ -70,16 +63,11 @@ class ApiMultiChunkEdition extends ApiController
         } catch (Exception $e) {
             // this should almost never happen!
             $this->logger->error("Edition $editionId not found");
-            return $this->responseWithJson($response,  [
-                'editionId' => $editionId,
-                'message' => 'Edition not found'
-            ], 404);
+            return $this->responseFactory->notFound($response, 'Edition not found');
         }
-
-        return $this->responseWithJson($response, [
-            'status' => 'OK',
-            'id' => $editionId,
-            'saveTimeStamp' => $data['validFrom']
-        ]);
+        $mceSaveResponse = new ApiMceSaveResponse();
+        $mceSaveResponse->id = $editionId;
+        $mceSaveResponse->saveTimeStamp = $data['validFrom'];
+        return $this->responseFactory->success($response, $mceSaveResponse);
     }
 }

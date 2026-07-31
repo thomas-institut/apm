@@ -16,21 +16,26 @@
  *
  */
 
-import {OptionsChecker} from '@thomas-inst/optionschecker';
+
 import {Edition} from '../Edition.js';
+
+export interface EditionGeneratorOptions {
+  verbose?: boolean;
+  debug?: boolean;
+}
 
 export class EditionGenerator {
   protected verbose: boolean;
   protected debug: boolean;
 
-  constructor(options: any) {
-    let optionsSpec = {
-      verbose: {type: 'boolean', default: false}, debug: {type: 'boolean', default: false}
+  constructor(options: EditionGeneratorOptions) {
+
+    const defaultOptions = {
+      verbose: false,
+      debug: false
     };
 
-    let oc = new OptionsChecker({optionsDefinition: optionsSpec, context: 'EditionGenerator'});
-
-    let cleanOptions = oc.getCleanOptions(options);
+    let cleanOptions = {...defaultOptions, ...options};
     this.verbose = cleanOptions.verbose;
     this.debug = cleanOptions.debug;
     if (this.debug) {

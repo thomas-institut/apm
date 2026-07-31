@@ -1,9 +1,9 @@
-import { OptionsChecker } from '@thomas-inst/optionschecker'
-import { ConfirmDialog, LARGE_DIALOG } from './ConfirmDialog'
-import { tr } from './SiteLang'
+import {OptionsChecker} from '@thomas-inst/optionschecker';
+import {ConfirmDialog, LARGE_DIALOG} from './ConfirmDialog';
+import {tr} from './SiteLang';
 import {ApmApiClient, ApmApiClientError} from '@/Api/ApmApiClient';
-import { ApmPage } from '../ApmPage'
-import { wait } from '@/toolbox/wait'
+import {ApmPage} from '../ApmPage';
+import {wait} from '@/toolbox/wait';
 import {getStringVal} from "@/toolbox/UiToolBox";
 
 
@@ -13,6 +13,7 @@ interface MakeUserDialogOptions {
   apmDataProxy: ApmApiClient;
   debug?: boolean;
 }
+
 export class MakeUserDialog {
 
   private options: MakeUserDialogOptions;
@@ -23,16 +24,16 @@ export class MakeUserDialog {
   private infoDiv!: JQuery<HTMLElement>;
   private successWaitTime: number;
 
-  constructor (options:any) {
+  constructor(options: any) {
     let oc = new OptionsChecker({
       context: 'MakeUserDialog',
       optionsDefinition: {
-        personData: { type: 'object'},
-        successWaitTime: { type: 'number', default: 500},
-        apmDataProxy: { type: 'object', objectClass: ApmApiClient},
-        debug: { type: 'boolean', default: true},
+        personData: {type: 'object'},
+        successWaitTime: {type: 'number', default: 500},
+        apmDataProxy: {type: 'object', objectClass: ApmApiClient},
+        debug: {type: 'boolean', default: true},
       }
-    })
+    });
 
     this.options = oc.getCleanOptions(options);
     this.successWaitTime = this.options.successWaitTime ?? 500;
@@ -42,14 +43,14 @@ export class MakeUserDialog {
   show() {
     return new Promise((resolve) => {
       this.dialog = new ConfirmDialog({
-        title: `${tr('Make User')}: ${this.options.personData['name']}` ,
+        title: `${tr('Make User')}: ${this.options.personData['name']}`,
         size: LARGE_DIALOG,
         acceptButtonLabel: tr('Make User'),
         cancelButtonLabel: tr('Cancel'),
         body: this.getEditUserProfileFormHtml(),
         hideOnAccept: false,
         cancelFunction: () => {
-          this.debug && console.log(`Make User cancelled`)
+          this.debug && console.log(`Make User cancelled`);
           resolve(-1);
         }
       });
@@ -65,7 +66,7 @@ export class MakeUserDialog {
       this.inputUserName.on('keyup', this.genOnInputChange());
       this.dialog.setAcceptFunction(this.genOnAccept(resolve));
       this.dialog.show();
-    })
+    });
   }
 
   genOnAccept(resolve: any) {
@@ -77,34 +78,34 @@ export class MakeUserDialog {
         this.dialog.hideCancelButton();
         let loadingMessage = tr('Making new user');
         this.infoDiv.html(ApmPage.genLoadingMessageHtml(loadingMessage)).removeClass('text-danger');
-        this.options.apmDataProxy.userCreate(id, username).then( () => {
+        this.options.apmDataProxy.userCreate(id, username).then(() => {
           this.infoDiv.html(tr('User successfully created'));
-          wait(this.successWaitTime).then( () => {
+          wait(this.successWaitTime).then(() => {
             this.dialog.hide();
             this.dialog.destroy();
-            resolve(true)
-          })
-        }).catch( (response:any ) => {
+            resolve(true);
+          });
+        }).catch((response: any) => {
           const resp = response as ApmApiClientError;
-          let status =resp.httpStatus;
-          let errorMessage = resp.data?.errorMsg ?? tr("Unknown error");
+          let status = resp.httpStatus;
+          let errorMessage = resp.receivedData?.errorMsg ?? tr("Unknown error");
           this.infoDiv.html(`${tr('The server found an error')}: <b>(${status}) ${errorMessage}</b>`)
             .addClass('text-danger');
           this.dialog.showAcceptButton();
           this.dialog.showCancelButton();
-        })
+        });
       }
-    }
+    };
   }
 
   genOnInputChange() {
     return () => {
-     if (this.validateInput()) {
+      if (this.validateInput()) {
         this.dialog.showAcceptButton();
       } else {
         this.dialog.hideAcceptButton();
       }
-    }
+    };
   }
 
   validateInput() {
@@ -115,12 +116,12 @@ export class MakeUserDialog {
     if (newUserName !== this.currentUserName) {
       // changes in username
       changes = true;
-      if(!this.isUserNameValid(newUserName)) {
+      if (!this.isUserNameValid(newUserName)) {
         errors.push(tr(`Invalid username`));
       }
     }
     if (changes) {
-      this.infoDiv.html(errors.map( (e) => {
+      this.infoDiv.html(errors.map((e) => {
         return `<p>${e}.</p>`;
       }).join('')).addClass('text-danger');
     } else {
@@ -131,7 +132,7 @@ export class MakeUserDialog {
   }
 
   isUserNameValid(userName: string) {
-    return userName.length > 4 && /^[A-Za-z]+$/.test(userName)
+    return userName.length > 4 && /^[A-Za-z]+$/.test(userName);
   }
 
   getEditUserProfileFormHtml() {

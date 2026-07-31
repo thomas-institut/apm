@@ -17,7 +17,7 @@ import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
 import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
-import {MceDataInterface_v2} from "@/MceData/MceDataInterface";
+import {MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import MceComposerSaveButton from "@/ReactAPM/Pages/MceComposer/MceComposerSaveButton";
 import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
@@ -98,7 +98,7 @@ interface ChunkLoadResult {
 }
 
 export interface MceComposerHistoryState {
-  mceData: MceDataInterface_v2;
+  mceData: MceDataInterface;
 }
 
 interface MceSettings {
@@ -119,7 +119,7 @@ interface PanelSpec {
 
 interface PendingEditionGenerationRequest {
   signature: string;
-  mceData: MceDataInterface_v2;
+  mceData: MceDataInterface;
   mceDataId: number;
 }
 
@@ -142,7 +142,7 @@ export default function MceComposer() {
   const [mceComposerStatus, setMceComposerStatus] = useState<MceComposerStatus>('loadingMce');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
-  const [mceData, setMceData] = useState<MceDataInterface_v2>(MceData.createEmpty());
+  const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
   const [edition, setEdition] = useState<Edition | null>(null);
   const [editionGenerationProgress, setEditionGenerationProgress] = useState<number | null>(null);
   const [settings, setSettings] = useState<MceSettings>({
@@ -173,7 +173,7 @@ export default function MceComposer() {
   const mceDataEditInProgressRef = useRef(false);
   const editionGenerationInProgressRef = useRef(false);
   const pendingEditionGenerationRequestRef = useRef<PendingEditionGenerationRequest | null>(null);
-  const latestMceDataRef = useRef<MceDataInterface_v2>(mceData);
+  const latestMceDataRef = useRef<MceDataInterface>(mceData);
   const latestMceDataIdRef = useRef<number>(-1);
   const latestAutoRegenerateRef = useRef<boolean>(settings.autoRegenerate);
   const editorSessionRef = useRef(0);
@@ -443,14 +443,14 @@ export default function MceComposer() {
 
   }, [mceComposerStatus, ctDataStatusArray, mceData]);
 
-  const getMceDataHash = (mceData: MceDataInterface_v2, mceDataId: number) => {
+  const getMceDataHash = (mceData: MceDataInterface, mceDataId: number) => {
     return hashString(JSON.stringify([mceData, mceDataId]));
   };
-  const isEditionInCache = (mceData: MceDataInterface_v2, mceDataId: number) => {
+  const isEditionInCache = (mceData: MceDataInterface, mceDataId: number) => {
     return editionCache.current[getMceDataHash(mceData, mceDataId)] !== undefined;
   };
 
-  const getEdition = async (mceData: MceDataInterface_v2, mceDataId: number) => {
+  const getEdition = async (mceData: MceDataInterface, mceDataId: number) => {
     const editorSession = editorSessionRef.current;
 
     const mceDataHash = getMceDataHash(mceData, mceDataId);
@@ -472,15 +472,15 @@ export default function MceComposer() {
     };
 
     const generator = new MceDataEditionGenerator({
-      ctDataGetter: async (mceData: MceDataInterface_v2, chunkIndex: number) => {
+      ctDataGetter: async (mceData: MceDataInterface, chunkIndex: number) => {
         const chunk = mceData.chunks[chunkIndex];
         const data = await appContext.apiClient.getSingleChunkData(chunk.chunkEditionTableId, chunk.version, true);
         return data.ctData;
       },
-      singleChunkEditionGetter: async (_mceData: MceDataInterface_v2, chunkIndex: number) => {
+      singleChunkEditionGetter: async (_mceData: MceDataInterface, chunkIndex: number) => {
         return singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] ?? null;
       },
-      singleChunkEditionSaver: async (_mceData: MceDataInterface_v2, chunkIndex: number, edition) => {
+      singleChunkEditionSaver: async (_mceData: MceDataInterface, chunkIndex: number, edition) => {
         if (editorSession === editorSessionRef.current) {
           singleChunkEditionCache.current[singleChunkEditionCacheKey(chunkIndex)] = new Edition().setFromInterface(edition);
         }
@@ -1006,7 +1006,7 @@ export default function MceComposer() {
     return true;
   };
 
-  const regenerateEdition = async (requestedMceData: MceDataInterface_v2 = mceData, requestedMceDataId: number = mceDataId) => {
+  const regenerateEdition = async (requestedMceData: MceDataInterface = mceData, requestedMceDataId: number = mceDataId) => {
     pendingEditionGenerationRequestRef.current = {
       signature: getMceDataHash(requestedMceData, requestedMceDataId),
       mceData: requestedMceData,

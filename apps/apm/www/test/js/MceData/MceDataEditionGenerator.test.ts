@@ -1,6 +1,6 @@
 import {beforeEach, describe, expect, it, vi} from 'vitest';
 import {MceDataEditionGenerator} from '@/MceData/MceDataEditionGenerator.js';
-import {MceDataInterface_v2} from '@/MceData/MceDataInterface.js';
+import {MceDataInterface} from '@/MceData/MceDataInterface.js';
 import {Edition} from '@/Edition/Edition.js';
 import {MainTextTokenFactory} from '@/Edition/MainTextTokenFactory.js';
 import {Apparatus} from '@/Edition/Apparatus.js';
@@ -40,7 +40,7 @@ vi.mock('@/Edition/EditionGenerator/CtDataEditionGenerator.js', () => {
   return {CtDataEditionGenerator: MockCtDataEditionGenerator};
 });
 
-function buildMceData(overrides: Partial<MceDataInterface_v2> = {}): MceDataInterface_v2 {
+function buildMceData(overrides: Partial<MceDataInterface> = {}): MceDataInterface {
   return {
     chunks: [
       {
@@ -75,8 +75,9 @@ function buildMceData(overrides: Partial<MceDataInterface_v2> = {}): MceDataInte
     lang: 'la',
     stylesheetId: 'default',
     archived: false,
-    schemaVersion: '2',
+    schemaVersion: '3',
     includeInAutoMarginalFoliation: [],
+    standardizedStrings: [],
     ...overrides,
   };
 }

@@ -3,9 +3,9 @@
 import {
   ChunkInMceData,
   MceDataInterface_v1,
-  MceDataInterface_v2,
+  MceDataInterface,
   ValidChunkBreaks,
-  WitnessInMceData
+  WitnessInMceData, MceDataInterfaceAny, MceDataInterface_v2, MceDataInterface_v3
 } from "./MceDataInterface.js";
 import * as ArrayUtil from "../lib/ToolBox/ArrayUtil.js";
 import {CtDataInterface, SiglaGroupInterface} from "../CtData/CtDataInterface.js";
@@ -15,7 +15,7 @@ import {ValidationError} from "../lib/Error/SystemError.js";
 
 export class MceData {
 
-  static createEmpty(): MceDataInterface_v2 {
+  static createEmpty(): MceDataInterface {
     return {
       chunks: [],
       chunkOrder: [],
@@ -28,20 +28,35 @@ export class MceData {
       lang: '',
       stylesheetId: '',
       archived: false,
-      schemaVersion: '2',
-      includeInAutoMarginalFoliation: []
+      schemaVersion: '3',
+      includeInAutoMarginalFoliation: [],
+      standardizedStrings: []
     };
   }
 
-  static isEmpty(mceData: MceDataInterface_v2): boolean {
+  static isEmpty(mceData: MceDataInterface): boolean {
     return mceData['chunks'].length === 0;
   }
 
 
-  static update(mceDataV1: MceDataInterface_v1): MceDataInterface_v2 {
+  static update(mceDataAny: MceDataInterfaceAny): MceDataInterface {
+    if (mceDataAny.schemaVersion === '3') {
+      return mceDataAny;
+    }
+    if (mceDataAny.schemaVersion === '2') {
+      return this.updateV2toV3(mceDataAny);
+    }
+    if (mceDataAny.schemaVersion === '1.0') {
+      return this.updateV2toV3(this.updateV1toV2(mceDataAny));
+    }
+    throw new ValidationError(`Unknown schema version: ${(mceDataAny as any).schemaVersion}`);
+  }
+
+  private static updateV1toV2(mceDataV1: MceDataInterface_v1) : MceDataInterface_v2 {
+
     const newMceData: MceDataInterface_v2 = {...mceDataV1, schemaVersion: '2', chunkOrder: [], includeInAutoMarginalFoliation: []};
     if (mceDataV1.chunkOrder === undefined) {
-      newMceData.chunkOrder = this.getDefaultChunkOrder(newMceData);
+      newMceData.chunkOrder = this.getDefaultChunkOrderFromChunks(mceDataV1.chunks);
     } else {
       newMceData.chunkOrder = mceDataV1.chunkOrder;
     }
@@ -53,15 +68,23 @@ export class MceData {
     return newMceData;
   }
 
-  static getDefaultChunkOrder(mceData: MceDataInterface_v2) {
-    return mceData.chunks.map((_c, i) => i);
+  private static updateV2toV3(mceDataV2: MceDataInterface_v2) : MceDataInterface_v3 {
+    return {...mceDataV2, schemaVersion: '3', standardizedStrings: []};
   }
 
-  static getWorkIds(mceData: MceDataInterface_v2): string[] {
+  static getDefaultChunkOrder(mceData: MceDataInterface) {
+    return this.getDefaultChunkOrderFromChunks(mceData.chunks);
+  }
+
+  private static getDefaultChunkOrderFromChunks(chunkArray: any[]) {
+    return chunkArray.map((_c, i) => i);
+  }
+
+  static getWorkIds(mceData: MceDataInterface): string[] {
     return mceData.chunks.map(c => c.chunkId.split('-')[0]);
   }
 
-  static setTitle(mceData: MceDataInterface_v2, newTitle: string) {
+  static setTitle(mceData: MceDataInterface, newTitle: string) {
     newTitle = newTitle.trim();
     if (newTitle === '') {
       throw new ValidationError(`Invalid title '${newTitle}'`);
@@ -70,7 +93,7 @@ export class MceData {
     return mceData;
   }
 
-  static deleteSiglaGroup(mceData: MceDataInterface_v2, siglaGroupIndex: number): MceDataInterface_v2 {
+  static deleteSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number): MceDataInterface {
     if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
       throw new ValidationError(`Invalid sigla group index ${siglaGroupIndex}`);
     }
@@ -90,7 +113,7 @@ export class MceData {
    * @param siglaGroupIndex
    * @param group
    */
-  static isSiglaGroupValid(mceData: MceDataInterface_v2, siglaGroupIndex: number, group: SiglaGroupInterface): true | string {
+  static isSiglaGroupValid(mceData: MceDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface): true | string {
 
     const trimmedSiglum = group.siglum.trim();
 
@@ -136,7 +159,7 @@ export class MceData {
    * @param group
    * @throws ValidationError
    */
-  static changeSiglaGroup(mceData: MceDataInterface_v2, siglaGroupIndex: number, group: SiglaGroupInterface) {
+  static changeSiglaGroup(mceData: MceDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface) {
     if (siglaGroupIndex < 0 || siglaGroupIndex >= mceData.siglaGroups.length) {
       throw new ValidationError(`Invalid sigla group index ${siglaGroupIndex}`);
     }
@@ -155,7 +178,7 @@ export class MceData {
    * @param group
    * @throws ValidationError
    */
-  static addSiglaGroup(mceData: MceDataInterface_v2, group: SiglaGroupInterface): MceDataInterface_v2 {
+  static addSiglaGroup(mceData: MceDataInterface, group: SiglaGroupInterface): MceDataInterface {
     const isValid = this.isSiglaGroupValid(mceData, -1, group);
     if (isValid !== true) {
       throw new ValidationError(`Invalid sigla group ${JSON.stringify(group)}: ${isValid}`);
@@ -171,7 +194,7 @@ export class MceData {
    * @param newBreak
    * @throws ValidationError
    */
-  static setChunkBreak(mceData: MceDataInterface_v2, chunkIndex: number, newBreak: string): MceDataInterface_v2 {
+  static setChunkBreak(mceData: MceDataInterface, chunkIndex: number, newBreak: string): MceDataInterface {
     if (chunkIndex < 0 || chunkIndex >= mceData.chunks.length) {
       throw new ValidationError(`Invalid chunk index ${chunkIndex}`);
     }
@@ -184,7 +207,7 @@ export class MceData {
     return mceData;
   }
 
-  static isSiglumValid(mceData: MceDataInterface_v2, witnessIndex: number, siglum: string): true | string {
+  static isSiglumValid(mceData: MceDataInterface, witnessIndex: number, siglum: string): true | string {
     if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
       return 'Invalid witness index';
     }
@@ -215,7 +238,7 @@ export class MceData {
    * @param newSiglum
    * @throws ValidationError
    */
-  static setSiglum(mceData: MceDataInterface_v2, witnessIndex: number, newSiglum: string): MceDataInterface_v2 {
+  static setSiglum(mceData: MceDataInterface, witnessIndex: number, newSiglum: string): MceDataInterface {
     const isValid = this.isSiglumValid(mceData, witnessIndex, newSiglum);
     if (isValid !== true) {
       throw new ValidationError(`Invalid siglum '${newSiglum}' for witness index ${witnessIndex}: ${isValid}`);
@@ -231,7 +254,7 @@ export class MceData {
    * @param witnessIndex
    * @param newState
    */
-  static setAutoMarginalFoliation(mceData: MceDataInterface_v2, witnessIndex: number, newState: boolean): MceDataInterface_v2 {
+  static setAutoMarginalFoliation(mceData: MceDataInterface, witnessIndex: number, newState: boolean): MceDataInterface {
     if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
       throw new ValidationError(`Invalid witness index ${witnessIndex}`)
     }
@@ -258,7 +281,7 @@ export class MceData {
    * @param chunkPosition
    * @param direction
    */
-  static moveChunk(mceData: MceDataInterface_v2, chunkPosition: number, direction: 'forwards' | 'backwards'): MceDataInterface_v2  {
+  static moveChunk(mceData: MceDataInterface, chunkPosition: number, direction: 'forwards' | 'backwards'): MceDataInterface  {
 
     if (chunkPosition === 0 && direction === 'backwards') {
       return mceData;
@@ -283,9 +306,9 @@ export class MceData {
    * @param getDocTitle a function to get the title of a document in case the updated chunk adds a new fullTx witness
    * @param getSourceTitle a function to get the title of a source in case the updated chunk adds a new source witness
    */
-  static async updateChunk(mceData: MceDataInterface_v2, tableId: number, ctData: CtDataInterface, version: string,
+  static async updateChunk(mceData: MceDataInterface, tableId: number, ctData: CtDataInterface, version: string,
                            getDocTitle: (docId: number) => Promise<string>,
-                           getSourceTitle: (sourceId: number) => Promise<string>): Promise<MceDataInterface_v2> {
+                           getSourceTitle: (sourceId: number) => Promise<string>): Promise<MceDataInterface> {
 
     const chunkIndex = mceData.chunks.findIndex((chunk) => chunk.chunkEditionTableId === tableId);
 
@@ -375,7 +398,7 @@ export class MceData {
     return this.removeUnusedWitnessesAndReindex(mceData);
   }
 
-  static deleteChunk(mceData: MceDataInterface_v2, chunkIndex: number): MceDataInterface_v2 {
+  static deleteChunk(mceData: MceDataInterface, chunkIndex: number): MceDataInterface {
     if (mceData.chunks.length === 0) {
       console.warn(`Attempt to delete chunks from empty edition`);
       return mceData;
@@ -415,11 +438,11 @@ export class MceData {
     return this.removeUnusedWitnessesAndReindex(mceData);
   }
 
-  static async addChunk(mceData: MceDataInterface_v2, tableId: number,
+  static async addChunk(mceData: MceDataInterface, tableId: number,
                         ctData: CtDataInterface, chunkTimeString: string,
                         getDocTitle: (docId: number) => Promise<string>,
                         getSourceTitle: (sourceId: number) => Promise<string>
-  ): Promise<MceDataInterface_v2> {
+  ): Promise<MceDataInterface> {
     console.log(`Adding chunk ${ctData.chunkId} to MceData`);
     // first, see if the exact chunk edition is already in
     for (let chunkIndex = 0; chunkIndex < mceData.chunks.length; chunkIndex++) {
@@ -525,7 +548,7 @@ export class MceData {
   /**
    * Returns the index of the witness with the given `witnessId`, or `-1` when it is not present.
    */
-  private static getWitnessIndexByWitnessId(mceData: MceDataInterface_v2, witnessId: string): number {
+  private static getWitnessIndexByWitnessId(mceData: MceDataInterface, witnessId: string): number {
     for (let i = 0; i < mceData.witnesses.length; i++) {
       if (witnessId === mceData.witnesses[i].witnessId) {
         return i;
@@ -541,7 +564,7 @@ export class MceData {
    *
    * @returns The index assigned to the newly added witness.
    */
-  private static addNewWitnessInfo(mceData: MceDataInterface_v2, witnessInfo: WitnessInMceData, siglum: string): number {
+  private static addNewWitnessInfo(mceData: MceDataInterface, witnessInfo: WitnessInMceData, siglum: string): number {
     mceData.witnesses.push(witnessInfo);
     let witnessIndex = mceData.witnesses.length - 1;
     // add witness siglum at the end of this.mceData.sigla
@@ -563,7 +586,7 @@ export class MceData {
    * This updates `chunks[].witnessIndices`, `siglaGroups[].witnesses`, and
    * `includeInAutoMarginalFoliation` (when defined) to match the compacted witness list.
    */
-  private static removeUnusedWitnessesAndReindex(mceData: MceDataInterface_v2): MceDataInterface_v2 {
+  private static removeUnusedWitnessesAndReindex(mceData: MceDataInterface): MceDataInterface {
     const usedWitnessIndices = new Set<number>();
     mceData.chunks.forEach(chunk => {
       chunk.witnessIndices.forEach(idx => {

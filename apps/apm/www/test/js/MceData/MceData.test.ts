@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MceData } from '@/MceData/MceData.js';
-import {MceDataInterface_v1, MceDataInterface_v2} from '@/MceData/MceDataInterface.js';
+import {MceDataInterface_v1, MceDataInterface} from '@/MceData/MceDataInterface.js';
 import { CtDataInterface } from '@/CtData/CtDataInterface.js';
 import { ValidationError } from '@/lib/Error/SystemError.js';
 
@@ -20,7 +20,8 @@ describe('MceData', () => {
       expect(empty.lang).toBe('');
       expect(empty.stylesheetId).toBe('');
       expect(empty.archived).toBe(false);
-      expect(empty.schemaVersion).toBe('2');
+      expect(empty.schemaVersion).toBe('3');
+      expect(empty.standardizedStrings).toEqual([]);
       expect(empty.includeInAutoMarginalFoliation).toEqual([]);
     });
   });
@@ -49,6 +50,7 @@ describe('MceData', () => {
   describe('fix', () => {
     it('initializes chunkOrder and includeInAutoMarginalFoliation if they are missing', () => {
       const incomplete = {
+        schemaVersion: '1.0',
         chunks: [
           { chunkId: 'c1', title: 'C1' },
           { chunkId: 'c2', title: 'C2' }
@@ -82,7 +84,7 @@ describe('MceData', () => {
     it('returns a sequence of indices based on the number of chunks', () => {
       const mceData = {
         chunks: [{}, {}, {}]
-      } as unknown as MceDataInterface_v2;
+      } as unknown as MceDataInterface;
 
       expect(MceData.getDefaultChunkOrder(mceData)).toEqual([0, 1, 2]);
     });

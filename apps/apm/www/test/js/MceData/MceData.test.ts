@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import { MceData } from '@/MceData/MceData.js';
-import { MceDataInterface } from '@/MceData/MceDataInterface.js';
+import {MceDataInterface_v1, MceDataInterface_v2} from '@/MceData/MceDataInterface.js';
 import { CtDataInterface } from '@/CtData/CtDataInterface.js';
 import { ValidationError } from '@/lib/Error/SystemError.js';
 
@@ -20,7 +20,7 @@ describe('MceData', () => {
       expect(empty.lang).toBe('');
       expect(empty.stylesheetId).toBe('');
       expect(empty.archived).toBe(false);
-      expect(empty.schemaVersion).toBe('1.0');
+      expect(empty.schemaVersion).toBe('2');
       expect(empty.includeInAutoMarginalFoliation).toEqual([]);
     });
   });
@@ -53,16 +53,17 @@ describe('MceData', () => {
           { chunkId: 'c1', title: 'C1' },
           { chunkId: 'c2', title: 'C2' }
         ]
-      } as unknown as MceDataInterface;
+      } as unknown as MceDataInterface_v1;
 
-      const fixed = MceData.fix(incomplete);
+      const fixed = MceData.update(incomplete);
       expect(fixed.chunkOrder).toEqual([0, 1]);
       expect(fixed.includeInAutoMarginalFoliation).toEqual([]);
     });
 
     it('does not overwrite existing chunkOrder or includeInAutoMarginalFoliation', () => {
-      const existing: MceDataInterface = {
+      const existing: MceDataInterface_v1 = {
         ...MceData.createEmpty(),
+        schemaVersion: '1.0',
         chunks: [
           { chunkId: 'c1', title: 'C1' } as any,
           { chunkId: 'c2', title: 'C2' } as any
@@ -71,7 +72,7 @@ describe('MceData', () => {
         includeInAutoMarginalFoliation: [5]
       };
 
-      const fixed = MceData.fix(existing);
+      const fixed = MceData.update(existing);
       expect(fixed.chunkOrder).toEqual([1, 0]);
       expect(fixed.includeInAutoMarginalFoliation).toEqual([5]);
     });
@@ -81,7 +82,7 @@ describe('MceData', () => {
     it('returns a sequence of indices based on the number of chunks', () => {
       const mceData = {
         chunks: [{}, {}, {}]
-      } as unknown as MceDataInterface;
+      } as unknown as MceDataInterface_v2;
 
       expect(MceData.getDefaultChunkOrder(mceData)).toEqual([0, 1, 2]);
     });
@@ -124,14 +125,6 @@ describe('MceData', () => {
       expect(mceData.chunkOrder).toEqual([0, 1]);
     });
 
-    it('initializes chunkOrder if it is missing before moving', () => {
-      const mceData = MceData.createEmpty();
-      mceData.chunks = [{} as any, {} as any];
-      delete mceData.chunkOrder;
-
-      MceData.moveChunk(mceData, 0, 'forwards');
-      expect(mceData.chunkOrder).toEqual([1, 0]);
-    });
   });
 
   describe('updateChunk', () => {
@@ -375,19 +368,6 @@ describe('MceData', () => {
       expect(mceData.chunkOrder).toEqual([0, 1]);
     });
 
-    it('initializes chunkOrder if missing when deleting a chunk', () => {
-      const mceData = MceData.createEmpty();
-      delete mceData.chunkOrder;
-      mceData.chunks = [
-        { chunkId: 'c1', witnessIndices: [] } as any,
-        { chunkId: 'c2', witnessIndices: [] } as any,
-        { chunkId: 'c3', witnessIndices: [] } as any
-      ];
-
-      MceData.deleteChunk(mceData, 1);
-
-      expect(mceData.chunkOrder).toEqual([0, 1]);
-    });
 
     it('removes unused witnesses and updates indices', () => {
       const mceData = MceData.createEmpty();
@@ -949,16 +929,6 @@ describe('MceData', () => {
 
       // addNewWitnessInfo pushes to witnesses first, so length becomes 2. witnessIndex is 1.
       expect(mceData.sigla).toEqual(['A', 'W1']);
-    });
-
-    it('initializes chunkOrder if missing when adding a chunk', async () => {
-      const mceData = MceData.createEmpty();
-      delete mceData.chunkOrder;
-
-      const ctData = { chunkId: 'c1', lang: 'en', type: 'edition', witnesses: [], sigla: [] } as any;
-      await MceData.addChunk(mceData, 1, ctData, 'v1', getDocTitle, getSourceTitle);
-
-      expect(mceData.chunkOrder).toEqual([0]);
     });
   });
 });

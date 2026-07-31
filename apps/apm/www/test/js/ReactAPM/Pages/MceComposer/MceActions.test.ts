@@ -6,11 +6,11 @@ import { SetChunkBreakAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetChu
 import { AddChunkAction } from '@/ReactAPM/Pages/MceComposer/Actions/AddChunkAction';
 import { SetSiglumAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetSiglumAction';
 import { SetIncludeInAutoMarginalFoliationAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction';
-import { MceDataInterface } from '@/MceData/MceDataInterface';
+import { MceDataInterface_v2 } from '@/MceData/MceDataInterface';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {ValidationError} from '@/lib/Error/SystemError';
 
-const makeBaseMceData = (): MceDataInterface => ({
+const makeBaseMceData = (): MceDataInterface_v2 => ({
   title: 'Test',
   chunks: [],
   chunkOrder: [],
@@ -22,10 +22,11 @@ const makeBaseMceData = (): MceDataInterface => ({
   lang: '',
   stylesheetId: '',
   archived: false,
-  schemaVersion: '1.0'
+  schemaVersion: '2',
+  includeInAutoMarginalFoliation: [],
 });
 
-const makeState = (mceData: MceDataInterface): MceComposerHistoryState => ({
+const makeState = (mceData: MceDataInterface_v2): MceComposerHistoryState => ({
   mceData,
 });
 
@@ -43,7 +44,7 @@ describe('MCE Actions', () => {
 
   describe('MoveChunkAction', () => {
     it('should move chunk', async () => {
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         chunks: [
           { chunkId: '1', break: '', chunkEditionTableId: 10, version: '1', title: 'C1', witnessIndices: [] } as any,
@@ -66,7 +67,7 @@ describe('MCE Actions', () => {
       const chunk2 = { chunkId: '2', break: '', chunkEditionTableId: 20, version: '1', title: 'C2', witnessIndices: [] as number[] } as any;
       const chunk3 = { chunkId: '3', break: '', chunkEditionTableId: 30, version: '1', title: 'C3', witnessIndices: [] as number[] } as any;
 
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         chunks: [chunk1, chunk2, chunk3],
         chunkOrder: [0, 1, 2],
@@ -84,7 +85,7 @@ describe('MCE Actions', () => {
 
   describe('SetChunkBreakAction', () => {
     it('should set break', async () => {
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         chunks: [
           { chunkId: '1', break: 'none', chunkEditionTableId: 10, version: '1', title: 'C1', witnessIndices: [] as number[] } as any,
@@ -147,7 +148,7 @@ describe('MCE Actions', () => {
 
   describe('SetSiglumAction', () => {
     it('should set siglum and update description', async () => {
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         witnesses: [
           { witnessId: 'w1', title: 'Witness A' } as any,
@@ -165,7 +166,7 @@ describe('MCE Actions', () => {
     });
 
     it('should throw when witness index is out of bounds', async () => {
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
         sigla: ['A']
@@ -180,7 +181,7 @@ describe('MCE Actions', () => {
     });
 
     it('should throw when siglum is empty', async () => {
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
         sigla: ['A']
@@ -195,7 +196,7 @@ describe('MCE Actions', () => {
 
   describe('SetIncludeInAutoMarginalFoliationAction', () => {
     it('should include witness index and update description', async () => {
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         witnesses: [
           { witnessId: 'w1', title: 'Witness A' } as any,
@@ -213,7 +214,7 @@ describe('MCE Actions', () => {
     });
 
     it('should exclude witness index and update description', async () => {
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         witnesses: [
           { witnessId: 'w1', title: 'Witness A' } as any,
@@ -231,7 +232,7 @@ describe('MCE Actions', () => {
     });
 
     it('should throw when witness index is out of bounds', async () => {
-      const mceData: MceDataInterface = {
+      const mceData: MceDataInterface_v2 = {
         ...makeBaseMceData(),
         witnesses: [{ witnessId: 'w1', title: 'Witness A' } as any],
       };

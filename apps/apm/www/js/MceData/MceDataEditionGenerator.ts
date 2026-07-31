@@ -1,6 +1,6 @@
 // noinspection ES6PreferShortImport
 
-import {MceDataInterface} from "./MceDataInterface.js";
+import {MceDataInterface_v2} from "./MceDataInterface.js";
 import {CtDataInterface} from "../CtData/CtDataInterface.js";
 import {LoggerInterface} from "../lib/Logger/LoggerInterface.js";
 import {NullLogger} from "../lib/Logger/NullLogger.js";
@@ -19,9 +19,9 @@ import {WitnessDataItem} from "../Edition/WitnessDataItem.js";
 import {CtDataEditionGenerator} from "../Edition/EditionGenerator/CtDataEditionGenerator.js";
 import {uniq} from "../lib/ToolBox/ArrayUtil.js";
 
-export type CtDataGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<CtDataInterface>;
-export type SingleChunkEditionSaver = (mceData: MceDataInterface, chunkIndex: number, edition: EditionInterface) => Promise<void>;
-export type SingleChunkEditionGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<EditionInterface|null>;
+export type CtDataGetter = (mceData: MceDataInterface_v2, chunkIndex: number) => Promise<CtDataInterface>;
+export type SingleChunkEditionSaver = (mceData: MceDataInterface_v2, chunkIndex: number, edition: EditionInterface) => Promise<void>;
+export type SingleChunkEditionGetter = (mceData: MceDataInterface_v2, chunkIndex: number) => Promise<EditionInterface|null>;
 export type OnProgressUpdateHandler = (step: number, numSteps: number) => void | null;
 
 export interface MceDataEditionGeneratorOptions {
@@ -57,14 +57,14 @@ export class MceDataEditionGenerator {
    this.ctDataGetter = options.ctDataGetter;
    this.logger = options.logger ?? new NullLogger();
    this.singleChunkEditionSaver = options.singleChunkEditionSaver ?? 
-     (async (_mceData: MceDataInterface, _chunkIndex: number, _edition: EditionInterface) => {});
+     (async (_mceData: MceDataInterface_v2, _chunkIndex: number, _edition: EditionInterface) => {});
    this.singleChunkEditionGetter = options.singleChunkEditionGetter ?? 
-     (async (_mceData: MceDataInterface, _chunkIndex: number) => null);
+     (async (_mceData: MceDataInterface_v2, _chunkIndex: number) => null);
 
    this.onProgressUpdate = options.onProgressUpdate ?? null;
   }
 
-  async generate(mceData: MceDataInterface, editionId: number) : Promise<EditionInterface> {
+  async generate(mceData: MceDataInterface_v2, editionId: number) : Promise<EditionInterface> {
     const numChunks = mceData.chunks.length;
     this.logger.debug(`Generating edition from ${numChunks} chunks`);
     const edition = new Edition();
@@ -204,7 +204,7 @@ export class MceDataEditionGenerator {
     
   }
 
-  async regenerateSingleChunkEdition(mceData: MceDataInterface, chunkIndex: number, currentMceFoliationChanges: FoliationChangeInfoInterface[]) : Promise<EditionInterface> {
+  async regenerateSingleChunkEdition(mceData: MceDataInterface_v2, chunkIndex: number, currentMceFoliationChanges: FoliationChangeInfoInterface[]) : Promise<EditionInterface> {
     const chunk = mceData.chunks[chunkIndex];
     if (chunk === undefined) {
       this.logger.warn(`Attempt to regenerate non-existent chunk ${chunkIndex}`);
@@ -233,10 +233,10 @@ export class MceDataEditionGenerator {
    * Returns the CtData's includeInAutoFoliation array needed to include the witnesses
    * given in the MceData
    * @return {number[]}
-   * @param {MceDataInterface}mceData
+   * @param {MceDataInterface_v2}mceData
    * @param {number}chunkIndex
    */
-  getSingleChunkIncludeInAutoFoliationArray(mceData: MceDataInterface, chunkIndex: number): number[] {
+  getSingleChunkIncludeInAutoFoliationArray(mceData: MceDataInterface_v2, chunkIndex: number): number[] {
     // basically, translate the indices in MceData's includeInAutoMarginalFoliation into
     // indices relative to the chunk's witnesses
     const chunkWitnessIndices = mceData.chunks[chunkIndex].witnessIndices;

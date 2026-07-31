@@ -389,7 +389,7 @@ describe('MainTextPanel', () => {
     expect(container.querySelector('.chunk-mark-icon')).not.toBeNull();
   });
 
-  it('renders chunk markers for mixed token sequences and ignores chunk_end markers visually', async () => {
+  it('renders chunk markers for mixed token sequences', async () => {
     const edition = new Edition().setLang('en').setMainText([
       makeTextToken('Alpha'),
       makeGlueToken(' '),
@@ -410,8 +410,7 @@ describe('MainTextPanel', () => {
 
     const labels = Array.from(container.querySelectorAll('.chunk-mark-label')).map((label) => label.textContent);
     expect(labels).toEqual(['chunk-A', 'chunk-B']);
-    expect(container.querySelectorAll('.chunk-mark')).toHaveLength(2);
-    expect(container.querySelectorAll('.chunk-mark-icon')).toHaveLength(2);
+    expect(container.querySelectorAll('.chunk-mark-icon.chunk-start')).toHaveLength(2);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Alpha');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Beta');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Gamma');

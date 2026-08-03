@@ -1034,6 +1034,7 @@ export default function MceComposer() {
         const currentMceDataId = latestMceDataIdRef.current;
         const currentSignature = getMceDataHash(currentMceData, currentMceDataId);
         if (generationRequest.signature === currentSignature) {
+          console.log(`Setting edition`, newEdition);
           setEdition(newEdition);
           setEditionOutOfDate(false);
           continue;

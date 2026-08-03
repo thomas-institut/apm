@@ -89,6 +89,13 @@ export class MceDataEditionGenerator {
       const singleChunkEdition = cachedEdition !== null ? cachedEdition :
         await this.regenerateSingleChunkEdition(mceData, chunkIndex, currentFoliationChanges);
 
+      // add ids to main text tokens
+      singleChunkEdition.mainText = singleChunkEdition.mainText.map((token) => {
+        token.chunkId = mceData.chunks[chunkIndex].chunkId;
+        token.sourceId = mceData.chunks[chunkIndex].chunkEditionTableId;
+        return token;
+      });
+
       if (cachedEdition === null) {
         await this.singleChunkEditionSaver(mceData, chunkIndex, singleChunkEdition);
       }
@@ -145,8 +152,6 @@ export class MceDataEditionGenerator {
         // nothing to do!
       }
 
-
-
       // process apparatuses
       for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {
         let singleChunkApparatus = singleChunkEdition.apparatuses[appIndex];
@@ -165,6 +170,7 @@ export class MceDataEditionGenerator {
           newEntry.to = entry.to + currentMainTextIndexShift;
           newEntry.lemma = entry.lemma;
           newEntry.lemmaText = entry.lemmaText;
+          newEntry.lemmaType = entry.lemmaType;
           newEntry.postLemma = entry.postLemma;
           newEntry.preLemma = entry.preLemma;
           newEntry.separator = entry.separator;

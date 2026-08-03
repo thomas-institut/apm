@@ -42,6 +42,12 @@ export interface MainTextTokenInterface {
   style: string;
   lang?: string;
   chunkId?: string;
+  /**
+   * An optional id that identifies the token source.
+   *
+   * Normally used in multi-chunk editions to identify the table that contains the token.
+   */
+  sourceId?: number;
 }
 
 export type MainTextTokenType =
@@ -74,6 +80,8 @@ export interface EditionInfoInterface extends MetadataInterface {
   editionId: number,
 }
 
+export type LemmaType = 'full' | 'auto' | 'custom';
+
 export interface ApparatusEntryInterface {
   section?: number[];
   from: number;
@@ -81,7 +89,11 @@ export interface ApparatusEntryInterface {
   preLemma: CompactFmtText;
   lemma: CompactFmtText;
   postLemma: CompactFmtText;
+  /**
+   * If present, this is the lemma text in full form.
+   */
   lemmaText: string;
+  lemmaType?: LemmaType;
   separator: CompactFmtText;
   tags: string[];
   subEntries: ApparatusSubEntryInterface[];

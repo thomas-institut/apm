@@ -3,7 +3,7 @@
 import * as SubEntryType from './SubEntryType.js';
 import {numericFieldSort} from '../lib/ToolBox/ArrayUtil.js';
 import {ApparatusSubEntry} from './ApparatusSubEntry.js';
-import {ApparatusEntryInterface, cloneMetadata, MetadataInterface} from "./EditionInterface.js";
+import {ApparatusEntryInterface, cloneMetadata, LemmaType, MetadataInterface} from "./EditionInterface.js";
 import {CompactFmtText} from "@thomas-inst/fmt-text";
 
 
@@ -22,6 +22,7 @@ export class ApparatusEntry implements ApparatusEntryInterface {
   metadata: MetadataInterface;
   mainTextFrom: number;
   mainTextTo: number;
+  lemmaType?: LemmaType;
 
   constructor() {
     this.from = -1;
@@ -36,6 +37,7 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.metadata = {};
     this.mainTextFrom = -1;
     this.mainTextTo = -1;
+    this.lemmaType = 'auto';
   }
 
   static clone(entry: ApparatusEntryInterface): ApparatusEntry {
@@ -94,6 +96,7 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.subEntries = entry.subEntries.map((subEntry) => {
       return ApparatusSubEntry.clone(subEntry);
     });
+    this.lemmaType = entry.lemmaType;
     return this;
   }
 

@@ -774,6 +774,55 @@ describe('MceData', () => {
       ]);
     });
 
+    it('resets all standardized string instances for a specific string', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [
+        {
+          original: 'uel',
+          standardized: 'vel',
+          instances: [
+            {mainTextIndex: 1, status: 'accepted'},
+            {mainTextIndex: 2, status: 'rejected'}
+          ]
+        },
+        {
+          original: 'autem',
+          standardized: 'aut',
+          instances: [
+            {mainTextIndex: 7, status: 'accepted'}
+          ]
+        }
+      ];
+
+      const result = MceData.resetStandardizedStringInstanceAll(mceData, 'uel');
+
+      expect(result).toBe(mceData);
+      expect(mceData.standardizedStrings).toEqual([
+        {
+          original: 'uel',
+          standardized: 'vel',
+          instances: []
+        },
+        {
+          original: 'autem',
+          standardized: 'aut',
+          instances: [
+            {mainTextIndex: 7, status: 'accepted'}
+          ]
+        }
+      ]);
+    });
+
+    it('throws when resetStandardizedStringInstanceAll targets an invalid or missing string', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [{original: 'uel', standardized: 'vel', instances: []}];
+
+      expect(() => MceData.resetStandardizedStringInstanceAll(mceData, '')).toThrow(ValidationError);
+      expect(() => MceData.resetStandardizedStringInstanceAll(mceData, undefined as unknown as string)).toThrow(ValidationError);
+      expect(() => MceData.resetStandardizedStringInstanceAll(mceData, 'autem')).toThrow(ValidationError);
+      expect(() => MceData.resetStandardizedStringInstanceAll(mceData, 'autem')).toThrow("String 'autem' not found");
+    });
+
     it('throws when instance operations target an invalid or missing string', () => {
       const mceData = MceData.createEmpty();
       mceData.standardizedStrings = [{original: 'uel', standardized: 'vel', instances: []}];

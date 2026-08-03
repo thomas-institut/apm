@@ -6,6 +6,9 @@ import { SetChunkBreakAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetChu
 import { AddChunkAction } from '@/ReactAPM/Pages/MceComposer/Actions/AddChunkAction';
 import { SetSiglumAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetSiglumAction';
 import { SetIncludeInAutoMarginalFoliationAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction';
+import { AddStandardizedStringAction } from '@/ReactAPM/Pages/MceComposer/Actions/AddStandardizedStringAction';
+import { DeleteStandardizedStringAction } from '@/ReactAPM/Pages/MceComposer/Actions/DeleteStandardizedStringAction';
+import { ResetStandardizedStringAction } from '@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAction';
 import { MceDataInterface } from '@/MceData/MceDataInterface';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {ValidationError} from '@/lib/Error/SystemError';
@@ -244,6 +247,110 @@ describe('MCE Actions', () => {
       await expect(new SetIncludeInAutoMarginalFoliationAction(-1, true).execute(state)).rejects.toThrow('Witness index -1 is out of bounds');
       await expect(new SetIncludeInAutoMarginalFoliationAction(1, false).execute(state)).rejects.toThrow(ValidationError);
       await expect(new SetIncludeInAutoMarginalFoliationAction(1, false).execute(state)).rejects.toThrow('Witness index 1 is out of bounds');
+    });
+  });
+
+  describe('Standardization Actions', () => {
+    describe('AddStandardizedStringAction', () => {
+      it('should add standardized string', async () => {
+        const state = makeState(makeBaseMceData());
+        const action = new AddStandardizedStringAction('foo', 'bar');
+
+        const result = await action.execute(state);
+        expect(result.mceData.standardizedStrings.length).toBe(1);
+        expect(result.mceData.standardizedStrings[0]).toEqual({
+          original: 'foo',
+          standardized: 'bar',
+          instances: []
+        });
+        expect(action.description()).toBe("Add standardized string 'foo'");
+      });
+
+      it('should throw if original is empty', async () => {
+        const state = makeState(makeBaseMceData());
+        const action = new AddStandardizedStringAction('', 'bar');
+        await expect(action.execute(state)).rejects.toThrow(ValidationError);
+        await expect(action.execute(state)).rejects.toThrow("Invalid original string ''");
+      });
+
+      it('should throw if standardized is empty', async () => {
+        const state = makeState(makeBaseMceData());
+        const action = new AddStandardizedStringAction('foo', '');
+        await expect(action.execute(state)).rejects.toThrow(ValidationError);
+        await expect(action.execute(state)).rejects.toThrow("Invalid standardized string ''");
+      });
+
+      it('should throw if original and standardized are same', async () => {
+        const state = makeState(makeBaseMceData());
+        const action = new AddStandardizedStringAction('foo', 'foo');
+        await expect(action.execute(state)).rejects.toThrow(ValidationError);
+        await expect(action.execute(state)).rejects.toThrow("Original and standardized strings cannot be the same");
+      });
+
+      it('should throw if original already exists', async () => {
+        const mceData = {
+          ...makeBaseMceData(),
+          standardizedStrings: [{ original: 'foo', standardized: 'bar', instances: [] }]
+        };
+        const state = makeState(mceData);
+        const action = new AddStandardizedStringAction('foo', 'baz');
+        await expect(action.execute(state)).rejects.toThrow(ValidationError);
+        await expect(action.execute(state)).rejects.toThrow("Standardized string 'foo' already exists");
+      });
+    });
+
+    describe('DeleteStandardizedStringAction', () => {
+      it('should delete standardized string', async () => {
+        const mceData = {
+          ...makeBaseMceData(),
+          standardizedStrings: [
+            { original: 'foo', standardized: 'bar', instances: [] },
+            { original: 'baz', standardized: 'qux', instances: [] }
+          ]
+        };
+        const state = makeState(mceData);
+        const action = new DeleteStandardizedStringAction('foo');
+
+        const result = await action.execute(state);
+        expect(result.mceData.standardizedStrings.length).toBe(1);
+        expect(result.mceData.standardizedStrings[0].original).toBe('baz');
+        expect(action.description()).toBe("Delete standardized string 'foo'");
+      });
+
+      it('should throw if original is empty', async () => {
+        const state = makeState(makeBaseMceData());
+        const action = new DeleteStandardizedStringAction('');
+        await expect(action.execute(state)).rejects.toThrow(ValidationError);
+        await expect(action.execute(state)).rejects.toThrow("Invalid original string ''");
+      });
+    });
+
+    describe('ResetStandardizedStringAction', () => {
+      it('should reset standardized string instances', async () => {
+        const mceData = {
+          ...makeBaseMceData(),
+          standardizedStrings: [
+            {
+              original: 'foo',
+              standardized: 'bar',
+              instances: [{ mainTextIndex: 1, status: 'accepted' as const }]
+            }
+          ]
+        };
+        const state = makeState(mceData);
+        const action = new ResetStandardizedStringAction('foo');
+
+        const result = await action.execute(state);
+        expect(result.mceData.standardizedStrings[0].instances.length).toBe(0);
+        expect(action.description()).toBe("Reset standardized string 'foo'");
+      });
+
+      it('should throw if original is empty', async () => {
+        const state = makeState(makeBaseMceData());
+        const action = new ResetStandardizedStringAction('');
+        await expect(action.execute(state)).rejects.toThrow(ValidationError);
+        await expect(action.execute(state)).rejects.toThrow("Invalid string ''");
+      });
     });
   });
 });

@@ -3,9 +3,9 @@ import './MainTextPanel.css';
 import {Button, Form} from "react-bootstrap";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {Fragment, JSX, useEffect, useMemo, useState} from "react";
-import {TriangleFill} from "react-bootstrap-icons";
+import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 
-interface MainTextPanelProps {
+interface MainTextPanelProps extends TabbableElementProps{
   edition: Edition | null;
   generationProgress: number | null;
   editionOutOfDate: boolean;

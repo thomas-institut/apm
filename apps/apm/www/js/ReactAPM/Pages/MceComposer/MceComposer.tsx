@@ -53,10 +53,14 @@ import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
+import {AddStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/AddStandardizedStringAction";
+import {DeleteStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteStandardizedStringAction";
+import {ResetStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAction";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 import {OperationalError} from "@/lib/Error/SystemError";
 import {ApmApiClientError} from "@/Api/ApmApiClient";
+import StandardizationPanel, {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel";
 
 // TODO: for later
 //  - Implement admin panel with versions
@@ -1062,6 +1066,68 @@ export default function MceComposer() {
     regenerateEdition(mceData, mceDataId).then();
   };
 
+  const addStandardizedString = async (original: string, standardized: string): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new AddStandardizedStringAction(original, standardized));
+      } catch (error) {
+        if (reportActionError('AddStandardizedStringAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const deleteStandardizedString = async (original: string): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new DeleteStandardizedStringAction(original));
+      } catch (error) {
+        if (reportActionError('DeleteStandardizedStringAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const resetStandardizedString = async (original: string): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new ResetStandardizedStringAction(original));
+      } catch (error) {
+        if (reportActionError('ResetStandardizedStringAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const standardizedWords: StandardizedWord[] = mceData.standardizedStrings.map((str) => ({...str, numInstances: str.instances.length}));
+
   const handleOnClickSaveButton = async () => {
     // console.log(`Click on save`);
     if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current || changes.length === 0) {
@@ -1156,13 +1222,17 @@ export default function MceComposer() {
       tabbable: true,
     },
 
-    // {
-    //   panel: 'one',
-    //   key: 'normalization',
-    //   title: 'Normalization',
-    //   expandable: true,
-    //   content: <>Main text normalization will be here...</>
-    // },
+    {
+      panel: 'one',
+      key: 'standardization',
+      title: 'Standardization',
+      expandable: false,
+      content: <StandardizationPanel standardizedWords={standardizedWords}
+                                    add={addStandardizedString}
+                                    delete={deleteStandardizedString}
+                                    reset={resetStandardizedString}/>,
+      tabbable: true,
+    },
     {
       panel: 'two',
       key: 'mainText',

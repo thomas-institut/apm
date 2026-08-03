@@ -1,0 +1,60 @@
+.standardization-panel {
+    padding: 1em;
+    height: 100%;
+    overflow-y: auto;
+}
+
+.standardization-table-container {
+    margin-top: 1rem;
+}
+
+.standardization-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.standardization-controls-buttons {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+.standardization-row-error {
+    font-size: 0.85rem;
+}
+
+.standardization-add-section {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.standardization-add-header {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-weight: 500;
+}
+
+.standardization-add-form {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.standardization-add-form label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+
+.standardization-add-form input {
+    min-width: 10rem;
+}
+
+.standardization-add-error {
+    font-size: 0.85rem;
+}

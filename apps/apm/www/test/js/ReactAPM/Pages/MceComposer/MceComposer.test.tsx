@@ -169,6 +169,8 @@ vi.mock('react-bootstrap-icons', () => {
     ChevronRight: Icon,
     LayoutSplit: Icon,
     Gear: Icon,
+    PlusCircle: Icon,
+    Trash: Icon,
     // Icons used in SessionPanel and other components
     CheckCircleFill: Icon,
     Circle: Icon,

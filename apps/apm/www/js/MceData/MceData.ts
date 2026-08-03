@@ -98,7 +98,7 @@ export class MceData {
     return mceData;
   }
 
-  static deleteStandardizeString(mceData: MceDataInterface, original: string) {
+  static deleteStandardizedString(mceData: MceDataInterface, original: string) {
     if (original === undefined || original === '') {
       throw new ValidationError(`Invalid original string '${original}'`);
     }
@@ -116,6 +116,18 @@ export class MceData {
 
   static resetStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number) {
     return this.setStandardizedStringInstance(mceData, str, mainTextIndex, null);
+  }
+
+  static resetStandardizedStringInstanceAll(mceData: MceDataInterface, str: string) {
+    if (str === undefined || str === '') {
+      throw new ValidationError(`Invalid string '${str}'`);
+    }
+    const strIndex = mceData.standardizedStrings.findIndex(s => s.original === str);
+    if (strIndex < 0) {
+      throw new ValidationError(`String '${str}' not found`);
+    }
+    mceData.standardizedStrings[strIndex].instances = [];
+    return mceData;
   }
 
   private static setStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number, status: 'accepted' | 'rejected' | null) {

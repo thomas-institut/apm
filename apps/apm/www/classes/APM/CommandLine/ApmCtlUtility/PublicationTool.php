@@ -12,6 +12,7 @@ use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
+use JsonException;
 
 class PublicationTool extends CommandLineUtility implements AdminUtility
 {
@@ -32,7 +33,8 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
            'update <id> [version]' => 'updates a publication by id (version is a timestring and is optional, defaults to the current version)',
            'del <id>' => 'removes a publication by id',
            'show <id>' => 'shows a publication by id',
-           'export <type> <id>' => 'exports a publication by id as JSON file'
+           'export <type> <id>' => 'exports a publication by id as JSON file',
+           'tei <id>' => 'converts a publication JSON to TEI format'
             ];
         return implode("\n", array_map(function($key, $value) { return "  $key: $value"; }, array_keys($options), $options));
     }
@@ -59,6 +61,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             'del' => $this->remove((int)$argv[2]),
             'show' => $this->show((int)$argv[2]),
             'export' => $this->export((int)$argv[2]),
+            'tei' => $this->convertJsonToTei((int)$argv[2]),
             default => 0,
         };
     }
@@ -201,7 +204,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
                     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 ) . "\n";
 
-            $fileName = sprintf('%s_%d_export.json', $data->type->value, $pubId);
+            $fileName = sprintf('%s.json', $pubId);
 
             if (@file_put_contents($fileName, $json . "\n") === false) {
                 print "Error: could not write publication JSON to file '$fileName'\n";
@@ -251,4 +254,124 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         }
         print implode("\n", $linesToPrint);
     }
+
+    private function convertJsonToTei (int $pubId): int
+    {
+        if ($pubId <= 0) {
+            print "Error: publication id must be greater than 0\n";
+            return 1;
+        }
+
+        try {
+            $jsonFileName = sprintf('%s.json', $pubId);
+
+            if (!file_exists($jsonFileName)) {
+                print "Error: Export file '$jsonFileName' not found. Please run 'pub export $pubId' first.\n";
+                return 1;
+            }
+
+            $jsonContent = file_get_contents($jsonFileName);
+            $publication = json_decode($jsonContent, false, 512, JSON_THROW_ON_ERROR);
+
+            // The publication object is now available as a stdClass object with accessible attributes
+            // Example: $publication->id, $publication->title, etc.
+
+            $fileName = sprintf('%s.xml', $pubId);
+
+            print "Publication $pubId loaded from '$jsonFileName'. Ready for TEI conversion to '$fileName'.\n";
+
+            $xmlCode = $this->generateTEI($publication->title, $publication->mainText, $publication->apparatuses, $publication->witnesses,
+                $publication->languageCode, $publication->description, $publication->versionTimeString, $publication->siglaGroups);
+
+            file_put_contents($fileName, $xmlCode);
+
+            return 0;
+
+        } catch (JsonException $e) {
+            print "Error: Could not decode JSON from '$jsonFileName': " . $e->getMessage() . "\n";
+            return 1;
+        } catch (PublicationNotFoundException) {
+            print "Error: publication not found\n";
+            return 1;
+        } catch (\Exception $e) {
+            print "Error: " . $e->getMessage() . "\n";
+            return 1;
+        }
+    }
+
+    private function generateTEI(string $title, array $mainText, array $apparatuses, array $witnesses,  string $lang="", string $desc="", string $date="", array $siglas=[]): string {
+
+        $witnessesFormatted = "";
+
+        foreach ($witnesses as $witness) {
+            $witnessesFormatted = $witnessesFormatted . "<witness xml:id=\"$witness->siglum\">$witness->title</witness>";
+        }
+
+        $teiOpening = <<<XML
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title> $title </title>
+                <author>Unknown</author>
+                <respStmt>
+                    <resp>Text Encoding by </resp>
+                    <name>APM</name>
+                </respStmt>
+            </titleStmt>
+            <publicationStmt>
+                <publisher>APM</publisher>
+                <availability>
+                    <p>This document is being made available for demonstration and testing purposes
+                        only.</p>
+                </availability>
+            </publicationStmt>
+            <sourceDesc>
+                <p>The base text is a JSON encoded edition exported from the APM.</p>
+                <p/>
+            </sourceDesc>
+        </fileDesc>
+        <encodingDesc>
+            <variantEncoding method="parallel-segmentation" location="internal"/>
+        </encodingDesc>
+    </teiHeader>
+    <text>
+        <front>
+            <div>
+                <listWit>
+                    $witnessesFormatted
+                </listWit>
+            </div>
+        </front>
+        <body>
+XML;
+
+        $teiEnd = <<<XML
+</body>
+    </text>
+</TEI>
+XML;
+
+$teiBody ="<head>Test</head>";
+
+        $teiEncoding = $teiOpening . $teiBody . $teiEnd;
+/*
+        foreach ($mainText as $token) {
+            if ($token->type === 'text') {
+                foreach ($token->text as $part) {
+                    print($part->text ?? '');
+                }
+            } elseif ($token->type === 'glue') {
+                print(' ');
+            } elseif ($token->type === 'paragraph_end') {
+                print("\n");
+            }
+        }
+        print("\n");*/
+
+        return $teiEncoding;
+    }
+
 }

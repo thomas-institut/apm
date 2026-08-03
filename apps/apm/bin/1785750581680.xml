@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-model href="http://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
+<TEI xmlns="http://www.tei-c.org/ns/1.0">
+    <teiHeader>
+        <fileDesc>
+            <titleStmt>
+                <title> Comm. Physics III Latin (Test Edition) </title>
+                <author>Unknown</author>
+                <respStmt>
+                    <resp>Text Encoding by </resp>
+                    <name>APM</name>
+                </respStmt>
+            </titleStmt>
+            <publicationStmt>
+                <publisher>APM</publisher>
+                <availability>
+                    <p>This document is being made available for demonstration and testing purposes
+                        only.</p>
+                </availability>
+            </publicationStmt>
+            <sourceDesc>
+                <p>The base text is a JSON encoded edition exported from the APM.</p>
+                <p/>
+            </sourceDesc>
+        </fileDesc>
+        <encodingDesc>
+            <variantEncoding method="parallel-segmentation" location="internal"/>
+        </encodingDesc>
+    </teiHeader>
+    <text>
+        <front>
+            <div>
+                <listWit>
+                    <witness xml:id="Am">New York, Morgan Library, M.858</witness><witness xml:id="C">Paris, Bibliothèque nationale, lat. 15453</witness><witness xml:id="Cq">Cambridge, Peterhouse College Library, 66</witness><witness xml:id="De">Durham, Chapter Library, C.IV.16</witness><witness xml:id="Fb">Florence, Biblioteca Medicea Laurenziana, Leop. Med. Fesul. 162</witness><witness xml:id="Oc">Oxford, Balliol College Library, 106</witness><witness xml:id="Pm">Paris, Bibliothèque Mazarine, 3469</witness><witness xml:id="Pn">Paris, Bibliothèque Nationale, lat. 6505</witness><witness xml:id="Ps">Paris, Bibliothèque Nationale, lat. 17155</witness><witness xml:id="Ta">Toledo, Archivo y Biblioteca Capitolares, 97.1</witness><witness xml:id="Tb">Toledo, Archivo y Biblioteca Capitolares, 97.2</witness><witness xml:id="Vs">Vatican City, Biblioteca Apostolica Vaticana, Vat. lat. 2076</witness><witness xml:id="Vw">Vatican City, Biblioteca Apostolica Vaticana, Vat. lat. 2079</witness><witness xml:id="Wl">Vienna, Österreichische Nationalbibliothek, 2334</witness><witness xml:id="p">Padua Edition (Canotius)</witness><witness xml:id="v">Venice Edition</witness>
+                </listWit>
+            </div>
+        </front>
+        <body><head>Test</head></body>
+    </text>
+</TEI>

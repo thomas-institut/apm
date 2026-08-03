@@ -13,16 +13,32 @@ export class ApparatusEntry implements ApparatusEntryInterface {
   from: number;
   to: number;
   preLemma: CompactFmtText;
+  /**
+   * Indicates the type of lemma to use:
+   *
+   * - '' or 'dash': the lemma is automatically constructed using the words in lemmaText, either all of them or  the first and last one with a dash in between if too long
+   * - 'ellipsis': same as 'dash' but with an ellipsis instead of a dash
+   * - any other string: the exact lemma text to use (overrides lemmaText)
+   *
+   * @deprecated Use lemmaType and customLemmaText
+   */
   lemma: CompactFmtText;
-  postLemma: CompactFmtText;
+  /**
+   * The lemma text to use.
+   * @deprecated Use customLemmaText or mainTextWords
+   */
   lemmaText: string;
+  lemmaType: LemmaType;
+  customLemmaText?: string;
+  mainTextWords: string[];
   separator: CompactFmtText;
+  postLemma: CompactFmtText;
   tags: string[];
   subEntries: ApparatusSubEntry[];
   metadata: MetadataInterface;
   mainTextFrom: number;
   mainTextTo: number;
-  lemmaType?: LemmaType;
+
 
   constructor() {
     this.from = -1;
@@ -30,6 +46,9 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.preLemma = '';
     this.lemma = '';
     this.lemmaText = '';
+    this.lemmaType = 'auto';
+    this.mainTextWords = [];
+    this.customLemmaText = '';
     this.postLemma = '';
     this.separator = '';
     this.tags = [];
@@ -89,6 +108,9 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.preLemma = entry.preLemma;
     this.lemma = entry.lemma;
     this.lemmaText = entry.lemmaText;
+    this.lemmaType = entry.lemmaType;
+    this.customLemmaText = entry.customLemmaText;
+    this.mainTextWords = entry.mainTextWords;
     this.postLemma = entry.postLemma;
     this.separator = entry.separator;
     this.tags = [...entry.tags];

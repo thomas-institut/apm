@@ -669,7 +669,8 @@ export class EditionTypesettingHelper {
 
   async getTsItemsForLemma(entry: ApparatusEntryInterface): Promise<TypesetterItem[]> {
     let tsItems = [];
-    let lemmaData = getGeneratedLemmaData(entry.lemma, entry.lemmaText, this.edition.lang);
+    // let lemmaData = getGeneratedLemmaDataDeprecated(entry.lemma, entry.lemmaText, this.edition.lang);
+    let lemmaData = getGeneratedLemmaData(entry, this.edition.lang);
 
     switch (lemmaData.type) {
       case 'custom':

@@ -7,8 +7,9 @@ import {Punctuation} from "../defaults/Punctuation.js";
 
 import {Group} from "./SequenceWithGroups.js";
 
-import {ApparatusInterface} from "./EditionInterface.js";
+import {ApparatusInterface, LemmaType} from "./EditionInterface.js";
 import {Apparatus} from "./Apparatus.js";
+import {CompactFmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
 
 export class ApparatusTools {
 
@@ -50,33 +51,47 @@ export class ApparatusTools {
     return app;
   }
 
-  static getMainTextForGroup(group: Group, mainTextInputTokens: WitnessTokenInterface[], normalized = true, lang = '') {
+  static getLemmaTypeFromDeprecatedLemma(lemma: CompactFmtText): LemmaType {
+    switch (getPlainText(fromCompactFmtText(lemma))) {
+      case '':
+        return 'auto';
+
+      case 'dash':
+        return 'dash';
+
+      case 'ellipsis':
+        return 'ellipsis';
+
+      default:
+        return 'custom';
+    }
+  }
+
+  static getMainTextWordsForGroup(group: Group, mainTextInputTokens: WitnessTokenInterface[], normalized: boolean = true, lang: string = ''): string[] {
     return mainTextInputTokens
-    .filter((t, i) => {
-      return i >= group.from && i <= group.to;
-    }) // get group main text columns
-    .map((t) => {   // get text for each column
-      if (t.tokenType === WitnessTokenType.EMPTY) {
-        return '';
-      }
-      if (t.tokenType === WitnessTokenType.NUMBERING_LABEL) {
-        return '';
-      }
-      if (Punctuation.stringIsAllPunctuation(t.text, lang)) {
-        if (t.text === '|') {
-          return '|'
+      .filter((t, i) => {
+        return i >= group.from && i <= group.to;
+      }) // get group main text columns
+      .map((t) => {   // get text for each column
+        if (t.tokenType === WitnessTokenType.EMPTY) {
+          return '';
         }
-        return '';
-      }
-      if (normalized) {
-        if (t.normalizedText !== undefined && t.normalizedText !== '') {
-          return t.normalizedText;
+        if (t.tokenType === WitnessTokenType.NUMBERING_LABEL) {
+          return '';
         }
-      }
-      return t.text;
-    })
-    .filter(t => t !== '')   // filter out empty text
-    .join(' ');
+        if (Punctuation.stringIsAllPunctuation(t.text, lang)) {
+          if (t.text === '|') {
+            return '|';
+          }
+          return '';
+        }
+        if (normalized) {
+          if (t.normalizedText !== undefined && t.normalizedText !== '') {
+            return t.normalizedText;
+          }
+        }
+        return t.text;
+      }).filter((t) => t !== '');
   }
 }
 

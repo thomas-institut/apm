@@ -713,7 +713,8 @@ export class ApparatusCommon {
 
   static getLemmaHtml(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
 
-    let lemmaData = getGeneratedLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
+    // let lemmaData = getGeneratedLemmaDataDeprecated(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
+    let lemmaData = getGeneratedLemmaData(apparatusEntry, lang);
 
     let lemmaText = '';
 
@@ -780,8 +781,9 @@ export class ApparatusCommon {
    */
   static getLemmaVNode(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): (VNode | string)[] {
 
-    let lemmaData = getGeneratedLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
+    // let lemmaData = getGeneratedLemmaDataDeprecated(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
 
+    let lemmaData = getGeneratedLemmaData(apparatusEntry, lang);
     let lemmaText = '';
 
     if (lemmaData.type === 'custom' || lemmaData.type === 'full') {

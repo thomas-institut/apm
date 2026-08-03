@@ -46,6 +46,7 @@ import {MainTextTokenFactory} from "../MainTextTokenFactory.js";
 import * as MainTextTokenType from "../MainTextTokenType.js";
 import {Punctuation} from "../../defaults/Punctuation.js";
 import {Apparatus} from "../../Edition/Apparatus.js";
+import {fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
 
 interface CtDataEditionGeneratorOptions extends EditionGeneratorOptions {
   ctData: CtDataInterface;
@@ -213,18 +214,24 @@ export class CtDataEditionGenerator extends EditionGenerator {
       if (currentEntryIndex === -1) {
         // this.debug && console.log(`Found custom entry not belonging to any automatic apparatus entry`)
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
-          // this.debug && console.log(`Adding new apparatus entry for lemma ${ctDataCustomEntry.lemma}`);
           let newEntry = new ApparatusEntry();
           newEntry.from = mainTextFrom;
           newEntry.to = mainTextTo;
           newEntry.preLemma = ctDataCustomEntry.preLemma;
           newEntry.lemma = ctDataCustomEntry.lemma;
+          newEntry.lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(ctDataCustomEntry.lemma);
+          if (newEntry.lemmaType === 'custom') {
+            newEntry.customLemmaText = getPlainText(fromCompactFmtText(ctDataCustomEntry.lemma));
+          }
           newEntry.postLemma = ctDataCustomEntry.postLemma;
           newEntry.separator = ctDataCustomEntry.separator;
           newEntry.tags = [...ctDataCustomEntry.tags];
-          newEntry.lemmaText = ApparatusTools.getMainTextForGroup({
+          const words = ApparatusTools.getMainTextWordsForGroup({
             from: ctDataCustomEntry.from, to: ctDataCustomEntry.to
           }, baseWitnessTokens, false, this.ctData.lang);
+          newEntry.lemmaType = 'auto';
+          newEntry.lemmaText = words.join(' ');
+          newEntry.mainTextWords = words;
           newEntry.subEntries = this.buildSubEntryArrayFromCustomSubEntries(customSubEntries);
           generatedApparatus.entries.push(newEntry);
         } else {
@@ -235,6 +242,10 @@ export class CtDataEditionGenerator extends EditionGenerator {
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           generatedApparatus.entries[currentEntryIndex].preLemma = ctDataCustomEntry.preLemma;
           generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
+          generatedApparatus.entries[currentEntryIndex].lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(ctDataCustomEntry.lemma);
+          if (generatedApparatus.entries[currentEntryIndex].lemmaType === 'custom') {
+            generatedApparatus.entries[currentEntryIndex].customLemmaText = getPlainText(fromCompactFmtText(ctDataCustomEntry.lemma));
+          }
           generatedApparatus.entries[currentEntryIndex].postLemma = ctDataCustomEntry.postLemma;
           generatedApparatus.entries[currentEntryIndex].separator = ctDataCustomEntry.separator;
           generatedApparatus.entries[currentEntryIndex].tags = [...ctDataCustomEntry.tags];
@@ -352,14 +363,20 @@ export class CtDataEditionGenerator extends EditionGenerator {
       theApparatus.entries = apparatus.entries.map((customEntry) => {
         let theEntry = new ApparatusEntry();
         theEntry.lemma = customEntry.lemma;
+        console.log(`Adding new apparatus entry with lemma`, customEntry.lemma);
+        theEntry.lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(customEntry.lemma);
+        if (theEntry.lemmaType === 'custom') {
+          theEntry.customLemmaText = getPlainText(fromCompactFmtText(customEntry.lemma));
+        }
         theEntry.preLemma = customEntry.preLemma;
         theEntry.postLemma = customEntry.postLemma;
         theEntry.separator = customEntry.separator;
         theEntry.tags = [...customEntry.tags];
-        theEntry.lemmaText = ApparatusTools.getMainTextForGroup({
+        const mainTextWordsForGroup = ApparatusTools.getMainTextWordsForGroup({
           from: customEntry.from, to: customEntry.to
         }, baseWitnessTokens, false, this.ctData.lang);
-
+        theEntry.mainTextWords = mainTextWordsForGroup;
+        theEntry.lemmaText = mainTextWordsForGroup.join(' ');
         theEntry.from = ctIndexToMainTextMap[customEntry.from];
         theEntry.to = ctIndexToMainTextMap[customEntry.to];
         theEntry.subEntries = this.buildSubEntryArrayFromCustomSubEntries(customEntry.subEntries);

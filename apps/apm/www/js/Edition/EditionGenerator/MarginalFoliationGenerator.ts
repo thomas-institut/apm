@@ -155,6 +155,8 @@ export class MarginalFoliationGenerator {
         entry.to = mainTextTokenIndex;
         entry.subEntries = subEntries;
         entry.lemmaText = editionWitnessToken.text;
+        entry.lemmaType = 'auto';
+        entry.mainTextWords = [editionWitnessToken.text];
         app.entries.push(entry);
       }
     });

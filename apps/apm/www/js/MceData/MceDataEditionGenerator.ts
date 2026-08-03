@@ -171,6 +171,8 @@ export class MceDataEditionGenerator {
           newEntry.lemma = entry.lemma;
           newEntry.lemmaText = entry.lemmaText;
           newEntry.lemmaType = entry.lemmaType;
+          newEntry.customLemmaText = entry.customLemmaText;
+          newEntry.mainTextWords = entry.mainTextWords;
           newEntry.postLemma = entry.postLemma;
           newEntry.preLemma = entry.preLemma;
           newEntry.separator = entry.separator;

@@ -93,15 +93,24 @@ export interface ApparatusEntryInterface {
    * - '' or 'dash': the lemma is automatically constructed using the words in lemmaText, either all of them or  the first and last one with a dash in between if too long
    * - 'ellipsis': same as 'dash' but with an ellipsis instead of a dash
    * - any other string: the exact lemma text to use (overrides lemmaText)
+   * @deprecated Use lemmaType and customLemmaText
    */
   lemma: CompactFmtText;
-  postLemma: CompactFmtText;
   /**
    * The lemma text to use.
+   * @deprecated Use customLemmaText or mainTextWords
    */
   lemmaText: string;
-  lemmaType?: LemmaType;
+  lemmaType: LemmaType;
   customLemmaText?: string;
+  /**
+   * The words in the main text that will be used to construct non-custom lemmata.
+   *
+   * These words are not needed until the entry needs to be rendered. So, at a later stage an edition processor
+   * could replace them, for example, to support standardization of the main text.
+   */
+  mainTextWords: string[];
+  postLemma: CompactFmtText;
   separator: CompactFmtText;
   tags: string[];
   subEntries: ApparatusSubEntryInterface[];

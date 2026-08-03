@@ -1,5 +1,6 @@
 // noinspection ES6PreferShortImport
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
+import {ApparatusEntryInterface} from "@/Edition/EditionInterface";
 
 
 export type GeneratedLemmaType = 'full' | 'shortened' | 'custom';
@@ -32,16 +33,13 @@ const LatinAbbreviations: Record<string, string> = {
   'etc': 'etc.'
 }
 
-
 const enDash = String.fromCodePoint(0x2013);
 
-export function getGeneratedLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: string, langCode: string = ''): GeneratedLemmaData {
+export function getGeneratedLemmaData(entry: ApparatusEntryInterface, langCode: string = ''): GeneratedLemmaData {
   let separator = '';
-  let custom = false;
-  const theLemma = getPlainText(fromCompactFmtText(apparatusEntryLemma));
 
-  switch (theLemma) {
-    case '':
+  switch (entry.lemmaType) {
+    case 'auto':
     case 'dash':
       separator = `${enDash}`;
       break;
@@ -50,14 +48,11 @@ export function getGeneratedLemmaData(apparatusEntryLemma: CompactFmtText, lemma
       separator = '...';
       break;
 
-    default:
-      custom = true;
-  }
-  if (custom) {
-    return {type: 'custom', text: getPlainText(fromCompactFmtText(apparatusEntryLemma))};
+    case 'custom':
+      return { type: 'custom', text: entry.customLemmaText ?? 'WRONG CUSTOM LEMMMA TEXT'}
   }
   // Language-specific processing
-  const theLemmaText = processLemmaText(lemmaText, langCode);
+  const theLemmaText = processLemmaText(entry.mainTextWords.join(' '), langCode);
 
   let lemmaTextWords = theLemmaText.split(' ');
   // if lemmaText is short,
@@ -73,6 +68,7 @@ export function getGeneratedLemmaData(apparatusEntryLemma: CompactFmtText, lemma
     to: lemmaTextWords[lemmaTextWords.length - 1],
   };
 }
+
 
 
 /**

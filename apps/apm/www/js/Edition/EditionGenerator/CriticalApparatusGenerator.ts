@@ -166,8 +166,6 @@ export class CriticalApparatusGenerator {
           entry.to = mainTextIndex;
           entry.lemmaType = 'auto';
           entry.mainTextWords = mainTextIndex === -1 ? [] : [baseWitnessTokens[ctIndex].text];
-          // TODO: deal with 'pre' entries properly, the lemma text should be the first word in the text
-          entry.lemmaText = mainTextIndex !== -1 ? baseWitnessTokens[ctIndex]['text'] : 'pre';
           entry.subEntries = subEntries;
           // other info
           entry.metadata.ctGroup = columnGroup;
@@ -240,9 +238,8 @@ export class CriticalApparatusGenerator {
         entry.from = mainTextIndexFrom;
         entry.to = mainTextIndexTo;
         entry.lemmaType = 'auto';
-        const mainTextWords = ApparatusTools.getMainTextWordsForGroup(columnGroup, baseWitnessTokens, false, lang);
-        entry.lemmaText = mainTextWords.join(' ');
-        entry.mainTextWords = mainTextWords;
+        // entry.lemmaText = mainTextWords.join(' ');
+        entry.mainTextWords = ApparatusTools.getMainTextWordsForGroup(columnGroup, baseWitnessTokens, false, lang);
         entry.subEntries = subEntries;
         // other info
         entry.metadata.ctGroup = columnGroup;

@@ -1,7 +1,6 @@
 // noinspection ES6PreferShortImport
-import {CompactFmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
-import {ApparatusEntryInterface} from "@/Edition/EditionInterface";
 
+import {ApparatusEntryInterface} from "./EditionInterface.js";
 
 export type GeneratedLemmaType = 'full' | 'shortened' | 'custom';
 

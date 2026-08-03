@@ -33,7 +33,6 @@ import {h, VNode} from 'snabbdom';
 import {getGeneratedLemmaData} from "@/Edition/GeneratedLemmaData";
 
 
-
 export interface MainTextTypesettingInfo {
   yPositions: number[],
   tokens: MainTextToken[],

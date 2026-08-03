@@ -13,23 +13,8 @@ export class ApparatusEntry implements ApparatusEntryInterface {
   from: number;
   to: number;
   preLemma: CompactFmtText;
-  /**
-   * Indicates the type of lemma to use:
-   *
-   * - '' or 'dash': the lemma is automatically constructed using the words in lemmaText, either all of them or  the first and last one with a dash in between if too long
-   * - 'ellipsis': same as 'dash' but with an ellipsis instead of a dash
-   * - any other string: the exact lemma text to use (overrides lemmaText)
-   *
-   * @deprecated Use lemmaType and customLemmaText
-   */
-  lemma: CompactFmtText;
-  /**
-   * The lemma text to use.
-   * @deprecated Use customLemmaText or mainTextWords
-   */
-  lemmaText: string;
   lemmaType: LemmaType;
-  customLemmaText?: string;
+  customLemmaText: string;
   mainTextWords: string[];
   separator: CompactFmtText;
   postLemma: CompactFmtText;
@@ -44,8 +29,6 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.from = -1;
     this.to = -1;
     this.preLemma = '';
-    this.lemma = '';
-    this.lemmaText = '';
     this.lemmaType = 'auto';
     this.mainTextWords = [];
     this.customLemmaText = '';
@@ -106,8 +89,6 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.from = entry.from;
     this.to = entry.to;
     this.preLemma = entry.preLemma;
-    this.lemma = entry.lemma;
-    this.lemmaText = entry.lemmaText;
     this.lemmaType = entry.lemmaType;
     this.customLemmaText = entry.customLemmaText;
     this.mainTextWords = entry.mainTextWords;

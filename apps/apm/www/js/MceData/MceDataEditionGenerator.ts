@@ -168,8 +168,6 @@ export class MceDataEditionGenerator {
           let newEntry = new ApparatusEntry();
           newEntry.from = entry.from + currentMainTextIndexShift;
           newEntry.to = entry.to + currentMainTextIndexShift;
-          newEntry.lemma = entry.lemma;
-          newEntry.lemmaText = entry.lemmaText;
           newEntry.lemmaType = entry.lemmaType;
           newEntry.customLemmaText = entry.customLemmaText;
           newEntry.mainTextWords = entry.mainTextWords;

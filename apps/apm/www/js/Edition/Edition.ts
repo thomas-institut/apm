@@ -43,9 +43,9 @@ export class Edition implements EditionInterface {
    * @param {number}to
    * @return {string}
    */
-  getPlainTextForRange(from: number, to: number): string {
+  getPlainTextForRange(from: number, to: number): string[] {
     if (to < 0 || from > to) {
-      return '';
+      return [];
     }
     if (from < 0) {
       from = 0;
@@ -54,7 +54,7 @@ export class Edition implements EditionInterface {
       return i >= from && i <= to;
     }).map((token) => {
       return token.getPlainText();
-    }).join('');
+    });
   }
 
   /**

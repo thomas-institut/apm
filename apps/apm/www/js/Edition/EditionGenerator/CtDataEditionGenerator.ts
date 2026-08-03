@@ -218,7 +218,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
           newEntry.from = mainTextFrom;
           newEntry.to = mainTextTo;
           newEntry.preLemma = ctDataCustomEntry.preLemma;
-          newEntry.lemma = ctDataCustomEntry.lemma;
+          // newEntry.lemma = ctDataCustomEntry.lemma;
           newEntry.lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(ctDataCustomEntry.lemma);
           if (newEntry.lemmaType === 'custom') {
             newEntry.customLemmaText = getPlainText(fromCompactFmtText(ctDataCustomEntry.lemma));
@@ -230,7 +230,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
             from: ctDataCustomEntry.from, to: ctDataCustomEntry.to
           }, baseWitnessTokens, false, this.ctData.lang);
           newEntry.lemmaType = 'auto';
-          newEntry.lemmaText = words.join(' ');
+          // newEntry.lemmaText = words.join(' ');
           newEntry.mainTextWords = words;
           newEntry.subEntries = this.buildSubEntryArrayFromCustomSubEntries(customSubEntries);
           generatedApparatus.entries.push(newEntry);
@@ -241,7 +241,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
         // this.debug && console.log(`Entry belongs to automatic apparatus entry index ${currentEntryIndex}`);
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           generatedApparatus.entries[currentEntryIndex].preLemma = ctDataCustomEntry.preLemma;
-          generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
+          // generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
           generatedApparatus.entries[currentEntryIndex].lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(ctDataCustomEntry.lemma);
           if (generatedApparatus.entries[currentEntryIndex].lemmaType === 'custom') {
             generatedApparatus.entries[currentEntryIndex].customLemmaText = getPlainText(fromCompactFmtText(ctDataCustomEntry.lemma));
@@ -362,7 +362,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
       theApparatus.type = apparatus.type;
       theApparatus.entries = apparatus.entries.map((customEntry) => {
         let theEntry = new ApparatusEntry();
-        theEntry.lemma = customEntry.lemma;
+        // theEntry.lemma = customEntry.lemma;
         console.log(`Adding new apparatus entry with lemma`, customEntry.lemma);
         theEntry.lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(customEntry.lemma);
         if (theEntry.lemmaType === 'custom') {
@@ -372,11 +372,10 @@ export class CtDataEditionGenerator extends EditionGenerator {
         theEntry.postLemma = customEntry.postLemma;
         theEntry.separator = customEntry.separator;
         theEntry.tags = [...customEntry.tags];
-        const mainTextWordsForGroup = ApparatusTools.getMainTextWordsForGroup({
+        theEntry.mainTextWords = ApparatusTools.getMainTextWordsForGroup({
           from: customEntry.from, to: customEntry.to
         }, baseWitnessTokens, false, this.ctData.lang);
-        theEntry.mainTextWords = mainTextWordsForGroup;
-        theEntry.lemmaText = mainTextWordsForGroup.join(' ');
+        // theEntry.lemmaText = mainTextWordsForGroup.join(' ');
         theEntry.from = ctIndexToMainTextMap[customEntry.from];
         theEntry.to = ctIndexToMainTextMap[customEntry.to];
         theEntry.subEntries = this.buildSubEntryArrayFromCustomSubEntries(customEntry.subEntries);

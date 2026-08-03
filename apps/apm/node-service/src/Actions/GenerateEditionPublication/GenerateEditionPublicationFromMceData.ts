@@ -112,12 +112,12 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
         }
         return {
           type: app.type as any, // Cast to any because of potential mismatch between string and literal types
-          entries: app.entries.map(entry => ({
+          entries: app.entries.map((entry) => ({
             from: entry.from,
             to: entry.to,
-            preLemma: entry.lemma,
+            preLemma: entry.preLemma,
+            lemmaText: entry.lemmaType === 'custom' ? entry.customLemmaText  : entry.mainTextWords.join(' '),
             postLemma: entry.postLemma,
-            lemmaText: entry.lemmaText,
             separator: entry.separator,
             subEntries: entry.subEntries.map(subEntry => ({
               type: subEntry.type as any,

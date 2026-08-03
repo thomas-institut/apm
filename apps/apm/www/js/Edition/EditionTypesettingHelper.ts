@@ -718,17 +718,17 @@ export class EditionTypesettingHelper {
    *
    * If there's only one occurrence in the line, returns an empty array.
    *
-   * @param indexFrom The index of the first token in the sequence
-   * @param indexTo The index of the last token in the sequence. If not
+   * @param mainTextIndexFrom The index of the first token in the sequence
+   * @param mainTextIndexTo The index of the last token in the sequence. If not
    * specified, defaults to indexFrom.
    */
-  async getTsItemsForLemmaOccurrenceNumber(indexFrom: number, indexTo: number = -1): Promise<TypesetterItem[]> {
-    if (indexTo === -1) {
-      indexTo = indexFrom;
+  async getTsItemsForLemmaOccurrenceNumber(mainTextIndexFrom: number, mainTextIndexTo: number = -1): Promise<TypesetterItem[]> {
+    if (mainTextIndexTo === -1) {
+      mainTextIndexTo = mainTextIndexFrom;
     }
     let tsItems = [];
     let lemmaNumberString = '';
-    let [occurrenceInLine, numberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(indexFrom);
+    let [occurrenceInLine, numberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(mainTextIndexFrom);
     if (numberOfOccurrencesInLine > 1) {
       // if the first token only occurs once in the line, obviously the whole series of tokens only
       // occurs once. Otherwise, we need to check the other tokens, if any.
@@ -738,7 +738,7 @@ export class EditionTypesettingHelper {
       // for the whole series.
       let seriesOccurrenceInLine = occurrenceInLine;
       let seriesNumberOfOccurrencesInLine = numberOfOccurrencesInLine;
-      for (let tokenIndex = indexFrom + 1; tokenIndex <= indexTo; tokenIndex++) {
+      for (let tokenIndex = mainTextIndexFrom + 1; tokenIndex <= mainTextIndexTo; tokenIndex++) {
         let [tokenOccurrenceInLine, tokenNumberOfOccurrencesInLine] = this.getOccurrenceInLineInfo(tokenIndex);
         seriesOccurrenceInLine = Math.min(seriesOccurrenceInLine, tokenOccurrenceInLine);
         seriesNumberOfOccurrencesInLine = Math.min(seriesNumberOfOccurrencesInLine, tokenNumberOfOccurrencesInLine);

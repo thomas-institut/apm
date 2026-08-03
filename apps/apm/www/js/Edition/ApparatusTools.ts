@@ -52,7 +52,7 @@ export class ApparatusTools {
     return app;
   }
 
-  static getLemmaTypeFromDeprecatedLemma(lemma: CompactFmtText): LemmaType {
+  static getLemmaTypeFromCtDataCustomApparatusEntry(lemma: CompactFmtText): LemmaType {
     switch (getPlainText(fromCompactFmtText(lemma))) {
       case '':
         return 'auto';
@@ -89,7 +89,7 @@ export class ApparatusTools {
   static getNormalizedMainTextForGroup(group: Group, mainTextInputTokens: WitnessTokenInterface[], lang: string = ''): string {
     const normalized = true;
     return mainTextInputTokens
-      .filter((t, i) => {
+      .filter((_t, i) => {
         return i >= group.from && i <= group.to;
       }) // get group main text columns
       .map((t) => {   // get text for each column

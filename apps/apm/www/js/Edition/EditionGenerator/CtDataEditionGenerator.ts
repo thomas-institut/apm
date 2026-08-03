@@ -220,8 +220,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
           newEntry.from = mainTextFrom;
           newEntry.to = mainTextTo;
           newEntry.preLemma = ctDataCustomEntry.preLemma;
-          // newEntry.lemma = ctDataCustomEntry.lemma;
-          newEntry.lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(ctDataCustomEntry.lemma);
+          newEntry.lemmaType = ApparatusTools.getLemmaTypeFromCtDataCustomApparatusEntry(ctDataCustomEntry.lemma);
           if (newEntry.lemmaType === 'custom') {
             newEntry.customLemmaText = getPlainText(fromCompactFmtText(ctDataCustomEntry.lemma));
           }
@@ -243,7 +242,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           generatedApparatus.entries[currentEntryIndex].preLemma = ctDataCustomEntry.preLemma;
           // generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
-          generatedApparatus.entries[currentEntryIndex].lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(ctDataCustomEntry.lemma);
+          generatedApparatus.entries[currentEntryIndex].lemmaType = ApparatusTools.getLemmaTypeFromCtDataCustomApparatusEntry(ctDataCustomEntry.lemma);
           if (generatedApparatus.entries[currentEntryIndex].lemmaType === 'custom') {
             generatedApparatus.entries[currentEntryIndex].customLemmaText = getPlainText(fromCompactFmtText(ctDataCustomEntry.lemma));
           }
@@ -365,7 +364,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
         let theEntry = new ApparatusEntry();
         // theEntry.lemma = customEntry.lemma;
         console.log(`Adding new apparatus entry with lemma`, customEntry.lemma);
-        theEntry.lemmaType = ApparatusTools.getLemmaTypeFromDeprecatedLemma(customEntry.lemma);
+        theEntry.lemmaType = ApparatusTools.getLemmaTypeFromCtDataCustomApparatusEntry(customEntry.lemma);
         if (theEntry.lemmaType === 'custom') {
           theEntry.customLemmaText = getPlainText(fromCompactFmtText(customEntry.lemma));
         }

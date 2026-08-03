@@ -76,6 +76,71 @@ export class MceData {
     return mceData.chunks.map(c => c.chunkId.split('-')[0]);
   }
 
+  static addStandardizedString(mceData: MceDataInterface, original: string, standardized: string) {
+    if (original === undefined || original.trim() === '') {
+      throw new ValidationError(`Invalid original string '${original}'`);
+    }
+    original = original.trim();
+    if (standardized === undefined || standardized.trim() === '') {
+      throw new ValidationError(`Invalid standardized string '${standardized}'`);
+    }
+    standardized = standardized.trim();
+
+    if (original === standardized) {
+      throw new ValidationError(`Original and standardized strings cannot be the same`);
+    }
+
+    const existing = mceData.standardizedStrings.find(s => s.original === original);
+    if (existing) {
+      throw new ValidationError(`Standardized string '${original}' already exists`);
+    }
+    mceData.standardizedStrings.push({original, standardized, instances: []});
+    return mceData;
+  }
+
+  static deleteStandardizeString(mceData: MceDataInterface, original: string) {
+    if (original === undefined || original === '') {
+      throw new ValidationError(`Invalid original string '${original}'`);
+    }
+    mceData.standardizedStrings = mceData.standardizedStrings.filter(s => s.original !== original);
+    return mceData;
+  }
+
+  static acceptStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number) {
+    return this.setStandardizedStringInstance(mceData, str, mainTextIndex, 'accepted');
+  }
+
+  static rejectStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number) {
+    return this.setStandardizedStringInstance(mceData, str, mainTextIndex, 'rejected');
+  }
+
+  static resetStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number) {
+    return this.setStandardizedStringInstance(mceData, str, mainTextIndex, null);
+  }
+
+  private static setStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number, status: 'accepted' | 'rejected' | null) {
+    if (str === undefined || str === '') {
+      throw new ValidationError(`Invalid string '${str}'`);
+    }
+    const strIndex = mceData.standardizedStrings.findIndex(s => s.original === str);
+    if (strIndex < 0) {
+      throw new ValidationError(`String '${str}' not found`);
+    }
+    const instanceIndex = mceData.standardizedStrings[strIndex].instances.findIndex(i => i.mainTextIndex === mainTextIndex);
+    if (status === null) {
+      // remove the instance
+      mceData.standardizedStrings[strIndex].instances.splice(instanceIndex, 1);
+      return mceData;
+    }
+    if (instanceIndex < 0) {
+      mceData.standardizedStrings[strIndex].instances.push({mainTextIndex: mainTextIndex, status: status});
+    } else {
+      mceData.standardizedStrings[strIndex].instances[instanceIndex].status = status;
+    }
+    return mceData;
+  }
+
+
   static setTitle(mceData: MceDataInterface, newTitle: string) {
     newTitle = newTitle.trim();
     if (newTitle === '') {

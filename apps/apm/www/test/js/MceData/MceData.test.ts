@@ -682,6 +682,109 @@ describe('MceData', () => {
     });
   });
 
+  describe('standardized string manipulation', () => {
+    it('adds a standardized string with empty instances and trims input strings', () => {
+      const mceData = MceData.createEmpty();
+
+      const result = MceData.addStandardizedString(mceData, '  uel ', ' vel  ');
+
+      expect(result).toBe(mceData);
+      expect(mceData.standardizedStrings).toEqual([
+        {original: 'uel', standardized: 'vel', instances: []}
+      ]);
+    });
+
+    it('throws when adding a standardized string with invalid values after trim', () => {
+      const mceData = MceData.createEmpty();
+
+      expect(() => MceData.addStandardizedString(mceData, '   ', 'vel')).toThrow(ValidationError);
+      expect(() => MceData.addStandardizedString(mceData, 'uel', '   ')).toThrow(ValidationError);
+    });
+
+    it('throws when adding a standardized string with identical values after trim', () => {
+      const mceData = MceData.createEmpty();
+
+      expect(() => MceData.addStandardizedString(mceData, ' uel ', 'uel  ')).toThrow(ValidationError);
+      expect(() => MceData.addStandardizedString(mceData, ' uel ', 'uel  ')).toThrow('Original and standardized strings cannot be the same');
+    });
+
+    it('throws when adding a duplicate standardized string after trim', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [{original: 'uel', standardized: 'vel', instances: []}];
+
+      expect(() => MceData.addStandardizedString(mceData, ' uel ', 'v')).toThrow(ValidationError);
+      expect(() => MceData.addStandardizedString(mceData, ' uel ', 'v')).toThrow("Standardized string 'uel' already exists");
+    });
+
+    it('deletes an existing standardized string', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [
+        {original: 'uel', standardized: 'vel', instances: []},
+        {original: 'autem', standardized: 'aut', instances: []}
+      ];
+
+      const result = MceData.deleteStandardizeString(mceData, 'uel');
+
+      expect(result).toBe(mceData);
+      expect(mceData.standardizedStrings).toEqual([
+        {original: 'autem', standardized: 'aut', instances: []}
+      ]);
+    });
+
+    it('throws when deleting with invalid original string', () => {
+      const mceData = MceData.createEmpty();
+
+      expect(() => MceData.deleteStandardizeString(mceData, '')).toThrow(ValidationError);
+      expect(() => MceData.deleteStandardizeString(mceData, undefined as unknown as string)).toThrow(ValidationError);
+    });
+
+    it('accepts and rejects standardized string instances', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [{original: 'uel', standardized: 'vel', instances: []}];
+
+      MceData.acceptStandardizedStringInstance(mceData, 'uel', 3);
+      expect(mceData.standardizedStrings[0].instances).toEqual([{mainTextIndex: 3, status: 'accepted'}]);
+
+      MceData.rejectStandardizedStringInstance(mceData, 'uel', 3);
+      expect(mceData.standardizedStrings[0].instances).toEqual([{mainTextIndex: 3, status: 'rejected'}]);
+
+      MceData.acceptStandardizedStringInstance(mceData, 'uel', 4);
+      expect(mceData.standardizedStrings[0].instances).toEqual([
+        {mainTextIndex: 3, status: 'rejected'},
+        {mainTextIndex: 4, status: 'accepted'}
+      ]);
+    });
+
+    it('resets a standardized string instance', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [{
+        original: 'uel',
+        standardized: 'vel',
+        instances: [
+          {mainTextIndex: 1, status: 'accepted'},
+          {mainTextIndex: 2, status: 'rejected'}
+        ]
+      }];
+
+      const result = MceData.resetStandardizedStringInstance(mceData, 'uel', 1);
+
+      expect(result).toBe(mceData);
+      expect(mceData.standardizedStrings[0].instances).toEqual([
+        {mainTextIndex: 2, status: 'rejected'}
+      ]);
+    });
+
+    it('throws when instance operations target an invalid or missing string', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [{original: 'uel', standardized: 'vel', instances: []}];
+
+      expect(() => MceData.acceptStandardizedStringInstance(mceData, '', 0)).toThrow(ValidationError);
+      expect(() => MceData.rejectStandardizedStringInstance(mceData, 'autem', 0)).toThrow(ValidationError);
+      expect(() => MceData.resetStandardizedStringInstance(mceData, 'autem', 0)).toThrow(ValidationError);
+      expect(() => MceData.rejectStandardizedStringInstance(mceData, 'autem', 0)).toThrow("String 'autem' not found");
+    });
+  });
+
   describe('setTitle', () => {
     it('sets the title on the mceData', () => {
       const mceData = MceData.createEmpty();

@@ -1,6 +1,6 @@
 // noinspection ES6PreferShortImport
 
-import {MceDataInterface} from "./MceDataInterface.js";
+import {MceDataInterface, StandardizedStringData} from "./MceDataInterface.js";
 import {CtDataInterface} from "../CtData/CtDataInterface.js";
 import {LoggerInterface} from "../lib/Logger/LoggerInterface.js";
 import {NullLogger} from "../lib/Logger/NullLogger.js";
@@ -20,7 +20,7 @@ import {uniq} from "../lib/ToolBox/ArrayUtil.js";
 
 export type CtDataGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<CtDataInterface>;
 export type SingleChunkEditionSaver = (mceData: MceDataInterface, chunkIndex: number, edition: EditionInterface) => Promise<void>;
-export type SingleChunkEditionGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<EditionInterface|null>;
+export type SingleChunkEditionGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<EditionInterface | null>;
 export type OnProgressUpdateHandler = (step: number, numSteps: number) => void | null;
 
 export interface MceDataEditionGeneratorOptions {
@@ -53,17 +53,18 @@ export class MceDataEditionGenerator {
   private readonly onProgressUpdate: OnProgressUpdateHandler | null;
 
   constructor(options: MceDataEditionGeneratorOptions) {
-   this.ctDataGetter = options.ctDataGetter;
-   this.logger = options.logger ?? new NullLogger();
-   this.singleChunkEditionSaver = options.singleChunkEditionSaver ?? 
-     (async (_mceData: MceDataInterface, _chunkIndex: number, _edition: EditionInterface) => {});
-   this.singleChunkEditionGetter = options.singleChunkEditionGetter ?? 
-     (async (_mceData: MceDataInterface, _chunkIndex: number) => null);
+    this.ctDataGetter = options.ctDataGetter;
+    this.logger = options.logger ?? new NullLogger();
+    this.singleChunkEditionSaver = options.singleChunkEditionSaver ??
+      (async (_mceData: MceDataInterface, _chunkIndex: number, _edition: EditionInterface) => {
+      });
+    this.singleChunkEditionGetter = options.singleChunkEditionGetter ??
+      (async (_mceData: MceDataInterface, _chunkIndex: number) => null);
 
-   this.onProgressUpdate = options.onProgressUpdate ?? null;
+    this.onProgressUpdate = options.onProgressUpdate ?? null;
   }
 
-  async generate(mceData: MceDataInterface, editionId: number) : Promise<EditionInterface> {
+  async generate(mceData: MceDataInterface, editionId: number): Promise<EditionInterface> {
     const numChunks = mceData.chunks.length;
     this.logger.debug(`Generating edition from ${numChunks} chunks`);
     const edition = new Edition();
@@ -72,7 +73,7 @@ export class MceDataEditionGenerator {
     };
     edition.metadata.infoText = `Multi chunk edition`;
 
-    edition.siglaGroups = mceData.siglaGroups.map( sgi => SiglaGroup.fromObject(sgi));
+    edition.siglaGroups = mceData.siglaGroups.map(sgi => SiglaGroup.fromObject(sgi));
     edition.witnesses = mceData.witnesses.map((w, i) => {
       return (new EditionWitnessInfo()).setSiglum(mceData.sigla[i]).setTitle(w.title);
     });
@@ -181,12 +182,12 @@ export class MceDataEditionGenerator {
             newSubEntry.source = subEntry.source;
             newSubEntry.type = subEntry.type;
             newSubEntry.keyword = subEntry.keyword;
-            newSubEntry.witnessData = subEntry.witnessData.map( (wd) => {
-              let newWd = new WitnessDataItem()
+            newSubEntry.witnessData = subEntry.witnessData.map((wd) => {
+              let newWd = new WitnessDataItem();
               newWd.setHand(wd.hand);
               newWd.setWitnessIndex(mceData.chunks[chunkIndex].witnessIndices[wd.witnessIndex]);
               newWd.realFoliationChange = wd.realFoliationChange;
-              return newWd
+              return newWd;
             });
             return newSubEntry;
           });
@@ -201,11 +202,13 @@ export class MceDataEditionGenerator {
         currentApparatus.entries.push(...apparatusEntriesToAdd);
       }
     }
+    // apply standardization
+    this.applyStandardization(edition, mceData);
     return edition;
-    
+
   }
 
-  async regenerateSingleChunkEdition(mceData: MceDataInterface, chunkIndex: number, currentMceFoliationChanges: FoliationChangeInfoInterface[]) : Promise<EditionInterface> {
+  async regenerateSingleChunkEdition(mceData: MceDataInterface, chunkIndex: number, currentMceFoliationChanges: FoliationChangeInfoInterface[]): Promise<EditionInterface> {
     const chunk = mceData.chunks[chunkIndex];
     if (chunk === undefined) {
       this.logger.warn(`Attempt to regenerate non-existent chunk ${chunkIndex}`);
@@ -216,7 +219,9 @@ export class MceDataEditionGenerator {
 
     singleChunkCtData.includeInAutoMarginalFoliation = this.getSingleChunkIncludeInAutoFoliationArray(mceData, chunkIndex);
     // convert foliation changes to be relative to the chunk
-    const chunkFoliationChanges = currentMceFoliationChanges.map(f => { return {...f, witnessIndex: chunk.witnessIndices.indexOf(f.witnessIndex)}});
+    const chunkFoliationChanges = currentMceFoliationChanges.map(f => {
+      return {...f, witnessIndex: chunk.witnessIndices.indexOf(f.witnessIndex)};
+    });
     let eg = new CtDataEditionGenerator({
       ctData: singleChunkCtData, lastFoliationChanges: chunkFoliationChanges
     });
@@ -301,6 +306,131 @@ export class MceDataEditionGenerator {
     });
     mergedChanges.push(...chunkFoliationChanges);
     return mergedChanges;
+  }
+
+  private applyStandardization(edition: EditionInterface, mceData: MceDataInterface): void {
+    edition.mainText = edition.mainText.map((token, mainTextIndex) => {
+      if (token.type !== 'text') {
+        return token;
+      }
+
+      token.fmtText = token.fmtText.map((fmtToken) => {
+        if (fmtToken.type !== 'text') {
+          return fmtToken;
+        }
+
+        const standardizedString = mceData.standardizedStrings.find((ss) => {
+          const hasAcceptedInstanceForIndex = ss.instances.some((instance) => {
+            return instance.status === 'accepted' && instance.mainTextIndex === mainTextIndex;
+          });
+          return hasAcceptedInstanceForIndex && this.wordMatchesStandardizedString(fmtToken.text, ss, mceData.lang);
+        });
+
+        if (standardizedString === undefined) {
+          return fmtToken;
+        }
+
+        const standardizedWord = this.getWordStandardizedByString(fmtToken.text, standardizedString, mceData.lang);
+        if (standardizedWord === fmtToken.text) {
+          return fmtToken;
+        }
+
+        return {...fmtToken, text: standardizedWord};
+      });
+
+      return token;
+    });
+
+    edition.apparatuses = edition.apparatuses.map((apparatus) => {
+      apparatus.entries = apparatus.entries.map((entry) => {
+        const acceptedInstancesInRange: { mainTextIndex: number, standardizedString: StandardizedStringData }[] = [];
+
+        mceData.standardizedStrings.forEach((standardizedString) => {
+          standardizedString.instances.forEach((instance) => {
+            if (instance.status === 'accepted' && instance.mainTextIndex >= entry.from && instance.mainTextIndex <= entry.to) {
+              acceptedInstancesInRange.push({
+                mainTextIndex: instance.mainTextIndex,
+                standardizedString,
+              });
+            }
+          });
+        });
+
+        acceptedInstancesInRange.sort((left, right) => {
+          return left.mainTextIndex - right.mainTextIndex;
+        });
+
+        const expectedMainTextWordsCount = entry.to - entry.from + 1;
+        if (entry.mainTextWords.length !== expectedMainTextWordsCount) {
+          throw new Error(`Apparatus entry mainTextWords are not aligned with entry range: expected ${expectedMainTextWordsCount}, got ${entry.mainTextWords.length} (from ${entry.from}, to ${entry.to})`);
+        }
+
+        const usedAcceptedInstances = new Set<number>();
+        entry.mainTextWords = entry.mainTextWords.map((word, wordIndex) => {
+          const assumedMainTextIndex = entry.from + wordIndex;
+
+          let acceptedInstanceIndex = acceptedInstancesInRange.findIndex((instanceData, index) => {
+            return !usedAcceptedInstances.has(index) &&
+              instanceData.mainTextIndex === assumedMainTextIndex &&
+              this.wordMatchesStandardizedString(word, instanceData.standardizedString, mceData.lang);
+          });
+
+          if (acceptedInstanceIndex === -1) {
+            return word;
+          }
+
+          usedAcceptedInstances.add(acceptedInstanceIndex);
+          return this.getWordStandardizedByString(word, acceptedInstancesInRange[acceptedInstanceIndex].standardizedString, mceData.lang);
+        });
+
+        return entry;
+      });
+
+      return apparatus;
+    });
+  }
+
+  private wordMatchesStandardizedString(word: string, standardizedString: StandardizedStringData, lang: string): boolean {
+    if (lang !== 'la') {
+      return word === standardizedString.original;
+    }
+
+    const originalLowerCase = standardizedString.original.toLowerCase();
+    return word === originalLowerCase ||
+      word === this.capitalizeFirstLetter(originalLowerCase) ||
+      word === originalLowerCase.toUpperCase();
+  }
+
+  private getWordStandardizedByString(word: string, standardizedString: StandardizedStringData, lang: string): string {
+    if (lang !== 'la') {
+      if (word === standardizedString.original) {
+        return standardizedString.standardized;
+      }
+      return word;
+    }
+
+    const originalLowerCase = standardizedString.original.toLowerCase();
+
+    if (word === originalLowerCase.toUpperCase()) {
+      return standardizedString.standardized.toUpperCase();
+    }
+
+    if (word === this.capitalizeFirstLetter(originalLowerCase)) {
+      return this.capitalizeFirstLetter(standardizedString.standardized);
+    }
+
+    if (word === originalLowerCase) {
+      return standardizedString.standardized;
+    }
+
+    return word;
+  }
+
+  private capitalizeFirstLetter(str: string): string {
+    if (str === '') {
+      return str;
+    }
+    return str[0].toUpperCase() + str.slice(1);
   }
 
 

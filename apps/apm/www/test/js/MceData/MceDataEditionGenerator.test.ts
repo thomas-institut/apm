@@ -119,6 +119,7 @@ function makeMarginaliaApparatus(entries: Array<{
     const entry = new ApparatusEntry();
     entry.from = entryData.from;
     entry.to = entryData.from;
+    entry.mainTextWords = [''];
 
     const subEntry = new ApparatusSubEntry();
     subEntry.type = 'auto_foliation';
@@ -439,6 +440,7 @@ describe('MceDataEditionGenerator', () => {
       const entry = new ApparatusEntry();
       entry.from = 0;
       entry.to = 0;
+      entry.mainTextWords = ['t0'];
       const subEntry = new ApparatusSubEntry();
       subEntry.witnessData = [new WitnessDataItem().setWitnessIndex(0).setHand(2)];
       entry.subEntries = [subEntry];
@@ -485,6 +487,117 @@ describe('MceDataEditionGenerator', () => {
       expect(edition.apparatuses[0].entries[0].to).toBe(6);
       expect(edition.apparatuses[0].entries[0].subEntries[0].witnessData[0].witnessIndex).toBe(1);
       expect(edition.apparatuses[0].entries[0].subEntries[0].witnessData[0].hand).toBe(2);
+    });
+
+    it('standardizes only accepted Latin instances in main text and apparatus', async () => {
+      const mceData = buildMceData({
+        chunks: [
+          {
+            chunkId: 'c1',
+            break: '',
+            chunkEditionTableId: 100,
+            lineNumbersRestart: false,
+            title: 'Chunk 1',
+            version: 'v1',
+            witnessIndices: [0],
+          }
+        ],
+        chunkOrder: [0],
+        witnesses: [{title: 'Witness A', witnessId: 'A'}],
+        sigla: ['A'],
+        lang: 'la',
+        standardizedStrings: [{
+          original: 'uel',
+          standardized: 'vel',
+          instances: [
+            {mainTextIndex: 1, status: 'accepted'},
+            {mainTextIndex: 2, status: 'rejected'},
+            {mainTextIndex: 3, status: 'accepted'},
+          ]
+        }],
+      });
+
+      const apparatus = new Apparatus();
+      apparatus.type = 'critical';
+      const entry = new ApparatusEntry();
+      entry.from = 0;
+      entry.to = 3;
+      entry.mainTextWords = ['uel', 'Uel', 'UEL', 'uEl'];
+      const subEntry = new ApparatusSubEntry();
+      subEntry.witnessData = [];
+      entry.subEntries = [subEntry];
+      apparatus.entries = [entry];
+
+      const singleChunkEdition = makeSingleChunkEdition({tokenIndices: []});
+      singleChunkEdition.mainText = [
+        MainTextTokenFactory.createSimpleText('text', 'uel', 0, 'la'),
+        MainTextTokenFactory.createSimpleText('text', 'Uel', 1, 'la'),
+        MainTextTokenFactory.createSimpleText('text', 'UEL', 2, 'la'),
+        MainTextTokenFactory.createSimpleText('text', 'uEl', 3, 'la'),
+      ];
+      singleChunkEdition.apparatuses = [apparatus];
+
+      mockCtDataGeneratorState.generatedEditionsQueue.push(singleChunkEdition);
+
+      const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
+      const edition = await generator.generate(mceData, 1);
+
+      const standardizedMainTextWords = edition.mainText
+        .filter((token) => token.type === 'text')
+        .map((token) => getPlainText(token.fmtText));
+
+      expect(standardizedMainTextWords).toEqual(['vel', 'Uel', 'VEL', 'uEl']);
+      expect(edition.apparatuses[0].entries[0].mainTextWords).toEqual(['vel', 'Uel', 'VEL', 'uEl']);
+    });
+
+    it('throws when apparatus mainTextWords are not directly aligned with entry range', async () => {
+      const mceData = buildMceData({
+        chunks: [
+          {
+            chunkId: 'c1',
+            break: '',
+            chunkEditionTableId: 100,
+            lineNumbersRestart: false,
+            title: 'Chunk 1',
+            version: 'v1',
+            witnessIndices: [0],
+          }
+        ],
+        chunkOrder: [0],
+        witnesses: [{title: 'Witness A', witnessId: 'A'}],
+        sigla: ['A'],
+        lang: 'la',
+        standardizedStrings: [{
+          original: 'uel',
+          standardized: 'vel',
+          instances: [{mainTextIndex: 2, status: 'accepted'}],
+        }],
+      });
+
+      const apparatus = new Apparatus();
+      apparatus.type = 'critical';
+      const entry = new ApparatusEntry();
+      entry.from = 0;
+      entry.to = 2;
+      entry.mainTextWords = ['uel'];
+      const subEntry = new ApparatusSubEntry();
+      subEntry.witnessData = [];
+      entry.subEntries = [subEntry];
+      apparatus.entries = [entry];
+
+      const singleChunkEdition = makeSingleChunkEdition({tokenIndices: []});
+      singleChunkEdition.mainText = [
+        MainTextTokenFactory.createSimpleText('text', 'foo', 0, 'la'),
+        MainTextTokenFactory.createSimpleText('text', 'uel', 1, 'la'),
+        MainTextTokenFactory.createSimpleText('text', 'bar', 2, 'la'),
+      ];
+      singleChunkEdition.apparatuses = [apparatus];
+
+      mockCtDataGeneratorState.generatedEditionsQueue.push(singleChunkEdition);
+
+      const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
+      await expect(generator.generate(mceData, 1)).rejects
+        .toThrow('Apparatus entry mainTextWords are not aligned with entry range');
     });
 
     it('filters out apparatus entries with empty subEntries', async () => {

@@ -104,17 +104,17 @@ export class CtDataEditionGenerator extends EditionGenerator {
     let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText);
 
     let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, edition.mainText);
-    generatedCriticalApparatus = this.mergeCustomApparatusEntries(ApparatusType.CRITICUS, generatedCriticalApparatus, baseWitnessTokens, theMap);
+    generatedCriticalApparatus = this.mergeCustomApparatusEntries(ApparatusType.CRITICUS, generatedCriticalApparatus, baseWitnessTokens, theMap, edition.mainText);
 
     // Automatic marginalia
     const marginalFoliationGenerator = new MarginalFoliationGenerator(this.ctData, this.lastFoliationChanges);
     const autoMarginaliaApparatus = marginalFoliationGenerator.generateMarginaliaApparatus(edition.mainText);
 
-    let mergedMarginaliaApparatus = this.mergeCustomApparatusEntries(ApparatusType.MARGINALIA, autoMarginaliaApparatus, baseWitnessTokens, theMap);
+    let mergedMarginaliaApparatus = this.mergeCustomApparatusEntries(ApparatusType.MARGINALIA, autoMarginaliaApparatus, baseWitnessTokens, theMap, edition.mainText);
     edition.apparatuses = [generatedCriticalApparatus, mergedMarginaliaApparatus];
     edition.foliationChanges = marginalFoliationGenerator.getCurrentFoliationChanges();
 
-    edition.apparatuses.push(...this.getCustomApparatuses(theMap, baseWitnessTokens));
+    edition.apparatuses.push(...this.getCustomApparatuses(theMap, edition.mainText));
     edition.apparatuses = edition.apparatuses.map((a) => {
       let appWithSortedEntries = ApparatusTools.sortEntries(a);
       appWithSortedEntries.entries = appWithSortedEntries.entries.map((entry: ApparatusEntry) => {
@@ -155,9 +155,11 @@ export class CtDataEditionGenerator extends EditionGenerator {
    * @param generatedApparatus
    * @param baseWitnessTokens
    * @param ctIndexToMainTextMap
+   * @param mainText
    * @private
    */
-  private mergeCustomApparatusEntries(apparatusType: string, generatedApparatus: Apparatus, baseWitnessTokens: WitnessTokenInterface[], ctIndexToMainTextMap: any[]): Apparatus {
+  private mergeCustomApparatusEntries(apparatusType: string, generatedApparatus: Apparatus,
+                                      baseWitnessTokens: WitnessTokenInterface[], ctIndexToMainTextMap: any[], mainText: MainTextToken[]): Apparatus {
 
     let customApparatus = this.getCustomApparatus(apparatusType);
     if (customApparatus === null) {
@@ -226,12 +228,11 @@ export class CtDataEditionGenerator extends EditionGenerator {
           newEntry.postLemma = ctDataCustomEntry.postLemma;
           newEntry.separator = ctDataCustomEntry.separator;
           newEntry.tags = [...ctDataCustomEntry.tags];
-          const words = ApparatusTools.getMainTextWordsForGroup({
-            from: ctDataCustomEntry.from, to: ctDataCustomEntry.to
-          }, baseWitnessTokens, false, this.ctData.lang);
+          // const words = ApparatusTools.getMainTextWordsForGroup({
+          //   from: ctDataCustomEntry.from, to: ctDataCustomEntry.to
+          // }, baseWitnessTokens, false, this.ctData.lang);
           newEntry.lemmaType = 'auto';
-          // newEntry.lemmaText = words.join(' ');
-          newEntry.mainTextWords = words;
+          newEntry.mainTextWords = ApparatusTools.getMainTextWordsForRange(mainTextFrom, mainTextTo, mainText, this.ctData.lang);
           newEntry.subEntries = this.buildSubEntryArrayFromCustomSubEntries(customSubEntries);
           generatedApparatus.entries.push(newEntry);
         } else {
@@ -350,7 +351,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     });
   }
 
-  private getCustomApparatuses(ctIndexToMainTextMap: number[], baseWitnessTokens: WitnessTokenInterface[]): Apparatus[] {
+  private getCustomApparatuses(ctIndexToMainTextMap: number[], mainText: MainTextToken[]): Apparatus[] {
     if (this.ctData.customApparatuses === undefined) {
       return [];
     }
@@ -368,16 +369,13 @@ export class CtDataEditionGenerator extends EditionGenerator {
         if (theEntry.lemmaType === 'custom') {
           theEntry.customLemmaText = getPlainText(fromCompactFmtText(customEntry.lemma));
         }
+        theEntry.from = ctIndexToMainTextMap[customEntry.from];
+        theEntry.to = ctIndexToMainTextMap[customEntry.to];
         theEntry.preLemma = customEntry.preLemma;
         theEntry.postLemma = customEntry.postLemma;
         theEntry.separator = customEntry.separator;
         theEntry.tags = [...customEntry.tags];
-        theEntry.mainTextWords = ApparatusTools.getMainTextWordsForGroup({
-          from: customEntry.from, to: customEntry.to
-        }, baseWitnessTokens, false, this.ctData.lang);
-        // theEntry.lemmaText = mainTextWordsForGroup.join(' ');
-        theEntry.from = ctIndexToMainTextMap[customEntry.from];
-        theEntry.to = ctIndexToMainTextMap[customEntry.to];
+        theEntry.mainTextWords = ApparatusTools.getMainTextWordsForRange(theEntry.from, theEntry.to, mainText, this.ctData.lang);
         theEntry.subEntries = this.buildSubEntryArrayFromCustomSubEntries(customEntry.subEntries);
         return theEntry;
       });
@@ -386,8 +384,6 @@ export class CtDataEditionGenerator extends EditionGenerator {
   }
 
   private generateMainText(witnessTokens: WitnessTokenInterface[]): MainTextToken[] {
-
-    // TODO: find out if we need to care about normalizations here
     const normalized = false;
     const normalizationsToIgnore: string[] = [];
 

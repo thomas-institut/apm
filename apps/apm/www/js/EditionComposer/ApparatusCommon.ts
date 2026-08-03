@@ -712,9 +712,7 @@ export class ApparatusCommon {
 
   static getLemmaHtml(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
 
-    // let lemmaData = getGeneratedLemmaDataDeprecated(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
     let lemmaData = getGeneratedLemmaData(apparatusEntry, lang);
-
     let lemmaText = '';
 
     if (lemmaData.type === 'custom' || lemmaData.type === 'full') {

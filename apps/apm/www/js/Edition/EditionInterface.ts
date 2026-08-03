@@ -101,8 +101,6 @@ export interface ApparatusEntryInterface {
   tags: string[];
   subEntries: ApparatusSubEntryInterface[];
   metadata: MetadataInterface;
-  mainTextFrom?: number;
-  mainTextTo?: number;
 }
 
 export interface ApparatusSubEntryInterface {

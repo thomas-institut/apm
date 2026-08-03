@@ -10,6 +10,7 @@ import {Group} from "./SequenceWithGroups.js";
 import {ApparatusInterface, LemmaType} from "./EditionInterface.js";
 import {Apparatus} from "./Apparatus.js";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
+import {MainTextToken} from "@/Edition/MainTextToken";
 
 export class ApparatusTools {
 
@@ -67,7 +68,26 @@ export class ApparatusTools {
     }
   }
 
-  static getMainTextWordsForGroup(group: Group, mainTextInputTokens: WitnessTokenInterface[], normalized: boolean = true, lang: string = ''): string[] {
+  static getMainTextWordsForRange(from: number, to: number, tokens: MainTextToken[], lang: string = '') : string[] {
+    return tokens
+      .filter( (_t, i) => i >= from && i <= to)
+      .map((t) => {
+        if (t.type === 'text') {
+          const theText = getPlainText(t.fmtText);
+          if (Punctuation.stringIsAllPunctuation(theText, lang)) {
+            if (theText === '|') {
+              return '|';
+            }
+            return '';
+          }
+          return theText;
+        }
+        return '';
+      });
+  }
+
+  static getNormalizedMainTextForGroup(group: Group, mainTextInputTokens: WitnessTokenInterface[], lang: string = ''): string {
+    const normalized = true;
     return mainTextInputTokens
       .filter((t, i) => {
         return i >= group.from && i <= group.to;
@@ -91,7 +111,7 @@ export class ApparatusTools {
           }
         }
         return t.text;
-      }).filter((t) => t !== '');
+      }).filter((t) => t !== '').join(' ');
   }
 }
 

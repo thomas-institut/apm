@@ -48,10 +48,10 @@ export function getGeneratedLemmaData(entry: ApparatusEntryInterface, langCode: 
       break;
 
     case 'custom':
-      return { type: 'custom', text: entry.customLemmaText ?? 'WRONG CUSTOM LEMMMA TEXT'}
+      return { type: 'custom', text: entry.customLemmaText}
   }
   // Language-specific processing
-  const theLemmaText = processLemmaText(entry.mainTextWords.join(' '), langCode);
+  const theLemmaText = processLemmaText(entry.mainTextWords.filter( w => w !== '').join(' '), langCode);
 
   let lemmaTextWords = theLemmaText.split(' ');
   // if lemmaText is short,

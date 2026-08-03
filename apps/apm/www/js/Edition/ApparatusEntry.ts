@@ -21,9 +21,6 @@ export class ApparatusEntry implements ApparatusEntryInterface {
   tags: string[];
   subEntries: ApparatusSubEntry[];
   metadata: MetadataInterface;
-  mainTextFrom: number;
-  mainTextTo: number;
-
 
   constructor() {
     this.from = -1;
@@ -37,9 +34,6 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.tags = [];
     this.subEntries = [];
     this.metadata = {};
-    this.mainTextFrom = -1;
-    this.mainTextTo = -1;
-    this.lemmaType = 'auto';
   }
 
   static clone(entry: ApparatusEntryInterface): ApparatusEntry {

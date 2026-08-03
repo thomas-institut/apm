@@ -37,7 +37,7 @@ import {WitnessDataItem} from '../WitnessDataItem.js';
 import {CtDataInterface, WitnessTokenInterface} from "../../CtData/CtDataInterface.js";
 import {MainTextToken} from "../MainTextToken.js";
 import {Apparatus} from "../../Edition/Apparatus.js";
-import {fromString} from "@thomas-inst/fmt-text";
+import {fromString, getPlainText} from "@thomas-inst/fmt-text";
 import {Matrix} from "../../lib/Matrix.js";
 
 export class CriticalApparatusGenerator {
@@ -165,7 +165,7 @@ export class CriticalApparatusGenerator {
           entry.from = mainTextIndex;
           entry.to = mainTextIndex;
           entry.lemmaType = 'auto';
-          entry.mainTextWords = mainTextIndex === -1 ? [] : [baseWitnessTokens[ctIndex].text];
+          entry.mainTextWords = mainTextIndex === -1 ? [] : [ getPlainText(mainText[mainTextIndex].fmtText) ];
           entry.subEntries = subEntries;
           // other info
           entry.metadata.ctGroup = columnGroup;
@@ -175,7 +175,7 @@ export class CriticalApparatusGenerator {
         return;
       }
       // 2. There's a main text in the group, we need to find omissions and variants
-      let normalizedGroupMainText = ApparatusTools.getMainTextWordsForGroup(columnGroup, baseWitnessTokens, true, lang).join(' ');
+      let normalizedGroupMainText = ApparatusTools.getNormalizedMainTextForGroup(columnGroup, baseWitnessTokens, lang);
       if (normalizedGroupMainText === '') {
         // this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} has empty text, skipping.`)
         // ignore empty string (normally main text consisting only of punctuation)
@@ -238,8 +238,7 @@ export class CriticalApparatusGenerator {
         entry.from = mainTextIndexFrom;
         entry.to = mainTextIndexTo;
         entry.lemmaType = 'auto';
-        // entry.lemmaText = mainTextWords.join(' ');
-        entry.mainTextWords = ApparatusTools.getMainTextWordsForGroup(columnGroup, baseWitnessTokens, false, lang);
+        entry.mainTextWords = ApparatusTools.getMainTextWordsForRange(mainTextIndexFrom, mainTextIndexTo, mainText, lang);
         entry.subEntries = subEntries;
         // other info
         entry.metadata.ctGroup = columnGroup;

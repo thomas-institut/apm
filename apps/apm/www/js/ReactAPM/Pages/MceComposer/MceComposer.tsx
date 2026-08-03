@@ -1155,13 +1155,13 @@ export default function MceComposer() {
       tabbable: true,
     },
 
-    {
-      panel: 'one',
-      key: 'normalization',
-      title: 'Normalization',
-      expandable: true,
-      content: <>Main text normalization will be here...</>
-    },
+    // {
+    //   panel: 'one',
+    //   key: 'normalization',
+    //   title: 'Normalization',
+    //   expandable: true,
+    //   content: <>Main text normalization will be here...</>
+    // },
     {
       panel: 'two',
       key: 'mainText',

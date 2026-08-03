@@ -165,7 +165,7 @@ export class CriticalApparatusGenerator {
           entry.from = mainTextIndex;
           entry.to = mainTextIndex;
           entry.lemmaType = 'auto';
-          entry.mainTextWords = mainTextIndex === -1 ? [] : [ getPlainText(mainText[mainTextIndex].fmtText) ];
+          entry.mainTextWords = mainTextIndex === -1 ? [] : [getPlainText(mainText[mainTextIndex].fmtText)];
           entry.subEntries = subEntries;
           // other info
           entry.metadata.ctGroup = columnGroup;

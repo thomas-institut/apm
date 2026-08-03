@@ -68,9 +68,9 @@ export class ApparatusTools {
     }
   }
 
-  static getMainTextWordsForRange(from: number, to: number, tokens: MainTextToken[], lang: string = '') : string[] {
+  static getMainTextWordsForRange(from: number, to: number, tokens: MainTextToken[], lang: string = ''): string[] {
     return tokens
-      .filter( (_t, i) => i >= from && i <= to)
+      .filter((_t, i) => i >= from && i <= to)
       .map((t) => {
         if (t.type === 'text') {
           const theText = getPlainText(t.fmtText);

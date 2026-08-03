@@ -20,46 +20,58 @@
 
 import {MainText} from './MainText.js';
 import {
+  Box,
+  Dimension,
+  FontConversionDefinition,
+  FontConversions,
+  Glue,
+  GoodPointForBreak,
   HorizontalItemDirection,
-  LineList, LineNumber, ListType, MainTextOriginalIndex, MergedItem, OriginalText, SourceItems, SplitInSyllablesItem,
-  SyllableIndex, TextBoxMeasurer, TokenForCountingPurposes, TokenOccurrenceInLine,
-  TokenTotalOccurrencesInLine, VerticalItemDirection
+  HyphenationLanguage,
+  InfinitePenalty,
+  ItemArray,
+  ItemList,
+  LineList,
+  LineNumber,
+  ListType,
+  MainTextOriginalIndex,
+  Marginalia,
+  MergedItem,
+  ObjectFactory,
+  OriginalText,
+  ParagraphStyleDef,
+  Penalty,
+  ReallyGoodPointForBreak,
+  SourceItems,
+  SplitInSyllablesItem,
+  StyleSheet,
+  StyleSheetDefinition,
+  SyllableIndex,
+  TextBox,
+  TextBoxFactory,
+  TextBoxMeasurer,
+  TokenForCountingPurposes,
+  TokenOccurrenceInLine,
+  TokenTotalOccurrencesInLine,
+  TypesetterItem,
+  VerticalItemDirection
 } from '@thomas-inst/typesetter';
-import {Box} from '@thomas-inst/typesetter';
-import {ItemList} from '@thomas-inst/typesetter';
-import {Glue} from '@thomas-inst/typesetter';
-import {TextBox} from '@thomas-inst/typesetter';
-import {GoodPointForBreak, InfinitePenalty, Penalty, ReallyGoodPointForBreak} from '@thomas-inst/typesetter';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
 import {getTextDirectionForLang, isRtl, removeExtraWhiteSpace} from '../toolbox/Util.js';
-import {ObjectFactory} from '@thomas-inst/typesetter';
 import {uniq} from '../lib/ToolBox/ArrayUtil.js';
 import {Typesetter2StyleSheetTokenRenderer} from '../lib/Typesetter2StyleSheetTokenRenderer.js';
 import {ApparatusUtil} from './ApparatusUtil.js';
 import {NumeralSystems} from '../toolbox/NumeralSystems.js';
-import {TextBoxFactory} from '@thomas-inst/typesetter';
 import {SiglaGroup} from './SiglaGroup.js';
-import {
-  FontConversionDefinition,
-  ParagraphStyleDef,
-  StyleSheet,
-  StyleSheetDefinition
-} from '@thomas-inst/typesetter';
-import {FontConversions} from '@thomas-inst/typesetter';
 import {ItemLineInfo} from './ItemLineInfo.js';
-import {TypesetterItem} from '@thomas-inst/typesetter';
 import {MARGINALIA} from '../constants/ApparatusType.js';
 import {AUTO_FOLIATION} from './SubEntryType.js';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.js";
 import {ApparatusEntry} from './ApparatusEntry.js';
 import {ApparatusEntryInterface, ApparatusInterface, ApparatusSubEntryInterface} from "./EditionInterface.js";
-import {Dimension} from '@thomas-inst/typesetter';
 import {Edition} from './Edition.js';
 import {Apparatus} from "./Apparatus.js";
 import {FmtText, fromCompactFmtText, fromString, getPlainText} from "@thomas-inst/fmt-text";
-import {Marginalia} from '@thomas-inst/typesetter';
-import {HyphenationLanguage} from '@thomas-inst/typesetter';
-import {ItemArray} from '@thomas-inst/typesetter';
 import {getGeneratedLemmaData} from "./GeneratedLemmaData.js";
 import {GLUE, NUMBERING_LABEL, TEXT} from "./MainTextTokenType.js";
 import {getLatinSiglaSpacing} from "./LatinSiglaSpacing.js";
@@ -68,7 +80,7 @@ export const MaxLineCount = 10000;
 const enDash = '\u2013';
 const MarginaliaApparatusType = 'marginalia';
 
-const FoliationChangeMainTextCharacters = [ '|', '¦', '║']
+const FoliationChangeMainTextCharacters = ['|', '¦', '║'];
 
 interface LineRange {
   key: string,
@@ -592,8 +604,8 @@ export class EditionTypesettingHelper {
         items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection));
         // TODO: check formatting here
         const customPostLemmaBox = await this.ss.apply((new TextBox())
-        .setText(getPlainText(fromCompactFmtText(entry.postLemma)))
-        .setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
+          .setText(getPlainText(fromCompactFmtText(entry.postLemma)))
+          .setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
         items.push(customPostLemmaBox);
     }
     return items;
@@ -619,8 +631,8 @@ export class EditionTypesettingHelper {
         let customPreLemmaText = entry.preLemma;
         this.debug && console.log(`Custom pre-lemma: '${customPreLemmaText}'`);
         let customPreLemmaBox = await this.ss.apply((new TextBox())
-        .setText(getPlainText(fromCompactFmtText(customPreLemmaText)))
-        .setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
+          .setText(getPlainText(fromCompactFmtText(customPreLemmaText)))
+          .setTextDirection(this.textDirection), 'apparatus apparatusKeyword');
         items.push(customPreLemmaBox);
         items.push((await this.createGlue('apparatus')).setTextDirection(this.textDirection));
     }

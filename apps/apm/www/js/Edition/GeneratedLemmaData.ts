@@ -30,7 +30,7 @@ interface ShortenedGeneratedLemmaData extends TypedGeneratedLemmaData {
 
 const LatinAbbreviations: Record<string, string> = {
   'etc': 'etc.'
-}
+};
 
 const enDash = String.fromCodePoint(0x2013);
 
@@ -48,10 +48,10 @@ export function getGeneratedLemmaData(entry: ApparatusEntryInterface, langCode: 
       break;
 
     case 'custom':
-      return { type: 'custom', text: entry.customLemmaText}
+      return {type: 'custom', text: entry.customLemmaText};
   }
   // Language-specific processing
-  const theLemmaText = processLemmaText(entry.mainTextWords.filter( w => w !== '').join(' '), langCode);
+  const theLemmaText = processLemmaText(entry.mainTextWords.filter(w => w !== '').join(' '), langCode);
 
   let lemmaTextWords = theLemmaText.split(' ');
   // if lemmaText is short,
@@ -67,7 +67,6 @@ export function getGeneratedLemmaData(entry: ApparatusEntryInterface, langCode: 
     to: lemmaTextWords[lemmaTextWords.length - 1],
   };
 }
-
 
 
 /**

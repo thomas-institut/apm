@@ -71,7 +71,6 @@ export interface StandardizedStringData {
 }
 
 export interface StandardizedStringInstance {
-  chunkIndex: number;
   mainTextIndex: number;
   status: 'rejected' | 'accepted';
 }

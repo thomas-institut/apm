@@ -80,20 +80,28 @@ export interface EditionInfoInterface extends MetadataInterface {
   editionId: number,
 }
 
-export type LemmaType = 'full' | 'auto' | 'custom';
+export type LemmaType = 'auto' | 'dash' | 'ellipsis' | 'custom';
 
 export interface ApparatusEntryInterface {
   section?: number[];
   from: number;
   to: number;
   preLemma: CompactFmtText;
+  /**
+   * Indicates the type of lemma to use:
+   *
+   * - '' or 'dash': the lemma is automatically constructed using the words in lemmaText, either all of them or  the first and last one with a dash in between if too long
+   * - 'ellipsis': same as 'dash' but with an ellipsis instead of a dash
+   * - any other string: the exact lemma text to use (overrides lemmaText)
+   */
   lemma: CompactFmtText;
   postLemma: CompactFmtText;
   /**
-   * If present, this is the lemma text in full form.
+   * The lemma text to use.
    */
   lemmaText: string;
   lemmaType?: LemmaType;
+  customLemmaText?: string;
   separator: CompactFmtText;
   tags: string[];
   subEntries: ApparatusSubEntryInterface[];

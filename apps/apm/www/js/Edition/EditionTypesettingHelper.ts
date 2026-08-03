@@ -60,7 +60,7 @@ import {FmtText, fromCompactFmtText, fromString, getPlainText} from "@thomas-ins
 import {Marginalia} from '@thomas-inst/typesetter';
 import {HyphenationLanguage} from '@thomas-inst/typesetter';
 import {ItemArray} from '@thomas-inst/typesetter';
-import {getLemmaData} from "./LemmaData.js";
+import {getGeneratedLemmaData} from "./GeneratedLemmaData.js";
 import {GLUE, NUMBERING_LABEL, TEXT} from "./MainTextTokenType.js";
 import {getLatinSiglaSpacing} from "./LatinSiglaSpacing.js";
 
@@ -669,7 +669,7 @@ export class EditionTypesettingHelper {
 
   async getTsItemsForLemma(entry: ApparatusEntryInterface): Promise<TypesetterItem[]> {
     let tsItems = [];
-    let lemmaData = getLemmaData(entry.lemma, entry.lemmaText, this.edition.lang);
+    let lemmaData = getGeneratedLemmaData(entry.lemma, entry.lemmaText, this.edition.lang);
 
     switch (lemmaData.type) {
       case 'custom':
@@ -693,7 +693,7 @@ export class EditionTypesettingHelper {
         return tsItems;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaData.type}'`);
+        console.warn(`Unknown lemma component type`);
         return await this.getTsItemsForString('Lemma???', 'apparatus', 'detect');
     }
   }

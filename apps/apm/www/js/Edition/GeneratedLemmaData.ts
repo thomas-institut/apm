@@ -1,13 +1,31 @@
 // noinspection ES6PreferShortImport
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
 
-export interface LemmaData {
-  type: 'full' | 'shortened' | 'custom',
+
+export type GeneratedLemmaType = 'full' | 'shortened' | 'custom';
+
+interface TypedGeneratedLemmaData {
+  type: GeneratedLemmaType;
+}
+
+export type GeneratedLemmaData = FullGeneratedLemmaData | CustomGeneratedLemmaData | ShortenedGeneratedLemmaData;
+
+interface FullGeneratedLemmaData extends TypedGeneratedLemmaData {
+  type: 'full',
   text: string,
-  from?: string,
-  separator?: string,
-  to?: string,
-  numWords?: number
+  numWords: number
+}
+
+interface CustomGeneratedLemmaData extends TypedGeneratedLemmaData {
+  type: 'custom',
+  text: string
+}
+
+interface ShortenedGeneratedLemmaData extends TypedGeneratedLemmaData {
+  type: 'shortened',
+  from: string,
+  separator: string,
+  to: string
 }
 
 const LatinAbbreviations: Record<string, string> = {
@@ -17,13 +35,10 @@ const LatinAbbreviations: Record<string, string> = {
 
 const enDash = String.fromCodePoint(0x2013);
 
-export function getLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: string, langCode: string = ''): LemmaData {
+export function getGeneratedLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: string, langCode: string = ''): GeneratedLemmaData {
   let separator = '';
   let custom = false;
   const theLemma = getPlainText(fromCompactFmtText(apparatusEntryLemma));
-  // if (lemmaText === '') {
-  //   console.warn(`Lemma text is empty for lemma '${theLemma}'`, apparatusEntryLemma);
-  // }
 
   switch (theLemma) {
     case '':
@@ -52,7 +67,6 @@ export function getLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: str
     };
   }
   return {
-    text: '',
     type: 'shortened',
     from: lemmaTextWords[0],
     separator: separator,
@@ -67,7 +81,7 @@ export function getLemmaData(apparatusEntryLemma: CompactFmtText, lemmaText: str
 function processLemmaText(lemmaText: string, langCode: string): string {
 
   // filter out punctuation from the last word, which should never happen after version 1.0,
-  // but there's still some old cases in the data (see issue #294)
+  // but there are still some old cases in the data (see issue #294)
   lemmaText = lemmaText.replace(/[.,;!?)\]]$/, '');
 
   switch (langCode) {

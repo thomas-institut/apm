@@ -30,7 +30,7 @@ import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {WitnessDataItemInterface} from "@/CtData/CtDataInterface";
 import {h, VNode} from 'snabbdom';
-import {getLemmaData} from "@/Edition/LemmaData";
+import {getGeneratedLemmaData} from "@/Edition/GeneratedLemmaData";
 
 
 
@@ -713,15 +713,16 @@ export class ApparatusCommon {
 
   static getLemmaHtml(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
 
-    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
+    let lemmaData = getGeneratedLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
 
-    let lemmaText = trimWhiteSpace(lemmaData.text);
+    let lemmaText = '';
 
-
-
-    if (lemmaText === '|') {
-      // marker
-      lemmaText = '&nbsp;|&nbsp;';
+    if (lemmaData.type === 'custom' || lemmaData.type === 'full') {
+      lemmaText = trimWhiteSpace(lemmaData.text);
+      if (lemmaText === '|') {
+        // marker
+        lemmaText = '&nbsp;|&nbsp;';
+      }
     }
 
     switch (lemmaData.type) {
@@ -764,7 +765,7 @@ export class ApparatusCommon {
         return `${lemmaData.from}${lemmaNumberStringFrom}${lemmaData.separator}${lemmaData.to}${lemmaNumberStringTo}`;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaData.type}'`);
+        console.warn(`Unknown lemma component type`);
         return 'ERROR';
     }
   }
@@ -779,13 +780,17 @@ export class ApparatusCommon {
    */
   static getLemmaVNode(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): (VNode | string)[] {
 
-    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
+    let lemmaData = getGeneratedLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
 
-    let lemmaText = trimWhiteSpace(lemmaData.text);
+    let lemmaText = '';
 
-    if (lemmaText === '|') {
-      // marker
-      lemmaText = '\u00A0|\u00A0';
+    if (lemmaData.type === 'custom' || lemmaData.type === 'full') {
+      lemmaText = trimWhiteSpace(lemmaData.text);
+
+      if (lemmaText === '|') {
+        // marker
+        lemmaText = '\u00A0|\u00A0';
+      }
     }
 
     switch (lemmaData.type) {
@@ -828,7 +833,7 @@ export class ApparatusCommon {
         return resNodes;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaData.type}'`);
+        console.warn(`Unknown lemma component type`);
         return ['ERROR'];
     }
   }

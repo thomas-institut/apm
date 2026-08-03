@@ -1,17 +1,17 @@
 {
   "name": "apm-frontend",
-  "version": "1.3.5",
+  "version": "1.4.0",
   "description": "Averroes Project Manager",
   "directories": {
     "test": "test"
   },
   "scripts": {
     "test": "vitest run test/js/",
-    "api-integration-test": "set -a; source .env.it; set +a; vitest run test/js/Api/ApmApiClient.integration.test.ts",
-    "test-run": "vitest run",
-    "test-watch": "vitest",
+    "test:api-integration": "set -a; source .env.it; set +a; vitest run test/js/Api/ApmApiClient.integration.test.ts",
     "test:playwright": "playwright test --workers=1",
-    "build-dev": "vite build --base=/dist",
+    "test:run": "vitest run",
+    "test:watch": "vitest",
+    "build:dev": "vite build --base=/dist",
     "build": "vite build",
     "dev": "vite"
   },

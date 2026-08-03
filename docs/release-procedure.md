@@ -12,7 +12,7 @@ numbers, corresponding to a particular commit in the main branch.
 * Pull and checkout the main branch from github.
 * Run `composer update thomas-institut/shared-php` to make sure the local branch has the latest shared-php code.
     * Optionally, run `composer update` to update all dependencies.
-* Run `npm run build` or `npm run build-dev` for apm, apm-typesetting and ape-backend. Make all three build without
+* Run `npm run build` or `npm run build-dev` for apm, node-service and ape-backend. Make sure all three build without
   issues.
 * Run tests and make sure they pass for ALL apps: shared-php, apm, ape-backend, ape-frontend.
 

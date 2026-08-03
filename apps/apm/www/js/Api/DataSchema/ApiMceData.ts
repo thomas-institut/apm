@@ -1,11 +1,14 @@
-import {MceDataInterface_v1, MceDataInterface_v2} from "@/MceData/MceDataInterface";
+import {
+  MceDataInterface,
+  MceDataInterfaceAny
+} from "@/MceData/MceDataInterface";
 import {ApiResponse} from "@/Api/DataSchema/ApiResponse";
 
 
-export interface ApiMceDataRaw {
+export interface ApiMceDataAny {
   authorTid: number;
   chunks: string[];
-  mceData: MceDataInterface_v1 | MceDataInterface_v2;
+  mceData: MceDataInterfaceAny;
   validFrom: string;
   validUntil: string;
   versionDescription: string;
@@ -15,13 +18,11 @@ export interface ApiMceDataRaw {
 export interface ApiMceData {
   authorTid: number;
   chunks: string[];
-  mceData: MceDataInterface_v2;
+  mceData: MceDataInterface;
   validFrom: string;
   validUntil: string;
   versionDescription: string;
 }
-
-
 
 export interface ApiMceSaveResponse extends ApiResponse{
   result: 'Success';
@@ -36,6 +37,6 @@ export interface ApiMceSaveRequest {
    * If it's -1, this is a new edition.
    */
   editionId: number;
-  mceData: MceDataInterface_v2;
+  mceData: MceDataInterface;
   description: string;
 }

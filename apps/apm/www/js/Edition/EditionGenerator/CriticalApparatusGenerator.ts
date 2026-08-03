@@ -20,6 +20,7 @@
 
 import * as TokenType from '../../Witness/WitnessTokenType.js';
 import * as WitnessTokenType from '../../Witness/WitnessTokenType.js';
+import {EMPTY} from '../../Witness/WitnessTokenType.js';
 import {SequenceWithGroups} from '../SequenceWithGroups.js';
 import * as SubEntryType from '../SubEntryType.js';
 import * as ApparatusType from '../../constants/ApparatusType.js';
@@ -36,9 +37,8 @@ import {WitnessDataItem} from '../WitnessDataItem.js';
 import {CtDataInterface, WitnessTokenInterface} from "../../CtData/CtDataInterface.js";
 import {MainTextToken} from "../MainTextToken.js";
 import {Apparatus} from "../../Edition/Apparatus.js";
-import {fromString} from "@thomas-inst/fmt-text";
+import {fromString, getPlainText} from "@thomas-inst/fmt-text";
 import {Matrix} from "../../lib/Matrix.js";
-import {EMPTY} from "../../Witness/WitnessTokenType.js";
 
 export class CriticalApparatusGenerator {
   protected verbose: boolean;
@@ -100,7 +100,7 @@ export class CriticalApparatusGenerator {
       }
 
       let groupMatrix = new Matrix<WitnessTokenInterface>(
-        ctColumns.length, ctColumns[0].length, { tokenType: EMPTY, text: '', tokenClass: ''});
+        ctColumns.length, ctColumns[0].length, {tokenType: EMPTY, text: '', tokenClass: ''});
       groupMatrix.setFromArray(ctColumns);
       // a row in groupMatrix is one collation table column
       // this means that a groupMatrix column is a row in the CT
@@ -164,8 +164,8 @@ export class CriticalApparatusGenerator {
           let entry = new ApparatusEntry();
           entry.from = mainTextIndex;
           entry.to = mainTextIndex;
-          // TODO: deal with 'pre' entries properly, the lemma text should be the first word in the text
-          entry.lemmaText = mainTextIndex !== -1 ? baseWitnessTokens[ctIndex]['text'] : 'pre';
+          entry.lemmaType = 'auto';
+          entry.mainTextWords = mainTextIndex === -1 ? [] : [getPlainText(mainText[mainTextIndex].fmtText)];
           entry.subEntries = subEntries;
           // other info
           entry.metadata.ctGroup = columnGroup;
@@ -174,8 +174,8 @@ export class CriticalApparatusGenerator {
         }
         return;
       }
-      // 2. There's main text in the group, we need to find omissions and variants
-      let normalizedGroupMainText = ApparatusTools.getMainTextForGroup(columnGroup, baseWitnessTokens, true, lang);
+      // 2. There's a main text in the group, we need to find omissions and variants
+      let normalizedGroupMainText = ApparatusTools.getNormalizedMainTextForGroup(columnGroup, baseWitnessTokens, lang);
       if (normalizedGroupMainText === '') {
         // this.verbose && console.log(`Group ${columnGroup.from}-${columnGroup.to} has empty text, skipping.`)
         // ignore empty string (normally main text consisting only of punctuation)
@@ -232,12 +232,13 @@ export class CriticalApparatusGenerator {
       }
 
       let subEntries = this._buildSubEntryArrayFromVariantArrayNew(groupVariants, SubEntryType.VARIANT)
-      .concat(this._buildSubEntryArrayFromVariantArrayNew(groupOmissions, SubEntryType.OMISSION));
+        .concat(this._buildSubEntryArrayFromVariantArrayNew(groupOmissions, SubEntryType.OMISSION));
       if (subEntries.length !== 0) {
         let entry = new ApparatusEntry();
         entry.from = mainTextIndexFrom;
         entry.to = mainTextIndexTo;
-        entry.lemmaText = ApparatusTools.getMainTextForGroup(columnGroup, baseWitnessTokens, false, lang);
+        entry.lemmaType = 'auto';
+        entry.mainTextWords = ApparatusTools.getMainTextWordsForRange(mainTextIndexFrom, mainTextIndexTo, mainText, lang);
         entry.subEntries = subEntries;
         // other info
         entry.metadata.ctGroup = columnGroup;
@@ -270,15 +271,6 @@ export class CriticalApparatusGenerator {
       }
     });
     return optimizedEntries;
-  }
-
-  private getGroupsFromCtData(ctData: CtDataInterface) {
-    if (ctData['witnesses'].length === 0) {
-      return [];
-    }
-    let groupedColumns = ctData['groupedColumns'] === undefined ? [] : ctData['groupedColumns'];
-    let seq = new SequenceWithGroups(ctData['collationMatrix'][0].length, groupedColumns);
-    return seq.getGroups();
   }
 
   /**
@@ -319,18 +311,40 @@ export class CriticalApparatusGenerator {
 
   _getRowTextFromGroupMatrix(matrix: any, rowNumber: number, normalized = true, lang = '') {
     return matrix.getColumn(rowNumber)
-    .map((token: WitnessTokenInterface) => {
-      if (token.tokenType === TokenType.EMPTY) {
-        return '';
-      }
-      let theText = normalized ? getNormalizedTextFromInputToken(token) : token.text;
-      if (Punctuation.stringIsAllPunctuation(theText, lang)) {
-        return '';
-      }
-      return theText;
-    })
-    .filter((t: string) => t !== '')   // filter out empty text
-    .join(' ');
+      .map((token: WitnessTokenInterface) => {
+        if (token.tokenType === TokenType.EMPTY) {
+          return '';
+        }
+        let theText = normalized ? getNormalizedTextFromInputToken(token) : token.text;
+        if (Punctuation.stringIsAllPunctuation(theText, lang)) {
+          return '';
+        }
+        return theText;
+      })
+      .filter((t: string) => t !== '')   // filter out empty text
+      .join(' ');
+  }
+
+  /**
+   * Creates a witness data object
+   *
+   * TODO: make this type of object a class and use a factory or a constructor
+   */
+  createWitnessData(witnessIndex: number, hand = 0, location = ''): WitnessDataItem {
+    let data = new WitnessDataItem();
+    data.setWitnessIndex(witnessIndex).setHand(hand);
+    data.location = location;
+    data.forceHandDisplay = false;
+    return data;
+  }
+
+  private getGroupsFromCtData(ctData: CtDataInterface) {
+    if (ctData['witnesses'].length === 0) {
+      return [];
+    }
+    let groupedColumns = ctData['groupedColumns'] === undefined ? [] : ctData['groupedColumns'];
+    let seq = new SequenceWithGroups(ctData['collationMatrix'][0].length, groupedColumns);
+    return seq.getGroups();
   }
 
   private isCtTableColumnEmpty(ctColumn: WitnessTokenInterface[]) {
@@ -349,8 +363,7 @@ export class CriticalApparatusGenerator {
     });
   }
 
-
-  private isCtRowForMultiColumnGroupEffectivelyEmpty(ctColumnArray: WitnessTokenInterface[][], rowIndex: number) : boolean {
+  private isCtRowForMultiColumnGroupEffectivelyEmpty(ctColumnArray: WitnessTokenInterface[][], rowIndex: number): boolean {
     if (ctColumnArray.length < 2) {
       // not a multi column group
       return false;
@@ -365,19 +378,6 @@ export class CriticalApparatusGenerator {
       }
       return tokenText === '';
     });
-  }
-
-  /**
-   * Creates a witness data object
-   *
-   * TODO: make this type of object a class and use a factory or a constructor
-   */
-  createWitnessData(witnessIndex: number, hand = 0, location = ''): WitnessDataItem {
-    let data = new WitnessDataItem();
-    data.setWitnessIndex(witnessIndex).setHand(hand);
-    data.location = location;
-    data.forceHandDisplay = false;
-    return data;
   }
 
 }

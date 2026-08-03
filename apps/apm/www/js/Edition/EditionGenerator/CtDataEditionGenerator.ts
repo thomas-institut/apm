@@ -46,6 +46,7 @@ import {MainTextTokenFactory} from "../MainTextTokenFactory.js";
 import * as MainTextTokenType from "../MainTextTokenType.js";
 import {Punctuation} from "../../defaults/Punctuation.js";
 import {Apparatus} from "../../Edition/Apparatus.js";
+import {fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
 
 interface CtDataEditionGeneratorOptions extends EditionGeneratorOptions {
   ctData: CtDataInterface;
@@ -103,17 +104,17 @@ export class CtDataEditionGenerator extends EditionGenerator {
     let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText);
 
     let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, edition.mainText);
-    generatedCriticalApparatus = this.mergeCustomApparatusEntries(ApparatusType.CRITICUS, generatedCriticalApparatus, baseWitnessTokens, theMap);
+    generatedCriticalApparatus = this.mergeCustomApparatusEntries(ApparatusType.CRITICUS, generatedCriticalApparatus, baseWitnessTokens, theMap, edition.mainText);
 
     // Automatic marginalia
     const marginalFoliationGenerator = new MarginalFoliationGenerator(this.ctData, this.lastFoliationChanges);
     const autoMarginaliaApparatus = marginalFoliationGenerator.generateMarginaliaApparatus(edition.mainText);
 
-    let mergedMarginaliaApparatus = this.mergeCustomApparatusEntries(ApparatusType.MARGINALIA, autoMarginaliaApparatus, baseWitnessTokens, theMap);
+    let mergedMarginaliaApparatus = this.mergeCustomApparatusEntries(ApparatusType.MARGINALIA, autoMarginaliaApparatus, baseWitnessTokens, theMap, edition.mainText);
     edition.apparatuses = [generatedCriticalApparatus, mergedMarginaliaApparatus];
     edition.foliationChanges = marginalFoliationGenerator.getCurrentFoliationChanges();
 
-    edition.apparatuses.push(...this.getCustomApparatuses(theMap, baseWitnessTokens));
+    edition.apparatuses.push(...this.getCustomApparatuses(theMap, edition.mainText));
     edition.apparatuses = edition.apparatuses.map((a) => {
       let appWithSortedEntries = ApparatusTools.sortEntries(a);
       appWithSortedEntries.entries = appWithSortedEntries.entries.map((entry: ApparatusEntry) => {
@@ -154,9 +155,11 @@ export class CtDataEditionGenerator extends EditionGenerator {
    * @param generatedApparatus
    * @param baseWitnessTokens
    * @param ctIndexToMainTextMap
+   * @param mainText
    * @private
    */
-  private mergeCustomApparatusEntries(apparatusType: string, generatedApparatus: Apparatus, baseWitnessTokens: WitnessTokenInterface[], ctIndexToMainTextMap: any[]): Apparatus {
+  private mergeCustomApparatusEntries(apparatusType: string, generatedApparatus: Apparatus,
+                                      baseWitnessTokens: WitnessTokenInterface[], ctIndexToMainTextMap: any[], mainText: MainTextToken[]): Apparatus {
 
     let customApparatus = this.getCustomApparatus(apparatusType);
     if (customApparatus === null) {
@@ -213,18 +216,22 @@ export class CtDataEditionGenerator extends EditionGenerator {
       if (currentEntryIndex === -1) {
         // this.debug && console.log(`Found custom entry not belonging to any automatic apparatus entry`)
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
-          // this.debug && console.log(`Adding new apparatus entry for lemma ${ctDataCustomEntry.lemma}`);
           let newEntry = new ApparatusEntry();
           newEntry.from = mainTextFrom;
           newEntry.to = mainTextTo;
           newEntry.preLemma = ctDataCustomEntry.preLemma;
-          newEntry.lemma = ctDataCustomEntry.lemma;
+          newEntry.lemmaType = ApparatusTools.getLemmaTypeFromCtDataCustomApparatusEntry(ctDataCustomEntry.lemma);
+          if (newEntry.lemmaType === 'custom') {
+            newEntry.customLemmaText = getPlainText(fromCompactFmtText(ctDataCustomEntry.lemma));
+          }
           newEntry.postLemma = ctDataCustomEntry.postLemma;
           newEntry.separator = ctDataCustomEntry.separator;
           newEntry.tags = [...ctDataCustomEntry.tags];
-          newEntry.lemmaText = ApparatusTools.getMainTextForGroup({
-            from: ctDataCustomEntry.from, to: ctDataCustomEntry.to
-          }, baseWitnessTokens, false, this.ctData.lang);
+          // const words = ApparatusTools.getMainTextWordsForGroup({
+          //   from: ctDataCustomEntry.from, to: ctDataCustomEntry.to
+          // }, baseWitnessTokens, false, this.ctData.lang);
+          newEntry.lemmaType = 'auto';
+          newEntry.mainTextWords = ApparatusTools.getMainTextWordsForRange(mainTextFrom, mainTextTo, mainText, this.ctData.lang);
           newEntry.subEntries = this.buildSubEntryArrayFromCustomSubEntries(customSubEntries);
           generatedApparatus.entries.push(newEntry);
         } else {
@@ -234,7 +241,11 @@ export class CtDataEditionGenerator extends EditionGenerator {
         // this.debug && console.log(`Entry belongs to automatic apparatus entry index ${currentEntryIndex}`);
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           generatedApparatus.entries[currentEntryIndex].preLemma = ctDataCustomEntry.preLemma;
-          generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
+          // generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
+          generatedApparatus.entries[currentEntryIndex].lemmaType = ApparatusTools.getLemmaTypeFromCtDataCustomApparatusEntry(ctDataCustomEntry.lemma);
+          if (generatedApparatus.entries[currentEntryIndex].lemmaType === 'custom') {
+            generatedApparatus.entries[currentEntryIndex].customLemmaText = getPlainText(fromCompactFmtText(ctDataCustomEntry.lemma));
+          }
           generatedApparatus.entries[currentEntryIndex].postLemma = ctDataCustomEntry.postLemma;
           generatedApparatus.entries[currentEntryIndex].separator = ctDataCustomEntry.separator;
           generatedApparatus.entries[currentEntryIndex].tags = [...ctDataCustomEntry.tags];
@@ -339,7 +350,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
     });
   }
 
-  private getCustomApparatuses(ctIndexToMainTextMap: number[], baseWitnessTokens: WitnessTokenInterface[]): Apparatus[] {
+  private getCustomApparatuses(ctIndexToMainTextMap: number[], mainText: MainTextToken[]): Apparatus[] {
     if (this.ctData.customApparatuses === undefined) {
       return [];
     }
@@ -351,17 +362,19 @@ export class CtDataEditionGenerator extends EditionGenerator {
       theApparatus.type = apparatus.type;
       theApparatus.entries = apparatus.entries.map((customEntry) => {
         let theEntry = new ApparatusEntry();
-        theEntry.lemma = customEntry.lemma;
+        // theEntry.lemma = customEntry.lemma;
+        console.log(`Adding new apparatus entry with lemma`, customEntry.lemma);
+        theEntry.lemmaType = ApparatusTools.getLemmaTypeFromCtDataCustomApparatusEntry(customEntry.lemma);
+        if (theEntry.lemmaType === 'custom') {
+          theEntry.customLemmaText = getPlainText(fromCompactFmtText(customEntry.lemma));
+        }
+        theEntry.from = ctIndexToMainTextMap[customEntry.from];
+        theEntry.to = ctIndexToMainTextMap[customEntry.to];
         theEntry.preLemma = customEntry.preLemma;
         theEntry.postLemma = customEntry.postLemma;
         theEntry.separator = customEntry.separator;
         theEntry.tags = [...customEntry.tags];
-        theEntry.lemmaText = ApparatusTools.getMainTextForGroup({
-          from: customEntry.from, to: customEntry.to
-        }, baseWitnessTokens, false, this.ctData.lang);
-
-        theEntry.from = ctIndexToMainTextMap[customEntry.from];
-        theEntry.to = ctIndexToMainTextMap[customEntry.to];
+        theEntry.mainTextWords = ApparatusTools.getMainTextWordsForRange(theEntry.from, theEntry.to, mainText, this.ctData.lang);
         theEntry.subEntries = this.buildSubEntryArrayFromCustomSubEntries(customEntry.subEntries);
         return theEntry;
       });
@@ -370,8 +383,6 @@ export class CtDataEditionGenerator extends EditionGenerator {
   }
 
   private generateMainText(witnessTokens: WitnessTokenInterface[]): MainTextToken[] {
-
-    // TODO: find out if we need to care about normalizations here
     const normalized = false;
     const normalizationsToIgnore: string[] = [];
 

@@ -3,7 +3,7 @@
 import * as SubEntryType from './SubEntryType.js';
 import {numericFieldSort} from '../lib/ToolBox/ArrayUtil.js';
 import {ApparatusSubEntry} from './ApparatusSubEntry.js';
-import {ApparatusEntryInterface, cloneMetadata, MetadataInterface} from "./EditionInterface.js";
+import {ApparatusEntryInterface, cloneMetadata, LemmaType, MetadataInterface} from "./EditionInterface.js";
 import {CompactFmtText} from "@thomas-inst/fmt-text";
 
 
@@ -13,29 +13,27 @@ export class ApparatusEntry implements ApparatusEntryInterface {
   from: number;
   to: number;
   preLemma: CompactFmtText;
-  lemma: CompactFmtText;
-  postLemma: CompactFmtText;
-  lemmaText: string;
+  lemmaType: LemmaType;
+  customLemmaText: string;
+  mainTextWords: string[];
   separator: CompactFmtText;
+  postLemma: CompactFmtText;
   tags: string[];
   subEntries: ApparatusSubEntry[];
   metadata: MetadataInterface;
-  mainTextFrom: number;
-  mainTextTo: number;
 
   constructor() {
     this.from = -1;
     this.to = -1;
     this.preLemma = '';
-    this.lemma = '';
-    this.lemmaText = '';
+    this.lemmaType = 'auto';
+    this.mainTextWords = [];
+    this.customLemmaText = '';
     this.postLemma = '';
     this.separator = '';
     this.tags = [];
     this.subEntries = [];
     this.metadata = {};
-    this.mainTextFrom = -1;
-    this.mainTextTo = -1;
   }
 
   static clone(entry: ApparatusEntryInterface): ApparatusEntry {
@@ -85,8 +83,9 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.from = entry.from;
     this.to = entry.to;
     this.preLemma = entry.preLemma;
-    this.lemma = entry.lemma;
-    this.lemmaText = entry.lemmaText;
+    this.lemmaType = entry.lemmaType;
+    this.customLemmaText = entry.customLemmaText;
+    this.mainTextWords = entry.mainTextWords;
     this.postLemma = entry.postLemma;
     this.separator = entry.separator;
     this.tags = [...entry.tags];
@@ -94,6 +93,7 @@ export class ApparatusEntry implements ApparatusEntryInterface {
     this.subEntries = entry.subEntries.map((subEntry) => {
       return ApparatusSubEntry.clone(subEntry);
     });
+    this.lemmaType = entry.lemmaType;
     return this;
   }
 

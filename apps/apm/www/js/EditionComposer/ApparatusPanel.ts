@@ -24,7 +24,11 @@ import {CtData} from '@/CtData/CtData';
 import {onClickAndDoubleClick} from '@/toolbox/DoubleClick';
 import {ApparatusEntryTextEditor} from './ApparatusEntryTextEditor';
 import {
-  capitalizeFirstLetter, deepCopy, getTextDirectionForLang, removeExtraWhiteSpace, trimWhiteSpace
+  capitalizeFirstLetter,
+  deepCopy,
+  getTextDirectionForLang,
+  removeExtraWhiteSpace,
+  trimWhiteSpace
 } from '@/toolbox/Util';
 import {varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import * as SubEntryType from '../Edition/SubEntryType';
@@ -51,6 +55,7 @@ import {Apparatus} from "@/Edition/Apparatus";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
 import {NiceToggle, toggleEvent} from "@/widgets/NiceToggle";
 import {attributesModule, classModule, eventListenersModule, h, init, propsModule, styleModule, VNode} from 'snabbdom';
+import {LemmaType} from "@/Edition/EditionInterface";
 
 const patch = init([classModule, propsModule, styleModule, eventListenersModule, attributesModule]);
 
@@ -509,7 +514,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.customPreLemmaTextInput = $(`${formSelector} .custom-pre-lemma-input`);
     this.customPreLemmaTextInput.addClass('hidden');
     this.preLemmaToggle.on('toggle', this.genOnToggleLemmaGroupToggle('preLemma', this.preLemmaToggle, this.customPreLemmaTextInput));
-    this.customPreLemmaTextInput.on('keyup', this._genOnKeyUpLemmaGroupCustomTextInput('preLemma', this.preLemmaToggle, this.customPreLemmaTextInput));
+    this.customPreLemmaTextInput.on('keyup', this.genOnKeyUpLemmaGroupCustomTextInput('preLemma', this.preLemmaToggle, this.customPreLemmaTextInput));
 
     // lemma
     this.lemmaToggle = new MultiToggle({
@@ -525,8 +530,8 @@ export class ApparatusPanel extends PanelWithToolbar {
     });
     this.customLemmaTextInput = $(`${formSelector} .custom-lemma-input`);
     this.customLemmaTextInput.addClass('hidden');
-    this.lemmaToggle.on('toggle', this.genOnToggleLemmaGroupToggle('lemma', this.lemmaToggle, this.customLemmaTextInput));
-    this.customLemmaTextInput.on('keyup', this._genOnKeyUpLemmaGroupCustomTextInput('lemma', this.lemmaToggle, this.customLemmaTextInput));
+    this.lemmaToggle.on('toggle', this.genOnToggleLemmaToggle());
+    this.customLemmaTextInput.on('keyup', this.genOnKeyUpCustomLemmaTextInput());
 
 
     // postLemma
@@ -542,7 +547,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.customPostLemmaTextInput = $(`${formSelector} .custom-post-lemma-input`);
     this.customPostLemmaTextInput.addClass('hidden');
     this.postLemmaToggle.on('toggle', this.genOnToggleLemmaGroupToggle('postLemma', this.postLemmaToggle, this.customPostLemmaTextInput));
-    this.customPostLemmaTextInput.on('keyup', this._genOnKeyUpLemmaGroupCustomTextInput('postLemma', this.postLemmaToggle, this.customPostLemmaTextInput));
+    this.customPostLemmaTextInput.on('keyup', this.genOnKeyUpLemmaGroupCustomTextInput('postLemma', this.postLemmaToggle, this.customPostLemmaTextInput));
 
     // separator
     this.separatorToggle = new MultiToggle({
@@ -559,18 +564,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.customSeparatorTextInput = $(`${formSelector} .custom-separator-input`);
     this.customSeparatorTextInput.addClass('hidden');
     this.separatorToggle.on('toggle', this.genOnToggleLemmaGroupToggle('separator', this.separatorToggle, this.customSeparatorTextInput));
-    this.customSeparatorTextInput.on('keyup', this._genOnKeyUpLemmaGroupCustomTextInput('separator', this.separatorToggle, this.customSeparatorTextInput));
-
-  }
-
-  _genOnKeyUpLemmaGroupCustomTextInput(variable: string, toggle: MultiToggle, textInput: JQuery<Element>) {
-    return () => {
-      if (this.editedEntry !== null) {
-        // @ts-expect-error using edited entry as object
-        this.editedEntry[variable] = this.getLemmaGroupVariableFromToggle(toggle, textInput);
-        this._updateUpdateApparatusButton();
-      }
-    };
+    this.customSeparatorTextInput.on('keyup', this.genOnKeyUpLemmaGroupCustomTextInput('separator', this.separatorToggle, this.customSeparatorTextInput));
   }
 
   _getCheckboxSelector(subEntryIndex: number) {
@@ -725,122 +719,6 @@ export class ApparatusPanel extends PanelWithToolbar {
     this.fitDivs();
   }
 
-  private getApparatusTags(): string[] {
-    return [...new Set(
-      this.apparatus.entries.flatMap(e => e.tags && e.tags.length > 0 ? e.tags : [])
-    )];
-  }
-
-  private getEntriesWithTag(tag: string): number[] {
-    return this.apparatus.entries
-    .map((e, i) => ({e, i}))
-    .filter(({e}) => e.tags && e.tags.includes(tag))
-    .map(({i}) => i);
-  }
-
-  private getActiveTags(entryIndex: number, hoveredTag: string | null = null): string[] {
-    
-    const entryTags = this.apparatus.entries[entryIndex].tags ?? [];
-    const activeTags = entryTags.filter(tag => this.activeTagFilters.has(tag));
-    
-    if (hoveredTag !== null && entryTags.includes(hoveredTag) && !activeTags.includes(hoveredTag)) {
-      return [...activeTags, hoveredTag];
-    }
-    
-    return activeTags;
-  }
-
-  private highlightEntryByIndex(entryIndex: number, hoveredTag: string | null = null) {
-    
-    const background = this.apparatusTagEditor?.getTagColor(this.getActiveTags(entryIndex, hoveredTag));
-    const lemma = $(this.containerSelector).find(`.lemma-${this.options.apparatusIndex}-${entryIndex}`);
-    const mainTextEntry = $(`.entry-index-${this.options.apparatusIndex}-${entryIndex}`);
-    
-    if (background === '') {
-      lemma.css('background', '');
-      mainTextEntry.css('background', '');
-      return;
-    }
-
-      // @ts-ignore
-      lemma.css('background', background);
-      // @ts-ignore
-      mainTextEntry.css('background', background);
-
-  }
-
-  private onApparatusTagHover(tag: string, active: boolean, event: MouseEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    const entriesWithTag = this.getEntriesWithTag(tag);
-    entriesWithTag.forEach(i => {
-      this.highlightEntryByIndex(i, active ? tag : null);
-    });
-  }
-
-  private onApparatusTagClick(tag: string, active: boolean, event: MouseEvent) {
-
-    // prevent removal of lemma selection
-    event.preventDefault();
-    event.stopPropagation();
-
-    const entriesWithTag = this.getEntriesWithTag(tag);
-
-    // tag activation
-    if (active) {
-      this.activeTagFilters.add(tag);
-      entriesWithTag.forEach(i => {
-        this.highlightEntryByIndex(i);
-      });
-
-    // tag deactivation
-    } else {
-      this.activeTagFilters.delete(tag);
-      entriesWithTag.forEach(i => {
-        this.highlightEntryByIndex(i);
-      });
-    }
-  }
-
-  private clearActiveTagBasedHighlights() {
-    const activeTags = [...this.activeTagFilters];
-
-    // deactivate active tags
-    activeTags.forEach((tag) => {
-      this.apparatusTagEditor?.setTagActivationStatus(tag, false);
-    });
-  
-    // remove tag based highlights in apparatus and main text
-    this.activeTagFilters.clear();
-    this.apparatus.entries.forEach((_entry, index) => {
-      this.highlightEntryByIndex(index);
-    });
-  }
-
-  private setupApparatusTagEditor() {
-
-    const containerSelector = `${this.containerSelector} div.apparatus-tags`;
-    const tags = this.getApparatusTags();
-
-    if (this.apparatusTagEditor === null) {
-
-      $('.apparatus-tags').hide();
-
-      this.apparatusTagEditor = new TagEditor({
-        containerSelector,
-        containerIdPrefix: `apparatus-tags-${this.options.apparatusIndex}`,
-        tags: tags,
-        mode: 'show',
-        onTagHover: this.onApparatusTagHover.bind(this),
-        onTagClick: this.onApparatusTagClick.bind(this),
-      });
-
-      return;
-    }
-
-    this.apparatusTagEditor.setTags(tags);
-  }
-
   updateApparatus(mainTextTypesettingInfo: MainTextTypesettingInfo | null) {
     if (mainTextTypesettingInfo !== null) {
       this.mainTextTypesettingInfo = mainTextTypesettingInfo;
@@ -907,12 +785,12 @@ export class ApparatusPanel extends PanelWithToolbar {
   _setUpEventHandlers() {
     let lemmaElements = this._getAllLemmaElements();
     lemmaElements.off()
-    .on('mouseenter', (ev) => {
-      this.hoverLemma($(ev.target), true);
-    })
-    .on('mouseleave', (ev) => {
-      this.hoverLemma($(ev.target), false);
-    });
+      .on('mouseenter', (ev) => {
+        this.hoverLemma($(ev.target), true);
+      })
+      .on('mouseleave', (ev) => {
+        this.hoverLemma($(ev.target), false);
+      });
     onClickAndDoubleClick(lemmaElements, this._genOnClickLemma(), this._genOnDoubleClickLemma());
   }
 
@@ -949,6 +827,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       lemmaElement.removeClass('lemma-hover');
     }
   }
+
   _genOnDoubleClickLemma() {
     return (ev: JQuery.ClickEvent<HTMLElement>) => {
       this._selectLemmaFromClickTarget(ev.target);
@@ -1049,6 +928,143 @@ export class ApparatusPanel extends PanelWithToolbar {
     return $(`${this.containerSelector} .clear-selection-btn`);
   }
 
+  private genOnKeyUpCustomLemmaTextInput() {
+    return () => {
+      if (this.editedEntry !== null) {
+        this.editedEntry.customLemmaText = removeExtraWhiteSpace(getStringVal(this.customLemmaTextInput));
+        this.editedEntry.lemmaType = 'custom';
+        console.log(`Changed lemma text`, this.editedEntry.customLemmaText);
+        this._updateUpdateApparatusButton();
+      }
+    };
+  }
+
+  private genOnKeyUpLemmaGroupCustomTextInput(variable: string, toggle: MultiToggle, textInput: JQuery<Element>) {
+    return () => {
+      if (this.editedEntry !== null) {
+        // @ts-expect-error using edited entry as object
+        this.editedEntry[variable] = this.getLemmaGroupVariableFromToggle(toggle, textInput);
+        this._updateUpdateApparatusButton();
+      }
+    };
+  }
+
+  private getApparatusTags(): string[] {
+    return [...new Set(
+      this.apparatus.entries.flatMap(e => e.tags && e.tags.length > 0 ? e.tags : [])
+    )];
+  }
+
+  private getEntriesWithTag(tag: string): number[] {
+    return this.apparatus.entries
+      .map((e, i) => ({e, i}))
+      .filter(({e}) => e.tags && e.tags.includes(tag))
+      .map(({i}) => i);
+  }
+
+  private getActiveTags(entryIndex: number, hoveredTag: string | null = null): string[] {
+
+    const entryTags = this.apparatus.entries[entryIndex].tags ?? [];
+    const activeTags = entryTags.filter(tag => this.activeTagFilters.has(tag));
+
+    if (hoveredTag !== null && entryTags.includes(hoveredTag) && !activeTags.includes(hoveredTag)) {
+      return [...activeTags, hoveredTag];
+    }
+
+    return activeTags;
+  }
+
+  private highlightEntryByIndex(entryIndex: number, hoveredTag: string | null = null) {
+
+    const background = this.apparatusTagEditor?.getTagColor(this.getActiveTags(entryIndex, hoveredTag));
+    const lemma = $(this.containerSelector).find(`.lemma-${this.options.apparatusIndex}-${entryIndex}`);
+    const mainTextEntry = $(`.entry-index-${this.options.apparatusIndex}-${entryIndex}`);
+
+    if (background === '') {
+      lemma.css('background', '');
+      mainTextEntry.css('background', '');
+      return;
+    }
+
+    // @ts-ignore
+    lemma.css('background', background);
+    // @ts-ignore
+    mainTextEntry.css('background', background);
+
+  }
+
+  private onApparatusTagHover(tag: string, active: boolean, event: MouseEvent) {
+    event.preventDefault();
+    event.stopPropagation();
+    const entriesWithTag = this.getEntriesWithTag(tag);
+    entriesWithTag.forEach(i => {
+      this.highlightEntryByIndex(i, active ? tag : null);
+    });
+  }
+
+  private onApparatusTagClick(tag: string, active: boolean, event: MouseEvent) {
+
+    // prevent removal of lemma selection
+    event.preventDefault();
+    event.stopPropagation();
+
+    const entriesWithTag = this.getEntriesWithTag(tag);
+
+    // tag activation
+    if (active) {
+      this.activeTagFilters.add(tag);
+      entriesWithTag.forEach(i => {
+        this.highlightEntryByIndex(i);
+      });
+
+      // tag deactivation
+    } else {
+      this.activeTagFilters.delete(tag);
+      entriesWithTag.forEach(i => {
+        this.highlightEntryByIndex(i);
+      });
+    }
+  }
+
+  private clearActiveTagBasedHighlights() {
+    const activeTags = [...this.activeTagFilters];
+
+    // deactivate active tags
+    activeTags.forEach((tag) => {
+      this.apparatusTagEditor?.setTagActivationStatus(tag, false);
+    });
+
+    // remove tag based highlights in apparatus and main text
+    this.activeTagFilters.clear();
+    this.apparatus.entries.forEach((_entry, index) => {
+      this.highlightEntryByIndex(index);
+    });
+  }
+
+  private setupApparatusTagEditor() {
+
+    const containerSelector = `${this.containerSelector} div.apparatus-tags`;
+    const tags = this.getApparatusTags();
+
+    if (this.apparatusTagEditor === null) {
+
+      $('.apparatus-tags').hide();
+
+      this.apparatusTagEditor = new TagEditor({
+        containerSelector,
+        containerIdPrefix: `apparatus-tags-${this.options.apparatusIndex}`,
+        tags: tags,
+        mode: 'show',
+        onTagHover: this.onApparatusTagHover.bind(this),
+        onTagClick: this.onApparatusTagClick.bind(this),
+      });
+
+      return;
+    }
+
+    this.apparatusTagEditor.setTags(tags);
+  }
+
   private setupLineColumnNumbersToggle() {
     const lineColumnNumbersToggle = new NiceToggle({
       containerSelector: `${this.containerSelector} #line-column-numbers-toggle`,
@@ -1075,10 +1091,10 @@ export class ApparatusPanel extends PanelWithToolbar {
       this.updateApparatus(this.mainTextTypesettingInfo);
     });
 
-    tagsToggle.on(toggleEvent, (ev: any) => {
-      $('.apparatus-tags').toggle()
+    tagsToggle.on(toggleEvent, (_ev: any) => {
+      $('.apparatus-tags').toggle();
 
-      this.clearActiveTagBasedHighlights()
+      this.clearActiveTagBasedHighlights();
 
     });
   }
@@ -1338,12 +1354,27 @@ export class ApparatusPanel extends PanelWithToolbar {
       let infoDiv = $(`${this.getApparatusEntryFormSelector()} div.info-div`);
       infoDiv.html(`Updating edition...`);
 
+      let customLemma: string;
+      switch (this.editedEntry.lemmaType) {
+        case 'auto':
+          customLemma = '';
+          break;
+
+        case 'custom':
+          customLemma = this.editedEntry.customLemmaText ?? '';
+          break;
+
+        default:
+          customLemma = this.editedEntry.lemmaType;
+      }
+
+
       let customApparatusEntryForCtData: CustomApparatusEntryInterface = {
         subEntries: [],
         from: this.editedEntry.metadata['ctGroup'].from,
         to: this.editedEntry.metadata['ctGroup'].to,
         preLemma: this.editedEntry.preLemma,
-        lemma: this.editedEntry.lemma,
+        lemma: customLemma,
         postLemma: this.editedEntry.postLemma,
         separator: this.editedEntry.separator,
         tags: [...this.editedEntry.tags]
@@ -1418,7 +1449,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       theEntry = new ApparatusEntry();
       theEntry.from = from;
       theEntry.to = to;
-      theEntry.lemmaText = this.edition.getPlainTextForRange(from, to);
+      theEntry.mainTextWords = this.edition.getPlainTextForRange(from, to);
     }
     let ctIndexFrom = -1;
     let ctIndexTo = -1;
@@ -1467,12 +1498,13 @@ export class ApparatusPanel extends PanelWithToolbar {
       formTitleElement.html('Apparatus Entry (new)');
     }
     // Edition text
-    $(`${formSelector} div.entry-text`).html(this.entryInEditor.lemmaText);
+    $(`${formSelector} div.entry-text`).html(this.entryInEditor.mainTextWords.join(' '));
     // Collation table columns
     $(`${formSelector} .ct-table-cols`).html(this._getCtColumnsText(this.entryInEditor.metadata['ctGroup'].from, this.entryInEditor.metadata['ctGroup'].to));
     // Lemma and separator section
     this.loadLemmaGroupVariableInForm('preLemma', this.entryInEditor, this.preLemmaToggle, this.customPreLemmaTextInput);
-    this.loadLemmaGroupVariableInForm('lemma', this.entryInEditor, this.lemmaToggle, this.customLemmaTextInput);
+    this.loadLemmaGroupInform(this.entryInEditor);
+    // this.loadLemmaGroupVariableInForm('lemma', this.entryInEditor, this.lemmaToggle, this.customLemmaTextInput);
     this.loadLemmaGroupVariableInForm('postLemma', this.entryInEditor, this.postLemmaToggle, this.customPostLemmaTextInput);
     this.loadLemmaGroupVariableInForm('separator', this.entryInEditor, this.separatorToggle, this.customSeparatorTextInput);
 
@@ -1719,6 +1751,36 @@ export class ApparatusPanel extends PanelWithToolbar {
     return subEntriesHtml;
   }
 
+  private loadLemmaGroupInform(appEntry: ApparatusEntry) {
+    let toggleOption = 'auto';
+
+    switch (appEntry.lemmaType) {
+      case 'auto':
+        toggleOption = 'auto';
+        break;
+
+      case 'dash':
+        toggleOption = 'dash';
+        break;
+
+      case 'ellipsis':
+        toggleOption = 'ellipsis';
+        break;
+
+      case 'custom':
+        toggleOption = 'custom';
+        break;
+    }
+
+    this.lemmaToggle.setOptionByName(toggleOption);
+
+    if (toggleOption === 'custom') {
+      this.customLemmaTextInput.removeClass('hidden').val(appEntry.customLemmaText ?? '');
+    } else {
+      this.customLemmaTextInput.addClass('hidden').val('');
+    }
+  }
+
   private loadLemmaGroupVariableInForm(variable: string, appEntry: ApparatusEntry, toggle: MultiToggle, textInput: JQuery<HTMLElement>) {
     const entry = appEntry as { [key: string]: any };
     let option = this.getLemmaGroupVariableToggleOption(entry[variable], toggle);
@@ -1742,6 +1804,26 @@ export class ApparatusPanel extends PanelWithToolbar {
       default:
         return toggle.getOption();
     }
+  }
+
+  private genOnToggleLemmaToggle() {
+    return () => {
+      if (this.editedEntry === null) {
+        console.warn(`this.editedEntry is null`);
+        return;
+      }
+      const lemmaToggleOption = this.lemmaToggle.getOption();
+      if (lemmaToggleOption === 'custom') {
+        this.customLemmaTextInput.removeClass('hidden');
+        this.editedEntry.lemmaType = 'custom';
+        this.editedEntry.customLemmaText = removeExtraWhiteSpace(getStringVal(this.customLemmaTextInput));
+      } else {
+        this.customLemmaTextInput.addClass('hidden').val('');
+        this.editedEntry.lemmaType = lemmaToggleOption as LemmaType;
+        console.log(`Changed lemmaType`, this.editedEntry.lemmaType);
+      }
+      this._updateUpdateApparatusButton();
+    };
   }
 
   private genOnToggleLemmaGroupToggle(variable: string, toggle: MultiToggle, textInput: JQuery<HTMLElement>) {
@@ -1854,22 +1936,4 @@ export class ApparatusPanel extends PanelWithToolbar {
       this._getAddEntryDropdownButton().dropdown('hide');
     };
   }
-
-  // _getLineNumberString(apparatusEntry, mainTextTypesettingInfo, lang) {
-  //   if (mainTextTypesettingInfo.tokens[apparatusEntry.from] === undefined) {
-  //     // before the main text
-  //     return ApparatusCommon.getNumberString(1, this.lang)
-  //   }
-  //
-  //   let startLine = mainTextTypesettingInfo.tokens[apparatusEntry.from].lineNumber
-  //   let endLine = mainTextTypesettingInfo.tokens[apparatusEntry.to] === undefined ? '???' :
-  //     mainTextTypesettingInfo.tokens[apparatusEntry.to].lineNumber
-  //
-  //   if (startLine === endLine) {
-  //     return ApparatusCommon.getNumberString(startLine, lang)
-  //   }
-  //   return `${ApparatusCommon.getNumberString(startLine, lang)}-${ApparatusCommon.getNumberString(endLine, lang)}`
-  // }
-
-
 }

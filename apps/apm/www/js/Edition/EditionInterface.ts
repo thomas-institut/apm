@@ -42,6 +42,12 @@ export interface MainTextTokenInterface {
   style: string;
   lang?: string;
   chunkId?: string;
+  /**
+   * An optional id that identifies the token source.
+   *
+   * Normally used in multi-chunk editions to identify the table that contains the token.
+   */
+  sourceId?: number;
 }
 
 export type MainTextTokenType =
@@ -74,20 +80,27 @@ export interface EditionInfoInterface extends MetadataInterface {
   editionId: number,
 }
 
+export type LemmaType = 'auto' | 'dash' | 'ellipsis' | 'custom';
+
 export interface ApparatusEntryInterface {
   section?: number[];
   from: number;
   to: number;
   preLemma: CompactFmtText;
-  lemma: CompactFmtText;
+  lemmaType: LemmaType;
+  customLemmaText: string;
+  /**
+   * The words in the main text that will be used to construct non-custom lemmata.
+   *
+   * These words are not needed until the entry needs to be rendered. So, at a later stage an edition processor
+   * could replace them, for example, to support standardization of the main text.
+   */
+  mainTextWords: string[];
   postLemma: CompactFmtText;
-  lemmaText: string;
   separator: CompactFmtText;
   tags: string[];
   subEntries: ApparatusSubEntryInterface[];
   metadata: MetadataInterface;
-  mainTextFrom?: number;
-  mainTextTo?: number;
 }
 
 export interface ApparatusSubEntryInterface {

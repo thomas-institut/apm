@@ -20,7 +20,8 @@ describe('MceData', () => {
       expect(empty.lang).toBe('');
       expect(empty.stylesheetId).toBe('');
       expect(empty.archived).toBe(false);
-      expect(empty.schemaVersion).toBe('2');
+      expect(empty.schemaVersion).toBe('3');
+      expect(empty.standardizedStrings).toEqual([]);
       expect(empty.includeInAutoMarginalFoliation).toEqual([]);
     });
   });
@@ -46,47 +47,110 @@ describe('MceData', () => {
     });
   });
 
-  describe('fix', () => {
-    it('initializes chunkOrder and includeInAutoMarginalFoliation if they are missing', () => {
-      const incomplete = {
-        chunks: [
-          { chunkId: 'c1', title: 'C1' },
-          { chunkId: 'c2', title: 'C2' }
-        ]
-      } as unknown as MceDataInterface_v1;
-
-      const fixed = MceData.update(incomplete);
-      expect(fixed.chunkOrder).toEqual([0, 1]);
-      expect(fixed.includeInAutoMarginalFoliation).toEqual([]);
-    });
-
-    it('does not overwrite existing chunkOrder or includeInAutoMarginalFoliation', () => {
-      const existing: MceDataInterface_v1 = {
-        ...MceData.createEmpty(),
+  describe('update', () => {
+    it('updates v1 to v3 and initializes missing chunkOrder to default sequence', () => {
+      const mceDataV1: MceDataInterface_v1 = {
         schemaVersion: '1.0',
+        title: 'Test Edition',
+        lang: 'la',
+        archived: false,
+        siglaGroups: [],
+        stylesheetId: '',
         chunks: [
-          { chunkId: 'c1', title: 'C1' } as any,
-          { chunkId: 'c2', title: 'C2' } as any
+          {
+            chunkId: 'W1-1',
+            break: '',
+            chunkEditionTableId: 10,
+            lineNumbersRestart: false,
+            title: 'Chunk 1',
+            version: '1.0',
+            witnessIndices: []
+          }
         ],
-        chunkOrder: [1, 0],
-        includeInAutoMarginalFoliation: [5]
+        initialSpace: '',
+        preamble: [],
+        witnesses: [],
+        sigla: []
       };
 
-      const fixed = MceData.update(existing);
-      expect(fixed.chunkOrder).toEqual([1, 0]);
-      expect(fixed.includeInAutoMarginalFoliation).toEqual([5]);
+      const updated = MceData.update(mceDataV1);
+
+      expect(updated.schemaVersion).toBe('3');
+      expect(updated.chunkOrder).toEqual([0]);
+      expect(updated.includeInAutoMarginalFoliation).toEqual([]);
+      expect(updated.standardizedStrings).toEqual([]);
+    });
+
+    it('updates v1 to v3 and keeps defined arrays intact', () => {
+      const mceDataV1: MceDataInterface_v1 = {
+        schemaVersion: '1.0',
+        title: 'Test Edition',
+        lang: 'la',
+        archived: false,
+        siglaGroups: [],
+        stylesheetId: '',
+        chunks: [
+          {
+            chunkId: 'W1-1',
+            break: '',
+            chunkEditionTableId: 10,
+            lineNumbersRestart: false,
+            title: 'Chunk 1',
+            version: '1.0',
+            witnessIndices: []
+          }
+        ],
+        initialSpace: '',
+        preamble: [],
+        witnesses: [],
+        sigla: [],
+        chunkOrder: [5, 1, 3],
+        includeInAutoMarginalFoliation: [3, 4]
+      };
+
+      const updated = MceData.update(mceDataV1);
+
+      expect(updated.schemaVersion).toBe('3');
+      expect(updated.chunkOrder).toEqual([5, 1, 3]);
+      expect(updated.includeInAutoMarginalFoliation).toEqual([3, 4]);
+      expect(updated.standardizedStrings).toEqual([]);
+    });
+
+    it('updates v2 to v3 and keeps arrays intact', () => {
+      const mceDataV2: MceDataInterface_v2 = {
+        schemaVersion: '2',
+        title: 'Test Edition',
+        lang: 'la',
+        archived: false,
+        siglaGroups: [],
+        stylesheetId: '',
+        chunks: [],
+        initialSpace: '',
+        preamble: [],
+        witnesses: [],
+        sigla: [],
+        chunkOrder: [2, 0, 1],
+        includeInAutoMarginalFoliation: [0, 2]
+      };
+
+      const updated = MceData.update(mceDataV2);
+
+      expect(updated.schemaVersion).toBe('3');
+      expect(updated.chunkOrder).toEqual([2, 0, 1]);
+      expect(updated.includeInAutoMarginalFoliation).toEqual([0, 2]);
+      expect(updated.standardizedStrings).toEqual([]);
+    });
+
+    it('throws ValidationError when schemaVersion is unknown', () => {
+      const invalidMceData = {
+        ...MceData.createEmpty(),
+        schemaVersion: '999'
+      } as any;
+
+      expect(() => MceData.update(invalidMceData)).toThrow(ValidationError);
     });
   });
 
-  describe('getDefaultChunkOrder', () => {
-    it('returns a sequence of indices based on the number of chunks', () => {
-      const mceData = {
-        chunks: [{}, {}, {}]
-      } as unknown as MceDataInterface_v2;
-
-      expect(MceData.getDefaultChunkOrder(mceData)).toEqual([0, 1, 2]);
-    });
-  });
 
   describe('moveChunk', () => {
     it('moves a chunk forwards', () => {

@@ -97,6 +97,8 @@ export class MainTextTokenFactory {
     if (token.lang !== undefined) {
       t.setLang(token.lang);
     }
+    t.sourceId = token.sourceId;
+    t.chunkId = token.chunkId;
     return t;
   }
 

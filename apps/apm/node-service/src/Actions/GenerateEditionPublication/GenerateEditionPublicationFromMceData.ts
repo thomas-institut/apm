@@ -1,5 +1,5 @@
 import { Action } from "#src/Actions/Action.js"
-import {MceDataInterface_v2} from "#www-js/MceData/MceDataInterface.js";
+import {MceDataInterface} from "#www-js/MceData/MceDataInterface.js";
 import {CtDataInterface} from "#www-js/CtData/CtDataInterface.js";
 import {LoggerInterface} from "#www-js/lib/Logger/LoggerInterface.js";
 import {EditionInterface} from "#www-js/Edition/EditionInterface.js";
@@ -12,7 +12,7 @@ import {getDurationInMs} from "#src/util/getDurationInMs.js";
 
 
 interface GenerateEditionInput {
-  mceData: MceDataInterface_v2;
+  mceData: MceDataInterface;
   editionId: number;
   publicationId: number;
   versionString: string;
@@ -112,12 +112,12 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
         }
         return {
           type: app.type as any, // Cast to any because of potential mismatch between string and literal types
-          entries: app.entries.map(entry => ({
+          entries: app.entries.map((entry) => ({
             from: entry.from,
             to: entry.to,
-            preLemma: entry.lemma,
+            preLemma: entry.preLemma,
+            lemmaText: entry.lemmaType === 'custom' ? entry.customLemmaText  : entry.mainTextWords.join(' '),
             postLemma: entry.postLemma,
-            lemmaText: entry.lemmaText,
             separator: entry.separator,
             subEntries: entry.subEntries.map(subEntry => ({
               type: subEntry.type as any,

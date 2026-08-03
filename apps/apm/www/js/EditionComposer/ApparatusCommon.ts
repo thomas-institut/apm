@@ -30,8 +30,7 @@ import {MainTextToken} from "@/Edition/MainTextToken";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {WitnessDataItemInterface} from "@/CtData/CtDataInterface";
 import {h, VNode} from 'snabbdom';
-import {getLemmaData} from "@/Edition/LemmaData";
-
+import {getGeneratedLemmaData} from "@/Edition/GeneratedLemmaData";
 
 
 export interface MainTextTypesettingInfo {
@@ -458,7 +457,7 @@ export class ApparatusCommon {
     }
   }
 
-  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItemInterface[], language: string, numberStyle: string|null = null) {
+  static __getSiglaHtmlFromFilledUpWitnessData(witnessData: WitnessDataItemInterface[], language: string, numberStyle: string | null = null) {
     const actualNumberStyle = numberStyle ?? language;
     return witnessData.map((w) => {
       if (w.hand === 0 && !w.forceHandDisplay) {
@@ -479,7 +478,7 @@ export class ApparatusCommon {
    * @param {string|null}numberStyle
    * @returns {(VNode|string)[]}
    */
-  static __getSiglaVNodeFromFilledUpWitnessData(witnessData: WitnessDataItemInterface[], language: string, numberStyle: string|null = null): (VNode | string)[] {
+  static __getSiglaVNodeFromFilledUpWitnessData(witnessData: WitnessDataItemInterface[], language: string, numberStyle: string | null = null): (VNode | string)[] {
     const actualNumberStyle = numberStyle ?? language;
     let nodes: (VNode | string)[] = [];
     witnessData.forEach((w) => {
@@ -556,7 +555,7 @@ export class ApparatusCommon {
       return matchedSiglaVNodes;
     }
     if (fullSiglaInBrackets) {
-      return [...matchedSiglaVNodes, ` ( = ${fullSiglaHtml})` ];
+      return [...matchedSiglaVNodes, ` ( = ${fullSiglaHtml})`];
     }
     return [h('a', {attrs: {title: `= ${fullSiglaHtml}`}}, matchedSiglaVNodes)];
   }
@@ -713,15 +712,15 @@ export class ApparatusCommon {
 
   static getLemmaHtml(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): string {
 
-    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
+    let lemmaData = getGeneratedLemmaData(apparatusEntry, lang);
+    let lemmaText = '';
 
-    let lemmaText = trimWhiteSpace(lemmaData.text);
-
-
-
-    if (lemmaText === '|') {
-      // marker
-      lemmaText = '&nbsp;|&nbsp;';
+    if (lemmaData.type === 'custom' || lemmaData.type === 'full') {
+      lemmaText = trimWhiteSpace(lemmaData.text);
+      if (lemmaText === '|') {
+        // marker
+        lemmaText = '&nbsp;|&nbsp;';
+      }
     }
 
     switch (lemmaData.type) {
@@ -764,7 +763,7 @@ export class ApparatusCommon {
         return `${lemmaData.from}${lemmaNumberStringFrom}${lemmaData.separator}${lemmaData.to}${lemmaNumberStringTo}`;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaData.type}'`);
+        console.warn(`Unknown lemma component type`);
         return 'ERROR';
     }
   }
@@ -779,13 +778,18 @@ export class ApparatusCommon {
    */
   static getLemmaVNode(apparatusEntry: ApparatusEntry, mainTextTypesettingInfo: MainTextTypesettingInfo, lang: string): (VNode | string)[] {
 
-    let lemmaData = getLemmaData(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
+    // let lemmaData = getGeneratedLemmaDataDeprecated(apparatusEntry.lemma, apparatusEntry.lemmaText, lang);
 
-    let lemmaText = trimWhiteSpace(lemmaData.text);
+    let lemmaData = getGeneratedLemmaData(apparatusEntry, lang);
+    let lemmaText = '';
 
-    if (lemmaText === '|') {
-      // marker
-      lemmaText = '\u00A0|\u00A0';
+    if (lemmaData.type === 'custom' || lemmaData.type === 'full') {
+      lemmaText = trimWhiteSpace(lemmaData.text);
+
+      if (lemmaText === '|') {
+        // marker
+        lemmaText = '\u00A0|\u00A0';
+      }
     }
 
     switch (lemmaData.type) {
@@ -828,7 +832,7 @@ export class ApparatusCommon {
         return resNodes;
 
       default:
-        console.warn(`Unknown lemma component type '${lemmaData.type}'`);
+        console.warn(`Unknown lemma component type`);
         return ['ERROR'];
     }
   }

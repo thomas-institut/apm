@@ -57,10 +57,9 @@ import {TimeString} from "@/toolbox/TimeString";
 import {CtData} from "@/CtData/CtData";
 import {ApiErrorResponse} from "@/Api/DataSchema/ApiResponse";
 import {ApiLoginRequest, ApiLoginResponse} from "@/Api/DataSchema/ApiLogin";
-import {ApiMceData, ApiMceDataRaw, ApiMceSaveRequest, ApiMceSaveResponse} from "@/Api/DataSchema/ApiMceData";
+import {ApiMceData, ApiMceDataAny, ApiMceSaveRequest, ApiMceSaveResponse} from "@/Api/DataSchema/ApiMceData";
 import {OperationalError} from "@/lib/Error/SystemError";
 import {MceData} from "@/MceData/MceData";
-import {MceDataInterface_v2} from "@/MceData/MceDataInterface";
 
 const TtlOneMinute = 60; // 1 minute
 const TtlOneHour = 3600; // 1 hour
@@ -253,12 +252,11 @@ export class ApmApiClient {
   }
 
   async apiMceGetData(editionId: number): Promise<ApiMceData> {
-    const serverResponse = await this.get(urlGen.apiGetMultiChunkEdition(editionId)) as ApiMceDataRaw;
-    if (serverResponse.mceData.schemaVersion === '1.0') {
-      console.log(`Updating MCE data for edition ${editionId} from schema version 1.0 to 2`);
+    const serverResponse = await this.get(urlGen.apiGetMultiChunkEdition(editionId)) as ApiMceDataAny;
+    if (serverResponse.mceData.schemaVersion !== '3') {
+      console.log(`Updating MCE data for edition ${editionId} from schema version '${serverResponse.mceData.schemaVersion}' to '3'`);
     }
-    const mceData_v2: MceDataInterface_v2 = serverResponse.mceData.schemaVersion === '1.0' ? MceData.update(serverResponse.mceData) : serverResponse.mceData ;
-    return {...serverResponse, mceData: mceData_v2};
+    return {...serverResponse, mceData: MceData.update(serverResponse.mceData)};
   }
 
   async apiMceSave(request: ApiMceSaveRequest): Promise<ApiMceSaveResponse | ApiErrorResponse> {

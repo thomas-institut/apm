@@ -17,7 +17,14 @@ vi.mock('react-bootstrap', () => ({
   Button: ({children, ...props}: any) => <button {...props}>{children}</button>,
   Form: {
     Select: ({children, ...props}: any) => <select {...props}>{children}</select>
-  }
+  },
+  OverlayTrigger: ({children, overlay}: any) => (
+    <div className="overlay-trigger-mock">
+      {children}
+      <div className="overlay-mock">{overlay}</div>
+    </div>
+  ),
+  Popover: ({children, ...props}: any) => <div {...props}>{children}</div>
 }));
 
 // @ts-expect-error test-only global binding
@@ -69,17 +76,21 @@ const makeFullContainedPageLabel = (firstChunkId: string, lastChunkId: string): 
 
 const renderMainTextPanel = async ({
                                      edition,
+                                     standardizedWords = [],
                                      generationProgress,
                                      editionOutOfDate,
                                      onClickRegenerate = vi.fn(),
+                                     setInstanceStatus = vi.fn(),
                                      paginationThreshold,
                                      minParsPerPage,
                                      maxParsPerPage
                                    }: {
   edition: Edition | null;
+  standardizedWords?: any[];
   generationProgress: number | null;
   editionOutOfDate: boolean;
   onClickRegenerate?: () => void | Promise<void>;
+  setInstanceStatus?: (str: string, index: number, status: any) => Promise<true | string>;
   paginationThreshold?: number;
   minParsPerPage?: number;
   maxParsPerPage?: number;
@@ -92,9 +103,11 @@ const renderMainTextPanel = async ({
     root.render(
       <MainTextPanel
         edition={edition}
+        standardizedWords={standardizedWords}
         generationProgress={generationProgress}
         editionOutOfDate={editionOutOfDate}
         onClickRegenerate={onClickRegenerate}
+        setInstanceStatus={setInstanceStatus}
         paginationThreshold={paginationThreshold}
         minParsPerPage={minParsPerPage}
         maxParsPerPage={maxParsPerPage}
@@ -414,5 +427,96 @@ describe('MainTextPanel', () => {
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Alpha');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Beta');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Gamma');
+  });
+
+  it('wraps standardized words in span with appropriate status class', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeTextToken('First'),
+      makeGlueToken(' '),
+      makeTextToken('Second'),
+      makeGlueToken(' '),
+      makeTextToken('Third'),
+      makeParagraphEndToken()
+    ]);
+
+    const standardizedWords = [
+      {
+        original: 'First',
+        standardized: '1st',
+        instances: [{mainTextIndex: 0, status: 'accepted'}]
+      },
+      {
+        original: 'Second',
+        standardized: '2nd',
+        instances: [{mainTextIndex: 2, status: 'rejected'}]
+      },
+      {
+        original: 'Third',
+        standardized: '3rd',
+        instances: [{mainTextIndex: 4, status: 'notReviewed'}]
+      }
+    ];
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: false
+    });
+
+    const acceptedSpan = container.querySelector('.standardized-word.accepted');
+    expect(acceptedSpan?.textContent).toBe('First');
+
+    const rejectedSpan = container.querySelector('.standardized-word.rejected');
+    expect(rejectedSpan?.textContent).toBe('Second');
+
+    const notReviewedSpan = container.querySelector('.standardized-word.not-reviewed');
+    expect(notReviewedSpan?.textContent).toBe('Third');
+  });
+
+  it('triggers setInstanceStatus when clicking buttons in the popover', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeTextToken('Word'),
+      makeParagraphEndToken()
+    ]);
+
+    const standardizedWords = [
+      {
+        original: 'Word',
+        standardized: 'Wrd',
+        instances: [{mainTextIndex: 0, status: 'notReviewed'}]
+      }
+    ];
+
+    const setInstanceStatus = vi.fn().mockResolvedValue(true);
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: false,
+      setInstanceStatus
+    });
+
+    const acceptButton = container.querySelector('button[title="Accept"]') as HTMLButtonElement;
+    expect(acceptButton).not.toBeNull();
+
+    await act(async () => {
+      acceptButton.click();
+    });
+
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'accepted');
+
+    const rejectButton = container.querySelector('button[title="Reject"]') as HTMLButtonElement;
+    await act(async () => {
+      rejectButton.click();
+    });
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'rejected');
+
+    const resetButton = container.querySelector('button[title="Reset"]') as HTMLButtonElement;
+    await act(async () => {
+      resetButton.click();
+    });
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'notReviewed');
   });
 });

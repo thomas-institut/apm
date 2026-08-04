@@ -8,7 +8,7 @@ import { SetSiglumAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetSiglumA
 import { SetIncludeInAutoMarginalFoliationAction } from '@/ReactAPM/Pages/MceComposer/Actions/SetIncludeInAutoMarginalFoliationAction';
 import { AddStandardizedStringAction } from '@/ReactAPM/Pages/MceComposer/Actions/AddStandardizedStringAction';
 import { DeleteStandardizedStringAction } from '@/ReactAPM/Pages/MceComposer/Actions/DeleteStandardizedStringAction';
-import { ResetStandardizedStringAction } from '@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAction';
+import { ResetStandardizedStringAllAction } from '@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAllAction';
 import { MceDataInterface } from '@/MceData/MceDataInterface';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {ValidationError} from '@/lib/Error/SystemError';
@@ -338,7 +338,7 @@ describe('MCE Actions', () => {
           ]
         };
         const state = makeState(mceData);
-        const action = new ResetStandardizedStringAction('foo');
+        const action = new ResetStandardizedStringAllAction('foo');
 
         const result = await action.execute(state);
         expect(result.mceData.standardizedStrings[0].instances.length).toBe(0);
@@ -347,7 +347,7 @@ describe('MCE Actions', () => {
 
       it('should throw if original is empty', async () => {
         const state = makeState(makeBaseMceData());
-        const action = new ResetStandardizedStringAction('');
+        const action = new ResetStandardizedStringAllAction('');
         await expect(action.execute(state)).rejects.toThrow(ValidationError);
         await expect(action.execute(state)).rejects.toThrow("Invalid string ''");
       });

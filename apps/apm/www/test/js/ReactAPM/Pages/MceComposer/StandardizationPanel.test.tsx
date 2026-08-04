@@ -6,7 +6,8 @@ import React from 'react';
 import {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {describe, expect, it, vi} from 'vitest';
-import StandardizationPanel, {StandardizedWord} from '@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel';
+import StandardizationPanel from '@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel';
+import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 
 vi.mock('react-bootstrap', () => ({
   Button: ({children, ...props}: any) => <button {...props}>{children}</button>,
@@ -72,6 +73,9 @@ const makeWord = (): StandardizedWord => ({
   original: 'foo',
   standardized: 'bar',
   numInstances: 11,
+  accepted: 3,
+  rejected: 4,
+  notReviewed: 4,
   instances: [
     {mainTextIndex: 1, status: 'accepted'},
     {mainTextIndex: 2, status: 'accepted'},
@@ -91,10 +95,10 @@ describe('StandardizationPanel', () => {
 
     expect(container.textContent).toContain('Original');
     expect(container.textContent).toContain('Standard');
-    expect(container.textContent).toContain('Num Instances');
+    expect(container.textContent).toContain('Total Found');
     expect(container.textContent).toContain('Accepted');
     expect(container.textContent).toContain('Rejected');
-    expect(container.textContent).toContain('Controls');
+    expect(container.textContent).toContain('To Review');
 
     const rowText = container.querySelector('tbody tr')?.textContent ?? '';
     expect(rowText).toContain('foo');

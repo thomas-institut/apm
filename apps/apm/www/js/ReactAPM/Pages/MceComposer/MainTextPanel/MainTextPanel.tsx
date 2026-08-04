@@ -1,15 +1,20 @@
 import {Edition} from "@/Edition/Edition";
 import './MainTextPanel.css';
-import {Button, Form} from "react-bootstrap";
+import {Button, Form, OverlayTrigger, Popover} from "react-bootstrap";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {Fragment, JSX, useEffect, useMemo, useState} from "react";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
+import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
+import {StandardizedStringInstanceStatus} from "@/MceData/MceDataInterface";
+import {ArrowCounterclockwise, Check, X} from "react-bootstrap-icons";
 
 interface MainTextPanelProps extends TabbableElementProps{
   edition: Edition | null;
+  standardizedWords: StandardizedWord[];
   generationProgress: number | null;
   editionOutOfDate: boolean;
   onClickRegenerate: () => void | Promise<void>;
+  setInstanceStatus: (str: string, index: number, status: StandardizedStringInstanceStatus) => Promise<true | string>;
   paginationThreshold?: number;
   minParsPerPage?: number;
   maxParsPerPage?: number;
@@ -19,6 +24,7 @@ interface Paragraph {
   style: string;
   tokens: MainTextToken[];
   chunks: ParagraphChunk[];
+  tokenIndices: number[];
 }
 
 interface ParagraphChunk {
@@ -43,15 +49,27 @@ const chunkEndMarker = '☐';
 
 export default function MainTextPanel({
                                         edition,
+                                        standardizedWords,
                                         generationProgress,
                                         editionOutOfDate,
                                         onClickRegenerate,
+                                        setInstanceStatus,
                                         paginationThreshold = defaultPaginationThreshold,
                                         minParsPerPage = defaultMinParsPerPage,
                                         maxParsPerPage = defaultMaxParsPerPage
                                       }: MainTextPanelProps) {
 
 
+
+  const standardizedIndices = useMemo(() => {
+    const map = new Map<number, 'rejected' | 'accepted' | 'notReviewed'>();
+    standardizedWords.forEach((word) => {
+      word.instances.forEach((instance) => {
+        map.set(instance.mainTextIndex, instance.status);
+      });
+    });
+    return map;
+  }, [standardizedWords]);
 
   const getPageChunks = (paragraphs: Paragraph[]): ParagraphChunk[] => {
     const pageChunks: ParagraphChunk[] = [];
@@ -146,7 +164,8 @@ export default function MainTextPanel({
     let currentParagraph: Paragraph = {
       style: '',
       tokens: [],
-      chunks: []
+      chunks: [],
+      tokenIndices: []
     };
 
     const registerChunkToken = (chunkId: string, tokenType: 'chunk_start' | 'chunk_end') => {
@@ -167,11 +186,12 @@ export default function MainTextPanel({
       }
     };
 
-    edition.mainText.forEach((token) => {
+    edition.mainText.forEach((token, index) => {
       switch (token.type) {
         case 'text':
         case 'glue':
           currentParagraph.tokens.push(token);
+          currentParagraph.tokenIndices.push(index);
           break;
 
         case 'paragraph_end':
@@ -180,7 +200,8 @@ export default function MainTextPanel({
           currentParagraph = {
             style: '',
             tokens: [],
-            chunks: []
+            chunks: [],
+            tokenIndices: []
           };
           break;
 
@@ -189,6 +210,7 @@ export default function MainTextPanel({
             registerChunkToken(token.chunkId, token.type);
           }
           currentParagraph.tokens.push(token);
+          currentParagraph.tokenIndices.push(index);
           break;
 
         case 'chunk_end':
@@ -196,6 +218,7 @@ export default function MainTextPanel({
             registerChunkToken(token.chunkId, token.type);
           }
           currentParagraph.tokens.push(token);
+          currentParagraph.tokenIndices.push(index);
           break;
       }
     });
@@ -208,8 +231,36 @@ export default function MainTextPanel({
   const getParagraphText = (p: Paragraph): JSX.Element[] => {
     const elementArray: JSX.Element[] = [];
     p.tokens.forEach((token, i) => {
+      const globalIndex = p.tokenIndices[i];
+      const status = standardizedIndices.get(globalIndex);
+
       if (token.type === 'text' || token.type === 'glue') {
-        elementArray.push(<Fragment key={`token-${i}`}>{token.getPlainText()}</Fragment>);
+        const text = token.getPlainText();
+        if (status !== undefined) {
+          const statusClass = status === 'notReviewed' ? 'not-reviewed' : status;
+          const popover = (
+            <Popover id={`popover-${globalIndex}`} className="standardized-word-popover">
+              <div className="d-flex gap-2 p-2">
+                <Button variant="outline-success" size="sm" onClick={() => setInstanceStatus(text, globalIndex, 'accepted')} title="Accept">
+                  <Check />
+                </Button>
+                <Button variant="outline-danger" size="sm" onClick={() => setInstanceStatus(text, globalIndex, 'rejected')} title="Reject">
+                  <X />
+                </Button>
+                <Button variant="outline-secondary" size="sm" onClick={() => setInstanceStatus(text, globalIndex, 'notReviewed')} title="Reset">
+                  <ArrowCounterclockwise />
+                </Button>
+              </div>
+            </Popover>
+          );
+          elementArray.push(
+            <OverlayTrigger key={`token-${i}`} trigger="click" rootClose placement="top" overlay={popover}>
+              <span className={`standardized-word ${statusClass}`}>{text}</span>
+            </OverlayTrigger>
+          );
+        } else {
+          elementArray.push(<Fragment key={`token-${i}`}>{text}</Fragment>);
+        }
         return;
       }
       if (token.type === 'chunk_start') {

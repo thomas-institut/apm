@@ -3,7 +3,7 @@ import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 
-export class ResetStandardizedStringAction implements StateTransformAction<MceComposerHistoryState> {
+export class ResetStandardizedStringAllAction implements StateTransformAction<MceComposerHistoryState> {
 
   constructor(
     private readonly original: string

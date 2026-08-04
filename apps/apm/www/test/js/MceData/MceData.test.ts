@@ -723,7 +723,7 @@ describe('MceData', () => {
         {original: 'autem', standardized: 'aut', instances: []}
       ];
 
-      const result = MceData.deleteStandardizeString(mceData, 'uel');
+      const result = MceData.deleteStandardizedString(mceData, 'uel');
 
       expect(result).toBe(mceData);
       expect(mceData.standardizedStrings).toEqual([
@@ -734,8 +734,8 @@ describe('MceData', () => {
     it('throws when deleting with invalid original string', () => {
       const mceData = MceData.createEmpty();
 
-      expect(() => MceData.deleteStandardizeString(mceData, '')).toThrow(ValidationError);
-      expect(() => MceData.deleteStandardizeString(mceData, undefined as unknown as string)).toThrow(ValidationError);
+      expect(() => MceData.deleteStandardizedString(mceData, '')).toThrow(ValidationError);
+      expect(() => MceData.deleteStandardizedString(mceData, undefined as unknown as string)).toThrow(ValidationError);
     });
 
     it('accepts and rejects standardized string instances', () => {

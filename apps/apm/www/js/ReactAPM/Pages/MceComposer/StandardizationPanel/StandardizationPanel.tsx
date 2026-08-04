@@ -1,27 +1,29 @@
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
-import './StandardizationPanel.css'
-import {StandardizedStringData} from "@/MceData/MceDataInterface";
+import './StandardizationPanel.css';
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import {ArrowCounterclockwise, PlusCircle, Trash} from "react-bootstrap-icons";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {Button} from "react-bootstrap";
 import {useMemo, useState} from "react";
+import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 
 
-export interface StandardizedWord extends StandardizedStringData {
-  numInstances: number,
-}
 
-interface StandardizationPanelProps extends TabbableElementProps{
+interface StandardizationPanelProps extends TabbableElementProps {
   standardizedWords: StandardizedWord[],
-  delete: (original: string) => Promise<true|string>,
-  add: (original: string, standardized: string) => Promise<true|string>,
-  reset: (original: string) => Promise<true|string>
+  delete: (original: string) => Promise<true | string>,
+  add: (original: string, standardized: string) => Promise<true | string>,
+  reset: (original: string) => Promise<true | string>
 }
 
 type RowPendingAction = 'delete' | 'reset';
 
-export default function StandardizationPanel({standardizedWords, delete: deleteWord, add: addWord, reset: resetWord}: StandardizationPanelProps) {
+export default function StandardizationPanel({
+                                               standardizedWords,
+                                               delete: deleteWord,
+                                               add: addWord,
+                                               reset: resetWord
+                                             }: StandardizationPanelProps) {
 
   const [pendingRowAction, setPendingRowAction] = useState<{ original: string, action: RowPendingAction } | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
@@ -128,6 +130,18 @@ export default function StandardizationPanel({standardizedWords, delete: deleteW
     setAddError(`Error: ${result}`);
   };
 
+  const rows = standardizedWords.map((w) => {
+    const accepted = w.instances.filter(instance => instance.status === 'accepted').length;
+    const rejected = w.instances.filter(instance => instance.status === 'rejected').length;
+    const standardizedWordInfo: StandardizedWord = {
+      ...w,
+      accepted,
+      rejected,
+      notReviewed: w.numInstances - accepted - rejected,
+    };
+    return standardizedWordInfo;
+  });
+
   const columnDefs: NiceTableColumnDef<StandardizedWord>[] = [
     {
       key: 'original',
@@ -141,7 +155,7 @@ export default function StandardizationPanel({standardizedWords, delete: deleteW
     },
     {
       key: 'numInstances',
-      title: 'Num Instances',
+      title: 'Total Found',
       tdClassName: 'num',
       thClassName: 'num',
       cellContent: (row) => <>{row.numInstances}</>,
@@ -151,18 +165,25 @@ export default function StandardizationPanel({standardizedWords, delete: deleteW
       title: 'Accepted',
       tdClassName: 'num',
       thClassName: 'num',
-      cellContent: (row) => <>{row.instances.filter(instance => instance.status === 'accepted').length}</>,
+      cellContent: (row) => <>{row.accepted}</>,
     },
     {
       key: 'rejected',
       title: 'Rejected',
       tdClassName: 'num',
       thClassName: 'num',
-      cellContent: (row) => <>{row.instances.filter(instance => instance.status === 'rejected').length}</>,
+      cellContent: (row) => <>{row.rejected}</>,
+    },
+    {
+      key: 'notReviewed',
+      title: 'To Review',
+      tdClassName: 'num',
+      thClassName: 'num',
+      cellContent: (row) => <>{row.notReviewed}</>,
     },
     {
       key: 'controls',
-      title: 'Controls',
+      title: '',
       cellContent: (row) => {
         const deletePending = pendingRowAction?.original === row.original && pendingRowAction.action === 'delete';
         const resetPending = pendingRowAction?.original === row.original && pendingRowAction.action === 'reset';
@@ -180,7 +201,8 @@ export default function StandardizationPanel({standardizedWords, delete: deleteW
                                      onClick={() => handleReset(row.original)}/>
             </ComponentWithPending>
           </div>
-          {rowErrors[row.original] !== undefined && <span className={'text-danger standardization-row-error'}>{rowErrors[row.original]}</span>}
+          {rowErrors[row.original] !== undefined &&
+            <span className={'text-danger standardization-row-error'}>{rowErrors[row.original]}</span>}
         </div>;
       }
     }
@@ -203,7 +225,7 @@ export default function StandardizationPanel({standardizedWords, delete: deleteW
     <h1>Standardized Words</h1>
     <p>Add words that you want to standardize. Use the Edition Text panel to accept or reject specific occurrences</p>
     <div className={'standardization-table-container'}>
-      <NiceTable rows={standardizedWords} columnDefs={columnDefs} stickyHeader={true} getRowKey={(row) => row.original}/>
+      <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true} getRowKey={(row) => row.original}/>
     </div>
     <div className={'standardization-add-section'}>
       <div className={'standardization-add-header'}>
@@ -234,12 +256,13 @@ export default function StandardizationPanel({standardizedWords, delete: deleteW
               setAddError(null);
             }}/>
           </label>
-          <Button variant={'primary'} size={'sm'} disabled={!isAddValid || isAnyPending} onClick={handleAdd}>Add</Button>
+          <Button variant={'primary'} size={'sm'} disabled={!isAddValid || isAnyPending}
+                  onClick={handleAdd}>Add</Button>
           {addError !== null && <span className={'text-danger standardization-add-error'}>{addError}</span>}
           {addError === null && addValidationMessage() !== null &&
             <span className={'text-danger standardization-add-error'}>{addValidationMessage()}</span>}
         </div>
       </ComponentWithPending>}
     </div>
-    </div>
+  </div>;
 }

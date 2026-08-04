@@ -70,9 +70,11 @@ export interface StandardizedStringData {
   instances: StandardizedStringInstance[];
 }
 
+export type StandardizedStringInstanceStatus = 'rejected' | 'accepted' | 'notReviewed';
+
 export interface StandardizedStringInstance {
   mainTextIndex: number;
-  status: 'rejected' | 'accepted';
+  status: StandardizedStringInstanceStatus;
 }
 
 export interface WitnessInMceData {

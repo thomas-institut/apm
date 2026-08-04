@@ -61,6 +61,45 @@
             line-height: 1.8rem;
         }
 
+        .standardized-word {
+            background-color: #f0f0f0;
+            border: 1px solid #a3a3a3;
+            border-radius: 4px;
+            padding: 0.2em;
+            cursor: pointer;
+        }
+
+        .accepted {
+            color: green;
+        }
+
+        .rejected {
+            color: red;
+        }
+
+        .not-reviewed {
+            color: gray;
+        }
+
+
+        .standardized-word-popover {
+            .popover-content {
+                padding: 0;
+            }
+
+            .d-flex {
+                display: flex;
+            }
+
+            .gap-2 {
+                gap: 0.5rem;
+            }
+
+            .p-2 {
+                padding: 0.5rem;
+            }
+        }
+
         .chunk-mark {
             display: contents;
 

@@ -1,5 +1,5 @@
 import {useParams, useNavigate} from "react-router";
-import {cloneElement, JSX, useContext, useEffect, useRef, useState} from "react";
+import {cloneElement, JSX, useContext, useEffect, useMemo, useRef, useState} from "react";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
@@ -17,7 +17,7 @@ import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
 import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
-import {MceDataInterface} from "@/MceData/MceDataInterface";
+import {MceDataInterface, StandardizedStringInstanceStatus} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import MceComposerSaveButton from "@/ReactAPM/Pages/MceComposer/MceComposerSaveButton";
 import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
@@ -55,12 +55,14 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
 import {AddStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/AddStandardizedStringAction";
 import {DeleteStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteStandardizedStringAction";
-import {ResetStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAction";
+import {SetStandardizedStringInstanceStatusAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetStandardizedStringInstanceStatusAction";
+import {ResetStandardizedStringAllAction} from "@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAllAction";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 import {OperationalError} from "@/lib/Error/SystemError";
 import {ApmApiClientError} from "@/Api/ApmApiClient";
-import StandardizationPanel, {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel";
+import StandardizationPanel from "@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel";
+import {StandardizedWords} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 
 // TODO: for later
 //  - Implement admin panel with versions
@@ -126,6 +128,7 @@ interface PendingEditionGenerationRequest {
   mceData: MceDataInterface;
   mceDataId: number;
 }
+
 
 const CHUNK_FETCH_BATCH_SIZE = 5;
 const MCE_DATA_NOT_LOADED_ERROR = 'Cannot modify MCE data until it is loaded';
@@ -1112,7 +1115,7 @@ export default function MceComposer() {
     }
     try {
       try {
-        await history.do(new ResetStandardizedStringAction(original));
+        await history.do(new ResetStandardizedStringAllAction(original));
       } catch (error) {
         if (reportActionError('ResetStandardizedStringAction', error)) {
           return 'Bug found';
@@ -1126,7 +1129,27 @@ export default function MceComposer() {
     }
   };
 
-  const standardizedWords: StandardizedWord[] = mceData.standardizedStrings.map((str) => ({...str, numInstances: str.instances.length}));
+  const setStandardizedStringInstanceStatus = async (str: string, index: number, status: StandardizedStringInstanceStatus): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new SetStandardizedStringInstanceStatusAction(str, index, status));
+      } catch (error) {
+        if (reportActionError('SetStandardizedStringInstanceStatusAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const standardizedWords = useMemo( () => edition !== null && mceData !== null ? StandardizedWords.build(mceData.standardizedStrings, edition) : [], [edition, mceData]);
 
   const handleOnClickSaveButton = async () => {
     // console.log(`Click on save`);
@@ -1238,9 +1261,10 @@ export default function MceComposer() {
       key: 'mainText',
       title: 'Edition Text',
       expandable: true,
-      content: <MainTextPanel edition={edition}
+      content: <MainTextPanel edition={edition} standardizedWords={standardizedWords}
                               generationProgress={editionGenerationProgress} editionOutOfDate={editionOutOfDate}
-                              onClickRegenerate={handleOnClickRegenerate}/>,
+                              onClickRegenerate={handleOnClickRegenerate}
+                              setInstanceStatus={setStandardizedStringInstanceStatus}/>,
       tabbable: true,
     },
     {

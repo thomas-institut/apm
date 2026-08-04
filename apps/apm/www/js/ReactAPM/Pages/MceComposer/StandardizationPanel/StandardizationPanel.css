@@ -2,6 +2,19 @@
     padding: 1em;
     height: 100%;
     overflow-y: auto;
+
+
+    .accepted {
+        color: var(--accepted-color);
+    }
+
+    .rejected {
+        color: var(--rejected-color);
+    }
+
+    .not-reviewed {
+        color: var(--not-reviewed-color);
+    }
 }
 
 .standardization-table-container {

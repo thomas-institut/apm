@@ -6,6 +6,7 @@
     overflow-y: hidden;
     overflow-x: auto;
 
+
     .main-text-pagination {
         display: flex;
         justify-content: space-between;
@@ -62,9 +63,9 @@
         }
 
         .standardized-word {
-            background-color: #f0f0f0;
-            border: 1px solid #a3a3a3;
-            border-radius: 4px;
+            background-color: #f8f8f8;
+            border: 1px dotted var(--not-reviewed-color);
+            border-radius: 0.2em;
             padding: 0.2em;
             cursor: pointer;
         }
@@ -74,15 +75,16 @@
         }
 
         .accepted {
-            color: green;
+            border-color: var(--accepted-color);
         }
 
         .rejected {
-            color: red;
+            border-color: var(--rejected-color);
         }
 
         .not-reviewed {
-            color: gray;
+            background-color: #d5d3d3;
+            border: 1px dotted var(--not-reviewed-color);
         }
 
 

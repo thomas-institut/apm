@@ -62,10 +62,10 @@ export default function MainTextPanel({
 
 
   const standardizedData = useMemo(() => {
-    const map = new Map<number, { status: 'rejected' | 'accepted' | 'notReviewed', original: string }>();
+    const map = new Map<number, { status: 'rejected' | 'accepted' | 'notReviewed', original: string, standard: string }>();
     standardizedWords.forEach((word) => {
       word.instances.forEach((instance) => {
-        map.set(instance.mainTextIndex, { status: instance.status, original: word.original });
+        map.set(instance.mainTextIndex, { status: instance.status, original: word.original, standard: word.standardized });
       });
     });
     return map;
@@ -242,7 +242,14 @@ export default function MainTextPanel({
           if (editionOutOfDate) {
             classes.push('disabled');
           }
-          const spanTitle = editionOutOfDate ? 'Edition out of date' : 'Click to accept/reject standardization';
+          let spanTitleStatus = 'Standardization not reviewed, click to accept or rejected'
+          if (data.status === 'accepted') {
+            spanTitleStatus = `Standardization accepted, original: '${data.original}'`
+          }
+          if (data.status === 'rejected') {
+            spanTitleStatus = `Standardization rejected, standard: '${data.standard}'`
+          }
+          const spanTitle = editionOutOfDate ? 'Edition out of date' : spanTitleStatus;
           const spanElement = <span className={classes.join(' ')} title={spanTitle}>{text}</span>;
           if (editionOutOfDate) {
             elementArray.push(<Fragment key={`token-${i}`}>{spanElement}</Fragment>);

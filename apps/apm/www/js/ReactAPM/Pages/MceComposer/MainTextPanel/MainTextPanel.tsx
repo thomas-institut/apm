@@ -244,10 +244,10 @@ export default function MainTextPanel({
           }
           let spanTitleStatus = 'Standardization not reviewed, click to accept or rejected'
           if (data.status === 'accepted') {
-            spanTitleStatus = `Standardization accepted, original: '${data.original}'`
+            spanTitleStatus = `Standardization accepted, original is '${data.original}'`
           }
           if (data.status === 'rejected') {
-            spanTitleStatus = `Standardization rejected, standard: '${data.standard}'`
+            spanTitleStatus = `Standardization rejected, standard is '${data.standard}'`
           }
           const spanTitle = editionOutOfDate ? 'Edition out of date' : spanTitleStatus;
           const spanElement = <span className={classes.join(' ')} title={spanTitle}>{text}</span>;
@@ -310,15 +310,8 @@ export default function MainTextPanel({
   const [currentPage, setCurrentPage] = useState(0);
 
   useEffect(() => {
-    setCurrentPage(0);
-  }, [edition]);
-
-  useEffect(() => {
-    if (pageCount === 0) {
-      return;
-    }
-    if (currentPage > pageCount - 1) {
-      setCurrentPage(pageCount - 1);
+    if (pageCount > 0 && currentPage >= pageCount) {
+      setCurrentPage(0);
     }
   }, [currentPage, pageCount]);
 

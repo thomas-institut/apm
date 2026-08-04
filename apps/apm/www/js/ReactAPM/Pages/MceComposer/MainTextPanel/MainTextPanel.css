@@ -63,7 +63,7 @@
         }
 
         .standardized-word {
-            background-color: #f8f8f8;
+            background-color: #ededed;
             border: 1px dotted var(--not-reviewed-color);
             border-radius: 0.2em;
             padding: 0.2em;

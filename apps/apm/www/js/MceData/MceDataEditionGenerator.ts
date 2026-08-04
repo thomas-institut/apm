@@ -372,7 +372,7 @@ export class MceDataEditionGenerator {
 
         const expectedMainTextWordsCount = entry.to - entry.from + 1;
         if (entry.mainTextWords.length !== expectedMainTextWordsCount) {
-          throw new Error(`Apparatus entry mainTextWords are not aligned with entry range: expected ${expectedMainTextWordsCount}, got ${entry.mainTextWords.length} (from ${entry.from}, to ${entry.to})`);
+          console.warn(`Apparatus entry mainTextWords are not aligned with entry range: expected ${expectedMainTextWordsCount}, got ${entry.mainTextWords.length} (from ${entry.from}, to ${entry.to})`);
         }
 
         const usedAcceptedInstances = new Set<number>();

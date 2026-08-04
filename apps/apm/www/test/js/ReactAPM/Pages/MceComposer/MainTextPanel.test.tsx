@@ -505,20 +505,20 @@ describe('MainTextPanel', () => {
       acceptButton.click();
     });
 
-    expect(setInstanceStatus).toHaveBeenCalledWith('Wrd', 0, 'accepted');
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'accepted');
 
     const rejectButton = container.querySelector('button[title="Reject"]') as HTMLButtonElement;
     await act(async () => {
       rejectButton.click();
     });
-    expect(setInstanceStatus).toHaveBeenCalledWith('Wrd', 0, 'rejected');
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'rejected');
 
     const resetButton = container.querySelector('button[title="Reset"]') as HTMLButtonElement;
     expect(resetButton).not.toBeNull();
     await act(async () => {
       resetButton.click();
     });
-    expect(setInstanceStatus).toHaveBeenCalledWith('Wrd', 0, 'notReviewed');
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'notReviewed');
   });
 
   it('does not display popover when edition is out of date', async () => {
@@ -549,5 +549,98 @@ describe('MainTextPanel', () => {
     expect(standardizedWord).not.toBeNull();
     expect(standardizedWord?.textContent).toBe('Word');
     expect(standardizedWord?.getAttribute('title')).toBe('Edition out of date');
+  });
+
+  describe('Pagination Persistence', () => {
+    const makeSimpleEdition = (count: number): Edition => {
+      const tokens: MainTextToken[] = [];
+      for (let i = 0; i < count; i++) {
+        tokens.push(makeTextToken(`Paragraph ${i + 1}`));
+        tokens.push(makeParagraphEndToken());
+      }
+      return new Edition().setLang('en').setMainText(tokens);
+    };
+
+    it('keeps current page when edition changes but page still exists', async () => {
+      document.body.innerHTML = '<div id="root"></div>';
+      const container = document.getElementById('root')!;
+      const root = createRoot(container);
+
+      const edition1 = makeSimpleEdition(30);
+      const props = {
+        edition: edition1,
+        standardizedWords: [],
+        generationProgress: null,
+        editionOutOfDate: false,
+        onClickRegenerate: vi.fn(),
+        setInstanceStatus: vi.fn(),
+        paginationThreshold: 10,
+        minParsPerPage: 5,
+        maxParsPerPage: 5
+      };
+
+      await act(async () => {
+        root.render(<MainTextPanel {...props} />);
+      });
+
+      // Go to page 2 (index 1)
+      const nextButton = container.querySelector('.main-text-pagination-next') as HTMLButtonElement;
+      await act(async () => {
+        nextButton.click();
+      });
+
+      expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 6');
+
+      // Re-render with a NEW edition object but SAME content
+      const edition2 = makeSimpleEdition(30);
+      await act(async () => {
+        root.render(<MainTextPanel {...props} edition={edition2} />);
+      });
+
+      // Should still show Paragraph 6
+      expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 6');
+    });
+
+    it('resets to page 0 if the current page no longer exists', async () => {
+      document.body.innerHTML = '<div id="root"></div>';
+      const container = document.getElementById('root')!;
+      const root = createRoot(container);
+
+      const edition1 = makeSimpleEdition(30);
+      const props = {
+        edition: edition1,
+        standardizedWords: [],
+        generationProgress: null,
+        editionOutOfDate: false,
+        onClickRegenerate: vi.fn(),
+        setInstanceStatus: vi.fn(),
+        paginationThreshold: 10,
+        minParsPerPage: 5,
+        maxParsPerPage: 5
+      };
+
+      await act(async () => {
+        root.render(<MainTextPanel {...props} />);
+      });
+
+      // Go to page 6 (index 5)
+      for (let i = 0; i < 5; i++) {
+        const nextButton = container.querySelector('.main-text-pagination-next') as HTMLButtonElement;
+        await act(async () => {
+          nextButton.click();
+        });
+      }
+
+      expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 26');
+
+      // Re-render with a much SHORTER edition (only 5 paragraphs -> 1 page)
+      const edition2 = makeSimpleEdition(5);
+      await act(async () => {
+        root.render(<MainTextPanel {...props} edition={edition2} />);
+      });
+
+      // Should reset to page 0
+      expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 1');
+    });
   });
 });

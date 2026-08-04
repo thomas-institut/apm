@@ -17,6 +17,7 @@ import {ApparatusSubEntry} from "../Edition/ApparatusSubEntry.js";
 import {WitnessDataItem} from "../Edition/WitnessDataItem.js";
 import {CtDataEditionGenerator} from "../Edition/EditionGenerator/CtDataEditionGenerator.js";
 import {uniq} from "../lib/ToolBox/ArrayUtil.js";
+import {getPlainText} from "@thomas-inst/fmt-text";
 
 export type CtDataGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<CtDataInterface>;
 export type SingleChunkEditionSaver = (mceData: MceDataInterface, chunkIndex: number, edition: EditionInterface) => Promise<void>;
@@ -314,7 +315,10 @@ export class MceDataEditionGenerator {
         return token;
       }
 
-      token.fmtText = token.fmtText.map((fmtToken) => {
+      const originalPlainText = getPlainText(token.fmtText);
+      let tokenChanged = false;
+
+      const newFmtText = token.fmtText.map((fmtToken) => {
         if (fmtToken.type !== 'text') {
           return fmtToken;
         }
@@ -335,8 +339,14 @@ export class MceDataEditionGenerator {
           return fmtToken;
         }
 
+        tokenChanged = true;
         return {...fmtToken, text: standardizedWord};
       });
+
+      if (tokenChanged) {
+        token.fmtText = newFmtText;
+        token.originalText = originalPlainText;
+      }
 
       return token;
     });

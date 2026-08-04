@@ -69,6 +69,10 @@
             cursor: pointer;
         }
 
+        .standardized-word.disabled {
+            cursor: default;
+        }
+
         .accepted {
             color: green;
         }

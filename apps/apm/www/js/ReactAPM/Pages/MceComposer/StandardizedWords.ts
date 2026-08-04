@@ -20,7 +20,7 @@ export class StandardizedWords {
         if (token.type !== 'text'){
           return -1;
         }
-        return token.getPlainText() === d.original ? index : -1;
+        return (token.getPlainText() === d.original || token.originalText === d.original) ? index : -1;
       }).filter( (index) => index !== -1);
 
       const instances =  matchingIndices.map( (index): StandardizedStringInstance => {

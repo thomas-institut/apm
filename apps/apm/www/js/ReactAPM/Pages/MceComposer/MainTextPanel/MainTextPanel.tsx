@@ -61,11 +61,11 @@ export default function MainTextPanel({
 
 
 
-  const standardizedIndices = useMemo(() => {
-    const map = new Map<number, 'rejected' | 'accepted' | 'notReviewed'>();
+  const standardizedData = useMemo(() => {
+    const map = new Map<number, { status: 'rejected' | 'accepted' | 'notReviewed', original: string }>();
     standardizedWords.forEach((word) => {
       word.instances.forEach((instance) => {
-        map.set(instance.mainTextIndex, instance.status);
+        map.set(instance.mainTextIndex, { status: instance.status, original: word.original });
       });
     });
     return map;
@@ -232,32 +232,42 @@ export default function MainTextPanel({
     const elementArray: JSX.Element[] = [];
     p.tokens.forEach((token, i) => {
       const globalIndex = p.tokenIndices[i];
-      const status = standardizedIndices.get(globalIndex);
+      const data = standardizedData.get(globalIndex);
 
       if (token.type === 'text' || token.type === 'glue') {
         const text = token.getPlainText();
-        if (status !== undefined) {
-          const statusClass = status === 'notReviewed' ? 'not-reviewed' : status;
-          const popover = (
-            <Popover id={`popover-${globalIndex}`} className="standardized-word-popover">
-              <div className="d-flex gap-2 p-2">
-                <Button variant="outline-success" size="sm" onClick={() => setInstanceStatus(text, globalIndex, 'accepted')} title="Accept">
-                  <Check />
-                </Button>
-                <Button variant="outline-danger" size="sm" onClick={() => setInstanceStatus(text, globalIndex, 'rejected')} title="Reject">
-                  <X />
-                </Button>
-                <Button variant="outline-secondary" size="sm" onClick={() => setInstanceStatus(text, globalIndex, 'notReviewed')} title="Reset">
-                  <ArrowCounterclockwise />
-                </Button>
-              </div>
-            </Popover>
-          );
-          elementArray.push(
-            <OverlayTrigger key={`token-${i}`} trigger="click" rootClose placement="top" overlay={popover}>
-              <span className={`standardized-word ${statusClass}`}>{text}</span>
-            </OverlayTrigger>
-          );
+        if (data !== undefined) {
+          const statusClass = data.status === 'notReviewed' ? 'not-reviewed' : data.status;
+          const classes = [ 'standardized-word', statusClass ];
+          if (editionOutOfDate) {
+            classes.push('disabled');
+          }
+          const spanTitle = editionOutOfDate ? 'Edition out of date' : 'Click to accept/reject standardization';
+          const spanElement = <span className={classes.join(' ')} title={spanTitle}>{text}</span>;
+          if (editionOutOfDate) {
+            elementArray.push(<Fragment key={`token-${i}`}>{spanElement}</Fragment>);
+          } else {
+            const popover = (
+              <Popover id={`popover-${globalIndex}`} className="standardized-word-popover">
+                <div className="d-flex gap-2 p-2">
+                  <Button variant="outline-success" size="sm" onClick={() => setInstanceStatus(data.original, globalIndex, 'accepted')} title="Accept">
+                    <Check />
+                  </Button>
+                  <Button variant="outline-danger" size="sm" onClick={() => setInstanceStatus(data.original, globalIndex, 'rejected')} title="Reject">
+                    <X />
+                  </Button>
+                  <Button variant="outline-secondary" size="sm" onClick={() => setInstanceStatus(data.original, globalIndex, 'notReviewed')} title="Reset">
+                    <ArrowCounterclockwise />
+                  </Button>
+                </div>
+              </Popover>
+            );
+            elementArray.push(
+              <OverlayTrigger key={`token-${i}`} trigger="click" rootClose placement="top" overlay={popover}>
+                {spanElement}
+              </OverlayTrigger>
+            );
+          }
         } else {
           elementArray.push(<Fragment key={`token-${i}`}>{text}</Fragment>);
         }

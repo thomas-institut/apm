@@ -505,18 +505,49 @@ describe('MainTextPanel', () => {
       acceptButton.click();
     });
 
-    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'accepted');
+    expect(setInstanceStatus).toHaveBeenCalledWith('Wrd', 0, 'accepted');
 
     const rejectButton = container.querySelector('button[title="Reject"]') as HTMLButtonElement;
     await act(async () => {
       rejectButton.click();
     });
-    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'rejected');
+    expect(setInstanceStatus).toHaveBeenCalledWith('Wrd', 0, 'rejected');
 
     const resetButton = container.querySelector('button[title="Reset"]') as HTMLButtonElement;
+    expect(resetButton).not.toBeNull();
     await act(async () => {
       resetButton.click();
     });
-    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'notReviewed');
+    expect(setInstanceStatus).toHaveBeenCalledWith('Wrd', 0, 'notReviewed');
+  });
+
+  it('does not display popover when edition is out of date', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeTextToken('Word'),
+      makeParagraphEndToken()
+    ]);
+
+    const standardizedWords = [
+      {
+        original: 'Word',
+        standardized: 'Wrd',
+        instances: [{mainTextIndex: 0, status: 'notReviewed'}]
+      }
+    ];
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: true
+    });
+
+    const overlayTrigger = container.querySelector('.overlay-trigger-mock');
+    expect(overlayTrigger).toBeNull();
+
+    const standardizedWord = container.querySelector('.standardized-word.disabled');
+    expect(standardizedWord).not.toBeNull();
+    expect(standardizedWord?.textContent).toBe('Word');
+    expect(standardizedWord?.getAttribute('title')).toBe('Edition out of date');
   });
 });

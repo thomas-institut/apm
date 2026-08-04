@@ -2,15 +2,19 @@
 
 import {
   ChunkInMceData,
-  MceDataInterface_v1,
   MceDataInterface,
+  MceDataInterface_v1,
+  MceDataInterface_v2,
+  MceDataInterface_v3,
+  MceDataInterfaceAny,
   ValidChunkBreaks,
-  WitnessInMceData, MceDataInterfaceAny, MceDataInterface_v2, MceDataInterface_v3
+  WitnessInMceData
 } from "./MceDataInterface.js";
 import * as ArrayUtil from "../lib/ToolBox/ArrayUtil.js";
 import {CtDataInterface, SiglaGroupInterface} from "../CtData/CtDataInterface.js";
 import {deepCopy} from "../toolbox/Util.js";
 import {ValidationError} from "../lib/Error/SystemError.js";
+import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
 
 
 export class MceData {
@@ -50,26 +54,6 @@ export class MceData {
       return this.updateV2toV3(this.updateV1toV2(mceDataAny));
     }
     throw new ValidationError(`Unknown schema version: ${(mceDataAny as any).schemaVersion}`);
-  }
-
-  private static updateV1toV2(mceDataV1: MceDataInterface_v1) : MceDataInterface_v2 {
-
-    const newMceData: MceDataInterface_v2 = {...mceDataV1, schemaVersion: '2', chunkOrder: [], includeInAutoMarginalFoliation: []};
-    if (mceDataV1.chunkOrder === undefined) {
-      newMceData.chunkOrder =mceDataV1.chunks.map((_c, i) => i);
-    } else {
-      newMceData.chunkOrder = mceDataV1.chunkOrder;
-    }
-    if (mceDataV1.includeInAutoMarginalFoliation === undefined) {
-      newMceData.includeInAutoMarginalFoliation = [];
-    } else {
-      newMceData.includeInAutoMarginalFoliation = mceDataV1.includeInAutoMarginalFoliation;
-    }
-    return newMceData;
-  }
-
-  private static updateV2toV3(mceDataV2: MceDataInterface_v2) : MceDataInterface_v3 {
-    return {...mceDataV2, schemaVersion: '3', standardizedStrings: []};
   }
 
   static getWorkIds(mceData: MceDataInterface): string[] {
@@ -115,7 +99,7 @@ export class MceData {
   }
 
   static resetStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number) {
-    return this.setStandardizedStringInstance(mceData, str, mainTextIndex, null);
+    return this.setStandardizedStringInstance(mceData, str, mainTextIndex, 'notReviewed');
   }
 
   static resetStandardizedStringInstanceAll(mceData: MceDataInterface, str: string) {
@@ -129,29 +113,6 @@ export class MceData {
     mceData.standardizedStrings[strIndex].instances = [];
     return mceData;
   }
-
-  private static setStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number, status: 'accepted' | 'rejected' | null) {
-    if (str === undefined || str === '') {
-      throw new ValidationError(`Invalid string '${str}'`);
-    }
-    const strIndex = mceData.standardizedStrings.findIndex(s => s.original === str);
-    if (strIndex < 0) {
-      throw new ValidationError(`String '${str}' not found`);
-    }
-    const instanceIndex = mceData.standardizedStrings[strIndex].instances.findIndex(i => i.mainTextIndex === mainTextIndex);
-    if (status === null) {
-      // remove the instance
-      mceData.standardizedStrings[strIndex].instances.splice(instanceIndex, 1);
-      return mceData;
-    }
-    if (instanceIndex < 0) {
-      mceData.standardizedStrings[strIndex].instances.push({mainTextIndex: mainTextIndex, status: status});
-    } else {
-      mceData.standardizedStrings[strIndex].instances[instanceIndex].status = status;
-    }
-    return mceData;
-  }
-
 
   static setTitle(mceData: MceDataInterface, newTitle: string) {
     newTitle = newTitle.trim();
@@ -269,7 +230,7 @@ export class MceData {
     }
 
     if (!ValidChunkBreaks.includes(newBreak)) {
-      throw new ValidationError(`Invalid chunk break '${newBreak}'`)
+      throw new ValidationError(`Invalid chunk break '${newBreak}'`);
     }
 
     mceData.chunks[chunkIndex].break = newBreak;
@@ -325,7 +286,7 @@ export class MceData {
    */
   static setAutoMarginalFoliation(mceData: MceDataInterface, witnessIndex: number, newState: boolean): MceDataInterface {
     if (witnessIndex < 0 || witnessIndex >= mceData.witnesses.length) {
-      throw new ValidationError(`Invalid witness index ${witnessIndex}`)
+      throw new ValidationError(`Invalid witness index ${witnessIndex}`);
     }
     if (mceData.includeInAutoMarginalFoliation === undefined) {
       mceData.includeInAutoMarginalFoliation = [];
@@ -350,7 +311,7 @@ export class MceData {
    * @param chunkPosition
    * @param direction
    */
-  static moveChunk(mceData: MceDataInterface, chunkPosition: number, direction: 'forwards' | 'backwards'): MceDataInterface  {
+  static moveChunk(mceData: MceDataInterface, chunkPosition: number, direction: 'forwards' | 'backwards'): MceDataInterface {
 
     if (chunkPosition === 0 && direction === 'backwards') {
       return mceData;
@@ -474,7 +435,7 @@ export class MceData {
     }
 
     if (chunkIndex >= mceData.chunks.length || chunkIndex < 0) {
-      throw new ValidationError(`Chunk delete on out of range index ${chunkIndex}`)
+      throw new ValidationError(`Chunk delete on out of range index ${chunkIndex}`);
     }
 
     if (mceData.chunks.length === 1) {
@@ -605,6 +566,55 @@ export class MceData {
           console.warn(`Unknown witness type '${ctDataWitnessInfo['witnessType']}' found in ctData, witness index ${ctDataWitnessIndex}`);
           console.log(ctData);
       }
+    }
+    return mceData;
+  }
+
+  private static updateV1toV2(mceDataV1: MceDataInterface_v1): MceDataInterface_v2 {
+
+    const newMceData: MceDataInterface_v2 = {
+      ...mceDataV1,
+      schemaVersion: '2',
+      chunkOrder: [],
+      includeInAutoMarginalFoliation: []
+    };
+    if (mceDataV1.chunkOrder === undefined) {
+      newMceData.chunkOrder = mceDataV1.chunks.map((_c, i) => i);
+    } else {
+      newMceData.chunkOrder = mceDataV1.chunkOrder;
+    }
+    if (mceDataV1.includeInAutoMarginalFoliation === undefined) {
+      newMceData.includeInAutoMarginalFoliation = [];
+    } else {
+      newMceData.includeInAutoMarginalFoliation = mceDataV1.includeInAutoMarginalFoliation;
+    }
+    return newMceData;
+  }
+
+  private static updateV2toV3(mceDataV2: MceDataInterface_v2): MceDataInterface_v3 {
+    return {...mceDataV2, schemaVersion: '3', standardizedStrings: []};
+  }
+
+  private static setStandardizedStringInstance(mceData: MceDataInterface, str: string, mainTextIndex: number, status: StandardizedStringInstanceStatus) {
+    if (str === undefined || str === '') {
+      throw new ValidationError(`Invalid string '${str}'`);
+    }
+    const strIndex = mceData.standardizedStrings.findIndex(s => s.original === str);
+    if (strIndex < 0) {
+      throw new ValidationError(`String '${str}' not found`);
+    }
+    const instanceIndex = mceData.standardizedStrings[strIndex].instances.findIndex(i => i.mainTextIndex === mainTextIndex);
+    if (status === 'notReviewed') {
+      if (instanceIndex >= 0) {
+        // remove the instance
+        mceData.standardizedStrings[strIndex].instances.splice(instanceIndex, 1);
+      }
+      return mceData;
+    }
+    if (instanceIndex < 0) {
+      mceData.standardizedStrings[strIndex].instances.push({mainTextIndex: mainTextIndex, status: status});
+    } else {
+      mceData.standardizedStrings[strIndex].instances[instanceIndex].status = status;
     }
     return mceData;
   }

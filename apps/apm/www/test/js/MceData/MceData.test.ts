@@ -766,6 +766,14 @@ describe('MceData', () => {
         ]
       }];
 
+      const result0 = MceData.resetStandardizedStringInstance(mceData, 'uel', 25);
+
+      expect(result0).toBe(mceData);
+      expect(mceData.standardizedStrings[0].instances).toEqual([
+        {mainTextIndex: 1, status: 'accepted'},
+        {mainTextIndex: 2, status: 'rejected'}
+      ]);
+
       const result = MceData.resetStandardizedStringInstance(mceData, 'uel', 1);
 
       expect(result).toBe(mceData);

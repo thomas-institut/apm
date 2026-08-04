@@ -17,7 +17,7 @@ import {MceData} from '@/MceData/MceData';
 import {AppContext} from "@/ReactAPM/App";
 import ChunksPanel from "@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel";
 import EditableTextField from "@/ReactAPM/Components/EditableTextField";
-import {MceDataInterface, StandardizedStringInstanceStatus} from "@/MceData/MceDataInterface";
+import {MceDataInterface} from "@/MceData/MceDataInterface";
 import {deepCopy} from "@/toolbox/Util";
 import MceComposerSaveButton from "@/ReactAPM/Pages/MceComposer/MceComposerSaveButton";
 import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
@@ -63,6 +63,7 @@ import {OperationalError} from "@/lib/Error/SystemError";
 import {ApmApiClientError} from "@/Api/ApmApiClient";
 import StandardizationPanel from "@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel";
 import {StandardizedWords} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
+import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
 
 // TODO: for later
 //  - Implement admin panel with versions

@@ -5,8 +5,8 @@ import {MainTextToken} from "@/Edition/MainTextToken";
 import {Fragment, JSX, useEffect, useMemo, useState} from "react";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
-import {StandardizedStringInstanceStatus} from "@/MceData/MceDataInterface";
 import {ArrowCounterclockwise, Check, X} from "react-bootstrap-icons";
+import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
 
 interface MainTextPanelProps extends TabbableElementProps{
   edition: Edition | null;

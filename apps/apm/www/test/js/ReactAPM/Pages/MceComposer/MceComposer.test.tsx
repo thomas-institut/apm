@@ -45,6 +45,11 @@ vi.mock('react-bootstrap', () => {
   // Simple mock for Spinner to avoid missing export errors in tests
   const Spinner = (props: any) => <span {...props} data-testid="spinner-mock"/>;
   const Button = ({children, ...props}: any) => <button {...props}>{children}</button>;
+  const Modal = ({children, show}: any) => show ? <div data-testid="modal-mock">{children}</div> : null;
+  const ModalHeader = ({children}: any) => <div>{children}</div>;
+  const ModalTitle = ({children}: any) => <div>{children}</div>;
+  const ModalBody = ({children}: any) => <div>{children}</div>;
+  const ModalFooter = ({children}: any) => <div>{children}</div>;
 
   return {
     Form: {
@@ -56,6 +61,12 @@ vi.mock('react-bootstrap', () => {
     Popover: Object.assign(PopoverComponent, {
       Header: PopoverHeader,
       Body: PopoverBody
+    }),
+    Modal: Object.assign(Modal, {
+      Header: ModalHeader,
+      Title: ModalTitle,
+      Body: ModalBody,
+      Footer: ModalFooter
     }),
     Spinner,
     Button,

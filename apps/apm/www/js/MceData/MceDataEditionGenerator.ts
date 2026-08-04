@@ -1,6 +1,6 @@
 // noinspection ES6PreferShortImport
 
-import {MceDataInterface, StandardizedStringData} from "./MceDataInterface.js";
+import {MceDataInterface} from "./MceDataInterface.js";
 import {CtDataInterface} from "../CtData/CtDataInterface.js";
 import {LoggerInterface} from "../lib/Logger/LoggerInterface.js";
 import {NullLogger} from "../lib/Logger/NullLogger.js";
@@ -18,6 +18,7 @@ import {WitnessDataItem} from "../Edition/WitnessDataItem.js";
 import {CtDataEditionGenerator} from "../Edition/EditionGenerator/CtDataEditionGenerator.js";
 import {uniq} from "../lib/ToolBox/ArrayUtil.js";
 import {getPlainText} from "@thomas-inst/fmt-text";
+import {getWordStandardizedByString, StandardizedString, wordMatchesStandardizedString} from "./StandardizedString.js";
 
 export type CtDataGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<CtDataInterface>;
 export type SingleChunkEditionSaver = (mceData: MceDataInterface, chunkIndex: number, edition: EditionInterface) => Promise<void>;
@@ -327,14 +328,14 @@ export class MceDataEditionGenerator {
           const hasAcceptedInstanceForIndex = ss.instances.some((instance) => {
             return instance.status === 'accepted' && instance.mainTextIndex === mainTextIndex;
           });
-          return hasAcceptedInstanceForIndex && this.wordMatchesStandardizedString(fmtToken.text, ss, mceData.lang);
+          return hasAcceptedInstanceForIndex && wordMatchesStandardizedString(fmtToken.text, ss, mceData.lang);
         });
 
         if (standardizedString === undefined) {
           return fmtToken;
         }
 
-        const standardizedWord = this.getWordStandardizedByString(fmtToken.text, standardizedString, mceData.lang);
+        const standardizedWord = getWordStandardizedByString(fmtToken.text, standardizedString, mceData.lang);
         if (standardizedWord === fmtToken.text) {
           return fmtToken;
         }
@@ -353,7 +354,7 @@ export class MceDataEditionGenerator {
 
     edition.apparatuses = edition.apparatuses.map((apparatus) => {
       apparatus.entries = apparatus.entries.map((entry) => {
-        const acceptedInstancesInRange: { mainTextIndex: number, standardizedString: StandardizedStringData }[] = [];
+        const acceptedInstancesInRange: { mainTextIndex: number, standardizedString: StandardizedString }[] = [];
 
         mceData.standardizedStrings.forEach((standardizedString) => {
           standardizedString.instances.forEach((instance) => {
@@ -382,7 +383,7 @@ export class MceDataEditionGenerator {
           let acceptedInstanceIndex = acceptedInstancesInRange.findIndex((instanceData, index) => {
             return !usedAcceptedInstances.has(index) &&
               instanceData.mainTextIndex === assumedMainTextIndex &&
-              this.wordMatchesStandardizedString(word, instanceData.standardizedString, mceData.lang);
+              wordMatchesStandardizedString(word, instanceData.standardizedString, mceData.lang);
           });
 
           if (acceptedInstanceIndex === -1) {
@@ -390,7 +391,7 @@ export class MceDataEditionGenerator {
           }
 
           usedAcceptedInstances.add(acceptedInstanceIndex);
-          return this.getWordStandardizedByString(word, acceptedInstancesInRange[acceptedInstanceIndex].standardizedString, mceData.lang);
+          return getWordStandardizedByString(word, acceptedInstancesInRange[acceptedInstanceIndex].standardizedString, mceData.lang);
         });
 
         return entry;
@@ -400,48 +401,6 @@ export class MceDataEditionGenerator {
     });
   }
 
-  private wordMatchesStandardizedString(word: string, standardizedString: StandardizedStringData, lang: string): boolean {
-    if (lang !== 'la') {
-      return word === standardizedString.original;
-    }
-
-    const originalLowerCase = standardizedString.original.toLowerCase();
-    return word === originalLowerCase ||
-      word === this.capitalizeFirstLetter(originalLowerCase) ||
-      word === originalLowerCase.toUpperCase();
-  }
-
-  private getWordStandardizedByString(word: string, standardizedString: StandardizedStringData, lang: string): string {
-    if (lang !== 'la') {
-      if (word === standardizedString.original) {
-        return standardizedString.standardized;
-      }
-      return word;
-    }
-
-    const originalLowerCase = standardizedString.original.toLowerCase();
-
-    if (word === originalLowerCase.toUpperCase()) {
-      return standardizedString.standardized.toUpperCase();
-    }
-
-    if (word === this.capitalizeFirstLetter(originalLowerCase)) {
-      return this.capitalizeFirstLetter(standardizedString.standardized);
-    }
-
-    if (word === originalLowerCase) {
-      return standardizedString.standardized;
-    }
-
-    return word;
-  }
-
-  private capitalizeFirstLetter(str: string): string {
-    if (str === '') {
-      return str;
-    }
-    return str[0].toUpperCase() + str.slice(1);
-  }
 
 
 }

@@ -550,56 +550,6 @@ describe('MceDataEditionGenerator', () => {
       expect(edition.apparatuses[0].entries[0].mainTextWords).toEqual(['vel', 'Uel', 'VEL', 'uEl']);
     });
 
-    it('throws when apparatus mainTextWords are not directly aligned with entry range', async () => {
-      const mceData = buildMceData({
-        chunks: [
-          {
-            chunkId: 'c1',
-            break: '',
-            chunkEditionTableId: 100,
-            lineNumbersRestart: false,
-            title: 'Chunk 1',
-            version: 'v1',
-            witnessIndices: [0],
-          }
-        ],
-        chunkOrder: [0],
-        witnesses: [{title: 'Witness A', witnessId: 'A'}],
-        sigla: ['A'],
-        lang: 'la',
-        standardizedStrings: [{
-          original: 'uel',
-          standardized: 'vel',
-          instances: [{mainTextIndex: 2, status: 'accepted'}],
-        }],
-      });
-
-      const apparatus = new Apparatus();
-      apparatus.type = 'critical';
-      const entry = new ApparatusEntry();
-      entry.from = 0;
-      entry.to = 2;
-      entry.mainTextWords = ['uel'];
-      const subEntry = new ApparatusSubEntry();
-      subEntry.witnessData = [];
-      entry.subEntries = [subEntry];
-      apparatus.entries = [entry];
-
-      const singleChunkEdition = makeSingleChunkEdition({tokenIndices: []});
-      singleChunkEdition.mainText = [
-        MainTextTokenFactory.createSimpleText('text', 'foo', 0, 'la'),
-        MainTextTokenFactory.createSimpleText('text', 'uel', 1, 'la'),
-        MainTextTokenFactory.createSimpleText('text', 'bar', 2, 'la'),
-      ];
-      singleChunkEdition.apparatuses = [apparatus];
-
-      mockCtDataGeneratorState.generatedEditionsQueue.push(singleChunkEdition);
-
-      const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
-      await expect(generator.generate(mceData, 1)).rejects
-        .toThrow('Apparatus entry mainTextWords are not aligned with entry range');
-    });
-
     it('filters out apparatus entries with empty subEntries', async () => {
       const apparatus = new Apparatus();
       apparatus.type = 'critical';

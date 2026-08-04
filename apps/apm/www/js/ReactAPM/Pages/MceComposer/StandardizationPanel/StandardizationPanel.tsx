@@ -6,6 +6,7 @@ import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {Button} from "react-bootstrap";
 import {useMemo, useState} from "react";
 import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
+import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 
 
 
@@ -26,6 +27,7 @@ export default function StandardizationPanel({
                                              }: StandardizationPanelProps) {
 
   const [pendingRowAction, setPendingRowAction] = useState<{ original: string, action: RowPendingAction } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<{ original: string, action: RowPendingAction } | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [showAddForm, setShowAddForm] = useState(false);
   const [addOriginal, setAddOriginal] = useState('');
@@ -56,6 +58,37 @@ export default function StandardizationPanel({
 
   const setRowError = (original: string, error: string) => {
     setRowErrors((current) => ({...current, [original]: error}));
+  };
+
+  const handleConfirmDelete = (original: string) => {
+    if (isAnyPending) {
+      return;
+    }
+    setConfirmAction({original, action: 'delete'});
+  };
+
+  const handleConfirmReset = (original: string) => {
+    if (isAnyPending) {
+      return;
+    }
+    setConfirmAction({original, action: 'reset'});
+  };
+
+  const handleAcceptConfirm = async () => {
+    if (confirmAction === null) {
+      return;
+    }
+    const {original, action} = confirmAction;
+    setConfirmAction(null);
+    if (action === 'delete') {
+      await handleDelete(original);
+    } else {
+      await handleReset(original);
+    }
+  };
+
+  const handleCancelConfirm = () => {
+    setConfirmAction(null);
   };
 
   const handleDelete = async (original: string) => {
@@ -187,18 +220,23 @@ export default function StandardizationPanel({
       cellContent: (row) => {
         const deletePending = pendingRowAction?.original === row.original && pendingRowAction.action === 'delete';
         const resetPending = pendingRowAction?.original === row.original && pendingRowAction.action === 'reset';
+        const isResetDisabled = isAnyPending || (row.accepted === 0 && row.rejected === 0);
 
         return <div className={'standardization-controls'}>
           <div className={'standardization-controls-buttons'}>
             <ComponentWithPending pending={deletePending} pendingTitle={`Deleting '${row.original}'`}>
               <Trash className={'icon-btn' + (isAnyPending ? ' disabled' : '')}
                      title={isAnyPending ? '' : `Click to delete standardized string '${row.original}'`}
-                     onClick={() => handleDelete(row.original)}/>
+                     onClick={() => handleConfirmDelete(row.original)}/>
             </ComponentWithPending>
             <ComponentWithPending pending={resetPending} pendingTitle={`Resetting '${row.original}'`}>
-              <ArrowCounterclockwise className={'icon-btn' + (isAnyPending ? ' disabled' : '')}
-                                     title={isAnyPending ? '' : `Click to reset accepted/rejected instances for '${row.original}'`}
-                                     onClick={() => handleReset(row.original)}/>
+              <ArrowCounterclockwise className={'icon-btn' + (isResetDisabled ? ' disabled' : '')}
+                                     title={isResetDisabled ? '' : `Click to reset accepted/rejected instances for '${row.original}'`}
+                                     onClick={() => {
+                                       if (!isResetDisabled) {
+                                         handleConfirmReset(row.original);
+                                       }
+                                     }}/>
             </ComponentWithPending>
           </div>
           {rowErrors[row.original] !== undefined &&
@@ -222,6 +260,20 @@ export default function StandardizationPanel({
   };
 
   return <div className="standardization-panel">
+    <ConfirmDialog
+      show={confirmAction !== null}
+      onHide={handleCancelConfirm}
+      onCancel={handleCancelConfirm}
+      onAccept={handleAcceptConfirm}
+      title={confirmAction?.action === 'delete' ? 'Delete standardization?' : 'Reset standardization?'}
+      body={confirmAction === null ? null : (confirmAction.action === 'delete' ?
+        <>Are you sure you want to delete the standardization entry for <b>{confirmAction.original}</b>?</> :
+        <>Are you sure you want to reset the standardization status for all instances of <b>{confirmAction.original}</b>?</>
+      )}
+      acceptButtonLabel={confirmAction?.action === 'delete' ? 'Delete' : 'Reset'}
+      cancelButtonLabel={'Cancel'}
+      size={'sm'}
+    />
     <h1>Standardized Words</h1>
     <p>Add words that you want to standardize. Use the Edition Text panel to accept or reject specific occurrences</p>
     <div className={'standardization-table-container'}>

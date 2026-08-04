@@ -9,10 +9,20 @@ import {describe, expect, it, vi} from 'vitest';
 import StandardizationPanel from '@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel';
 import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 
-vi.mock('react-bootstrap', () => ({
-  Button: ({children, ...props}: any) => <button {...props}>{children}</button>,
-  Spinner: () => <span>spinner</span>
-}));
+vi.mock('react-bootstrap', () => {
+  const Button = ({children, ...props}: any) => <button {...props}>{children}</button>;
+  const Modal: any = ({children, show}: any) => show ? <div className="modal-mock">{children}</div> : null;
+  Modal.Header = ({children}: any) => <div className="modal-header-mock">{children}</div>;
+  Modal.Title = ({children}: any) => <div className="modal-title-mock">{children}</div>;
+  Modal.Body = ({children}: any) => <div className="modal-body-mock">{children}</div>;
+  Modal.Footer = ({children}: any) => <div className="modal-footer-mock">{children}</div>;
+
+  return {
+    Button,
+    Spinner: () => <span>spinner</span>,
+    Modal: Modal
+  };
+});
 
 // @ts-expect-error test-only global binding
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
@@ -38,6 +48,11 @@ const clickDeleteIcon = async (container: HTMLElement) => {
 const clickResetIcon = async (container: HTMLElement) => {
   const icons = container.querySelectorAll('.standardization-controls-buttons .icon-btn');
   await clickElement(icons.item(1));
+};
+
+const clickConfirmAccept = async (container: HTMLElement) => {
+  const acceptBtn = container.querySelector('.modal-footer-mock .accept-btn');
+  await clickElement(acceptBtn);
 };
 
 const clickAddNewIcon = async (container: HTMLElement) => {
@@ -118,10 +133,12 @@ describe('StandardizationPanel', () => {
     });
 
     await clickDeleteIcon(container);
+    await clickConfirmAccept(container);
     expect(deleteWord).toHaveBeenCalledWith('foo');
     expect(container.textContent).toContain('Error: cannot delete');
 
     await clickResetIcon(container);
+    await clickConfirmAccept(container);
     expect(resetWord).toHaveBeenCalledWith('foo');
     expect(container.textContent).toContain('Error: cannot reset');
   });
@@ -138,6 +155,7 @@ describe('StandardizationPanel', () => {
     });
 
     await clickDeleteIcon(container);
+    await clickConfirmAccept(container);
     expect(container.textContent).toContain('spinner');
 
     await act(async () => {
@@ -202,5 +220,49 @@ describe('StandardizationPanel', () => {
     });
 
     expect(container.textContent).toContain('Error: cannot add');
+  });
+
+  it('disables reset button if all instances are notReviewed', async () => {
+    const wordWithOnlyNotReviewed: StandardizedWord = {
+      original: 'foo',
+      standardized: 'bar',
+      numInstances: 5,
+      accepted: 0,
+      rejected: 0,
+      notReviewed: 5,
+      instances: [
+        {mainTextIndex: 1, status: 'notReviewed'},
+        {mainTextIndex: 2, status: 'notReviewed'},
+      ]
+    };
+
+    const {container} = await renderStandardizationPanel({
+      standardizedWords: [wordWithOnlyNotReviewed]
+    });
+
+    const resetIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(1);
+    expect(resetIcon.className).toContain('disabled');
+  });
+
+  it('enables reset button if at least one instance is accepted or rejected', async () => {
+    const wordWithAccepted: StandardizedWord = {
+      original: 'foo',
+      standardized: 'bar',
+      numInstances: 5,
+      accepted: 1,
+      rejected: 0,
+      notReviewed: 4,
+      instances: [
+        {mainTextIndex: 1, status: 'accepted'},
+        {mainTextIndex: 2, status: 'notReviewed'},
+      ]
+    };
+
+    const {container} = await renderStandardizationPanel({
+      standardizedWords: [wordWithAccepted]
+    });
+
+    const resetIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(1);
+    expect(resetIcon.className).not.toContain('disabled');
   });
 });

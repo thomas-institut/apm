@@ -86,8 +86,9 @@ class ApmUserManager implements UserManagerInterface
         $data = [];
         foreach ($this->getUsersTable()->getAllRows() as $userRow) {
             $userId = $userRow['id'];
-            $this->cache[$userId] = $this->getUserDataFromTableRow($userRow);
-            $data[] = $this->cache[$userId];
+            $userData = $this->getUserDataFromTableRow($userRow);
+            $this->cache->set($this->getDataCacheKey($userId), serialize($userData));
+            $data[] = $userData;
         }
         return $data;
     }

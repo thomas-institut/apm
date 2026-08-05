@@ -36,6 +36,15 @@
             opacity: 0.5;
             cursor: default;
         }
+
+        .std-word-review-status {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 0.5em;
+            font-size: 0.9em;
+            color: #a8a8a8;
+        }
     }
 
     .panel-content {
@@ -74,7 +83,7 @@
             background-color: #ededed;
             border: 1px dotted var(--not-reviewed-color);
             border-radius: 0.2em;
-            padding: 0.2em;
+            padding: 0.1em;
             cursor: pointer;
         }
 
@@ -83,10 +92,12 @@
         }
 
         .accepted {
+            background-color: #cfe1cf;
             border-color: var(--accepted-color);
         }
 
         .rejected {
+            background-color: #f8d7d7;
             border-color: var(--rejected-color);
         }
 

@@ -188,6 +188,10 @@ describe('MainTextPanel', () => {
     expect(paragraphs[0].textContent).toContain('First paragraph');
     expect(paragraphs[1].className).toBe('');
     expect(paragraphs[1].textContent).toContain('Second paragraph');
+
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    expect(select.options).toHaveLength(1);
   });
 
   it('shows and hides standardized words from the toolbar toggle', async () => {
@@ -217,6 +221,55 @@ describe('MainTextPanel', () => {
     expect(toggle.classList).toContain('off');
     expect(container.querySelector('.standardized-word')).toBeNull();
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Word');
+  });
+
+  it('shows the standardized-word review status for the current page while words are shown', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeTextToken('Reviewed word'), makeParagraphEndToken(),
+      makeTextToken('Unreviewed word'), makeParagraphEndToken(),
+      makeTextToken('No standardized words'), makeParagraphEndToken()
+    ]);
+    const standardizedWords = [{
+      original: 'Reviewed word',
+      standardized: 'Reviewed standard',
+      instances: [{mainTextIndex: 0, status: 'accepted'}]
+    }, {
+      original: 'Unreviewed word',
+      standardized: 'Unreviewed standard',
+      instances: [{mainTextIndex: 2, status: 'notReviewed'}]
+    }];
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: false,
+      paginationThreshold: 1,
+      minParsPerPage: 1,
+      maxParsPerPage: 1
+    });
+
+    const toolbar = container.querySelector('.toolbar-group') as HTMLElement;
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
+    const toggle = toolbar.querySelector('.nice-toggle') as HTMLElement;
+    expect(toolbar.textContent).toContain('All reviewed');
+
+    await act(async () => {
+      select.value = '1';
+      select.dispatchEvent(new Event('change', {bubbles: true}));
+    });
+    expect(toolbar.textContent).toContain('1 to review');
+
+    await act(async () => {
+      select.value = '2';
+      select.dispatchEvent(new Event('change', {bubbles: true}));
+    });
+    expect(toolbar.textContent).toContain('None in this page');
+
+    await act(async () => {
+      toggle.click();
+    });
+    expect(toolbar.textContent).not.toContain('None in this page');
   });
 
   it('shows toolbar page controls when the text is paginated', async () => {
@@ -396,7 +449,7 @@ describe('MainTextPanel', () => {
     expect(container.querySelector('.main-text-content')?.textContent).not.toContain('Paragraph 41');
   });
 
-  it('disables pagination when pagination threshold is lower than 1', async () => {
+  it('keeps a single-page control when pagination threshold is lower than 1', async () => {
     const edition = makeEditionWithChunkParagraphs(60);
 
     const {container} = await renderMainTextPanel({
@@ -408,7 +461,10 @@ describe('MainTextPanel', () => {
       maxParsPerPage: 15
     });
 
-    expect(container.querySelector('.toolbar-group.center select')).toBeNull();
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    expect(select.options).toHaveLength(1);
+    expect(select.options[0].textContent).toBe(makeFullContainedPageLabel('AW47-1', 'AW47-60'));
     expect(container.querySelectorAll('.main-text-content p')).toHaveLength(60);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 1');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 60');

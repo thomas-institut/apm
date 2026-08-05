@@ -5,7 +5,13 @@ import {MainTextToken} from "@/Edition/MainTextToken";
 import {Fragment, JSX, useEffect, useMemo, useState} from "react";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
-import {ArrowCounterclockwise, Check, Check2Circle, X, XCircle} from "react-bootstrap-icons";
+import {
+  ArrowCounterclockwise,
+  Check, Check2,
+  Check2Circle, ExclamationTriangleFill,
+  X,
+  XCircle
+} from "react-bootstrap-icons";
 import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
@@ -13,7 +19,7 @@ import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import NiceToggle from "@/ReactAPM/Components/NiceToggle/NiceToggle";
 import ToolbarPageControls from "@/ReactAPM/Pages/MceComposer/ToolbarPageControls";
 
-interface MainTextPanelProps extends TabbableElementProps{
+interface MainTextPanelProps extends TabbableElementProps {
   edition: Edition | null;
   standardizedWords: StandardizedWord[];
   generationProgress: number | null;
@@ -41,6 +47,8 @@ interface ParagraphChunk {
 interface ParagraphPage {
   paragraphs: Paragraph[];
   label: string;
+  standardizedWordCount: number;
+  toReviewCount: number;
 }
 
 const defaultPaginationThreshold = 25;
@@ -65,12 +73,19 @@ export default function MainTextPanel({
                                       }: MainTextPanelProps) {
 
 
-
   const standardizedData = useMemo(() => {
-    const map = new Map<number, { status: 'rejected' | 'accepted' | 'notReviewed', original: string, standard: string }>();
+    const map = new Map<number, {
+      status: 'rejected' | 'accepted' | 'notReviewed',
+      original: string,
+      standard: string
+    }>();
     standardizedWords.forEach((word) => {
       word.instances.forEach((instance) => {
-        map.set(instance.mainTextIndex, { status: instance.status, original: word.original, standard: word.standardized });
+        map.set(instance.mainTextIndex, {
+          status: instance.status,
+          original: word.original,
+          standard: word.standardized
+        });
       });
     });
     return map;
@@ -128,6 +143,27 @@ export default function MainTextPanel({
     return `${firstChunkLabel} → ${lastChunkLabel}`;
   };
 
+  const getPageStandardizedWordCounts = (paragraphs: Paragraph[]): Pick<ParagraphPage, 'standardizedWordCount' | 'toReviewCount'> => {
+    let standardizedWordCount = 0;
+    let toReviewCount = 0;
+
+    paragraphs.forEach((paragraph) => {
+      paragraph.tokenIndices.forEach((tokenIndex) => {
+        const standardizedWord = standardizedData.get(tokenIndex);
+        if (standardizedWord === undefined) {
+          return;
+        }
+
+        standardizedWordCount += 1;
+        if (standardizedWord.status === 'notReviewed') {
+          toReviewCount += 1;
+        }
+      });
+    });
+
+    return {standardizedWordCount, toReviewCount};
+  };
+
   const getParagraphPages = (paragraphs: Paragraph[]): ParagraphPage[] => {
     if (paragraphs.length === 0) {
       return [];
@@ -135,7 +171,8 @@ export default function MainTextPanel({
     if (paginationThreshold < 1 || paragraphs.length <= paginationThreshold) {
       return [{
         paragraphs,
-        label: getPageLabel(paragraphs)
+        label: getPageLabel(paragraphs),
+        ...getPageStandardizedWordCounts(paragraphs)
       }];
     }
 
@@ -156,7 +193,8 @@ export default function MainTextPanel({
       const pageParagraphs = paragraphs.slice(start, end);
       pages.push({
         paragraphs: pageParagraphs,
-        label: getPageLabel(pageParagraphs)
+        label: getPageLabel(pageParagraphs),
+        ...getPageStandardizedWordCounts(pageParagraphs)
       });
       start = end;
     }
@@ -243,16 +281,16 @@ export default function MainTextPanel({
         const text = token.getPlainText();
         if (data !== undefined && showStandardizedWords) {
           const statusClass = data.status === 'notReviewed' ? 'not-reviewed' : data.status;
-          const classes = [ 'standardized-word', statusClass ];
+          const classes = ['standardized-word', statusClass];
           if (editionOutOfDate) {
             classes.push('disabled');
           }
-          let spanTitleStatus = 'Standardization not reviewed, click to accept or rejected'
+          let spanTitleStatus = 'Standardization not reviewed, click to accept or rejected';
           if (data.status === 'accepted') {
-            spanTitleStatus = `Standardization accepted, original is '${data.original}'`
+            spanTitleStatus = `Standardization accepted, original is '${data.original}'`;
           }
           if (data.status === 'rejected') {
-            spanTitleStatus = `Standardization rejected, standard is '${data.standard}'`
+            spanTitleStatus = `Standardization rejected, standard is '${data.standard}'`;
           }
           const spanTitle = editionOutOfDate ? 'Edition out of date' : spanTitleStatus;
           const spanElement = <span className={classes.join(' ')} title={spanTitle}>{text}</span>;
@@ -262,14 +300,17 @@ export default function MainTextPanel({
             const popover = (
               <Popover id={`popover-${globalIndex}`} className="standardized-word-popover">
                 <div className="d-flex gap-2 p-2">
-                  <Button variant="outline-success" size="sm" onClick={() => setInstanceStatus(data.original, globalIndex, 'accepted')} title="Accept">
-                    <Check />
+                  <Button variant="outline-success" size="sm"
+                          onClick={() => setInstanceStatus(data.original, globalIndex, 'accepted')} title="Accept">
+                    <Check/>
                   </Button>
-                  <Button variant="outline-danger" size="sm" onClick={() => setInstanceStatus(data.original, globalIndex, 'rejected')} title="Reject">
-                    <X />
+                  <Button variant="outline-danger" size="sm"
+                          onClick={() => setInstanceStatus(data.original, globalIndex, 'rejected')} title="Reject">
+                    <X/>
                   </Button>
-                  <Button variant="outline-secondary" size="sm" onClick={() => setInstanceStatus(data.original, globalIndex, 'notReviewed')} title="Reset">
-                    <ArrowCounterclockwise />
+                  <Button variant="outline-secondary" size="sm"
+                          onClick={() => setInstanceStatus(data.original, globalIndex, 'notReviewed')} title="Reset">
+                    <ArrowCounterclockwise/>
                   </Button>
                 </div>
               </Popover>
@@ -288,7 +329,8 @@ export default function MainTextPanel({
       if (token.type === 'chunk_start') {
         elementArray.push(
           <span className={'chunk-mark'} key={`chunk-mark-start-${i}-${token.chunkId ?? ''}`}>
-            <span className={'chunk-mark-icon chunk-start'} title={`Start of chunk ${token.chunkId ?? ''}`}>{chunkStartMarker}</span>
+            <span className={'chunk-mark-icon chunk-start'}
+                  title={`Start of chunk ${token.chunkId ?? ''}`}>{chunkStartMarker}</span>
             <span className={'chunk-mark-label'}>{token.chunkId}</span>
           </span>
         );
@@ -296,7 +338,8 @@ export default function MainTextPanel({
       if (token.type === 'chunk_end') {
         elementArray.push(
           <span className={'chunk-mark'} key={`chunk-mark-end-${i}-${token.chunkId ?? ''}`}>
-            <span className={'chunk-mark-icon chunk-end'} title={`End of chunk ${token.chunkId ?? ''}`}>{chunkEndMarker}</span>
+            <span className={'chunk-mark-icon chunk-end'}
+                  title={`End of chunk ${token.chunkId ?? ''}`}>{chunkEndMarker}</span>
           </span>
         );
       }
@@ -308,7 +351,7 @@ export default function MainTextPanel({
     return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
   };
   const paragraphs = useMemo(() => edition === null ? [] : getParagraphs(edition), [edition]);
-  const paragraphPages = useMemo(() => getParagraphPages(paragraphs), [paragraphs, paginationThreshold, minParsPerPage, maxParsPerPage]);
+  const paragraphPages = useMemo(() => getParagraphPages(paragraphs), [paragraphs, standardizedData, paginationThreshold, minParsPerPage, maxParsPerPage]);
   const isPaginated = paginationThreshold > 0 && paragraphs.length > paginationThreshold;
   const pageCount = paragraphPages.length;
 
@@ -333,33 +376,43 @@ export default function MainTextPanel({
   const currentParagraphs = isPaginated
     ? (paragraphPages[currentPage]?.paragraphs ?? [])
     : paragraphs;
+  const currentPageData = paragraphPages[currentPage] ?? {standardizedWordCount: 0, toReviewCount: 0};
+
+  const standardizedWordReviewStatus = currentPageData.standardizedWordCount === 0
+    ? 'None in this page'
+    : currentPageData.toReviewCount === 0
+      ? <><Check2/><span>All reviewed</span></>
+      : <><ExclamationTriangleFill className={'text-warning'}/><span className={'text-warning'}>{currentPageData.toReviewCount} to review</span></>;
 
   const mainTextClasses = ['main-text', 'text-' + edition?.lang];
 
   return (
     <Panel className={'main-text-panel'}>
       <Toolbar>
-        <div className={'toolbar-group'}>{standardizedWords.length > 0 && <span>
+        <div className={'toolbar-group'}>
+          {standardizedWords.length > 0 && <span>
           Std. words:  <NiceToggle isOn={showStandardizedWords}
-                                           on={'Shown'}
-                                           off={'Hidden'}
-                                           onTitle={'Click to hide standardized words'}
-                                           offTitle={'Click to show standardized words'}
-                                           onClick={setShowStandardizedWords}/>
+                                   on={'Shown'}
+                                   off={'Hidden'}
+                                   onTitle={'Click to hide standardized words'}
+                                   offTitle={'Click to show standardized words'}
+                                   onClick={setShowStandardizedWords}/>
         </span>}
-          { standardizedWords.length === 0 && <span>No standardized words defined</span>}
+          {standardizedWords.length > 0 && showStandardizedWords && <div className={'std-word-review-status'}>{standardizedWordReviewStatus}</div>}
+          {standardizedWords.length === 0 && <div className={'std-word-review-status'}>No standardized words defined</div>}
 
         </div>
         <div className={'toolbar-group center'}>
-          {isPaginated && <ToolbarPageControls page={currentPage}
-                                                totalPages={pageCount}
-                                                labels={paragraphPages.map((page) => page.label)}
-                                                onChange={goToPage}/>}
+          {pageCount > 0 && <ToolbarPageControls page={currentPage}
+                                                 totalPages={pageCount}
+                                                 labels={paragraphPages.map((page) => page.label)}
+                                                 onChange={goToPage}/>}
         </div>
         <div className={'toolbar-group right'}>
           {!editionOutOfDate && <span className={'text-success'}><Check2Circle/> <span>Up to date</span></span>}
           {editionOutOfDate && (generationProgress === null ?
-            <span className={'tb-btn text-danger'} onClick={onClickRegenerate} title={'Click to regenerate edition'}><XCircle/> Out of date</span> :
+            <span className={'tb-btn text-danger'} onClick={onClickRegenerate}
+                  title={'Click to regenerate edition'}><XCircle/> Out of date</span> :
             <span>Regenerating...</span>)}
         </div>
       </Toolbar>
@@ -367,7 +420,7 @@ export default function MainTextPanel({
         <div className={mainTextClasses.join(' ')}>
           <div className={'left-margin'}></div>
           <div className={'main-text-content'}>{currentParagraphs.map((p, i) => <ParagraphComponent p={p}
-                                                                                                 key={i}/>)}</div>
+                                                                                                    key={i}/>)}</div>
           <div className={'right-margin'}></div>
         </div>
       </PanelContent>

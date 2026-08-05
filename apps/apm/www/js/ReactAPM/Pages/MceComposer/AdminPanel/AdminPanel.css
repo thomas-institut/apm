@@ -1,0 +1,17 @@
+.admin-panel {
+    padding: 1em;
+    height: 100%;
+    overflow-y: auto;
+
+
+    .action-buttons-div {
+        display: flex;
+        margin: 1em;
+        flex-direction: row;
+        gap: 2em;
+    }
+
+    .versions-div {
+        margin: 2em 0;
+    }
+}

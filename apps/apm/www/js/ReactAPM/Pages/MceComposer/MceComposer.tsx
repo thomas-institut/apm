@@ -64,6 +64,7 @@ import {ApmApiClientError} from "@/Api/ApmApiClient";
 import StandardizationPanel from "@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel";
 import {StandardizedWords} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
+import AdminPanel from "@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel";
 
 // TODO: for later
 //  - Implement admin panel with versions
@@ -1287,13 +1288,6 @@ export default function MceComposer() {
                                getActiveEditions={getActiveEditions}/>,
       tabbable: true,
     },
-    // {
-    //   panel: 'two',
-    //   key: 'versions',
-    //   title: 'Versions',
-    //   expandable: true,
-    //   content: <>Versions will be here...</>
-    // },
     {
       panel: 'two',
       key: 'session',
@@ -1321,6 +1315,14 @@ export default function MceComposer() {
       />,
       tabbable: true,
     },
+    {
+      panel: 'two',
+      key: 'admin',
+      title: 'Admin',
+      expandable: false,
+      tabbable: true,
+      content: <AdminPanel/>
+    }
   ];
 
   if (routeErrorMsg !== null) {

@@ -7,11 +7,18 @@
 
     --empty-message-font-size: 1.1rem;
 
+    --rejected-color: red;
+    --accepted-color: green;
+    --not-reviewed-color: gray;
+
+
     display: grid;
     grid-template-rows: auto 1fr;
     height: 100dvh;
     overflow: hidden;
     box-sizing: border-box;
+
+
 
 
     .no-edition p {
@@ -183,6 +190,9 @@
 
     }
 
+
+
+
 }
 
 @keyframes mce-composer-bug-flash {
@@ -276,3 +286,4 @@
         }
     }
 }
+

@@ -1,15 +1,31 @@
 import {Edition} from "@/Edition/Edition";
 import './MainTextPanel.css';
-import {Button, Form} from "react-bootstrap";
+import {Button, OverlayTrigger, Popover} from "react-bootstrap";
 import {MainTextToken} from "@/Edition/MainTextToken";
-import {Fragment, JSX, useEffect, useMemo, useState} from "react";
-import {TriangleFill} from "react-bootstrap-icons";
+import React, {Fragment, JSX, useEffect, useMemo, useState} from "react";
+import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
+import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
+import {
+  ArrowCounterclockwise,
+  Check, Check2,
+  Check2Circle, ExclamationTriangleFill,
+  X,
+  XCircle
+} from "react-bootstrap-icons";
+import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
+import Panel from "@/ReactAPM/Components/PanelUI/Panel";
+import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
+import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
+import NiceToggle from "@/ReactAPM/Components/NiceToggle/NiceToggle";
+import ToolbarPageControls from "@/ReactAPM/Pages/MceComposer/ToolbarPageControls";
 
-interface MainTextPanelProps {
+interface MainTextPanelProps extends TabbableElementProps {
   edition: Edition | null;
+  standardizedWords: StandardizedWord[];
   generationProgress: number | null;
   editionOutOfDate: boolean;
   onClickRegenerate: () => void | Promise<void>;
+  setInstanceStatus: (str: string, index: number, status: StandardizedStringInstanceStatus) => Promise<true | string>;
   paginationThreshold?: number;
   minParsPerPage?: number;
   maxParsPerPage?: number;
@@ -19,6 +35,7 @@ interface Paragraph {
   style: string;
   tokens: MainTextToken[];
   chunks: ParagraphChunk[];
+  tokenIndices: number[];
 }
 
 interface ParagraphChunk {
@@ -30,6 +47,8 @@ interface ParagraphChunk {
 interface ParagraphPage {
   paragraphs: Paragraph[];
   label: string;
+  standardizedWordCount: number;
+  toReviewCount: number;
 }
 
 const defaultPaginationThreshold = 25;
@@ -43,15 +62,34 @@ const chunkEndMarker = '☐';
 
 export default function MainTextPanel({
                                         edition,
+                                        standardizedWords,
                                         generationProgress,
                                         editionOutOfDate,
                                         onClickRegenerate,
+                                        setInstanceStatus,
                                         paginationThreshold = defaultPaginationThreshold,
                                         minParsPerPage = defaultMinParsPerPage,
                                         maxParsPerPage = defaultMaxParsPerPage
                                       }: MainTextPanelProps) {
 
 
+  const standardizedData = useMemo(() => {
+    const map = new Map<number, {
+      status: 'rejected' | 'accepted' | 'notReviewed',
+      original: string,
+      standard: string
+    }>();
+    standardizedWords.forEach((word) => {
+      word.instances.forEach((instance) => {
+        map.set(instance.mainTextIndex, {
+          status: instance.status,
+          original: word.original,
+          standard: word.standardized
+        });
+      });
+    });
+    return map;
+  }, [standardizedWords]);
 
   const getPageChunks = (paragraphs: Paragraph[]): ParagraphChunk[] => {
     const pageChunks: ParagraphChunk[] = [];
@@ -105,6 +143,27 @@ export default function MainTextPanel({
     return `${firstChunkLabel} → ${lastChunkLabel}`;
   };
 
+  const getPageStandardizedWordCounts = (paragraphs: Paragraph[]): Pick<ParagraphPage, 'standardizedWordCount' | 'toReviewCount'> => {
+    let standardizedWordCount = 0;
+    let toReviewCount = 0;
+
+    paragraphs.forEach((paragraph) => {
+      paragraph.tokenIndices.forEach((tokenIndex) => {
+        const standardizedWord = standardizedData.get(tokenIndex);
+        if (standardizedWord === undefined) {
+          return;
+        }
+
+        standardizedWordCount += 1;
+        if (standardizedWord.status === 'notReviewed') {
+          toReviewCount += 1;
+        }
+      });
+    });
+
+    return {standardizedWordCount, toReviewCount};
+  };
+
   const getParagraphPages = (paragraphs: Paragraph[]): ParagraphPage[] => {
     if (paragraphs.length === 0) {
       return [];
@@ -112,7 +171,8 @@ export default function MainTextPanel({
     if (paginationThreshold < 1 || paragraphs.length <= paginationThreshold) {
       return [{
         paragraphs,
-        label: getPageLabel(paragraphs)
+        label: getPageLabel(paragraphs),
+        ...getPageStandardizedWordCounts(paragraphs)
       }];
     }
 
@@ -133,7 +193,8 @@ export default function MainTextPanel({
       const pageParagraphs = paragraphs.slice(start, end);
       pages.push({
         paragraphs: pageParagraphs,
-        label: getPageLabel(pageParagraphs)
+        label: getPageLabel(pageParagraphs),
+        ...getPageStandardizedWordCounts(pageParagraphs)
       });
       start = end;
     }
@@ -146,7 +207,8 @@ export default function MainTextPanel({
     let currentParagraph: Paragraph = {
       style: '',
       tokens: [],
-      chunks: []
+      chunks: [],
+      tokenIndices: []
     };
 
     const registerChunkToken = (chunkId: string, tokenType: 'chunk_start' | 'chunk_end') => {
@@ -167,11 +229,12 @@ export default function MainTextPanel({
       }
     };
 
-    edition.mainText.forEach((token) => {
+    edition.mainText.forEach((token, index) => {
       switch (token.type) {
         case 'text':
         case 'glue':
           currentParagraph.tokens.push(token);
+          currentParagraph.tokenIndices.push(index);
           break;
 
         case 'paragraph_end':
@@ -180,7 +243,8 @@ export default function MainTextPanel({
           currentParagraph = {
             style: '',
             tokens: [],
-            chunks: []
+            chunks: [],
+            tokenIndices: []
           };
           break;
 
@@ -189,6 +253,7 @@ export default function MainTextPanel({
             registerChunkToken(token.chunkId, token.type);
           }
           currentParagraph.tokens.push(token);
+          currentParagraph.tokenIndices.push(index);
           break;
 
         case 'chunk_end':
@@ -196,6 +261,7 @@ export default function MainTextPanel({
             registerChunkToken(token.chunkId, token.type);
           }
           currentParagraph.tokens.push(token);
+          currentParagraph.tokenIndices.push(index);
           break;
       }
     });
@@ -205,17 +271,95 @@ export default function MainTextPanel({
     return paragraphs;
   };
 
+  const getTextTokenElement = (token: MainTextToken) => {
+    return token.fmtText.map((t, index) => {
+      if (t.type === 'text') {
+        const classes: string[] = [];
+        const style: React.CSSProperties = {};
+        if (t.fontStyle === 'italic') {
+          classes.push('i');
+        }
+        if (t.fontWeight === 'bold') {
+          classes.push('b');
+        }
+        if (t.fontSize !== undefined) {
+          style.fontSize = `${t.fontSize}em`;
+        }
+        if (t.verticalAlign === 'superscript') {
+          classes.push('sup');
+        }
+        if (t.verticalAlign === 'subscript') {
+          classes.push('sub');
+        }
+        return <span key={index} className={classes.join(' ')} style={style}>{t.text}</span>;
+      }
+      if (t.type === 'glue') {
+        return <Fragment key={index}>{' '}</Fragment>;
+      }
+      return null;
+    });
+  }
+
   const getParagraphText = (p: Paragraph): JSX.Element[] => {
     const elementArray: JSX.Element[] = [];
     p.tokens.forEach((token, i) => {
+      const globalIndex = p.tokenIndices[i];
+      const data = standardizedData.get(globalIndex);
+
       if (token.type === 'text' || token.type === 'glue') {
-        elementArray.push(<Fragment key={`token-${i}`}>{token.getPlainText()}</Fragment>);
+        const text = getTextTokenElement(token);
+        if (data !== undefined && showStandardizedWords) {
+          const statusClass = data.status === 'notReviewed' ? 'not-reviewed' : data.status;
+          const classes = ['standardized-word', statusClass];
+          if (editionOutOfDate) {
+            classes.push('disabled');
+          }
+          let spanTitleStatus = 'Standardization not reviewed, click to accept or rejected';
+          if (data.status === 'accepted') {
+            spanTitleStatus = `Standardization accepted, original is '${data.original}'`;
+          }
+          if (data.status === 'rejected') {
+            spanTitleStatus = `Standardization rejected, standard is '${data.standard}'`;
+          }
+          const spanTitle = editionOutOfDate ? 'Edition out of date' : spanTitleStatus;
+          const spanElement = <span className={classes.join(' ')} title={spanTitle}>{text}</span>;
+          if (editionOutOfDate) {
+            elementArray.push(<Fragment key={`token-${i}`}>{spanElement}</Fragment>);
+          } else {
+            const popover = (
+              <Popover id={`popover-${globalIndex}`} className="standardized-word-popover">
+                <div className="d-flex gap-2 p-2">
+                  <Button variant="outline-success" size="sm"
+                          onClick={() => setInstanceStatus(data.original, globalIndex, 'accepted')} title="Accept">
+                    <Check/>
+                  </Button>
+                  <Button variant="outline-danger" size="sm"
+                          onClick={() => setInstanceStatus(data.original, globalIndex, 'rejected')} title="Reject">
+                    <X/>
+                  </Button>
+                  <Button variant="outline-secondary" size="sm"
+                          onClick={() => setInstanceStatus(data.original, globalIndex, 'notReviewed')} title="Reset">
+                    <ArrowCounterclockwise/>
+                  </Button>
+                </div>
+              </Popover>
+            );
+            elementArray.push(
+              <OverlayTrigger key={`token-${i}`} trigger="click" rootClose placement="top" overlay={popover}>
+                {spanElement}
+              </OverlayTrigger>
+            );
+          }
+        } else {
+          elementArray.push(<Fragment key={`token-${i}`}>{text}</Fragment>);
+        }
         return;
       }
       if (token.type === 'chunk_start') {
         elementArray.push(
           <span className={'chunk-mark'} key={`chunk-mark-start-${i}-${token.chunkId ?? ''}`}>
-            <span className={'chunk-mark-icon chunk-start'} title={`Start of chunk ${token.chunkId ?? ''}`}>{chunkStartMarker}</span>
+            <span className={'chunk-mark-icon chunk-start'}
+                  title={`Start of chunk ${token.chunkId ?? ''}`}>{chunkStartMarker}</span>
             <span className={'chunk-mark-label'}>{token.chunkId}</span>
           </span>
         );
@@ -223,7 +367,8 @@ export default function MainTextPanel({
       if (token.type === 'chunk_end') {
         elementArray.push(
           <span className={'chunk-mark'} key={`chunk-mark-end-${i}-${token.chunkId ?? ''}`}>
-            <span className={'chunk-mark-icon chunk-end'} title={`End of chunk ${token.chunkId ?? ''}`}>{chunkEndMarker}</span>
+            <span className={'chunk-mark-icon chunk-end'}
+                  title={`End of chunk ${token.chunkId ?? ''}`}>{chunkEndMarker}</span>
           </span>
         );
       }
@@ -235,22 +380,16 @@ export default function MainTextPanel({
     return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
   };
   const paragraphs = useMemo(() => edition === null ? [] : getParagraphs(edition), [edition]);
-  const paragraphPages = useMemo(() => getParagraphPages(paragraphs), [paragraphs, paginationThreshold, minParsPerPage, maxParsPerPage]);
+  const paragraphPages = useMemo(() => getParagraphPages(paragraphs), [paragraphs, standardizedData, paginationThreshold, minParsPerPage, maxParsPerPage]);
   const isPaginated = paginationThreshold > 0 && paragraphs.length > paginationThreshold;
   const pageCount = paragraphPages.length;
 
   const [currentPage, setCurrentPage] = useState(0);
+  const [showStandardizedWords, setShowStandardizedWords] = useState(true);
 
   useEffect(() => {
-    setCurrentPage(0);
-  }, [edition]);
-
-  useEffect(() => {
-    if (pageCount === 0) {
-      return;
-    }
-    if (currentPage > pageCount - 1) {
-      setCurrentPage(pageCount - 1);
+    if (pageCount > 0 && currentPage >= pageCount) {
+      setCurrentPage(0);
     }
   }, [currentPage, pageCount]);
 
@@ -266,59 +405,54 @@ export default function MainTextPanel({
   const currentParagraphs = isPaginated
     ? (paragraphPages[currentPage]?.paragraphs ?? [])
     : paragraphs;
+  const currentPageData = paragraphPages[currentPage] ?? {standardizedWordCount: 0, toReviewCount: 0};
+
+  const standardizedWordReviewStatus = currentPageData.standardizedWordCount === 0
+    ? 'None in this page'
+    : currentPageData.toReviewCount === 0
+      ? <><Check2/><span>All reviewed</span></>
+      : <><ExclamationTriangleFill className={'text-warning'}/><span className={'text-warning'}>{currentPageData.toReviewCount} to review</span></>;
 
   const mainTextClasses = ['main-text', 'text-' + edition?.lang];
 
   return (
-    <div className={'main-text-panel'}>
-      {editionOutOfDate &&
-        <div className={'out-of-date'}>Edition is out of date. {generationProgress === null ?
-          <Button variant="outline-secondary"
-                  onClick={onClickRegenerate}>Regenerate</Button> : 'Regenerating...'}
-        </div>}
-      {isPaginated &&
-        <div className={'main-text-pagination'}>
-          <div className={'main-text-pagination-nav'}>
-            <Button size="sm"
-                    variant="outline-secondary"
-                    className={'main-text-pagination-first'}
-                    title="First page"
-                    disabled={currentPage === 0}
-                    onClick={() => goToPage(0)}>{'First'}</Button>
-            <Button size="sm"
-                    variant="outline-secondary"
-                    className={'main-text-pagination-previous'}
-                    title="Previous page"
-                    disabled={currentPage === 0}
-                    onClick={() => goToPage(currentPage - 1)}>{'Previous'}</Button>
-            <Button size="sm"
-                    variant="outline-secondary"
-                    className={'main-text-pagination-next'}
-                    title="Next page"
-                    disabled={currentPage === pageCount - 1}
-                    onClick={() => goToPage(currentPage + 1)}>{'Next'}</Button>
-            <Button size="sm"
-                    variant="outline-secondary"
-                    className={'main-text-pagination-last'}
-                    title="Last page"
-                    disabled={currentPage === pageCount - 1}
-                    onClick={() => goToPage(pageCount - 1)}>{'Last'}</Button>
-          </div>
-          <div className={'main-text-pagination-jump'}>
-            <Form.Select size="sm"
-                         className={'main-text-pagination-select'}
-                         value={currentPage}
-                         onChange={(e) => goToPage(parseInt(e.target.value))}>
-              {paragraphPages.map((page, index) => <option key={page.label + index} value={index}>{page.label}</option>)}
-            </Form.Select>
-          </div>
-        </div>}
-      <div className={mainTextClasses.join(' ')}>
-        <div className={'left-margin'}></div>
-        <div className={'main-text-content'}>{currentParagraphs.map((p, i) => <ParagraphComponent p={p}
-                                                                                               key={i}/>)}</div>
-        <div className={'right-margin'}></div>
-      </div>
-    </div>
+    <Panel className={'main-text-panel'}>
+      <Toolbar>
+        <div className={'toolbar-group'}>
+          {standardizedWords.length > 0 && <span>
+          Std. words:  <NiceToggle isOn={showStandardizedWords}
+                                   on={'Shown'}
+                                   off={'Hidden'}
+                                   onTitle={'Click to hide standardized words'}
+                                   offTitle={'Click to show standardized words'}
+                                   onClick={setShowStandardizedWords}/>
+        </span>}
+          {standardizedWords.length > 0 && showStandardizedWords && <div className={'std-word-review-status'}>{standardizedWordReviewStatus}</div>}
+          {standardizedWords.length === 0 && <div className={'std-word-review-status'}>No standardized words defined</div>}
+
+        </div>
+        <div className={'toolbar-group center'}>
+          {pageCount > 0 && <ToolbarPageControls page={currentPage}
+                                                 totalPages={pageCount}
+                                                 labels={paragraphPages.map((page) => page.label)}
+                                                 onChange={goToPage}/>}
+        </div>
+        <div className={'toolbar-group right'}>
+          {!editionOutOfDate && <span className={'text-success'}><Check2Circle/> <span>Up to date</span></span>}
+          {editionOutOfDate && (generationProgress === null ?
+            <span className={'tb-btn text-danger'} onClick={onClickRegenerate}
+                  title={'Click to regenerate edition'}><XCircle/> Out of date</span> :
+            <span>Regenerating...</span>)}
+        </div>
+      </Toolbar>
+      <PanelContent>
+        <div className={mainTextClasses.join(' ')}>
+          <div className={'left-margin'}></div>
+          <div className={'main-text-content'}>{currentParagraphs.map((p, i) => <ParagraphComponent p={p}
+                                                                                                    key={i}/>)}</div>
+          <div className={'right-margin'}></div>
+        </div>
+      </PanelContent>
+    </Panel>
   );
 }

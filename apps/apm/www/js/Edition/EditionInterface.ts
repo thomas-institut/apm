@@ -25,10 +25,9 @@ export interface EditionWitnessInfoInterface {
  * A token that can appear in the main text of an edition.
  *
  * Normally in APM, the main text of an edition is built automatically from the edition witness in CtData.
- * For the purposes of the collation table and to create an automatic apparatus, the edition witness only
- * needs to contain words and punctuation, whereas an edition main text should also have proper spaces between
- * words and other formatting information suitable to feed a typesetter and produce a nice looking document
- * output.
+ * For the collation table and to create an automatic apparatus, the edition witness only
+ * needs to contain words and punctuation. For an edition, however, the main text should also have proper spaces between
+ * words and other formatting information suitable to feed a typesetter and produce a nice-looking document.
  *
  * Spaces can be generated programmatically, but other formatting marks need to be included in the edition witness
  * as well. The idea, however, is to include minimal semantic information about these marks in the edition witness
@@ -48,6 +47,11 @@ export interface MainTextTokenInterface {
    * Normally used in multi-chunk editions to identify the table that contains the token.
    */
   sourceId?: number;
+  /**
+   * A string that contains the original text of the token, for example, if a string was standardized.
+   *
+   */
+  originalText?: string;
 }
 
 export type MainTextTokenType =

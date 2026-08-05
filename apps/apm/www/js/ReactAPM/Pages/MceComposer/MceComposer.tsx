@@ -1,5 +1,5 @@
 import {useParams, useNavigate} from "react-router";
-import {cloneElement, JSX, useContext, useEffect, useRef, useState} from "react";
+import {cloneElement, JSX, useContext, useEffect, useMemo, useRef, useState} from "react";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
@@ -53,10 +53,17 @@ import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
 import AddChunksPanel from "@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
+import {AddStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/AddStandardizedStringAction";
+import {DeleteStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteStandardizedStringAction";
+import {SetStandardizedStringInstanceStatusAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetStandardizedStringInstanceStatusAction";
+import {ResetStandardizedStringAllAction} from "@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAllAction";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 import {OperationalError} from "@/lib/Error/SystemError";
 import {ApmApiClientError} from "@/Api/ApmApiClient";
+import StandardizationPanel from "@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel";
+import {StandardizedWords} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
+import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
 
 // TODO: for later
 //  - Implement admin panel with versions
@@ -122,6 +129,7 @@ interface PendingEditionGenerationRequest {
   mceData: MceDataInterface;
   mceDataId: number;
 }
+
 
 const CHUNK_FETCH_BATCH_SIZE = 5;
 const MCE_DATA_NOT_LOADED_ERROR = 'Cannot modify MCE data until it is loaded';
@@ -1062,6 +1070,88 @@ export default function MceComposer() {
     regenerateEdition(mceData, mceDataId).then();
   };
 
+  const addStandardizedString = async (original: string, standardized: string): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new AddStandardizedStringAction(original, standardized));
+      } catch (error) {
+        if (reportActionError('AddStandardizedStringAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const deleteStandardizedString = async (original: string): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new DeleteStandardizedStringAction(original));
+      } catch (error) {
+        if (reportActionError('DeleteStandardizedStringAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const resetStandardizedString = async (original: string): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new ResetStandardizedStringAllAction(original));
+      } catch (error) {
+        if (reportActionError('ResetStandardizedStringAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const setStandardizedStringInstanceStatus = async (str: string, index: number, status: StandardizedStringInstanceStatus): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new SetStandardizedStringInstanceStatusAction(str, index, status));
+      } catch (error) {
+        if (reportActionError('SetStandardizedStringInstanceStatusAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const standardizedWords = useMemo( () => edition !== null && mceData !== null ? StandardizedWords.build(mceData.standardizedStrings, edition) : [], [edition, mceData]);
+
   const handleOnClickSaveButton = async () => {
     // console.log(`Click on save`);
     if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current || changes.length === 0) {
@@ -1156,21 +1246,26 @@ export default function MceComposer() {
       tabbable: true,
     },
 
-    // {
-    //   panel: 'one',
-    //   key: 'normalization',
-    //   title: 'Normalization',
-    //   expandable: true,
-    //   content: <>Main text normalization will be here...</>
-    // },
+    {
+      panel: 'one',
+      key: 'standardization',
+      title: 'Standardization',
+      expandable: false,
+      content: <StandardizationPanel standardizedWords={standardizedWords}
+                                    add={addStandardizedString}
+                                    delete={deleteStandardizedString}
+                                    reset={resetStandardizedString}/>,
+      tabbable: true,
+    },
     {
       panel: 'two',
       key: 'mainText',
       title: 'Edition Text',
       expandable: true,
-      content: <MainTextPanel edition={edition}
+      content: <MainTextPanel edition={edition} standardizedWords={standardizedWords}
                               generationProgress={editionGenerationProgress} editionOutOfDate={editionOutOfDate}
-                              onClickRegenerate={handleOnClickRegenerate}/>,
+                              onClickRegenerate={handleOnClickRegenerate}
+                              setInstanceStatus={setStandardizedStringInstanceStatus}/>,
       tabbable: true,
     },
     {

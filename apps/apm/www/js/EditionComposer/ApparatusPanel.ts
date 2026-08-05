@@ -1421,7 +1421,9 @@ export class ApparatusPanel extends PanelWithToolbar {
       this.hideApparatusEntryForm();
       if (this.currentSelectedEntryIndex === -1) {
         this.selectNewEntry = true;
+        // @ts-ignore
         this.newEntryMainTextFrom = this.editedEntry.mainTextFrom;
+        // @ts-ignore
         this.newEntryMainTextTo = this.editedEntry.mainTextTo;
         this.verbose && console.log(`Just updated a new entry: ${this.newEntryMainTextFrom} to ${this.newEntryMainTextTo}`);
       } else {

@@ -12,7 +12,7 @@ import {TypesetterDocument} from "@thomas-inst/typesetter";
 import {Edition} from "@/Edition/Edition";
 import {getApiPdfData, getTypesetEdition} from "@/ReactAPM/Pages/MceComposer/PreviewPanel/EditionTypesettingUtilities";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
-import PreviewPageControls from "@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPageControls";
+import ToolbarPageControls from "@/ReactAPM/Pages/MceComposer/ToolbarPageControls";
 import PreviewZoomControls from "@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewZoomControls";
 import {Spinner} from "react-bootstrap";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
@@ -196,7 +196,7 @@ export default function PreviewPanel({editionKey, edition, getPdfUrl}: PreviewPa
       </div>
       <div className={'toolbar-group center'}>
         {typesetEdition !== null &&
-          <PreviewPageControls page={page} totalPages={typesetEdition.getPageCount()} onChange={(p) => setPage(p)}/>}
+          <ToolbarPageControls page={page} totalPages={typesetEdition.getPageCount()} onChange={(p) => setPage(p)}/>}
       </div>
       <div className={'toolbar-group center'}>
         {typesetEdition !== null && <PreviewZoomControls zoom={zoom} onChange={(z) => setZoom(z)}/>}

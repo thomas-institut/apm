@@ -17,7 +17,14 @@ vi.mock('react-bootstrap', () => ({
   Button: ({children, ...props}: any) => <button {...props}>{children}</button>,
   Form: {
     Select: ({children, ...props}: any) => <select {...props}>{children}</select>
-  }
+  },
+  OverlayTrigger: ({children, overlay}: any) => (
+    <div className="overlay-trigger-mock">
+      {children}
+      <div className="overlay-mock">{overlay}</div>
+    </div>
+  ),
+  Popover: ({children, ...props}: any) => <div {...props}>{children}</div>
 }));
 
 // @ts-expect-error test-only global binding
@@ -69,17 +76,21 @@ const makeFullContainedPageLabel = (firstChunkId: string, lastChunkId: string): 
 
 const renderMainTextPanel = async ({
                                      edition,
+                                     standardizedWords = [],
                                      generationProgress,
                                      editionOutOfDate,
                                      onClickRegenerate = vi.fn(),
+                                     setInstanceStatus = vi.fn(),
                                      paginationThreshold,
                                      minParsPerPage,
                                      maxParsPerPage
                                    }: {
   edition: Edition | null;
+  standardizedWords?: any[];
   generationProgress: number | null;
   editionOutOfDate: boolean;
   onClickRegenerate?: () => void | Promise<void>;
+  setInstanceStatus?: (str: string, index: number, status: any) => Promise<true | string>;
   paginationThreshold?: number;
   minParsPerPage?: number;
   maxParsPerPage?: number;
@@ -92,9 +103,11 @@ const renderMainTextPanel = async ({
     root.render(
       <MainTextPanel
         edition={edition}
+        standardizedWords={standardizedWords}
         generationProgress={generationProgress}
         editionOutOfDate={editionOutOfDate}
         onClickRegenerate={onClickRegenerate}
+        setInstanceStatus={setInstanceStatus}
         paginationThreshold={paginationThreshold}
         minParsPerPage={minParsPerPage}
         maxParsPerPage={maxParsPerPage}
@@ -117,7 +130,7 @@ describe('MainTextPanel', () => {
     expect(container.querySelector('.main-text-content')).toBeNull();
   });
 
-  it('shows out-of-date banner with regenerate button when not regenerating yet', async () => {
+  it('shows out-of-date notification in toolbar and regenerates when clicked', async () => {
     const onClickRegenerate = vi.fn();
     const edition = new Edition().setLang('en').setMainText([makeTextToken('Lorem'), makeParagraphEndToken()]);
 
@@ -128,9 +141,15 @@ describe('MainTextPanel', () => {
       onClickRegenerate
     });
 
-    expect(container.querySelector('.out-of-date')?.textContent).toContain('Edition is out of date.');
-    const regenerateButton = container.querySelector('.out-of-date button');
-    expect(regenerateButton?.textContent).toBe('Regenerate');
+    const notification = container.querySelector('.toolbar-group.right .tb-btn') as HTMLElement;
+    expect(notification.textContent).toContain('Out of date');
+    expect(container.querySelector('.out-of-date')).toBeNull();
+
+    await act(async () => {
+      notification.click();
+    });
+
+    expect(onClickRegenerate).toHaveBeenCalledOnce();
   });
 
   it('shows regenerating text instead of regenerate button while generation is in progress', async () => {
@@ -142,8 +161,8 @@ describe('MainTextPanel', () => {
       editionOutOfDate: true
     });
 
-    expect(container.querySelector('.out-of-date')?.textContent).toContain('Regenerating...');
-    expect(container.querySelector('.out-of-date button')).toBeNull();
+    expect(container.querySelector('.toolbar-group.right')?.textContent).toContain('Regenerating...');
+    expect(container.querySelector('.toolbar-group.right .tb-btn')).toBeNull();
   });
 
   it('splits text into paragraphs and applies paragraph_end style to paragraph class', async () => {
@@ -169,9 +188,91 @@ describe('MainTextPanel', () => {
     expect(paragraphs[0].textContent).toContain('First paragraph');
     expect(paragraphs[1].className).toBe('');
     expect(paragraphs[1].textContent).toContain('Second paragraph');
+
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    expect(select.options).toHaveLength(1);
   });
 
-  it('shows page select with chunk-id range labels when page count is low', async () => {
+  it('shows and hides standardized words from the toolbar toggle', async () => {
+    const edition = new Edition().setLang('en').setMainText([makeTextToken('Word'), makeParagraphEndToken()]);
+    const standardizedWords = [{
+      original: 'Word',
+      standardized: 'Wrd',
+      instances: [{mainTextIndex: 0, status: 'notReviewed'}]
+    }];
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: false
+    });
+
+    const toggle = container.querySelector('.toolbar-group .nice-toggle') as HTMLElement;
+    expect(toggle).not.toBeNull();
+    expect(toggle.classList).toContain('on');
+    expect(container.querySelector('.standardized-word')).not.toBeNull();
+
+    await act(async () => {
+      toggle.click();
+    });
+
+    expect(toggle.classList).toContain('off');
+    expect(container.querySelector('.standardized-word')).toBeNull();
+    expect(container.querySelector('.main-text-content')?.textContent).toContain('Word');
+  });
+
+  it('shows the standardized-word review status for the current page while words are shown', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeTextToken('Reviewed word'), makeParagraphEndToken(),
+      makeTextToken('Unreviewed word'), makeParagraphEndToken(),
+      makeTextToken('No standardized words'), makeParagraphEndToken()
+    ]);
+    const standardizedWords = [{
+      original: 'Reviewed word',
+      standardized: 'Reviewed standard',
+      instances: [{mainTextIndex: 0, status: 'accepted'}]
+    }, {
+      original: 'Unreviewed word',
+      standardized: 'Unreviewed standard',
+      instances: [{mainTextIndex: 2, status: 'notReviewed'}]
+    }];
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: false,
+      paginationThreshold: 1,
+      minParsPerPage: 1,
+      maxParsPerPage: 1
+    });
+
+    const toolbar = container.querySelector('.toolbar-group') as HTMLElement;
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
+    const toggle = toolbar.querySelector('.nice-toggle') as HTMLElement;
+    expect(toolbar.textContent).toContain('All reviewed');
+
+    await act(async () => {
+      select.value = '1';
+      select.dispatchEvent(new Event('change', {bubbles: true}));
+    });
+    expect(toolbar.textContent).toContain('1 to review');
+
+    await act(async () => {
+      select.value = '2';
+      select.dispatchEvent(new Event('change', {bubbles: true}));
+    });
+    expect(toolbar.textContent).toContain('None in this page');
+
+    await act(async () => {
+      toggle.click();
+    });
+    expect(toolbar.textContent).not.toContain('None in this page');
+  });
+
+  it('shows toolbar page controls when the text is paginated', async () => {
     const edition = makeEditionWithChunkParagraphs(28);
 
     const {container} = await renderMainTextPanel({
@@ -183,10 +284,9 @@ describe('MainTextPanel', () => {
       maxParsPerPage: 15
     });
 
-    expect(container.querySelector('.main-text-pagination')).not.toBeNull();
-    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    expect(container.querySelector('.panel-toolbar')).not.toBeNull();
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
     expect(select).not.toBeNull();
-    expect(container.querySelectorAll('.main-text-pagination-page-button')).toHaveLength(0);
     expect(Array.from(select.options).map((option) => option.textContent)).toEqual([
       makeFullContainedPageLabel('AW47-1', 'AW47-10'),
       makeFullContainedPageLabel('AW47-11', 'AW47-20'),
@@ -224,7 +324,7 @@ describe('MainTextPanel', () => {
       maxParsPerPage: 2
     });
 
-    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
     expect(Array.from(select.options).map((option) => option.textContent)).toEqual([
       `${fullyContainedFirstChunkMarker}AW47-1 → AW47-2`,
       `AW47-2 → AW47-3${fullyContainedLastChunkMarker}`
@@ -244,21 +344,21 @@ describe('MainTextPanel', () => {
     });
 
     await act(async () => {
-      (container.querySelector('.main-text-pagination-next') as HTMLButtonElement).click();
+      (container.querySelector('[data-page-control="next"]') as HTMLElement).click();
     });
     let paragraphTexts = Array.from(container.querySelectorAll('.main-text-content p')).map((paragraph) => paragraph.textContent ?? '');
     expect(paragraphTexts[0]).toContain('Paragraph 11');
     expect(paragraphTexts).not.toContain('Paragraph 1');
 
     await act(async () => {
-      (container.querySelector('.main-text-pagination-last') as HTMLButtonElement).click();
+      (container.querySelector('[data-page-control="last"]') as HTMLElement).click();
     });
     expect(container.querySelectorAll('.main-text-content p')).toHaveLength(8);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 28');
     expect(container.querySelector('.main-text-content')?.textContent).not.toContain('Paragraph 20');
 
     await act(async () => {
-      (container.querySelector('.main-text-pagination-first') as HTMLButtonElement).click();
+      (container.querySelector('[data-page-control="first"]') as HTMLElement).click();
     });
     paragraphTexts = Array.from(container.querySelectorAll('.main-text-content p')).map((paragraph) => paragraph.textContent ?? '');
     expect(paragraphTexts[0]).toContain('Paragraph 1');
@@ -277,7 +377,7 @@ describe('MainTextPanel', () => {
       maxParsPerPage: 15
     });
 
-    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
     expect(Array.from(select.options).map((option) => option.textContent)).toEqual([
       makeFullContainedPageLabel('AW47-1', 'AW47-10'),
       makeFullContainedPageLabel('AW47-11', 'AW47-20'),
@@ -286,7 +386,7 @@ describe('MainTextPanel', () => {
     ]);
 
     await act(async () => {
-      (container.querySelector('.main-text-pagination-last') as HTMLButtonElement).click();
+      (container.querySelector('[data-page-control="last"]') as HTMLElement).click();
     });
     expect(container.querySelectorAll('.main-text-content p')).toHaveLength(1);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 31');
@@ -315,7 +415,7 @@ describe('MainTextPanel', () => {
       maxParsPerPage: 4
     });
 
-    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
     expect(select.options).toHaveLength(1);
     expect(select.options[0].textContent).toBe(makeFullContainedPageLabel('AW47-1', 'AW47-2'));
     expect(container.querySelectorAll('.main-text-content p')).toHaveLength(3);
@@ -333,9 +433,7 @@ describe('MainTextPanel', () => {
       maxParsPerPage: 15
     });
 
-    expect(container.querySelectorAll('.main-text-pagination-page-button')).toHaveLength(0);
-
-    const select = container.querySelector('.main-text-pagination-select') as HTMLSelectElement;
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
     expect(select).not.toBeNull();
     expect(select.options).toHaveLength(6);
     expect(select.options[0].textContent).toBe(makeFullContainedPageLabel('AW47-1', 'AW47-10'));
@@ -351,7 +449,7 @@ describe('MainTextPanel', () => {
     expect(container.querySelector('.main-text-content')?.textContent).not.toContain('Paragraph 41');
   });
 
-  it('disables pagination when pagination threshold is lower than 1', async () => {
+  it('keeps a single-page control when pagination threshold is lower than 1', async () => {
     const edition = makeEditionWithChunkParagraphs(60);
 
     const {container} = await renderMainTextPanel({
@@ -363,7 +461,10 @@ describe('MainTextPanel', () => {
       maxParsPerPage: 15
     });
 
-    expect(container.querySelector('.main-text-pagination')).toBeNull();
+    const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
+    expect(select).not.toBeNull();
+    expect(select.options).toHaveLength(1);
+    expect(select.options[0].textContent).toBe(makeFullContainedPageLabel('AW47-1', 'AW47-60'));
     expect(container.querySelectorAll('.main-text-content p')).toHaveLength(60);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 1');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 60');
@@ -414,5 +515,220 @@ describe('MainTextPanel', () => {
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Alpha');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Beta');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Gamma');
+  });
+
+  it('wraps standardized words in span with appropriate status class', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeTextToken('First'),
+      makeGlueToken(' '),
+      makeTextToken('Second'),
+      makeGlueToken(' '),
+      makeTextToken('Third'),
+      makeParagraphEndToken()
+    ]);
+
+    const standardizedWords = [
+      {
+        original: 'First',
+        standardized: '1st',
+        instances: [{mainTextIndex: 0, status: 'accepted'}]
+      },
+      {
+        original: 'Second',
+        standardized: '2nd',
+        instances: [{mainTextIndex: 2, status: 'rejected'}]
+      },
+      {
+        original: 'Third',
+        standardized: '3rd',
+        instances: [{mainTextIndex: 4, status: 'notReviewed'}]
+      }
+    ];
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: false
+    });
+
+    const acceptedSpan = container.querySelector('.standardized-word.accepted');
+    expect(acceptedSpan?.textContent).toBe('First');
+
+    const rejectedSpan = container.querySelector('.standardized-word.rejected');
+    expect(rejectedSpan?.textContent).toBe('Second');
+
+    const notReviewedSpan = container.querySelector('.standardized-word.not-reviewed');
+    expect(notReviewedSpan?.textContent).toBe('Third');
+  });
+
+  it('triggers setInstanceStatus when clicking buttons in the popover', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeTextToken('Word'),
+      makeParagraphEndToken()
+    ]);
+
+    const standardizedWords = [
+      {
+        original: 'Word',
+        standardized: 'Wrd',
+        instances: [{mainTextIndex: 0, status: 'notReviewed'}]
+      }
+    ];
+
+    const setInstanceStatus = vi.fn().mockResolvedValue(true);
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: false,
+      setInstanceStatus
+    });
+
+    const acceptButton = container.querySelector('button[title="Accept"]') as HTMLButtonElement;
+    expect(acceptButton).not.toBeNull();
+
+    await act(async () => {
+      acceptButton.click();
+    });
+
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'accepted');
+
+    const rejectButton = container.querySelector('button[title="Reject"]') as HTMLButtonElement;
+    await act(async () => {
+      rejectButton.click();
+    });
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'rejected');
+
+    const resetButton = container.querySelector('button[title="Reset"]') as HTMLButtonElement;
+    expect(resetButton).not.toBeNull();
+    await act(async () => {
+      resetButton.click();
+    });
+    expect(setInstanceStatus).toHaveBeenCalledWith('Word', 0, 'notReviewed');
+  });
+
+  it('does not display popover when edition is out of date', async () => {
+    const edition = new Edition().setLang('en').setMainText([
+      makeTextToken('Word'),
+      makeParagraphEndToken()
+    ]);
+
+    const standardizedWords = [
+      {
+        original: 'Word',
+        standardized: 'Wrd',
+        instances: [{mainTextIndex: 0, status: 'notReviewed'}]
+      }
+    ];
+
+    const {container} = await renderMainTextPanel({
+      edition,
+      standardizedWords,
+      generationProgress: null,
+      editionOutOfDate: true
+    });
+
+    const overlayTrigger = container.querySelector('.overlay-trigger-mock');
+    expect(overlayTrigger).toBeNull();
+
+    const standardizedWord = container.querySelector('.standardized-word.disabled');
+    expect(standardizedWord).not.toBeNull();
+    expect(standardizedWord?.textContent).toBe('Word');
+    expect(standardizedWord?.getAttribute('title')).toBe('Edition out of date');
+  });
+
+  describe('Pagination Persistence', () => {
+    const makeSimpleEdition = (count: number): Edition => {
+      const tokens: MainTextToken[] = [];
+      for (let i = 0; i < count; i++) {
+        tokens.push(makeTextToken(`Paragraph ${i + 1}`));
+        tokens.push(makeParagraphEndToken());
+      }
+      return new Edition().setLang('en').setMainText(tokens);
+    };
+
+    it('keeps current page when edition changes but page still exists', async () => {
+      document.body.innerHTML = '<div id="root"></div>';
+      const container = document.getElementById('root')!;
+      const root = createRoot(container);
+
+      const edition1 = makeSimpleEdition(30);
+      const props = {
+        edition: edition1,
+        standardizedWords: [],
+        generationProgress: null,
+        editionOutOfDate: false,
+        onClickRegenerate: vi.fn(),
+        setInstanceStatus: vi.fn(),
+        paginationThreshold: 10,
+        minParsPerPage: 5,
+        maxParsPerPage: 5
+      };
+
+      await act(async () => {
+        root.render(<MainTextPanel {...props} />);
+      });
+
+      // Go to page 2 (index 1)
+      const nextButton = container.querySelector('[data-page-control="next"]') as HTMLElement;
+      await act(async () => {
+        nextButton.click();
+      });
+
+      expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 6');
+
+      // Re-render with a NEW edition object but SAME content
+      const edition2 = makeSimpleEdition(30);
+      await act(async () => {
+        root.render(<MainTextPanel {...props} edition={edition2} />);
+      });
+
+      // Should still show Paragraph 6
+      expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 6');
+    });
+
+    it('resets to page 0 if the current page no longer exists', async () => {
+      document.body.innerHTML = '<div id="root"></div>';
+      const container = document.getElementById('root')!;
+      const root = createRoot(container);
+
+      const edition1 = makeSimpleEdition(30);
+      const props = {
+        edition: edition1,
+        standardizedWords: [],
+        generationProgress: null,
+        editionOutOfDate: false,
+        onClickRegenerate: vi.fn(),
+        setInstanceStatus: vi.fn(),
+        paginationThreshold: 10,
+        minParsPerPage: 5,
+        maxParsPerPage: 5
+      };
+
+      await act(async () => {
+        root.render(<MainTextPanel {...props} />);
+      });
+
+      // Go to page 6 (index 5)
+      for (let i = 0; i < 5; i++) {
+        const nextButton = container.querySelector('[data-page-control="next"]') as HTMLElement;
+        await act(async () => {
+          nextButton.click();
+        });
+      }
+
+      expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 26');
+
+      // Re-render with a much SHORTER edition (only 5 paragraphs -> 1 page)
+      const edition2 = makeSimpleEdition(5);
+      await act(async () => {
+        root.render(<MainTextPanel {...props} edition={edition2} />);
+      });
+
+      // Should reset to page 0
+      expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 1');
+    });
   });
 });

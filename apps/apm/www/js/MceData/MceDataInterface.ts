@@ -1,6 +1,7 @@
 // noinspection ES6PreferShortImport
 
 import {SiglaGroupInterface} from "../CtData/CtDataInterface.js";
+import {StandardizedString} from "./StandardizedString.js";
 
 
 interface VersionedMceData {
@@ -61,18 +62,7 @@ export interface MceDataInterface_v3 extends VersionedMceData {
   sigla: string[],
   chunkOrder: number[],
   includeInAutoMarginalFoliation: number[];
-  standardizedStrings: StandardizedStringData[];
-}
-
-export interface StandardizedStringData {
-  original: string,
-  standardized: string,
-  instances: StandardizedStringInstance[];
-}
-
-export interface StandardizedStringInstance {
-  mainTextIndex: number;
-  status: 'rejected' | 'accepted';
+  standardizedStrings: StandardizedString[];
 }
 
 export interface WitnessInMceData {

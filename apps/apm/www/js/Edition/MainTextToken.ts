@@ -38,6 +38,7 @@ export class MainTextToken implements MainTextTokenInterface {
   occurrenceInLine?: number;
   chunkId?: string;
   sourceId?: number;
+  originalText?: string;
 
 
   constructor() {
@@ -54,6 +55,7 @@ export class MainTextToken implements MainTextTokenInterface {
     this.style = token.style;
     this.chunkId = token.chunkId;
     this.sourceId = token.sourceId;
+    this.originalText = token.originalText;
     return this;
   }
 

@@ -94,6 +94,7 @@ export class PredicateListSection extends MdeSection {
     }).join(''));
 
     this.predicateEditors = this.predicates.map((predicate: any, index: number) => {
+
       return new BasicPredicateEditor({
         predicateDefinition: predicate.predicateDefinition,
         qualificationDefinitions: this.qualificationDefinitions,
@@ -115,7 +116,9 @@ export class PredicateListSection extends MdeSection {
         getAllEntitiesForTypes: this.genGetAllEntitiesForTypes(),
         getEntityName: this.genGetEntityName(),
         getEntityType: this.genGetEntityType(),
+        // @ts-ignore
         saveStatement: this.genSaveStatement(predicate),
+        // @ts-ignore
         cancelStatement: this.genCancelStatement(predicate),
       });
     });
@@ -245,6 +248,7 @@ export class PredicateListSection extends MdeSection {
       return {success: false, msg: serverResponse.errorMessage, statements: []};
     }
     let minorProblems: string[] = [];
+    // @ts-ignore
     serverResponse['commandResults'].forEach((cmdResult: any) => {
       if (cmdResult['success'] === false) {
         minorProblems.push(cmdResult['errorMessage']);

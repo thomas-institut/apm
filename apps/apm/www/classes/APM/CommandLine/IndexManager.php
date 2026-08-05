@@ -65,7 +65,7 @@ class IndexManager extends CommandLineUtility
      * @throws TypesenseClientError
      * @throws \Http\Client\Exception
      */
-    public function main($argc, $argv): bool
+    public function main(int $argc, array $argv): bool
     {
 
         if (count($argv) < 2) {

@@ -16,7 +16,7 @@ class UnitemporalConsistency extends CommandLineUtility
     const string USAGE="usage: unitemporalconsistency <table>\n";
     const string EOT = '9999-12-31 23:59:59.999999';
 
-    public function main($argc, $argv): bool
+    public function main(int $argc, array $argv): bool
     {
         $db = $this->getSystemManager()->getDbConnection();
 //        $dbh = $this->getSystemManager()->getMySqlHelper();

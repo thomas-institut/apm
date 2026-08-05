@@ -31,7 +31,7 @@ class DocTool extends CommandLineUtility implements AdminUtility
         return self::DESCRIPTION;
     }
 
-    public function main($argc, $argv): int
+    public function main(int $argc, array $argv) : int
     {
         if ($argc < 2) {
             print self::USAGE . "\n";

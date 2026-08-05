@@ -23,7 +23,7 @@ use ThomasInstitut\TimeString\TimeString;
 class ColumnVersionFixTool extends CommandLineUtility {
     const USAGE = "usage: columnversionfixtool.php doc|page <id> [fix]\n";
 
-    public function main($argc, $argv)
+    public function main(int $argc, array $argv) : bool
     {
         if ($argc < 3) {
             print self::USAGE;

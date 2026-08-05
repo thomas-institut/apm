@@ -12,10 +12,8 @@ class CtVersionCheckTool extends CommandLineUtility
 
     const USAGE = "usage: ctversioncheck check|fix [<ctId1> <ctId2> ... ]\n";
 
-    /**
-     * @throws RowDoesNotExist
-     */
-    public function main($argc, $argv): bool
+
+    public function main(int $argc, array $argv): bool
     {
         if ($argc < 2) {
             print self::USAGE;

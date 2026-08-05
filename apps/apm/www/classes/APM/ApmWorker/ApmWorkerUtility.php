@@ -17,7 +17,7 @@ class ApmWorkerUtility extends CommandLineUtility
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function main($argc, $argv): void
+    public function main(int $argc, array $argv): bool
     {
         if ($argc < 2) {
             $this->printErrorMsg("Usage: " . $argv[0] . " <instance_id> [<max_jobs>] [<db_reset_interval_in_mins>]");
@@ -27,6 +27,6 @@ class ApmWorkerUtility extends CommandLineUtility
         $maxJobs = (int)($argv[2] ?? ValkeyWorker::DefaultMaxJobs);
         $dbResetInterval = (int)($argv[3] ?? ValkeyWorker::DefaultDbConnectionResetIntervalInMinutes);
         $worker = new ValkeyWorker($this->container, $instanceId, $maxJobs, $dbResetInterval);
-        $worker->run();
+        return $worker->run();
     }
 }

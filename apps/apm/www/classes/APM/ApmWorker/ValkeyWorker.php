@@ -71,7 +71,7 @@ class ValkeyWorker
     /**
      * Main worker loop.
      */
-    public function run(): void
+    public function run(): bool
     {
         $this->logger->info("Worker $this->instanceId starting", [
             'worker_id' => $this->workerId,
@@ -124,6 +124,7 @@ class ValkeyWorker
             'stop_requested' => $this->stopRequested,
             'jobs_processed' => $this->jobsProcessed
         ]);
+        return true;
     }
 
     private function setupSignals(): void

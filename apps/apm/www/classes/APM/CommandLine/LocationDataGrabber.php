@@ -42,7 +42,7 @@ class LocationDataGrabber extends CommandLineUtility
      * @param $argv
      * @return bool
      */
-    public function main($argc, $argv): bool
+    public function main(int $argc, array $argv): bool
     {
         // print help
         if (count($argv) < 1 || $argv[1] === '-h') {

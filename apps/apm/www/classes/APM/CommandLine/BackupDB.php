@@ -39,7 +39,7 @@ class BackupDB extends CommandLineUtility {
 //        $this->logger = $this->logger->withName('BACKUP');
     }
     
-    public function main($argc, $argv): bool
+    public function main(int $argc, array $argv): bool
     {
         $shell = '/bin/bash';
         $mysqldump = 'mysqldump';

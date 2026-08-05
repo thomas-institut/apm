@@ -23,7 +23,7 @@ class ApmDaemon extends CommandLineUtility
     private int $lastRecoveryRun = 0;
 
 
-    public function main($argc, $argv): void
+    public function main(int $argc, array $argv): bool
     {
 
         $this->getSystemManager(); // just to get the right logger
@@ -63,7 +63,7 @@ class ApmDaemon extends CommandLineUtility
                 if (!$this->erasePidFile()) {
                     $this->logger->warning("Could not erase daemon pid file");
                 }
-                return;
+                return true;
             }
             foreach ($daemonTasks as $daemonTask) {
                 try {

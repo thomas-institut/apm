@@ -32,7 +32,7 @@ use PDO;
 class CheckElementSequence extends CommandLineUtility {
      const USAGE = "usage: checkelementsequence [fix]\n";
     
-    public function main($argc, $argv)
+    public function main(int $argc, array $argv) : bool
     {
         
         $te = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_ELEMENTS];
@@ -107,7 +107,7 @@ class CheckElementSequence extends CommandLineUtility {
         if ($allGood) {
             print "All good, no problems with element sequences in database\n";
         }
-
+        return true;
     }
     
 }

@@ -42,7 +42,7 @@ class UserTool extends CommandLineUtility implements AdminUtility
         return self::DESCRIPTION;
     }
 
-    public function main($argc, $argv): int
+    public function main(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print self::USAGE . "\n";

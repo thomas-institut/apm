@@ -142,8 +142,10 @@ abstract class CommandLineUtility {
     #[NoReturn] public function run(): void // @phpstan-ignore attribute.notFound
     {
         $result = $this->main($this->argc, $this->argv);
-        $status = $result ? 0 : 1;
-        exit($status);
+        if (is_int($result)) {
+            exit($result);
+        }
+        exit($result ? 0 : 1);
     }
     
     protected function printErrorMsg($msg): void
@@ -168,7 +170,7 @@ abstract class CommandLineUtility {
     }
 
 
-    public abstract function main($argc, $argv);
+    public abstract function main(int $argc, array $argv): bool | int;
 
 
 }

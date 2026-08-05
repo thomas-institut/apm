@@ -42,7 +42,7 @@ class EntityTool extends CommandLineUtility implements AdminUtility
      * @throws InvalidTimeZoneException|InvalidEntityTypeException
      * @throws EntityDoesNotExistException
      */
-    public function main($argc, $argv) : int
+    public function main(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print self::USAGE . "\n";

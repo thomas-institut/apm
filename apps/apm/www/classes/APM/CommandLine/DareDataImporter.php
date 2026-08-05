@@ -64,7 +64,7 @@ class DareDataImporter extends CommandLineUtility
      * @param $argv
      * @return bool
      */
-    public function main($argc, $argv): bool
+    public function main(int $argc, array $argv): bool
     {
 
         $this->es = $this->getSystemManager()->getEntitySystem();

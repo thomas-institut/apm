@@ -47,7 +47,7 @@ class WikiDataGrabber extends CommandLineUtility implements AdminUtility
         return self::DESCRIPTION;
     }
 
-    public function main($argc, $argv) : int
+    public function main(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print "USAGE: " . self::USAGE . "\n";

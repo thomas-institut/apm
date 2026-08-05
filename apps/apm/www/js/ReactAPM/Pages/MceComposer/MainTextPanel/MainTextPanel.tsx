@@ -2,7 +2,7 @@ import {Edition} from "@/Edition/Edition";
 import './MainTextPanel.css';
 import {Button, OverlayTrigger, Popover} from "react-bootstrap";
 import {MainTextToken} from "@/Edition/MainTextToken";
-import {Fragment, JSX, useEffect, useMemo, useState} from "react";
+import React, {Fragment, JSX, useEffect, useMemo, useState} from "react";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 import {
@@ -271,6 +271,35 @@ export default function MainTextPanel({
     return paragraphs;
   };
 
+  const getTextTokenElement = (token: MainTextToken) => {
+    return token.fmtText.map((t, index) => {
+      if (t.type === 'text') {
+        const classes: string[] = [];
+        const style: React.CSSProperties = {};
+        if (t.fontStyle === 'italic') {
+          classes.push('i');
+        }
+        if (t.fontWeight === 'bold') {
+          classes.push('b');
+        }
+        if (t.fontSize !== undefined) {
+          style.fontSize = `${t.fontSize}em`;
+        }
+        if (t.verticalAlign === 'superscript') {
+          classes.push('sup');
+        }
+        if (t.verticalAlign === 'subscript') {
+          classes.push('sub');
+        }
+        return <span key={index} className={classes.join(' ')} style={style}>{t.text}</span>;
+      }
+      if (t.type === 'glue') {
+        return <Fragment key={index}>{' '}</Fragment>;
+      }
+      return null;
+    });
+  }
+
   const getParagraphText = (p: Paragraph): JSX.Element[] => {
     const elementArray: JSX.Element[] = [];
     p.tokens.forEach((token, i) => {
@@ -278,7 +307,7 @@ export default function MainTextPanel({
       const data = standardizedData.get(globalIndex);
 
       if (token.type === 'text' || token.type === 'glue') {
-        const text = token.getPlainText();
+        const text = getTextTokenElement(token);
         if (data !== undefined && showStandardizedWords) {
           const statusClass = data.status === 'notReviewed' ? 'not-reviewed' : data.status;
           const classes = ['standardized-word', statusClass];

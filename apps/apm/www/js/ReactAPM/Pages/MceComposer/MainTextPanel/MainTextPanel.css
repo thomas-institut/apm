@@ -74,6 +74,28 @@
         overflow-y: auto;
         min-height: 0;
 
+
+        .b {
+            font-weight: bold;
+        }
+
+        .i {
+            font-style: italic;
+        }
+
+        .sup {
+            position: relative;
+            top: -0.5em;
+        }
+
+        .sub {
+            position: relative;
+            top: 0.5em;
+        }
+
+
+
+
         .main-text-content {
             position: relative;
             line-height: 1.8rem;

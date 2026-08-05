@@ -86,9 +86,11 @@ export class WitnessUpdateDialog {
     reviewP.html(reviewChangesStepTitle);
     doChangesP.html(doChangesStepTitle);
     cancelButton.on('click', () => {
+      // @ts-ignore
       $(modalSelector).modal('hide');
       $(modalSelector).remove();
     });
+    // @ts-ignore
     $(modalSelector).modal({
       backdrop: 'static', keyboard: false, show: false
     });
@@ -244,6 +246,7 @@ export class WitnessUpdateDialog {
       });
     });
     // go!
+    // @ts-ignore
     $(modalSelector).modal('show');
     return true;
 

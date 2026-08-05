@@ -174,6 +174,7 @@ export class ChunkPage extends HeaderAndContentPage {
       }
       let witness = witnessInfo;
       witness.index = parseInt(w);
+      // @ts-ignore
       witness.title = title;
       // let witness = {
       //   index:  parseInt(w),
@@ -184,9 +185,12 @@ export class ChunkPage extends HeaderAndContentPage {
       //   systemId: witnessInfo.systemId
       // }
       if (witnessInfo.isValid) {
+        // @ts-ignore
         if (this.witnessesByLang[witnessInfo['languageCode']] === undefined) {
+          // @ts-ignore
           this.witnessesByLang[witnessInfo['languageCode']] = [];
         }
+        // @ts-ignore
         this.witnessesByLang[witnessInfo['languageCode']].push(witness);
         new CollapseToggleButton($('#texttoggle-' + witness.systemId), $('#text-' + witness.systemId));
       }
@@ -233,9 +237,9 @@ export class ChunkPage extends HeaderAndContentPage {
           });
           break;
 
-        case WitnessType.PARTIAL_TX:
-          console.log('Partial TX witness not supported yet!');
-          break;
+        // case WitnessType.PARTIAL_TX:
+        //   console.log('Partial TX witness not supported yet!');
+        //   break;
 
         default:
           console.warn('Unsupported witness type: ' + witnessInfo.type);
@@ -402,6 +406,7 @@ export class ChunkPage extends HeaderAndContentPage {
           if (localWitnessId !== 'A') {
             title += ' (' + localWitnessId + ')';
           }
+          // @ts-ignore
           html += this.getWitnessCard(witnessInfo.systemId, title, witnessInfo['languageCode']);
           break;
       }
@@ -468,11 +473,11 @@ export class ChunkPage extends HeaderAndContentPage {
         case WitnessType.FULL_TX:
           info = await this.genFullTxInfo(witnessInfo, parseInt(i));
           break;
-
-        case WitnessType.PARTIAL_TX:
-          info.location = 'tbd';
-          info.essential = 'based on TBD';
-          break;
+        //
+        // case WitnessType.PARTIAL_TX:
+        //   info.location = 'tbd';
+        //   info.essential = 'based on TBD';
+        //   break;
 
         default:
           info.location = 'Unknown witness type';
@@ -659,6 +664,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
           chunk: this.options.chunkNumber,
           ignorePunctuation: true,
           witnesses: this.witnessesByLang[l].filter(w => w.type === 'fullTx').map(w => {
+            // @ts-ignore
             return {type: 'fullTx', systemId: w.systemId, title: w.title};
           })
         }
@@ -727,6 +733,7 @@ title="Click to create edition with only this witness">${convertToEditionIcon}</
               ignorePunctuation: preset.data.ignorePunctuation,
               normalizers: preset.data.normalizers,
               witnesses: witnessesToInclude.filter(w => w.type === 'fullTx').map(w => {
+                // @ts-ignore
                 return {type: 'fullTx', systemId: w.systemId, title: w.title};
               })
             }

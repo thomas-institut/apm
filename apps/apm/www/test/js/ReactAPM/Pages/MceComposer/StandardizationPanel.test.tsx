@@ -99,7 +99,8 @@ const makeWord = (): StandardizedWord => ({
     {mainTextIndex: 5, status: 'rejected'},
     {mainTextIndex: 6, status: 'rejected'},
     {mainTextIndex: 7, status: 'rejected'},
-  ]
+  ],
+  staleInstanceIndices: [],
 });
 
 describe('StandardizationPanel', () => {
@@ -233,7 +234,8 @@ describe('StandardizationPanel', () => {
       instances: [
         {mainTextIndex: 1, status: 'notReviewed'},
         {mainTextIndex: 2, status: 'notReviewed'},
-      ]
+      ],
+      staleInstanceIndices: [],
     };
 
     const {container} = await renderStandardizationPanel({
@@ -255,7 +257,8 @@ describe('StandardizationPanel', () => {
       instances: [
         {mainTextIndex: 1, status: 'accepted'},
         {mainTextIndex: 2, status: 'notReviewed'},
-      ]
+      ],
+      staleInstanceIndices: [],
     };
 
     const {container} = await renderStandardizationPanel({
@@ -264,5 +267,22 @@ describe('StandardizationPanel', () => {
 
     const resetIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(1);
     expect(resetIcon.className).not.toContain('disabled');
+  });
+
+  it('displays a warning icon if a row has non-empty staleInstances', async () => {
+    const wordWithStaleInstances: StandardizedWord = {
+      ...makeWord(),
+      staleInstanceIndices: [1, 2],
+    };
+
+    const {container} = await renderStandardizationPanel({
+      standardizedWords: [wordWithStaleInstances]
+    });
+
+    const warningIcon = container.querySelector('.text-warning');
+    expect(warningIcon).not.toBeNull();
+    // Check for title attribute or title element inside SVG
+    const title = warningIcon?.getAttribute('title') || warningIcon?.querySelector('title')?.textContent;
+    expect(title).toContain('2 stale entries');
   });
 });

@@ -3,6 +3,7 @@ import {
   wordMatchesStandardizedString,
   getWordStandardizedByString,
   getMatchingMainTextTokenIndices,
+  getStaleInstanceIndices,
   StandardizedString
 } from '@/MceData/StandardizedString.js';
 import {MainTextTokenInterface} from '@/Edition/EditionInterface.js';
@@ -235,6 +236,59 @@ describe('StandardizedString', () => {
         ];
         expect(getMatchingMainTextTokenIndices(targetStdString, tokens, 'en')).toEqual([]);
       });
+    });
+  });
+
+  describe('getStaleInstanceIndices', () => {
+    const tokens: MainTextTokenInterface[] = [
+      {
+        type: 'text',
+        fmtText: [{type: 'text', text: 'Dominus'}],
+        editionWitnessTokenIndex: 0,
+        style: ''
+      },
+      {
+        type: 'text',
+        fmtText: [{type: 'text', text: 'Deus'}],
+        editionWitnessTokenIndex: 1,
+        style: ''
+      }
+    ];
+
+    it('returns instance-array indices for instances without matching tokens', () => {
+      const standardizedString: StandardizedString = {
+        original: 'Dominus',
+        standardized: 'dominus',
+        instances: [
+          {mainTextIndex: 0, status: 'accepted'},
+          {mainTextIndex: 2, status: 'accepted'},
+          {mainTextIndex: 1, status: 'rejected'}
+        ]
+      };
+
+      expect(getStaleInstanceIndices(standardizedString, tokens, 'la')).toEqual([1, 2]);
+    });
+
+    it('returns an empty array when all instances have matching tokens', () => {
+      const standardizedString: StandardizedString = {
+        original: 'Dominus',
+        standardized: 'dominus',
+        instances: [
+          {mainTextIndex: 0, status: 'accepted'}
+        ]
+      };
+
+      expect(getStaleInstanceIndices(standardizedString, tokens, 'la')).toEqual([]);
+    });
+
+    it('returns an empty array when there are no instances', () => {
+      const standardizedString: StandardizedString = {
+        original: 'Dominus',
+        standardized: 'dominus',
+        instances: []
+      };
+
+      expect(getStaleInstanceIndices(standardizedString, tokens, 'la')).toEqual([]);
     });
   });
 });

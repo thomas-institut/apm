@@ -1,6 +1,6 @@
 import {Edition} from "@/Edition/Edition";
 import {
-  getMatchingMainTextTokenIndices,
+  getMatchingMainTextTokenIndices, getStaleInstanceIndices,
   StandardizedString,
   StandardizedStringInstance
 } from "@/MceData/StandardizedString";
@@ -13,6 +13,7 @@ export interface StandardizedWord extends StandardizedString {
   rejected: number,
   notReviewed: number,
   instances: StandardizedStringInstance[],
+  staleInstanceIndices: number[],
 }
 
 
@@ -39,6 +40,7 @@ export class StandardizedWords {
         accepted: instances.filter((instance) => instance.status === 'accepted').length,
         rejected: instances.filter((instance) => instance.status === 'rejected').length,
         instances: instances,
+        staleInstanceIndices: getStaleInstanceIndices(d, edition.mainText, edition.lang),
       };
     });
   }

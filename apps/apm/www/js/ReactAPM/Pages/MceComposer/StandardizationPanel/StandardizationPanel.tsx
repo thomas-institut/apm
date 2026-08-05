@@ -1,7 +1,7 @@
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import './StandardizationPanel.css';
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
-import {ArrowCounterclockwise, PlusCircle, Trash} from "react-bootstrap-icons";
+import {ArrowCounterclockwise, ExclamationTriangleFill, PlusCircle, Trash} from "react-bootstrap-icons";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {Button} from "react-bootstrap";
 import {useMemo, useState} from "react";
@@ -239,6 +239,7 @@ export default function StandardizationPanel({
                                      }}/>
             </ComponentWithPending>
           </div>
+          { row.staleInstanceIndices.length > 0 && <ExclamationTriangleFill className={'text-warning'} title={`${row.staleInstanceIndices.length} stale entries, no need to worry for now`}/>}
           {rowErrors[row.original] !== undefined &&
             <span className={'text-danger standardization-row-error'}>{rowErrors[row.original]}</span>}
         </div>;

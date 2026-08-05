@@ -27,6 +27,22 @@ export function getMatchingMainTextTokenIndices(standardizedString: Standardized
   }).filter((index) => index !== -1);
 }
 
+/**
+ * Returns the indices in the standardized string instances array for instances whose mainTextIndex does not match
+ * the token in the main text token array.
+ *
+ * These instances are stale and could be removed from the standardized string instances array.
+ *
+ * @param standardizedString
+ * @param mainTextTokenArray
+ * @param lang
+ */
+export function getStaleInstanceIndices(standardizedString: StandardizedString, mainTextTokenArray: MainTextTokenInterface[], lang: string): number[] {
+  const matchingIndices = getMatchingMainTextTokenIndices(standardizedString, mainTextTokenArray, lang);
+  return standardizedString.instances.map( (instance, index) => {
+    return matchingIndices.includes(instance.mainTextIndex) ? -1 : index;
+  }).filter((index) => index !== -1);
+}
 
 export function wordMatchesStandardizedString(word: string, standardizedString: StandardizedString, lang: string): boolean {
   if (lang !== 'la') {

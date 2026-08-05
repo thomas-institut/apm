@@ -1,12 +1,17 @@
 import {Edition} from "@/Edition/Edition";
 import './MainTextPanel.css';
-import {Button, Form, OverlayTrigger, Popover} from "react-bootstrap";
+import {Button, OverlayTrigger, Popover} from "react-bootstrap";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {Fragment, JSX, useEffect, useMemo, useState} from "react";
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
-import {ArrowCounterclockwise, Check, X} from "react-bootstrap-icons";
+import {ArrowCounterclockwise, Check, Check2Circle, X, XCircle} from "react-bootstrap-icons";
 import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
+import Panel from "@/ReactAPM/Components/PanelUI/Panel";
+import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
+import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
+import NiceToggle from "@/ReactAPM/Components/NiceToggle/NiceToggle";
+import ToolbarPageControls from "@/ReactAPM/Pages/MceComposer/ToolbarPageControls";
 
 interface MainTextPanelProps extends TabbableElementProps{
   edition: Edition | null;
@@ -236,7 +241,7 @@ export default function MainTextPanel({
 
       if (token.type === 'text' || token.type === 'glue') {
         const text = token.getPlainText();
-        if (data !== undefined) {
+        if (data !== undefined && showStandardizedWords) {
           const statusClass = data.status === 'notReviewed' ? 'not-reviewed' : data.status;
           const classes = [ 'standardized-word', statusClass ];
           if (editionOutOfDate) {
@@ -308,6 +313,7 @@ export default function MainTextPanel({
   const pageCount = paragraphPages.length;
 
   const [currentPage, setCurrentPage] = useState(0);
+  const [showStandardizedWords, setShowStandardizedWords] = useState(true);
 
   useEffect(() => {
     if (pageCount > 0 && currentPage >= pageCount) {
@@ -331,55 +337,40 @@ export default function MainTextPanel({
   const mainTextClasses = ['main-text', 'text-' + edition?.lang];
 
   return (
-    <div className={'main-text-panel'}>
-      {editionOutOfDate &&
-        <div className={'out-of-date'}>Edition is out of date. {generationProgress === null ?
-          <Button variant="outline-secondary"
-                  onClick={onClickRegenerate}>Regenerate</Button> : 'Regenerating...'}
-        </div>}
-      {isPaginated &&
-        <div className={'main-text-pagination'}>
-          <div className={'main-text-pagination-nav'}>
-            <Button size="sm"
-                    variant="outline-secondary"
-                    className={'main-text-pagination-first'}
-                    title="First page"
-                    disabled={currentPage === 0}
-                    onClick={() => goToPage(0)}>{'First'}</Button>
-            <Button size="sm"
-                    variant="outline-secondary"
-                    className={'main-text-pagination-previous'}
-                    title="Previous page"
-                    disabled={currentPage === 0}
-                    onClick={() => goToPage(currentPage - 1)}>{'Previous'}</Button>
-            <Button size="sm"
-                    variant="outline-secondary"
-                    className={'main-text-pagination-next'}
-                    title="Next page"
-                    disabled={currentPage === pageCount - 1}
-                    onClick={() => goToPage(currentPage + 1)}>{'Next'}</Button>
-            <Button size="sm"
-                    variant="outline-secondary"
-                    className={'main-text-pagination-last'}
-                    title="Last page"
-                    disabled={currentPage === pageCount - 1}
-                    onClick={() => goToPage(pageCount - 1)}>{'Last'}</Button>
-          </div>
-          <div className={'main-text-pagination-jump'}>
-            <Form.Select size="sm"
-                         className={'main-text-pagination-select'}
-                         value={currentPage}
-                         onChange={(e) => goToPage(parseInt(e.target.value))}>
-              {paragraphPages.map((page, index) => <option key={page.label + index} value={index}>{page.label}</option>)}
-            </Form.Select>
-          </div>
-        </div>}
-      <div className={mainTextClasses.join(' ')}>
-        <div className={'left-margin'}></div>
-        <div className={'main-text-content'}>{currentParagraphs.map((p, i) => <ParagraphComponent p={p}
-                                                                                               key={i}/>)}</div>
-        <div className={'right-margin'}></div>
-      </div>
-    </div>
+    <Panel className={'main-text-panel'}>
+      <Toolbar>
+        <div className={'toolbar-group'}>{standardizedWords.length > 0 && <span>
+          Std. words:  <NiceToggle isOn={showStandardizedWords}
+                                           on={'Shown'}
+                                           off={'Hidden'}
+                                           onTitle={'Click to hide standardized words'}
+                                           offTitle={'Click to show standardized words'}
+                                           onClick={setShowStandardizedWords}/>
+        </span>}
+          { standardizedWords.length === 0 && <span>No standardized words defined</span>}
+
+        </div>
+        <div className={'toolbar-group center'}>
+          {isPaginated && <ToolbarPageControls page={currentPage}
+                                                totalPages={pageCount}
+                                                labels={paragraphPages.map((page) => page.label)}
+                                                onChange={goToPage}/>}
+        </div>
+        <div className={'toolbar-group right'}>
+          {!editionOutOfDate && <span className={'text-success'}><Check2Circle/> <span>Up to date</span></span>}
+          {editionOutOfDate && (generationProgress === null ?
+            <span className={'tb-btn text-danger'} onClick={onClickRegenerate} title={'Click to regenerate edition'}><XCircle/> Out of date</span> :
+            <span>Regenerating...</span>)}
+        </div>
+      </Toolbar>
+      <PanelContent>
+        <div className={mainTextClasses.join(' ')}>
+          <div className={'left-margin'}></div>
+          <div className={'main-text-content'}>{currentParagraphs.map((p, i) => <ParagraphComponent p={p}
+                                                                                                 key={i}/>)}</div>
+          <div className={'right-margin'}></div>
+        </div>
+      </PanelContent>
+    </Panel>
   );
 }

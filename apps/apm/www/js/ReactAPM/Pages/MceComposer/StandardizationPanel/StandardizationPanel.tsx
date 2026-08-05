@@ -9,7 +9,6 @@ import {StandardizedWord} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
 
 
-
 interface StandardizationPanelProps extends TabbableElementProps {
   standardizedWords: StandardizedWord[],
   delete: (original: string) => Promise<true | string>,
@@ -239,7 +238,8 @@ export default function StandardizationPanel({
                                      }}/>
             </ComponentWithPending>
           </div>
-          { row.staleInstanceIndices.length > 0 && <ExclamationTriangleFill className={'text-warning'} title={`${row.staleInstanceIndices.length} stale entries, no need to worry for now`}/>}
+          {row.staleInstanceIndices.length > 0 && <ExclamationTriangleFill className={'text-warning'}
+                                                                           title={`${row.staleInstanceIndices.length} stale entries, no need to worry for now`}/>}
           {rowErrors[row.original] !== undefined &&
             <span className={'text-danger standardization-row-error'}>{rowErrors[row.original]}</span>}
         </div>;
@@ -268,8 +268,9 @@ export default function StandardizationPanel({
       onAccept={handleAcceptConfirm}
       title={confirmAction?.action === 'delete' ? 'Delete standardization?' : 'Reset standardization?'}
       body={confirmAction === null ? null : (confirmAction.action === 'delete' ?
-        <>Are you sure you want to delete the standardization entry for <b>{confirmAction.original}</b>?</> :
-        <>Are you sure you want to reset the standardization status for all instances of <b>{confirmAction.original}</b>?</>
+          <>Are you sure you want to delete the standardization entry for <b>{confirmAction.original}</b>?</> :
+          <>Are you sure you want to reset the standardization status for all instances
+            of <b>{confirmAction.original}</b>?</>
       )}
       acceptButtonLabel={confirmAction?.action === 'delete' ? 'Delete' : 'Reset'}
       cancelButtonLabel={'Cancel'}
@@ -277,9 +278,10 @@ export default function StandardizationPanel({
     />
     <h1>Standardized Words</h1>
     <p>Add words that you want to standardize. Use the Edition Text panel to accept or reject specific occurrences</p>
-    <div className={'standardization-table-container'}>
-      <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true} getRowKey={(row) => row.original}/>
-    </div>
+
+    {rows.length > 0 && <div className={'standardization-table-container'}>
+      <NiceTable rows={rows} columnDefs={columnDefs} stickyHeader={true} getRowKey={(row) => row.original}/></div>}
+    {rows.length === 0 && <p><i>No standardized words defined yet...</i></p>}
     <div className={'standardization-add-section'}>
       <div className={'standardization-add-header'}>
         <PlusCircle className={'icon-btn' + (isAnyPending ? ' disabled' : '')}
@@ -318,4 +320,4 @@ export default function StandardizationPanel({
       </ComponentWithPending>}
     </div>
   </div>;
-}
+};

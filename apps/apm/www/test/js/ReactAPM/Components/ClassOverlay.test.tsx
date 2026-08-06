@@ -19,7 +19,11 @@ afterEach(() => {
   document.body.innerHTML = '';
 });
 
-async function renderOverlay(children: React.ReactNode, getOverlayContent: (id: string | null) => React.ReactNode) {
+async function renderOverlay(
+  children: React.ReactNode,
+  getOverlayContent: (id: string | null) => React.ReactNode,
+  props: Partial<React.ComponentProps<typeof ClassOverlay>> = {}
+) {
   document.body.innerHTML = '<div id="root"></div>';
   const container = document.getElementById('root')!;
   root = createRoot(container);
@@ -30,6 +34,7 @@ async function renderOverlay(children: React.ReactNode, getOverlayContent: (id: 
         baseClassName="overlay-ref"
         idClassPrefix="overlay-id-"
         getOverlayContent={getOverlayContent}
+        {...props}
       >
         {children}
       </ClassOverlay>
@@ -42,6 +47,12 @@ async function renderOverlay(children: React.ReactNode, getOverlayContent: (id: 
 async function click(element: Element) {
   await act(async () => {
     element.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+  });
+}
+
+async function mouseEvent(element: Element, type: 'mouseover' | 'mouseout') {
+  await act(async () => {
+    element.dispatchEvent(new MouseEvent(type, {bubbles: true}));
   });
 }
 
@@ -105,5 +116,63 @@ describe('ClassOverlay', () => {
 
     await click(container.querySelector('.ordinary-child')!);
     expect(container.querySelector('.overlay-content')).toBeNull();
+  });
+
+  it('shows content after hovering over a reference for the configured delay', async () => {
+    vi.useFakeTimers();
+    const container = await renderOverlay(
+      <button className="overlay-ref overlay-id-first">Reference</button>,
+      id => <span>content-{id}</span>,
+      {trigger: 'hover', hoverDelay: 100}
+    );
+
+    await mouseEvent(container.querySelector('.overlay-ref')!, 'mouseover');
+    expect(container.querySelector('.overlay-content')).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    expect(container.querySelector('.overlay-content')?.textContent).toBe('content-first');
+    vi.useRealTimers();
+  });
+
+  it('does not show content when the pointer leaves before the hover delay', async () => {
+    vi.useFakeTimers();
+    const container = await renderOverlay(
+      <button className="overlay-ref overlay-id-first">Reference</button>,
+      id => <span>content-{id}</span>,
+      {trigger: 'hover', hoverDelay: 100}
+    );
+    const reference = container.querySelector('.overlay-ref')!;
+
+    await mouseEvent(reference, 'mouseover');
+    await mouseEvent(reference, 'mouseout');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    expect(container.querySelector('.overlay-content')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('hides content immediately when the pointer leaves a hovered reference', async () => {
+    vi.useFakeTimers();
+    const container = await renderOverlay(
+      <button className="overlay-ref overlay-id-first">Reference</button>,
+      id => <span>content-{id}</span>,
+      {trigger: 'hover', hoverDelay: 0}
+    );
+    const reference = container.querySelector('.overlay-ref')!;
+
+    await mouseEvent(reference, 'mouseover');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    expect(container.querySelector('.overlay-content')).not.toBeNull();
+
+    await mouseEvent(reference, 'mouseout');
+    expect(container.querySelector('.overlay-content')).toBeNull();
+    vi.useRealTimers();
   });
 });

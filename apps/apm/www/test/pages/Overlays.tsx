@@ -15,7 +15,7 @@ function Overlays() {
       {someText.split(' ').map((word, index) => {
         if (words.includes(word)) {
           occurrences[word] = (occurrences[word] || 0) + 1;
-          return <Fragment key={index}><span className={`word word-${word}-${occurrences[word]}`}>{word}</span>
+          return <Fragment key={index}><span className={`word word-${word}-${occurrences[word]}`}>{word}</span>{' '}
           </Fragment>;
         }
         return <Fragment key={index}>{word} </Fragment>;
@@ -66,7 +66,7 @@ function Overlays() {
   return (
     <div className={'outer-container'}>
       <h1>Normal text</h1>
-      <ClassOverlay getOverlayContent={getOverlayContent} baseClassName={'word'}>
+      <ClassOverlay getOverlayContent={getOverlayContent} baseClassName={'word'} trigger={'hover'}>
         {myRichText(makeSomeText(myWords), myWords)}
       </ClassOverlay>
 

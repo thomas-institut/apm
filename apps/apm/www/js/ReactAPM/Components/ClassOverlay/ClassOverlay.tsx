@@ -1,4 +1,4 @@
-import React, {MouseEvent, ReactNode, useState} from "react";
+import React, {MouseEvent, ReactNode, useEffect, useRef, useState} from "react";
 import {flip, useFloating, autoUpdate, offset, shift} from "@floating-ui/react";
 
 
@@ -40,6 +40,18 @@ interface ClassOverlayProps {
    * Defaults to 'bottom'
    */
   placement?: Placement;
+  /**
+   * Event that displays the overlay
+   *
+   * Defaults to 'click'
+   */
+  trigger?: 'click' | 'hover';
+  /**
+   * Delay in milliseconds before a hovered reference displays its overlay
+   *
+   * Defaults to 500
+   */
+  hoverDelay?: number;
   getOverlayContent?: (id: string | null) => ReactNode;
 }
 
@@ -50,7 +62,9 @@ export default function ClassOverlay({
                                        baseClassName = 'overlay',
                                        placement = 'bottom',
                                        idClassPrefix,
-                                       overlayOffset = 5
+                                       overlayOffset = 5,
+                                       trigger = 'click',
+                                       hoverDelay = 500
                                      }: ClassOverlayProps) {
 
   if (idClassPrefix === undefined) {
@@ -60,6 +74,7 @@ export default function ClassOverlay({
   const [overlayElement, setOverlayElement] = React.useState<HTMLElement | null>(null);
   const [isShown, setIsShown] = useState(false);
   const [id, setId] = useState<string | null>('default');
+  const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   const floatingData = useFloating({
     placement: placement,
@@ -71,7 +86,17 @@ export default function ClassOverlay({
     whileElementsMounted: autoUpdate,
   });
 
+  const clearHoverTimer = () => {
+    if (hoverTimer.current !== undefined) {
+      clearTimeout(hoverTimer.current);
+      hoverTimer.current = undefined;
+    }
+  };
+
+  useEffect(() => clearHoverTimer, []);
+
   const hideOverlay = () => {
+    clearHoverTimer();
     setRefElement(null);
     setIsShown(false);
   };
@@ -90,36 +115,68 @@ export default function ClassOverlay({
     }
   };
 
+  const getReferenceId = (target: HTMLElement) => {
+    if (!target.classList.contains(baseClassName)) {
+      return undefined;
+    }
+
+    return target.className.split(' ').find((className) => {
+      const referenceId = className.slice(idClassPrefix.length);
+      return className.startsWith(idClassPrefix) && referenceId !== '';
+    })?.slice(idClassPrefix.length);
+  };
+
   const handleClick = (ev: MouseEvent<HTMLDivElement>) => {
     if (getOverlayContent === undefined) {
       setIsShown(false);
       return;
     }
     const target = ev.target as HTMLElement;
-    if (target.classList.contains(baseClassName)) {
-      target.className.split(' ').forEach((className) => {
-        if (className.startsWith(idClassPrefix)) {
-          const clickedId = className.slice(idClassPrefix.length);
-          if (clickedId === '') {
-            return;
-          }
-          ev.preventDefault();
-          setId(clickedId);
-          if (clickedId === id) {
-            toggleOverlay(target);
-          } else {
-            showOverlay(target);
-          }
-        }
-      });
+    const clickedId = getReferenceId(target);
+    if (clickedId === undefined) {
+      hideOverlay();
+      return;
+    }
+
+    ev.preventDefault();
+    setId(clickedId);
+    if (clickedId === id) {
+      toggleOverlay(target);
     } else {
+      showOverlay(target);
+    }
+  };
+
+  const handleMouseOver = (ev: MouseEvent<HTMLDivElement>) => {
+    if (getOverlayContent === undefined) {
+      return;
+    }
+    const target = ev.target as HTMLElement;
+    const hoveredId = getReferenceId(target);
+    if (hoveredId === undefined) {
+      return;
+    }
+
+    clearHoverTimer();
+    hoverTimer.current = setTimeout(() => {
+      setId(hoveredId);
+      showOverlay(target);
+      hoverTimer.current = undefined;
+    }, hoverDelay);
+  };
+
+  const handleMouseOut = (ev: MouseEvent<HTMLDivElement>) => {
+    const target = ev.target as HTMLElement;
+    if (getReferenceId(target) !== undefined) {
       hideOverlay();
     }
   };
 
   return (
     <div>
-      <div onClick={handleClick}>
+      <div onClick={trigger === 'click' ? handleClick : undefined}
+           onMouseOver={trigger === 'hover' ? handleMouseOver : undefined}
+           onMouseOut={trigger === 'hover' ? handleMouseOut : undefined}>
         {children}
       </div>
       {isShown && <div className="overlay-content"

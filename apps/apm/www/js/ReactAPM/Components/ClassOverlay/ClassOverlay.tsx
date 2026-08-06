@@ -1,5 +1,5 @@
 import React, {MouseEvent, ReactNode, useEffect, useRef, useState} from "react";
-import {flip, useFloating, autoUpdate, offset, shift} from "@floating-ui/react";
+import {autoUpdate, flip, offset, shift, useFloating} from "@floating-ui/react";
 
 
 type Placement =
@@ -52,19 +52,31 @@ interface ClassOverlayProps {
    * Defaults to 500
    */
   hoverDelay?: number;
+
+  /**
+   * Whether the overlay is enabled
+   *
+   * Defaults to true
+   */
+  enabled?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
   getOverlayContent?: (id: string | null) => ReactNode;
 }
 
 
 export default function ClassOverlay({
                                        children,
+                                       enabled = true,
                                        getOverlayContent,
                                        baseClassName = 'overlay',
                                        placement = 'bottom',
                                        idClassPrefix,
                                        overlayOffset = 5,
                                        trigger = 'click',
-                                       hoverDelay = 500
+                                       hoverDelay = 500,
+                                       className = '',
+                                       style = {},
                                      }: ClassOverlayProps) {
 
   if (idClassPrefix === undefined) {
@@ -172,11 +184,15 @@ export default function ClassOverlay({
     }
   };
 
+  if (!enabled) {
+    return <div className={className} style={style}>{children}</div>;
+  }
+
   return (
     <div>
       <div onClick={trigger === 'click' ? handleClick : undefined}
            onMouseOver={trigger === 'hover' ? handleMouseOver : undefined}
-           onMouseOut={trigger === 'hover' ? handleMouseOut : undefined}>
+           onMouseOut={trigger === 'hover' ? handleMouseOut : undefined} className={className} style={style}>
         {children}
       </div>
       {isShown && <div className="overlay-content"
@@ -187,5 +203,4 @@ export default function ClassOverlay({
       </div>}
     </div>
   );
-
 }

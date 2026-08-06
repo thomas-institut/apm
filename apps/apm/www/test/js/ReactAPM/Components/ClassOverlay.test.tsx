@@ -4,7 +4,7 @@
 
 import React from 'react';
 import {act} from 'react';
-import {afterEach, describe, expect, it, vi} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 import {createRoot, Root} from 'react-dom/client';
 import ClassOverlay from '@/ReactAPM/Components/ClassOverlay/ClassOverlay';
 
@@ -12,12 +12,6 @@ import ClassOverlay from '@/ReactAPM/Components/ClassOverlay/ClassOverlay';
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 let root: Root | undefined;
-
-afterEach(() => {
-  root?.unmount();
-  root = undefined;
-  document.body.innerHTML = '';
-});
 
 async function renderOverlay(
   children: React.ReactNode,
@@ -116,6 +110,33 @@ describe('ClassOverlay', () => {
 
     await click(container.querySelector('.ordinary-child')!);
     expect(container.querySelector('.overlay-content')).toBeNull();
+  });
+
+  it('applies className and style to the resulting div', async () => {
+    const container = await renderOverlay(
+      <span>Content</span>,
+      id => <span>content-{id}</span>,
+      {className: 'custom-overlay', style: {position: 'relative', zIndex: 10}}
+    );
+
+    const wrapper = container.firstElementChild?.firstElementChild as HTMLDivElement;
+    expect(wrapper.className).toBe('custom-overlay');
+    expect(wrapper.style.position).toBe('relative');
+    expect(wrapper.style.zIndex).toBe('10');
+  });
+
+  it('renders only the children wrapped in a styled div when disabled', async () => {
+    const container = await renderOverlay(
+      <span className="child">Content</span>,
+      id => <span>content-{id}</span>,
+      {enabled: false, className: 'disabled-overlay', style: {display: 'block'}}
+    );
+
+    const wrapper = container.firstElementChild as HTMLDivElement;
+    expect(container.querySelectorAll('div')).toHaveLength(1);
+    expect(wrapper.className).toBe('disabled-overlay');
+    expect(wrapper.style.display).toBe('block');
+    expect(wrapper.querySelector('.child')?.textContent).toBe('Content');
   });
 
   it('shows content after hovering over a reference for the configured delay', async () => {

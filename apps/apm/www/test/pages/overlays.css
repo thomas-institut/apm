@@ -6,6 +6,11 @@ body {
     padding: 2em;
 }
 
+.text-div {
+    margin: 1em;
+    font-family: serif;
+}
+
 .word {
     background: #d5a68b;
     border: 1px solid silver;

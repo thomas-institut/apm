@@ -2,7 +2,8 @@ import {createRoot} from "react-dom/client";
 import 'bootstrap/dist/css/bootstrap.min.css';
 import "./overlays.css";
 import ClassOverlay from "@/ReactAPM/Components/ClassOverlay/ClassOverlay";
-import {Fragment} from "react";
+import {Fragment, useRef, useState} from "react";
+import NiceToggle from "@/ReactAPM/Components/NiceToggle/NiceToggle";
 
 
 function Overlays() {
@@ -45,6 +46,8 @@ function Overlays() {
     return textWords.join(' ');
   };
 
+  const theText = useRef<string>(makeSomeText(myWords)) ;
+
 
   const getOverlayContent = (id: string | null) => {
     if (id === null)
@@ -63,15 +66,20 @@ function Overlays() {
       ;
   };
 
+  const [ enabled, setEnabled ] = useState(true);
+
   return (
     <div className={'outer-container'}>
       <h1>Normal text</h1>
-      <ClassOverlay getOverlayContent={getOverlayContent} baseClassName={'word'} trigger={'hover'}>
-        {myRichText(makeSomeText(myWords), myWords)}
+      <div style={{marginBottom: '1rem'}}>
+        Overlays: <NiceToggle isOn={enabled} onClick={() => setEnabled( currentValue => !currentValue)}/>
+      </div>
+      <ClassOverlay getOverlayContent={getOverlayContent} baseClassName={'word'} trigger={'hover'} enabled={enabled} className="text-div" >
+        {myRichText(theText.current, myWords)}
       </ClassOverlay>
 
       <h2>With a table</h2>
-      <ClassOverlay getOverlayContent={getOverlayContent} baseClassName={'word'}>
+      <ClassOverlay getOverlayContent={getOverlayContent} baseClassName={'word'} enabled={enabled}>
         <table>
           <thead>
           <tr>

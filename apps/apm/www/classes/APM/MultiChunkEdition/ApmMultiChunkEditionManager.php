@@ -7,6 +7,7 @@ use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataTable\Exception\RowDoesNotExist;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 use ThomasInstitut\TimeString\TimeString;
@@ -113,6 +114,28 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
     {
         // TODO: Implement getMultiChunkEditionIdsByWorkChunk() method.
         return [];
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEditionVersions(int $mceId): array
+    {
+        try {
+            $rows = $this->mceTable->getRowHistory($mceId);
+            $outputArray = [];
+            foreach ($rows as $row) {
+                $info = new MceVersionInfo();
+                $info->mceId = $mceId;
+                $info->authorId = $row['author_tid'];
+                $info->description = $row['version_description'];
+                $info->timeString = $row['valid_from'];
+                $outputArray[] = $info;
+            }
+            return $outputArray;
+        } catch (RowDoesNotExist) {
+            throw new MultiChunkEditionDoesNotExist("Edition $mceId does not exist");
+        }
     }
 
     /**

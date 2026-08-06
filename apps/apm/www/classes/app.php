@@ -342,6 +342,12 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
 
     // MULTI CHUNK EDITION
 
+
+    $group->get('/edition/multi/get/{editionId}/versions',
+        function (Request $request, Response $response) use ($container) {
+            return (new ApiMultiChunkEdition($container))->getEditionVersions($request, $response);
+        });
+
     /**
      * Return a multi-chunk edition by id and, optionally, timestamp
      *
@@ -360,7 +366,7 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
         });
 
     /**
-     * Saves a multi chunk edition
+     * Saves a multi-chunk edition
      *
      * API Inventory:
      *    Method: POST
@@ -375,6 +381,10 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
         function (Request $request, Response $response) use ($container) {
             return (new ApiMultiChunkEdition($container))->saveEdition($request, $response);
         });
+
+
+
+
 
 
 }

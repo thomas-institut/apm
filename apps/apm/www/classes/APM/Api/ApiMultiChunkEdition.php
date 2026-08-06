@@ -3,6 +3,7 @@
 namespace APM\Api;
 
 use APM\Api\DataSchema\ApiMceGetResponse;
+use APM\Api\DataSchema\ApiMceGetVersionsResponse;
 use APM\Api\DataSchema\ApiMceSaveResponse;
 use APM\MultiChunkEdition\MultiChunkEditionDoesNotExist;
 use Exception;
@@ -30,6 +31,23 @@ class ApiMultiChunkEdition extends ApiController
             $mceGetResponse->versionDescription = $data->versionDescription;
             $mceGetResponse->mceData = $data->mceData;
             return $this->responseFactory->success($response, $mceGetResponse);
+        } catch (MultiChunkEditionDoesNotExist) {
+            $this->logger->error("Edition $editionId not found");
+            return $this->responseFactory->notFound($response, "Edition $editionId not found");
+        } catch (Exception $e) {
+            $this->logger->error("Unexpected error while retrieving edition $editionId", [ 'exception' => $e]);
+            return $this->responseFactory->internalServerError($response, "Unexpected error while retrieving edition $editionId");
+        }
+    }
+
+    public function getEditionVersions(Request $request, Response $response) : Response {
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+        $editionId = intval($request->getAttribute('editionId'));
+        try {
+            $versions = $this->systemManager->getMultiChunkEditionManager()->getEditionVersions($editionId);
+            $apiResponse = new ApiMceGetVersionsResponse();
+            $apiResponse->versions = $versions;
+            return $this->responseFactory->success($response, $apiResponse);
         } catch (MultiChunkEditionDoesNotExist) {
             $this->logger->error("Edition $editionId not found");
             return $this->responseFactory->notFound($response, "Edition $editionId not found");

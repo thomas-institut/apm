@@ -53,5 +53,12 @@ abstract class MultiChunkEditionManager
      */
     abstract public function getMultiChunkEditionsByUser(int $userTid): array;
 
+    /**
+     * @param int $mceId
+     * @return MceVersionInfo[]
+     * @throws MultiChunkEditionDoesNotExist
+     */
+    abstract public function getEditionVersions(int $mceId) : array;
+
 
 }

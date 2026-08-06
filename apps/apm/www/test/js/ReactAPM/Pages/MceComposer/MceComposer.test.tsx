@@ -721,6 +721,7 @@ describe('MceComposer', () => {
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
         getSingleChunkData: getSingleChunkDataMock,
       } as any,
       versionTag: 'test',
@@ -809,6 +810,7 @@ describe('MceComposer', () => {
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
         getSingleChunkData: getSingleChunkDataMock,
       } as any,
       versionTag: 'test',
@@ -908,6 +910,7 @@ describe('MceComposer', () => {
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
         getSingleChunkData,
       } as any,
       versionTag: 'test',
@@ -1059,6 +1062,7 @@ describe('MceComposer', () => {
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
         apiMceGetData,
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
         getSingleChunkData,
       } as any,
       versionTag: 'test',

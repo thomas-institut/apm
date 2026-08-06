@@ -57,7 +57,7 @@ import {TimeString} from "@/toolbox/TimeString";
 import {CtData} from "@/CtData/CtData";
 import {ApiErrorResponse} from "@/Api/DataSchema/ApiResponse";
 import {ApiLoginRequest, ApiLoginResponse} from "@/Api/DataSchema/ApiLogin";
-import {ApiMceData, ApiMceDataAny, ApiMceSaveRequest, ApiMceSaveResponse} from "@/Api/DataSchema/ApiMceData";
+import {ApiMceData, ApiMceGetResponse, ApiMceSaveRequest, ApiMceSaveResponse} from "@/Api/DataSchema/ApiMceData";
 import {OperationalError} from "@/lib/Error/SystemError";
 import {MceData} from "@/MceData/MceData";
 
@@ -239,7 +239,6 @@ export class ApmApiClient {
   }
 
   async collationTableVersionInfo(tableId: number, versionTimeString: string): Promise<ApiCollationTableVersionInfo | null> {
-
     try {
       const apiResponse = await this.get(urlGen.apiCollationTable_versionInfo(tableId, versionTimeString));
       if (apiResponse.result === 'Success') {
@@ -252,7 +251,7 @@ export class ApmApiClient {
   }
 
   async apiMceGetData(editionId: number): Promise<ApiMceData> {
-    const serverResponse = await this.get(urlGen.apiGetMultiChunkEdition(editionId)) as ApiMceDataAny;
+    const serverResponse = await this.get(urlGen.apiGetMultiChunkEdition(editionId)) as ApiMceGetResponse;
     if (serverResponse.mceData.schemaVersion !== '3') {
       console.log(`Updating MCE data for edition ${editionId} from schema version '${serverResponse.mceData.schemaVersion}' to '3'`);
     }

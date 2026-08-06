@@ -40,16 +40,13 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
                 'title' => $row['title']
             ];
         }
-
         return $ids;
     }
 
-
     /**
      * @inheritDoc
-     * @throws MultiChunkEditionDoesNotExist
      */
-    public function getMultiChunkEditionById(int $id, string $timeString = ''): array
+    public function getMultiChunkEditionById(int $id, string $timeString = ''): MceSystemData
     {
         if ($timeString === '') {
             $timeString = TimeString::now();
@@ -59,29 +56,28 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         if (count($rows) === 0) {
             throw new MultiChunkEditionDoesNotExist("Multi chunk edition with id $id does not exist");
         }
-
-        $dbData = $rows->getFirst();
-        $isCompressed = intval($dbData['compressed']) === 1;
+        $dbRow = $rows->getFirst();
+        $isCompressed = intval($dbRow['compressed']) === 1;
 
         if ($isCompressed) {
-            $dataJson = gzuncompress($dbData['mce_data']);
+            $dataJson = gzuncompress($dbRow['mce_data']);
         } else {
-            $dataJson = $dbData['mce_data'];
+            $dataJson = $dbRow['mce_data'];
         }
 
         $mceData = json_decode($dataJson, true);
 
         // Handle archived editions
-        $mceData['archived'] = intval($dbData['archived']) === 1;
+        $mceData['archived'] = intval($dbRow['archived']) === 1;
 
-        return [
-            'authorTid' => $dbData['author_tid'],
-            'chunks' => explode(',', $dbData['chunks']),
-            'versionDescription' => $dbData['version_description'],
-            'validFrom' => $dbData['valid_from'],
-            'validUntil' => $dbData['valid_until'],
-            'mceData' => $mceData
-        ];
+        $data = new MceSystemData();
+        $data->chunks = explode(',', $dbRow['chunks']);
+        $data->authorId = $dbRow['author_tid'];
+        $data->versionDescription = $dbRow['version_description'];
+        $data->validFrom = $dbRow['valid_from'];
+        $data->validUntil = $dbRow['valid_until'];
+        $data->mceData = $mceData;
+        return $data;
     }
 
     /**
@@ -89,18 +85,18 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
      * @throws MultiChunkEditionDoesNotExist
      * @throws Exception
      */
-    public function saveMultiChunkEdition(int $id, array $mceData, int $authorTid, string $versionDescription): int
+    public function saveMultiChunkEdition(int $id, array $mceData, int $authorId, string $versionDescription): int
     {
         $timeString = TimeString::now();
-        if ($authorTid <= 0){
-            throw new InvalidArgumentException("Invalid author tid $authorTid");
+        if ($authorId <= 0){
+            throw new InvalidArgumentException("Invalid author tid $authorId");
         }
         $isNew = $id === -1;
         if (!$isNew) {
             // get the edition so that an exception is thrown if it does not exist
             $this->getMultiChunkEditionById($id);
         }
-        $dbRow = $this->getDbRowFromMceData($mceData, $authorTid, $versionDescription);
+        $dbRow = $this->getDbRowFromMceData($mceData, $authorId, $versionDescription);
         if ($isNew) {
             $id = $this->mceTable->createRowWithTime($dbRow, $timeString);
         } else {
@@ -121,19 +117,19 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
 
     /**
      * @param array $mceData
-     * @param int $authorTid
+     * @param int $authorId
      * @param string $versionDescription
      * @param bool $compress
      * @return array
      * @throws Exception
      */
-    private function getDbRowFromMceData(array $mceData, int $authorTid, string $versionDescription, bool $compress = false): array
+    private function getDbRowFromMceData(array $mceData, int $authorId, string $versionDescription, bool $compress = false): array
     {
 
         if (!isset($mceData['chunks'])) {
             throw new InvalidArgumentException("No chunk information in MceData");
         }
-        $chunkDbString = implode(',', MceData::getChunkIds($mceData));
+        $chunkDbString = implode(',', MceDataUtils::getChunkIds($mceData));
 
         if (!isset($mceData['title']) || $mceData['title'] === '') {
             $mceData['title'] = 'Edition ' . random_int(1000000, 9999999);
@@ -148,7 +144,7 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
 
         return [
             'title' => $title,
-            'author_tid' => $authorTid,
+            'author_tid' => $authorId,
             'version_description' => $versionDescription,
             'chunks' => $chunkDbString,
             'compressed' => $compress ? 1 : 0,

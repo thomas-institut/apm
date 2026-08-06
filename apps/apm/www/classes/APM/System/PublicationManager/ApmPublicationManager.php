@@ -242,8 +242,8 @@ class ApmPublicationManager implements PublicationManagerInterface
     {
         $this->logger->debug("Retrieving MCE data for edition ID $mceId");
         $mceDataInfo = $this->mceManager->getMultiChunkEditionById($mceId);
-        $versionString = $mceDataInfo['validFrom'];
-        $mceData = $mceDataInfo['mceData'];
+        $versionString = $mceDataInfo->validFrom;
+        $mceData = $mceDataInfo->mceData;
         $this->logger->debug("Retrieved MCE data for edition ID $mceId, version: $versionString, chunks count: " . count($mceData['chunks']));
         $chunksCtData = [];
 

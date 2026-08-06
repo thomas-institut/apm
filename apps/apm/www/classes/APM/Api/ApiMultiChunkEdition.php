@@ -2,7 +2,9 @@
 
 namespace APM\Api;
 
+use APM\Api\DataSchema\ApiMceGetResponse;
 use APM\Api\DataSchema\ApiMceSaveResponse;
+use APM\MultiChunkEdition\MultiChunkEditionDoesNotExist;
 use Exception;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -21,17 +23,20 @@ class ApiMultiChunkEdition extends ApiController
         $timeStamp = $request->getAttribute('timestamp',  TimeString::now());
         try {
             $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId, $timeStamp);
-        } catch (Exception) {
-            // this should almost never happen!
+            $mceGetResponse = new ApiMceGetResponse();
+            $mceGetResponse->validFrom = $data->validFrom;
+            $mceGetResponse->validUntil = $data->validUntil;
+            $mceGetResponse->chunks = $data->chunks;
+            $mceGetResponse->versionDescription = $data->versionDescription;
+            $mceGetResponse->mceData = $data->mceData;
+            return $this->responseFactory->success($response, $mceGetResponse);
+        } catch (MultiChunkEditionDoesNotExist) {
             $this->logger->error("Edition $editionId not found");
-            return $this->responseWithJson($response,  [
-                'editionId' => $editionId,
-                'message' => 'Edition not found'
-            ], 404);
+            return $this->responseFactory->notFound($response, "Edition $editionId not found");
+        } catch (Exception $e) {
+            $this->logger->error("Unexpected error while retrieving edition $editionId", [ 'exception' => $e]);
+            return $this->responseFactory->internalServerError($response, "Unexpected error while retrieving edition $editionId");
         }
-
-
-        return $this->responseWithJson($response, $data);
     }
 
     public function saveEdition(Request $request, Response $response): Response
@@ -57,17 +62,15 @@ class ApiMultiChunkEdition extends ApiController
             return $this->responseFactory->internalServerError($response, 'Error saving multi chunk edition');
         }
         // get the edition's data to report timestamp
-
         try {
             $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId);
+            $mceSaveResponse = new ApiMceSaveResponse();
+            $mceSaveResponse->id = $editionId;
+            $mceSaveResponse->saveTimeStamp = $data->validFrom;
+            return $this->responseFactory->success($response, $mceSaveResponse);
         } catch (Exception $e) {
-            // this should almost never happen!
-            $this->logger->error("Edition $editionId not found");
-            return $this->responseFactory->notFound($response, 'Edition not found');
+            $this->logger->error("Unexpected error while retrieving edition $editionId after save", [ 'exception' => $e]);
+            return $this->responseFactory->internalServerError($response, "Unexpected error while retrieving edition $editionId after save");
         }
-        $mceSaveResponse = new ApiMceSaveResponse();
-        $mceSaveResponse->id = $editionId;
-        $mceSaveResponse->saveTimeStamp = $data['validFrom'];
-        return $this->responseFactory->success($response, $mceSaveResponse);
     }
 }

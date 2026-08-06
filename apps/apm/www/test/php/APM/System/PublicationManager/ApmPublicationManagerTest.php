@@ -2,33 +2,27 @@
 
 namespace APM\System\PublicationManager;
 
-use APM\EntitySystem\Schema\Entity;
-use APM\NodeService\NodeServiceClient;
 use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\Schema\Entity;
+use APM\MultiChunkEdition\MceSystemData;
+use APM\MultiChunkEdition\MultiChunkEditionManager;
+use APM\NodeService\NodeServiceClient;
 use APM\System\Document\DocInfo;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\PageInfo;
 use APM\System\LanguageManager;
-use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Transcription\TranscriptionManager;
 use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Psr\Log\LoggerInterface;
+use ReflectionMethod;
 use ThomasInstitut\ApmPublicationApi\EditionPublication\EditionPublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
-
-use ThomasInstitut\TimeString\TimeString;
-use ThomasInstitut\FmtText\FmtTextToken;
-use ThomasInstitut\FmtText\FmtTextTextToken;
-use ThomasInstitut\FmtText\FmtTextMarkToken;
-use ThomasInstitut\FmtText\FmtTextGlueToken;
-use ThomasInstitut\FmtText\FmtTextEmptyToken;
-use ReflectionMethod;
 
 class ApmPublicationManagerTest extends TestCase
 {
@@ -81,7 +75,7 @@ class ApmPublicationManagerTest extends TestCase
     public function testListReturnsListings(): void
     {
         $this->valkeyClient->method('__call')
-            ->willReturnCallback(function($method, $args) {
+            ->willReturnCallback(function ($method, $args) {
                 if ($method === 'smembers') {
                     return [1, 2];
                 }
@@ -154,7 +148,7 @@ class ApmPublicationManagerTest extends TestCase
     public function testDeletePublication(): void
     {
         $this->valkeyClient->method('__call')
-            ->willReturnCallback(function($method) {
+            ->willReturnCallback(function ($method) {
                 if ($method === 'exists') {
                     return true;
                 }
@@ -163,9 +157,9 @@ class ApmPublicationManagerTest extends TestCase
 
         $this->valkeyClient->expects($this->once())
             ->method('transaction')
-            ->willReturnCallback(function($callback) {
+            ->willReturnCallback(function ($callback) {
                 $tx = $this->createMock(Client::class);
-                $tx->method('__call')->willReturnCallback(function($method, $args) {
+                $tx->method('__call')->willReturnCallback(function ($method, $args) {
                     static $calls = [];
                     $calls[] = [$method, $args];
                     return null;
@@ -221,9 +215,9 @@ class ApmPublicationManagerTest extends TestCase
 
         $this->valkeyClient->expects($this->once())
             ->method('transaction')
-            ->willReturnCallback(function($callback) use (&$capturedPubKey, &$capturedResourceId, &$capturedType) {
+            ->willReturnCallback(function ($callback) use (&$capturedPubKey, &$capturedResourceId, &$capturedType) {
                 $tx = $this->createMock(Client::class);
-                $tx->method('__call')->willReturnCallback(function($method, $args) use (&$capturedPubKey, &$capturedResourceId, &$capturedType) {
+                $tx->method('__call')->willReturnCallback(function ($method, $args) use (&$capturedPubKey, &$capturedResourceId, &$capturedType) {
                     if ($method === 'hset') {
                         $capturedPubKey = $args[0];
                         if ($args[1] === 'resourceId') {
@@ -289,7 +283,7 @@ class ApmPublicationManagerTest extends TestCase
         $docId = 456;
 
         $this->valkeyClient->method('__call')
-            ->willReturnCallback(function($method, $args) use ($pubId, $docId) {
+            ->willReturnCallback(function ($method, $args) use ($pubId, $docId) {
                 if ($method === 'hgetall') {
                     if ($args[0] === 'APM:PublicationManager:pub:' . $pubId) {
                         return [
@@ -319,13 +313,13 @@ class ApmPublicationManagerTest extends TestCase
 
         $capturedFields = [];
         $this->valkeyClient->method('__call')
-            ->willReturnCallback(function($method, $args) use (&$capturedFields) {
+            ->willReturnCallback(function ($method, $args) use (&$capturedFields) {
                 if ($method === 'hgetall') {
-                     return [
-                            'type' => PublicationType::Transcription->value,
-                            'resourceId' => '456',
-                            'title' => 'Old Title'
-                        ];
+                    return [
+                        'type' => PublicationType::Transcription->value,
+                        'resourceId' => '456',
+                        'title' => 'Old Title'
+                    ];
                 }
                 if ($method === 'hset') {
                     $capturedFields[$args[1]] = $args[2];
@@ -342,6 +336,7 @@ class ApmPublicationManagerTest extends TestCase
         $this->assertEquals($pubId, $updatedData->id);
         $this->assertEquals('New Title', $updatedData->title);
     }
+
     /**
      * @throws ResourceNotFoundException
      */
@@ -349,12 +344,11 @@ class ApmPublicationManagerTest extends TestCase
     public function testCreateEditionPublication(): void
     {
         $mceId = 123;
-        $mceDataInfo = [
-            'validFrom' => '2023-01-01 00:00:00.000000',
-            'mceData' => [
-                'chunks' => [
-                    ['chunkEditionTableId' => 456]
-                ]
+        $mceDataInfo = new MceSystemData();
+        $mceDataInfo->validFrom = '2023-01-01 00:00:00.000000';
+        $mceDataInfo->mceData = [
+            'chunks' => [
+                ['chunkEditionTableId' => 456]
             ]
         ];
 
@@ -387,9 +381,9 @@ class ApmPublicationManagerTest extends TestCase
         $capturedPubKey = null;
         $this->valkeyClient->expects($this->once())
             ->method('transaction')
-            ->willReturnCallback(function($callback) use (&$capturedPubKey) {
+            ->willReturnCallback(function ($callback) use (&$capturedPubKey) {
                 $tx = $this->createMock(Client::class);
-                $tx->method('__call')->willReturnCallback(function($method, $args) use (&$capturedPubKey) {
+                $tx->method('__call')->willReturnCallback(function ($method, $args) use (&$capturedPubKey) {
                     if ($method === 'hset' && $args[1] === 'type') {
                         $capturedPubKey = $args[0];
                     }
@@ -417,7 +411,7 @@ class ApmPublicationManagerTest extends TestCase
         $mceId = 123;
 
         $this->valkeyClient->method('__call')
-            ->willReturnCallback(function($method, $args) use ($pubId, $mceId) {
+            ->willReturnCallback(function ($method, $args) use ($pubId, $mceId) {
                 if ($method === 'hgetall' && $args[0] === 'APM:PublicationManager:pub:' . $pubId) {
                     return [
                         'type' => PublicationType::Edition->value,
@@ -428,10 +422,9 @@ class ApmPublicationManagerTest extends TestCase
                 return null;
             });
 
-        $mceDataInfo = [
-            'validFrom' => '2023-01-01 00:00:00.000000',
-            'mceData' => ['chunks' => []]
-        ];
+        $mceDataInfo = new MceSystemData();
+        $mceDataInfo->validFrom = '2023-01-01 00:00:00.000000';
+        $mceDataInfo->mceData = ['chunks' => []];
 
         $this->mceManager->expects($this->once())
             ->method('getMultiChunkEditionById')
@@ -455,7 +448,7 @@ class ApmPublicationManagerTest extends TestCase
 
         $capturedFields = [];
         $this->valkeyClient->method('__call')
-            ->willReturnCallback(function($method, $args) use (&$capturedFields, $pubId, $mceId) {
+            ->willReturnCallback(function ($method, $args) use (&$capturedFields, $pubId, $mceId) {
                 if ($method === 'hgetall' && $args[0] === 'APM:PublicationManager:pub:' . $pubId) {
                     return [
                         'type' => PublicationType::Edition->value,
@@ -485,11 +478,10 @@ class ApmPublicationManagerTest extends TestCase
         $resourceId = 123;
         $publicationId = 456;
 
-        $mceDataInfo = [
-            'validFrom' => '2023-01-01 00:00:00.000000',
-            'mceData' => [
-                'chunks' => []
-            ]
+        $mceDataInfo = new MceSystemData();
+        $mceDataInfo->validFrom = '2023-01-01 00:00:00.000000';
+        $mceDataInfo->mceData = [
+            'chunks' => []
         ];
 
         $this->mceManager->expects($this->once())
@@ -506,9 +498,9 @@ class ApmPublicationManagerTest extends TestCase
             'description' => 'Edition Description',
             'languageCode' => 'ara',
             'mainText' => [
-                [ 'type' => 'text', 'text' => 'Hello'],
-                [ 'type' => 'glue'],
-                [ 'type' => 'text', 'text' => [ ['type' => 'text', 'text' => 'World', 'fontWeight' => 'bold'] ]]
+                ['type' => 'text', 'text' => 'Hello'],
+                ['type' => 'glue'],
+                ['type' => 'text', 'text' => [['type' => 'text', 'text' => 'World', 'fontWeight' => 'bold']]]
             ],
             'apparatuses' => [],
             'witnesses' => [],

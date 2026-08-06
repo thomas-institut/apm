@@ -15,7 +15,7 @@ let root: Root | undefined;
 
 async function renderOverlay(
   children: React.ReactNode,
-  getOverlayContent: (id: string | null) => React.ReactNode,
+  getOverlayContent: (id: string | null) => React.ReactNode | Promise<React.ReactNode>,
   props: Partial<React.ComponentProps<typeof ClassOverlay>> = {}
 ) {
   document.body.innerHTML = '<div id="root"></div>';
@@ -65,6 +65,19 @@ describe('ClassOverlay', () => {
     expect(overlay.textContent).toBe('content-first');
     expect(getOverlayContent).toHaveBeenLastCalledWith('first');
     expect(overlay.style.position).toBe('absolute');
+  });
+
+  it('shows content when the content function is asynchronous', async () => {
+    const getOverlayContent = vi.fn(async (id: string | null) => <span>content-{id}</span>);
+    const container = await renderOverlay(
+      <button className="overlay-ref overlay-id-first">Reference</button>,
+      getOverlayContent
+    );
+
+    await click(container.querySelector('.overlay-ref')!);
+
+    expect(container.querySelector('.overlay-content')?.textContent).toBe('content-first');
+    expect(getOverlayContent).toHaveBeenLastCalledWith('first');
   });
 
   it('toggles the overlay when the same reference is clicked again', async () => {
@@ -193,6 +206,62 @@ describe('ClassOverlay', () => {
     expect(container.querySelector('.overlay-content')).not.toBeNull();
 
     await mouseEvent(reference, 'mouseout');
+    expect(container.querySelector('.overlay-content')).toBeNull();
+    vi.useRealTimers();
+  });
+
+  it('shows asynchronously loaded content after the content function takes longer than the hover delay', async () => {
+    vi.useFakeTimers();
+    const getOverlayContent = vi.fn(async (id: string | null) => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return <span>content-{id}</span>;
+    });
+    const container = await renderOverlay(
+      <button className="overlay-ref overlay-id-first">Reference</button>,
+      getOverlayContent,
+      {trigger: 'hover', hoverDelay: 100}
+    );
+
+    await mouseEvent(container.querySelector('.overlay-ref')!, 'mouseover');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+
+    expect(getOverlayContent).toHaveBeenLastCalledWith('first');
+    expect(container.querySelector('.overlay-content')).toBeNull();
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(500);
+    });
+
+    expect(container.querySelector('.overlay-content')?.textContent).toBe('content-first');
+    vi.useRealTimers();
+  });
+
+  it('does not show asynchronously loaded content when the pointer leaves before the hover delay', async () => {
+    vi.useFakeTimers();
+    const getOverlayContent = vi.fn(async (id: string | null) => {
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return <span>content-{id}</span>;
+    });
+    const container = await renderOverlay(
+      <button className="overlay-ref overlay-id-first">Reference</button>,
+      getOverlayContent,
+      {trigger: 'hover', hoverDelay: 100}
+    );
+    const reference = container.querySelector('.overlay-ref')!;
+
+    await mouseEvent(reference, 'mouseover');
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(50);
+    });
+    await mouseEvent(reference, 'mouseout');
+
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(550);
+    });
+
+    expect(getOverlayContent).not.toHaveBeenCalled();
     expect(container.querySelector('.overlay-content')).toBeNull();
     vi.useRealTimers();
   });

@@ -61,7 +61,7 @@ interface ClassOverlayProps {
   enabled?: boolean;
   className?: string;
   style?: React.CSSProperties;
-  getOverlayContent?: (id: string | null) => ReactNode;
+  getOverlayContent?: (id: string | null) => ReactNode | Promise<ReactNode>;
 }
 
 
@@ -86,7 +86,9 @@ export default function ClassOverlay({
   const [overlayElement, setOverlayElement] = React.useState<HTMLElement | null>(null);
   const [isShown, setIsShown] = useState(false);
   const [id, setId] = useState<string | null>('default');
+
   const hoverTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const overlayContent = useRef<ReactNode>(null);
 
   const floatingData = useFloating({
     placement: placement,
@@ -110,20 +112,23 @@ export default function ClassOverlay({
   const hideOverlay = () => {
     clearHoverTimer();
     setRefElement(null);
+    setId(null);
+    overlayContent.current = null;
     setIsShown(false);
   };
 
-  const showOverlay = (target: HTMLElement) => {
+  const showOverlay = async (target: HTMLElement, id: string | null) => {
+    overlayContent.current = await getOverlayContent?.(id);
+    setId(id);
     setRefElement(target);
     setIsShown(true);
   };
 
-  const toggleOverlay = (target: HTMLElement) => {
-    setIsShown(s => !s);
+  const toggleOverlay = async (target: HTMLElement, id: string | null) => {
     if (isShown) {
       hideOverlay();
     } else {
-      showOverlay(target);
+      await showOverlay(target, id);
     }
   };
 
@@ -138,7 +143,7 @@ export default function ClassOverlay({
     })?.slice(idClassPrefix.length);
   };
 
-  const handleClick = (ev: MouseEvent<HTMLDivElement>) => {
+  const handleClick = async (ev: MouseEvent<HTMLDivElement>) => {
     if (getOverlayContent === undefined) {
       setIsShown(false);
       return;
@@ -151,11 +156,10 @@ export default function ClassOverlay({
     }
 
     ev.preventDefault();
-    setId(clickedId);
     if (clickedId === id) {
-      toggleOverlay(target);
+      await toggleOverlay(target, clickedId);
     } else {
-      showOverlay(target);
+      await showOverlay(target, clickedId);
     }
   };
 
@@ -166,13 +170,13 @@ export default function ClassOverlay({
     const target = ev.target as HTMLElement;
     const hoveredId = getReferenceId(target);
     if (hoveredId === undefined) {
+      hideOverlay();
       return;
     }
 
     clearHoverTimer();
-    hoverTimer.current = setTimeout(() => {
-      setId(hoveredId);
-      showOverlay(target);
+    hoverTimer.current = setTimeout( async () => {
+      await showOverlay(target, hoveredId);
       hoverTimer.current = undefined;
     }, hoverDelay);
   };
@@ -199,7 +203,7 @@ export default function ClassOverlay({
                        onClick={() => hideOverlay()}
                        ref={node => setOverlayElement(node)}
                        style={{...floatingData.floatingStyles}}>
-        {getOverlayContent ? getOverlayContent(id) : null}
+        {overlayContent.current}
       </div>}
     </div>
   );

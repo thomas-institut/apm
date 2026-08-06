@@ -49,7 +49,7 @@ function Overlays() {
   const theText = useRef<string>(makeSomeText(myWords)) ;
 
 
-  const getOverlayContent = (id: string | null) => {
+  const getOverlayContent = async (id: string | null) => {
     if (id === null)
       return null;
 

@@ -12,6 +12,17 @@ export interface ApiMceGetResponse extends ApiResponse {
   versionDescription: string;
 }
 
+export interface ApiMceGetVersionsResponse extends ApiResponse {
+  result: 'Success';
+  versions: MceVersionInfo[];
+}
+
+export interface MceVersionInfo {
+  mceId: number;
+  timeString: string;
+  authorId: number;
+  description: string;
+}
 
 export interface ApiMceData {
   authorId: number;

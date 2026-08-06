@@ -57,7 +57,13 @@ import {TimeString} from "@/toolbox/TimeString";
 import {CtData} from "@/CtData/CtData";
 import {ApiErrorResponse} from "@/Api/DataSchema/ApiResponse";
 import {ApiLoginRequest, ApiLoginResponse} from "@/Api/DataSchema/ApiLogin";
-import {ApiMceData, ApiMceGetResponse, ApiMceSaveRequest, ApiMceSaveResponse} from "@/Api/DataSchema/ApiMceData";
+import {
+  ApiMceData,
+  ApiMceGetResponse,
+  ApiMceGetVersionsResponse,
+  ApiMceSaveRequest,
+  ApiMceSaveResponse
+} from "@/Api/DataSchema/ApiMceData";
 import {OperationalError} from "@/lib/Error/SystemError";
 import {MceData} from "@/MceData/MceData";
 
@@ -251,7 +257,7 @@ export class ApmApiClient {
   }
 
   async apiMceGetData(editionId: number): Promise<ApiMceData> {
-    const serverResponse = await this.get(urlGen.apiGetMultiChunkEdition(editionId)) as ApiMceGetResponse;
+    const serverResponse = await this.get(urlGen.apeMceGet(editionId)) as ApiMceGetResponse;
     if (serverResponse.mceData.schemaVersion !== '3') {
       console.log(`Updating MCE data for edition ${editionId} from schema version '${serverResponse.mceData.schemaVersion}' to '3'`);
     }
@@ -260,7 +266,7 @@ export class ApmApiClient {
 
   async apiMceSave(request: ApiMceSaveRequest): Promise<ApiMceSaveResponse | ApiErrorResponse> {
     try {
-      return await this.post(urlGen.apiSaveMultiChunkEdition(), request, true);
+      return await this.post(urlGen.apiMceSave(), request, true);
     } catch (error) {
       console.warn(`Error saving multi chunk edition`, error);
       if (error instanceof ApmApiClientError) {
@@ -268,6 +274,14 @@ export class ApmApiClient {
       }
       throw error;
     }
+  }
+
+  async apiMceGetVersions(editionId: number): Promise<ApiMceGetVersionsResponse> {
+    const resp = await this.get(urlGen.apiMceGetVersions(editionId), true) as ApiMceGetVersionsResponse | ApiErrorResponse;
+    if (resp.result === 'Error') {
+      throw new ApmApiClientError(resp.message, 'network', resp.httpStatus);
+    }
+    return resp;
   }
 
 

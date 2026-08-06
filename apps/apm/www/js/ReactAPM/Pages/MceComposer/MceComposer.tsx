@@ -65,6 +65,7 @@ import StandardizationPanel from "@/ReactAPM/Pages/MceComposer/StandardizationPa
 import {StandardizedWords} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
 import AdminPanel from "@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel";
+import {MceVersionInfo} from "@/Api/DataSchema/ApiMceData";
 
 // TODO: for later
 //  - Implement admin panel with versions
@@ -107,6 +108,11 @@ interface ChunkLoadResult {
 
 export interface MceComposerHistoryState {
   mceData: MceDataInterface;
+}
+
+interface InitialMceData {
+  mceData: MceDataInterface;
+  versions: MceVersionInfo[];
 }
 
 interface MceSettings {
@@ -152,6 +158,7 @@ export default function MceComposer() {
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
   const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
+  const [versions, setVersions] = useState<MceVersionInfo[]>([]);
   const [edition, setEdition] = useState<Edition | null>(null);
   const [editionGenerationProgress, setEditionGenerationProgress] = useState<number | null>(null);
   const [settings, setSettings] = useState<MceSettings>({
@@ -218,6 +225,15 @@ export default function MceComposer() {
   const editionKey = `mce-${mceDataId}`;
   const isMceDataIdValid = routeErrorMsg === null && (id === 'new' || mceDataId > 0);
 
+  const getInitialInfo = async (mceDataId: number): Promise<InitialMceData> => {
+    const respGet = await appContext.apiClient.apiMceGetData(mceDataId);
+    const restVersions = await appContext.apiClient.apiMceGetVersions(mceDataId);
+    return {
+      mceData: respGet.mceData,
+      versions: restVersions.versions,
+    };
+  }
+
   // Start a fresh editor session whenever the route selects another MCE.
   useEffect(() => {
     if (!isMceDataIdValid) {
@@ -278,7 +294,7 @@ export default function MceComposer() {
 
       let ignore = false;
       const editorSession = editorSessionRef.current;
-      appContext.apiClient.apiMceGetData(mceDataId)
+      getInitialInfo(mceDataId)
         .then((resp) => {
           if (ignore || editorSession !== editorSessionRef.current) {
             return; // avoid problems with React strict mode
@@ -296,6 +312,7 @@ export default function MceComposer() {
             lastVersionTimeStamp: null,
           }));
           setMceData(resp.mceData);
+          setVersions(resp.versions);
           setCtDataStatusArray(initialCtDataStatusArray);
           setMceComposerStatus('loadingSingleChunks');
         })
@@ -1321,7 +1338,7 @@ export default function MceComposer() {
       title: 'Admin',
       expandable: false,
       tabbable: true,
-      content: <AdminPanel/>
+      content: <AdminPanel versions={versions}/>
     }
   ];
 

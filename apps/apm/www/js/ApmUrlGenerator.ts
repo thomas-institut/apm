@@ -384,14 +384,18 @@ export class ApmUrlGenerator {
   }
 
 
-  apiGetMultiChunkEdition(editionId: number, timeStamp = '') {
+  apeMceGet(editionId: number, timeStamp = '') {
     if (timeStamp !== '') {
       return `${this.apiBase}/edition/multi/get/${editionId}/${timeStamp}`;
     }
     return `${this.apiBase}/edition/multi/get/${editionId}`;
   }
 
-  apiSaveMultiChunkEdition() {
+  apiMceGetVersions(editionId: number) {
+    return `${this.apiBase}/edition/multi/get/${editionId}/versions`;
+  }
+
+  apiMceSave() {
     return `${this.apiBase}/edition/multi/save`;
   }
 

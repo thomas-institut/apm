@@ -1,8 +1,8 @@
-import React, {ReactNode} from 'react';
-import {SharedTablePopover} from "@/ReactAPM/Components/SharedTablePopover";
+import React, {CSSProperties, ReactNode} from 'react';
 import {createRoot} from "react-dom/client";
-import '../../node_modules/bootstrap5/dist/css/bootstrap.min.css'
 import {Button, Container, OverlayTrigger, Popover} from "react-bootstrap";
+import ClassOverlay from "@/ReactAPM/Components/ClassOverlay/ClassOverlay";
+import 'bootstrap/dist/css/bootstrap.min.css';
 
 
 
@@ -22,11 +22,22 @@ export function ReactSharedPopovers() {
 
   const [enabledByFunction, setEnabledByFunction] = React.useState(true);
   const [enabledByState, setEnabledByState] = React.useState(true);
-  async function getPopoverContent(x: number, y: number): Promise<ReactNode> {
+
+  const overlayStyle: CSSProperties = {
+    background: 'lightgray',
+    border: '1px solid black',
+    padding: '10px',
+    borderRadius: '5px'
+  }
+  async function getPopoverContent(id: string |null ): Promise<ReactNode> {
     if (!enabledByFunction) {
       return null;
     }
-    return <><strong>Cell</strong>: {x}, {y}<br/>Important information here.</>;
+    if (id === null) {
+      return null;
+    }
+    const [x, y] = id.split('-');
+    return <div style={overlayStyle}><strong>Cell</strong>: {x}, {y}<br/>Important information here.</div>;
   }
 
   const popover = (
@@ -49,17 +60,17 @@ export function ReactSharedPopovers() {
         </div>
         <div>
           This is a shared popover set up using SharedTablePopover.  Set enable state:
-          <div>By function:
+          <div>By function (i.e., the content generation function enables or disables the popover):
             <Button variant="primary" onClick={() => setEnabledByFunction(!enabledByFunction)}>{ enabledByFunction ? 'Disable' : 'Enable'}</Button></div>
           <div>
-            By state:
+            By state (i.e., a state variable enables or disables the popover):
             <Button variant="primary" onClick={() => setEnabledByState(!enabledByState)}>{ enabledByState ? 'Disable' : 'Enable'}</Button>
           </div>
 
         </div>
-        <SharedTablePopover getPopoverContent={getPopoverContent} enabled={enabledByState}>
+        <ClassOverlay getOverlayContent={getPopoverContent} enabled={enabledByState} baseClassName={'cell'} trigger={'hover'} hoverDelay={100} overlayOffset={1}>
           {getTable(3, 3)}
-        </SharedTablePopover>
+        </ClassOverlay>
       </Container>
   );
 }

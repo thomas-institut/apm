@@ -14,7 +14,7 @@ import {MceData} from '@/MceData/MceData';
 import {MceDataEditionGenerator} from '@/MceData/MceDataEditionGenerator';
 import {ConflictError, OperationalError} from '@/lib/Error/SystemError';
 
-const mockRouteParams = vi.hoisted(() => ({id: 'new'}));
+const mockRouteParams = vi.hoisted(() => ({id: 'new', version: undefined as string | undefined}));
 const mockedAddChunk = vi.hoisted(() => ({
   callback: undefined as undefined | ((tableId: number, version?: string) => Promise<true | string>),
 }));
@@ -233,6 +233,10 @@ vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel', () => ({
   default: () => <div>preview</div>
 }));
 
+vi.mock('@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel', () => ({
+  default: () => <div>admin</div>,
+}));
+
 // @ts-expect-error test-only global binding
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -275,6 +279,7 @@ const getChunkApiResponse = (tableId: number) => {
 
 afterEach(() => {
   mockRouteParams.id = 'new';
+  mockRouteParams.version = undefined;
 });
 
 describe('isMceDataEditingAllowed', () => {
@@ -768,6 +773,56 @@ describe('MceComposer', () => {
 
     expect(getSingleChunkDataMock).toHaveBeenCalledTimes(12);
     expect(getSingleChunkDataMock.mock.calls.slice(10, 12).map((call) => call[0])).toEqual([110, 111]);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('shows a warning in the top bar when the loaded version is not the last one', async () => {
+    mockRouteParams.id = '123';
+    mockRouteParams.version = '20260101120000000000';
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const mceData = MceData.createEmpty();
+    const loadedVersion = '2026-01-01 12:00:00.000000';
+    const lastVersion = '2026-01-02 12:00:00.000000';
+    const apiMceGetData = vi.fn().mockResolvedValue({mceData, validFrom: loadedVersion});
+    const apiMceGetVersions = vi.fn().mockResolvedValue({versions: [
+      {mceId: 123, timeString: loadedVersion, authorId: 1, description: ''},
+      {mceId: 123, timeString: lastVersion, authorId: 1, description: ''},
+    ]});
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData,
+        apiMceGetVersions,
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects(8);
+    });
+
+    expect(apiMceGetData).toHaveBeenCalledWith(123, loadedVersion);
+    expect(container.querySelector('.notifications')?.textContent).toContain('Outdated Version!');
+    expect(container.querySelector('.notifications')?.textContent).toContain('This is not the last version of this edition.');
 
     await act(async () => {
       root.unmount();

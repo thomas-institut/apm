@@ -8,9 +8,7 @@ import {
   Arrow90degRight,
   ArrowCounterclockwise,
   ArrowsAngleContract,
-  BugFill,
-  ChevronRight, ExclamationTriangleFill,
-  Gear
+  ChevronRight, Gear
 } from "react-bootstrap-icons";
 import {Form, OverlayTrigger, Popover, Spinner} from "react-bootstrap";
 import {MceData} from '@/MceData/MceData';
@@ -67,6 +65,8 @@ import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
 import AdminPanel from "@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel";
 import {MceVersionInfo} from "@/Api/DataSchema/ApiMceData";
 import {TimeString} from "@/toolbox/TimeString";
+import BugWarningButton from "@/ReactAPM/Pages/MceComposer/BugWarningButton";
+import NotLastVersionWarningButton from "@/ReactAPM/Pages/MceComposer/NotLastVersionWarningButton";
 
 // TODO: for later
 //  - Implement admin panel with versions
@@ -1449,31 +1449,12 @@ export default function MceComposer() {
   );
 
   const notificationsDiv = <div className={'notifications'}>
-    {isLastVersion !== null && !isLastVersion && <ExclamationTriangleFill className={'text-danger icon-btn'} style={{fontSize: '1.2em'}} title={'This is not the last version of this edition. Normally you should not edit it'}/>}
+    {isLastVersion !== null && !isLastVersion && <NotLastVersionWarningButton version={versionString}/>}
     {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
     {operationalActionErrorMsg !== null && <span className={'text-danger action-error-message'}>{operationalActionErrorMsg}</span>}
     {saving && <span className={'text-primary'}>Saving... <Spinner size={'sm'}/></span>}
   </div>;
-
-  const bugPopover = (
-    <Popover id="bug-popover" className="bug-popover">
-      <Popover.Header>Oops!</Popover.Header>
-      <Popover.Body>
-        <p>You have discovered a bug in the software! Please click <a
-          href={'https://github.com/thomas-institut/apm/issues/new'} target="_blank">here to report it on Github</a>.
-        </p>
-        <p>Include the following description:</p>
-        <p className={'bug-description'}>{foundBugDescription}</p>
-        <p>Be sure to include the following information as well:</p>
-        <ul>
-          <li>What you were doing when the bug occurred.</li>
-          <li>A screenshot of the History Panel</li>
-          <li>If possible, error messages or logs from the Developer Tools</li>
-        </ul>
-      </Popover.Body>
-    </Popover>
-  );
 
   const controlsDiv = <div className={'controls'}>
     {!foundBug && <Arrow90degLeft className={'icon-btn' + (canUndo ? '' : ' disabled')}
@@ -1503,9 +1484,7 @@ export default function MceComposer() {
     {!foundBug && <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
                                          onClick={() => handleOnClickRevertChanges()}
                                          title={'Click to revert to last saved version'}/>}
-    {foundBug && <OverlayTrigger trigger={['click']} placement="bottom" overlay={bugPopover}>
-      <BugFill className={'icon-btn bug-icon'} title={`A bug was found, click here for more information`}/>
-    </OverlayTrigger>}
+    {foundBug && <BugWarningButton foundBugDescription={foundBugDescription}/>}
     <OverlayTrigger trigger="click" placement="bottom" overlay={settingsPopover} rootClose>
       <Gear className={'icon-btn'} title={'Settings'}/>
     </OverlayTrigger>

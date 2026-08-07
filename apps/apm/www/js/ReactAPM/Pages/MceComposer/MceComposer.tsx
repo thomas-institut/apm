@@ -154,6 +154,26 @@ const getMessageFromThrownError = (error: unknown): string => {
   return String(error ?? 'Unknown error');
 };
 
+const synchronizeCtDataStatusesWithMceData = (ctDataStatuses: CtDataStatus[], mceData: MceDataInterface): CtDataStatus[] => {
+  const chunksByTableId = new Map(mceData.chunks.map((chunk) => [chunk.chunkEditionTableId, chunk]));
+
+  return ctDataStatuses.map((ctDataStatus) => {
+    const chunk = chunksByTableId.get(ctDataStatus.ctDataId);
+    if (chunk === undefined || ctDataStatus.ctDataState !== 'loaded') {
+      return ctDataStatus;
+    }
+
+    return {
+      ...ctDataStatus,
+      requestedVersion: chunk.version,
+      loadedVersionTimeStamp: chunk.version,
+      isLatestVersion: ctDataStatus.lastVersionTimeStamp === null
+        ? ctDataStatus.isLatestVersion
+        : chunk.version === ctDataStatus.lastVersionTimeStamp,
+    };
+  });
+};
+
 export default function MceComposer() {
 
   const [mceComposerStatus, setMceComposerStatus] = useState<MceComposerStatus>('loadingMce');
@@ -563,6 +583,9 @@ export default function MceComposer() {
     checkForChanges();
     const currentHistoryState = history.getCurrentState();
     setMceData(currentHistoryState.mceData);
+    setCtDataStatusArray((currentCtDataStatuses) => {
+      return synchronizeCtDataStatusesWithMceData(currentCtDataStatuses, currentHistoryState.mceData);
+    });
   }, [historyVersion]);
 
   /**
@@ -964,7 +987,6 @@ export default function MceComposer() {
   };
 
   const handleOnClickTabExpand = (tabKey: string) => {
-    // console.log(`Click on expand tab ${tabKey}`);
     setExpandedTab(tabKey);
   };
 

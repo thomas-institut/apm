@@ -100,8 +100,9 @@ vi.mock('@/ReactAPM/Components/PanelUI/PanelContent', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel', () => ({
-  default: ({chunks, deleteChunk, moveChunk, setChunkBreak, updateChunk}: {
+  default: ({chunks, ctDataStatusArray, deleteChunk, moveChunk, setChunkBreak, updateChunk}: {
     chunks: {chunkId: string, title: string}[],
+    ctDataStatusArray: {ctDataId: number, loadedVersionTimeStamp: string | null, isLatestVersion: boolean | null}[],
     deleteChunk: (chunkIndex: number) => Promise<boolean>,
     moveChunk: (chunkPosition: number, direction: 'up' | 'down') => Promise<boolean>,
     setChunkBreak: (chunkPosition: number, newBreak: string) => Promise<boolean>,
@@ -111,7 +112,12 @@ vi.mock('@/ReactAPM/Pages/MceComposer/ChunksPanel/ChunksPanel', () => ({
     mockedEditorHandlers.moveChunk = moveChunk;
     mockedEditorHandlers.setChunkBreak = setChunkBreak;
     mockedEditorHandlers.updateChunk = updateChunk;
-    return <div>{chunks.map((chunk) => <div key={chunk.chunkId}>{chunk.title}</div>)}</div>;
+    return <div>
+      {chunks.map((chunk) => <div key={chunk.chunkId}>{chunk.title}</div>)}
+      {ctDataStatusArray.map((status) => <div key={status.ctDataId} data-testid={`chunk-status-${status.ctDataId}`}>
+        {`${status.loadedVersionTimeStamp}:${status.isLatestVersion}`}
+      </div>)}
+    </div>;
   }
 }));
 
@@ -547,6 +553,96 @@ describe('MceComposer', () => {
     await act(async () => {
       root.unmount();
     });
+  });
+
+  it('restores an outdated chunk status when undoing its update', async () => {
+    mockRouteParams.id = '1';
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const generateEditionSpy = vi.spyOn(MceDataEditionGenerator.prototype, 'generate').mockResolvedValue({
+      lang: 'la',
+      info: {
+        source: 'test',
+        tableId: -1,
+        singleChunk: false,
+        chunkId: 'chunk-42',
+        baseWitnessIndex: 0,
+        editionId: -1,
+      },
+      mainText: [],
+      apparatuses: [],
+      witnesses: [],
+      siglaGroups: [],
+      foliationChanges: null,
+      metadata: {},
+    });
+    const outdatedVersion = '2026-01-01 00:00:00';
+    const latestVersion = '2026-01-02 00:00:00';
+    const mceData = MceData.createEmpty();
+    mceData.title = 'MCE with outdated chunk';
+    mceData.lang = 'la';
+    mceData.chunks = [{
+      chunkId: 'chunk-42',
+      break: '',
+      chunkEditionTableId: 42,
+      lineNumbersRestart: false,
+      title: 'Outdated chunk',
+      version: outdatedVersion,
+      witnessIndices: [],
+    }];
+    mceData.chunkOrder = [0];
+    const getSingleChunkData = vi.fn((_tableId: number, version: string) => Promise.resolve({
+      ...getChunkApiResponse(42),
+      isLatestVersion: version === '',
+      timeStamp: version === '' ? latestVersion : outdatedVersion,
+    }));
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: latestVersion}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{timeString: latestVersion}]}),
+        getSingleChunkData,
+        getEntityName: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects(8);
+    });
+
+    expect(container.querySelector('[data-testid="chunk-status-42"]')?.textContent).toBe(`${outdatedVersion}:false`);
+
+    await act(async () => {
+      await expect(mockedEditorHandlers.updateChunk!(0)).resolves.toBe(true);
+    });
+
+    expect(container.querySelector('[data-testid="chunk-status-42"]')?.textContent).toBe(`${latestVersion}:true`);
+
+    await act(async () => {
+      (container.querySelector('.icon-btn[title^="Undo"]') as HTMLElement).click();
+    });
+
+    expect(container.querySelector('[data-testid="chunk-status-42"]')?.textContent).toBe(`${outdatedVersion}:false`);
+
+    await act(async () => {
+      root.unmount();
+    });
+    generateEditionSpy.mockRestore();
   });
 
   it('shows edition generation progress when regenerate is clicked', async () => {

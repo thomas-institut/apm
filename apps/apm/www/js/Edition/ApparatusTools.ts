@@ -10,7 +10,7 @@ import {Group} from "./SequenceWithGroups.js";
 import {ApparatusInterface, LemmaType} from "./EditionInterface.js";
 import {Apparatus} from "./Apparatus.js";
 import {CompactFmtText, fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
-import {MainTextToken} from "@/Edition/MainTextToken";
+import {MainTextToken} from "./MainTextToken.js";
 
 export class ApparatusTools {
 

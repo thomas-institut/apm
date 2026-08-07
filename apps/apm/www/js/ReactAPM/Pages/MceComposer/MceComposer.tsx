@@ -8,9 +8,7 @@ import {
   Arrow90degRight,
   ArrowCounterclockwise,
   ArrowsAngleContract,
-  BugFill,
-  ChevronRight,
-  Gear
+  ChevronRight, Gear
 } from "react-bootstrap-icons";
 import {Form, OverlayTrigger, Popover, Spinner} from "react-bootstrap";
 import {MceData} from '@/MceData/MceData';
@@ -64,6 +62,11 @@ import {ApmApiClientError} from "@/Api/ApmApiClient";
 import StandardizationPanel from "@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel";
 import {StandardizedWords} from "@/ReactAPM/Pages/MceComposer/StandardizedWords";
 import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
+import AdminPanel from "@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel";
+import {MceVersionInfo} from "@/Api/DataSchema/ApiMceData";
+import {TimeString} from "@/toolbox/TimeString";
+import BugWarningButton from "@/ReactAPM/Pages/MceComposer/BugWarningButton";
+import NotLastVersionWarningButton from "@/ReactAPM/Pages/MceComposer/NotLastVersionWarningButton";
 
 // TODO: for later
 //  - Implement admin panel with versions
@@ -106,6 +109,12 @@ interface ChunkLoadResult {
 
 export interface MceComposerHistoryState {
   mceData: MceDataInterface;
+}
+
+interface InitialMceData {
+  mceData: MceDataInterface;
+  versions: MceVersionInfo[];
+  isLastVersion: boolean;
 }
 
 interface MceSettings {
@@ -151,6 +160,8 @@ export default function MceComposer() {
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
   const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
+  const [versions, setVersions] = useState<MceVersionInfo[]>([]);
+  const [isLastVersion, setIsLastVersion] = useState<boolean|null>(null);
   const [edition, setEdition] = useState<Edition | null>(null);
   const [editionGenerationProgress, setEditionGenerationProgress] = useState<number | null>(null);
   const [settings, setSettings] = useState<MceSettings>({
@@ -194,10 +205,11 @@ export default function MceComposer() {
   const editionCache = useRef<Record<string, Edition>>({});
   const shimWidth = 5;
 
-  const {id} = useParams();
+  const {id, version} = useParams();
   const navigate = useNavigate();
   const appContext = useContext(AppContext);
   let mceDataId = -1;
+  let versionString: string | null = null;
   let routeErrorMsg: string | null = null;
 
   if (id === undefined) {
@@ -210,12 +222,32 @@ export default function MceComposer() {
         routeErrorMsg = 'Invalid MCE ID';
       } else {
         mceDataId = parsedMceDataId;
+        if (version !== undefined) {
+          versionString = TimeString.compactDecode(version);
+        }
+      }
+    } else {
+      if (version !== undefined) {
+        routeErrorMsg = 'New MCEs must not have a version';
       }
     }
   }
 
-  const editionKey = `mce-${mceDataId}`;
+  const editionKey = `mce-${mceDataId}` + (versionString !== null ? `-${versionString}` : '');
   const isMceDataIdValid = routeErrorMsg === null && (id === 'new' || mceDataId > 0);
+
+
+  const getInitialInfo = async (mceDataId: number, versionString: string | undefined): Promise<InitialMceData> => {
+    const respGet = await appContext.apiClient.apiMceGetData(mceDataId, versionString);
+    const respVersions = await appContext.apiClient.apiMceGetVersions(mceDataId);
+    const sortedVersions = respVersions.versions.sort((a, b) => b.timeString.localeCompare(a.timeString));
+
+    return {
+      mceData: respGet.mceData,
+      versions: sortedVersions,
+      isLastVersion: respGet.validFrom === sortedVersions[0].timeString,
+    };
+  }
 
   // Start a fresh editor session whenever the route selects another MCE.
   useEffect(() => {
@@ -259,7 +291,7 @@ export default function MceComposer() {
     setSaving(false);
     setSaveError(null);
     setLastFullChunkLoadTime(null);
-  }, [id, isMceDataIdValid]);
+  }, [id, versionString, isMceDataIdValid]);
 
   // 1. Hook to load MceData (Phase: start -> loadingMce -> loadingSingleChunks)
   useEffect(() => {
@@ -277,7 +309,7 @@ export default function MceComposer() {
 
       let ignore = false;
       const editorSession = editorSessionRef.current;
-      appContext.apiClient.apiMceGetData(mceDataId)
+      getInitialInfo(mceDataId, versionString ?? undefined)
         .then((resp) => {
           if (ignore || editorSession !== editorSessionRef.current) {
             return; // avoid problems with React strict mode
@@ -295,6 +327,8 @@ export default function MceComposer() {
             lastVersionTimeStamp: null,
           }));
           setMceData(resp.mceData);
+          setVersions(resp.versions);
+          setIsLastVersion(resp.isLastVersion);
           setCtDataStatusArray(initialCtDataStatusArray);
           setMceComposerStatus('loadingSingleChunks');
         })
@@ -1152,7 +1186,7 @@ export default function MceComposer() {
 
   const standardizedWords = useMemo( () => edition !== null && mceData !== null ? StandardizedWords.build(mceData.standardizedStrings, edition) : [], [edition, mceData]);
 
-  const handleOnClickSaveButton = async () => {
+  const handleOnClickSaveButton = async (description: string) => {
     // console.log(`Click on save`);
     if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current || changes.length === 0) {
       console.warn(`Cannot save MCE data because there are no changes`);
@@ -1166,16 +1200,20 @@ export default function MceComposer() {
       const response = await appContext.apiClient.apiMceSave({
         editionId: mceDataId,
         mceData,
-        description: changes.join('. ')
+        description: description === '' ? changes.join('. ') : description
       });
       if (response.result === 'Error') {
         setSaveError(response.message ?? 'Error saving');
         return;
       }
       console.log(`Saved MCE data`, response);
-      if (mceDataId === -1) {
+      if (mceDataId === -1 || !isLastVersion) {
+        // navigate to last version
         navigate(RouteUrls.multiChunkEdition(response.id));
       }
+      // Update versions
+      const respVersions = await appContext.apiClient.apiMceGetVersions(mceDataId);
+      setVersions(respVersions.versions);
       // reset history
       history.reset(history.getCurrentState(), 'Last save');
       setSavedStateSignature(history.getHistory()[0].signature);
@@ -1287,13 +1325,6 @@ export default function MceComposer() {
                                getActiveEditions={getActiveEditions}/>,
       tabbable: true,
     },
-    // {
-    //   panel: 'two',
-    //   key: 'versions',
-    //   title: 'Versions',
-    //   expandable: true,
-    //   content: <>Versions will be here...</>
-    // },
     {
       panel: 'two',
       key: 'session',
@@ -1321,6 +1352,14 @@ export default function MceComposer() {
       />,
       tabbable: true,
     },
+    {
+      panel: 'two',
+      key: 'admin',
+      title: 'Admin',
+      expandable: false,
+      tabbable: true,
+      content: <AdminPanel versions={versions} version={versionString} mceId={mceDataId}/>
+    }
   ];
 
   if (routeErrorMsg !== null) {
@@ -1414,30 +1453,12 @@ export default function MceComposer() {
   );
 
   const notificationsDiv = <div className={'notifications'}>
+    {isLastVersion !== null && !isLastVersion && <NotLastVersionWarningButton version={versionString}/>}
     {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
     {operationalActionErrorMsg !== null && <span className={'text-danger action-error-message'}>{operationalActionErrorMsg}</span>}
     {saving && <span className={'text-primary'}>Saving... <Spinner size={'sm'}/></span>}
   </div>;
-
-  const bugPopover = (
-    <Popover id="bug-popover" className="bug-popover">
-      <Popover.Header>Oops!</Popover.Header>
-      <Popover.Body>
-        <p>You have discovered a bug in the software! Please click <a
-          href={'https://github.com/thomas-institut/apm/issues/new'} target="_blank">here to report it on Github</a>.
-        </p>
-        <p>Include the following description:</p>
-        <p className={'bug-description'}>{foundBugDescription}</p>
-        <p>Be sure to include the following information as well:</p>
-        <ul>
-          <li>What you were doing when the bug occurred.</li>
-          <li>A screenshot of the History Panel</li>
-          <li>If possible, error messages or logs from the Developer Tools</li>
-        </ul>
-      </Popover.Body>
-    </Popover>
-  );
 
   const controlsDiv = <div className={'controls'}>
     {!foundBug && <Arrow90degLeft className={'icon-btn' + (canUndo ? '' : ' disabled')}
@@ -1462,14 +1483,12 @@ export default function MceComposer() {
                                    }}/>}
 
     {!foundBug && <ComponentWithPending pending={saving}>
-      <MceComposerSaveButton changes={changes} onClick={handleOnClickSaveButton} saveError={saveError}/>
+      <MceComposerSaveButton changes={changes} executeSave={handleOnClickSaveButton} saveError={saveError}/>
     </ComponentWithPending>}
     {!foundBug && <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
                                          onClick={() => handleOnClickRevertChanges()}
                                          title={'Click to revert to last saved version'}/>}
-    {foundBug && <OverlayTrigger trigger={['click']} placement="bottom" overlay={bugPopover}>
-      <BugFill className={'icon-btn bug-icon'} title={`A bug was found, click here for more information`}/>
-    </OverlayTrigger>}
+    {foundBug && <BugWarningButton foundBugDescription={foundBugDescription}/>}
     <OverlayTrigger trigger="click" placement="bottom" overlay={settingsPopover} rootClose>
       <Gear className={'icon-btn'} title={'Settings'}/>
     </OverlayTrigger>

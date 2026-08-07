@@ -19,8 +19,6 @@
     box-sizing: border-box;
 
 
-
-
     .no-edition p {
         display: flex;
         flex-direction: row;
@@ -96,6 +94,7 @@
         }
     }
 
+
     .panelContainer {
         padding: 0 !important;
     }
@@ -122,6 +121,8 @@
             padding: 0;
             margin-bottom: 0.25em;
         }
+
+
     }
 
 
@@ -189,8 +190,6 @@
         }
 
     }
-
-
 
 
 }
@@ -263,8 +262,10 @@
     }
 }
 
+.save-confirmation-popover {
 
-.save-changes-popover {
+    width: 20em;
+
     .popover-body {
         padding: 1em;
 
@@ -284,6 +285,14 @@
             line-height: 1.25em;
             margin-bottom: 0.75em;
         }
+
+        .save-confirmation-actions {
+            display: flex;
+            gap: 0.5em;
+            justify-content: flex-end;
+            margin-top: 2em;
+        }
+
     }
 }
 

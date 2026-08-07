@@ -1,0 +1,98 @@
+/**
+ * @vitest-environment happy-dom
+ */
+
+import React, {act} from 'react';
+import {createRoot} from 'react-dom/client';
+import {describe, expect, it, vi} from 'vitest';
+import AdminPanel from '@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel';
+import {MceVersionInfo} from '@/Api/DataSchema/ApiMceData';
+
+vi.mock('@/ReactAPM/Components/EntityLink', () => ({
+  default: ({id, name}: {id: number, name?: string}) => name
+    ? <a data-entity-id={id}>{name}</a>
+    : <span data-author-id={id}>Author {id}</span>,
+}));
+
+vi.mock('@/pages/common/ApmFormats', () => ({
+  ApmFormats: {
+    timeString: vi.fn((timeString: string) => `formatted ${timeString}`),
+  },
+}));
+
+// @ts-expect-error test-only global binding
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
+const versions: MceVersionInfo[] = [
+  {
+    mceId: 42,
+    timeString: '2026-08-05 12:00:00.000000',
+    authorId: 1002,
+    description: 'Newest version',
+  },
+  {
+    mceId: 42,
+    timeString: '2026-08-06 12:00:00.000000',
+    authorId: 1001,
+    description: 'a'.repeat(151),
+  },
+];
+
+describe('AdminPanel', () => {
+  it('renders versions newest first with formatted time, author links, and complete descriptions', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<AdminPanel mceId={42} version={null} versions={versions}/>);
+    });
+
+    const headers = Array.from(container.querySelectorAll('th')).map((header) => header.textContent);
+    expect(headers).toEqual(['N', 'Time', 'Author', 'Description']);
+
+    const rows = Array.from(container.querySelectorAll('tbody tr'));
+    expect(rows).toHaveLength(2);
+    expect(rows[0].textContent).toContain('1');
+    expect(rows[0].textContent).toContain('formatted 2026-08-06 12:00:00.000000');
+    expect(rows[0].textContent).toContain('Author 1001');
+    expect(rows[1].textContent).toContain('2');
+    expect(rows[1].textContent).toContain('formatted 2026-08-05 12:00:00.000000');
+    expect(rows[1].textContent).toContain('Author 1002');
+
+    const descriptionCell = rows[0].querySelector('td:nth-child(4)')!;
+    expect(descriptionCell.textContent).toBe(`${'a'.repeat(151)}`);
+    expect(descriptionCell.querySelector('button')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('highlights the loaded version and does not link its time', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<AdminPanel mceId={42} version={versions[0].timeString} versions={versions}/>);
+    });
+
+    const rows = Array.from(container.querySelectorAll('tbody tr'));
+    expect(rows[0].classList.contains('loaded-version')).toBe(false);
+    expect(rows[1].classList.contains('loaded-version')).toBe(true);
+
+    rows
+      .filter((row) => !row.classList.contains('loaded-version'))
+      .forEach((row) => {
+        expect(row.querySelector('td:nth-child(2) a')).not.toBeNull();
+      });
+    const loadedVersionTimeCell = rows[1].querySelector('td:nth-child(2)')!;
+    expect(loadedVersionTimeCell.textContent).toBe('formatted 2026-08-05 12:00:00.000000');
+    expect(loadedVersionTimeCell.querySelector('a')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+});

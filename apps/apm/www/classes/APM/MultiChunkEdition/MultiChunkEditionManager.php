@@ -4,7 +4,7 @@ namespace APM\MultiChunkEdition;
 
 
 /**
- * Saving and retrieving multi chunk editions
+ * Saving and retrieving multi-chunk editions
  */
 abstract class MultiChunkEditionManager
 {
@@ -14,9 +14,10 @@ abstract class MultiChunkEditionManager
      *
      * @param int $id
      * @param string $timeString
-     * @return array
+     * @return MceSystemData
+     * @throws MultiChunkEditionDoesNotExist
      */
-    abstract public function getMultiChunkEditionById(int $id, string $timeString = '') : array;
+    abstract public function getMultiChunkEditionById(int $id, string $timeString = '') : MceSystemData;
 
 
     /**
@@ -25,11 +26,11 @@ abstract class MultiChunkEditionManager
      *
      * @param int $id,  if === -1, creates a new edition
      * @param array $mceData
-     * @param int $authorTid
+     * @param int $authorId
      * @param string $versionDescription
      * @return int
      */
-    abstract public function saveMultiChunkEdition(int $id, array $mceData, int $authorTid, string $versionDescription) : int;
+    abstract public function saveMultiChunkEdition(int $id, array $mceData, int $authorId, string $versionDescription) : int;
 
 
     /**
@@ -51,6 +52,13 @@ abstract class MultiChunkEditionManager
      * @return array
      */
     abstract public function getMultiChunkEditionsByUser(int $userTid): array;
+
+    /**
+     * @param int $mceId
+     * @return MceVersionInfo[]
+     * @throws MultiChunkEditionDoesNotExist
+     */
+    abstract public function getEditionVersions(int $mceId) : array;
 
 
 }

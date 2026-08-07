@@ -18,6 +18,7 @@ interface EntityLinkProps {
   title?: string;
   useUrlAsLabel?: boolean;
   active?: boolean;
+  version?: string;
   openInNewTab?: boolean;
   showIconWithLabel?: boolean;
 }
@@ -84,7 +85,7 @@ export default function EntityLink(props: EntityLinkProps) {
       break;
 
     case 'multiChunkEdition':
-      url = RouteUrls.multiChunkEdition(id);
+      url = RouteUrls.multiChunkEdition(id, props.version);
       isReactRoute = true;
       defaultEntityName = `MultiChunkEdition ${id}`;
       realTitle = title ?? `MultiChunkEdition ${id}`;

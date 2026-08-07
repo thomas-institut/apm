@@ -24,6 +24,13 @@ describe('ApmFormats', () => {
             expect(ApmFormats.timeAgo(now - 3660)).toBe('1h 1min ago');
         });
 
+        it('should format durations in days', () => {
+            const now = Date.now() / 1000;
+            expect(ApmFormats.timeAgo(now - 24 * 60 * 60)).toBe('24h ago');
+            expect(ApmFormats.timeAgo(now - (2 * 24 + 3) * 60 * 60)).toBe('2 days, 3 hours ago');
+            expect(ApmFormats.timeAgo(now - (8 * 24 + 3) * 60 * 60)).toBe('8 days ago');
+        });
+
         it('should work with string', () => {
             // @ts-ignore - testing new functionality
             expect(ApmFormats.timeAgo('2023-01-01 12:00:00')).toBe('<1min ago');

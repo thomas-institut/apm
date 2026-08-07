@@ -1,12 +1,10 @@
-import {
-  MceDataInterface,
-  MceDataInterfaceAny
-} from "@/MceData/MceDataInterface";
+import {MceDataInterface, MceDataInterfaceAny} from "@/MceData/MceDataInterface";
 import {ApiResponse} from "@/Api/DataSchema/ApiResponse";
 
 
-export interface ApiMceDataAny {
-  authorTid: number;
+export interface ApiMceGetResponse extends ApiResponse {
+  result: 'Success';
+  authorId: number;
   chunks: string[];
   mceData: MceDataInterfaceAny;
   validFrom: string;
@@ -14,9 +12,20 @@ export interface ApiMceDataAny {
   versionDescription: string;
 }
 
+export interface ApiMceGetVersionsResponse extends ApiResponse {
+  result: 'Success';
+  versions: MceVersionInfo[];
+}
+
+export interface MceVersionInfo {
+  mceId: number;
+  timeString: string;
+  authorId: number;
+  description: string;
+}
 
 export interface ApiMceData {
-  authorTid: number;
+  authorId: number;
   chunks: string[];
   mceData: MceDataInterface;
   validFrom: string;
@@ -24,10 +33,10 @@ export interface ApiMceData {
   versionDescription: string;
 }
 
-export interface ApiMceSaveResponse extends ApiResponse{
+export interface ApiMceSaveResponse extends ApiResponse {
   result: 'Success';
   id: number;
-  saveTimeStamp: string
+  saveTimeStamp: string;
 }
 
 export interface ApiMceSaveRequest {

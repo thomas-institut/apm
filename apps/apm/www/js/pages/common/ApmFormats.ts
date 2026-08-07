@@ -121,7 +121,7 @@ export class ApmFormats {
    * Rounds up to the closest minute.
    *
    * @param dateTimeVar - timestamp in seconds, date string or Date object
-   * @returns string like '<1min ago', 'N mins ago', or 'Xh Ymin ago'
+   * @returns string like '<1min ago', 'N mins ago', 'Xh Ymin ago', or 'X days ago'
    */
   static timeAgo(dateTimeVar: string | number | Date): string {
     const d = this.dateTimeVarToDate(dateTimeVar);
@@ -149,6 +149,14 @@ export class ApmFormats {
 
     const hours = Math.floor(diffMinutes / 60);
     const minutes = diffMinutes % 60;
+
+    if (diffMinutes > 24 * 60) {
+      const days = Math.floor(hours / 24);
+      if (days > 7) {
+        return `${days} days ago`;
+      }
+      return `${days} days, ${hours % 24} hours ago`;
+    }
 
     if (minutes === 0) {
       return `${hours}h ago`;

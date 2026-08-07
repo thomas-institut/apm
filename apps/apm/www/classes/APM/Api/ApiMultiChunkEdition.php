@@ -17,11 +17,19 @@ class ApiMultiChunkEdition extends ApiController
 
     const string CLASS_NAME = 'MultiChunkEditions';
 
-    public function getEdition(Request $request, Response $response, array $args): Response
+    public function getEdition(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $editionId = intval($request->getAttribute('editionId'));
-        $timeStamp = $request->getAttribute('timestamp',  TimeString::now());
+        $editionId = intval($request->getAttribute('editionId'));$timeStamp = '';
+        $compactEncodedTimeStamp =  $request->getAttribute('timestamp', '');
+        if ($compactEncodedTimeStamp !== '') {
+            $timeStamp = TimeString::compactDecode($compactEncodedTimeStamp);
+        }
+        if ($timeStamp === '') {
+            $timeStamp = TimeString::now();
+        }
+
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $editionId . ':' . $timeStamp);
         try {
             $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId, $timeStamp);
             $mceGetResponse = new ApiMceGetResponse();

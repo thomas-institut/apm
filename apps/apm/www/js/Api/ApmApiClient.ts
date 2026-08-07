@@ -83,12 +83,13 @@ const MaxSystemEntityId = 10000000;
 
 export type EntityNameTuple = [number, string];
 
-export type ApiClientErrorType = 'http' | 'authentication' | 'method' | 'network' | 'other';
+export type ApiClientErrorType = 'http' | 'authentication' | 'method' | 'network' | 'validation' | 'other';
 
 export class ApmApiClientError extends OperationalError {
   public errorType: ApiClientErrorType;
   public httpStatus: number;
   public receivedData: any;
+
   constructor(message: string, errorType: ApiClientErrorType, httpStatus: number, receivedData?: any) {
     super(message);
     this.name = 'ApmApiClientError';
@@ -256,8 +257,18 @@ export class ApmApiClient {
     }
   }
 
-  async apiMceGetData(editionId: number): Promise<ApiMceData> {
-    const serverResponse = await this.get(urlGen.apeMceGet(editionId)) as ApiMceGetResponse;
+  async apiMceGetData(editionId: number, timeStamp?: string | null): Promise<ApiMceData> {
+    if (timeStamp === null) {
+      timeStamp = undefined;
+    }
+    if (timeStamp !== undefined) {
+      if (!TimeString.isValid(timeStamp)) {
+        throw new ApmApiClientError(`Invalid time stamp '${timeStamp}'`, 'validation', 0);
+      }
+    }
+    const url = timeStamp === undefined ? urlGen.apeMceGet(editionId) :
+      urlGen.apeMceGet(editionId, TimeString.compactEncode(timeStamp));
+    const serverResponse = await this.get(url) as ApiMceGetResponse;
     if (serverResponse.mceData.schemaVersion !== '3') {
       console.log(`Updating MCE data for edition ${editionId} from schema version '${serverResponse.mceData.schemaVersion}' to '3'`);
     }

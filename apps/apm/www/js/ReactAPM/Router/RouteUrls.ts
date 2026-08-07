@@ -1,4 +1,5 @@
 import {Tid} from "@/Tid/Tid";
+import {TimeString} from "@/toolbox/TimeString";
 
 let baseUrl = '';
 let betaPathInfix = 'beta';
@@ -76,10 +77,13 @@ export class RouteUrls {
   }
 
   static patternMultiChunkEdition() {
-    return baseUrl + '/multiChunkEdition/:id';
+    return baseUrl + '/multiChunkEdition/:id/:version?';
   }
 
-  static multiChunkEdition(id: number | 'new') {
+  static multiChunkEdition(id: number | 'new', versionTimeString?: string) {
+    if (versionTimeString !== undefined) {
+      return baseUrl + '/multiChunkEdition/' + id + '/' + TimeString.compactEncode(versionTimeString);
+    }
     return baseUrl + '/multiChunkEdition/' + id;
   }
 

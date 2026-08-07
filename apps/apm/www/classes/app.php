@@ -362,7 +362,7 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
      */
     $group->get('/edition/multi/get/{editionId}[/{timestamp}]',
         function (Request $request, Response $response, array $args) use ($container) {
-            return (new ApiMultiChunkEdition($container))->getEdition($request, $response, $args);
+            return (new ApiMultiChunkEdition($container))->getEdition($request, $response);
         });
 
     /**

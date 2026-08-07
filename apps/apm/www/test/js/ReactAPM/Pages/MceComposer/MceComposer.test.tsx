@@ -26,7 +26,7 @@ const mockedEditorHandlers = vi.hoisted(() => ({
   deleteSiglaGroup: undefined as undefined | ((siglaGroupIndex: number) => Promise<boolean>),
   moveChunk: undefined as undefined | ((chunkPosition: number, direction: 'up' | 'down') => Promise<boolean>),
   onGoTo: undefined as undefined | ((index: number) => void),
-  save: undefined as undefined | (() => Promise<void>),
+  save: undefined as undefined | ((description: string) => Promise<void>),
   setChunkBreak: undefined as undefined | ((chunkPosition: number, newBreak: string) => Promise<boolean>),
   setIncludeInAutoMarginalFoliation: undefined as undefined | ((witnessIndex: number, newState: boolean) => Promise<boolean>),
   setSiglum: undefined as undefined | ((witnessIndex: number, newSiglum: string) => Promise<boolean>),
@@ -136,8 +136,8 @@ vi.mock('@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/MceComposerSaveButton', () => ({
-  default: ({onClick, saveError}: {onClick: () => Promise<void>, saveError: string | null}) => {
-    mockedEditorHandlers.save = onClick;
+  default: ({executeSave, saveError}: {executeSave: (description: string) => Promise<void>, saveError: string | null}) => {
+    mockedEditorHandlers.save = executeSave;
     return <div>
       save
       {saveError !== null && <div data-testid="save-error">{saveError}</div>}
@@ -1411,7 +1411,7 @@ describe('MceComposer', () => {
 
     let savePromise!: Promise<void>;
     await act(async () => {
-      savePromise = mockedEditorHandlers.save!();
+      savePromise = mockedEditorHandlers.save!('Changed title');
       await vi.advanceTimersByTimeAsync(0);
     });
 
@@ -1504,7 +1504,7 @@ describe('MceComposer', () => {
 
     let firstSavePromise!: Promise<void>;
     await act(async () => {
-      firstSavePromise = mockedEditorHandlers.save!();
+      firstSavePromise = mockedEditorHandlers.save!('Changed title');
       await vi.advanceTimersByTimeAsync(0);
     });
 
@@ -1518,7 +1518,7 @@ describe('MceComposer', () => {
 
     let secondSavePromise!: Promise<void>;
     await act(async () => {
-      secondSavePromise = mockedEditorHandlers.save!();
+      secondSavePromise = mockedEditorHandlers.save!('Changed title again');
       await vi.advanceTimersByTimeAsync(0);
     });
 
@@ -1580,7 +1580,7 @@ describe('MceComposer', () => {
 
     let savePromise!: Promise<void>;
     await act(async () => {
-      savePromise = mockedEditorHandlers.save!();
+      savePromise = mockedEditorHandlers.save!('Changed title');
       await vi.advanceTimersByTimeAsync(0);
     });
 

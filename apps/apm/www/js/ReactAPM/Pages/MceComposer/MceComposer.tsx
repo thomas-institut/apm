@@ -1186,7 +1186,7 @@ export default function MceComposer() {
 
   const standardizedWords = useMemo( () => edition !== null && mceData !== null ? StandardizedWords.build(mceData.standardizedStrings, edition) : [], [edition, mceData]);
 
-  const handleOnClickSaveButton = async () => {
+  const handleOnClickSaveButton = async (description: string) => {
     // console.log(`Click on save`);
     if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current || changes.length === 0) {
       console.warn(`Cannot save MCE data because there are no changes`);
@@ -1200,7 +1200,7 @@ export default function MceComposer() {
       const response = await appContext.apiClient.apiMceSave({
         editionId: mceDataId,
         mceData,
-        description: changes.join('. ')
+        description: description === '' ? changes.join('. ') : description
       });
       if (response.result === 'Error') {
         setSaveError(response.message ?? 'Error saving');
@@ -1479,7 +1479,7 @@ export default function MceComposer() {
                                    }}/>}
 
     {!foundBug && <ComponentWithPending pending={saving}>
-      <MceComposerSaveButton changes={changes} onClick={handleOnClickSaveButton} saveError={saveError}/>
+      <MceComposerSaveButton changes={changes} executeSave={handleOnClickSaveButton} saveError={saveError}/>
     </ComponentWithPending>}
     {!foundBug && <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
                                          onClick={() => handleOnClickRevertChanges()}

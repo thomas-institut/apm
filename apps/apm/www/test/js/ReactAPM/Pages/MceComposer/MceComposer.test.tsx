@@ -60,7 +60,10 @@ vi.mock('react-bootstrap', () => {
         <input type="checkbox" checked={checked} onChange={onChange}/>
       )
     },
-    OverlayTrigger: ({children, overlay}: {children: React.ReactNode, overlay: React.ReactNode}) => <>{children}{overlay}</>,
+    OverlayTrigger: ({children, overlay}: {
+      children: React.ReactNode,
+      overlay: React.ReactNode | ((props: object) => React.ReactNode),
+    }) => <>{children}{typeof overlay === 'function' ? overlay({}) : overlay}</>,
     Popover: Object.assign(PopoverComponent, {
       Header: PopoverHeader,
       Body: PopoverBody

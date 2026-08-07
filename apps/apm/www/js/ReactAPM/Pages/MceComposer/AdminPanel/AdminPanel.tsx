@@ -1,5 +1,3 @@
-
-
 import './AdminPanel.css';
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import {Button} from "react-bootstrap";
@@ -11,29 +9,36 @@ import {useState} from "react";
 
 const VERSION_DESCRIPTION_MAX_LENGTH = 150;
 
-function VersionDescription({description}: {description: string}) {
+function VersionDescription({description}: { description: string }) {
   const [showFullDescription, setShowFullDescription] = useState(false);
   const isTruncated = description.length > VERSION_DESCRIPTION_MAX_LENGTH;
   const displayedDescription = !isTruncated || showFullDescription ? description : description.slice(0, VERSION_DESCRIPTION_MAX_LENGTH);
 
   return <>
     {displayedDescription}
-    {isTruncated && !showFullDescription && <Button variant={'link'} size={'sm'} onClick={() => setShowFullDescription(true)}>
-      Show more
-    </Button>}
+    {isTruncated && !showFullDescription &&
+      <Button variant={'link'} size={'sm'} onClick={() => setShowFullDescription(true)}>
+        Show more
+      </Button>}
   </>;
 }
 
 
-
-interface AdminPanelProps extends TabbableElementProps{
+interface AdminPanelProps extends TabbableElementProps {
+  mceId: number;
+  version: string | null;
   versions: MceVersionInfo[];
 }
 
 
-export default function AdminPanel({versions}: AdminPanelProps){
+export default function AdminPanel({mceId, version, versions}: AdminPanelProps) {
 
   const sortedVersions = [...versions].sort((a, b) => b.timeString.localeCompare(a.timeString));
+
+  const loadedVersionIndex = version === null ? 0 : sortedVersions.findIndex(v => v.timeString === version);
+
+  const getRowClassName = (row: MceVersionInfo, index: number) => index === loadedVersionIndex ? 'loaded-version' : '';
+
   const columnDefs: NiceTableColumnDef<MceVersionInfo>[] = [
     {
       key: 'n',
@@ -43,7 +48,9 @@ export default function AdminPanel({versions}: AdminPanelProps){
     {
       key: 'time',
       title: 'Time',
-      cellContent: (row) => <>{ApmFormats.timeString(row.timeString)}</>,
+      cellContent: (row, index) => index === loadedVersionIndex ? <strong>{ApmFormats.timeString(row.timeString)}</strong> : <EntityLink id={mceId}
+                                        type={'multiChunkEdition'} version={index === 0 ? undefined : row.timeString}
+                                        name={ApmFormats.timeString(row.timeString)}/>
     },
     {
       key: 'author',
@@ -69,10 +76,10 @@ export default function AdminPanel({versions}: AdminPanelProps){
     </div>
 
     <div className={'versions-div'}>
-    <h1>Versions</h1>
-    <NiceTable rows={sortedVersions} columnDefs={columnDefs}
-               getRowKey={(row) => `${row.mceId}-${row.timeString}`}/>
+      <h1>Versions</h1>
+      <NiceTable rows={sortedVersions} columnDefs={columnDefs} getRowClassName={getRowClassName}
+                 getRowKey={(row) => `${row.mceId}-${row.timeString}`}/>
     </div>
-  </div>
+  </div>;
 }
 

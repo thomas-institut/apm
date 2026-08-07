@@ -9,7 +9,7 @@ import {
   ArrowCounterclockwise,
   ArrowsAngleContract,
   BugFill,
-  ChevronRight,
+  ChevronRight, ExclamationTriangleFill,
   Gear
 } from "react-bootstrap-icons";
 import {Form, OverlayTrigger, Popover, Spinner} from "react-bootstrap";
@@ -66,6 +66,7 @@ import {StandardizedWords} from "@/ReactAPM/Pages/MceComposer/StandardizedWords"
 import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
 import AdminPanel from "@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel";
 import {MceVersionInfo} from "@/Api/DataSchema/ApiMceData";
+import {TimeString} from "@/toolbox/TimeString";
 
 // TODO: for later
 //  - Implement admin panel with versions
@@ -113,6 +114,7 @@ export interface MceComposerHistoryState {
 interface InitialMceData {
   mceData: MceDataInterface;
   versions: MceVersionInfo[];
+  isLastVersion: boolean;
 }
 
 interface MceSettings {
@@ -159,6 +161,7 @@ export default function MceComposer() {
   const [ctDataStatusArray, setCtDataStatusArray] = useState<CtDataStatus[]>([]);
   const [mceData, setMceData] = useState<MceDataInterface>(MceData.createEmpty());
   const [versions, setVersions] = useState<MceVersionInfo[]>([]);
+  const [isLastVersion, setIsLastVersion] = useState<boolean|null>(null);
   const [edition, setEdition] = useState<Edition | null>(null);
   const [editionGenerationProgress, setEditionGenerationProgress] = useState<number | null>(null);
   const [settings, setSettings] = useState<MceSettings>({
@@ -202,10 +205,11 @@ export default function MceComposer() {
   const editionCache = useRef<Record<string, Edition>>({});
   const shimWidth = 5;
 
-  const {id} = useParams();
+  const {id, version} = useParams();
   const navigate = useNavigate();
   const appContext = useContext(AppContext);
   let mceDataId = -1;
+  let versionString: string | null = null;
   let routeErrorMsg: string | null = null;
 
   if (id === undefined) {
@@ -218,19 +222,30 @@ export default function MceComposer() {
         routeErrorMsg = 'Invalid MCE ID';
       } else {
         mceDataId = parsedMceDataId;
+        if (version !== undefined) {
+          versionString = TimeString.compactDecode(version);
+        }
+      }
+    } else {
+      if (version !== undefined) {
+        routeErrorMsg = 'New MCEs must not have a version';
       }
     }
   }
 
-  const editionKey = `mce-${mceDataId}`;
+  const editionKey = `mce-${mceDataId}` + (versionString !== null ? `-${versionString}` : '');
   const isMceDataIdValid = routeErrorMsg === null && (id === 'new' || mceDataId > 0);
 
-  const getInitialInfo = async (mceDataId: number): Promise<InitialMceData> => {
-    const respGet = await appContext.apiClient.apiMceGetData(mceDataId);
-    const restVersions = await appContext.apiClient.apiMceGetVersions(mceDataId);
+
+  const getInitialInfo = async (mceDataId: number, versionString: string | undefined): Promise<InitialMceData> => {
+    const respGet = await appContext.apiClient.apiMceGetData(mceDataId, versionString);
+    const respVersions = await appContext.apiClient.apiMceGetVersions(mceDataId);
+    const sortedVersions = respVersions.versions.sort((a, b) => b.timeString.localeCompare(a.timeString));
+
     return {
       mceData: respGet.mceData,
-      versions: restVersions.versions,
+      versions: sortedVersions,
+      isLastVersion: respGet.validFrom === sortedVersions[0].timeString,
     };
   }
 
@@ -276,7 +291,7 @@ export default function MceComposer() {
     setSaving(false);
     setSaveError(null);
     setLastFullChunkLoadTime(null);
-  }, [id, isMceDataIdValid]);
+  }, [id, versionString, isMceDataIdValid]);
 
   // 1. Hook to load MceData (Phase: start -> loadingMce -> loadingSingleChunks)
   useEffect(() => {
@@ -294,7 +309,7 @@ export default function MceComposer() {
 
       let ignore = false;
       const editorSession = editorSessionRef.current;
-      getInitialInfo(mceDataId)
+      getInitialInfo(mceDataId, versionString ?? undefined)
         .then((resp) => {
           if (ignore || editorSession !== editorSessionRef.current) {
             return; // avoid problems with React strict mode
@@ -313,6 +328,7 @@ export default function MceComposer() {
           }));
           setMceData(resp.mceData);
           setVersions(resp.versions);
+          setIsLastVersion(resp.isLastVersion);
           setCtDataStatusArray(initialCtDataStatusArray);
           setMceComposerStatus('loadingSingleChunks');
         })
@@ -1338,7 +1354,7 @@ export default function MceComposer() {
       title: 'Admin',
       expandable: false,
       tabbable: true,
-      content: <AdminPanel versions={versions}/>
+      content: <AdminPanel versions={versions} version={versionString} mceId={mceDataId}/>
     }
   ];
 
@@ -1433,6 +1449,7 @@ export default function MceComposer() {
   );
 
   const notificationsDiv = <div className={'notifications'}>
+    {isLastVersion !== null && !isLastVersion && <ExclamationTriangleFill className={'text-danger icon-btn'} style={{fontSize: '1.2em'}} title={'This is not the last version of this edition. Normally you should not edit it'}/>}
     {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
     {operationalActionErrorMsg !== null && <span className={'text-danger action-error-message'}>{operationalActionErrorMsg}</span>}

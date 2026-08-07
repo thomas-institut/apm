@@ -14,4 +14,8 @@
     .versions-div {
         margin: 2em 0;
     }
+
+    .loaded-version {
+        background-color: #f0f0f0;
+    }
 }

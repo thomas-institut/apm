@@ -1207,9 +1207,13 @@ export default function MceComposer() {
         return;
       }
       console.log(`Saved MCE data`, response);
-      if (mceDataId === -1) {
+      if (mceDataId === -1 || !isLastVersion) {
+        // navigate to last version
         navigate(RouteUrls.multiChunkEdition(response.id));
       }
+      // Update versions
+      const respVersions = await appContext.apiClient.apiMceGetVersions(mceDataId);
+      setVersions(respVersions.versions);
       // reset history
       history.reset(history.getCurrentState(), 'Last save');
       setSavedStateSignature(history.getHistory()[0].signature);

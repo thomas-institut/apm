@@ -13,8 +13,11 @@ import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceData} from '@/MceData/MceData';
 import {MceDataEditionGenerator} from '@/MceData/MceDataEditionGenerator';
 import {ConflictError, OperationalError} from '@/lib/Error/SystemError';
+import {RouteUrls} from '@/ReactAPM/Router/RouteUrls';
 
 const mockRouteParams = vi.hoisted(() => ({id: 'new', version: undefined as string | undefined}));
+const mockedNavigate = vi.hoisted(() => vi.fn());
+const mockedAdminPanel = vi.hoisted(() => ({versions: [] as {description: string}[]}));
 const mockedAddChunk = vi.hoisted(() => ({
   callback: undefined as undefined | ((tableId: number, version?: string) => Promise<true | string>),
 }));
@@ -35,7 +38,7 @@ const mockedEditorHandlers = vi.hoisted(() => ({
 }));
 vi.mock('react-router', () => ({
   useParams: () => mockRouteParams,
-  useNavigate: () => vi.fn(),
+  useNavigate: () => mockedNavigate,
 }));
 
 vi.mock('react-bootstrap', () => {
@@ -234,7 +237,10 @@ vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel', () => ({
-  default: () => <div>admin</div>,
+  default: ({versions}: {versions: {description: string}[]}) => {
+    mockedAdminPanel.versions = versions;
+    return <div data-testid="admin-versions">{versions.map((version) => version.description).join('|')}</div>;
+  },
 }));
 
 // @ts-expect-error test-only global binding
@@ -280,6 +286,8 @@ const getChunkApiResponse = (tableId: number) => {
 afterEach(() => {
   mockRouteParams.id = 'new';
   mockRouteParams.version = undefined;
+  mockedNavigate.mockReset();
+  mockedAdminPanel.versions = [];
 });
 
 describe('isMceDataEditingAllowed', () => {
@@ -1390,6 +1398,7 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceGetData: vi.fn(),
         apiMceSave,
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
         getSingleChunkData,
       } as any,
       versionTag: 'test',
@@ -1478,6 +1487,7 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceGetData: vi.fn(),
         apiMceSave,
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
       } as any,
       versionTag: 'test',
     };
@@ -1531,6 +1541,165 @@ describe('MceComposer', () => {
     expect(container.querySelector('[data-testid="save-error"]')).toBeNull();
     expect((container.querySelector(revertButtonSelector) as HTMLElement).className).not.toContain('highlighted');
     expect(getSavedSignature()).not.toBe(initialSavedSignature);
+
+    await act(async () => {
+      root.unmount();
+    });
+    vi.useRealTimers();
+  });
+
+  it.each([
+    {
+      name: 'a new MCE',
+      id: 'new',
+      version: undefined,
+      saveId: 456,
+      expectedVersionsId: -1,
+    },
+    {
+      name: 'an outdated MCE',
+      id: '123',
+      version: '20260101120000000000',
+      saveId: 123,
+      expectedVersionsId: 123,
+    },
+  ])('navigates to the last version after saving $name', async ({id, version, saveId, expectedVersionsId}) => {
+    vi.useFakeTimers();
+    mockRouteParams.id = id;
+    mockRouteParams.version = version;
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const mceData = MceData.createEmpty();
+    const loadedVersion = '2026-01-01 12:00:00.000000';
+    const lastVersion = '2026-01-02 12:00:00.000000';
+    const apiMceGetVersions = vi.fn().mockResolvedValue({versions: [
+      {mceId: 123, timeString: loadedVersion, authorId: 1, description: 'Loaded version'},
+      {mceId: 123, timeString: lastVersion, authorId: 1, description: 'Last version'},
+    ]});
+    const apiMceSave = vi.fn().mockResolvedValue({result: 'Success', id: saveId});
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: loadedVersion}),
+        apiMceGetVersions,
+        apiMceSave,
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects(8);
+    });
+
+    await act(async () => {
+      await mockedEditorHandlers.changeTitle!('Changed title');
+    });
+
+    let savePromise!: Promise<void>;
+    await act(async () => {
+      savePromise = mockedEditorHandlers.save!('Changed title');
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await act(async () => {
+      await savePromise;
+    });
+
+    expect(mockedNavigate).toHaveBeenCalledTimes(1);
+    expect(mockedNavigate).toHaveBeenCalledWith(RouteUrls.multiChunkEdition(saveId));
+    expect(apiMceGetVersions).toHaveBeenCalledWith(expectedVersionsId);
+
+    await act(async () => {
+      root.unmount();
+    });
+    vi.useRealTimers();
+  });
+
+  it('updates versions after saving the current last version without navigating', async () => {
+    vi.useFakeTimers();
+    mockRouteParams.id = '123';
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    const mceData = MceData.createEmpty();
+    const lastVersion = '2026-01-02 12:00:00.000000';
+    const initialVersions = [{
+      mceId: 123,
+      timeString: lastVersion,
+      authorId: 1,
+      description: 'Initial version',
+    }];
+    const updatedVersions = [{
+      mceId: 123,
+      timeString: '2026-01-03 12:00:00.000000',
+      authorId: 1,
+      description: 'Saved version',
+    }, ...initialVersions];
+    const apiMceGetVersions = vi.fn()
+      .mockResolvedValueOnce({versions: initialVersions})
+      .mockResolvedValueOnce({versions: updatedVersions});
+    const apiMceSave = vi.fn().mockResolvedValue({result: 'Success', id: 123});
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: lastVersion}),
+        apiMceGetVersions,
+        apiMceSave,
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+      await flushEffects(8);
+    });
+
+    expect(container.querySelector('[data-testid="admin-versions"]')?.textContent).toContain('Initial version');
+
+    await act(async () => {
+      await mockedEditorHandlers.changeTitle!('Changed title');
+    });
+
+    let savePromise!: Promise<void>;
+    await act(async () => {
+      savePromise = mockedEditorHandlers.save!('Changed title');
+      await vi.advanceTimersByTimeAsync(0);
+    });
+    await act(async () => {
+      await savePromise;
+    });
+
+    expect(mockedNavigate).not.toHaveBeenCalled();
+    expect(apiMceGetVersions).toHaveBeenCalledTimes(2);
+    expect(mockedAdminPanel.versions).toEqual(updatedVersions);
+    expect(container.querySelector('[data-testid="admin-versions"]')?.textContent).toContain('Saved version');
 
     await act(async () => {
       root.unmount();

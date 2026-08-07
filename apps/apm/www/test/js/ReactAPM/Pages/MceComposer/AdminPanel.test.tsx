@@ -39,7 +39,7 @@ const versions: MceVersionInfo[] = [
 ];
 
 describe('AdminPanel', () => {
-  it('renders versions newest first with formatted time, author links, and expandable descriptions', async () => {
+  it('renders versions newest first with formatted time, author links, and complete descriptions', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
@@ -61,14 +61,7 @@ describe('AdminPanel', () => {
     expect(rows[1].textContent).toContain('Author 1002');
 
     const descriptionCell = rows[0].querySelector('td:nth-child(4)')!;
-    expect(descriptionCell.textContent).toBe(`${'a'.repeat(150)}Show more`);
-    const showMoreButton = descriptionCell.querySelector('button')!;
-
-    await act(async () => {
-      showMoreButton.click();
-    });
-
-    expect(descriptionCell.textContent).toBe('a'.repeat(151));
+    expect(descriptionCell.textContent).toBe(`${'a'.repeat(151)}`);
     expect(descriptionCell.querySelector('button')).toBeNull();
 
     await act(async () => {

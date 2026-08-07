@@ -5,23 +5,6 @@ import {MceVersionInfo} from "@/Api/DataSchema/ApiMceData";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
-import {useState} from "react";
-
-const VERSION_DESCRIPTION_MAX_LENGTH = 150;
-
-function VersionDescription({description}: { description: string }) {
-  const [showFullDescription, setShowFullDescription] = useState(false);
-  const isTruncated = description.length > VERSION_DESCRIPTION_MAX_LENGTH;
-  const displayedDescription = !isTruncated || showFullDescription ? description : description.slice(0, VERSION_DESCRIPTION_MAX_LENGTH);
-
-  return <>
-    {displayedDescription}
-    {isTruncated && !showFullDescription &&
-      <Button variant={'link'} size={'sm'} onClick={() => setShowFullDescription(true)}>
-        Show more
-      </Button>}
-  </>;
-}
 
 
 interface AdminPanelProps extends TabbableElementProps {
@@ -60,7 +43,8 @@ export default function AdminPanel({mceId, version, versions}: AdminPanelProps) 
     {
       key: 'description',
       title: 'Description',
-      cellContent: (row) => <VersionDescription description={row.description}/>,
+      tdClassName: 'description',
+      cellContent: (row) => <>{row.description}</>,
     },
   ];
 
@@ -77,7 +61,7 @@ export default function AdminPanel({mceId, version, versions}: AdminPanelProps) 
 
     <div className={'versions-div'}>
       <h1>Versions</h1>
-      <NiceTable rows={sortedVersions} columnDefs={columnDefs} getRowClassName={getRowClassName}
+      <NiceTable rows={sortedVersions} columnDefs={columnDefs} getRowClassName={getRowClassName} className={'versions-table'}
                  getRowKey={(row) => `${row.mceId}-${row.timeString}`}/>
     </div>
   </div>;

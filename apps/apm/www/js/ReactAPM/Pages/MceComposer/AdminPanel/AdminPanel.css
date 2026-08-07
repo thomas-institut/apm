@@ -18,4 +18,16 @@
     .loaded-version {
         background-color: #f0f0f0;
     }
+
+    .versions-table {
+        margin: 1em;
+
+        td {
+            vertical-align: top;
+        }
+    }
+
+    .description {
+       max-width: 50em;
+    }
 }

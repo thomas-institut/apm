@@ -178,6 +178,7 @@ vi.mock('react-bootstrap-icons', () => {
     ArrowsAngleContract: Icon,
     BugFill: Icon,
     ChevronRight: Icon,
+    ExclamationTriangleFill: Icon,
     LayoutSplit: Icon,
     Gear: Icon,
     PlusCircle: Icon,
@@ -721,7 +722,13 @@ describe('MceComposer', () => {
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
-        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{
+          mceId: 123,
+          timeString: '2026-01-01 00:00:00.000000',
+          authorId: 1,
+          description: '',
+        }]}),
+        getEntityNameFromCache: vi.fn().mockReturnValue(null),
         getSingleChunkData: getSingleChunkDataMock,
       } as any,
       versionTag: 'test',
@@ -810,7 +817,13 @@ describe('MceComposer', () => {
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
-        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{
+          mceId: 123,
+          timeString: '2026-01-01 00:00:00.000000',
+          authorId: 1,
+          description: '',
+        }]}),
+        getEntityNameFromCache: vi.fn().mockReturnValue(null),
         getSingleChunkData: getSingleChunkDataMock,
       } as any,
       versionTag: 'test',
@@ -910,7 +923,13 @@ describe('MceComposer', () => {
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
-        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{
+          mceId: 123,
+          timeString: '2026-01-01 00:00:00.000000',
+          authorId: 1,
+          description: '',
+        }]}),
+        getEntityNameFromCache: vi.fn().mockReturnValue(null),
         getSingleChunkData,
       } as any,
       versionTag: 'test',
@@ -1062,7 +1081,13 @@ describe('MceComposer', () => {
       localCache: new WebStorageKeyCache('local', 'test'),
       apiClient: {
         apiMceGetData,
-        apiMceGetVersions: vi.fn().mockResolvedValue({versions: []}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{
+          mceId: 1,
+          timeString: '2026-01-01 00:00:00.000000',
+          authorId: 1,
+          description: '',
+        }]}),
+        getEntityNameFromCache: vi.fn().mockReturnValue(null),
         getSingleChunkData,
       } as any,
       versionTag: 'test',
@@ -1078,7 +1103,7 @@ describe('MceComposer', () => {
     });
 
     expect(apiMceGetData).toHaveBeenCalledTimes(1);
-    expect(apiMceGetData).toHaveBeenLastCalledWith(1);
+    expect(apiMceGetData).toHaveBeenLastCalledWith(1, undefined);
     expect(container.textContent).toContain('First MCE');
     expect(container.textContent).toContain('First chunk');
     expect(getSingleChunkData).toHaveBeenCalledWith(101, '');
@@ -1100,7 +1125,7 @@ describe('MceComposer', () => {
     });
 
     expect(apiMceGetData).toHaveBeenCalledTimes(2);
-    expect(apiMceGetData).toHaveBeenLastCalledWith(2);
+    expect(apiMceGetData).toHaveBeenLastCalledWith(2, undefined);
     expect(container.textContent).toContain('Second MCE');
     expect(container.textContent).toContain('Second chunk');
     expect(container.textContent).not.toContain('First MCE');

@@ -9,7 +9,9 @@ import AdminPanel from '@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel';
 import {MceVersionInfo} from '@/Api/DataSchema/ApiMceData';
 
 vi.mock('@/ReactAPM/Components/EntityLink', () => ({
-  default: ({id}: {id: number}) => <span data-author-id={id}>Author {id}</span>,
+  default: ({id, name}: {id: number, name?: string}) => name
+    ? <a data-entity-id={id}>{name}</a>
+    : <span data-author-id={id}>Author {id}</span>,
 }));
 
 vi.mock('@/pages/common/ApmFormats', () => ({
@@ -43,7 +45,7 @@ describe('AdminPanel', () => {
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AdminPanel versions={versions}/>);
+      root.render(<AdminPanel mceId={42} version={null} versions={versions}/>);
     });
 
     const headers = Array.from(container.querySelectorAll('th')).map((header) => header.textContent);
@@ -68,6 +70,33 @@ describe('AdminPanel', () => {
 
     expect(descriptionCell.textContent).toBe('a'.repeat(151));
     expect(descriptionCell.querySelector('button')).toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('highlights the loaded version and does not link its time', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<AdminPanel mceId={42} version={versions[0].timeString} versions={versions}/>);
+    });
+
+    const rows = Array.from(container.querySelectorAll('tbody tr'));
+    expect(rows[0].classList.contains('loaded-version')).toBe(false);
+    expect(rows[1].classList.contains('loaded-version')).toBe(true);
+
+    rows
+      .filter((row) => !row.classList.contains('loaded-version'))
+      .forEach((row) => {
+        expect(row.querySelector('td:nth-child(2) a')).not.toBeNull();
+      });
+    const loadedVersionTimeCell = rows[1].querySelector('td:nth-child(2)')!;
+    expect(loadedVersionTimeCell.textContent).toBe('formatted 2026-08-05 12:00:00.000000');
+    expect(loadedVersionTimeCell.querySelector('a')).toBeNull();
 
     await act(async () => {
       root.unmount();

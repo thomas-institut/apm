@@ -316,6 +316,12 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         $appsByEnd = [];
         foreach ($apparatuses as $apparatus) {
             $type = is_object($apparatus->type) ? $apparatus->type->value : $apparatus->type;
+
+            // apparatus criticus abbilden, aber marginalia (auskommentiert) ausschließen
+            if ($type === 'marginalia') {
+                continue;
+            }
+
             foreach ($apparatus->entries as $entry) {
                 $entry->appType = $type;
                 $appsByStart[$entry->from][] = $entry;
@@ -325,8 +331,23 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
 
         $body = "";
         $isParagraphOpen = false;
+        $currentParagraphTag = 'p';
+        $openAppsStack = [];
+        $inItalic = false;
+
+        $closeItalic = function () use (&$body, &$inItalic) {
+            if ($inItalic) {
+                $body .= '</hi>';
+                $inItalic = false;
+            }
+        };
 
         foreach ($mainText as $index => $token) {
+            // Close italic before structural changes
+            if ($token->type === 'paragraph_end' || isset($appsByStart[$index]) || isset($appsByEnd[$index])) {
+                $closeItalic();
+            }
+
             // Check if we need to open a paragraph
             if (!$isParagraphOpen && $token->type !== 'paragraph_end') {
                 $style = 'normal';
@@ -336,61 +357,109 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
                         break;
                     }
                 }
-                $tag = ($style === 'h2') ? 'head' : 'p';
-                $body .= "<$tag>";
+                $currentParagraphTag = ($style === 'h2') ? 'head' : 'p';
+                $body .= "\n<$currentParagraphTag>";
                 $isParagraphOpen = true;
             }
 
             // Start apparatus entries
             if (isset($appsByStart[$index])) {
-                // Sort by end index descending to ensure outermost entries are started first
+                // Sort by end index descending to ensure outermost entries are started first.
+                // For identical end indices, we use a stable sort by type.
                 usort($appsByStart[$index], function ($a, $b) {
-                    return $b->to <=> $a->to;
+                    if ($b->to !== $a->to) {
+                        return $b->to <=> $a->to;
+                    }
+                    return strcmp($a->appType, $b->appType);
                 });
                 foreach ($appsByStart[$index] as $entry) {
-                    $body .= sprintf('<app type="%s"><lem>', htmlspecialchars($entry->appType));
+                    $body .= sprintf("\n<app type=\"%s\">\n<lem>", htmlspecialchars($entry->appType));
+                    $openAppsStack[] = $entry;
                 }
             }
 
             // Process token content
             if ($token->type === 'text') {
-                $body .= $this->fmtTextToString($token->text);
+                foreach ($token->text as $part) {
+                    $isPartItalic = (isset($part->fontStyle) && $part->fontStyle === 'italic');
+                    $content = "";
+                    if (isset($part->text)) {
+                        $content = htmlspecialchars($part->text);
+                    } elseif (isset($part->type) && $part->type === 'glue') {
+                        $content = ' ';
+                    }
+
+                    if ($isPartItalic && !$inItalic) {
+                        $body .= '<hi rend="italic">';
+                        $inItalic = true;
+                    } elseif (!$isPartItalic && $inItalic) {
+                        $body .= '</hi>';
+                        $inItalic = false;
+                    }
+                    $body .= $content;
+                }
             } elseif ($token->type === 'glue') {
+                // Inherit italic if next token is also italic text
+                $nextIsItalic = false;
+                if (isset($mainText[$index + 1]) && $mainText[$index + 1]->type === 'text') {
+                    if (!empty($mainText[$index + 1]->text) && isset($mainText[$index + 1]->text[0]->fontStyle) && $mainText[$index + 1]->text[0]->fontStyle === 'italic') {
+                        $nextIsItalic = true;
+                    }
+                }
+
+                if ($inItalic && !$nextIsItalic) {
+                    $closeItalic();
+                }
                 $body .= ' ';
+            } elseif ($token->type === 'page_break') {
+                $body .= '<pb/>';
+            } elseif ($token->type === 'column_break') {
+                $body .= '<cb/>';
+            } elseif ($token->type === 'line_break') {
+                $body .= '<lb/>';
             }
 
             // End apparatus entries
-            if (isset($appsByEnd[$index])) {
-                // Sort by start index descending to ensure innermost entries are closed first
-                usort($appsByEnd[$index], function ($a, $b) {
-                    return $b->from <=> $a->from;
-                });
-                foreach ($appsByEnd[$index] as $entry) {
-                    $body .= "</lem>";
-                    foreach ($entry->subEntries as $subEntry) {
-                        $wits = [];
-                        foreach ($subEntry->witnessData as $wd) {
-                            $siglum = $wd->siglum ?: ($siglaMap[$wd->witnessIndex] ?? '');
-                            if ($siglum) {
-                                $wits[] = '#' . $siglum;
-                            }
+            // We use the stack to ensure LIFO (Last-In-First-Out) order for correct XML nesting.
+            while (!empty($openAppsStack) && end($openAppsStack)->to === $index) {
+                $closeItalic();
+                $entry = array_pop($openAppsStack);
+                $body .= "\n</lem>";
+                foreach ($entry->subEntries as $subEntry) {
+                    $wits = [];
+                    foreach ($subEntry->witnessData as $wd) {
+                        $siglum = $wd->siglum ?: ($siglaMap[$wd->witnessIndex] ?? '');
+                        if ($siglum) {
+                            $wits[] = '#' . $siglum;
                         }
-                        $witStr = implode(' ', $wits);
-                        $rdgText = $this->fmtTextToString($subEntry->text);
-                        $body .= sprintf('<rdg wit="%s">%s</rdg>', htmlspecialchars($witStr), $rdgText);
                     }
-                    $body .= "</app>";
+                    $witStr = implode(' ', $wits);
+                    $rdgText = $this->fmtTextToString($subEntry->text);
+                    $body .= sprintf("\n<rdg wit=\"%s\">%s</rdg>", htmlspecialchars($witStr), $rdgText);
                 }
+                $body .= "\n</app>\n";
             }
 
             // End paragraph
             if ($token->type === 'paragraph_end') {
                 if ($isParagraphOpen) {
-                    $tag = ($token->style === 'h2') ? 'head' : 'p';
-                    $body .= "</$tag>\n";
+                    $body .= "</$currentParagraphTag>\n";
                     $isParagraphOpen = false;
                 }
             }
+        }
+
+        // Close any remaining open apparatus entries (should not happen with valid data)
+        while (!empty($openAppsStack)) {
+            $closeItalic();
+            $entry = array_pop($openAppsStack);
+            $body .= "\n</lem>\n</app>\n";
+        }
+
+        // Close last paragraph if still open
+        if ($isParagraphOpen) {
+            $closeItalic();
+            $body .= "</$currentParagraphTag>\n";
         }
 
 
@@ -401,10 +470,10 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
     <teiHeader>
         <fileDesc>
             <titleStmt>
-                <title> $title </title>
+                <title>$title</title>
                 <author>Unknown</author>
                 <respStmt>
-                    <resp>Text Encoding by </resp>
+                    <resp>Text Encoding by</resp>
                     <name>APM</name>
                 </respStmt>
             </titleStmt>
@@ -427,8 +496,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
     <text>
         <front>
             <div>
-                <listWit>
-                    $witnessesFormatted
+                <listWit>$witnessesFormatted
                 </listWit>
             </div>
         </front>
@@ -437,7 +505,21 @@ XML;
 
         $teiEnd = "</body></text></TEI>";
 
-        return $teiOpening . $body . $teiEnd;
+        $xml = $teiOpening . $body . $teiEnd;
+
+        // Pretty print XML
+        $dom = new \DOMDocument();
+        $dom->preserveWhiteSpace = false;
+        $dom->formatOutput = true;
+        try {
+            if ($dom->loadXML($xml)) {
+                return $dom->saveXML();
+            }
+        } catch (\Exception $e) {
+            // Fallback to unformatted XML if there are parsing issues
+        }
+
+        return $xml;
 
     }
 
@@ -447,12 +529,28 @@ XML;
             return htmlspecialchars($text);
         }
         $out = "";
+        $currentItalic = "";
         foreach ($text as $part) {
+            $isItalic = (isset($part->fontStyle) && $part->fontStyle === 'italic');
+            $content = "";
             if (isset($part->text)) {
-                $out .= htmlspecialchars($part->text);
+                $content = htmlspecialchars($part->text);
             } elseif (isset($part->type) && $part->type === 'glue') {
-                $out .= ' ';
+                $content = ' ';
             }
+
+            if ($isItalic) {
+                $currentItalic .= $content;
+            } else {
+                if ($currentItalic !== "") {
+                    $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
+                    $currentItalic = "";
+                }
+                $out .= $content;
+            }
+        }
+        if ($currentItalic !== "") {
+            $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
         }
         return $out;
     }

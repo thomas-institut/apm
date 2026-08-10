@@ -821,6 +821,60 @@ describe('MceData', () => {
       ]);
     });
 
+    it('accepts all instances at the given main text indices', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [
+        {
+          original: 'uel',
+          standardized: 'vel',
+          instances: [
+            {mainTextIndex: 1, status: 'accepted'},
+            {mainTextIndex: 2, status: 'rejected'},
+            {mainTextIndex: 3, status: 'accepted'}
+          ]
+        },
+        {
+          original: 'autem',
+          standardized: 'aut',
+          instances: [
+            {mainTextIndex: 7, status: 'rejected'}
+          ]
+        }
+      ];
+
+      const result = MceData.acceptStandardizedStringInstanceAll(mceData, 'uel', [2, 4]);
+
+      expect(result).toBe(mceData);
+      expect(mceData.standardizedStrings).toEqual([
+        {
+          original: 'uel',
+          standardized: 'vel',
+          instances: [
+            {mainTextIndex: 2, status: 'accepted'},
+            {mainTextIndex: 4, status: 'accepted'}
+          ]
+        },
+        {
+          original: 'autem',
+          standardized: 'aut',
+          instances: [
+            {mainTextIndex: 7, status: 'rejected'}
+          ]
+        }
+      ]);
+    });
+
+    it('throws when accepting all instances for an invalid or missing string', () => {
+      const mceData = MceData.createEmpty();
+      mceData.standardizedStrings = [{original: 'uel', standardized: 'vel', instances: []}];
+
+      expect(() => MceData.acceptStandardizedStringInstanceAll(mceData, '', [0])).toThrow(ValidationError);
+      expect(() => MceData.acceptStandardizedStringInstanceAll(mceData, undefined as unknown as string, [0]))
+        .toThrow(ValidationError);
+      expect(() => MceData.acceptStandardizedStringInstanceAll(mceData, 'autem', [0])).toThrow(ValidationError);
+      expect(() => MceData.acceptStandardizedStringInstanceAll(mceData, 'autem', [0])).toThrow("String 'autem' not found");
+    });
+
     it('throws when resetStandardizedStringInstanceAll targets an invalid or missing string', () => {
       const mceData = MceData.createEmpty();
       mceData.standardizedStrings = [{original: 'uel', standardized: 'vel', instances: []}];

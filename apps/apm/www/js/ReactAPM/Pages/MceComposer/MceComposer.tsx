@@ -1166,7 +1166,7 @@ export default function MceComposer() {
     }
   };
 
-  const resetStandardizedString = async (original: string): Promise<true | string> => {
+  const resetStandardizedStringAll = async (original: string): Promise<true | string> => {
     if (!startMceDataEdit()) {
       return getMceDataEditError();
     }
@@ -1314,7 +1314,7 @@ export default function MceComposer() {
       content: <StandardizationPanel standardizedWords={standardizedWords}
                                     add={addStandardizedString}
                                     delete={deleteStandardizedString}
-                                    reset={resetStandardizedString}/>,
+                                    reset={resetStandardizedStringAll}/>,
       tabbable: true,
     },
     {

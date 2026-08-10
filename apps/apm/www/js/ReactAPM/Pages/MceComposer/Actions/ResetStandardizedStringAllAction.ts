@@ -6,16 +6,16 @@ import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer'
 export class ResetStandardizedStringAllAction implements StateTransformAction<MceComposerHistoryState> {
 
   constructor(
-    private readonly original: string
+    private readonly str: string
   ) {}
 
   async execute(state: MceComposerHistoryState): Promise<MceComposerHistoryState> {
     const newState = deepCopy(state);
-    MceData.resetStandardizedStringInstanceAll(newState.mceData, this.original);
+    MceData.resetStandardizedStringInstanceAll(newState.mceData, this.str);
     return newState;
   }
 
   description(): string {
-    return `Reset standardized string '${this.original}'`;
+    return `Reset standardized string '${this.str}'`;
   }
 }

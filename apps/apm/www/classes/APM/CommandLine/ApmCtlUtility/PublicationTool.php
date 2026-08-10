@@ -304,8 +304,95 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         $witnessesFormatted = "";
 
         foreach ($witnesses as $witness) {
-            $witnessesFormatted = $witnessesFormatted . "<witness xml:id=\"$witness->siglum\">$witness->title</witness>";
+            $witnessesFormatted = $witnessesFormatted . "\n<witness xml:id=\"$witness->siglum\">$witness->title</witness>";
         }
+
+        $siglaMap = [];
+        foreach ($witnesses as $index => $witness) {
+            $siglaMap[$index] = $witness->siglum;
+        }
+
+        $appsByStart = [];
+        $appsByEnd = [];
+        foreach ($apparatuses as $apparatus) {
+            $type = is_object($apparatus->type) ? $apparatus->type->value : $apparatus->type;
+            foreach ($apparatus->entries as $entry) {
+                $entry->appType = $type;
+                $appsByStart[$entry->from][] = $entry;
+                $appsByEnd[$entry->to][] = $entry;
+            }
+        }
+
+        $body = "";
+        $isParagraphOpen = false;
+
+        foreach ($mainText as $index => $token) {
+            // Check if we need to open a paragraph
+            if (!$isParagraphOpen && $token->type !== 'paragraph_end') {
+                $style = 'normal';
+                for ($i = $index; $i < count($mainText); $i++) {
+                    if ($mainText[$i]->type === 'paragraph_end') {
+                        $style = $mainText[$i]->style;
+                        break;
+                    }
+                }
+                $tag = ($style === 'h2') ? 'head' : 'p';
+                $body .= "<$tag>";
+                $isParagraphOpen = true;
+            }
+
+            // Start apparatus entries
+            if (isset($appsByStart[$index])) {
+                // Sort by end index descending to ensure outermost entries are started first
+                usort($appsByStart[$index], function ($a, $b) {
+                    return $b->to <=> $a->to;
+                });
+                foreach ($appsByStart[$index] as $entry) {
+                    $body .= sprintf('<app type="%s"><lem>', htmlspecialchars($entry->appType));
+                }
+            }
+
+            // Process token content
+            if ($token->type === 'text') {
+                $body .= $this->fmtTextToString($token->text);
+            } elseif ($token->type === 'glue') {
+                $body .= ' ';
+            }
+
+            // End apparatus entries
+            if (isset($appsByEnd[$index])) {
+                // Sort by start index descending to ensure innermost entries are closed first
+                usort($appsByEnd[$index], function ($a, $b) {
+                    return $b->from <=> $a->from;
+                });
+                foreach ($appsByEnd[$index] as $entry) {
+                    $body .= "</lem>";
+                    foreach ($entry->subEntries as $subEntry) {
+                        $wits = [];
+                        foreach ($subEntry->witnessData as $wd) {
+                            $siglum = $wd->siglum ?: ($siglaMap[$wd->witnessIndex] ?? '');
+                            if ($siglum) {
+                                $wits[] = '#' . $siglum;
+                            }
+                        }
+                        $witStr = implode(' ', $wits);
+                        $rdgText = $this->fmtTextToString($subEntry->text);
+                        $body .= sprintf('<rdg wit="%s">%s</rdg>', htmlspecialchars($witStr), $rdgText);
+                    }
+                    $body .= "</app>";
+                }
+            }
+
+            // End paragraph
+            if ($token->type === 'paragraph_end') {
+                if ($isParagraphOpen) {
+                    $tag = ($token->style === 'h2') ? 'head' : 'p';
+                    $body .= "</$tag>\n";
+                    $isParagraphOpen = false;
+                }
+            }
+        }
+
 
         $teiOpening = <<<XML
 <?xml version="1.0" encoding="UTF-8"?>
@@ -348,30 +435,26 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         <body>
 XML;
 
-        $teiEnd = <<<XML
-</body>
-    </text>
-</TEI>
-XML;
+        $teiEnd = "</body></text></TEI>";
 
-$teiBody ="<head>Test</head>";
+        return $teiOpening . $body . $teiEnd;
 
-        $teiEncoding = $teiOpening . $teiBody . $teiEnd;
-/*
-        foreach ($mainText as $token) {
-            if ($token->type === 'text') {
-                foreach ($token->text as $part) {
-                    print($part->text ?? '');
-                }
-            } elseif ($token->type === 'glue') {
-                print(' ');
-            } elseif ($token->type === 'paragraph_end') {
-                print("\n");
+    }
+
+    private function fmtTextToString(string|array $text): string
+    {
+        if (is_string($text)) {
+            return htmlspecialchars($text);
+        }
+        $out = "";
+        foreach ($text as $part) {
+            if (isset($part->text)) {
+                $out .= htmlspecialchars($part->text);
+            } elseif (isset($part->type) && $part->type === 'glue') {
+                $out .= ' ';
             }
         }
-        print("\n");*/
-
-        return $teiEncoding;
+        return $out;
     }
 
 }

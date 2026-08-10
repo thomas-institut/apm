@@ -47,6 +47,11 @@ const clickDeleteIcon = async (container: HTMLElement) => {
 
 const clickResetIcon = async (container: HTMLElement) => {
   const icons = container.querySelectorAll('.standardization-controls-buttons .icon-btn');
+  await clickElement(icons.item(2));
+};
+
+const clickAcceptAllIcon = async (container: HTMLElement) => {
+  const icons = container.querySelectorAll('.standardization-controls-buttons .icon-btn');
   await clickElement(icons.item(1));
 };
 
@@ -65,6 +70,7 @@ const renderStandardizationPanel = async (props: {
   deleteWord?: (original: string) => Promise<true | string>;
   addWord?: (original: string, standardized: string) => Promise<true | string>;
   resetWord?: (original: string) => Promise<true | string>;
+  acceptWord?: (original: string, mainTextIndices: number[]) => Promise<true | string>;
 }) => {
   document.body.innerHTML = '<div id="root"></div>';
   const container = document.getElementById('root')!;
@@ -77,6 +83,7 @@ const renderStandardizationPanel = async (props: {
         delete={props.deleteWord ?? vi.fn().mockResolvedValue(true)}
         add={props.addWord ?? vi.fn().mockResolvedValue(true)}
         reset={props.resetWord ?? vi.fn().mockResolvedValue(true)}
+        acceptAll={props.acceptWord ?? vi.fn().mockResolvedValue(true)}
       />
     );
   });
@@ -142,6 +149,41 @@ describe('StandardizationPanel', () => {
     await clickConfirmAccept(container);
     expect(resetWord).toHaveBeenCalledWith('foo');
     expect(container.textContent).toContain('Error: cannot reset');
+  });
+
+  it('confirms accepting all instances and calls the callback with their indices', async () => {
+    const acceptWord = vi.fn().mockResolvedValue(true);
+    const word = {...makeWord(), numInstances: 7};
+    const {container} = await renderStandardizationPanel({
+      standardizedWords: [word],
+      acceptWord,
+    });
+
+    const acceptIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(1) as HTMLElement;
+    expect(acceptIcon.classList.contains('disabled')).toBe(false);
+
+    await clickAcceptAllIcon(container);
+    expect(container.textContent).toContain('Do you want to accept all 7 instances of the string foo?');
+
+    await clickConfirmAccept(container);
+    expect(acceptWord).toHaveBeenCalledWith('foo', [1, 2, 3, 4, 5, 6, 7]);
+  });
+
+  it('disables accepting all when a word has no instances', async () => {
+    const word = {...makeWord(), numInstances: 0, instances: []};
+    const {container} = await renderStandardizationPanel({standardizedWords: [word]});
+
+    const acceptIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(1) as HTMLElement;
+    expect(acceptIcon.classList.contains('disabled')).toBe(true);
+  });
+
+  it('disables accepting all when all instances are already accepted', async () => {
+    const word = makeWord();
+    word.instances = word.instances.map(instance => ({...instance, status: 'accepted' as const}));
+    const {container} = await renderStandardizationPanel({standardizedWords: [word]});
+
+    const acceptIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(1) as HTMLElement;
+    expect(acceptIcon.classList.contains('disabled')).toBe(true);
   });
 
   it('shows pending spinner while delete is executing', async () => {
@@ -242,7 +284,7 @@ describe('StandardizationPanel', () => {
       standardizedWords: [wordWithOnlyNotReviewed]
     });
 
-    const resetIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(1);
+    const resetIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(2);
     expect(resetIcon.className).toContain('disabled');
   });
 
@@ -265,7 +307,7 @@ describe('StandardizationPanel', () => {
       standardizedWords: [wordWithAccepted]
     });
 
-    const resetIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(1);
+    const resetIcon = container.querySelectorAll('.standardization-controls-buttons .icon-btn').item(2);
     expect(resetIcon.className).not.toContain('disabled');
   });
 

@@ -68,12 +68,10 @@ import {MceVersionInfo} from "@/Api/DataSchema/ApiMceData";
 import {TimeString} from "@/toolbox/TimeString";
 import BugWarningButton from "@/ReactAPM/Pages/MceComposer/BugWarningButton";
 import NotLastVersionWarningButton from "@/ReactAPM/Pages/MceComposer/NotLastVersionWarningButton";
+import ArchivedEditionWarningButton from "@/ReactAPM/Pages/MceComposer/ArchivedEditionWarningButton";
 
 // TODO: for later
-//  - Implement admin panel with versions
-//  - Issue #429: implement clone button in admin panel
-//  - Issue #430: implement archive button in admin panel
-//  - Issue #399: Implement tags panel
+//  - Implement tags panel
 
 
 export type CtDataState = 'notLoaded' | 'loading' | 'loaded' | 'error';
@@ -143,6 +141,7 @@ interface PendingEditionGenerationRequest {
 
 const CHUNK_FETCH_BATCH_SIZE = 5;
 const MCE_DATA_NOT_LOADED_ERROR = 'Cannot modify MCE data until it is loaded';
+const ARCHIVED_MCE_DATA_ERROR = 'Cannot modify archived MCE data';
 const SAVING_EDIT_ERROR = 'Cannot modify MCE data while saving';
 const EDIT_IN_PROGRESS_ERROR = 'Cannot modify MCE data while another edit is in progress';
 const OPERATIONAL_ACTION_ERROR_TIMEOUT_MS = 5000;
@@ -692,7 +691,7 @@ export default function MceComposer() {
 
   const startMceDataEdit = () => {
     clearOperationalActionError();
-    if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current) {
+    if (!isMceDataEditingAllowed(mceComposerStatus) || mceData.archived || savingRef.current || mceDataEditInProgressRef.current) {
       return false;
     }
     mceDataEditInProgressRef.current = true;
@@ -707,11 +706,14 @@ export default function MceComposer() {
     if (!isMceDataEditingAllowed(mceComposerStatus)) {
       return MCE_DATA_NOT_LOADED_ERROR;
     }
+    if (mceData.archived) {
+      return ARCHIVED_MCE_DATA_ERROR;
+    }
     return savingRef.current ? SAVING_EDIT_ERROR : EDIT_IN_PROGRESS_ERROR;
   };
 
   const isMceDataEditBlocked = () => {
-    return !isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current;
+    return !isMceDataEditingAllowed(mceComposerStatus) || mceData.archived || savingRef.current || mceDataEditInProgressRef.current;
   };
 
   const deleteChunk = async (chunkIndex: number): Promise<boolean> => {
@@ -1231,7 +1233,7 @@ export default function MceComposer() {
 
   const handleOnClickSaveButton = async (description: string) => {
     // console.log(`Click on save`);
-    if (!isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current || changes.length === 0) {
+    if (mceData.archived || !isMceDataEditingAllowed(mceComposerStatus) || savingRef.current || mceDataEditInProgressRef.current || changes.length === 0) {
       console.warn(`Cannot save MCE data because there are no changes`);
       return;
     }
@@ -1284,6 +1286,37 @@ export default function MceComposer() {
         return response.message ?? 'Error cloning edition';
       }
       return response.id;
+    } catch (error) {
+      return getMessageFromThrownError(error);
+    }
+  };
+
+  const archive = async (): Promise<true | string> => {
+    if (mceData.archived) {
+      return true;
+    }
+    if (changes.length > 0) {
+      return 'There are unsaved changes, archiving is not possible';
+    }
+
+    const archivedMceData = MceData.archive(deepCopy(mceData));
+    try {
+      const response = await appContext.apiClient.apiMceSave({
+        editionId: mceDataId,
+        mceData: archivedMceData,
+        description: 'Archived',
+      });
+      if (response.result === 'Error') {
+        return response.message ?? 'Error archiving edition';
+      }
+
+      MceData.archive(mceData);
+      history.reset({mceData}, 'Archived');
+      setMceData(mceData);
+      setSavedStateSignature(history.getCurrentStateSignature());
+      setChanges([]);
+      setHistoryVersion(v => v + 1);
+      return true;
     } catch (error) {
       return getMessageFromThrownError(error);
     }
@@ -1421,7 +1454,10 @@ export default function MceComposer() {
       title: 'Admin',
       expandable: false,
       tabbable: true,
-      content: <AdminPanel versions={versions} version={versionString} mceId={mceDataId} cloneEdition={cloneEdition}/>
+      content: <AdminPanel versions={versions} version={versionString} mceId={mceDataId}
+                           cloneEdition={cloneEdition} archive={archive}
+                           isArchived={mceData.archived}
+                           archivingEnabled={mceComposerStatus === 'loaded' && !mceData.archived && changes.length === 0}/>
     }
   ];
 
@@ -1517,6 +1553,7 @@ export default function MceComposer() {
 
   const notificationsDiv = <div className={'notifications'}>
     {isLastVersion !== null && !isLastVersion && <NotLastVersionWarningButton version={versionString}/>}
+    {mceData.archived && <ArchivedEditionWarningButton/>}
     {mceComposerStatus === 'loadingSingleChunks' && loadingProgress}
     {editionGenerationProgressBar}
     {operationalActionErrorMsg !== null && <span className={'text-danger action-error-message'}>{operationalActionErrorMsg}</span>}
@@ -1546,7 +1583,8 @@ export default function MceComposer() {
                                    }}/>}
 
     {!foundBug && <ComponentWithPending pending={saving}>
-      <MceComposerSaveButton changes={changes} executeSave={handleOnClickSaveButton} saveError={saveError}/>
+      <MceComposerSaveButton changes={changes} executeSave={handleOnClickSaveButton}
+                             saveError={saveError} disabled={mceData.archived}/>
     </ComponentWithPending>}
     {!foundBug && <ArrowCounterclockwise className={'icon-btn' + (changes.length > 0 ? ' highlighted' : ' disabled')}
                                          onClick={() => handleOnClickRevertChanges()}

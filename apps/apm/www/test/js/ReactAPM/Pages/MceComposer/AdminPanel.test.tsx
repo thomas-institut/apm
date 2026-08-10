@@ -40,14 +40,26 @@ const versions: MceVersionInfo[] = [
 
 describe('AdminPanel', () => {
   const cloneEdition = vi.fn<() => Promise<number | string>>();
+  const archive = vi.fn<() => Promise<true | string>>();
 
-  const renderAdminPanel = async (cloneEditionProp = cloneEdition) => {
+  interface RenderOptions {
+    cloneEdition?: () => Promise<number | string>;
+    archive?: () => Promise<true | string>;
+    isArchived?: boolean;
+    archivingEnabled?: boolean;
+  }
+
+  const renderAdminPanel = async (options: RenderOptions = {}) => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AdminPanel mceId={42} version={null} versions={versions} cloneEdition={cloneEditionProp}/>);
+      root.render(<AdminPanel mceId={42} version={null} versions={versions}
+                              cloneEdition={options.cloneEdition ?? cloneEdition}
+                              archive={options.archive ?? archive}
+                              isArchived={options.isArchived ?? false}
+                              archivingEnabled={options.archivingEnabled ?? true}/>);
     });
 
     return {container, root};
@@ -58,7 +70,7 @@ describe('AdminPanel', () => {
     const pendingClone = vi.fn(() => new Promise<number>((resolve) => {
       resolveClone = resolve;
     }));
-    const {container, root} = await renderAdminPanel(pendingClone);
+    const {container, root} = await renderAdminPanel({cloneEdition: pendingClone});
 
     await act(async () => {
       const cloneButton = Array.from(container.querySelectorAll('button'))
@@ -89,7 +101,7 @@ describe('AdminPanel', () => {
   it('displays the clone error in red', async () => {
     const error = 'Unable to save clone';
     const cloneEditionProp = vi.fn().mockResolvedValue(error);
-    const {container, root} = await renderAdminPanel(cloneEditionProp);
+    const {container, root} = await renderAdminPanel({cloneEdition: cloneEditionProp});
 
     await act(async () => {
       container.querySelector<HTMLButtonElement>('button[title="Clone Edition"]')!.click();
@@ -105,14 +117,81 @@ describe('AdminPanel', () => {
     });
   });
 
-  it('renders versions newest first with formatted time, author links, and complete descriptions', async () => {
-    document.body.innerHTML = '<div id="root"></div>';
-    const container = document.getElementById('root')!;
-    const root = createRoot(container);
+  it('confirms archiving and displays a spinner while the archive request is pending', async () => {
+    let resolveArchive: (result: true) => void = () => {};
+    const pendingArchive = vi.fn(() => new Promise<true>((resolve) => {
+      resolveArchive = resolve;
+    }));
+    const {container, root} = await renderAdminPanel({archive: pendingArchive});
 
     await act(async () => {
-      root.render(<AdminPanel mceId={42} version={null} versions={versions} cloneEdition={cloneEdition}/>);
+      container.querySelector<HTMLButtonElement>('button[title="Archive Edition"]')!.click();
     });
+    expect(document.body.textContent).toContain('Do you want to archive this edition?');
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('.accept-btn')!.click();
+    });
+    expect(pendingArchive).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain('Archiving edition...');
+    expect(container.querySelector('.action-buttons-div .spinner-border')).not.toBeNull();
+    expect(container.textContent).not.toContain('Archive Edition');
+
+    await act(async () => {
+      resolveArchive(true);
+    });
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('disables archiving and explains that the edition is archived', async () => {
+    const {container, root} = await renderAdminPanel({isArchived: true});
+
+    const archiveButton = container.querySelector<HTMLButtonElement>('button[title="Archive Edition"]')!;
+    expect(archiveButton.disabled).toBe(true);
+    expect(container.querySelector('.archive-info')?.textContent).toBe('This edition is archived');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('disables archiving when there are unsaved changes', async () => {
+    const {container, root} = await renderAdminPanel({archivingEnabled: false});
+
+    const archiveButton = container.querySelector<HTMLButtonElement>('button[title="Archive Edition"]')!;
+    expect(archiveButton.disabled).toBe(true);
+    expect(container.querySelector('.archive-info')?.textContent)
+      .toBe('There are unsaved changes, archiving is not possible');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('displays an archive error in red', async () => {
+    const error = 'Unable to archive edition';
+    const archiveProp = vi.fn().mockResolvedValue(error);
+    const {container, root} = await renderAdminPanel({archive: archiveProp});
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('button[title="Archive Edition"]')!.click();
+    });
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('.accept-btn')!.click();
+    });
+
+    expect(container.querySelector('.archive-info.text-danger')?.textContent).toBe(error);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('renders versions newest first with formatted time, author links, and complete descriptions', async () => {
+    const {container, root} = await renderAdminPanel();
 
     const headers = Array.from(container.querySelectorAll('th')).map((header) => header.textContent);
     expect(headers).toEqual(['N', 'Time', 'Author', 'Description']);
@@ -141,7 +220,9 @@ describe('AdminPanel', () => {
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AdminPanel mceId={42} version={versions[0].timeString} versions={versions} cloneEdition={cloneEdition}/>);
+      root.render(<AdminPanel mceId={42} version={versions[0].timeString} versions={versions}
+                              cloneEdition={cloneEdition} archive={archive}
+                              isArchived={false} archivingEnabled={true}/>);
     });
 
     const rows = Array.from(container.querySelectorAll('tbody tr'));

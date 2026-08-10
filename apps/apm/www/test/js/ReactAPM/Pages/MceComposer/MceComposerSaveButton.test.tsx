@@ -146,4 +146,31 @@ describe('MceComposerSaveButton', () => {
       root.unmount();
     });
   });
+
+  it('is permanently disabled when the edition is archived', async () => {
+    const executeSave = vi.fn().mockResolvedValue(undefined);
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<MceComposerSaveButton changes={['Changed title']}
+                                      executeSave={executeSave}
+                                      saveError={null}
+                                      disabled={true}/>);
+    });
+
+    const saveIcon = container.querySelector('.icon-btn') as HTMLElement;
+    expect(saveIcon.className).toContain('disabled');
+    expect(container.textContent).not.toContain('Do you want to save?');
+
+    await act(async () => {
+      saveIcon.click();
+    });
+    expect(executeSave).not.toHaveBeenCalled();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
 });

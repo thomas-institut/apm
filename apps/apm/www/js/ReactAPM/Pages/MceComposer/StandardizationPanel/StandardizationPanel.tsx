@@ -1,7 +1,7 @@
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 import './StandardizationPanel.css';
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
-import {ArrowCounterclockwise, ExclamationTriangleFill, PlusCircle, Trash} from "react-bootstrap-icons";
+import {ArrowCounterclockwise, Check2All, ExclamationTriangleFill, PlusCircle, Trash} from "react-bootstrap-icons";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {Button} from "react-bootstrap";
 import {useMemo, useState} from "react";
@@ -13,20 +13,27 @@ interface StandardizationPanelProps extends TabbableElementProps {
   standardizedWords: StandardizedWord[],
   delete: (original: string) => Promise<true | string>,
   add: (original: string, standardized: string) => Promise<true | string>,
-  reset: (original: string) => Promise<true | string>
+  reset: (original: string) => Promise<true | string>,
+  acceptAll: (original: string, mainTextIndices: number[]) => Promise<true | string>
 }
 
-type RowPendingAction = 'delete' | 'reset';
+type RowPendingAction = 'delete' | 'reset' | 'accept';
+interface ConfirmAction {
+  original: string;
+  action: RowPendingAction;
+  mainTextIndices?: number[];
+}
 
 export default function StandardizationPanel({
                                                standardizedWords,
                                                delete: deleteWord,
                                                add: addWord,
-                                               reset: resetWord
+                                               reset: resetWord,
+                                               acceptAll: acceptAllInstances
                                              }: StandardizationPanelProps) {
 
   const [pendingRowAction, setPendingRowAction] = useState<{ original: string, action: RowPendingAction } | null>(null);
-  const [confirmAction, setConfirmAction] = useState<{ original: string, action: RowPendingAction } | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ConfirmAction | null>(null);
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
   const [showAddForm, setShowAddForm] = useState(false);
   const [addOriginal, setAddOriginal] = useState('');
@@ -73,7 +80,18 @@ export default function StandardizationPanel({
     setConfirmAction({original, action: 'reset'});
   };
 
-  const handleAcceptConfirm = async () => {
+  const handleConfirmAccept = (row: StandardizedWord) => {
+    if (isAnyPending || row.instances.length === 0) {
+      return;
+    }
+    setConfirmAction({
+      original: row.original,
+      action: 'accept',
+      mainTextIndices: row.instances.map(instance => instance.mainTextIndex),
+    });
+  };
+
+  const handleAcceptAllConfirm = async () => {
     if (confirmAction === null) {
       return;
     }
@@ -81,8 +99,10 @@ export default function StandardizationPanel({
     setConfirmAction(null);
     if (action === 'delete') {
       await handleDelete(original);
-    } else {
+    } else if (action === 'reset') {
       await handleReset(original);
+    } else {
+      await handleAcceptAll(original, confirmAction.mainTextIndices ?? []);
     }
   };
 
@@ -124,6 +144,29 @@ export default function StandardizationPanel({
       result = await resetWord(original);
     } catch (error) {
       console.error(`Error resetting standardized string '${original}'`, error);
+      setRowError(original, 'Error: unexpected error');
+      return;
+    } finally {
+      setPendingRowAction(null);
+    }
+    if (result === true) {
+      clearRowError(original);
+      return;
+    }
+    setRowError(original, `Error: ${result}`);
+  };
+
+  const handleAcceptAll = async (original: string, mainTextIndices: number[]) => {
+    if (isAnyPending) {
+      return;
+    }
+    setPendingRowAction({original, action: 'accept'});
+    clearRowError(original);
+    let result: true | string;
+    try {
+      result = await acceptAllInstances(original, mainTextIndices);
+    } catch (error) {
+      console.error(`Error accepting all instances of standardized string '${original}'`, error);
       setRowError(original, 'Error: unexpected error');
       return;
     } finally {
@@ -219,7 +262,10 @@ export default function StandardizationPanel({
       cellContent: (row) => {
         const deletePending = pendingRowAction?.original === row.original && pendingRowAction.action === 'delete';
         const resetPending = pendingRowAction?.original === row.original && pendingRowAction.action === 'reset';
+        const acceptPending = pendingRowAction?.original === row.original && pendingRowAction.action === 'accept';
         const isResetDisabled = isAnyPending || (row.accepted === 0 && row.rejected === 0);
+        const isAcceptDisabled = isAnyPending || row.instances.length === 0 ||
+          row.instances.every(instance => instance.status === 'accepted');
 
         return <div className={'standardization-controls'}>
           <div className={'standardization-controls-buttons'}>
@@ -227,6 +273,15 @@ export default function StandardizationPanel({
               <Trash className={'icon-btn' + (isAnyPending ? ' disabled' : '')}
                      title={isAnyPending ? '' : `Click to delete standardized string '${row.original}'`}
                      onClick={() => handleConfirmDelete(row.original)}/>
+            </ComponentWithPending>
+            <ComponentWithPending pending={acceptPending} pendingTitle={`Accepting all instances of '${row.original}'`}>
+              <Check2All className={'icon-btn' + (isAcceptDisabled ? ' disabled' : '')}
+                         title={isAcceptDisabled ? '' : `Accept all instances of '${row.original}'`}
+                         onClick={() => {
+                           if (!isAcceptDisabled) {
+                             handleConfirmAccept(row);
+                           }
+                         }}/>
             </ComponentWithPending>
             <ComponentWithPending pending={resetPending} pendingTitle={`Resetting '${row.original}'`}>
               <ArrowCounterclockwise className={'icon-btn' + (isResetDisabled ? ' disabled' : '')}
@@ -265,14 +320,17 @@ export default function StandardizationPanel({
       show={confirmAction !== null}
       onHide={handleCancelConfirm}
       onCancel={handleCancelConfirm}
-      onAccept={handleAcceptConfirm}
-      title={confirmAction?.action === 'delete' ? 'Delete standardization?' : 'Reset standardization?'}
+      onAccept={handleAcceptAllConfirm}
+      title={confirmAction?.action === 'delete' ? 'Delete standardization?' :
+        confirmAction?.action === 'reset' ? 'Reset standardization?' : 'Accept all instances?'}
       body={confirmAction === null ? null : (confirmAction.action === 'delete' ?
           <>Are you sure you want to delete the standardization entry for <b>{confirmAction.original}</b>?</> :
-          <>Are you sure you want to reset the standardization status for all instances
-            of <b>{confirmAction.original}</b>?</>
+          confirmAction.action === 'reset' ?
+            <>Are you sure you want to reset the standardization status for all instances
+              of <b>{confirmAction.original}</b>?</> :
+            <>Do you want to accept all {confirmAction.mainTextIndices?.length ?? 0} instances of the string {confirmAction.original}?</>
       )}
-      acceptButtonLabel={confirmAction?.action === 'delete' ? 'Delete' : 'Reset'}
+      acceptButtonLabel={confirmAction?.action === 'delete' ? 'Delete' : confirmAction?.action === 'reset' ? 'Reset' : 'Yes'}
       cancelButtonLabel={'Cancel'}
       size={'sm'}
     />

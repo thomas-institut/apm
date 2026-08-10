@@ -55,6 +55,7 @@ import {AddStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/
 import {DeleteStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteStandardizedStringAction";
 import {SetStandardizedStringInstanceStatusAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetStandardizedStringInstanceStatusAction";
 import {ResetStandardizedStringAllAction} from "@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAllAction";
+import {AcceptStandardizedStringAllAction} from "@/ReactAPM/Pages/MceComposer/Actions/AcceptStandardizedStringAllAction";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 import {OperationalError} from "@/lib/Error/SystemError";
@@ -1166,7 +1167,7 @@ export default function MceComposer() {
     }
   };
 
-  const resetStandardizedString = async (original: string): Promise<true | string> => {
+  const resetStandardizedStringAll = async (original: string): Promise<true | string> => {
     if (!startMceDataEdit()) {
       return getMceDataEditError();
     }
@@ -1175,6 +1176,26 @@ export default function MceComposer() {
         await history.do(new ResetStandardizedStringAllAction(original));
       } catch (error) {
         if (reportActionError('ResetStandardizedStringAction', error)) {
+          return 'Bug found';
+        }
+        return getMessageFromThrownError(error);
+      }
+      setHistoryVersion(v => v + 1);
+      return true;
+    } finally {
+      finishMceDataEdit();
+    }
+  };
+
+  const acceptStandardizedStringAll = async (original: string, mainTextIndices: number[]): Promise<true | string> => {
+    if (!startMceDataEdit()) {
+      return getMceDataEditError();
+    }
+    try {
+      try {
+        await history.do(new AcceptStandardizedStringAllAction(original, mainTextIndices));
+      } catch (error) {
+        if (reportActionError('AcceptStandardizedStringAllAction', error)) {
           return 'Bug found';
         }
         return getMessageFromThrownError(error);
@@ -1314,7 +1335,8 @@ export default function MceComposer() {
       content: <StandardizationPanel standardizedWords={standardizedWords}
                                     add={addStandardizedString}
                                     delete={deleteStandardizedString}
-                                    reset={resetStandardizedString}/>,
+                                    reset={resetStandardizedStringAll}
+                                    acceptAll={acceptStandardizedStringAll}/>,
       tabbable: true,
     },
     {

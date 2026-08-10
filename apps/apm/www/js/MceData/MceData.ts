@@ -114,6 +114,18 @@ export class MceData {
     return mceData;
   }
 
+  static acceptStandardizedStringInstanceAll(mceData: MceDataInterface, str: string, mainTextIndices: number[]) {
+    if (str === undefined || str === '') {
+      throw new ValidationError(`Invalid string '${str}'`);
+    }
+    const strIndex = mceData.standardizedStrings.findIndex(s => s.original === str);
+    if (strIndex < 0) {
+      throw new ValidationError(`String '${str}' not found`);
+    }
+    mceData.standardizedStrings[strIndex].instances = mainTextIndices.map( i => { return {status: 'accepted', mainTextIndex: i}});
+    return mceData;
+  }
+
   static setTitle(mceData: MceDataInterface, newTitle: string) {
     newTitle = newTitle.trim();
     if (newTitle === '') {

@@ -23,6 +23,7 @@ const mockedAddChunk = vi.hoisted(() => ({
 }));
 const mockedEditorHandlers = vi.hoisted(() => ({
   changeTitle: undefined as undefined | ((title: string) => Promise<boolean | undefined>),
+  acceptStandardizedStringAll: undefined as undefined | ((original: string, mainTextIndices: number[]) => Promise<true | string>),
   changeSiglaGroup: undefined as undefined | ((siglaGroupIndex: number, group: {siglum: string, witnesses: number[]}) => Promise<boolean>),
   clearHistory: undefined as undefined | (() => void),
   deleteChunk: undefined as undefined | ((chunkIndex: number) => Promise<boolean>),
@@ -144,6 +145,13 @@ vi.mock('@/ReactAPM/Pages/MceComposer/AddChunksPanel/AddChunksPanel', () => ({
   default: ({addChunk}: {addChunk: (tableId: number, version?: string) => Promise<true | string>}) => {
     mockedAddChunk.callback = addChunk;
     return <div>add chunks</div>;
+  }
+}));
+
+vi.mock('@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel', () => ({
+  default: ({acceptAll}: {acceptAll: (original: string, mainTextIndices: number[]) => Promise<true | string>}) => {
+    mockedEditorHandlers.acceptStandardizedStringAll = acceptAll;
+    return <div>standardization</div>;
   }
 }));
 
@@ -2249,6 +2257,54 @@ describe('MceComposer', () => {
     expect(historyDoSpy).toHaveBeenCalledTimes(2);
     expect((historyDoSpy.mock.calls[0] as any[])[0].constructor.name).toBe('ChangeSiglaGroupAction');
     expect((historyDoSpy.mock.calls[1] as any[])[0].constructor.name).toBe('DeleteSiglaGroupAction');
+
+    historyDoSpy.mockRestore();
+  });
+
+  it('wires accepting all standardized string instances to its history action', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do').mockImplementation(async () => {
+    });
+
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceGetData: vi.fn(),
+        getSingleChunkData: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(
+        <AppContext.Provider value={appContext}>
+          <MceComposer/>
+        </AppContext.Provider>,
+      );
+    });
+
+    await act(async () => {
+      await Promise.resolve();
+      await Promise.resolve();
+    });
+
+    await act(async () => {
+      await mockedEditorHandlers.acceptStandardizedStringAll?.('foo', [2, 4]);
+    });
+
+    expect(historyDoSpy).toHaveBeenCalledTimes(1);
+    expect((historyDoSpy.mock.calls[0] as any[])[0].constructor.name).toBe('AcceptStandardizedStringAllAction');
 
     historyDoSpy.mockRestore();
   });

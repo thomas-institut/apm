@@ -1270,6 +1270,25 @@ export default function MceComposer() {
     }
   };
 
+  const cloneEdition = async (): Promise<number | string> => {
+    const clonedMceData = deepCopy(mceData);
+    clonedMceData.title = `${clonedMceData.title} (clone)`;
+
+    try {
+      const response = await appContext.apiClient.apiMceSave({
+        editionId: -1,
+        mceData: clonedMceData,
+        description: `Cloned from edition ${mceDataId}`,
+      });
+      if (response.result === 'Error') {
+        return response.message ?? 'Error cloning edition';
+      }
+      return response.id;
+    } catch (error) {
+      return getMessageFromThrownError(error);
+    }
+  };
+
   const getDataForWitnessPanel = (): WitnessData[] => {
     return mceData.witnesses.map((w, index) => {
       let title = w.title;
@@ -1402,7 +1421,7 @@ export default function MceComposer() {
       title: 'Admin',
       expandable: false,
       tabbable: true,
-      content: <AdminPanel versions={versions} version={versionString} mceId={mceDataId}/>
+      content: <AdminPanel versions={versions} version={versionString} mceId={mceDataId} cloneEdition={cloneEdition}/>
     }
   ];
 

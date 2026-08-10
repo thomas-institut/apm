@@ -17,7 +17,10 @@ import {RouteUrls} from '@/ReactAPM/Router/RouteUrls';
 
 const mockRouteParams = vi.hoisted(() => ({id: 'new', version: undefined as string | undefined}));
 const mockedNavigate = vi.hoisted(() => vi.fn());
-const mockedAdminPanel = vi.hoisted(() => ({versions: [] as {description: string}[]}));
+const mockedAdminPanel = vi.hoisted(() => ({
+  versions: [] as {description: string}[],
+  cloneEdition: undefined as undefined | (() => Promise<number | string>),
+}));
 const mockedAddChunk = vi.hoisted(() => ({
   callback: undefined as undefined | ((tableId: number, version?: string) => Promise<true | string>),
 }));
@@ -254,8 +257,12 @@ vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel', () => ({
-  default: ({versions}: {versions: {description: string}[]}) => {
+  default: ({versions, cloneEdition}: {
+    versions: {description: string}[],
+    cloneEdition: () => Promise<number | string>,
+  }) => {
     mockedAdminPanel.versions = versions;
+    mockedAdminPanel.cloneEdition = cloneEdition;
     return <div data-testid="admin-versions">{versions.map((version) => version.description).join('|')}</div>;
   },
 }));
@@ -305,6 +312,7 @@ afterEach(() => {
   mockRouteParams.version = undefined;
   mockedNavigate.mockReset();
   mockedAdminPanel.versions = [];
+  mockedAdminPanel.cloneEdition = undefined;
 });
 
 describe('isMceDataEditingAllowed', () => {
@@ -320,6 +328,82 @@ describe('isMceDataEditingAllowed', () => {
 });
 
 describe('MceComposer', () => {
+  it('clones MCE data as a new edition and returns the new ID', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    mockRouteParams.id = '42';
+    const apiMceSave = vi.fn().mockResolvedValue({result: 'Success', id: 77});
+    const mceData = MceData.createEmpty();
+    mceData.title = 'Existing Edition';
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceSave,
+        apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: '2026-01-01 00:00:00'}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{timeString: '2026-01-01 00:00:00'}]}),
+        getEntityName: vi.fn(),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(<AppContext.Provider value={appContext}><MceComposer/></AppContext.Provider>);
+      await flushEffects();
+    });
+
+    const result = await mockedAdminPanel.cloneEdition!();
+
+    expect(result).toBe(77);
+    expect(apiMceSave).toHaveBeenCalledWith(expect.objectContaining({
+      editionId: -1,
+      description: 'Cloned from edition 42',
+      mceData: expect.objectContaining({title: 'Existing Edition (clone)'}),
+    }));
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('returns an API error message when cloning fails', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const root = createRoot(document.getElementById('root')!);
+    const apiMceSave = vi.fn().mockResolvedValue({result: 'Error', message: 'Clone failed'});
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {apiMceSave, apiMceGetData: vi.fn(), getEntityName: vi.fn()} as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(<AppContext.Provider value={appContext}><MceComposer/></AppContext.Provider>);
+      await flushEffects();
+    });
+
+    await expect(mockedAdminPanel.cloneEdition!()).resolves.toBe('Clone failed');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it('accepts a non-Latin first chunk', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;

@@ -39,13 +39,79 @@ const versions: MceVersionInfo[] = [
 ];
 
 describe('AdminPanel', () => {
+  const cloneEdition = vi.fn<() => Promise<number | string>>();
+
+  const renderAdminPanel = async (cloneEditionProp = cloneEdition) => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<AdminPanel mceId={42} version={null} versions={versions} cloneEdition={cloneEditionProp}/>);
+    });
+
+    return {container, root};
+  };
+
+  it('confirms and displays the cloned edition link while replacing the button with a spinner', async () => {
+    let resolveClone: (id: number) => void = () => {};
+    const pendingClone = vi.fn(() => new Promise<number>((resolve) => {
+      resolveClone = resolve;
+    }));
+    const {container, root} = await renderAdminPanel(pendingClone);
+
+    await act(async () => {
+      const cloneButton = Array.from(container.querySelectorAll('button'))
+        .find((button) => button.textContent === 'Clone Edition')!;
+      cloneButton.click();
+    });
+    expect(document.body.textContent).toContain('Do you want to clone this edition?');
+
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('.accept-btn')!.click();
+    });
+    expect(pendingClone).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain('Cloning edition...');
+    expect(container.querySelector('.action-buttons-div .spinner-border')).not.toBeNull();
+    expect(container.textContent).not.toContain('Clone Edition');
+
+    await act(async () => {
+      resolveClone(123);
+    });
+    expect(container.textContent).toContain('Edition successfully cloned: 123');
+    expect(container.querySelector('a[data-entity-id="123"]')).not.toBeNull();
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('displays the clone error in red', async () => {
+    const error = 'Unable to save clone';
+    const cloneEditionProp = vi.fn().mockResolvedValue(error);
+    const {container, root} = await renderAdminPanel(cloneEditionProp);
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('button[title="Clone Edition"]')!.click();
+    });
+    await act(async () => {
+      document.querySelector<HTMLButtonElement>('.accept-btn')!.click();
+    });
+
+    expect(container.querySelector('.clone-info.text-danger')?.textContent).toBe(error);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
   it('renders versions newest first with formatted time, author links, and complete descriptions', async () => {
     document.body.innerHTML = '<div id="root"></div>';
     const container = document.getElementById('root')!;
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AdminPanel mceId={42} version={null} versions={versions}/>);
+      root.render(<AdminPanel mceId={42} version={null} versions={versions} cloneEdition={cloneEdition}/>);
     });
 
     const headers = Array.from(container.querySelectorAll('th')).map((header) => header.textContent);
@@ -75,7 +141,7 @@ describe('AdminPanel', () => {
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AdminPanel mceId={42} version={versions[0].timeString} versions={versions}/>);
+      root.render(<AdminPanel mceId={42} version={versions[0].timeString} versions={versions} cloneEdition={cloneEdition}/>);
     });
 
     const rows = Array.from(container.querySelectorAll('tbody tr'));

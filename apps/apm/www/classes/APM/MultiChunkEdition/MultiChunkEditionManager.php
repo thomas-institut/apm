@@ -39,7 +39,7 @@ abstract class MultiChunkEditionManager
      * @param int $chunkId
      * @return array
      */
-    abstract public function getMultiChunkEditionIdsByWorkChunk(string $workId, int $chunkId) : array;
+//    abstract public function getMultiChunkEditionIdsByWorkChunk(string $workId, int $chunkId) : array;
 
     /**
      * Returns a list of all multi-chunk editions by the given user.
@@ -48,10 +48,11 @@ abstract class MultiChunkEditionManager
      *
      *   [ 'id' => multiChunkEditionId,  'title' => editionTitle ]
      *
-     * @param int $userTid
+     * @param int $userId
+     * @param bool $includeArchived
      * @return array
      */
-    abstract public function getMultiChunkEditionsByUser(int $userTid): array;
+    abstract public function getMultiChunkEditionsByUser(int $userId, bool $includeArchived = false): array;
 
     /**
      * @param int $mceId

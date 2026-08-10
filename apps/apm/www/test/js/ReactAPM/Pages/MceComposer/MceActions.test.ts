@@ -9,6 +9,7 @@ import { SetIncludeInAutoMarginalFoliationAction } from '@/ReactAPM/Pages/MceCom
 import { AddStandardizedStringAction } from '@/ReactAPM/Pages/MceComposer/Actions/AddStandardizedStringAction';
 import { DeleteStandardizedStringAction } from '@/ReactAPM/Pages/MceComposer/Actions/DeleteStandardizedStringAction';
 import { ResetStandardizedStringAllAction } from '@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAllAction';
+import { AcceptStandardizedStringAllAction } from '@/ReactAPM/Pages/MceComposer/Actions/AcceptStandardizedStringAllAction';
 import { MceDataInterface } from '@/MceData/MceDataInterface';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {ValidationError} from '@/lib/Error/SystemError';
@@ -348,6 +349,48 @@ describe('MCE Actions', () => {
       it('should throw if original is empty', async () => {
         const state = makeState(makeBaseMceData());
         const action = new ResetStandardizedStringAllAction('');
+        await expect(action.execute(state)).rejects.toThrow(ValidationError);
+        await expect(action.execute(state)).rejects.toThrow("Invalid string ''");
+      });
+    });
+
+    describe('AcceptStandardizedStringAllAction', () => {
+      it('should accept standardized string instances at the given indices', async () => {
+        const mceData = {
+          ...makeBaseMceData(),
+          standardizedStrings: [
+            {
+              original: 'foo',
+              standardized: 'bar',
+              instances: [
+                {mainTextIndex: 1, status: 'accepted' as const},
+                {mainTextIndex: 2, status: 'rejected' as const},
+                {mainTextIndex: 3, status: 'accepted' as const}
+              ]
+            }
+          ]
+        };
+        const state = makeState(mceData);
+        const action = new AcceptStandardizedStringAllAction('foo', [2, 4]);
+
+        const result = await action.execute(state);
+
+        expect(result.mceData.standardizedStrings[0].instances).toEqual([
+          {mainTextIndex: 2, status: 'accepted'},
+          {mainTextIndex: 4, status: 'accepted'}
+        ]);
+        expect(state.mceData.standardizedStrings[0].instances).toEqual([
+          {mainTextIndex: 1, status: 'accepted'},
+          {mainTextIndex: 2, status: 'rejected'},
+          {mainTextIndex: 3, status: 'accepted'}
+        ]);
+        expect(action.description()).toBe("Accept standardized string 'foo'");
+      });
+
+      it('should throw if original is empty', async () => {
+        const state = makeState(makeBaseMceData());
+        const action = new AcceptStandardizedStringAllAction('', [1]);
+
         await expect(action.execute(state)).rejects.toThrow(ValidationError);
         await expect(action.execute(state)).rejects.toThrow("Invalid string ''");
       });

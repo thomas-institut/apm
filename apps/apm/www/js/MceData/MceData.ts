@@ -60,6 +60,11 @@ export class MceData {
     return mceData.chunks.map(c => c.chunkId.split('-')[0]);
   }
 
+  static archive(mceData: MceDataInterface) {
+    mceData.archived = true;
+    return mceData;
+  }
+
   static addStandardizedString(mceData: MceDataInterface, original: string, standardized: string) {
     if (original === undefined || original.trim() === '') {
       throw new ValidationError(`Invalid original string '${original}'`);

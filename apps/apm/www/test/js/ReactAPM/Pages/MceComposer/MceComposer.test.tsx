@@ -20,6 +20,9 @@ const mockedNavigate = vi.hoisted(() => vi.fn());
 const mockedAdminPanel = vi.hoisted(() => ({
   versions: [] as {description: string}[],
   cloneEdition: undefined as undefined | (() => Promise<number | string>),
+  archive: undefined as undefined | (() => Promise<true | string>),
+  isArchived: false,
+  archivingEnabled: false,
 }));
 const mockedAddChunk = vi.hoisted(() => ({
   callback: undefined as undefined | ((tableId: number, version?: string) => Promise<true | string>),
@@ -34,6 +37,7 @@ const mockedEditorHandlers = vi.hoisted(() => ({
   moveChunk: undefined as undefined | ((chunkPosition: number, direction: 'up' | 'down') => Promise<boolean>),
   onGoTo: undefined as undefined | ((index: number) => void),
   save: undefined as undefined | ((description: string) => Promise<void>),
+  saveDisabled: false,
   setChunkBreak: undefined as undefined | ((chunkPosition: number, newBreak: string) => Promise<boolean>),
   setIncludeInAutoMarginalFoliation: undefined as undefined | ((witnessIndex: number, newState: boolean) => Promise<boolean>),
   setSiglum: undefined as undefined | ((witnessIndex: number, newSiglum: string) => Promise<boolean>),
@@ -159,8 +163,13 @@ vi.mock('@/ReactAPM/Pages/MceComposer/StandardizationPanel/StandardizationPanel'
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/MceComposerSaveButton', () => ({
-  default: ({executeSave, saveError}: {executeSave: (description: string) => Promise<void>, saveError: string | null}) => {
+  default: ({executeSave, saveError, disabled}: {
+    executeSave: (description: string) => Promise<void>,
+    saveError: string | null,
+    disabled: boolean,
+  }) => {
     mockedEditorHandlers.save = executeSave;
+    mockedEditorHandlers.saveDisabled = disabled;
     return <div>
       save
       {saveError !== null && <div data-testid="save-error">{saveError}</div>}
@@ -257,12 +266,18 @@ vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel', () => ({
 }));
 
 vi.mock('@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel', () => ({
-  default: ({versions, cloneEdition}: {
+  default: ({versions, cloneEdition, archive, isArchived, archivingEnabled}: {
     versions: {description: string}[],
     cloneEdition: () => Promise<number | string>,
+    archive: () => Promise<true | string>,
+    isArchived: boolean,
+    archivingEnabled: boolean,
   }) => {
     mockedAdminPanel.versions = versions;
     mockedAdminPanel.cloneEdition = cloneEdition;
+    mockedAdminPanel.archive = archive;
+    mockedAdminPanel.isArchived = isArchived;
+    mockedAdminPanel.archivingEnabled = archivingEnabled;
     return <div data-testid="admin-versions">{versions.map((version) => version.description).join('|')}</div>;
   },
 }));
@@ -313,6 +328,10 @@ afterEach(() => {
   mockedNavigate.mockReset();
   mockedAdminPanel.versions = [];
   mockedAdminPanel.cloneEdition = undefined;
+  mockedAdminPanel.archive = undefined;
+  mockedAdminPanel.isArchived = false;
+  mockedAdminPanel.archivingEnabled = false;
+  mockedEditorHandlers.saveDisabled = false;
 });
 
 describe('isMceDataEditingAllowed', () => {
@@ -398,6 +417,137 @@ describe('MceComposer', () => {
     });
 
     await expect(mockedAdminPanel.cloneEdition!()).resolves.toBe('Clone failed');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('archives the edition through the API and updates the composer state', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const root = createRoot(document.getElementById('root')!);
+    mockRouteParams.id = '42';
+    const mceData = MceData.createEmpty();
+    mceData.title = 'Edition to archive';
+    const apiMceSave = vi.fn().mockResolvedValue({result: 'Success', id: 42});
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceSave,
+        apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: '2026-01-01 00:00:00'}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{mceId: 42, timeString: '2026-01-01 00:00:00', authorId: 1, description: 'Initial'}]}),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(<AppContext.Provider value={appContext}><MceComposer/></AppContext.Provider>);
+      await flushEffects(8);
+    });
+
+    expect(mockedAdminPanel.isArchived).toBe(false);
+    expect(mockedAdminPanel.archivingEnabled).toBe(true);
+    const result = await act(async () => mockedAdminPanel.archive!());
+
+    expect(result).toBe(true);
+    expect(apiMceSave).toHaveBeenCalledWith(expect.objectContaining({
+      editionId: 42,
+      description: 'Archived',
+      mceData: expect.objectContaining({archived: true}),
+    }));
+    expect(apiMceSave.mock.calls[0][0].mceData).not.toBe(mceData);
+    expect(mceData.archived).toBe(true);
+    expect(mockedAdminPanel.isArchived).toBe(true);
+    expect(mockedAdminPanel.archivingEnabled).toBe(false);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('returns an archive API error without changing the edition state', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const root = createRoot(document.getElementById('root')!);
+    mockRouteParams.id = '42';
+    const mceData = MceData.createEmpty();
+    const apiMceSave = vi.fn().mockResolvedValue({result: 'Error', message: 'Archive failed'});
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceSave,
+        apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: '2026-01-01 00:00:00'}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{mceId: 42, timeString: '2026-01-01 00:00:00', authorId: 1, description: 'Initial'}]}),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(<AppContext.Provider value={appContext}><MceComposer/></AppContext.Provider>);
+      await flushEffects(8);
+    });
+
+    await expect(mockedAdminPanel.archive!()).resolves.toBe('Archive failed');
+    expect(mceData.archived).toBe(false);
+    expect(mockedAdminPanel.isArchived).toBe(false);
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('blocks editing and saving an archived edition', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+    mockRouteParams.id = '42';
+    const mceData = MceData.createEmpty();
+    mceData.archived = true;
+    const apiMceSave = vi.fn();
+    const appContext: AppContextProps = {
+      devMode: true,
+      userId: 1,
+      userName: 'Test User',
+      userIsAdmin: false,
+      userCanManageUsers: false,
+      baseUrl: '',
+      apiBaseUrl: '',
+      reactAppBaseUrl: '',
+      localCache: new WebStorageKeyCache('local', 'test'),
+      apiClient: {
+        apiMceSave,
+        apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: '2026-01-01 00:00:00'}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{mceId: 42, timeString: '2026-01-01 00:00:00', authorId: 1, description: 'Archived'}]}),
+      } as any,
+      versionTag: 'test',
+    };
+
+    await act(async () => {
+      root.render(<AppContext.Provider value={appContext}><MceComposer/></AppContext.Provider>);
+      await flushEffects(8);
+    });
+
+    expect(mockedAdminPanel.isArchived).toBe(true);
+    expect(mockedAdminPanel.archivingEnabled).toBe(false);
+    expect(mockedEditorHandlers.saveDisabled).toBe(true);
+    expect(container.textContent).toContain('This edition is archived');
+    await expect(mockedEditorHandlers.changeTitle!('Changed title')).resolves.toBe(false);
+    expect(apiMceSave).not.toHaveBeenCalled();
 
     await act(async () => {
       root.unmount();

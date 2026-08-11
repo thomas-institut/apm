@@ -9,10 +9,11 @@ import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 interface SaveButtonProps {
   changes: string[],
   executeSave: (description: string) => void | Promise<void>,
-  saveError: string | null
+  saveError: string | null,
+  disabled?: boolean,
 }
 
-export default function MceComposerSaveButton({changes, executeSave, saveError}: SaveButtonProps) {
+export default function MceComposerSaveButton({changes, executeSave, saveError, disabled = false}: SaveButtonProps) {
 
 
   const [saving, setSaving] = useState(false);
@@ -20,7 +21,7 @@ export default function MceComposerSaveButton({changes, executeSave, saveError}:
   const [description, setDescription] = useState('');
   const saveButtonRef = useRef<SVGSVGElement>(null);
   const handleConfirmationOpen = () => {
-    if (saving) {
+    if (disabled || saving) {
       return;
     }
     setDescription(changes.join('. '));
@@ -43,7 +44,7 @@ export default function MceComposerSaveButton({changes, executeSave, saveError}:
     }
   };
 
-  if (changes.length > 0) {
+  if (changes.length > 0 && !disabled) {
     const changesPopover = (
       <Popover className={'save-changes-popover'}>
         <Popover.Header>Save changes</Popover.Header>
@@ -97,5 +98,5 @@ export default function MceComposerSaveButton({changes, executeSave, saveError}:
       </Overlay>
     </>;
   }
-  return <CloudArrowUp className={'icon-btn disabled'} title={'Nothing to save'}/>;
+  return <CloudArrowUp className={'icon-btn disabled'} title={disabled ? 'Edition is archived' : 'Nothing to save'}/>;
 }

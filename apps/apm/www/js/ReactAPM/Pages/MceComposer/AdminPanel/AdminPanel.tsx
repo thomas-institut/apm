@@ -15,13 +15,19 @@ interface AdminPanelProps extends TabbableElementProps {
   version: string | null;
   versions: MceVersionInfo[];
   cloneEdition: () => Promise<number | string>;
+  archive: () => Promise<true | string>;
+  isArchived: boolean;
+  archivingEnabled: boolean;
 }
 
 
-export default function AdminPanel({mceId, version, versions, cloneEdition}: AdminPanelProps) {
+export default function AdminPanel({mceId, version, versions, cloneEdition, archive, isArchived, archivingEnabled}: AdminPanelProps) {
   const [confirmationOpen, setConfirmationOpen] = useState(false);
+  const [archiveConfirmationOpen, setArchiveConfirmationOpen] = useState(false);
   const [cloning, setCloning] = useState(false);
   const [cloneResult, setCloneResult] = useState<number | string | null>(null);
+  const [archiving, setArchiving] = useState(false);
+  const [archiveResult, setArchiveResult] = useState<string | null>(null);
 
   const sortedVersions = [...versions].sort((a, b) => b.timeString.localeCompare(a.timeString));
 
@@ -36,6 +42,19 @@ export default function AdminPanel({mceId, version, versions, cloneEdition}: Adm
       setCloneResult(await cloneEdition());
     } finally {
       setCloning(false);
+    }
+  };
+
+  const handleArchive = async () => {
+    setArchiving(true);
+    setArchiveResult(null);
+    try {
+      const result = await archive();
+      if (typeof result === 'string') {
+        setArchiveResult(result);
+      }
+    } finally {
+      setArchiving(false);
     }
   };
 
@@ -69,8 +88,18 @@ export default function AdminPanel({mceId, version, versions, cloneEdition}: Adm
   return <div className="admin-panel">
     <div className={'archive-div'}>
       <h1>Archive</h1>
+      <div className={'archive-info' + (archiveResult !== null ? ' text-danger' : '')}>
+        {isArchived && 'This edition is archived'}
+        {!isArchived && archiving && 'Archiving edition...'}
+        {!isArchived && !archiving && archiveResult !== null && archiveResult}
+        {!isArchived && !archiving && archiveResult === null && !archivingEnabled &&
+          'There are unsaved changes, archiving is not possible'}
+      </div>
       <div className={'action-buttons-div'}>
-        <Button disabled={true} title={'Archiving editions not implemented yet'}>Archive Edition</Button>
+        <ComponentWithPending pending={archiving} pendingTitle={'Archiving edition'}>
+          <Button disabled={isArchived || !archivingEnabled} title={'Archive Edition'} variant={'danger'}
+                  onClick={() => setArchiveConfirmationOpen(true)}>Archive Edition</Button>
+        </ComponentWithPending>
       </div>
     </div>
 
@@ -98,6 +127,13 @@ export default function AdminPanel({mceId, version, versions, cloneEdition}: Adm
                    onAccept={handleClone}
                    title={'Clone Edition'}
                    body={'Do you want to clone this edition?'}
+                   acceptButtonLabel={'Yes'}
+                   cancelButtonLabel={'No'}/>
+    <ConfirmDialog show={archiveConfirmationOpen}
+                   onHide={() => setArchiveConfirmationOpen(false)}
+                   onAccept={handleArchive}
+                   title={'Archive Edition'}
+                   body={'Do you want to archive this edition?'}
                    acceptButtonLabel={'Yes'}
                    cancelButtonLabel={'No'}/>
   </div>;

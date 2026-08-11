@@ -26,6 +26,17 @@ describe('MceData', () => {
     });
   });
 
+  describe('archive', () => {
+    it('marks the MceData as archived', () => {
+      const mceData = MceData.createEmpty();
+
+      const archived = MceData.archive(mceData);
+
+      expect(archived.archived).toBe(true);
+      expect(mceData.archived).toBe(true);
+    });
+  });
+
   describe('isEmpty', () => {
     it('returns true for a newly created empty MceData', () => {
       const empty = MceData.createEmpty();

@@ -30,10 +30,15 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         $this->setLogger($logger);
     }
 
-    public function getMultiChunkEditionsByUser(int $userTid): array
+    public function getMultiChunkEditionsByUser(int $userId, bool $includeArchived = false): array
     {
         $ids = [];
-        $rows = $this->mceTable->findRowsWithTime([ 'author_tid' => $userTid], 0, TimeString::now());
+        $rowsToFind = ['author_tid' => $userId];
+        if (!$includeArchived) {
+            $rowsToFind['archived'] = '0';
+        }
+
+        $rows = $this->mceTable->findRowsWithTime($rowsToFind, 0, TimeString::now());
 
         foreach($rows as $row) {
             $ids[] =  [
@@ -110,11 +115,11 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
     /**
      * @inheritDoc
      */
-    public function getMultiChunkEditionIdsByWorkChunk(string $workId, int $chunkId): array
-    {
-        // TODO: Implement getMultiChunkEditionIdsByWorkChunk() method.
-        return [];
-    }
+//    public function getMultiChunkEditionIdsByWorkChunk(string $workId, int $chunkId): array
+//    {
+//        // TODO: Implement getMultiChunkEditionIdsByWorkChunk() method.
+//        return [];
+//    }
 
     /**
      * @inheritDoc

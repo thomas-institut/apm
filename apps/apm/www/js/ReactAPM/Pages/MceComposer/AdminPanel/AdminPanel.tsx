@@ -97,7 +97,7 @@ export default function AdminPanel({mceId, version, versions, cloneEdition, arch
       </div>
       <div className={'action-buttons-div'}>
         <ComponentWithPending pending={archiving} pendingTitle={'Archiving edition'}>
-          <Button disabled={isArchived || !archivingEnabled} title={'Archive Edition'}
+          <Button disabled={isArchived || !archivingEnabled} title={'Archive Edition'} variant={'danger'}
                   onClick={() => setArchiveConfirmationOpen(true)}>Archive Edition</Button>
         </ComponentWithPending>
       </div>

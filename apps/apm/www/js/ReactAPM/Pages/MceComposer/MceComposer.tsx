@@ -1313,6 +1313,9 @@ export default function MceComposer() {
       MceData.archive(mceData);
       history.reset({mceData}, 'Archived');
       setMceData(mceData);
+      // Update versions
+      const respVersions = await appContext.apiClient.apiMceGetVersions(mceDataId);
+      setVersions(respVersions.versions);
       setSavedStateSignature(history.getCurrentStateSignature());
       setChanges([]);
       setHistoryVersion(v => v + 1);

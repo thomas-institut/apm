@@ -1,6 +1,6 @@
 {
   "name": "apm-node-service",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "type": "module",
   "imports": {
     "#src/*": "./dist/apm/node-service/src/*",
@@ -21,12 +21,12 @@
   "dependencies": {
     "@thomas-inst/fmt-text": "1.1.1",
     "@thomas-inst/matrix": "1.0.1",
-    "@thomas-inst/typesetter" : "1.0.5",
+    "@thomas-inst/typesetter": "1.0.5",
     "@thomas-inst/optionschecker": "^1.1.4",
     "body-parser": "^2.2.0",
     "express": "^5.2",
     "kleur": "^4.1.5",
-    "node-gtk": "^1.0.0",
+    "node-gtk": "^4.1.1",
     "yaml": "^2.9.0"
   },
   "devDependencies": {
@@ -34,6 +34,6 @@
     "typescript": "^5.9.2"
   },
   "allowScripts": {
-    "node-gtk@1.0.0": true
+    "node-gtk@4.1.1": true
   }
 }

@@ -299,25 +299,101 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         }
     }
 
-    private function generateTEI(string $title, array $mainText, array $apparatuses, array $witnesses,  string $lang="", string $desc="", string $date="", array $siglas=[]): string {
+    private function generateTEI(
+        string $title,
+        array $mainText,
+        array $apparatuses,
+        array $witnesses,
+        string $lang = "",
+        string $desc = "",
+        string $date = "",
+        array $siglas = []
+    ): string {
+        $witnessesFormatted = $this->formatWitnessesForTei($witnesses);
+        $siglaMap = $this->buildSiglaMap($witnesses);
+        [$appsByStart, $appsByEnd] = $this->indexApparatusEntries($apparatuses);
 
+        $body = $this->renderTeiBody($mainText, $appsByStart, $appsByEnd, $siglaMap);
+
+        $xml = $this->buildTeiDocument($title, $witnessesFormatted, $body);
+
+        return $this->formatXmlIfPossible($xml);
+    }
+
+    private function fmtTextToString(string|array $text): string
+    {
+        /*
+         * Plain strings only need XML escaping.
+         */
+        if (is_string($text)) {
+            return htmlspecialchars($text);
+        }
+
+        /*
+         * Structured text is flattened into a TEI-compatible string.
+         * Consecutive italic parts are buffered and emitted as one
+         * <hi rend="italic">...</hi> element.
+         */
+        $out = "";
+        $currentItalic = "";
+
+        foreach ($text as $part) {
+            $isItalic = isset($part->fontStyle) && $part->fontStyle === 'italic';
+            $content = $this->extractEscapedTextContent($part);
+
+            if ($isItalic) {
+                $currentItalic .= $content;
+                continue;
+            }
+
+            if ($currentItalic !== "") {
+                $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
+                $currentItalic = "";
+            }
+
+            $out .= $content;
+        }
+
+        if ($currentItalic !== "") {
+            $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
+        }
+
+        return $out;
+    }
+
+    private function formatWitnessesForTei(array $witnesses): string
+    {
         $witnessesFormatted = "";
 
         foreach ($witnesses as $witness) {
-            $witnessesFormatted = $witnessesFormatted . "\n<witness xml:id=\"$witness->siglum\">$witness->title</witness>";
+            $witnessesFormatted .= "\n<witness xml:id=\"$witness->siglum\">$witness->title</witness>";
         }
 
+        return $witnessesFormatted;
+    }
+
+    private function buildSiglaMap(array $witnesses): array
+    {
         $siglaMap = [];
+
         foreach ($witnesses as $index => $witness) {
             $siglaMap[$index] = $witness->siglum;
         }
 
+        return $siglaMap;
+    }
+
+    private function indexApparatusEntries(array $apparatuses): array
+    {
         $appsByStart = [];
         $appsByEnd = [];
+
         foreach ($apparatuses as $apparatus) {
             $type = is_object($apparatus->type) ? $apparatus->type->value : $apparatus->type;
 
-            // apparatus criticus abbilden, aber marginalia (auskommentiert) ausschließen
+            /*
+             * export apparatus data, but skip marginalia for now.
+             */
             if ($type === 'marginalia') {
                 continue;
             }
@@ -329,6 +405,11 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             }
         }
 
+        return [$appsByStart, $appsByEnd];
+    }
+
+    private function renderTeiBody(array $mainText, array $appsByStart, array $appsByEnd, array $siglaMap): string
+    {
         $body = "";
         $isParagraphOpen = false;
         $currentParagraphTag = 'p';
@@ -343,216 +424,269 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         };
 
         foreach ($mainText as $index => $token) {
-            // Close italic before structural changes
-            if ($token->type === 'paragraph_end' || isset($appsByStart[$index]) || isset($appsByEnd[$index])) {
+            if ($this->requiresItalicClosureBeforeStructureChange($token, $index, $appsByStart, $appsByEnd)) {
                 $closeItalic();
             }
 
-            // Check if we need to open a paragraph
             if (!$isParagraphOpen && $token->type !== 'paragraph_end') {
-                $style = 'normal';
-                for ($i = $index; $i < count($mainText); $i++) {
-                    if ($mainText[$i]->type === 'paragraph_end') {
-                        $style = $mainText[$i]->style;
-                        break;
-                    }
-                }
-                $currentParagraphTag = ($style === 'h2') ? 'head' : 'p';
+                $currentParagraphTag = $this->determineParagraphTag($mainText, $index);
                 $body .= "\n<$currentParagraphTag>";
                 $isParagraphOpen = true;
             }
 
-            // Start apparatus entries
             if (isset($appsByStart[$index])) {
-                // Sort by end index descending to ensure outermost entries are started first.
-                // For identical end indices, we use a stable sort by type.
-                usort($appsByStart[$index], function ($a, $b) {
-                    if ($b->to !== $a->to) {
-                        return $b->to <=> $a->to;
-                    }
-                    return strcmp($a->appType, $b->appType);
-                });
+                $this->sortApparatusEntriesForOpening($appsByStart[$index]);
+
                 foreach ($appsByStart[$index] as $entry) {
-                    $body .= sprintf("\n<app type=\"%s\">\n<lem>", htmlspecialchars($entry->appType));
+                    $body .= sprintf(
+                        "\n<app type=\"%s\">\n<lem>",
+                        htmlspecialchars($entry->appType)
+                    );
                     $openAppsStack[] = $entry;
                 }
             }
 
-            // Process token content
-            if ($token->type === 'text') {
-                foreach ($token->text as $part) {
-                    $isPartItalic = (isset($part->fontStyle) && $part->fontStyle === 'italic');
-                    $content = "";
-                    if (isset($part->text)) {
-                        $content = htmlspecialchars($part->text);
-                    } elseif (isset($part->type) && $part->type === 'glue') {
-                        $content = ' ';
-                    }
+            $this->appendRenderedToken($body, $mainText, $index, $token, $inItalic, $closeItalic);
 
-                    if ($isPartItalic && !$inItalic) {
-                        $body .= '<hi rend="italic">';
-                        $inItalic = true;
-                    } elseif (!$isPartItalic && $inItalic) {
-                        $body .= '</hi>';
-                        $inItalic = false;
-                    }
-                    $body .= $content;
-                }
-            } elseif ($token->type === 'glue') {
-                // Inherit italic if next token is also italic text
-                $nextIsItalic = false;
-                if (isset($mainText[$index + 1]) && $mainText[$index + 1]->type === 'text') {
-                    if (!empty($mainText[$index + 1]->text) && isset($mainText[$index + 1]->text[0]->fontStyle) && $mainText[$index + 1]->text[0]->fontStyle === 'italic') {
-                        $nextIsItalic = true;
-                    }
-                }
-
-                if ($inItalic && !$nextIsItalic) {
-                    $closeItalic();
-                }
-                $body .= ' ';
-            } elseif ($token->type === 'page_break') {
-                $body .= '<pb/>';
-            } elseif ($token->type === 'column_break') {
-                $body .= '<cb/>';
-            } elseif ($token->type === 'line_break') {
-                $body .= '<lb/>';
-            }
-
-            // End apparatus entries
-            // We use the stack to ensure LIFO (Last-In-First-Out) order for correct XML nesting.
             while (!empty($openAppsStack) && end($openAppsStack)->to === $index) {
                 $closeItalic();
+
                 $entry = array_pop($openAppsStack);
                 $body .= "\n</lem>";
-                foreach ($entry->subEntries as $subEntry) {
-                    $wits = [];
-                    foreach ($subEntry->witnessData as $wd) {
-                        $siglum = $wd->siglum ?: ($siglaMap[$wd->witnessIndex] ?? '');
-                        if ($siglum) {
-                            $wits[] = '#' . $siglum;
-                        }
-                    }
-                    $witStr = implode(' ', $wits);
-                    $rdgText = $this->fmtTextToString($subEntry->text);
-                    $body .= sprintf("\n<rdg wit=\"%s\">%s</rdg>", htmlspecialchars($witStr), $rdgText);
-                }
+                $body .= $this->renderApparatusReadings($entry, $siglaMap);
                 $body .= "\n</app>\n";
             }
 
-            // End paragraph
-            if ($token->type === 'paragraph_end') {
-                if ($isParagraphOpen) {
-                    $body .= "</$currentParagraphTag>\n";
-                    $isParagraphOpen = false;
-                }
+            if ($token->type === 'paragraph_end' && $isParagraphOpen) {
+                $body .= "</$currentParagraphTag>\n";
+                $isParagraphOpen = false;
             }
         }
 
-        // Close any remaining open apparatus entries (should not happen with valid data)
         while (!empty($openAppsStack)) {
             $closeItalic();
-            $entry = array_pop($openAppsStack);
+            array_pop($openAppsStack);
             $body .= "\n</lem>\n</app>\n";
         }
 
-        // Close last paragraph if still open
         if ($isParagraphOpen) {
             $closeItalic();
             $body .= "</$currentParagraphTag>\n";
         }
 
+        return $body;
+    }
 
+    private function requiresItalicClosureBeforeStructureChange(object $token, int $index, array $appsByStart, array $appsByEnd): bool
+    {
+        return $token->type === 'paragraph_end'
+            || isset($appsByStart[$index])
+            || isset($appsByEnd[$index]);
+    }
+
+    private function determineParagraphTag(array $mainText, int $startIndex): string
+    {
+        $style = 'normal';
+
+        for ($i = $startIndex; $i < count($mainText); $i++) {
+            if ($mainText[$i]->type === 'paragraph_end') {
+                $style = $mainText[$i]->style;
+                break;
+            }
+        }
+
+        return $style === 'h2' ? 'head' : 'p';
+    }
+
+    private function sortApparatusEntriesForOpening(array &$entries): void
+    {
+        /*
+         * Open outer entries before inner entries so nested XML stays valid.
+         * For equal ranges, use the apparatus type as a deterministic fallback.
+         */
+        usort($entries, function ($a, $b) {
+            if ($b->to !== $a->to) {
+                return $b->to <=> $a->to;
+            }
+
+            return strcmp($a->appType, $b->appType);
+        });
+    }
+
+    private function appendRenderedToken(
+        string &$body,
+        array $mainText,
+        int $index,
+        object $token,
+        bool &$inItalic,
+        callable $closeItalic
+    ): void {
+        if ($token->type === 'text') {
+            foreach ($token->text as $part) {
+                $isPartItalic = isset($part->fontStyle) && $part->fontStyle === 'italic';
+                $content = $this->extractEscapedTextContent($part);
+
+                if ($isPartItalic && !$inItalic) {
+                    $body .= '<hi rend="italic">';
+                    $inItalic = true;
+                } elseif (!$isPartItalic && $inItalic) {
+                    $body .= '</hi>';
+                    $inItalic = false;
+                }
+
+                $body .= $content;
+            }
+
+            return;
+        }
+
+        if ($token->type === 'glue') {
+            $nextIsItalic = $this->nextTokenStartsWithItalicText($mainText, $index);
+
+            if ($inItalic && !$nextIsItalic) {
+                $closeItalic();
+            }
+
+            $body .= ' ';
+            return;
+        }
+
+        if ($token->type === 'page_break') {
+            $body .= '<pb/>';
+            return;
+        }
+
+        if ($token->type === 'column_break') {
+            $body .= '<cb/>';
+            return;
+        }
+
+        if ($token->type === 'line_break') {
+            $body .= '<lb/>';
+        }
+    }
+
+    private function nextTokenStartsWithItalicText(array $mainText, int $index): bool
+    {
+        if (!isset($mainText[$index + 1]) || $mainText[$index + 1]->type !== 'text') {
+            return false;
+        }
+
+        $nextToken = $mainText[$index + 1];
+
+        return !empty($nextToken->text)
+            && isset($nextToken->text[0]->fontStyle)
+            && $nextToken->text[0]->fontStyle === 'italic';
+    }
+
+    private function extractEscapedTextContent(object $part): string
+    {
+        if (isset($part->text)) {
+            return htmlspecialchars($part->text);
+        }
+
+        if (isset($part->type) && $part->type === 'glue') {
+            return ' ';
+        }
+
+        return "";
+    }
+
+    private function renderApparatusReadings(object $entry, array $siglaMap): string
+    {
+        $output = "";
+
+        foreach ($entry->subEntries as $subEntry) {
+            $witStr = $this->buildWitnessReferenceString($subEntry->witnessData, $siglaMap);
+            $rdgText = $this->fmtTextToString($subEntry->text);
+
+            $output .= sprintf(
+                "\n<rdg wit=\"%s\">%s</rdg>",
+                htmlspecialchars($witStr),
+                $rdgText
+            );
+        }
+
+        return $output;
+    }
+
+    private function buildWitnessReferenceString(array $witnessData, array $siglaMap): string
+    {
+        $wits = [];
+
+        foreach ($witnessData as $wd) {
+            $siglum = $wd->siglum ?: ($siglaMap[$wd->witnessIndex] ?? '');
+
+            if ($siglum) {
+                $wits[] = '#' . $siglum;
+            }
+        }
+
+        return implode(' ', $wits);
+    }
+
+    private function buildTeiDocument(string $title, string $witnessesFormatted, string $body): string
+    {
         $teiOpening = <<<XML
-<?xml version="1.0" encoding="UTF-8"?>
-<?xml-model href="http://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
-<TEI xmlns="http://www.tei-c.org/ns/1.0">
-    <teiHeader>
-        <fileDesc>
-            <titleStmt>
-                <title>$title</title>
-                <author>Unknown</author>
-                <respStmt>
-                    <resp>Text Encoding by</resp>
-                    <name>APM</name>
-                </respStmt>
-            </titleStmt>
-            <publicationStmt>
-                <publisher>APM</publisher>
-                <availability>
-                    <p>This document is being made available for demonstration and testing purposes
-                        only.</p>
-                </availability>
-            </publicationStmt>
-            <sourceDesc>
-                <p>The base text is a JSON encoded edition exported from the APM.</p>
-                <p/>
-            </sourceDesc>
-        </fileDesc>
-        <encodingDesc>
-            <variantEncoding method="parallel-segmentation" location="internal"/>
-        </encodingDesc>
-    </teiHeader>
-    <text>
-        <front>
-            <div>
-                <listWit>$witnessesFormatted
-                </listWit>
-            </div>
-        </front>
-        <body>
-XML;
+    <?xml version="1.0" encoding="UTF-8"?>
+    <?xml-model href="http://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
+    <TEI xmlns="http://www.tei-c.org/ns/1.0">
+        <teiHeader>
+            <fileDesc>
+                <titleStmt>
+                    <title>$title</title>
+                    <author>Unknown</author>
+                    <respStmt>
+                        <resp>Text Encoding by</resp>
+                        <name>APM</name>
+                    </respStmt>
+                </titleStmt>
+                <publicationStmt>
+                    <publisher>APM</publisher>
+                    <availability>
+                        <p>This document is being made available for demonstration and testing purposes
+                            only.</p>
+                    </availability>
+                </publicationStmt>
+                <sourceDesc>
+                    <p>The base text is a JSON encoded edition exported from the APM.</p>
+                    <p/>
+                </sourceDesc>
+            </fileDesc>
+            <encodingDesc>
+                <variantEncoding method="parallel-segmentation" location="internal"/>
+            </encodingDesc>
+        </teiHeader>
+        <text>
+            <front>
+                <div>
+                    <listWit>$witnessesFormatted
+                    </listWit>
+                </div>
+            </front>
+            <body>
+    XML;
 
         $teiEnd = "</body></text></TEI>";
 
-        $xml = $teiOpening . $body . $teiEnd;
+        return $teiOpening . $body . $teiEnd;
+    }
 
-        // Pretty print XML
+    private function formatXmlIfPossible(string $xml): string
+    {
         $dom = new \DOMDocument();
         $dom->preserveWhiteSpace = false;
         $dom->formatOutput = true;
+
         try {
             if ($dom->loadXML($xml)) {
                 return $dom->saveXML();
             }
         } catch (\Exception $e) {
-            // Fallback to unformatted XML if there are parsing issues
+            // Fall back to the unformatted XML if parsing fails.
         }
 
         return $xml;
-
-    }
-
-    private function fmtTextToString(string|array $text): string
-    {
-        if (is_string($text)) {
-            return htmlspecialchars($text);
-        }
-        $out = "";
-        $currentItalic = "";
-        foreach ($text as $part) {
-            $isItalic = (isset($part->fontStyle) && $part->fontStyle === 'italic');
-            $content = "";
-            if (isset($part->text)) {
-                $content = htmlspecialchars($part->text);
-            } elseif (isset($part->type) && $part->type === 'glue') {
-                $content = ' ';
-            }
-
-            if ($isItalic) {
-                $currentItalic .= $content;
-            } else {
-                if ($currentItalic !== "") {
-                    $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
-                    $currentItalic = "";
-                }
-                $out .= $content;
-            }
-        }
-        if ($currentItalic !== "") {
-            $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
-        }
-        return $out;
     }
 
 }

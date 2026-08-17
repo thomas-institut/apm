@@ -9,6 +9,8 @@ class TEIGenerator
 {
     /**
      *
+     * Returns the TEI code for the given data extracted from a json encoding of an edition
+     * 
      * @param string $title
      * @param array $mainText
      * @param array $apparatuses
@@ -19,7 +21,7 @@ class TEIGenerator
      * @param array $siglas
      * @return string
      */
-    public function generateTEI(
+    public function getTEI(
         string $title,
         array $mainText,
         array $apparatuses,
@@ -29,54 +31,14 @@ class TEIGenerator
         string $date = "",
         array $siglas = []
     ): string {
+        
         $witnessesFormatted = $this->formatWitnessesForTei($witnesses);
         $siglaMap = $this->buildSiglaMap($witnesses);
-        [$appsByStart, $appsByEnd] = $this->indexApparatusEntries($apparatuses);
-
-        $body = $this->renderTeiBody($mainText, $appsByStart, $appsByEnd, $siglaMap);
-
+        [$appEntryFrom, $appEntryTo] = $this->indexApparatusEntries($apparatuses);
+        $body = $this->renderTeiBody($mainText, $appEntryFrom, $appEntryTo, $siglaMap);
         $xml = $this->buildTeiDocument($title, $witnessesFormatted, $body);
 
         return $this->formatXmlIfPossible($xml);
-    }
-
-    /**
-     * Converts text content to an XML-safe TEI fragment.
-     *
-     * @param string|array $text
-     * @return string
-     */
-    private function fmtTextToString(string|array $text): string
-    {
-        if (is_string($text)) {
-            return htmlspecialchars($text);
-        }
-
-        $out = "";
-        $currentItalic = "";
-
-        foreach ($text as $part) {
-            $isItalic = isset($part->fontStyle) && $part->fontStyle === 'italic';
-            $content = $this->extractEscapedTextContent($part);
-
-            if ($isItalic) {
-                $currentItalic .= $content;
-                continue;
-            }
-
-            if ($currentItalic !== "") {
-                $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
-                $currentItalic = "";
-            }
-
-            $out .= $content;
-        }
-
-        if ($currentItalic !== "") {
-            $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
-        }
-
-        return $out;
     }
 
     /**
@@ -114,15 +76,15 @@ class TEIGenerator
     }
 
     /**
-     * Indexes apparatus entries by start and end token.
+     * Indexes apparatus entries by start and end token, skips the apparatus marginalia.
      *
      * @param array $apparatuses
      * @return array
      */
     private function indexApparatusEntries(array $apparatuses): array
     {
-        $appsByStart = [];
-        $appsByEnd = [];
+        $appEntryFrom = [];
+        $appEntryTo = [];
 
         foreach ($apparatuses as $apparatus) {
             $type = is_object($apparatus->type) ? $apparatus->type->value : $apparatus->type;
@@ -133,24 +95,24 @@ class TEIGenerator
 
             foreach ($apparatus->entries as $entry) {
                 $entry->appType = $type;
-                $appsByStart[$entry->from][] = $entry;
-                $appsByEnd[$entry->to][] = $entry;
+                $appEntryFrom[$entry->from][] = $entry;
+                $appEntryTo[$entry->to][] = $entry;
             }
         }
 
-        return [$appsByStart, $appsByEnd];
+        return [$appEntryFrom, $appEntryTo];
     }
 
     /**
      * Renders the TEI body for main text and apparatus entries.
      *
      * @param array $mainText
-     * @param array $appsByStart
-     * @param array $appsByEnd
+     * @param array $appEntryFrom
+     * @param array $appEntryTo
      * @param array $siglaMap
      * @return string
      */
-    private function renderTeiBody(array $mainText, array $appsByStart, array $appsByEnd, array $siglaMap): string
+    private function renderTeiBody(array $mainText, array $appEntryFrom, array $appEntryTo, array $siglaMap): string
     {
         $body = "";
         $isParagraphOpen = false;
@@ -166,23 +128,26 @@ class TEIGenerator
         };
 
         foreach ($mainText as $index => $token) {
-            if ($this->requiresItalicClosureBeforeStructureChange($token, $index, $appsByStart, $appsByEnd)) {
+            if ($this->requiresItalicClosureBeforeStructureChange($token, $index, $appEntryFrom, $appEntryTo)) {
                 $closeItalic();
             }
 
             if (!$isParagraphOpen && $token->type !== 'paragraph_end') {
                 $currentParagraphTag = $this->determineParagraphTag($mainText, $index);
-                $body .= "\n<$currentParagraphTag>";
+                $body .= "\n" . $this->indent(3) . "<$currentParagraphTag>";
                 $isParagraphOpen = true;
             }
 
-            if (isset($appsByStart[$index])) {
-                $this->sortApparatusEntriesForOpening($appsByStart[$index]);
+            if (isset($appEntryFrom[$index])) {
+                $this->sortApparatusEntriesForOpening($appEntryFrom[$index]);
 
-                foreach ($appsByStart[$index] as $entry) {
+                foreach ($appEntryFrom[$index] as $entry) {
                     $body .= sprintf(
-                        "\n<app type=\"%s\">\n<lem>",
+                        "\n%s<app type=\"%s\">\n%s<lem>",
+                        $this->indent(4),
                         htmlspecialchars($entry->appType)
+                        ,
+                        $this->indent(5)
                     );
                     $openAppsStack[] = $entry;
                 }
@@ -194,13 +159,13 @@ class TEIGenerator
                 $closeItalic();
 
                 $entry = array_pop($openAppsStack);
-                $body .= "\n</lem>";
-                $body .= $this->renderApparatusReadings($entry, $siglaMap);
-                $body .= "\n</app>\n";
+                $body .= "\n" . $this->indent(5) . "</lem>";
+                $body .= $this->renderApparatusReadings($entry, $siglaMap, 5);
+                $body .= "\n" . $this->indent(4) . "</app>\n";
             }
 
             if ($token->type === 'paragraph_end' && $isParagraphOpen) {
-                $body .= "</$currentParagraphTag>\n";
+                $body .= $this->indent(3) . "</$currentParagraphTag>\n";
                 $isParagraphOpen = false;
             }
         }
@@ -208,12 +173,13 @@ class TEIGenerator
         while (!empty($openAppsStack)) {
             $closeItalic();
             array_pop($openAppsStack);
-            $body .= "\n</lem>\n</app>\n";
+            $body .= "\n" . $this->indent(5) . "</lem>\n";
+            $body .= $this->indent(4) . "</app>\n";
         }
 
         if ($isParagraphOpen) {
             $closeItalic();
-            $body .= "</$currentParagraphTag>\n";
+            $body .= $this->indent(3) . "</$currentParagraphTag>\n";
         }
 
         return $body;
@@ -224,15 +190,15 @@ class TEIGenerator
      *
      * @param object $token
      * @param int $index
-     * @param array $appsByStart
-     * @param array $appsByEnd
+     * @param array $appEntryFrom
+     * @param array $appEntryTo
      * @return bool
      */
-    private function requiresItalicClosureBeforeStructureChange(object $token, int $index, array $appsByStart, array $appsByEnd): bool
+    private function requiresItalicClosureBeforeStructureChange(object $token, int $index, array $appEntryFrom, array $appEntryTo): bool
     {
         return $token->type === 'paragraph_end'
-            || isset($appsByStart[$index])
-            || isset($appsByEnd[$index]);
+            || isset($appEntryFrom[$index])
+            || isset($appEntryTo[$index]);
     }
 
     /**
@@ -377,13 +343,52 @@ class TEIGenerator
     }
 
     /**
+     * Converts plain or structured text into a TEI-safe fragment.
+     *
+     * @param string|array $text
+     * @return string
+     */
+    private function fmtTextToString(string|array $text): string
+    {
+        if (is_string($text)) {
+            return htmlspecialchars($text);
+        }
+
+        $out = "";
+        $currentItalic = "";
+
+        foreach ($text as $part) {
+            $isItalic = isset($part->fontStyle) && $part->fontStyle === 'italic';
+            $content = $this->extractEscapedTextContent($part);
+
+            if ($isItalic) {
+                $currentItalic .= $content;
+                continue;
+            }
+
+            if ($currentItalic !== "") {
+                $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
+                $currentItalic = "";
+            }
+
+            $out .= $content;
+        }
+
+        if ($currentItalic !== "") {
+            $out .= '<hi rend="italic">' . $currentItalic . '</hi>';
+        }
+
+        return $out;
+    }
+
+    /**
      * Renders apparatus readings.
      *
      * @param object $entry
      * @param array $siglaMap
      * @return string
      */
-    private function renderApparatusReadings(object $entry, array $siglaMap): string
+    private function renderApparatusReadings(object $entry, array $siglaMap, int $indentLevel = 5): string
     {
         $output = "";
 
@@ -392,7 +397,8 @@ class TEIGenerator
             $rdgText = $this->fmtTextToString($subEntry->text);
 
             $output .= sprintf(
-                "\n<rdg wit=\"%s\">%s</rdg>",
+                "\n%s<rdg wit=\"%s\">%s</rdg>",
+                $this->indent($indentLevel),
                 htmlspecialchars($witStr),
                 $rdgText
             );
@@ -424,6 +430,17 @@ class TEIGenerator
     }
 
     /**
+     * Returns the XML indentation string for a nesting level.
+     *
+     * @param int $level
+     * @return string
+     */
+    private function indent(int $level): string
+    {
+        return str_repeat('  ', $level);
+    }
+
+    /**
      * Builds the surrounding TEI document structure.
      *
      * @param string $title
@@ -433,49 +450,50 @@ class TEIGenerator
      */
     private function buildTeiDocument(string $title, string $witnessesFormatted, string $body): string
     {
-        $teiOpening = <<<XML
-    <?xml version="1.0" encoding="UTF-8"?>
-    <?xml-model href="http://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>
-    <TEI xmlns="http://www.tei-c.org/ns/1.0">
-        <teiHeader>
-            <fileDesc>
-                <titleStmt>
-                    <title>$title</title>
-                    <author>Unknown</author>
-                    <respStmt>
-                        <resp>Text Encoding by</resp>
-                        <name>APM</name>
-                    </respStmt>
-                </titleStmt>
-                <publicationStmt>
-                    <publisher>APM</publisher>
-                    <availability>
-                        <p>This document is being made available for demonstration and testing purposes
-                            only.</p>
-                    </availability>
-                </publicationStmt>
-                <sourceDesc>
-                    <p>The base text is a JSON encoded edition exported from the APM.</p>
-                    <p/>
-                </sourceDesc>
-            </fileDesc>
-            <encodingDesc>
-                <variantEncoding method="parallel-segmentation" location="internal"/>
-            </encodingDesc>
-        </teiHeader>
-        <text>
-            <front>
-                <div>
-                    <listWit>$witnessesFormatted
-                    </listWit>
-                </div>
-            </front>
-            <body>
-    XML;
+        $xmlLines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<?xml-model href="http://www.tei-c.org/release/xml/tei/custom/schema/relaxng/tei_all.rng" schematypens="http://relaxng.org/ns/structure/1.0"?>',
+            '<TEI xmlns="http://www.tei-c.org/ns/1.0">',
+            '  <teiHeader>',
+            '    <fileDesc>',
+            '      <titleStmt>',
+            '        <title>' . $title . '</title>',
+            '        <author>Unknown</author>',
+            '        <respStmt>',
+            '          <resp>Text Encoding by</resp>',
+            '          <name>APM</name>',
+            '        </respStmt>',
+            '      </titleStmt>',
+            '      <publicationStmt>',
+            '        <publisher>APM</publisher>',
+            '        <availability>',
+            '          <p>This document is being made available for demonstration and testing purposes',
+            '                            only.</p>',
+            '        </availability>',
+            '      </publicationStmt>',
+            '      <sourceDesc>',
+            '        <p>The base text is a JSON encoded edition exported from the APM.</p>',
+            '        <p/>',
+            '      </sourceDesc>',
+            '    </fileDesc>',
+            '    <encodingDesc>',
+            '      <variantEncoding method="parallel-segmentation" location="internal"/>',
+            '    </encodingDesc>',
+            '  </teiHeader>',
+            '  <text>',
+            '    <front>',
+            '      <div>',
+            '        <listWit>' . $witnessesFormatted,
+            '        </listWit>',
+            '      </div>',
+            '    </front>',
+            '    <body>' . $body,
+            '    </body>',
+            '  </text>',
+            '</TEI>',
+        ];
 
-        $teiEnd = "</body></text></TEI>";
-
-        return $teiOpening . $body . $teiEnd;
+        return trim(implode("\n", $xmlLines));
     }
 
     /**
@@ -491,12 +509,14 @@ class TEIGenerator
         $dom->formatOutput = true;
 
         try {
-            if ($dom->loadXML($xml)) {
-                return $dom->saveXML();
+            if ($dom->loadXML(trim($xml))) {
+                return trim((string) $dom->saveXML());
             }
         } catch (\Exception $e) {
         }
 
-        return $xml;
+        return trim($xml);
     }
+
+
 }

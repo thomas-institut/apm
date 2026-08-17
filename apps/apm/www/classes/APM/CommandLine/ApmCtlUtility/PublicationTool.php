@@ -231,7 +231,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
                 $publication = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
 
                 $teiGenerator = new TEIGenerator();
-                $xmlCode = $teiGenerator->generateTEI(
+                $xmlCode = $teiGenerator->getTEI(
                     $publication->title,
                     $publication->mainText,
                     $publication->apparatuses,

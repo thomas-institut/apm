@@ -3,12 +3,11 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 /**
- * Generates TEI XML for publication exports.
+ * Generates TEI XML from edition data.
  */
 class TEIGenerator
 {
     /**
-     * Generates a TEI document from publication data.
      *
      * @param string $title
      * @param array $mainText

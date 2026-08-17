@@ -33,8 +33,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
            'update <id> [version]' => 'updates a publication by id (version is a timestring and is optional, defaults to the current version)',
            'del <id>' => 'removes a publication by id',
            'show <id>' => 'shows a publication by id',
-           'export <type> <id>' => 'exports a publication by id as JSON file',
-           'tei <id>' => 'converts a publication JSON to TEI format'
+           'export <format> <id>' => 'exports a publication by id as JSON or as TEI-XML for edition publications',
             ];
         return implode("\n", array_map(function($key, $value) { return "  $key: $value"; }, array_keys($options), $options));
     }
@@ -60,8 +59,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             'update' => $this->update((int)$argv[2], $argv[3] ?? 'current'),
             'del' => $this->remove((int)$argv[2]),
             'show' => $this->show((int)$argv[2]),
-            'export' => $this->export((int)$argv[2]),
-            'tei' => $this->convertJsonToTei((int)$argv[2]),
+            'export' => $this->export($argv[2], (int)$argv[3]),
             default => 0,
         };
     }
@@ -188,9 +186,14 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
     }
 
 
-    private function export(int $pubId) : int {
+    private function export(string $format, int $pubId) : int {
         if ($pubId <= 0) {
             print "Error: publication id must be greater than 0\n";
+            return 1;
+        }
+
+        if ($format !== 'json' && $format !== 'tei') {
+            print "Error: export format must be 'json' or 'tei'\n";
             return 1;
         }
 
@@ -199,16 +202,51 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             $pm = $this->container->get(PublicationManagerInterface::class);
             $data = $pm->getPublication($pubId);
 
+            $publicationType = is_object($data->type) && isset($data->type->value)
+                ? $data->type->value
+                : $data->type;
+
+            if ($format === 'tei' && $publicationType !== PublicationType::Edition->value) {
+                print "Error: TEI export is only supported for edition publications\n";
+                return 1;
+            }
+
             $json = json_encode(
                     $data,
                     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 ) . "\n";
 
-            $fileName = sprintf('%s.json', $pubId);
+            $fileName = '';
 
-            if (@file_put_contents($fileName, $json . "\n") === false) {
-                print "Error: could not write publication JSON to file '$fileName'\n";
-                return 1;
+            if ($format === 'json') {
+                $fileName = sprintf('%s.json', $pubId);
+
+                if (@file_put_contents($fileName, $json . "\n") === false) {
+                    print "Error: could not write publication JSON to file '$fileName'\n";
+                    return 1;
+                }
+            } else {
+                $fileName = sprintf('%s.xml', $pubId);
+
+                $publication = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
+
+                $teiGenerator = new TEIGenerator();
+                $xmlCode = $teiGenerator->generateTEI(
+                    $publication->title,
+                    $publication->mainText,
+                    $publication->apparatuses,
+                    $publication->witnesses,
+                    $publication->languageCode,
+                    $publication->description,
+                    $publication->versionTimeString,
+                    $publication->siglaGroups
+                );
+
+                if (@file_put_contents($fileName, $xmlCode) === false) {
+                    print "Error: could not write TEI XML to file '$fileName'\n";
+                    return 1;
+                }
+
             }
 
             print "Publication $pubId exported to '$fileName'\n";
@@ -255,56 +293,4 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         print implode("\n", $linesToPrint);
     }
 
-    private function convertJsonToTei (int $pubId): int
-    {
-        if ($pubId <= 0) {
-            print "Error: publication id must be greater than 0\n";
-            return 1;
-        }
-
-        try {
-            $jsonFileName = sprintf('%s.json', $pubId);
-
-            if (!file_exists($jsonFileName)) {
-                print "Error: Export file '$jsonFileName' not found. Please run 'pub export $pubId' first.\n";
-                return 1;
-            }
-
-            $jsonContent = file_get_contents($jsonFileName);
-            $publication = json_decode($jsonContent, false, 512, JSON_THROW_ON_ERROR);
-
-            // The publication object is now available as a stdClass object with accessible attributes
-            // Example: $publication->id, $publication->title, etc.
-
-            $fileName = sprintf('%s.xml', $pubId);
-
-            print "Publication $pubId loaded from '$jsonFileName'. Ready for TEI conversion to '$fileName'.\n";
-
-            $teiGenerator = new TEIGenerator();
-            $xmlCode = $teiGenerator->generateTEI(
-                $publication->title,
-                $publication->mainText,
-                $publication->apparatuses,
-                $publication->witnesses,
-                $publication->languageCode,
-                $publication->description,
-                $publication->versionTimeString,
-                $publication->siglaGroups
-            );
-
-            file_put_contents($fileName, $xmlCode);
-
-            return 0;
-
-        } catch (JsonException $e) {
-            print "Error: Could not decode JSON from '$jsonFileName': " . $e->getMessage() . "\n";
-            return 1;
-        } catch (PublicationNotFoundException) {
-            print "Error: publication not found\n";
-            return 1;
-        } catch (\Exception $e) {
-            print "Error: " . $e->getMessage() . "\n";
-            return 1;
-        }
-    }
 }

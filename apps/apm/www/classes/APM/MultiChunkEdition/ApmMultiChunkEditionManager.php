@@ -72,6 +72,9 @@ class ApmMultiChunkEditionManager implements MultiChunkEditionManager, LoggerAwa
 
         if ($isCompressed) {
             $dataJson = gzuncompress($row['mce_data']);
+            if ($dataJson === false) {
+                throw new RuntimeException("Failed to decompress MCE data");
+            }
         } else {
             $dataJson = $row['mce_data'];
         }
@@ -140,11 +143,11 @@ class ApmMultiChunkEditionManager implements MultiChunkEditionManager, LoggerAwa
     }
 
     /**
-     * @param array $mceData
+     * @param array<string, mixed> $mceData
      * @param int $authorId
      * @param string $versionDescription
      * @param bool $compress
-     * @return array
+     * @return array<string, mixed>
      * @throws Exception
      */
     private function getDbRowFromMceData(array $mceData, int $authorId, string $versionDescription, bool $compress = false): array
@@ -162,6 +165,9 @@ class ApmMultiChunkEditionManager implements MultiChunkEditionManager, LoggerAwa
         $title =  $mceData['title'];
 
         $dataToSave = json_encode($mceData);
+        if ($dataToSave === false) {
+            throw new RuntimeException("Failed to encode MCE data to JSON");
+        }
         if ($compress) {
             $dataToSave = gzcompress($dataToSave);
         }

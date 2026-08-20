@@ -41,7 +41,7 @@ interface MultiChunkEditionManager
      *
      * @param int $userId
      * @param bool $includeArchived
-     * @return array
+     * @return array<array{id: int, title: string}>
      */
     public function getMultiChunkEditionsByUser(int $userId, bool $includeArchived = false): array;
 

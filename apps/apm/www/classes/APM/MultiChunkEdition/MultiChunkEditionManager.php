@@ -33,21 +33,17 @@ interface MultiChunkEditionManager
     public function saveMultiChunkEdition(int $id, array $mceData, int $authorId, string $versionDescription) : int;
 
     /**
-     * Returns a list of all multi-chunk editions by the given user.
-     *
-     * The return array elements are associative arrays of the form:
-     *
-     *   [ 'id' => multiChunkEditionId,  'title' => editionTitle ]
+     * Returns a list of current version information of all multi-chunk editions authored by the given user.
      *
      * @param int $userId
      * @param bool $includeArchived
-     * @return array<array{id: int, title: string}>
+     * @return array<MceVersionInfo
      */
     public function getMultiChunkEditionsByUser(int $userId, bool $includeArchived = false): array;
 
     /**
      * @param int $mceId
-     * @return MceVersionInfo[]
+     * @return array<MceVersionInfo>
      * @throws MultiChunkEditionDoesNotExist
      */
     public function getEditionVersions(int $mceId) : array;

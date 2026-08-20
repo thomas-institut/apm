@@ -443,7 +443,7 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceSave,
         apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: '2026-01-01 00:00:00'}),
-        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{mceId: 42, timeString: '2026-01-01 00:00:00', authorId: 1, description: 'Initial'}]}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{id: 42, validFrom: '2026-01-01 00:00:00', authorId: 1, description: 'Initial'}]}),
       } as any,
       versionTag: 'test',
     };
@@ -492,7 +492,7 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceSave,
         apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: '2026-01-01 00:00:00'}),
-        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{mceId: 42, timeString: '2026-01-01 00:00:00', authorId: 1, description: 'Initial'}]}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{id: 42, validFrom: '2026-01-01 00:00:00', authorId: 1, description: 'Initial'}]}),
       } as any,
       versionTag: 'test',
     };
@@ -532,7 +532,7 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceSave,
         apiMceGetData: vi.fn().mockResolvedValue({mceData, validFrom: '2026-01-01 00:00:00'}),
-        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{mceId: 42, timeString: '2026-01-01 00:00:00', authorId: 1, description: 'Archived'}]}),
+        apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{id: 42, validFrom: '2026-01-01 00:00:00', authorId: 1, description: 'Archived'}]}),
       } as any,
       versionTag: 'test',
     };
@@ -1077,8 +1077,8 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
         apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{
-          mceId: 123,
-          timeString: '2026-01-01 00:00:00.000000',
+          id: 123,
+          validFrom: '2026-01-01 00:00:00.000000',
           authorId: 1,
           description: '',
         }]}),
@@ -1139,8 +1139,8 @@ describe('MceComposer', () => {
     const lastVersion = '2026-01-02 12:00:00.000000';
     const apiMceGetData = vi.fn().mockResolvedValue({mceData, validFrom: loadedVersion});
     const apiMceGetVersions = vi.fn().mockResolvedValue({versions: [
-      {mceId: 123, timeString: loadedVersion, authorId: 1, description: ''},
-      {mceId: 123, timeString: lastVersion, authorId: 1, description: ''},
+      {id: 123, validFrom: loadedVersion, authorId: 1, description: ''},
+      {id: 123, validFrom: lastVersion, authorId: 1, description: ''},
     ]});
     const appContext: AppContextProps = {
       devMode: true,
@@ -1222,8 +1222,8 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
         apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{
-          mceId: 123,
-          timeString: '2026-01-01 00:00:00.000000',
+          id: 123,
+          validFrom: '2026-01-01 00:00:00.000000',
           authorId: 1,
           description: '',
         }]}),
@@ -1328,8 +1328,8 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceGetData: vi.fn().mockResolvedValue({mceData}),
         apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{
-          mceId: 123,
-          timeString: '2026-01-01 00:00:00.000000',
+          id: 123,
+          validFrom: '2026-01-01 00:00:00.000000',
           authorId: 1,
           description: '',
         }]}),
@@ -1486,8 +1486,8 @@ describe('MceComposer', () => {
       apiClient: {
         apiMceGetData,
         apiMceGetVersions: vi.fn().mockResolvedValue({versions: [{
-          mceId: 1,
-          timeString: '2026-01-01 00:00:00.000000',
+          id: 1,
+          validFrom: '2026-01-01 00:00:00.000000',
           authorId: 1,
           description: '',
         }]}),
@@ -1915,8 +1915,8 @@ describe('MceComposer', () => {
     const loadedVersion = '2026-01-01 12:00:00.000000';
     const lastVersion = '2026-01-02 12:00:00.000000';
     const apiMceGetVersions = vi.fn().mockResolvedValue({versions: [
-      {mceId: 123, timeString: loadedVersion, authorId: 1, description: 'Loaded version'},
-      {mceId: 123, timeString: lastVersion, authorId: 1, description: 'Last version'},
+      {id: 123, validFrom: loadedVersion, authorId: 1, description: 'Loaded version'},
+      {id: 123, validFrom: lastVersion, authorId: 1, description: 'Last version'},
     ]});
     const apiMceSave = vi.fn().mockResolvedValue({result: 'Success', id: saveId});
     const appContext: AppContextProps = {
@@ -1979,14 +1979,14 @@ describe('MceComposer', () => {
     const mceData = MceData.createEmpty();
     const lastVersion = '2026-01-02 12:00:00.000000';
     const initialVersions = [{
-      mceId: 123,
-      timeString: lastVersion,
+      id: 123,
+      validFrom: lastVersion,
       authorId: 1,
       description: 'Initial version',
     }];
     const updatedVersions = [{
-      mceId: 123,
-      timeString: '2026-01-03 12:00:00.000000',
+      id: 123,
+      validFrom: '2026-01-03 12:00:00.000000',
       authorId: 1,
       description: 'Saved version',
     }, ...initialVersions];

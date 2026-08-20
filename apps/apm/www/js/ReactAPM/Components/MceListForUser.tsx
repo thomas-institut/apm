@@ -1,6 +1,4 @@
-import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
-import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
-import {Link} from "react-router";
+import {MceShortInfo} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {FilePlus} from "react-bootstrap-icons";
 import EntityLink from "@/ReactAPM/Components/EntityLink";
 import {ApmUrlGenerator} from "@/ApmUrlGenerator";
@@ -10,7 +8,7 @@ import {AppContext} from "@/ReactAPM/App";
 interface MceListForUserProps {
   itemClassName?: string;
   showNewMceLink?: boolean;
-  data: ApiUserMultiChunkEdition[];
+  data: MceShortInfo[];
 }
 
 export default function MceListForUser(props: MceListForUserProps) {

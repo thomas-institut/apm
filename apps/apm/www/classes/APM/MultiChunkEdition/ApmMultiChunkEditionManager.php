@@ -24,6 +24,10 @@ class ApmMultiChunkEditionManager implements MultiChunkEditionManager, LoggerAwa
         $this->setLogger($logger);
     }
 
+    /**
+     * @inheritDoc
+     * @return MceVersionInfo[]
+     */
     public function getMultiChunkEditionsByUser(int $userId, bool $includeArchived = false): array
     {
         $ids = [];
@@ -42,13 +46,11 @@ class ApmMultiChunkEditionManager implements MultiChunkEditionManager, LoggerAwa
             throw  new RuntimeException("Unexpected error: " . $e->getMessage(), $e->getCode(), $e); // @codeCoverageIgnore
         }
 
+        $versions = [];
         foreach($rows as $row) {
-            $ids[] =  [
-                'id' => $row['id'],
-                'title' => $row['title']
-            ];
+            $versions[] = $this->getMceVersionInfoFromRow($row);
         }
-        return $ids;
+        return $versions;
     }
 
     /**
@@ -122,24 +124,32 @@ class ApmMultiChunkEditionManager implements MultiChunkEditionManager, LoggerAwa
 
     /**
      * @inheritDoc
+     * @return MceVersionInfo[]
      */
     public function getEditionVersions(int $mceId): array
     {
         try {
             $rows = $this->mceTable->getRowHistory($mceId);
-            $outputArray = [];
-            foreach ($rows as $row) {
-                $info = new MceVersionInfo();
-                $info->mceId = $mceId;
-                $info->authorId = $row['author_tid'];
-                $info->description = $row['version_description'];
-                $info->timeString = $row['valid_from'];
-                $outputArray[] = $info;
-            }
-            return $outputArray;
+            return array_map(fn(array $row): MceVersionInfo => $this->getMceVersionInfoFromRow($row), $rows);
         } catch (RowDoesNotExist) {
             throw new MultiChunkEditionDoesNotExist("Edition $mceId does not exist");
         }
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @return MceVersionInfo
+     */
+    private function getMceVersionInfoFromRow(array $row): MceVersionInfo
+    {
+        $info = new MceVersionInfo();
+        $info->id = $row['id'];
+        $info->authorId = $row['author_tid'];
+        $info->description = $row['version_description'];
+        $info->validFrom = $row['valid_from'];
+        $info->validUntil = $row['valid_until'];
+        $info->title = $row['title'];
+        return $info;
     }
 
     /**

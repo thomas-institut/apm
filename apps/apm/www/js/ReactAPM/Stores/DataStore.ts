@@ -4,7 +4,7 @@ import type {WorksByAuthorData} from "@/ReactAPM/Pages/Works/Works";
 import {create} from "zustand";
 import type {PaginationState, SortingState} from "@tanstack/react-table";
 import type {StatePropSetter} from "@/ReactAPM/Stores/Types";
-import type {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
+import type {MceShortInfo} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import type {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import type {ApiUserTranscriptions} from "@/Api/DataSchema/ApiUserTranscriptions";
 
@@ -35,8 +35,8 @@ interface DataStore {
   worksByAuthorData: WorksByAuthorData[];
   setWorksByAuthorData: (data: WorksByAuthorData[]) => void;
 
-  multiChunkEditionsForLoggedUser: ApiUserMultiChunkEdition[];
-  setMultiChunkEditionsForLoggedUser: (data: ApiUserMultiChunkEdition[]) => void;
+  multiChunkEditionsForLoggedUser: MceShortInfo[];
+  setMultiChunkEditionsForLoggedUser: (data: MceShortInfo[]) => void;
 
   collationTablesForLoggedUser: ApiUserCollationTables;
   setCollationTablesForLoggedUser: (data: ApiUserCollationTables) => void;

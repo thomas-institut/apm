@@ -48,6 +48,7 @@ use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\Jobs\UpdateWorksCache;
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
+use APM\System\DataTableSchema\MceDataTableSchemaProvider;
 use APM\System\Document\ApmDocumentManager;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
@@ -81,8 +82,10 @@ use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DirectoryDataCache;
 use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\Exception\InvalidColumnDefinitionsArray;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\DataTable\MySqlUnitemporalDataTableWithSchema;
 use ThomasInstitut\EntitySystem\DataTableStatementStorage;
 use ThomasInstitut\EntitySystem\EntityData;
 use ThomasInstitut\EntitySystem\EntityDataCache\DataTableEntityDataCache;
@@ -666,11 +669,18 @@ class ApmSystemManager extends SystemManager {
 //        return $this->router;
     }
 
+
     public function getMultiChunkEditionManager(): MultiChunkEditionManager
     {
         if ($this->multiChunkEditionManager === null) {
-            $mceTable = new MySqlUnitemporalDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS]);
-            $this->multiChunkEditionManager = new ApmMultiChunkEditionManager($mceTable, $this->logger);
+            try {
+                $mceTable = new MySqlUnitemporalDataTable($this->getDbConnection(), $this->tableNames[ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS]);
+                $mceTableWithSchema = new MySqlUnitemporalDataTableWithSchema($mceTable, MceDataTableSchemaProvider::getSchema());
+                $this->multiChunkEditionManager = new ApmMultiChunkEditionManager($mceTableWithSchema, $this->logger);
+            } catch (\ThomasInstitut\DataTable\Exception\InvalidArgumentException|InvalidColumnDefinitionsArray $e) {
+                // should never happen if the above 3 lines are correct
+                throw new RuntimeException("Could not create multi chunk edition manager: " . $e->getMessage(), $e->getCode(), $e);
+            }
         }
         return $this->multiChunkEditionManager;
     }

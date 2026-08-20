@@ -6,7 +6,7 @@ namespace APM\MultiChunkEdition;
 /**
  * Saving and retrieving multi-chunk editions
  */
-abstract class MultiChunkEditionManager
+interface MultiChunkEditionManager
 {
 
     /**
@@ -17,7 +17,7 @@ abstract class MultiChunkEditionManager
      * @return MceSystemData
      * @throws MultiChunkEditionDoesNotExist
      */
-    abstract public function getMultiChunkEditionById(int $id, string $timeString = '') : MceSystemData;
+    public function getMultiChunkEditionById(int $id, string $timeString = '') : MceSystemData;
 
 
     /**
@@ -25,21 +25,12 @@ abstract class MultiChunkEditionManager
      * Returns the id of the saved edition
      *
      * @param int $id,  if === -1, creates a new edition
-     * @param array $mceData
+     * @param array<string, mixed> $mceData
      * @param int $authorId
      * @param string $versionDescription
      * @return int
      */
-    abstract public function saveMultiChunkEdition(int $id, array $mceData, int $authorId, string $versionDescription) : int;
-
-
-    /**
-     * Gets a list of ids of multi-chunk editions that include the given work and chunk
-     * @param string $workId
-     * @param int $chunkId
-     * @return array
-     */
-//    abstract public function getMultiChunkEditionIdsByWorkChunk(string $workId, int $chunkId) : array;
+    public function saveMultiChunkEdition(int $id, array $mceData, int $authorId, string $versionDescription) : int;
 
     /**
      * Returns a list of all multi-chunk editions by the given user.
@@ -52,14 +43,14 @@ abstract class MultiChunkEditionManager
      * @param bool $includeArchived
      * @return array
      */
-    abstract public function getMultiChunkEditionsByUser(int $userId, bool $includeArchived = false): array;
+    public function getMultiChunkEditionsByUser(int $userId, bool $includeArchived = false): array;
 
     /**
      * @param int $mceId
      * @return MceVersionInfo[]
      * @throws MultiChunkEditionDoesNotExist
      */
-    abstract public function getEditionVersions(int $mceId) : array;
+    public function getEditionVersions(int $mceId) : array;
 
 
 }

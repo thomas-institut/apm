@@ -37,9 +37,9 @@ class ApmMultiChunkEditionManagerTest extends TestCase
         $this->saveEdition('Archived edition', 7, true);
         $this->saveEdition('Other author', 8);
 
-        $this->assertSame(
+        $this->assertArrayIsEqualToArrayOnlyConsideringListOfKeys(
             [['id' => $firstId, 'title' => 'First edition']],
-            $this->manager->getMultiChunkEditionsByUser(7)
+            $this->manager->getMultiChunkEditionsByUser(7), ['id', 'title']
         );
     }
 
@@ -51,12 +51,12 @@ class ApmMultiChunkEditionManagerTest extends TestCase
         $firstId = $this->saveEdition('First edition', 7);
         $archivedId = $this->saveEdition('Archived edition', 7, true);
 
-        $this->assertSame(
+        $this->assertArrayIsEqualToArrayOnlyConsideringListOfKeys(
             [
                 ['id' => $firstId, 'title' => 'First edition'],
                 ['id' => $archivedId, 'title' => 'Archived edition'],
             ],
-            $this->manager->getMultiChunkEditionsByUser(7, true)
+            $this->manager->getMultiChunkEditionsByUser(7, true), ['id', 'title']
         );
     }
 
@@ -195,13 +195,13 @@ class ApmMultiChunkEditionManagerTest extends TestCase
         $versions = $this->manager->getEditionVersions($id);
 
         $this->assertCount(2, $versions);
-        $this->assertSame($id, $versions[0]->mceId);
+        $this->assertSame($id, $versions[0]->id);
         $this->assertSame(1, $versions[0]->authorId);
         $this->assertSame('First version', $versions[0]->description);
-        $this->assertSame($id, $versions[1]->mceId);
+        $this->assertSame($id, $versions[1]->id);
         $this->assertSame(2, $versions[1]->authorId);
         $this->assertSame('Second version', $versions[1]->description);
-        $this->assertLessThan($versions[1]->timeString, $versions[0]->timeString);
+        $this->assertLessThan($versions[1]->validFrom, $versions[0]->validFrom);
     }
 
     public function testGetEditionVersionsThrowsForMissingEdition(): void

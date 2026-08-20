@@ -260,12 +260,12 @@ export default function MceComposer() {
   const getInitialInfo = async (mceDataId: number, versionString: string | undefined): Promise<InitialMceData> => {
     const respGet = await appContext.apiClient.apiMceGetData(mceDataId, versionString);
     const respVersions = await appContext.apiClient.apiMceGetVersions(mceDataId);
-    const sortedVersions = respVersions.versions.sort((a, b) => b.timeString.localeCompare(a.timeString));
+    const sortedVersions = respVersions.versions.sort((a, b) => b.validFrom.localeCompare(a.validFrom));
 
     return {
       mceData: respGet.mceData,
       versions: sortedVersions,
-      isLastVersion: respGet.validFrom === sortedVersions[0].timeString,
+      isLastVersion: respGet.validFrom === sortedVersions[0].validFrom,
     };
   }
 

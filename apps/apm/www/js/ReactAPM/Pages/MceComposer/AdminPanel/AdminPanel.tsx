@@ -29,9 +29,9 @@ export default function AdminPanel({mceId, version, versions, cloneEdition, arch
   const [archiving, setArchiving] = useState(false);
   const [archiveResult, setArchiveResult] = useState<string | null>(null);
 
-  const sortedVersions = [...versions].sort((a, b) => b.timeString.localeCompare(a.timeString));
+  const sortedVersions = [...versions].sort((a, b) => b.validFrom.localeCompare(a.validFrom));
 
-  const loadedVersionIndex = version === null ? 0 : sortedVersions.findIndex(v => v.timeString === version);
+  const loadedVersionIndex = version === null ? 0 : sortedVersions.findIndex(v => v.validFrom === version);
 
   const getRowClassName = (row: MceVersionInfo, index: number) => index === loadedVersionIndex ? 'loaded-version' : '';
 
@@ -67,9 +67,9 @@ export default function AdminPanel({mceId, version, versions, cloneEdition, arch
     {
       key: 'time',
       title: 'Time',
-      cellContent: (row, index) => index === loadedVersionIndex ? <strong>{ApmFormats.timeString(row.timeString)}</strong> : <EntityLink id={mceId}
-                                        type={'multiChunkEdition'} version={index === 0 ? undefined : row.timeString}
-                                        name={ApmFormats.timeString(row.timeString)}/>
+      cellContent: (row, index) => index === loadedVersionIndex ? <strong>{ApmFormats.timeString(row.validFrom)}</strong> : <EntityLink id={mceId}
+                                                                                                                                        type={'multiChunkEdition'} version={index === 0 ? undefined : row.validFrom}
+                                                                                                                                        name={ApmFormats.timeString(row.validFrom)}/>
     },
     {
       key: 'author',
@@ -120,7 +120,7 @@ export default function AdminPanel({mceId, version, versions, cloneEdition, arch
     <div className={'versions-div'}>
       <h1>Versions</h1>
       <NiceTable rows={sortedVersions} columnDefs={columnDefs} getRowClassName={getRowClassName} className={'versions-table'}
-                 getRowKey={(row) => `${row.mceId}-${row.timeString}`}/>
+                 getRowKey={(row) => `${row.id}-${row.validFrom}`}/>
     </div>
     <ConfirmDialog show={confirmationOpen}
                    onHide={() => setConfirmationOpen(false)}

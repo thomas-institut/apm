@@ -35,7 +35,10 @@ import {
   AutomaticCollationSettings,
   SingleChunkApiData
 } from "@/Api/DataSchema/ApiCollationTable";
-import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
+import {
+  MceShortInfo,
+  ApiUserMultiChunkEditionApiResponse
+} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {ApiUserCollationTables} from "@/Api/DataSchema/ApiUserCollationTables";
 import {KeyCache} from "@/toolbox/KeyCache/KeyCache";
 import {ApiClientPdfUrlResponse, ApiTypesetPdfRequestData, ApiTypesetPdfResponse} from "@/Api/DataSchema/ApiPdfUrl";
@@ -591,8 +594,9 @@ export class ApmApiClient {
     return resp['presets'];
   }
 
-  async userMultiChunkEditions(userId: number, ttl?: number): Promise<ApiUserMultiChunkEdition[]> {
-    return this.get(urlGen.apiUserGetMultiChunkEditionInfo(userId), false, ttl ?? TtlOneMinute);
+  async userMultiChunkEditions(userId: number, ttl?: number): Promise<MceShortInfo[]> {
+    const apiResp: ApiUserMultiChunkEditionApiResponse | ApiErrorResponse  = await this.get(urlGen.apiUserGetMultiChunkEditionInfo(userId), false, ttl ?? TtlOneMinute);
+    return apiResp.result === 'Success' ? apiResp.editions : [];
   }
 
   async userTranscriptions(userId: number, ttl?: number): Promise<ApiUserTranscriptions> {

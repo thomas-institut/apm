@@ -118,7 +118,9 @@ export class PersonPage extends NormalPage {
   }
 
   async fetchMultiChunkEditions() {
-    let data = await this.apiClient.get(urlGen.apiUserGetMultiChunkEditionInfo(this.personId));
+
+    const data = await this.apiClient.userMultiChunkEditions(this.personId);
+    // let data = await this.apiClient.get(urlGen.apiUserGetMultiChunkEditionInfo(this.personId));
     if (data.length !== 0) {
       this.userContributions.push(CONTRIBUTION_MCE);
       let html = UserDocDataCommon.generateMultiChunkEditionsListHtml(data);

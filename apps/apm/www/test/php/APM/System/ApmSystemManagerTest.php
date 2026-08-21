@@ -10,7 +10,6 @@ use APM\System\Preset\DataTablePresetManager;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\User\ApmUserManager;
 use APM\System\Work\WorkManager;
-use APM\ToolBox\ResettablePdoProvider;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
@@ -30,14 +29,13 @@ class ApmSystemManagerTest extends TestCase
     {
         $systemManager = $this->createSystemManagerWithoutConstructor();
 
-        $pdoProvider = $this->createMock(ResettablePdoProvider::class);
+        $pdoProvider = $this->createMock(ApmPdoProvider::class);
         $pdoProvider->expects($this->once())->method('reset');
         $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturnMap([
             [PdoProvider::class, $pdoProvider],
         ]);
         $this->setProperty($systemManager, 'ci', $container);
-        $this->setProperty($systemManager, 'dbHasBeenChecked', true);
 
         $this->setProperty($systemManager, 'settingsMgr', $this->createStub(SettingsManager::class));
         $this->setProperty($systemManager, 'presetsManager', $this->createStub(DataTablePresetManager::class));

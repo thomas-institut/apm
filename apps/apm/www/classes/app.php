@@ -27,6 +27,7 @@ use APM\Site\SitePeople;
 use APM\Site\SiteReact;
 use APM\Site\SiteSettings;
 use APM\System\ApmContainerKey;
+use APM\System\ApmPdoProvider;
 use APM\System\ApmSystemManager;
 use APM\System\Auth\Authenticator;
 use APM\System\Config\ApmSystemConfig;
@@ -35,7 +36,6 @@ use APM\System\Factories\LanguageManagerFactory;
 use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\MultiChunkEditionManagerFactory;
 use APM\System\Factories\NodeServiceClientFactory;
-use APM\System\Factories\PdoProviderFactory;
 use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TableNamesFactory;
 use APM\System\Factories\TwigFactory;
@@ -81,7 +81,7 @@ $builder->addDefinitions([
     ApmContainerKey::API_USER_ID => -1, // set by authenticator
     ApmSystemConfig::class => factory([ApmSystemConfigFactory::class, 'create']),
     ApmContainerKey::TABLE_NAMES => factory([TableNamesFactory::class, 'create']),
-    PdoProvider::class => factory([PdoProviderFactory::class, 'create']),
+    PdoProvider::class => autowire(ApmPdoProvider::class),
     MultiChunkEditionManager::class => factory([MultiChunkEditionManagerFactory::class, 'create']),
     LoggerInterface::class => factory([LoggerFactory::class, 'create']),
     Twig::class => factory([TwigFactory::class, 'create']),

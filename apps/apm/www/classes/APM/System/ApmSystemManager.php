@@ -65,8 +65,7 @@ use APM\System\User\UserManagerInterface;
 use APM\System\Work\EntitySystemWorkManager;
 use APM\System\Work\WorkManager;
 use APM\ToolBox\BaseUrlDetector;
-use APM\ToolBox\ResettablePdoProvider;
-use Exception;
+use APM\ToolBox\Resettable;
 use Monolog\Logger;
 use PDO;
 use Psr\Container\ContainerExceptionInterface;
@@ -105,13 +104,7 @@ class ApmSystemManager extends SystemManager
 {
 
     // Error codes
-    const int ERROR_DATABASE_IS_NOT_INITIALIZED = 1003;
-    const int ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE = 1004;
-    const int ERROR_CANNOT_READ_SETTINGS_FROM_DB = 1005;
     const int ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
-
-    // Database version
-    const int DB_VERSION = 38; // updated 2026-05-05
 
     // Entity system Data ID: key for entity system caches
     const string ES_DATA_ID = '0010'; // 2026 Jan 9
@@ -146,7 +139,6 @@ class ApmSystemManager extends SystemManager
     //
     // (all initialized to null)
     private ?DataTablePresetManager $presetsManager = null;
-    private ?SettingsManager $settingsMgr = null;
     private ?CollationEngine $collationEngine = null;
     private ?ApmTranscriptionManager $transcriptionManager = null;
     private ?ApmCollationTableManager $collationTableManager = null;
@@ -165,10 +157,6 @@ class ApmSystemManager extends SystemManager
     private ?Client $typesenseClient = null;
     private ?UdPipeLemmatizer $lemmatizer = null;
     private ?TypesenseSearchManager $searchManager = null;
-
-
-    private bool $dbHasBeenChecked = false;
-
 
     /**
      * @throws ContainerExceptionInterface
@@ -206,52 +194,10 @@ class ApmSystemManager extends SystemManager
 
     public function getPdoProvider(): PdoProvider
     {
-        $provider = $this->getPdoProviderWithoutDbCheck();
-
-        if (!$this->dbHasBeenChecked) {
-            $this->checkDatabase();
-            $this->dbHasBeenChecked = true;
-        }
-        return $provider;
-    }
-
-    public function getPdoProviderWithoutDbCheck(): PdoProvider
-    {
         try {
             return $this->ci->get(PdoProvider::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             throw new RuntimeException('Could not get PDO provider from container: ' . $e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-    public function checkDatabase(): void
-    {
-        // Check that the database is initialized
-        if (!$this->isDatabaseInitialized()) {
-            $this->logAndSetError(self::ERROR_DATABASE_IS_NOT_INITIALIZED,
-                "Database is not initialized");
-            throw new RuntimeException("Database not initialized");
-        }
-        // Set up SettingsManager
-        try {
-            $settingsTable = new MySqlDataTable($this->getPdoProviderWithoutDbCheck(),
-                $this->getTableNames()[ApmMySqlTableName::TABLE_SETTINGS]);
-        } catch (Exception $e) {
-            // Cannot replicate this in testing, yet
-            // @codeCoverageIgnoreStart
-            $this->logAndSetError(self::ERROR_CANNOT_READ_SETTINGS_FROM_DB,
-                "Cannot read settings from database: [ " . $e->getCode() . '] ' . $e->getMessage());
-            throw new RuntimeException("Cannot read settings from database",$e->getLine(), $e);
-            // @codeCoverageIgnoreEnd
-        }
-
-        $this->settingsMgr = new SettingsManager($settingsTable);
-
-        // Check that the database is up to date
-        if (!$this->isDatabaseUpToDate()) {
-            $this->logAndSetError(self::ERROR_DATABASE_SCHEMA_NOT_UP_TO_DATE,
-                "Database schema not up to date");
-            throw new RuntimeException("Database not up to date");
         }
     }
 
@@ -271,11 +217,10 @@ class ApmSystemManager extends SystemManager
     {
         $provider = $this->getPdoProvider();
 
-        if ($provider instanceof ResettablePdoProvider) {
+        if ($provider instanceof Resettable) {
             $provider->reset();
         }
 
-        $this->settingsMgr = null;
         $this->presetsManager = null;
         $this->transcriptionManager = null;
         $this->collationTableManager = null;
@@ -316,11 +261,6 @@ class ApmSystemManager extends SystemManager
         return $this->logger;
     }
 
-    public function getSettingsManager(): SettingsManager
-    {
-        return $this->settingsMgr;
-    }
-
     public function getCollationEngine(string $engineSystemId = ''): CollationEngine
     {
         if ($engineSystemId === ApmCollationEngine::DO_NOTHING) {
@@ -352,47 +292,6 @@ class ApmSystemManager extends SystemManager
             throw new RuntimeException("Could not get table names: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
-
-    protected function isDatabaseInitialized(): bool
-    {
-        // Check that all tables exist
-        foreach ($this->getTableNames() as $table) {
-            if (!$this->tableExists($table)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    protected function isDatabaseUpToDate(): bool
-    {
-        $dbVersion = $this->getSettingsManager()->getSetting('DatabaseVersion');
-        if ($dbVersion === false) {
-            return false; // @codeCoverageIgnore
-        }
-        return intval($dbVersion) === self::DB_VERSION;
-    }
-
-    private function tableExists($table): bool
-    {
-        $r = $this->getPdoProviderWithoutDbCheck()->getPdo()->query("show tables like '" . $table . "'");
-        if ($r === false) {
-            // This is reached only if the query above has a mistake,
-            throw new RuntimeException("Could not check if table exists: " . $this->getPdoProviderWithoutDbCheck()->getPdo()->errorInfo()[2], 0); // @codeCoverageIgnore
-        }
-        if ($r->fetch()) {
-            return true;
-        }
-
-        return false;
-    }
-
-    protected function logAndSetError(int $errorCode, string $msg): void
-    {
-        $this->logger->error($msg, ['errorCode' => $errorCode]);
-        $this->setError($msg, $errorCode);
-    }
-
     /**
      * Checks a configuration array and adds defaults.
      * Reports errors and warnings in the configuration in

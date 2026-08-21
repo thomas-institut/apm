@@ -37,7 +37,6 @@ class ApmSystemManagerTest extends TestCase
         ]);
         $this->setProperty($systemManager, 'ci', $container);
 
-        $this->setProperty($systemManager, 'settingsMgr', $this->createStub(SettingsManager::class));
         $this->setProperty($systemManager, 'presetsManager', $this->createStub(DataTablePresetManager::class));
         $this->setProperty($systemManager, 'transcriptionManager', $this->createStub(ApmTranscriptionManager::class));
         $this->setProperty($systemManager, 'collationTableManager', $this->createStub(ApmCollationTableManager::class));
@@ -54,7 +53,6 @@ class ApmSystemManagerTest extends TestCase
 
         $systemManager->resetDbConnectionAndDependentManagers();
 
-        $this->assertNull($this->getProperty($systemManager, 'settingsMgr'));
         $this->assertNull($this->getProperty($systemManager, 'presetsManager'));
         $this->assertNull($this->getProperty($systemManager, 'transcriptionManager'));
         $this->assertNull($this->getProperty($systemManager, 'collationTableManager'));

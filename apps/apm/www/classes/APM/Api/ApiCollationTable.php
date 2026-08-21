@@ -44,6 +44,7 @@ use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
+use Slim\Interfaces\RouteParserInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SystemProfiler;
@@ -754,6 +755,9 @@ class ApiCollationTable extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $inputData = json_decode($request->getBody()->getContents(), true);
 
+        /** @var RouteParserInterface $router */
+        $router = $this->container->get(RouteParserInterface::class);
+
         $requiredFields = [ 'tableId', 'initStrategy'];
 
         foreach($requiredFields as $field) {
@@ -788,7 +792,7 @@ class ApiCollationTable extends ApiController
         return $this->responseWithJson($response, [
             'status' => 'OK',
             'tableId' => $tableId,
-            'url' => $this->router->urlFor('chunk-edition.edit', ['tableId' => $tableId])]);
+            'url' => $router->urlFor('chunk-edition.edit', ['tableId' => $tableId])]);
 
     }
 

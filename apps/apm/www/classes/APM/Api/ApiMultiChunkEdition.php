@@ -6,7 +6,9 @@ use APM\Api\DataSchema\ApiMceGetResponse;
 use APM\Api\DataSchema\ApiMceGetVersionsResponse;
 use APM\Api\DataSchema\ApiMceSaveResponse;
 use APM\MultiChunkEdition\MultiChunkEditionDoesNotExist;
+use APM\MultiChunkEdition\MultiChunkEditionManager;
 use Exception;
+use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use ThomasInstitut\TimeString\TimeString;
@@ -16,6 +18,16 @@ class ApiMultiChunkEdition extends ApiController
 
 
     const string CLASS_NAME = 'MultiChunkEditions';
+
+    private MultiChunkEditionManager $mceManager;
+
+    public function __construct(ContainerInterface $ci)
+    {
+        parent::__construct($ci);
+        /** @var MultiChunkEditionManager $mceManager */
+        $mceManager = $ci->get(MultiChunkEditionManager::class);
+        $this->mceManager = $mceManager;
+    }
 
     public function getEdition(Request $request, Response $response): Response
     {
@@ -30,8 +42,9 @@ class ApiMultiChunkEdition extends ApiController
         }
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $editionId . ':' . $timeStamp);
+
         try {
-            $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId, $timeStamp);
+            $data = $this->mceManager->getMultiChunkEditionById($editionId, $timeStamp);
             $mceGetResponse = new ApiMceGetResponse();
             $mceGetResponse->validFrom = $data->validFrom;
             $mceGetResponse->validUntil = $data->validUntil;
@@ -52,7 +65,7 @@ class ApiMultiChunkEdition extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $editionId = intval($request->getAttribute('editionId'));
         try {
-            $versions = $this->systemManager->getMultiChunkEditionManager()->getEditionVersions($editionId);
+            $versions = $this->mceManager->getEditionVersions($editionId);
             $apiResponse = new ApiMceGetVersionsResponse();
             $apiResponse->versions = $versions;
             return $this->responseFactory->success($response, $apiResponse);
@@ -77,7 +90,7 @@ class ApiMultiChunkEdition extends ApiController
         $authorTid = $this->apiUserId;
 
         try {
-            $editionId = $this->systemManager->getMultiChunkEditionManager()->saveMultiChunkEdition($editionId, $mceData, $authorTid, $description);
+            $editionId = $this->mceManager->saveMultiChunkEdition($editionId, $mceData, $authorTid, $description);
         } catch (Exception $e) {
             $this->logger->error("Error saving multi chunk edition", [
                 'id' => $editionId,
@@ -89,7 +102,7 @@ class ApiMultiChunkEdition extends ApiController
         }
         // get the edition's data to report timestamp
         try {
-            $data = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionById($editionId);
+            $data = $this->mceManager->getMultiChunkEditionById($editionId);
             $mceSaveResponse = new ApiMceSaveResponse();
             $mceSaveResponse->id = $editionId;
             $mceSaveResponse->saveTimeStamp = $data->validFrom;

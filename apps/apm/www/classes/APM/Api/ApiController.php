@@ -22,7 +22,9 @@ namespace APM\Api;
 
 use APM\CollationEngine\CollationEngine;
 use APM\System\ApmContainerKey;
+use APM\System\Config\ApmSystemConfig;
 use Exception;
+use Monolog\Logger;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -33,6 +35,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 use APM\System\SystemManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use Slim\Interfaces\RouteParserInterface;
 use ThomasInstitut\ApiResponseFactory\ApiResponseFactory;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
@@ -76,10 +79,9 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     const int API_ERROR_DB_UPDATE_ERROR = 1200;
     const int API_ERROR_WRONG_TYPE = 1300;
 
+    /** @deprecated Use container to get individual components */
     protected SystemManager $systemManager;
     protected array $languages;
-    protected RouteParserInterface $router;
-
     protected ContainerInterface $container;
     protected bool $debugMode;
     protected string $apiCallName;
@@ -100,18 +102,26 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        $this->container = $ci;
        $this->debugMode = false;
 
+       /** @var ApmSystemConfig $apmConfig */
+       $apmConfig = $ci->get(ApmSystemConfig::class);
+
        $this->systemManager = $ci->get(SystemManager::class);
-       $this->apiUserId = $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
+       $this->apiUserId = (int) $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
        $this->languages = $this->systemManager->getConfig()['languages'];
-       $this->logger = $this->systemManager->getLogger()->withName('API');
-       $this->router = $this->systemManager->getRouter();
+
+       /** @var LoggerInterface $logger */
+       $logger = $ci->get(LoggerInterface::class);
+       if ($logger instanceof Logger) {
+           $this->logger = $logger->withName('API');
+       } else {
+           $this->logger = $logger;
+       }
+
        $this->apiCallName = self::CLASS_NAME . ":generic";
-
-       $this->devMode = $this->systemManager->getConfig()['devMode'] ?? false;
-
-       $this->responseFactory = new ApiResponseFactory($this->systemManager->getLogger());
+       $this->devMode = $apmConfig->general->devMode ?? false;
+       $this->responseFactory = new ApiResponseFactory($logger);
     }
-    
+
     protected function setApiCallName(string $name) : void {
         $this->apiCallName  = $name;
         $this->responseFactory->withApiCallName($name);

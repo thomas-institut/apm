@@ -143,8 +143,6 @@ abstract class SystemManager implements ErrorReporter {
      * Get methods for the different components
      */
 
-
-
     abstract public function getPresetsManager() : PresetManager;
     abstract public function getAvailableImageSources() : array;
     abstract public function getImageSources() : array;
@@ -153,6 +151,7 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getCollationEngine(string $engineSystemId = '') : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
+    /** @deprecated use container */
     abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
     abstract public function getSystemDataCache() : DataCache;
     abstract public function getMemDataCache() : DataCache;

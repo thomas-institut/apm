@@ -10,7 +10,7 @@ import {CtDataInterface} from "../CtDataInterface.js";
 export class CleanerOnePointThree extends CtDataCleaner {
 
   sourceSchemaVersion() {
-    return '1.3';
+    return ['1.3'];
   }
 
   getCleanCtData(ctData: CtDataInterface): CtDataInterface {

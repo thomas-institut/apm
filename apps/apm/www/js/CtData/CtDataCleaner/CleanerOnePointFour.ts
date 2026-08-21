@@ -13,7 +13,7 @@ import {CtDataInterface, WitnessInterface} from "../CtDataInterface";
 export class CleanerOnePointFour extends CtDataCleaner {
 
   sourceSchemaVersion() {
-    return '1.4';
+    return ['1.4'];
   }
 
   getCleanCtData(ctData: CtDataInterface): CtDataInterface {
@@ -30,7 +30,7 @@ export class CleanerOnePointFour extends CtDataCleaner {
     cleanData = apparatusEntryCleaner.getCleanCtData(cleanData);
 
     if (cleanData.type === 'edition' && cleanData.lang === 'he') {
-      // clean up edition witness
+      // cleanup edition witness
       let editionWitnessIndex = cleanData['editionWitnessIndex'];
       cleanData.witnesses[editionWitnessIndex] = this.getCleanEditionWitness(cleanData.witnesses[editionWitnessIndex]);
     }

@@ -21,3 +21,4 @@ export const CRITICUS = 'criticus';
 export const FONTIUM = 'fontium';
 export const COMPARATIVUS = 'comparativus';
 export const MARGINALIA = 'marginalia';
+export const END_NOTES = 'endnotes';

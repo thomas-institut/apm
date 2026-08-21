@@ -37,7 +37,7 @@ export class CleanerOnePointZero extends CtDataCleaner {
   }
 
   sourceSchemaVersion() {
-    return '1.0';
+    return ['1.0'];
   }
 
   /**

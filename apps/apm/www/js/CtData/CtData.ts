@@ -41,7 +41,7 @@ import {CleanerOnePointThree} from './CtDataCleaner/CleanerOnePointThree.js';
 import {CleanerOnePointFour} from './CtDataCleaner/CleanerOnePointFour.js';
 import {UpdaterToOnePointFour} from './CtDataUpdater/UpdaterToOnePointFour.js';
 import {UpdaterToOnePointFive} from "./CtDataUpdater/UpdaterToOnePointFive.js";
-import {CleanerOnePointFive} from "./CtDataCleaner/CleanerOnePointFive.js";
+import {CleanerOnePointFiveAndSix} from "./CtDataCleaner/CleanerOnePointFiveAndSix.js";
 import {Punctuation} from '../defaults/Punctuation.js';
 import {
   ColumnInformation,
@@ -55,6 +55,7 @@ import {
 import {FULL_TX} from "../Witness/WitnessType.js";
 import {NormalizerRegister} from "../pages/common/NormalizerRegister.js";
 import {Matrix} from "../lib/Matrix.js";
+import {UpdaterToOnePointSix} from "@/CtData/CtDataUpdater/UpdaterToOnePointSix";
 
 
 /*
@@ -62,7 +63,7 @@ import {Matrix} from "../lib/Matrix.js";
  */
 
 
-const schemaVersions = ['0', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5'];
+const schemaVersions = ['0', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5', '1.6'];
 
 
 export class CtData {
@@ -204,7 +205,8 @@ export class CtData {
           return new CleanerOnePointFour({verbose: verbose, debug: debug});
 
         case '1.5':
-          return new CleanerOnePointFive({verbose: verbose, debug: debug});
+        case '1.6':
+          return new CleanerOnePointFiveAndSix({verbose: verbose, debug: debug});
 
         default:
           throw new Error(`Invalid source schema ${sourceSchemaVersion} requested`);
@@ -230,6 +232,9 @@ export class CtData {
 
         case '1.5':
           return new UpdaterToOnePointFive({verbose: verbose, debug: debug});
+
+        case '1.6':
+          return new UpdaterToOnePointSix({verbose: verbose, debug: debug});
 
         default:
           throw new Error(`Invalid target schema ${targetSchemaVersion} requested`);

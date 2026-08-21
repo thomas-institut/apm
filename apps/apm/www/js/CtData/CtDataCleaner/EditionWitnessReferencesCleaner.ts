@@ -26,7 +26,6 @@ import {CtDataInterface, WitnessTokenInterface} from "../CtDataInterface.js";
 
 export class EditionWitnessReferencesCleaner extends CtDataCleaner {
 
-
   getCleanCtData(sourceCtData: CtDataInterface) {
     let ctData = deepCopy(sourceCtData);
 

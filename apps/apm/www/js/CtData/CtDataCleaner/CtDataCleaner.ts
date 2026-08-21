@@ -4,13 +4,13 @@ import {deepCopy} from '../../toolbox/Util.js';
 import {CtDataInterface} from "../CtDataInterface.js";
 
 /**
- * Base class for updater process
+ * Base class for the cleaner process
  */
 
 
 export class CtDataCleaner {
-  protected verbose: any;
-  protected debug: any;
+  protected verbose: boolean;
+  protected debug: boolean;
 
   constructor(options: any = {}) {
     this.verbose = options.verbose === undefined ? false : options.verbose;
@@ -25,8 +25,8 @@ export class CtDataCleaner {
    * Returns the CtData schema version this cleaner works with
    * @return {string}
    */
-  sourceSchemaVersion(): string {
-    return '';
+  sourceSchemaVersion(): string[] {
+    return [''];
   }
 
 
@@ -36,12 +36,12 @@ export class CtDataCleaner {
    * @return {*}
    */
   getCleanCtData(sourceCtData: CtDataInterface): CtDataInterface {
-    if (sourceCtData['schemaVersion'] === undefined) {
+    if (sourceCtData.schemaVersion === undefined) {
       throw new Error('CtData does not have an schema version defined');
     }
 
-    if (sourceCtData['schemaVersion'] !== this.sourceSchemaVersion()) {
-      throw new Error(`Cannot clean schema version ${sourceCtData['schemaVersion']}, expected version ${this.sourceSchemaVersion()}`);
+    if (this.sourceSchemaVersion().indexOf(sourceCtData.schemaVersion) === -1) {
+      throw new Error(`Cannot clean schema version ${sourceCtData.schemaVersion}, expected versions: [${this.sourceSchemaVersion().join(', ')}]`);
     }
 
     return deepCopy(sourceCtData);

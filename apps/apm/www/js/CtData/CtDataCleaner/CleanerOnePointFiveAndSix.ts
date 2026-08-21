@@ -12,10 +12,10 @@ import {arraysAreEqual} from "../../lib/ToolBox/ArrayUtil.js";
 /**
  *
  */
-export class CleanerOnePointFive extends CtDataCleaner {
+export class CleanerOnePointFiveAndSix extends CtDataCleaner {
 
   sourceSchemaVersion() {
-    return '1.5';
+    return ['1.5', '1.6'];
   }
 
   getCleanCtData(ctData: CtDataInterface): CtDataInterface {

@@ -6,7 +6,7 @@ import {CtDataInterface} from "../CtDataInterface.js";
 export class CleanerOnePointTwo extends CleanerOnePointOne {
 
   sourceSchemaVersion() {
-    return '1.2';
+    return ['1.2'];
   }
 
   getCleanCtData(ctData: CtDataInterface): CtDataInterface {

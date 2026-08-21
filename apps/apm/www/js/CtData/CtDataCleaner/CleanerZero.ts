@@ -8,7 +8,7 @@ export class CleanerZero extends CtDataCleaner {
   }
 
   sourceSchemaVersion() {
-    return '0';
+    return ['0'];
   }
 
   getCleanCtData(sourceCtData: CtDataInterface): CtDataInterface {

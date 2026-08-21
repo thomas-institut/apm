@@ -18,8 +18,10 @@ export interface ApiMceGetVersionsResponse extends ApiResponse {
 }
 
 export interface MceVersionInfo {
-  mceId: number;
-  timeString: string;
+  id: number;
+  validFrom: string;
+  validUntil: string;
+  title: string;
   authorId: number;
   description: string;
 }

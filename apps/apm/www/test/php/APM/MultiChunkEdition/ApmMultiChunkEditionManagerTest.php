@@ -2,325 +2,238 @@
 
 namespace APM\MultiChunkEdition;
 
+use APM\System\DataTableSchema\MceDataTableSchemaProvider;
+use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
-use Psr\Log\LoggerInterface;
-use ThomasInstitut\DataTable\Exception\RowDoesNotExist;
-use ThomasInstitut\DataTable\ResultsIterator\ResultsIterator;
-use ThomasInstitut\DataTable\UnitemporalDataTable;
+use Psr\Log\NullLogger;
+use ThomasInstitut\DataTable\Exception\InvalidColumnDefinitionsArray;
+use ThomasInstitut\DataTable\Exception\InvalidRow;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
+use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
+use ThomasInstitut\DataTable\InMemoryUnitemporalDataTableWithSchema;
+use ThomasInstitut\DataTable\UnitemporalDataTableWithSchema;
+use ThomasInstitut\TimeString\TimeString;
 
-/**
- * Unit tests for ApmMultiChunkEditionManager.
- */
 class ApmMultiChunkEditionManagerTest extends TestCase
 {
-    private UnitemporalDataTable $table;
+    private UnitemporalDataTableWithSchema $mceTable;
     private ApmMultiChunkEditionManager $manager;
 
     /**
-     * Creates a manager with a mocked data table for each test.
+     * @throws InvalidColumnDefinitionsArray
      */
     protected function setUp(): void
     {
-        $this->table = $this->createMock(UnitemporalDataTable::class);
-        $this->manager = new ApmMultiChunkEditionManager(
-            $this->table,
-            $this->createStub(LoggerInterface::class)
-        );
+        $this->mceTable = new InMemoryUnitemporalDataTableWithSchema(MceDataTableSchemaProvider::getSchema());
+        $this->manager = new ApmMultiChunkEditionManager($this->mceTable, new NullLogger());
     }
 
     /**
-     * Verifies that archived editions are excluded unless requested.
+     * @throws MultiChunkEditionDoesNotExist
      */
     public function testGetMultiChunkEditionsByUserExcludesArchivedEditionsByDefault(): void
     {
-        $rows = [
-            ['id' => '12', 'title' => 'First edition'],
-            ['id' => 13, 'title' => 'Second edition'],
-        ];
-        $results = $this->resultsIterator($rows);
+        $firstId = $this->saveEdition('First edition', 7);
+        $this->saveEdition('Archived edition', 7, true);
+        $this->saveEdition('Other author', 8);
 
-        $this->table->expects($this->once())
-            ->method('findRowsWithTime')
-            ->with(
-                ['author_tid' => 7, 'archived' => '0'],
-                0,
-                $this->isString()
-            )
-            ->willReturn($results);
-
-        self::assertSame(
-            [
-                ['id' => 12, 'title' => 'First edition'],
-                ['id' => 13, 'title' => 'Second edition'],
-            ],
-            $this->manager->getMultiChunkEditionsByUser(7)
+        $this->assertArrayIsEqualToArrayOnlyConsideringListOfKeys(
+            [['id' => $firstId, 'title' => 'First edition']],
+            $this->manager->getMultiChunkEditionsByUser(7), ['id', 'title']
         );
     }
 
     /**
-     * Verifies that archived editions can be included in the user listing.
+     * @throws MultiChunkEditionDoesNotExist
      */
     public function testGetMultiChunkEditionsByUserCanIncludeArchivedEditions(): void
     {
-        $results = $this->resultsIterator([
-            ['id' => '12', 'title' => 'Archived edition'],
-        ]);
+        $firstId = $this->saveEdition('First edition', 7);
+        $archivedId = $this->saveEdition('Archived edition', 7, true);
 
-        $this->table->expects($this->once())
-            ->method('findRowsWithTime')
-            ->with(['author_tid' => 7], 0, $this->isString())
-            ->willReturn($results);
-
-        self::assertSame(
-            [['id' => 12, 'title' => 'Archived edition']],
-            $this->manager->getMultiChunkEditionsByUser(7, true)
+        $this->assertArrayIsEqualToArrayOnlyConsideringListOfKeys(
+            [
+                ['id' => $firstId, 'title' => 'First edition'],
+                ['id' => $archivedId, 'title' => 'Archived edition'],
+            ],
+            $this->manager->getMultiChunkEditionsByUser(7, true), ['id', 'title']
         );
     }
 
     /**
-     * Verifies retrieval and archive flag conversion for uncompressed data.
+     * @throws MultiChunkEditionDoesNotExist
      */
-    public function testGetMultiChunkEditionByIdReturnsUncompressedDataAndArchiveStatus(): void
+    public function testGetMultiChunkEditionByIdReturnsEditionDataAndArchiveStatus(): void
     {
-        $row = [
-            'id' => 12,
-            'author_tid' => 7,
-            'version_description' => 'Initial version',
-            'chunks' => '101,102',
-            'compressed' => '0',
-            'archived' => '1',
-            'mce_data' => json_encode([
-                'title' => 'An edition',
-                'chunks' => [
-                    ['chunkId' => 101],
-                    ['chunkId' => 102],
-                ],
-            ]),
-            'valid_from' => '2026-01-01 00:00:00.000000',
-            'valid_until' => '9999-12-31 23:59:59.999999',
-        ];
-        $results = $this->resultsIterator([$row]);
+        $id = $this->saveEdition('Stored edition', 19, true, 'Second version', [12, 34]);
 
-        $this->table->expects($this->once())
-            ->method('findRowsWithTime')
-            ->with(['id' => 12], 1, '2026-02-01 00:00:00.000000')
-            ->willReturn($results);
+        $result = $this->manager->getMultiChunkEditionById($id);
 
-        $data = $this->manager->getMultiChunkEditionById(12, '2026-02-01 00:00:00.000000');
-
-        self::assertSame(7, $data->authorId);
-        self::assertSame(['101', '102'], $data->chunks);
-        self::assertSame('Initial version', $data->versionDescription);
-        self::assertSame($row['valid_from'], $data->validFrom);
-        self::assertSame($row['valid_until'], $data->validUntil);
-        self::assertTrue($data->mceData['archived']);
-        self::assertSame('An edition', $data->mceData['title']);
-    }
-
-    /**
-     * Verifies that compressed edition data is decompressed before decoding.
-     */
-    public function testGetMultiChunkEditionByIdReadsCompressedData(): void
-    {
-        $mceData = [
-            'title' => 'Compressed edition',
-            'chunks' => [['chunkId' => 101]],
-        ];
-        $row = [
-            'author_tid' => 7,
-            'version_description' => 'Compressed version',
-            'chunks' => '101',
-            'compressed' => 1,
-            'archived' => 0,
-            'mce_data' => gzcompress(json_encode($mceData)),
-            'valid_from' => '2026-01-01 00:00:00.000000',
-            'valid_until' => '9999-12-31 23:59:59.999999',
-        ];
-
-        $this->table->expects($this->once())
-            ->method('findRowsWithTime')
-            ->willReturn($this->resultsIterator([$row]));
-
-        $data = $this->manager->getMultiChunkEditionById(12);
-
-        self::assertSame($mceData, array_diff_key($data->mceData, ['archived' => true]));
-        self::assertFalse($data->mceData['archived']);
-    }
-
-    /**
-     * Verifies that missing editions produce the domain exception.
-     */
-    public function testGetMultiChunkEditionByIdThrowsWhenEditionDoesNotExist(): void
-    {
-        $this->table->expects($this->once())
-            ->method('findRowsWithTime')
-            ->willReturn($this->resultsIterator([]));
-
-        $this->expectException(MultiChunkEditionDoesNotExist::class);
-        $this->manager->getMultiChunkEditionById(404, '2026-02-01 00:00:00.000000');
-    }
-
-    /**
-     * Verifies creation of a new edition row from MCE data.
-     */
-    public function testSaveMultiChunkEditionCreatesRowWithSerializedData(): void
-    {
-        $mceData = [
-            'title' => 'New edition',
-            'archived' => true,
-            'chunks' => [
-                ['chunkId' => 101],
-                ['chunkId' => 102],
+        $this->assertSame(['12', '34'], $result->chunks);
+        $this->assertSame(19, $result->authorId);
+        $this->assertSame('Second version', $result->versionDescription);
+        $this->assertSame(
+            [
+                'title' => 'Stored edition',
+                'chunks' => [['chunkId' => 12], ['chunkId' => 34]],
+                'archived' => true,
             ],
-        ];
-
-        $this->table->expects($this->once())
-            ->method('createRowWithTime')
-            ->with(
-                [
-                    'title' => 'New edition',
-                    'author_tid' => 7,
-                    'version_description' => 'Created',
-                    'chunks' => '101,102',
-                    'compressed' => 0,
-                    'archived' => 1,
-                    'mce_data' => json_encode($mceData),
-                ],
-                $this->isString()
-            )
-            ->willReturn(12);
-
-        self::assertSame(12, $this->manager->saveMultiChunkEdition(-1, $mceData, 7, 'Created'));
+            $result->mceData
+        );
+        $this->assertNotSame('', $result->validFrom);
     }
 
     /**
-     * Verifies that an existing edition is validated and updated.
+     * @throws MultiChunkEditionDoesNotExist
+     * @throws InvalidTimeStringException
+     * @throws RowAlreadyExists
+     * @throws InvalidRow
      */
-    public function testSaveMultiChunkEditionUpdatesExistingRow(): void
+    public function testGetMultiChunkEditionByIdUncompressesCompressedData(): void
     {
-        $existingRow = [
-            'author_tid' => 7,
-            'version_description' => 'Old',
-            'chunks' => '101',
-            'compressed' => 0,
-            'archived' => 0,
-            'mce_data' => json_encode(['title' => 'Old', 'chunks' => [['chunkId' => 101]]]),
-            'valid_from' => '2026-01-01 00:00:00.000000',
-            'valid_until' => '9999-12-31 23:59:59.999999',
-        ];
-        $mceData = [
-            'title' => 'Updated edition',
+        $storedData = ['title' => 'Compressed edition', 'chunks' => [['chunkId' => 56]]];
+        $id = $this->mceTable->createRowWithTime([
+            'title' => 'Compressed edition',
+            'author_tid' => 23,
+            'version_description' => 'Compressed version',
+            'chunks' => '56',
+            'compressed' => true,
             'archived' => false,
-            'chunks' => [['chunkId' => 102]],
-        ];
+            'mce_data' => gzcompress(json_encode($storedData)),
+        ], TimeString::now());
 
-        $this->table->expects($this->once())
-            ->method('findRowsWithTime')
-            ->with(['id' => 12], 1, $this->isString())
-            ->willReturn($this->resultsIterator([$existingRow]));
-        $this->table->expects($this->once())
-            ->method('updateRowWithTime')
-            ->with(
-                [
-                    'id' => 12,
-                    'title' => 'Updated edition',
-                    'author_tid' => 8,
-                    'version_description' => 'Updated',
-                    'chunks' => '102',
-                    'compressed' => 0,
-                    'archived' => 0,
-                    'mce_data' => json_encode($mceData),
-                ],
-                $this->isString()
-            );
+        $result = $this->manager->getMultiChunkEditionById($id);
 
-        self::assertSame(12, $this->manager->saveMultiChunkEdition(12, $mceData, 8, 'Updated'));
+        $this->assertSame($storedData + ['archived' => false], $result->mceData);
     }
 
-    /**
-     * Verifies that invalid author IDs are rejected before persistence.
-     */
-    public function testSaveMultiChunkEditionRejectsNonPositiveAuthorId(): void
+    public function testGetMultiChunkEditionByIdThrowsForMissingEdition(): void
     {
-        $this->table->expects($this->never())->method('createRowWithTime');
-        $this->table->expects($this->never())->method('updateRowWithTime');
-
-        $this->expectException(\InvalidArgumentException::class);
-        $this->manager->saveMultiChunkEdition(-1, ['chunks' => [], 'archived' => false], 0, 'Invalid');
-    }
-
-    /**
-     * Verifies conversion of row history to version information objects.
-     */
-    public function testGetEditionVersionsReturnsVersionInfoObjects(): void
-    {
-        $this->table->expects($this->once())
-            ->method('getRowHistory')
-            ->with(12)
-            ->willReturn([
-                [
-                    'author_tid' => 7,
-                    'version_description' => 'Initial',
-                    'valid_from' => '2026-01-01 00:00:00.000000',
-                ],
-                [
-                    'author_tid' => 8,
-                    'version_description' => 'Updated',
-                    'valid_from' => '2026-02-01 00:00:00.000000',
-                ],
-            ]);
-
-        $versions = $this->manager->getEditionVersions(12);
-
-        self::assertCount(2, $versions);
-        self::assertContainsOnlyInstancesOf(MceVersionInfo::class, $versions);
-        self::assertSame(12, $versions[0]->mceId);
-        self::assertSame(7, $versions[0]->authorId);
-        self::assertSame('Initial', $versions[0]->description);
-        self::assertSame('2026-01-01 00:00:00.000000', $versions[0]->timeString);
-        self::assertSame(8, $versions[1]->authorId);
-    }
-
-    /**
-     * Verifies conversion of a missing history row to the domain exception.
-     */
-    public function testGetEditionVersionsConvertsMissingRowException(): void
-    {
-        $this->table->expects($this->once())
-            ->method('getRowHistory')
-            ->with(404)
-            ->willThrowException(new RowDoesNotExist());
-
         $this->expectException(MultiChunkEditionDoesNotExist::class);
-        $this->manager->getEditionVersions(404);
+
+        $this->manager->getMultiChunkEditionById(999);
     }
 
     /**
-     * Creates an iterator stub for rows returned by the data table.
+     * @throws MultiChunkEditionDoesNotExist
      */
-    private function resultsIterator(array $rows): ResultsIterator
+    public function testGetMultiChunkEditionByIdRejectsInvalidTimeString(): void
     {
-        $iterator = $this->createStub(ResultsIterator::class);
-        $position = 0;
+        $id = $this->saveEdition('Edition', 1);
 
-        $iterator->method('count')->willReturn(count($rows));
-        $iterator->method('getFirst')->willReturn($rows[0] ?? null);
-        $iterator->method('rewind')->willReturnCallback(function () use (&$position): void {
-            $position = 0;
-        });
-        $iterator->method('current')->willReturnCallback(function () use (&$position, $rows): ?array {
-            return $rows[$position] ?? null;
-        });
-        $iterator->method('key')->willReturnCallback(function () use (&$position): int {
-            return $position;
-        });
-        $iterator->method('valid')->willReturnCallback(function () use (&$position, $rows): bool {
-            return $position < count($rows);
-        });
-        $iterator->method('next')->willReturnCallback(function () use (&$position): void {
-            $position++;
-        });
+        $this->expectException(InvalidArgumentException::class);
 
-        return $iterator;
+        $this->manager->getMultiChunkEditionById($id, 'not a time string');
+    }
+
+    /**
+     * @throws MultiChunkEditionDoesNotExist
+     */
+    public function testSaveMultiChunkEditionCreatesAndUpdatesAnEdition(): void
+    {
+        $id = $this->manager->saveMultiChunkEdition(
+            -1,
+            ['title' => 'New edition', 'chunks' => [['chunkId' => 21]]],
+            31,
+            'Initial version'
+        );
+
+        $this->assertSame(
+            ['title' => 'New edition', 'chunks' => [['chunkId' => 21]], 'archived' => false],
+            $this->manager->getMultiChunkEditionById($id)->mceData
+        );
+
+        $this->manager->saveMultiChunkEdition(
+            $id,
+            ['title' => 'Updated edition', 'chunks' => [['chunkId' => 22]], 'archived' => true],
+            32,
+            'Updated version'
+        );
+
+        $result = $this->manager->getMultiChunkEditionById($id);
+        $this->assertSame(32, $result->authorId);
+        $this->assertSame('Updated version', $result->versionDescription);
+        $this->assertSame(
+            ['title' => 'Updated edition', 'chunks' => [['chunkId' => 22]], 'archived' => true],
+            $result->mceData
+        );
+    }
+
+    /**
+     * @throws MultiChunkEditionDoesNotExist
+     */
+    public function testSaveMultiChunkEditionRejectsInvalidAuthor(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->manager->saveMultiChunkEdition(-1, ['chunks' => [['chunkId' => 1]]], 0, 'Version');
+    }
+
+    /**
+     * @throws MultiChunkEditionDoesNotExist
+     */
+    public function testSaveMultiChunkEditionRejectsMissingChunks(): void
+    {
+        $this->expectException(InvalidArgumentException::class);
+
+        $this->manager->saveMultiChunkEdition(-1, ['title' => 'No chunks'], 1, 'Version');
+    }
+
+    /**
+     * @throws MultiChunkEditionDoesNotExist
+     */
+    public function testGetEditionVersionsReturnsAllVersionsInAscendingOrder(): void
+    {
+        $id = $this->saveEdition('Edition', 1, false, 'First version');
+        $this->manager->saveMultiChunkEdition(
+            $id,
+            ['title' => 'Updated edition', 'chunks' => [['chunkId' => 2]]],
+            2,
+            'Second version'
+        );
+
+        $versions = $this->manager->getEditionVersions($id);
+
+        $this->assertCount(2, $versions);
+        $this->assertSame($id, $versions[0]->id);
+        $this->assertSame(1, $versions[0]->authorId);
+        $this->assertSame('First version', $versions[0]->description);
+        $this->assertSame($id, $versions[1]->id);
+        $this->assertSame(2, $versions[1]->authorId);
+        $this->assertSame('Second version', $versions[1]->description);
+        $this->assertLessThan($versions[1]->validFrom, $versions[0]->validFrom);
+    }
+
+    public function testGetEditionVersionsThrowsForMissingEdition(): void
+    {
+        $this->expectException(MultiChunkEditionDoesNotExist::class);
+
+        $this->manager->getEditionVersions(999);
+    }
+
+    /**
+     * @param array<int> $chunkIds
+     * @throws MultiChunkEditionDoesNotExist
+     */
+    private function saveEdition(
+        string $title,
+        int $authorId,
+        bool $archived = false,
+        string $versionDescription = 'Version',
+        array $chunkIds = [1]
+    ): int {
+        return $this->manager->saveMultiChunkEdition(
+            -1,
+            [
+                'title' => $title,
+                'chunks' => array_map(
+                    static fn (int $chunkId): array => ['chunkId' => $chunkId],
+                    $chunkIds
+                ),
+                'archived' => $archived,
+            ],
+            $authorId,
+            $versionDescription
+        );
     }
 }

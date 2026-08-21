@@ -20,6 +20,7 @@
  */
 
 namespace APM;
+
 require __DIR__ . '/../www/vendor/autoload.php';
 
 $config = SystemConfigArray::get();

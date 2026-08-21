@@ -20,6 +20,10 @@
 
 namespace APM\Api;
 
+use APM\Api\DataSchema\ApiUsersMultiChunkEditions;
+use APM\Api\DataSchema\MceShortInfo;
+use APM\MultiChunkEdition\MceVersionInfo;
+use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Cache\CacheKey;
 use APM\System\DataRetrieveHelper;
 use APM\System\Document\Exception\PageNotFoundException;
@@ -349,7 +353,11 @@ class ApiUsers extends ApiController
     public function userMultiChunkEditions(Request $request, Response $response) : Response {
         $userTid =  (int) $request->getAttribute('userId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
-        $editionInfo = $this->systemManager->getMultiChunkEditionManager()->getMultiChunkEditionsByUser($userTid);
-        return $this->responseWithJson($response, $editionInfo);
+        /** @var MultiChunkEditionManager $mceManager */
+        $mceManager = $this->container->get(MultiChunkEditionManager::class);
+        $editionInfo = $mceManager->getMultiChunkEditionsByUser($userTid);
+        $apiResponse = new ApiUsersMultiChunkEditions();
+        $apiResponse->editions = array_map(fn(MceVersionInfo $info): MceShortInfo => new MceShortInfo($info->id, $info->title), $editionInfo);
+        return $this->responseFactory->success($response, $apiResponse);
     }
 }

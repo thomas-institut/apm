@@ -62,6 +62,7 @@ use APM\System\Transcription\TxText\Unclear;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\ArraySort;
 use APM\ToolBox\MyersDiff;
@@ -133,16 +134,15 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     private array $langCodes = [ 'ar', 'he', 'la', 'jrb'];
 
-    public function __construct(callable $getDbConn,
-                                array $tableNames,
-                                LoggerInterface $logger,
-                                callable $docManager,
-                                callable $personManager,
-                                callable|DataCache $dataCache
+    public function __construct(private readonly PdoProvider $pdoProvider,
+                                array                        $tableNames,
+                                LoggerInterface              $logger,
+                                callable                     $docManager,
+                                callable                     $personManager,
+                                callable|DataCache           $dataCache
     )
     {
         $this->resetError();
-        $this->getDbConnCallable = $getDbConn;
         $this->docManagerCallable = $docManager;
         $this->personManagerCallable = $personManager;
         $this->tNames  = $tableNames;
@@ -155,10 +155,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
     private function getDbConn() : PDO {
-        if ($this->dbConn === null) {
-            $this->dbConn = call_user_func($this->getDbConnCallable);
-        }
-        return $this->dbConn;
+       return $this->pdoProvider->getPdo();
     }
 
     private function getDatabaseHelper() : MySqlHelper {
@@ -176,10 +173,13 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $this->edNoteManager;
     }
 
+    /**
+     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
+     */
     public function getElementsDataTable() : MySqlUnitemporalDataTable {
         if ($this->elementsDataTable === null) {
             $this->elementsDataTable = new MySqlUnitemporalDataTable(
-                $this->getDbConn(),
+                $this->pdoProvider,
                 $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS]);
         }
         return $this->elementsDataTable;
@@ -188,7 +188,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function getItemsDataTable() : MySqlUnitemporalDataTable {
         if ($this->itemsDataTable === null) {
             $this->itemsDataTable = new MySqlUnitemporalDataTable(
-                $this->getDbConn(),
+                $this->pdoProvider,
                 $this->tNames[ApmMySqlTableName::TABLE_ITEMS]);
         }
         return $this->itemsDataTable;
@@ -196,7 +196,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     public function getColumnVersionManager() : ColumnVersionManager {
         if ($this->columnVersionManager === null) {
-            $txVersionsTable = new MySqlDataTable($this->getDbConn(), $this->tNames[ApmMySqlTableName::TABLE_VERSIONS_TX]);
+            $txVersionsTable = new MySqlDataTable($this->pdoProvider, $this->tNames[ApmMySqlTableName::TABLE_VERSIONS_TX]);
             $this->columnVersionManager = new ApmColumnVersionManager($txVersionsTable);
         }
         return $this->columnVersionManager;

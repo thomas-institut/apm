@@ -23,6 +23,9 @@ namespace APM;
 
 
 
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+
 require __DIR__ . '/../vendor/autoload.php';
 
 $config = SystemConfigArray::get();
@@ -32,4 +35,11 @@ if (!is_array($config)) {
 }
 
 
-(new CommandLine\BackupDB($config, $argc, $argv))->run();
+try {
+    (new CommandLine\BackupDB($config, $argc, $argv))->run();
+} catch (NotFoundExceptionInterface $e) {
+
+} catch (ContainerExceptionInterface $e) {
+
+} catch (\Exception $e) {
+}

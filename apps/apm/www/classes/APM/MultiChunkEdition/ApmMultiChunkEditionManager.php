@@ -4,49 +4,53 @@ namespace APM\MultiChunkEdition;
 
 use Exception;
 use InvalidArgumentException;
+use LogicException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use ThomasInstitut\DataTable\Exception\InvalidRow;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\DataTable\Exception\RowDoesNotExist;
-use ThomasInstitut\DataTable\UnitemporalDataTable;
-use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
+use ThomasInstitut\DataTable\UnitemporalDataTableWithSchema;
 use ThomasInstitut\TimeString\TimeString;
 
-class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements LoggerAwareInterface
+class ApmMultiChunkEditionManager implements MultiChunkEditionManager, LoggerAwareInterface
 {
-    use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
 
-
-    /**
-     * @var UnitemporalDataTable
-     */
-    private UnitemporalDataTable $mceTable;
-
-
-    public function __construct(UnitemporalDataTable $mceTable, LoggerInterface $logger)
+    public function __construct(private readonly UnitemporalDataTableWithSchema $mceTable, LoggerInterface $logger)
     {
-        $this->mceTable = $mceTable;
         $this->setLogger($logger);
     }
 
+    /**
+     * @inheritDoc
+     * @return MceVersionInfo[]
+     */
     public function getMultiChunkEditionsByUser(int $userId, bool $includeArchived = false): array
     {
         $ids = [];
         $rowsToFind = ['author_tid' => $userId];
         if (!$includeArchived) {
-            $rowsToFind['archived'] = '0';
+            $rowsToFind['archived'] = false;
         }
 
-        $rows = $this->mceTable->findRowsWithTime($rowsToFind, 0, TimeString::now());
+        try {
+            $rows = $this->mceTable->findRowsWithTime($rowsToFind, 0, TimeString::now());
+        } catch (InvalidRow $e) {
+            // this means a programming error
+            throw new LogicException("Invalid row exception: " . $e->getMessage(), $e->getCode(), $e); // @codeCoverageIgnore
+        } catch (InvalidTimeStringException $e) {
+            // should never happen
+            throw  new RuntimeException("Unexpected error: " . $e->getMessage(), $e->getCode(), $e); // @codeCoverageIgnore
+        }
 
+        $versions = [];
         foreach($rows as $row) {
-            $ids[] =  [
-                'id' => intval($row['id']),
-                'title' => $row['title']
-            ];
+            $versions[] = $this->getMceVersionInfoFromRow($row);
         }
-        return $ids;
+        return $versions;
     }
 
     /**
@@ -57,31 +61,37 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         if ($timeString === '') {
             $timeString = TimeString::now();
         }
-        $rows = $this->mceTable->findRowsWithTime([ 'id' => $id], 1, $timeString);
+        try {
+            $row = $this->mceTable->getRowWithTime($id, $timeString);
+        } catch (InvalidTimeStringException $e) {
+            throw new InvalidArgumentException("Invalid time string: " . $e->getMessage(), $e->getCode(), $e);
+        }
 
-        if (count($rows) === 0) {
+        if ($row === null) {
             throw new MultiChunkEditionDoesNotExist("Multi chunk edition with id $id does not exist");
         }
-        $dbRow = $rows->getFirst();
-        $isCompressed = intval($dbRow['compressed']) === 1;
+        $isCompressed = $row['compressed'];
 
         if ($isCompressed) {
-            $dataJson = gzuncompress($dbRow['mce_data']);
+            $dataJson = gzuncompress($row['mce_data']);
+            if ($dataJson === false) {
+                throw new RuntimeException("Failed to decompress MCE data");
+            }
         } else {
-            $dataJson = $dbRow['mce_data'];
+            $dataJson = $row['mce_data'];
         }
 
         $mceData = json_decode($dataJson, true);
 
         // Handle archived editions
-        $mceData['archived'] = intval($dbRow['archived']) === 1;
+        $mceData['archived'] = $row['archived'];
 
         $data = new MceSystemData();
-        $data->chunks = explode(',', $dbRow['chunks']);
-        $data->authorId = $dbRow['author_tid'];
-        $data->versionDescription = $dbRow['version_description'];
-        $data->validFrom = $dbRow['valid_from'];
-        $data->validUntil = $dbRow['valid_until'];
+        $data->chunks = explode(',', $row['chunks']);
+        $data->authorId = $row['author_tid'];
+        $data->versionDescription = $row['version_description'];
+        $data->validFrom = $row['valid_from'];
+        $data->validUntil = $row['valid_until'];
         $data->mceData = $mceData;
         return $data;
     }
@@ -114,41 +124,40 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
 
     /**
      * @inheritDoc
-     */
-//    public function getMultiChunkEditionIdsByWorkChunk(string $workId, int $chunkId): array
-//    {
-//        // TODO: Implement getMultiChunkEditionIdsByWorkChunk() method.
-//        return [];
-//    }
-
-    /**
-     * @inheritDoc
+     * @return MceVersionInfo[]
      */
     public function getEditionVersions(int $mceId): array
     {
         try {
             $rows = $this->mceTable->getRowHistory($mceId);
-            $outputArray = [];
-            foreach ($rows as $row) {
-                $info = new MceVersionInfo();
-                $info->mceId = $mceId;
-                $info->authorId = $row['author_tid'];
-                $info->description = $row['version_description'];
-                $info->timeString = $row['valid_from'];
-                $outputArray[] = $info;
-            }
-            return $outputArray;
+            return array_map(fn(array $row): MceVersionInfo => $this->getMceVersionInfoFromRow($row), $rows);
         } catch (RowDoesNotExist) {
             throw new MultiChunkEditionDoesNotExist("Edition $mceId does not exist");
         }
     }
 
     /**
-     * @param array $mceData
+     * @param array<string, mixed> $row
+     * @return MceVersionInfo
+     */
+    private function getMceVersionInfoFromRow(array $row): MceVersionInfo
+    {
+        $info = new MceVersionInfo();
+        $info->id = $row['id'];
+        $info->authorId = $row['author_tid'];
+        $info->description = $row['version_description'];
+        $info->validFrom = $row['valid_from'];
+        $info->validUntil = $row['valid_until'];
+        $info->title = $row['title'];
+        return $info;
+    }
+
+    /**
+     * @param array<string, mixed> $mceData
      * @param int $authorId
      * @param string $versionDescription
      * @param bool $compress
-     * @return array
+     * @return array<string, mixed>
      * @throws Exception
      */
     private function getDbRowFromMceData(array $mceData, int $authorId, string $versionDescription, bool $compress = false): array
@@ -166,6 +175,9 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
         $title =  $mceData['title'];
 
         $dataToSave = json_encode($mceData);
+        if ($dataToSave === false) {
+            throw new RuntimeException("Failed to encode MCE data to JSON");
+        }
         if ($compress) {
             $dataToSave = gzcompress($dataToSave);
         }
@@ -175,10 +187,9 @@ class ApmMultiChunkEditionManager extends MultiChunkEditionManager implements Lo
             'author_tid' => $authorId,
             'version_description' => $versionDescription,
             'chunks' => $chunkDbString,
-            'compressed' => $compress ? 1 : 0,
-            'archived' => $mceData['archived'] ? 1 : 0,
+            'compressed' => $compress,
+            'archived' => $mceData['archived'] ?? false,
             'mce_data' => $dataToSave
         ];
-
     }
 }

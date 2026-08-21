@@ -2,10 +2,12 @@
 
 namespace APM\MultiChunkEdition;
 
-class MceVersionInfo
+final class MceVersionInfo
 {
-    public int $mceId;
-    public string $timeString;
+    public int $id;
+    public string $validFrom;
+    public string $validUntil;
     public int $authorId;
+    public string $title;
     public string $description;
 }

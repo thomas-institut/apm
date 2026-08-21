@@ -7,8 +7,8 @@ class MceDataUtils
 
     /**
      * Returns the chunk Ids present in the given MceData array
-     * @param array $mceData
-     * @return array
+     * @param array<string, mixed> $mceData
+     * @return array<int|string>
      */
     static public function getChunkIds(array $mceData): array {
         $chunkIds = [];

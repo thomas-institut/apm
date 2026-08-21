@@ -7,7 +7,7 @@ import CtListForUser from "@/ReactAPM/Components/CtListForUser";
 import AnchorList from "@/ReactAPM/Components/AnchorList";
 import TranscriptionsForUser from "@/ReactAPM/Components/TranscriptionsForUser";
 import {useQuery} from "@tanstack/react-query";
-import {ApiUserMultiChunkEdition} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
+import {MceShortInfo} from "@/Api/DataSchema/ApiUserMultiChunkEdition";
 import {varsAreEqual} from "@/toolbox/ObjectUtil";
 import {useDataStore} from "@/ReactAPM/Stores/DataStore";
 
@@ -31,7 +31,7 @@ export default function Dashboard() {
     return appContext.apiClient.userMultiChunkEditions(userId);
   };
 
-  const apiUserMceResult = useQuery<ApiUserMultiChunkEdition[]>({
+  const apiUserMceResult = useQuery<MceShortInfo[]>({
     queryKey: ['mceList', userId], queryFn: () => getMceListForUser(userId),
   });
 

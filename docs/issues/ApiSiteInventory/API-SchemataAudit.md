@@ -37,7 +37,7 @@
 | `POST /api/user/{userTid}/update` | `ApiUsers::userUpdateProfile` | status response only | None needed | — | |
 | `POST /api/user/create/{personTid}` | `ApiUsers::userCreate` | status response only | None needed | — | |
 | `GET /api/user/{userId}/collationTables` | `ApiUsers::userCollationTables` | ad-hoc `{tableInfo: [...], workInfo: {...}}` | `ApiUserCollationTables` in `ApiUserCollationTables.ts` | ⚠️ | PHP `workInfo` entries include `author_name` (snake_case) — TS `WorkInfo` has `author_name` too, so it matches, but naming is inconsistent with project conventions |
-| `GET /api/user/{userId}/multiChunkEditions` | `ApiUsers::userMultiChunkEditions` | raw from `MultiChunkEditionManager` | `ApiUserMultiChunkEdition` in `ApiUserMultiChunkEdition.ts` | ⚠️ | No PHP DataSchema class; depends on what manager returns |
+| `GET /api/user/{userId}/multiChunkEditions` | `ApiUsers::userMultiChunkEditions` | raw from `MultiChunkEditionManager` | `MceShortInfo` in `ApiUserMultiChunkEdition.ts` | ⚠️ | No PHP DataSchema class; depends on what manager returns |
 | `GET /api/transcriptions/byUser/{userTid}/docPageData` | `ApiUsers::getTranscribedPages` | ad-hoc `{docIds, docInfoArray, pageInfoArray}` where docInfoArray contains `DocInfo` objects (via `get_object_vars` implicitly through json_encode) and pageInfoArray contains `PageInfo` objects | `ApiUserTranscriptions` in `ApiUserTranscriptions.ts` | ⚠️ | `UserTranscriptionsDocInfo` has `pageIds` field added dynamically in PHP. `LegacyPageInfo` matches `PageInfo` PHP class fields |
 
 #### Documents & Pages

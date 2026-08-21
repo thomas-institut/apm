@@ -20,15 +20,19 @@
 
 namespace APM\CommandLine;
 
+use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\NodeService\NodeServiceClient;
 use APM\System\ApmContainerKey;
+use APM\System\ApmPdoProvider;
 use APM\System\ApmSystemManager;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Factories\LanguageManagerFactory;
 use APM\System\Factories\LoggerFactory;
 use APM\System\Factories\ApmSystemConfigFactory;
+use APM\System\Factories\MultiChunkEditionManagerFactory;
 use APM\System\Factories\NodeServiceClientFactory;
 use APM\System\Factories\PublicationManagerFactory;
+use APM\System\Factories\TableNamesFactory;
 use APM\System\Factories\TwigFactory;
 use APM\System\Factories\ValkeyClientFactory;
 use APM\System\LanguageManager;
@@ -44,6 +48,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use Slim\Views\Twig;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use function DI\autowire;
 use function DI\factory;
 
@@ -108,7 +113,10 @@ abstract class CommandLineUtility {
         $builder->addDefinitions([
             ApmContainerKey::CONFIG_ARRAY => $this->config,
             ApmSystemConfig::class => factory([ApmSystemConfigFactory::class, 'create']),
+            ApmContainerKey::TABLE_NAMES => factory([TableNamesFactory::class, 'create']),
+            PdoProvider::class => autowire(ApmPdoProvider::class),
             LoggerInterface::class => factory([LoggerFactory::class, 'createForCli']),
+            MultiChunkEditionManager::class => factory([MultiChunkEditionManagerFactory::class, 'create']),
             Twig::class => factory([TwigFactory::class, 'create']),
             SystemManager::class => autowire(ApmSystemManager::class),
             LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
@@ -136,7 +144,7 @@ abstract class CommandLineUtility {
      * @throws NotFoundExceptionInterface
      */
     protected function getDbConn() : PDO {
-        return $this->getSystemManager()->getDbConnection();
+        return $this->getSystemManager()->getPdoProvider()->getPdo();
     }
     
     #[NoReturn] public function run(): void // @phpstan-ignore attribute.notFound

@@ -25,14 +25,14 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 const versions: MceVersionInfo[] = [
   {
-    mceId: 42,
-    timeString: '2026-08-05 12:00:00.000000',
+    id: 42,
+    validFrom: '2026-08-05 12:00:00.000000',
     authorId: 1002,
     description: 'Newest version',
   },
   {
-    mceId: 42,
-    timeString: '2026-08-06 12:00:00.000000',
+    id: 42,
+    validFrom: '2026-08-06 12:00:00.000000',
     authorId: 1001,
     description: 'a'.repeat(151),
   },
@@ -220,7 +220,7 @@ describe('AdminPanel', () => {
     const root = createRoot(container);
 
     await act(async () => {
-      root.render(<AdminPanel mceId={42} version={versions[0].timeString} versions={versions}
+      root.render(<AdminPanel mceId={42} version={versions[0].validFrom} versions={versions}
                               cloneEdition={cloneEdition} archive={archive}
                               isArchived={false} archivingEnabled={true}/>);
     });

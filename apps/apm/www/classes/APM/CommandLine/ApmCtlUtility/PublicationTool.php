@@ -12,6 +12,7 @@ use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
+use JsonException;
 
 class PublicationTool extends CommandLineUtility implements AdminUtility
 {
@@ -32,7 +33,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
            'update <id> [version]' => 'updates a publication by id (version is a timestring and is optional, defaults to the current version)',
            'del <id>' => 'removes a publication by id',
            'show <id>' => 'shows a publication by id',
-           'export <type> <id>' => 'exports a publication by id as JSON file'
+           'export <format> <id>' => 'exports a publication by id as JSON or as TEI-XML for edition publications',
             ];
         return implode("\n", array_map(function($key, $value) { return "  $key: $value"; }, array_keys($options), $options));
     }
@@ -58,7 +59,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             'update' => $this->update((int)$argv[2], $argv[3] ?? 'current'),
             'del' => $this->remove((int)$argv[2]),
             'show' => $this->show((int)$argv[2]),
-            'export' => $this->export((int)$argv[2]),
+            'export' => $this->export($argv[2], (int)$argv[3]),
             default => 0,
         };
     }
@@ -185,9 +186,14 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
     }
 
 
-    private function export(int $pubId) : int {
+    private function export(string $format, int $pubId) : int {
         if ($pubId <= 0) {
             print "Error: publication id must be greater than 0\n";
+            return 1;
+        }
+
+        if ($format !== 'json' && $format !== 'tei') {
+            print "Error: export format must be 'json' or 'tei'\n";
             return 1;
         }
 
@@ -196,16 +202,51 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             $pm = $this->container->get(PublicationManagerInterface::class);
             $data = $pm->getPublication($pubId);
 
+            $publicationType = is_object($data->type) && isset($data->type->value)
+                ? $data->type->value
+                : $data->type;
+
+            if ($format === 'tei' && $publicationType !== PublicationType::Edition->value) {
+                print "Error: TEI export is only supported for edition publications\n";
+                return 1;
+            }
+
             $json = json_encode(
                     $data,
                     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 ) . "\n";
 
-            $fileName = sprintf('%s_%d_export.json', $data->type->value, $pubId);
+            $fileName = '';
 
-            if (@file_put_contents($fileName, $json . "\n") === false) {
-                print "Error: could not write publication JSON to file '$fileName'\n";
-                return 1;
+            if ($format === 'json') {
+                $fileName = sprintf('%s.json', $pubId);
+
+                if (@file_put_contents($fileName, $json . "\n") === false) {
+                    print "Error: could not write publication JSON to file '$fileName'\n";
+                    return 1;
+                }
+            } else {
+                $fileName = sprintf('%s.xml', $pubId);
+
+                $publication = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
+
+                $teiGenerator = new TEIGenerator();
+                $xmlCode = $teiGenerator->getTEI(
+                    $publication->title,
+                    $publication->mainText,
+                    $publication->apparatuses,
+                    $publication->witnesses,
+                    $publication->languageCode,
+                    $publication->description,
+                    $publication->versionTimeString,
+                    $publication->siglaGroups
+                );
+
+                if (@file_put_contents($fileName, $xmlCode) === false) {
+                    print "Error: could not write TEI XML to file '$fileName'\n";
+                    return 1;
+                }
+
             }
 
             print "Publication $pubId exported to '$fileName'\n";
@@ -251,4 +292,5 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         }
         print implode("\n", $linesToPrint);
     }
+
 }

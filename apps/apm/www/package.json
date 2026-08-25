@@ -26,7 +26,7 @@
     "@tanstack/react-table": "^8.21",
     "@thomas-inst/fmt-text": "1.1.1",
     "@thomas-inst/optionschecker": "1.1.4",
-    "@thomas-inst/typesetter": "1.0.5",
+    "@thomas-inst/typesetter": "1.1.1",
     "@tiptap/core": "^3.22.3",
     "@tiptap/extension-bold": "^3.22.3",
     "@tiptap/extension-italic": "^3.22.3",

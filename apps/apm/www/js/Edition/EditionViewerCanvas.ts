@@ -17,7 +17,7 @@
  */
 import {Edition} from './Edition';
 import {CanvasTextBoxMeasurer} from '@/lib/CanvasTextBoxMeasurer';
-import {CanvasRenderer} from '@thomas-inst/typesetter';
+import {CanvasRenderer, TypesetterPage} from '@thomas-inst/typesetter';
 import {BrowserUtilities} from '@/toolbox/BrowserUtilities';
 import {Typesetter} from '@thomas-inst/typesetter';
 import {EditionTypesettingHelper, EditionTypesettingHelperOptions} from './EditionTypesettingHelper.js';
@@ -30,6 +30,7 @@ import {TypesetterDocument} from '@thomas-inst/typesetter';
 import {ItemList} from '@thomas-inst/typesetter';
 import {MarginaliaAlignDirection} from '@thomas-inst/typesetter';
 import {ApparatusInterface} from "@/Edition/EditionInterface";
+import {END_NOTES} from "@/constants/ApparatusType";
 
 const pageMarginInCanvas = 20;
 
@@ -88,7 +89,10 @@ interface TypesettingParameters {
   mainTextVerticalListToTypeset: ItemList;
   typesetterOptions: BasicTypesetterOptions<ApparatusInterface>;
   helperOptions: EditionTypesettingHelperOptions;
-  extraData: { apparatuses: ApparatusInterface[]}
+  extraData: {
+    apparatuses: ApparatusInterface[],
+    endNoteApparatus?: ApparatusInterface
+  }
 }
 
 export class EditionViewerCanvas {
@@ -325,6 +329,9 @@ export class EditionViewerCanvas {
             getApparatusListToTypeset: (mainTextVerticalList: ItemList, apparatus, lineFrom:number, lineTo:number, resetFirstLine:boolean) => {
               return editionTypesettingHelper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine);
             },
+            getEndNotesVerticalListToTypeset: (endNotesApparatus: ApparatusInterface, pages: TypesetterPage[]) => {
+              return editionTypesettingHelper.generateEndNotesApparatusVerticalListToTypeset(endNotesApparatus, pages);
+            },
             preTypesetApparatuses: () => {
               editionTypesettingHelper.resetExtractedMetadataInfo();
               return Promise.resolve(true);
@@ -334,7 +341,8 @@ export class EditionViewerCanvas {
             },
             debug: false
           },
-          extraData: {apparatuses: this.edition.apparatuses}
+          extraData: {apparatuses: this.edition.apparatuses, endNoteApparatus: this.edition.apparatuses.find( app => app.type === END_NOTES)}
+          // extraData: {apparatuses: this.edition.apparatuses}
         };
         let ts = new BasicTypesetter(this.typesettingParameters.typesetterOptions);
         let profiler = new BasicProfiler('Typesetting', true);

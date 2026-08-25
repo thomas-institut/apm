@@ -53,7 +53,7 @@ import {
   TokenForCountingPurposes,
   TokenOccurrenceInLine,
   TokenTotalOccurrencesInLine,
-  TypesetterItem,
+  TypesetterItem, TypesetterPage,
   VerticalItemDirection
 } from '@thomas-inst/typesetter';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
@@ -64,7 +64,7 @@ import {ApparatusUtil} from './ApparatusUtil.js';
 import {NumeralSystems} from '../toolbox/NumeralSystems.js';
 import {SiglaGroup} from './SiglaGroup.js';
 import {ItemLineInfo} from './ItemLineInfo.js';
-import {MARGINALIA} from '../constants/ApparatusType.js';
+import {END_NOTES, MARGINALIA} from '../constants/ApparatusType.js';
 import {AUTO_FOLIATION} from './SubEntryType.js';
 import {ApparatusSubEntry} from "./ApparatusSubEntry.js";
 import {ApparatusEntry} from './ApparatusEntry.js';
@@ -78,7 +78,8 @@ import {getLatinSiglaSpacing} from "./LatinSiglaSpacing.js";
 
 export const MaxLineCount = 10000;
 const enDash = '\u2013';
-const MarginaliaApparatusType = 'marginalia';
+const MarginaliaApparatusType = MARGINALIA;
+const EndnotesApparatusType = END_NOTES;
 
 const FoliationChangeMainTextCharacters = ['|', '¦', '║'];
 
@@ -397,12 +398,53 @@ export class EditionTypesettingHelper {
     return uniq(indices);
   }
 
+  async generateEndNotesApparatusVerticalListToTypeset(app: ApparatusInterface, pages: TypesetterPage[]) : Promise<ItemList> {
+    const textDirection = 'ltr'; // peg to LTR for now
+    let outputList = new ItemList(VerticalItemDirection);
+    outputList.setTextDirection(textDirection);
+
+    const endNotesApparatus = app;
+    if (endNotesApparatus === undefined || endNotesApparatus.entries.length === 0) {
+      console.log("No endnotes apparatus found");
+      return outputList;
+    }
+
+    console.log("Endnotes apparatus found");
+    console.log(`Ignoring ${pages.length} typeset pages for now`);
+
+    // just list the entries for now
+    let headerStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle('h1');
+
+    const verticalParagraphs: TypesetterItem[] = [];
+
+    for (let i = 0; i < endNotesApparatus.entries.length; i++) {
+      const entryList = new ItemList(HorizontalItemDirection);
+      const typesetterItems: TypesetterItem[] = [];
+
+      const entry = endNotesApparatus.entries[i];
+      const subEntriesTs  = await Promise.all(entry.subEntries.map( async (subEntry) => subEntry.enabled ? await this.getSubEntryTsItems(subEntry) : [])) ;
+      for (let subEntryIndex = 0; subEntryIndex < subEntriesTs.length; subEntryIndex++) {
+        typesetterItems.push(...subEntriesTs[subEntryIndex]);
+        if (subEntryIndex < entry.subEntries.length - 1) {
+          typesetterItems.push(this.createPenalty(GoodPointForBreak));
+          typesetterItems.push((await this.createGlue('apparatus emGlue')).setTextDirection(textDirection));
+        }
+      }
+      entryList.setList(typesetterItems);
+      FontConversions.applyFontConversions(entryList, this.fontConversionDefinitions, this.edition.lang);
+      verticalParagraphs.push(entryList);
+    }
+    outputList.setList(verticalParagraphs);
+    return outputList;
+  }
+
 
   async generateApparatusVerticalListToTypeset(typesetMainTextVerticalList: ItemList, apparatus: ApparatusInterface, firstLine: number = 1, lastLine: number = MaxLineCount, resetFirstLineNumber: boolean = false): Promise<ItemList> {
 
     let textDirection = getTextDirectionForLang(this.edition.lang);
     let outputList = new ItemList(HorizontalItemDirection);
     outputList.setTextDirection(textDirection);
+    console.log("Generating apparatus vertical list to typeset", { firstLine, lastLine, resetFirstLineNumber});
 
     if (apparatus.entries.length === 0) {
       return outputList;
@@ -545,10 +587,11 @@ export class EditionTypesettingHelper {
 
     // At this point all the line ranges in the apparatus should be completely built, we just need
     // to assemble them for the desired line range and resetLineNumbers flag
-    // ... but not for marginalia
-    if (apparatus.type === MarginaliaApparatusType) {
+    // ... but not for marginalia or endnotes
+    if (apparatus.type === MarginaliaApparatusType || apparatus.type === EndnotesApparatusType) {
       return outputList;
     }
+
     let lineRangesKeysToTypeset = Object.keys(this.lineRanges[apparatus.type]).filter((lineRangeKey) => {
       return this.lineRanges[apparatus.type][lineRangeKey].lineFrom >= firstLine && this.lineRanges[apparatus.type][lineRangeKey].lineFrom <= lastLine;
     });

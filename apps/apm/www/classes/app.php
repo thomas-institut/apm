@@ -121,96 +121,63 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 {
     $app->group('', function (RouteCollectorProxy $group) use ($container) {
 
-        $group->get('/person/{id}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SitePeople($container))->personPage($request, $response);
-            })
-            ->setName('person');
-
-        $group->get('/work/{work}/chunk/{chunk}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteChunkPage($container))->singleChunkPage($request, $response);
-            })
-            ->setName('chunk');
+        $group->get('/person/{id}', [SitePeople::class, 'personPage'])->setName('person');
+        $group->get('/work/{work}/chunk/{chunk}', [SiteChunkPage::class, 'singleChunkPage'])->setName('chunk');
 
         // COLLATION TABLES
         // Collation table with preset
         $group->get('/collation-table/auto/{work}/{chunk}/preset/{preset}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteCollationTable($container))->automaticCollationPagePreset($request, $response);
-            })
+            [SiteCollationTable::class, 'automaticCollationPagePreset'])
             ->setName('chunk.collation-table.preset');
 
         // Collation table with parameters in Url
         $group->get('/collation-table/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]',
-            function (Request $request, Response $response, $args) use ($container) {
-                return (new SiteCollationTable($container))->automaticCollationPageGet($request, $response, $args);
-            })
+            [SiteCollationTable::class, 'automaticCollationPageGet'])
             ->setName('chunk.collation-table');
 
         // Collation table with full options in post
         $group->post('/collation-table/auto/{work}/{chunk}/{lang}/custom',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteCollationTable($container))->automaticCollationPageCustom($request, $response);
-            })
+            [SiteCollationTable::class, 'automaticCollationPageCustom'])
             ->setName('chunk.collation-table.custom');
 
         // edit collation table
         $group->get('/collation-table/{tableId}[/{version}]',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteCollationTable($container))->editCollationTable($request, $response);
-            })
+            [SiteCollationTable::class, 'editCollationTable'])
             ->setName('collation-table.edit');
 
         // CHUNK EDITION
         $group->get('/chunk-edition/new/{workId}/{chunkNumber}/{lang}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteCollationTable($container))->newChunkEdition($request, $response);
-            })->setName('chunk-edition.new');
+            [SiteCollationTable::class, 'newChunkEdition'])->setName('chunk-edition.new');
 
         $group->get('/chunk-edition/{tableId}[/{version}]',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteCollationTable($container))->editCollationTable($request, $response);
-            })->setName('chunk-edition.edit');
+            [SiteCollationTable::class, 'editCollationTable'])->setName('chunk-edition.edit');
 
         // transcription editor
         $group->get('/doc/{doc}/page/{n}/view[/c/{col}]',
-            function (Request $request, Response $response) use ($container) {
-                return (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, false);
-            })
+            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, false))
             ->setName('doc.page.transcribe');
 
         // transcription editor (real pages)
 
         $group->get('/doc/{doc}/realPage/{n}/view[/c/{col}]',
-            function (Request $request, Response $response) use ($container) {
-                return (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, true);
-            })
+            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, true))
             ->setName('doc.page.transcribe.realPage');
 
         // sending to React explicitly or else the path would be picked up by the show document page below
         $group->get('/doc/{id}/definepages',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteReact($container))->ReactMain($request, $response);
-            });
+            [SiteReact::class, 'ReactMain']);
 
         // show document
         $group->get('/doc/{id}[/{params:.*}]',
-            function (Request $request, Response $response, array $args) use ($container) {
-                return (new SiteDocuments($container))->documentPage($request, $response, $args);
-            })
+            [SiteDocuments::class, 'documentPage'])
             ->setName('doc.show');
 
         // for everything else, go to React
-        $group->get('{path:.*}',
-            function (Request $request, Response $response) use ($container) {
-                return (new SiteReact($container))->ReactMain($request, $response);
-            });
+        $group->get('{path:.*}', [ SiteReact::class, 'ReactMain']);
 
 
-    })->add(function (Request $request, RequestHandlerInterface $handler) use ($container) {
-        return (new Authenticator($container))->authenticateSiteRequest($request, $handler);
-    });
+    })->add(fn(Request $request, RequestHandlerInterface $handler) =>
+        (new Authenticator($container))->authenticateSiteRequest($request, $handler));
 }
 
 function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container): void
@@ -229,9 +196,7 @@ function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container)
          *    PHP Output Schema: yes
          *    ApiClient Method: yes
          */
-        $group->post('/login', function (Request $request, Response $response) use ($container) {
-            return (new Authenticator($container))->apiLogin($request, $response);
-        });
+        $group->post('/login', [Authenticator::class, 'apiLogin']);
 
         createApiPublicationRoutes($group);
     });
@@ -272,9 +237,8 @@ function createApiAuthenticatedRoutes(App $app, ContainerInterface $container): 
         // admin
         createApiAdminRoutes($group, $container);
 
-    })->add(function (Request $request, RequestHandlerInterface $handler) use ($container) {
-        return (new Authenticator($container))->authenticateApiRequest($request, $handler);
-    });
+    })->add(fn(Request $request, RequestHandlerInterface $handler) =>
+        (new Authenticator($container))->authenticateApiRequest($request, $handler));
 }
 
 function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -294,9 +258,7 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->get('/edition/sources/all',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEditionSources($container))->getAllSources($request, $response);
-        });
+        [ApiEditionSources::class, 'getAllSources']);
 
     /**
      * Returns a single edition source
@@ -313,17 +275,13 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->get('/edition/source/get/{tid}',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEditionSources($container))->getSourceByTid($request, $response);
-        });
+        [ApiEditionSources::class, 'getSourceByTid']);
 
     // MULTI CHUNK EDITION
 
 
     $group->get('/edition/multi/get/{editionId}/versions',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiMultiChunkEdition($container))->getEditionVersions($request, $response);
-        });
+        [ApiMultiChunkEdition::class, 'getEditionVersions']);
 
     /**
      * Return a multi-chunk edition by id and, optionally, timestamp
@@ -338,9 +296,7 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->get('/edition/multi/get/{editionId}[/{timestamp}]',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiMultiChunkEdition($container))->getEdition($request, $response);
-        });
+        [ApiMultiChunkEdition::class, 'getEdition']);
 
     /**
      * Saves a multi-chunk edition
@@ -355,13 +311,7 @@ function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->post('/edition/multi/save',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiMultiChunkEdition($container))->saveEdition($request, $response);
-        });
-
-
-
-
+        [ApiMultiChunkEdition::class, 'saveEdition']);
 
 
 }
@@ -381,9 +331,7 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
      *    ApiClient Method: TBD
      */
     $group->post('/collationTable/auto',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiCollationTable($container))->auto($request, $response);
-        });
+        [ApiCollationTable::class, 'auto']);
 
     /**
      * Saves a collation table
@@ -398,9 +346,7 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
      *    ApiClient Method: TBD
      */
     $group->post('/collationTable/save',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiCollationTable($container))->save($request, $response);
-        });
+        [ApiCollationTable::class, 'save']);
 
     /**
      * Returns a list of active editions
@@ -415,9 +361,7 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
      *    ApiClient Method: TBD
      */
     $group->get('/collationTable/active/editions',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiCollationTable($container))->activeEditions($response);
-        });
+        fn(Request $request, Response $response) => (new ApiCollationTable($container))->activeEditions($response));
 
     /**
      * Returns a list of active collation tables for a work
@@ -432,9 +376,7 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
      *    ApiClient Method: TBD
      */
     $group->get('/collationTable/active/forWork/{workId}',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiCollationTable($container))->activeForWork($request, $response);
-        });
+        [ApiCollationTable::class, 'activeForWork']);
 
     /**
      * Converts a collation table to an edition
@@ -449,9 +391,7 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
      *    ApiClient Method: TBD
      */
     $group->post('/collationTable/{tableId}/convertToEdition',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiCollationTable($container))->convertToEdition($request, $response);
-        });
+        [ApiCollationTable::class, 'convertToEdition']);
 
     /**
      * Returns a collation table by id
@@ -466,10 +406,7 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
      *    ApiClient Method: TBD
      */
     $group->get('/collationTable/{tableId}/get[/{timestamp}]',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiCollationTable($container))->get($request, $response);
-        }
-    );
+        [ApiCollationTable::class, 'get']);
 
     /**
      * Returns version info for a collation table
@@ -484,10 +421,7 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
      *    ApiClient Method: TBD
      */
     $group->get('/collationTable/{tableId}/versionInfo/{timestamp}',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiCollationTable($container))->versionInfo($request, $response);
-        }
-    );
+        [ApiCollationTable::class, 'versionInfo']);
 }
 
 function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -508,10 +442,7 @@ function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->get('/witness/get/{witnessId}[/{outputType}[/{cache}]]',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiWitness($container))->getWitness($request, $response);
-        }
-    );
+        [ApiWitness::class, 'getWitness']);
 
     /**
      * Checks for updates of a number of witnesses
@@ -526,10 +457,7 @@ function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->post('/witness/check/updates',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiWitness($container))->checkWitnessUpdates($request, $response);
-        }
-    );
+        [ApiWitness::class, 'checkWitnessUpdates']);
 
     /**
      * Creates an edition from a single witness
@@ -544,10 +472,7 @@ function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->get('/witness/{witnessId}/to/edition',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiCollationTable($container))->convertWitnessToEdition($request, $response);
-        }
-    );
+        [ApiCollationTable::class, 'convertWitnessToEdition']);
 
 }
 
@@ -566,10 +491,7 @@ function createApiSystemRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get('/system/languages',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiSystem($container))->getSystemLanguages($request, $response);
-        }
-    );
+        [ApiSystem::class, 'getSystemLanguages']);
 
 
     /**
@@ -585,10 +507,7 @@ function createApiSystemRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get('/whoami',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiSystem($container))->whoAmI($request, $response);
-        }
-    );
+        [ApiSystem::class, 'whoAmI']);
 }
 
 function createApiAdminRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -609,10 +528,7 @@ function createApiAdminRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->post('/admin/log',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiLog($container))->frontEndLog($request, $response);
-        }
-    );
+        [ApiLog::class, 'frontEndLog']);
 }
 
 function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -630,10 +546,7 @@ function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get('/person/all/dataForPeoplePage',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPeople($container))->getAllPeopleDataForPeoplePage($request, $response);
-        }
-    );
+        [ApiPeople::class, 'getAllPeopleDataForPeoplePage']);
 
     /**
      * Returns essential data for a person by id.
@@ -648,10 +561,7 @@ function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get('/person/{tid}/data/essential',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPeople($container))->getPersonEssentialData($request, $response);
-        }
-    );
+        [ApiPeople::class, 'getPersonEssentialData']);
 
     /**
      * Returns a list of works by a person by id.
@@ -668,10 +578,7 @@ function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get('/person/{tid}/works',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPeople($container))->getWorksByPerson($request, $response);
-        }
-    );
+        [ApiPeople::class, 'getWorksByPerson']);
 
     /**
      * Creates a new person entity in the system
@@ -686,10 +593,7 @@ function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->post('/person/create',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPeople($container))->personCreate($request, $response);
-        }
-    );
+        [ApiPeople::class, 'personCreate']);
 }
 
 function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -710,10 +614,7 @@ function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->post('/user/{userTid}/update',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->userUpdateProfile($request, $response);
-        }
-    );
+        [ApiUsers::class, 'userUpdateProfile']);
 
     /**
      * Makes a user in the system
@@ -730,10 +631,7 @@ function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->post('/user/create/{personTid}',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->userCreate($request, $response);
-        }
-    );
+        [ApiUsers::class, 'userCreate']);
 
     /**
      * Returns the list of collation tables by a user
@@ -748,10 +646,7 @@ function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get('/user/{userId}/collationTables',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->userCollationTables($request, $response);
-        }
-    );
+        [ApiUsers::class, 'userCollationTables']);
 
     /**
      * Returns the list of multi-chunk editions by a user
@@ -766,10 +661,7 @@ function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get('/user/{userId}/multiChunkEditions',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->userMultiChunkEditions($request, $response);
-        }
-    );
+        [ApiUsers::class, 'userMultiChunkEditions']);
 }
 
 function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -788,10 +680,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->get('/docs/all',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->allDocumentsData($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'allDocumentsData']);
 
 
     /**
@@ -807,10 +696,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->get('/doc/getId/{docId}',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->getDocId($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'getDocId']);
 
     /**
      * Returns information about a document with optional page information of different kinds
@@ -827,10 +713,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->get('/doc/{docId}/info[/{pageInfoToInclude}]',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->getDocumentInfo($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'getDocumentInfo']);
 
 
     /**
@@ -846,10 +729,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->post('/doc/create',
-        function (Request $request, Response $response, array $args) use ($container) {
-            return (new ApiDocuments($container))->createDocument($request, $response, $args);
-        }
-    );
+        [ApiDocuments::class, 'createDocument']);
 
     /**
      * Adds pages to a document
@@ -866,10 +746,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->post('/doc/{id}/addpages',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->addPages($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'addPages']);
 
     /**
      * Gets the number of columns in a page
@@ -886,10 +763,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->get('/{document}/{page}/numcolumns',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->getNumColumns($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'getNumColumns']);
 
 
     /**
@@ -907,10 +781,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->get('/page/types',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->getPageTypes($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'getPageTypes']);
 
     /**
      * Update the information of a single page
@@ -927,10 +798,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->post('/page/{pageId}/update',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->updatePageSettings($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'updatePageSettings']);
 
     /**
      * Updates the information of multiple pages
@@ -947,10 +815,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->post('/page/bulkupdate',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->updatePageSettingsBulk($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'updatePageSettingsBulk']);
 
     /**
      * Adds a new column to a page
@@ -969,10 +834,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->get('/{document}/{page}/newcolumn',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->addNewColumn($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'addNewColumn']);
 
     /**
      * Get info about a page
@@ -987,10 +849,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->get('/page/{pageId}/info',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->getPageInfo($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'getPageInfo']);
 
     /**
      * Gets information about a several pages at the same time
@@ -1005,10 +864,7 @@ function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterfac
      *    ApiClient Method: TBD
      */
     $group->post('/pages/info',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiDocuments($container))->getPageInfoBulk($request, $response);
-        }
-    );
+        [ApiDocuments::class, 'getPageInfoBulk']);
 }
 
 function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -1027,9 +883,8 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get("/entity/statementQualificationObjects/data",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEntity($container))->getValidQualificationObjects($request, $response, false);
-        }
+        fn(Request $request, Response $response) =>
+            (new ApiEntity($container))->getValidQualificationObjects($request, $response, false)
     );
 
     /**
@@ -1047,9 +902,8 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get("/entity/statementQualificationObjects",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEntity($container))->getValidQualificationObjects($request, $response, true);
-        }
+        fn(Request $request, Response $response) =>
+            (new ApiEntity($container))->getValidQualificationObjects($request, $response, true)
     );
 
     /**
@@ -1065,10 +919,7 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get("/entity/{entityType}/entities",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEntity($container))->getEntitiesForType($request, $response);
-        }
-    );
+        [ApiEntity::class, 'getEntitiesForType']);
 
     /**
      * Returns predicate definition for a given entity type
@@ -1085,10 +936,7 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get("/entity/{id}/predicateDefinitionsForType",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEntity($container))->getPredicateDefinitionsForType($request, $response);
-        }
-    );
+        [ApiEntity::class, 'getPredicateDefinitionsForType']);
 
     /**
      * Returns the definition of a predicate
@@ -1105,10 +953,7 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get("/entity/{id}/predicateDefinition",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEntity($container))->getPredicateDefinition($request, $response);
-        }
-    );
+        [ApiEntity::class, 'getPredicateDefinition']);
 
     /**
      * Returns the entity data for an entity
@@ -1125,10 +970,7 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get("/entity/{tid}/data",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEntity($container))->getEntityData($request, $response);
-        }
-    );
+        [ApiEntity::class, 'getEntityData']);
 
     /**
      * Executes a list of statement edition commands
@@ -1143,10 +985,7 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->post("/entity/statements/edit",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEntity($container))->statementEdition($request, $response);
-        }
-    );
+        [ApiEntity::class, 'statementEdition']);
 
     /**
      * Returns matching entities for a given entity type and a search string
@@ -1163,10 +1002,7 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->get("/entity/nameSearch/{inputString}/{typeList}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiEntity($container))->nameSearch($request, $response);
-        }
-    );
+        [ApiEntity::class, 'nameSearch']);
 }
 
 function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -1187,10 +1023,7 @@ function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->post('/presets/get',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPresets($container))->getPresets($request, $response);
-        }
-    );
+        [ApiPresets::class, 'getPresets']);
 
     /**
      * Deletes a preset
@@ -1205,10 +1038,7 @@ function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->get('/presets/delete/{id}',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPresets($container))->deletePreset($request, $response);
-        }
-    );
+        [ApiPresets::class, 'deletePreset']);
 
     /**
      * Returns a sigla preset
@@ -1224,10 +1054,7 @@ function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->post('/presets/sigla/get',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPresets($container))->getSiglaPresets($request, $response);
-        }
-    );
+        [ApiPresets::class, 'getSiglaPresets']);
 
     /**
      * Saves a sigla preset
@@ -1242,10 +1069,7 @@ function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->post('/presets/sigla/save',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPresets($container))->saveSiglaPreset($request, $response);
-        }
-    );
+        [ApiPresets::class, 'saveSiglaPreset']);
 
     /**
      * Returns an automatic collation preset
@@ -1262,10 +1086,7 @@ function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->post('/presets/act/get',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPresets($container))->getAutomaticCollationPresets($request, $response);
-        }
-    );
+        [ApiPresets::class, 'getAutomaticCollationPresets']);
 
     /**
      * Saves a preset
@@ -1282,18 +1103,15 @@ function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $
      *    ApiClient Method: TBD
      */
     $group->post('/presets/post',
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiPresets($container))->savePreset($request, $response);
-        }
-    );
+        [ApiPresets::class, 'savePreset']);
 }
 
 
 function createApiPublicationRoutes(RouteCollectorProxy $group): void
 {
     $prefix = '/publication';
-    $group->get($prefix . '/list', [ ApiPublication::class, 'list' ]);
-    $group->get($prefix . '/{id}/get', [ ApiPublication::class, 'get' ]);
+    $group->get($prefix . '/list', [ApiPublication::class, 'list']);
+    $group->get($prefix . '/{id}/get', [ApiPublication::class, 'get']);
 }
 
 /**
@@ -1321,10 +1139,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/images/mark/{size}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiIcons($container))->generateMarkIcon($request, $response);
-        }
-    );
+        [ApiIcons::class, 'generateMarkIcon']);
 
     /**
      * Returns a no word break image
@@ -1339,10 +1154,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/images/nowb/{size}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiIcons($container))->generateNoWordBreakIcon($request, $response);
-        }
-    );
+        [ApiIcons::class, 'generateNoWordBreakIcon']);
 
     /**
      * Returns an 'illegible' image
@@ -1357,10 +1169,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/images/illegible/{size}/{length}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiIcons($container))->generateIllegibleIcon($request, $response);
-        }
-    );
+        [ApiIcons::class, 'generateIllegibleIcon']);
 
     /**
      * Returns a chunk mark image
@@ -1375,10 +1184,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/images/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiIcons($container))->generateChunkMarkIcon($request, $response);
-        }
-    );
+        [ApiIcons::class, 'generateChunkMarkIcon']);
 
     /**
      * Returns a chapter mark image
@@ -1393,10 +1199,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/images/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiIcons($container))->generateChapterMarkIcon($request, $response);
-        }
-    );
+        [ApiIcons::class, 'generateChapterMarkIcon']);
 
     /**
      * Returns a line gap image
@@ -1411,10 +1214,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/images/linegap/{count}/{size}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiIcons($container))->generateLineGapImage($request, $response);
-        }
-    );
+        [ApiIcons::class, 'generateLineGapImage']);
 
     /**
      * Returns a character gap image
@@ -1429,10 +1229,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/images/charactergap/{length}/{size}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiIcons($container))->generateCharacterGapImage($request, $response);
-        }
-    );
+        [ApiIcons::class, 'generateCharacterGapImage']);
 
     /**
      * Returns a paragraph mark image
@@ -1447,10 +1244,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/images/paragraphmark/{size}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiIcons($container))->generateParagraphMarkIcon($request, $response);
-        }
-    );
+        [ApiIcons::class, 'generateParagraphMarkIcon']);
 }
 
 function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -1468,10 +1262,7 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->post("/search/keyword",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiSearch($container))->search($request, $response);
-        }
-    );
+        [ApiSearch::class, 'search']);
 
     /**
      * Searches in transcriptions
@@ -1486,10 +1277,7 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->any("/search/transcriptions",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiSearch($container))->getTranscriptionTitles($request, $response);
-        }
-    );
+        [ApiSearch::class, 'getTranscriptionTitles']);
 
     /**
      * Returns a list of transcribers
@@ -1504,10 +1292,7 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->any("/search/transcribers",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiSearch($container))->getTranscribers($request, $response);
-        }
-    );
+        [ApiSearch::class, 'getTranscribers']);
 
     /**
      * Returns a list of edition titles
@@ -1522,10 +1307,7 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->any("/search/editions",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiSearch($container))->getEditionTitles($request, $response);
-        }
-    );
+        [ApiSearch::class, 'getEditionTitles']);
 
     /**
      * Returns a list of editors
@@ -1540,10 +1322,7 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
      *    ApiClient Method: TBD
      */
     $group->any("/search/editors",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiSearch($container))->getEditors($request, $response);
-        }
-    );
+        [ApiSearch::class, 'getEditors']);
 
 }
 
@@ -1565,10 +1344,7 @@ function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInter
      *    ApiClient Method: TBD
      */
     $group->get("/transcriptions/byUser/{userTid}/docPageData",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiUsers($container))->getTranscribedPages($request, $response);
-        }
-    );
+        [ApiUsers::class, 'getTranscribedPages']);
 
     /**
      * Returns the transcription for a given document, page and column
@@ -1585,10 +1361,7 @@ function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInter
      *    ApiClient Method: TBD
      */
     $group->get("/transcriptions/{document}/{page}/{column}/get",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
-        }
-    );
+        [ApiElements::class, 'getElementsByDocPageCol']);
 
 
     /**
@@ -1606,10 +1379,7 @@ function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInter
      *    ApiClient Method: TBD
      */
     $group->get("/transcriptions/{document}/{page}/{column}/get/version/{version}",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiElements($container))->getElementsByDocPageCol($request, $response);
-        }
-    );
+        [ApiElements::class, 'getElementsByDocPageCol']);
 
     /**
      * Updates/saves a transcription
@@ -1625,10 +1395,7 @@ function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInter
      *    ApiClient Method: TBD
      */
     $group->post("/transcriptions/{document}/{page}/{column}/update",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiElements($container))->updateElementsByDocPageCol($request, $response);
-        }
-    );
+        [ApiElements::class, 'updateElementsByDocPageCol']);
 }
 
 function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
@@ -1647,10 +1414,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/works/all",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiWorks($container))->allWorksData($request, $response);
-        }
-    );
+        [ApiWorks::class, 'allWorksData']);
 
     /**
      * Returns legacy work information
@@ -1667,10 +1431,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/work/{workId}/old-info",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiWorks($container))->getWorkInfoOld($request, $response);
-        }
-    );
+        [ApiWorks::class, 'getWorkInfoOld']);
 
     /**
      * Get work data
@@ -1685,10 +1446,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/work/{workId}/data",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiWorks($container))->getWorkData($request, $response);
-        }
-    );
+        [ApiWorks::class, 'getWorkData']);
 
     /**
      * Returns witnesses by work and chunk number
@@ -1702,10 +1460,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    PHP Output Schema: TBD
      *    ApiClient Method: TBD
      */
-    $group->get("/work/{workId}/chunk/{chunkNumber}/witnesses", function (Request $request, Response $response) use ($container) {
-        return (new ApiWitness($container))->getWitnessesForChunk($request, $response);
-    }
-    );
+    $group->get("/work/{workId}/chunk/{chunkNumber}/witnesses", [ApiWitness::class, 'getWitnessesForChunk']);
 
     /**
      * Returns collation tables (and editions) by work and chunk number
@@ -1719,10 +1474,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    PHP Output Schema: TBD
      *    ApiClient Method: TBD
      */
-    $group->get("/work/{workId}/chunk/{chunkNumber}/ctables", function (Request $request, Response $response) use ($container) {
-        return (new ApiWitness($container))->getCollationTablesForChunk($request, $response);
-    }
-    );
+    $group->get("/work/{workId}/chunk/{chunkNumber}/ctables", [ApiWitness::class, 'getCollationTablesForChunk']);
 
     /**
      * Returns chunks with transcription by work
@@ -1737,10 +1489,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    ApiClient Method: TBD
      */
     $group->get("/work/{workId}/chunksWithTranscription",
-        function (Request $request, Response $response) use ($container) {
-            return (new ApiWorks($container))->getChunksWithTranscription($request, $response);
-        }
-    );
+        [ApiWorks::class, 'getChunksWithTranscription']);
 
     /**
      * Returns authors for a work
@@ -1756,10 +1505,7 @@ function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $co
      *    PHP Output Schema: TBD
      *    ApiClient Method: TBD
      */
-    $group->get("/works/authors", function (Request $request, Response $response) use ($container) {
-        return (new ApiWorks($container))->getAuthorList($request, $response);
-    }
-    );
+    $group->get("/works/authors", [ApiWorks::class, 'getAuthorList']);
 }
 
 function createApiTypesettingRoutes(RouteCollectorProxy $group): void
@@ -1784,12 +1530,8 @@ function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container
 {
     $app->any('/login',
         // handled by React
-        function (Request $request, Response $response) use ($container) {
-            return (new SiteReact($container))->ReactMain($request, $response);
-        })
+        [SiteReact::class, 'ReactMain'])
         ->setName('login');
 
-    $app->get('/app-settings', function (Request $request, Response $response) use ($container) {
-        return (new SiteSettings($container))->getSiteSettings($request, $response);
-    });
+    $app->get('/app-settings', [SiteSettings::class, 'getSiteSettings']);
 }

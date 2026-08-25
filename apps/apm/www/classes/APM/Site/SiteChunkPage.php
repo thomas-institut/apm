@@ -26,6 +26,7 @@
 
 namespace APM\Site;
 
+use APM\CollationTable\TableNotFoundException;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\System\DataRetrieveHelper;
 use APM\System\Document\Exception\PageNotFoundException;
@@ -34,6 +35,7 @@ use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
+use ThomasInstitut\DataTable\Exception\InvalidArgumentException;
 use ThomasInstitut\Profiler\SystemProfiler;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -48,8 +50,13 @@ use ThomasInstitut\TimeString\TimeString;
 class SiteChunkPage extends SiteController
 {
     /**
-     * @throws UserNotFoundException
+     * @param Request $request
+     * @param Response $response
+     * @return Response
      * @throws PageNotFoundException
+     * @throws UserNotFoundException
+     * @throws TableNotFoundException
+     * @throws InvalidArgumentException
      */
     public function singleChunkPage(Request $request, Response $response): Response
     {

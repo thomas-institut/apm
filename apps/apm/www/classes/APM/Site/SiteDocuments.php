@@ -222,7 +222,7 @@ class SiteDocuments extends SiteController
                     "Document $id not found", HttpStatus::NOT_FOUND);
             }
             $this->logger->debug("Entity id for legacy doc id $docId is $docData->id");
-            $newUrl = $this->router->urlFor("doc.details", ['id' => Tid::toBase36String($docData->id)]);
+            $newUrl = $this->router->urlFor("docPage", ['id' => Tid::toBase36String($docData->id)]);
             $this->logger->warning("Redirecting to $newUrl");
             return $response->withHeader('Location', $newUrl)->withStatus(HttpStatus::MOVED_PERMANENTLY);
         }

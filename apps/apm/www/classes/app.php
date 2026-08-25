@@ -121,47 +121,41 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 {
     $app->group('', function (RouteCollectorProxy $group) use ($container) {
 
-        $group->get('/person/{id}', [SitePeople::class, 'personPage'])->setName('person');
-        $group->get('/work/{work}/chunk/{chunk}', [SiteChunkPage::class, 'singleChunkPage'])->setName('chunk');
+        $group->get('/person/{id}', [SitePeople::class, 'personPage']);
+        $group->get('/work/{work}/chunk/{chunk}', [SiteChunkPage::class, 'singleChunkPage']);
 
         // COLLATION TABLES
         // Collation table with preset
         $group->get('/collation-table/auto/{work}/{chunk}/preset/{preset}',
-            [SiteCollationTable::class, 'automaticCollationPagePreset'])
-            ->setName('chunk.collation-table.preset');
+            [SiteCollationTable::class, 'automaticCollationPagePreset']);
 
         // Collation table with parameters in Url
         $group->get('/collation-table/auto/{work}/{chunk}/{lang}[/{ignore_punct}[/{witnesses:.*}]]',
-            [SiteCollationTable::class, 'automaticCollationPageGet'])
-            ->setName('chunk.collation-table');
+            [SiteCollationTable::class, 'automaticCollationPageGet']);
 
         // Collation table with full options in post
         $group->post('/collation-table/auto/{work}/{chunk}/{lang}/custom',
-            [SiteCollationTable::class, 'automaticCollationPageCustom'])
-            ->setName('chunk.collation-table.custom');
+            [SiteCollationTable::class, 'automaticCollationPageCustom']);
 
         // edit collation table
         $group->get('/collation-table/{tableId}[/{version}]',
-            [SiteCollationTable::class, 'editCollationTable'])
-            ->setName('collation-table.edit');
+            [SiteCollationTable::class, 'editCollationTable']);
 
         // CHUNK EDITION
         $group->get('/chunk-edition/new/{workId}/{chunkNumber}/{lang}',
-            [SiteCollationTable::class, 'newChunkEdition'])->setName('chunk-edition.new');
+            [SiteCollationTable::class, 'newChunkEdition']);
 
         $group->get('/chunk-edition/{tableId}[/{version}]',
             [SiteCollationTable::class, 'editCollationTable'])->setName('chunk-edition.edit');
 
         // transcription editor
         $group->get('/doc/{doc}/page/{n}/view[/c/{col}]',
-            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, false))
-            ->setName('doc.page.transcribe');
+            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, false));
 
         // transcription editor (real pages)
 
         $group->get('/doc/{doc}/realPage/{n}/view[/c/{col}]',
-            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, true))
-            ->setName('doc.page.transcribe.realPage');
+            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, true));
 
         // sending to React explicitly or else the path would be picked up by the show document page below
         $group->get('/doc/{id}/definepages',
@@ -169,8 +163,7 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 
         // show document
         $group->get('/doc/{id}[/{params:.*}]',
-            [SiteDocuments::class, 'documentPage'])
-            ->setName('doc.show');
+            [SiteDocuments::class, 'documentPage'])->setName('docPage');
 
         // for everything else, go to React
         $group->get('{path:.*}', [ SiteReact::class, 'ReactMain']);

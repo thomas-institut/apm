@@ -2,6 +2,7 @@
 
 namespace APM\System\ContainerDefinitions;
 
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\NodeService\NodeServiceClient;
 use APM\System\ApmContainerKey;
@@ -37,7 +38,8 @@ class CommonDefsProviderTest extends TestCase
             PublicationManagerInterface::class,
             Client::class,
             NodeServiceClient::class,
-            MySqlHelper::class
+            MySqlHelper::class,
+            ApmEntitySystemInterface::class,
         ];
         $defKeys = array_keys($definitions);
 

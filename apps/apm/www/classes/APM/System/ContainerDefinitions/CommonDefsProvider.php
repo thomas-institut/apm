@@ -2,15 +2,17 @@
 
 namespace APM\System\ContainerDefinitions;
 
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\NodeService\NodeServiceClient;
 use APM\System\ApmContainerKey;
+use APM\System\ApmLanguageManager;
 use APM\System\ApmPdoProvider;
 use APM\System\ApmSystemManager;
 use APM\System\ApmTableNames;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Factories\ApmSystemConfigFactory;
-use APM\System\Factories\LanguageManagerFactory;
+use APM\System\Factories\ApmEntitySystemFactory;
 use APM\System\Factories\MultiChunkEditionManagerFactory;
 use APM\System\Factories\NodeServiceClientFactory;
 use APM\System\Factories\PublicationManagerFactory;
@@ -44,12 +46,13 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             MultiChunkEditionManager::class => factory([MultiChunkEditionManagerFactory::class, 'create']),
             Twig::class => factory([TwigFactory::class, 'create']),
             SystemManager::class => autowire(ApmSystemManager::class),
-            LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
+            LanguageManager::class => autowire(ApmLanguageManager::class),
             PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
             Client::class => factory([ValkeyClientFactory::class, 'create']),
             NodeServiceClient::class => factory([NodeServiceClientFactory::class, 'create']),
             EdNoteManager::class => autowire(EdNoteManager::class),
             MySqlHelper::class => autowire(MySqlHelper::class),
+            ApmEntitySystemInterface::class => factory([ApmEntitySystemFactory::class, 'create']),
         ];
     }
 }

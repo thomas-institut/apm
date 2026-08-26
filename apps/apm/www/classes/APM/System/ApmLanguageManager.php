@@ -11,9 +11,9 @@ readonly class ApmLanguageManager implements LanguageManager
 {
     public function __construct(private ApmEntitySystemInterface $entitySystem)
     {
-
     }
-    public function getLanguageCode(int $langId) : string|null
+
+    public function getLanguageCode(int $langId): string|null
     {
         try {
             $langData = $this->entitySystem->getEntityData($langId);
@@ -22,7 +22,7 @@ readonly class ApmLanguageManager implements LanguageManager
                 throw new RuntimeException("Integer language code not expected");
             }
             return $code;
-        } catch (EntityDoesNotExistException $e) {
+        } catch (EntityDoesNotExistException) {
             return null;
         }
     }

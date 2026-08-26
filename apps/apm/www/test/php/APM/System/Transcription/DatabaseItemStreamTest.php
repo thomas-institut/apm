@@ -18,22 +18,28 @@
  *  
  */
 
-namespace Test\APM;
+namespace APM\System\Transcription;
 
 
 
+use APM\Core\Item\Mark;
+use APM\Core\Item\TextualItem;
+use APM\System\Transcription\ColumnElement\Element;
+use APM\System\Transcription\TxText\Item;
+use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\TestCase;
-use AverroesProjectToApm\DatabaseItemStream;
-use AverroesProject\TxText\Item as APItem;
-use AverroesProject\ColumnElement\Element;
+
 
 /**
  * Description of ItemStreamTest
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ItemStreamTest extends TestCase {
+#[CoversClass(DatabaseItemStream::class)]
+class DatabaseItemStreamTest extends TestCase {
     
+    #[Test]
     public function testConstructorBasic() {
         
         $is = new DatabaseItemStream(1, []);
@@ -43,9 +49,10 @@ class ItemStreamTest extends TestCase {
         $is2 = new DatabaseItemStream(1, [ [], []]);
         $this->assertEquals([], $is2->getItems());
     }
-    
+
+    #[Test]
     public function testTextualItems() {
-        $textualItemClass = get_class(new Core\Item\TextualItem('stub'));
+        $textualItemClass = TextualItem::class;
         
         $ceId = 500;
         $initialItemId = 100;
@@ -56,91 +63,91 @@ class ItemStreamTest extends TestCase {
         $inputRows = [
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::TEXT, 'text' => 'Some text',
+                'type' => Item::TEXT, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::RUBRIC, 'text' => 'Some text',
+                'type' => Item::RUBRIC, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::GLIPH, 'text' => 'Some text',
+                'type' => Item::GLIPH, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::GLIPH, 'text' => 'Some text',
+                'type' => Item::GLIPH, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::MATH_TEXT, 'text' => 'Some text',
+                'type' => Item::MATH_TEXT, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ], 
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::SIC, 'text' => 'Some text',
+                'type' => Item::SIC, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> 'some other text', 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ], 
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::ABBREVIATION, 'text' => 'Some text',
+                'type' => Item::ABBREVIATION, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> 'some other text', 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::UNCLEAR, 'text' => 'Some text',
+                'type' => Item::UNCLEAR, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> 'some other text', 'extra_info' => 'unclear reason', 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::ADDITION, 'text' => 'Some text',
+                'type' => Item::ADDITION, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => 'location', 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::DELETION, 'text' => 'Some text',
+                'type' => Item::DELETION, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => 'deletion technique', 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::INITIAL, 'text' => 'Some text',
+                'type' => Item::INITIAL, 'text' => 'Some text',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::ILLEGIBLE, 'text' => null,
+                'type' => Item::ILLEGIBLE, 'text' => null,
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => 'illegible reason', 
                 'length' => 5, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
-                'id' => $itemId++, 'seq' => $itemSeq++, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::LINEBREAK, 'text' => null,
+                'id' => $itemId, 'seq' => $itemSeq, 'ce_id' => $ceId, 'e.seq' => 0, 'col' => 1, 'page_id' => $pageId, 'p.seq' => '1', 'foliation' => null,
+                'type' => Item::LINEBREAK, 'text' => null,
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
@@ -196,49 +203,49 @@ class ItemStreamTest extends TestCase {
             $this->assertTrue(is_a($itemInStream->getItem(), $textualItemClass ));
         }
     }
-    
+
+    #[Test]
      public function testMarkItems() {
-        $markItemClass = get_class(new Core\Item\Mark());
-        
+
         $inputRows = [
             [
                 'id' => 100, 'seq' => 0, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::MARK, 'text' => null,
+                'type' => Item::MARK, 'text' => null,
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => 101, 'seq' => 1, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::NO_WORD_BREAK, 'text' => null,
+                'type' => Item::NO_WORD_BREAK, 'text' => null,
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => 102, 'seq' => 2, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::CHUNK_MARK, 'text' => 'AW47',
+                'type' => Item::CHUNK_MARK, 'text' => 'AW47',
                 'lang' => 'la', 'alt_text'=> 'start', 'extra_info' => null, 
                 'length' => 1, 'target' => 1, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => 103, 'seq' => 3, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::CHARACTER_GAP, 'text' => null,
+                'type' => Item::CHARACTER_GAP, 'text' => null,
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => 5, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ],
             [
                 'id' => 104, 'seq' => 4, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::PARAGRAPH_MARK, 'text' => null,
+                'type' => Item::PARAGRAPH_MARK, 'text' => null,
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
             ], 
             [
                 'id' => 105, 'seq' => 5, 'ce_id' => 500, 'e.seq' => 0, 'col' => 1, 'page_id' => 100, 'p.seq' => '1', 'foliation' => null,
-                'type' => APItem::MARGINAL_MARK, 'text' => 'Ref',
+                'type' => Item::MARGINAL_MARK, 'text' => 'Ref',
                 'lang' => 'la', 'alt_text'=> null, 'extra_info' => null, 
                 'length' => null, 'target' => null, 'hand' => 0, 
                 'e.type' => Element::LINE, 'placement' => null
@@ -250,7 +257,7 @@ class ItemStreamTest extends TestCase {
         
         $this->assertCount(6, $items);
         foreach($items as $itemInStream) {
-            $this->assertTrue(is_a($itemInStream->getItem(), $markItemClass ));
+            $this->assertInstanceOf(Mark::class, $itemInStream->getItem());
         }
         
     }

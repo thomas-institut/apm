@@ -26,28 +26,29 @@ use APM\System\Transcription\TxText\Text;
 
 /**
  * Utility class with algorithms for getting text out of item streams
- * 
+ *
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class ItemStream {
-    
+class ItemStream
+{
+
     public static function getPlainText($itemStream): string
     {
         $itemTree = self::createPageColElementItemTreeFromItemStream($itemStream);
         $plainText = '';
         $foundNoWordBreak = false;
         foreach ($itemTree as $page) {
-            foreach($page['cols'] as $col) {
-                foreach($col['elements'] as $element) {
-                    $type = (int) $element['type'];
-                    
+            foreach ($page['cols'] as $col) {
+                foreach ($col['elements'] as $element) {
+                    $type = (int)$element['type'];
+
                     // element
                     switch ($type) {
                         case Element::LINE:
                         case Element::SUBSTITUTION:
-                            foreach($element['items'] as $item) {
-                                if ((int) $item['type'] === Item::NO_WORD_BREAK) {
+                            foreach ($element['items'] as $item) {
+                                if ((int)$item['type'] === Item::NO_WORD_BREAK) {
                                     $foundNoWordBreak = true;
                                     continue;
                                 }
@@ -63,7 +64,7 @@ class ItemStream {
                     }
                     // post Element
                     switch ($type) {
-                       
+
                         case Element::LINE:
                             if ($foundNoWordBreak) {
                                 $foundNoWordBreak = false;
@@ -75,15 +76,15 @@ class ItemStream {
                 }
             }
         }
-        
+
         return trim($plainText);
     }
-    
+
     public static function createItemArrayFromItemStream($itemStream): array
     {
         $itemArray = [];
         $cE = 0;
-        foreach($itemStream as $item) {
+        foreach ($itemStream as $item) {
             if ($item['ce_id'] !== $cE) {
                 // add a new line after each element
                 $cE = $item['ce_id'];
@@ -93,28 +94,28 @@ class ItemStream {
         }
         return $itemArray;
     }
-    
+
     public static function createPageColElementItemTreeFromItemStream($itemStream): array
     {
         $tree = [];
-        
+
         $cP = 0;
         $cC = 0;
         $cE = 0;
         $columnElementIndex = 0;
-        foreach($itemStream as $item){
-            if ($item['page_id'] !== $cP)  {
+        foreach ($itemStream as $item) {
+            if ($item['page_id'] !== $cP) {
                 // New Page
                 $cP = $item['page_id'];
-                $tree[$cP]['id']=$item['page_id'];
-                $tree[$cP]['seq']=$item['p.seq'];
-                $tree[$cP]['foliation']= 
-                        is_null($item['foliation']) ? 
-                            $item['p.seq'] : $item['foliation'];
-                $tree[$cP]['cols']=[];
+                $tree[$cP]['id'] = $item['page_id'];
+                $tree[$cP]['seq'] = $item['p.seq'];
+                $tree[$cP]['foliation'] =
+                    is_null($item['foliation']) ?
+                        $item['p.seq'] : $item['foliation'];
+                $tree[$cP]['cols'] = [];
                 $cC = 0;
             }
-            if ($item['col'] !== $cC)  {
+            if ($item['col'] !== $cC) {
                 // New column
                 $cC = $item['col'];
                 $tree[$cP]['cols'][$cC]['elements'] = [];
@@ -133,6 +134,6 @@ class ItemStream {
             }
             $tree[$cP]['cols'][$cC]['elements'][$columnElementIndex]['items'][] = $item;
         }
-        return $tree;    
+        return $tree;
     }
 }

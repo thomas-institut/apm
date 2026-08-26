@@ -249,7 +249,7 @@ class ApmSystemManager extends SystemManager
         if ($this->presetsManager === null) {
             // Set up PresetsManager
             $presetsManagerDataTable = new MySqlDataTable($this->getPdoProvider(),
-                $this->getTableNames()[ApmMySqlTableName::TABLE_PRESETS]);
+                $this->getTableNames()->presets);
             $this->presetsManager =
                 new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
         }
@@ -281,17 +281,25 @@ class ApmSystemManager extends SystemManager
         return BaseUrlDetector::detectBaseUrl($this->getBaseUrlSubDir());
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public function getTableNames(): array
+    public function getTableNames(): ApmTableNames
     {
         try {
-            return $this->ci->get(ApmContainerKey::TABLE_NAMES);
+            return $this->ci->get(ApmTableNames::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             throw new RuntimeException("Could not get table names: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
+
+
+    /**
+     * @return array<string, string>
+     * @deprecated use getTableNames()
+     */
+    public function getTableNamesArray(): array
+    {
+        return get_object_vars($this->getTableNames());
+    }
+
     /**
      * Checks a configuration array and adds defaults.
      * Reports errors and warnings in the configuration in
@@ -352,22 +360,23 @@ class ApmSystemManager extends SystemManager
     {
         if ($this->transcriptionManager === null) {
             // Set up TranscriptionManager
-            $this->transcriptionManager = new ApmTranscriptionManager(
-                $this->ci,
-                $this->getPdoProvider(),
-                $this->getTableNames(),
-                $this->logger,
-                function () {
-                    return $this->getDocumentManager();
-                },
-                function () {
-                    return $this->getPersonManager();
-                },
-                function () {
-                    return $this->getSystemDataCache();
-                },
-            );
-            $this->transcriptionManager->setCache($this->getSystemDataCache());
+            try {
+                $this->transcriptionManager = new ApmTranscriptionManager(
+                    $this->ci,
+                    function () {
+                        return $this->getDocumentManager();
+                    },
+                    function () {
+                        return $this->getPersonManager();
+                    },
+                    function () {
+                        return $this->getSystemDataCache();
+                    },
+                );
+                $this->transcriptionManager->setCache($this->getSystemDataCache());
+            } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+                throw new RuntimeException("Failed to initialize transcription manager", 0, $e);
+            }
         }
         return $this->transcriptionManager;
     }
@@ -416,8 +425,8 @@ class ApmSystemManager extends SystemManager
     {
         if ($this->collationTableManager === null) {
             // Set up collation table manager
-            $ctTable = new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE]);
-            $ctVersionsTable = new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_VERSIONS_CT]);
+            $ctTable = new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()->cTables);
+            $ctVersionsTable = new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->ctVersions);
             $ctVersionManager = new ApmCollationTableVersionManager($ctVersionsTable);
             $ctVersionManager->setLogger($this->logger);
             $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
@@ -672,10 +681,10 @@ class ApmSystemManager extends SystemManager
         if ($this->userManager === null) {
             $this->userManager = new ApmUserManager(
                 function () {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_USERS], false);
+                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->users, false);
                 },
                 function () {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_TOKENS], true);
+                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->tokens, true);
                 },
                 $this->getSystemDataCache(),
                 'ApmUM_'
@@ -696,11 +705,6 @@ class ApmSystemManager extends SystemManager
     public function getWorkManager(): WorkManager
     {
         if ($this->workManager === null) {
-//            $this->logger->debug("Creating WorkManager");
-//            $this->workManager = new DataTableWorkManager(
-//                new MySqlDataTable($this->getDbConnection(),
-//                    $this->tableNames[ApmMySqlTableName::TABLE_WORKS], true));
-
             $this->workManager = new EntitySystemWorkManager($this->getEntitySystem());
             $this->workManager->setLogger($this->getLogger()->withName("WorkManager"));
         }
@@ -732,7 +736,7 @@ class ApmSystemManager extends SystemManager
                     return $this->getRawEntitySystem();
                 },
                 function (): DataTable {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::ES_Merges], true);
+                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->esMerges, true);
                 },
                 $this->getMemDataCache(),
                 self::MemCachePrefix_Apm_ES
@@ -745,7 +749,7 @@ class ApmSystemManager extends SystemManager
     public function createDefaultStatementStorage(): StatementStorage
     {
         $defaultStatementDataTable = new MySqlDataTable($this->getPdoProvider(),
-            $this->getTableNames()[ApmMySqlTableName::ES_Statements_Default]);
+            $this->getTableNames()->esStatementsDefault);
         return new DataTableStatementStorage($defaultStatementDataTable, [
             'author' => Entity::pStatementAuthor,
             "timestamp" => ['predicate' => Entity::pStatementTimestamp, 'forceLiteralValue' => true],
@@ -770,7 +774,7 @@ class ApmSystemManager extends SystemManager
             };
             $defaultConfig->useCache = true;
             $defaultConfig->entityDataCacheCallable = function () {
-                $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::ES_Cache_Default]);
+                $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->esCacheDefault);
                 return new DataTableEntityDataCache(
                     $defaultEntityDataCacheDataTable,
                     [
@@ -810,7 +814,7 @@ class ApmSystemManager extends SystemManager
                     return $this->getEntitySystem();
                 },
                 function () {
-                    return new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_PAGES]);
+                    return new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()->pages);
                 }
             );
             $this->documentManager->setLogger($this->logger);

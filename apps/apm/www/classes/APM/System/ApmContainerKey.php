@@ -30,6 +30,4 @@ class ApmContainerKey
     const string CONFIG_ARRAY = 'configArray';
     const string SITE_USER_ID = 'siteUserId';
     const string API_USER_ID = 'apiUserId';
-    const string TABLE_NAMES = 'tableNames';
-
 }

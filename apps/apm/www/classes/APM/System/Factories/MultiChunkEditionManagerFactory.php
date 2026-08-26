@@ -4,8 +4,7 @@ namespace APM\System\Factories;
 
 use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\System\ApmContainerKey;
-use APM\System\ApmMySqlTableName;
+use APM\System\ApmTableNames;
 use APM\System\DataTableSchema\MceDataTableSchemaProvider;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -29,11 +28,11 @@ class MultiChunkEditionManagerFactory
         try {
             /** @var LoggerInterface $logger */
             $logger = $ci->get(LoggerInterface::class);
-            /** @var array<string, string> $tableNames */
-            $tableNames = $ci->get(ApmContainerKey::TABLE_NAMES);
+            /** @var ApmTableNames $tableNames */
+            $tableNames = $ci->get(ApmTableNames::class);
             /** @var PdoProvider $pdoProvider */
             $pdoProvider = $ci->get(PdoProvider::class);
-            $mceTable = new MySqlUnitemporalDataTable($pdoProvider, $tableNames[ApmMySqlTableName::TABLE_MULTI_CHUNK_EDITIONS]);
+            $mceTable = new MySqlUnitemporalDataTable($pdoProvider, $tableNames->mcEditions);
             $mceTableWithSchema = new MySqlUnitemporalDataTableWithSchema($mceTable, MceDataTableSchemaProvider::getSchema());
             return new ApmMultiChunkEditionManager($mceTableWithSchema, $logger);
         } catch (InvalidArgumentException|InvalidColumnDefinitionsArray $e) {

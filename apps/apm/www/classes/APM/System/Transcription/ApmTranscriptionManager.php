@@ -19,7 +19,7 @@
 
 namespace APM\System\Transcription;
 
-use APM\System\ApmMySqlTableName;
+use APM\System\ApmTableNames;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
@@ -128,7 +128,9 @@ class ApmTranscriptionManager extends TranscriptionManager
     private $getDbConnCallable;
     private InMemoryDataCache $localMemCache;
     private string $cacheKeyPrefix;
-    private array $tNames;
+    private ApmTableNames $tNames;
+
+    private PdoProvider $pdoProvider;
 
     /**
      * Language codes allowed in transcription
@@ -137,22 +139,25 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     private array $langCodes = [ 'ar', 'he', 'la', 'jrb'];
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function __construct(readonly private ContainerInterface $container,
-                                private readonly PdoProvider $pdoProvider,
-                                array                        $tableNames,
-                                LoggerInterface              $logger,
-                                callable                     $docManager,
-                                callable                     $personManager,
-                                callable|DataCache           $dataCache
+                                callable                            $docManager,
+                                callable                            $personManager,
+                                callable|DataCache                  $dataCache
     )
     {
         $this->resetError();
         $this->docManagerCallable = $docManager;
         $this->personManagerCallable = $personManager;
-        $this->tNames  = $tableNames;
+        $this->tNames  = $container->get(ApmTableNames::class);
         $this->setCache($dataCache);
         $this->setCacheKeyPrefix( self::DEFAULT_CACHE_KEY_PREFIX);
         $this->localMemCache = new InMemoryDataCache();
+        $this->pdoProvider = $this->container->get(PdoProvider::class);
+        $logger = $this->container->get(LoggerInterface::class);
         $this->setLogger($logger);
         $this->cacheOn = true;
         $this->startCodeDebug();
@@ -181,7 +186,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         if ($this->elementsDataTable === null) {
             $this->elementsDataTable = new MySqlUnitemporalDataTable(
                 $this->pdoProvider,
-                $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS]);
+                $this->tNames->elements);
         }
         return $this->elementsDataTable;
     }
@@ -193,14 +198,14 @@ class ApmTranscriptionManager extends TranscriptionManager
         if ($this->itemsDataTable === null) {
             $this->itemsDataTable = new MySqlUnitemporalDataTable(
                 $this->pdoProvider,
-                $this->tNames[ApmMySqlTableName::TABLE_ITEMS]);
+                $this->tNames->items);
         }
         return $this->itemsDataTable;
     }
 
     public function getColumnVersionManager() : ColumnVersionManager {
         if ($this->columnVersionManager === null) {
-            $txVersionsTable = new MySqlDataTable($this->pdoProvider, $this->tNames[ApmMySqlTableName::TABLE_VERSIONS_TX]);
+            $txVersionsTable = new MySqlDataTable($this->pdoProvider, $this->tNames->txVersions);
             $this->columnVersionManager = new ApmColumnVersionManager($txVersionsTable);
         }
         return $this->columnVersionManager;
@@ -389,9 +394,9 @@ class ApmTranscriptionManager extends TranscriptionManager
         if ($seqNumberStart >= $seqNumberEnd) {
             return [];
         }
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
+        $ti = $this->tNames->items;
+        $te = $this->tNames->elements;
+        $tp = $this->tNames->pages;
 
 
         $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
@@ -485,7 +490,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
     private function getAdditionItemWithGivenTarget(int $target, string $timeString) {
-        $ti = $this->tNames['items'];
+        $ti = $this->tNames->items;
 
 
         $query = "SELECT * from $ti WHERE type=" . ApItem::ADDITION .
@@ -501,7 +506,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     private function getAdditionElementIdWithGivenReference(int $reference, string $timeString): bool|int
     {
-        $te = $this->tNames['elements'];
+        $te = $this->tNames->elements;
 
         $query = "SELECT id from $te where type=" . Element::SUBSTITUTION .
             " AND reference=$reference" .
@@ -518,9 +523,9 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     private function getItemStreamForElementId(int $elementId, string $timeString): array
     {
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
+        $ti = $this->tNames->items;
+        $te = $this->tNames->elements;
+        $tp = $this->tNames->pages;
 
 
         $query = "SELECT $ti.id, $ti.type, $ti.seq, $ti.ce_id, $ti.lang, $ti.hand_id, $ti.text, $ti.alt_text, $ti.extra_info, $ti.length, $ti.target, " .
@@ -637,9 +642,9 @@ class ApmTranscriptionManager extends TranscriptionManager
     {
 
 //        $this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
-        $ti = $this->tNames[ApmMySqlTableName::TABLE_ITEMS];
-        $te = $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS];
-        $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
+        $ti = $this->tNames->items;
+        $te = $this->tNames->elements;
+        $tp = $this->tNames->pages;
 
         if ($timeString === '') {
             $timeString = TimeString::now();
@@ -722,8 +727,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array
     {
-        $te = $this->tNames[ApmMySqlTableName::TABLE_ELEMENTS];
-        $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
+        $te = $this->tNames->elements;
+        $tp = $this->tNames->pages;
 
         $orderBy = 'page_number';
         if ($order === self::ORDER_BY_SEQ) {
@@ -910,8 +915,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function getLastSavesForDoc(int $docId, int $numSaves): array
     {
-        $tv = $this->tNames[ApmMySqlTableName::TABLE_VERSIONS_TX];
-        $tp = $this->tNames[ApmMySqlTableName::TABLE_PAGES];
+        $tv = $this->tNames->txVersions;
+        $tp = $this->tNames->pages;
         $eot = TimeString::END_OF_TIMES;
 
 
@@ -1517,7 +1522,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     private function getMaxElementSeq(int $pageId, int $col): int
     {
 
-        $te = $this->tNames['elements'];
+        $te = $this->tNames->elements;
         $sql = "SELECT MAX(seq) as m FROM $te "
             . "WHERE page_id=$pageId AND column_number=$col "
             . "AND `valid_until`='9999-12-31 23:59:59.999999'";
@@ -1903,8 +1908,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function getDocIdsTranscribedByUser(int $userTid) : array
     {
-        $tp = $this->tNames['pages'];
-        $te = $this->tNames['elements'];
+        $tp = $this->tNames->pages;
+        $te = $this->tNames->elements;
         $eot = '9999-12-31 23:59:59.999999';
 
         $query = "SELECT DISTINCT $tp.doc_id as 'id' FROM $tp, $te " .
@@ -1928,8 +1933,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array
     {
-        $tp = $this->tNames['pages'];
-        $te = $this->tNames['elements'];
+        $tp = $this->tNames->pages;
+        $te = $this->tNames->elements;
         $eot = '9999-12-31 23:59:59.999999';
 
         try {
@@ -2109,8 +2114,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @inheritDoc
      */
     public function getEditorIdsByDocId(int $docId) : array {
-        $te = $this->tNames['elements'];
-        $tp = $this->tNames['pages'];
+        $te = $this->tNames->elements;
+        $tp = $this->tNames->pages;
 
         $query = "SELECT DISTINCT `$te`.`editor_tid` AS id" .
             " FROM `$te`, `$tp`" .
@@ -2131,8 +2136,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @inheritDoc
      */
     public function getWorksWithTranscription() : array {
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
+        $ti = $this->tNames->items;
+        $te = $this->tNames->elements;
 
         $query = "SELECT DISTINCT $ti.text " .
             " FROM $ti " .
@@ -2156,8 +2161,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function getChunksWithTranscriptionForWorkId($apmWorkId) : array
     {
-        $ti = $this->tNames['items'];
-        $te = $this->tNames['elements'];
+        $ti = $this->tNames->items;
+        $te = $this->tNames->elements;
 
         $query = "SELECT DISTINCT $ti.target " .
             " FROM $ti " .
@@ -2178,7 +2183,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
     public function getTranscribedPageCount() : int {
-        $te = $this->tNames['elements'];
+        $te = $this->tNames->elements;
         $query = "SELECT count(DISTINCT(page_id)) AS c FROM `$te`";
         $r = $this->getDatabaseHelper()->query($query);
         $row = $r->fetch();

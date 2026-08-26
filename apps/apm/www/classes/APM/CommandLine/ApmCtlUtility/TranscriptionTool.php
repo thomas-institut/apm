@@ -6,7 +6,6 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Schema\Entity;
-use APM\System\ApmMySqlTableName;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
@@ -281,10 +280,10 @@ TXT;
             if ($this->userRespondsYes("Are you sure you want to delete this transcription?")) {
                 $tableNames = $this->getSystemManager()->getTableNames();
                 $dbConn = $this->getDbConn();
-                $edNotes = $tableNames[ApmMySqlTableName::TABLE_EDNOTES];
-                $elements = $tableNames[ApmMySqlTableName::TABLE_ELEMENTS];
-                $items = $tableNames[ApmMySqlTableName::TABLE_ITEMS];
-                $versionsTable = $tableNames[ApmMySqlTableName::TABLE_VERSIONS_TX];
+                $edNotes = $tableNames->edNotes;
+                $elements = $tableNames->elements;
+                $items = $tableNames->items;
+                $versionsTable = $tableNames->txVersions;
                 $txManager = $this->getSystemManager()->getTranscriptionManager();
                 $versions = $txManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $column);
                 $lastAuthor = $versions[count($versions) - 1]->authorTid;
@@ -343,8 +342,8 @@ TXT;
             if (!$requireConfirmation || $this->userRespondsYes("Are you sure you want to move this transcription?")) {
                 // get table names and setup database connection
                 $tableNames = $this->getSystemManager()->getTableNames();
-                $elements = $tableNames[ApmMySqlTableName::TABLE_ELEMENTS];
-                $versionsTable = $tableNames[ApmMySqlTableName::TABLE_VERSIONS_TX];
+                $elements = $tableNames->elements;
+                $versionsTable = $tableNames->txVersions;
 
                 $dbConn = $this->getDbConn();
                 $dbConn->beginTransaction();

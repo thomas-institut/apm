@@ -99,7 +99,7 @@ try {
 // Create routes
 createApiAuthenticatedRoutes($app, $container);
 createApiUnauthenticatedRoutes($app, $container);
-createSiteUnauthenticatedRoutes($app, $container);
+createSiteUnauthenticatedRoutes($app);
 createSiteRoutes($app, $container); // must be the last
 
 SystemProfiler::lap('Ready');
@@ -200,41 +200,40 @@ function createApiAuthenticatedRoutes(App $app, ContainerInterface $container): 
     $app->group('/api', function (RouteCollectorProxy $group) use ($container) {
 
         // system
-        createApiSystemRoutes($group, $container);
+        createApiSystemRoutes($group);
         // entity
         createApiEntityRoutes($group, $container);
         // search
-        createApiSearchRoutes($group, $container);
+        createApiSearchRoutes($group);
         // images
-        createApiImageRoutes($group, $container);
+        createApiImageRoutes($group);
         // transcriptions
-        createApiTranscriptionRoutes($group, $container);
+        createApiTranscriptionRoutes($group);
         // work, works
-        createApiWorksRoutes($group, $container);
+        createApiWorksRoutes($group);
         // presets
-        createApiPresetsRoutes($group, $container);
+        createApiPresetsRoutes($group);
         // doc, page, pages
-        createApiDocAndPageRoutes($group, $container);
+        createApiDocAndPageRoutes($group);
         // person
-        createApiPersonRoutes($group, $container);
+        createApiPersonRoutes($group);
         // user
-        createApiUsersRoutes($group, $container);
+        createApiUsersRoutes($group);
         // witness
-        createApiWitnessRoutes($group, $container);
+        createApiWitnessRoutes($group);
         // collation-table
         createApiCollationTableRoutes($group, $container);
         // edition
-        createApiEditionRoutes($group, $container);
+        createApiEditionRoutes($group);
         // typeset
         createApiTypesettingRoutes($group);
         // admin
-        createApiAdminRoutes($group, $container);
-
+        createApiAdminRoutes($group);
     })->add(fn(Request $request, RequestHandlerInterface $handler) =>
         (new Authenticator($container))->authenticateApiRequest($request, $handler));
 }
 
-function createApiEditionRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiEditionRoutes(RouteCollectorProxy $group): void
 {
     // EDITION SOURCES
 
@@ -417,11 +416,9 @@ function createApiCollationTableRoutes(RouteCollectorProxy $group, ContainerInte
         [ApiCollationTable::class, 'versionInfo']);
 }
 
-function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiWitnessRoutes(RouteCollectorProxy $group): void
 {
     // WITNESSES
-
-
     /**
      * Returns witness by id with optional output type and cache flag
      *
@@ -469,7 +466,7 @@ function createApiWitnessRoutes(RouteCollectorProxy $group, ContainerInterface $
 
 }
 
-function createApiSystemRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiSystemRoutes(RouteCollectorProxy $group): void
 {
     /**
      * Returns a list of all system languages and their names
@@ -503,7 +500,7 @@ function createApiSystemRoutes(RouteCollectorProxy $group, ContainerInterface $c
         [ApiSystem::class, 'whoAmI']);
 }
 
-function createApiAdminRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiAdminRoutes(RouteCollectorProxy $group): void
 {
 
     /**
@@ -524,7 +521,7 @@ function createApiAdminRoutes(RouteCollectorProxy $group, ContainerInterface $co
         [ApiLog::class, 'frontEndLog']);
 }
 
-function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiPersonRoutes(RouteCollectorProxy $group): void
 {
     /**
      * Returns essential data for all people in the system. Used to populate the people page on the frontend.
@@ -589,7 +586,7 @@ function createApiPersonRoutes(RouteCollectorProxy $group, ContainerInterface $c
         [ApiPeople::class, 'personCreate']);
 }
 
-function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiUsersRoutes(RouteCollectorProxy $group): void
 {
 
     /**
@@ -657,7 +654,7 @@ function createApiUsersRoutes(RouteCollectorProxy $group, ContainerInterface $co
         [ApiUsers::class, 'userMultiChunkEditions']);
 }
 
-function createApiDocAndPageRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiDocAndPageRoutes(RouteCollectorProxy $group): void
 {
 
     /**
@@ -998,7 +995,7 @@ function createApiEntityRoutes(RouteCollectorProxy $group, ContainerInterface $c
         [ApiEntity::class, 'nameSearch']);
 }
 
-function createApiPresetsRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiPresetsRoutes(RouteCollectorProxy $group): void
 {
 
     /**
@@ -1113,10 +1110,9 @@ function createApiPublicationRoutes(RouteCollectorProxy $group): void
  * TODO: Find a way to generate images in the frontend and get rid of this (Issue #322)
  *
  * @param RouteCollectorProxy $group
- * @param ContainerInterface $container
  * @return void
  */
-function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiImageRoutes(RouteCollectorProxy $group): void
 {
 
     /**
@@ -1240,7 +1236,7 @@ function createApiImageRoutes(RouteCollectorProxy $group, ContainerInterface $co
         [ApiIcons::class, 'generateParagraphMarkIcon']);
 }
 
-function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiSearchRoutes(RouteCollectorProxy $group): void
 {
     /**
      * Searches for a keyword
@@ -1319,7 +1315,7 @@ function createApiSearchRoutes(RouteCollectorProxy $group, ContainerInterface $c
 
 }
 
-function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiTranscriptionRoutes(RouteCollectorProxy $group): void
 {
 
     /**
@@ -1391,7 +1387,7 @@ function createApiTranscriptionRoutes(RouteCollectorProxy $group, ContainerInter
         [ApiElements::class, 'updateElementsByDocPageCol']);
 }
 
-function createApiWorksRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
+function createApiWorksRoutes(RouteCollectorProxy $group): void
 {
 
     /**
@@ -1519,7 +1515,7 @@ function createApiTypesettingRoutes(RouteCollectorProxy $group): void
     $group->post('/typeset/toPdf', [ApiTypesetPdf::class, 'toPdf']);
 }
 
-function createSiteUnauthenticatedRoutes(App $app, ContainerInterface $container): void
+function createSiteUnauthenticatedRoutes(App $app): void
 {
     $app->any('/login',
         // handled by React

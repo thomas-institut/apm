@@ -150,12 +150,14 @@ function createSiteRoutes(App $app, ContainerInterface $container): void
 
         // transcription editor
         $group->get('/doc/{doc}/page/{n}/view[/c/{col}]',
-            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, false));
+            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, false))
+        ->setName('transcription.editor');
 
         // transcription editor (real pages)
 
         $group->get('/doc/{doc}/realPage/{n}/view[/c/{col}]',
-            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, true));
+            fn(Request $request, Response $response) => (new SitePageViewer($container))->pageViewerPageByDoc($request, $response, true))
+        ->setName('transcription.editor.real');
 
         // sending to React explicitly or else the path would be picked up by the show document page below
         $group->get('/doc/{id}/definepages',

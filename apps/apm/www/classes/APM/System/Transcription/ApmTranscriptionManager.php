@@ -62,6 +62,9 @@ use APM\System\Transcription\TxText\Unclear;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\DataTable\UnitemporalDataTable;
@@ -104,8 +107,6 @@ class ApmTranscriptionManager extends TranscriptionManager
     const int CACHE_TTL = 60 * 24 * 3600;  // 30 days
 
     // Components that are generated when needed
-    private ?PDO $dbConn = null;
-    private ?MySqlHelper $databaseHelper = null;
     private ?EdNoteManager $edNoteManager = null;
     private ?ApmColumnVersionManager $columnVersionManager = null;
     private ?DocumentManager $docManager = null;
@@ -136,7 +137,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     private array $langCodes = [ 'ar', 'he', 'la', 'jrb'];
 
-    public function __construct(private readonly PdoProvider $pdoProvider,
+    public function __construct(readonly private ContainerInterface $container,
+                                private readonly PdoProvider $pdoProvider,
                                 array                        $tableNames,
                                 LoggerInterface              $logger,
                                 callable                     $docManager,
@@ -156,20 +158,17 @@ class ApmTranscriptionManager extends TranscriptionManager
         $this->startCodeDebug();
     }
 
-    private function getDbConn() : PDO {
-       return $this->pdoProvider->getPdo();
-    }
-
     private function getDatabaseHelper() : MySqlHelper {
-        if ($this->databaseHelper === null) {
-            $this->databaseHelper = new MySqlHelper($this->getDbConn(), $this->logger);
+        try {
+            return $this->container->get(MySqlHelper::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Could not get MySqlHelper from container', 0, $e);
         }
-        return $this->databaseHelper;
     }
 
     public function getEdNoteManager() : EdNoteManager {
         if ($this->edNoteManager === null) {
-            $this->edNoteManager = new EdNoteManager($this->getDbConn(), $this->getDatabaseHelper(), $this->tNames,
+            $this->edNoteManager = new EdNoteManager($this->pdoProvider, $this->getDatabaseHelper(), $this->tNames,
                 $this->logger);
         }
         return $this->edNoteManager;

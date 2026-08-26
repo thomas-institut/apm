@@ -24,6 +24,7 @@ use Predis\Client;
 use Psr\Log\LoggerInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
+use ThomasInstitut\ToolBox\MySqlHelper;
 use function DI\autowire;
 use function DI\factory;
 
@@ -50,6 +51,7 @@ class WebAppDefsProvider implements ApmContainerDefsProvider
            PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
            Client::class => factory([ValkeyClientFactory::class, 'create']),
            NodeServiceClient::class => factory([NodeServiceClientFactory::class, 'create']),
+           MySqlHelper::class => autowire(MySqlHelper::class),
        ];
     }
 }

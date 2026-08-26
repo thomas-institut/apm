@@ -353,6 +353,7 @@ class ApmSystemManager extends SystemManager
         if ($this->transcriptionManager === null) {
             // Set up TranscriptionManager
             $this->transcriptionManager = new ApmTranscriptionManager(
+                $this->ci,
                 $this->getPdoProvider(),
                 $this->getTableNames(),
                 $this->logger,

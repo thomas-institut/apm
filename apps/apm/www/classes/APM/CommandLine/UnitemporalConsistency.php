@@ -18,10 +18,7 @@ class UnitemporalConsistency extends CommandLineUtility
 
     public function main(int $argc, array $argv): bool
     {
-        $db = $this->getSystemManager()->getDbConnection();
-//        $dbh = $this->getSystemManager()->getMySqlHelper();
-
-        $dbh = new MySqlHelper($db, $this->logger);
+        $dbh = new MySqlHelper($this->getSystemManager()->getPdoProvider(), $this->logger);
 
         if ($argc != 2) {
             print self::USAGE;
@@ -29,11 +26,6 @@ class UnitemporalConsistency extends CommandLineUtility
         }
 
         $table = $argv[1];
-
-//        if (!preg_match('/^ap_[a-z]+$/', $table)) {
-//            $this->printErrorMsg('Invalid table name');
-//            return false;
-//        }
 
         $allRows = $dbh->getAllRows("SELECT * from `$table` ORDER BY id, valid_from");
 

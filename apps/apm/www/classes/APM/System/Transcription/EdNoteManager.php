@@ -26,6 +26,7 @@ use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\ToolBox\MySqlHelper;
 
@@ -41,12 +42,12 @@ class EdNoteManager {
     private LoggerInterface $logger;
     private MySqlDataTable $edNotesDataTable;
             
-    public function __construct(PDO $dbConn, MySqlHelper $dbh, array $tableNames, LoggerInterface $logger)
+    public function __construct(private readonly PdoProvider $pdoProvider, MySqlHelper $dbh, array $tableNames, LoggerInterface $logger)
     {
         $this->dbh = $dbh;
         $this->tNames = $tableNames;
         $this->logger = $logger;
-        $this->edNotesDataTable = new MySqlDataTable($dbConn, 
+        $this->edNotesDataTable = new MySqlDataTable($this->pdoProvider,
                 $tableNames[ApmMySqlTableName::TABLE_EDNOTES]);
     }
 

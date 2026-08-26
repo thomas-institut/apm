@@ -37,8 +37,9 @@ use ThomasInstitut\ToolBox\MySqlHelper;
 readonly class EdNoteManager {
     
     private MySqlDataTable $edNotesDataTable;
+
             
-    public function __construct(private readonly PdoProvider $pdoProvider, private MySqlHelper $dbh, private ApmTableNames $tableNames, private LoggerInterface $logger)
+    public function __construct(private PdoProvider $pdoProvider, private MySqlHelper $dbh, private ApmTableNames $tableNames, private LoggerInterface $logger)
     {
         $this->edNotesDataTable = new MySqlDataTable($this->pdoProvider,$this->tableNames->edNotes);
     }

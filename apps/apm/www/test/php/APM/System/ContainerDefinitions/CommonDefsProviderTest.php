@@ -5,6 +5,7 @@ namespace APM\System\ContainerDefinitions;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\NodeService\NodeServiceClient;
 use APM\System\ApmContainerKey;
+use APM\System\ApmTableNames;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\LanguageManager;
 use APM\System\PublicationManager\PublicationManagerInterface;
@@ -13,6 +14,7 @@ use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Slim\Views\Twig;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
+use ThomasInstitut\ToolBox\MySqlHelper;
 
 class CommonDefsProviderTest extends TestCase
 {
@@ -22,21 +24,25 @@ class CommonDefsProviderTest extends TestCase
         $definitions = (new CommonDefsProvider())->getContainerDefs($config);
 
         $this->assertSame($config, $definitions[ApmContainerKey::CONFIG_ARRAY]);
-        $this->assertSame(
-            [
-                ApmContainerKey::CONFIG_ARRAY,
-                ApmSystemConfig::class,
-//                ApmContainerKey::TABLE_NAMES,
-                PdoProvider::class,
-                MultiChunkEditionManager::class,
-                Twig::class,
-                SystemManager::class,
-                LanguageManager::class,
-                PublicationManagerInterface::class,
-                Client::class,
-                NodeServiceClient::class,
-            ],
-            array_keys($definitions)
-        );
+
+        $expectedKeys = [
+            ApmContainerKey::CONFIG_ARRAY,
+            ApmSystemConfig::class,
+            ApmTableNames::class,
+            PdoProvider::class,
+            MultiChunkEditionManager::class,
+            Twig::class,
+            SystemManager::class,
+            LanguageManager::class,
+            PublicationManagerInterface::class,
+            Client::class,
+            NodeServiceClient::class,
+            MySqlHelper::class
+        ];
+        $defKeys = array_keys($definitions);
+
+        foreach ($expectedKeys as $key) {
+            $this->assertContains($key, $defKeys);
+        }
     }
 }

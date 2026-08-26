@@ -172,11 +172,11 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
     public function getEdNoteManager() : EdNoteManager {
-        if ($this->edNoteManager === null) {
-            $this->edNoteManager = new EdNoteManager($this->pdoProvider, $this->getDatabaseHelper(), $this->tNames,
-                $this->logger);
+        try {
+            return $this->container->get(EdNoteManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Could not get EdNoteManager from container', 0, $e);
         }
-        return $this->edNoteManager;
     }
 
     /**

@@ -23,7 +23,6 @@ class WebAppDefsProvider implements ApmContainerDefsProvider
                 ApmContainerKey::SITE_USER_ID => -1, // set by authenticator
                 ApmContainerKey::API_USER_ID => -1, // set by authenticator
                 LoggerInterface::class => factory([LoggerFactory::class, 'create']),
-                MySqlHelper::class => autowire(MySqlHelper::class),
             ]
         );
     }

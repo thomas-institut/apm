@@ -20,9 +20,11 @@ use APM\System\Factories\ValkeyClientFactory;
 use APM\System\LanguageManager;
 use APM\System\PublicationManager\PublicationManagerInterface;
 use APM\System\SystemManager;
+use APM\System\Transcription\EdNoteManager;
 use Predis\Client;
 use Slim\Views\Twig;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
+use ThomasInstitut\ToolBox\MySqlHelper;
 use function DI\autowire;
 use function DI\factory;
 
@@ -46,6 +48,8 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
             Client::class => factory([ValkeyClientFactory::class, 'create']),
             NodeServiceClient::class => factory([NodeServiceClientFactory::class, 'create']),
+            EdNoteManager::class => autowire(EdNoteManager::class),
+            MySqlHelper::class => autowire(MySqlHelper::class),
         ];
     }
 }

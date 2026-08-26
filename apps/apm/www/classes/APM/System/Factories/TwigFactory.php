@@ -11,7 +11,7 @@ class TwigFactory
     /**
      * @throws LoaderError
      */
-    public static function create()  : Twig
+    public static function create(): Twig
     {
         return Twig::create('templates');
 

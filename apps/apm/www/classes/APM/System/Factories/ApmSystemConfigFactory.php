@@ -17,7 +17,8 @@ class ApmSystemConfigFactory
      * @throws ContainerExceptionInterface
      * @throws MappingError
      */
-    public static function create(ContainerInterface $ci) : ApmSystemConfig {
+    public static function create(ContainerInterface $ci): ApmSystemConfig
+    {
         $configArray = $ci->get(ApmContainerKey::CONFIG_ARRAY);
         $configArray['general'] = $configArray;
 

@@ -6,9 +6,6 @@ use APM\MultiChunkEdition\ApmMultiChunkEditionManager;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\ApmTableNames;
 use APM\System\DataTableSchema\MceDataTableSchemaProvider;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataTable\Exception\InvalidArgumentException;
@@ -19,19 +16,9 @@ use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
 class MultiChunkEditionManagerFactory
 {
-
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public static function create(ContainerInterface $ci): MultiChunkEditionManager {
+    public static function create(LoggerInterface $logger, ApmTableNames $tableNames, PdoProvider $pdoProvider): MultiChunkEditionManager
+    {
         try {
-            /** @var LoggerInterface $logger */
-            $logger = $ci->get(LoggerInterface::class);
-            /** @var ApmTableNames $tableNames */
-            $tableNames = $ci->get(ApmTableNames::class);
-            /** @var PdoProvider $pdoProvider */
-            $pdoProvider = $ci->get(PdoProvider::class);
             $mceTable = new MySqlUnitemporalDataTable($pdoProvider, $tableNames->mcEditions);
             $mceTableWithSchema = new MySqlUnitemporalDataTableWithSchema($mceTable, MceDataTableSchemaProvider::getSchema());
             return new ApmMultiChunkEditionManager($mceTableWithSchema, $logger);

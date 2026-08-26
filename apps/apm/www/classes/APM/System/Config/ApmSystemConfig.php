@@ -2,28 +2,18 @@
 
 namespace APM\System\Config;
 
-class ApmSystemConfig
+final readonly class ApmSystemConfig
 {
-    public GeneralConfig $general;
-    public UrlConfig $url;
-    public VersionConfig $version;
-    public LogConfig $log;
-    public NodeServiceConfig $nodeService;
-    public DbConfig $db;
 
     public function __construct(
-        VersionConfig $version,
-        GeneralConfig $general = new GeneralConfig(),
-        UrlConfig $url = new UrlConfig(),
-        LogConfig $log = new LogConfig(),
-        NodeServiceConfig $nodeService = new NodeServiceConfig(),
-        DbConfig $db = new DbConfig()
-    ) {
-        $this->version = $version;
-        $this->general = $general;
-        $this->url = $url;
-        $this->log = $log;
-        $this->nodeService = $nodeService;
-        $this->db = $db;
+        public VersionConfig     $version,
+        public NodeServiceConfig $nodeService,
+        public GeneralConfig     $general = new GeneralConfig(),
+        public UrlConfig         $url = new UrlConfig(),
+        public LogConfig         $log = new LogConfig(),
+        public DbConfig          $db = new DbConfig(),
+        public ValkeyConfig      $valkey = new ValkeyConfig()
+    )
+    {
     }
 }

@@ -2,9 +2,11 @@
 
 namespace APM\System\Config;
 
-class NodeServiceConfig
+final readonly class NodeServiceConfig
 {
-    public string $url;
-    public int $httpTimeout = 45;
+    public function __construct(public string $url,
+                                public int    $httpTimeout = 45)
+    {
+    }
 
 }

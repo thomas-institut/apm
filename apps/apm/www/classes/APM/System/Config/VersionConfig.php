@@ -2,10 +2,14 @@
 
 namespace APM\System\Config;
 
-class VersionConfig
+final readonly class VersionConfig
 {
-    public string $version;
-    public string $versionDate;
-    public string $versionExtra = '';
-    public string $jsAppCacheDataId;
+    public function __construct(
+        public string $version,
+        public string $versionDate,
+        public string $jsAppCacheDataId,
+        public string $versionExtra = '',
+    )
+    {
+    }
 }

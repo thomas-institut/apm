@@ -62,7 +62,9 @@ use APM\System\Transcription\TxText\Unclear;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
+use ThomasInstitut\DataTable\UnitemporalDataTable;
 use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\ArraySort;
 use APM\ToolBox\MyersDiff;
@@ -108,8 +110,8 @@ class ApmTranscriptionManager extends TranscriptionManager
     private ?ApmColumnVersionManager $columnVersionManager = null;
     private ?DocumentManager $docManager = null;
     private ?PersonManagerInterface $personManager = null;
-    private ?MySqlUnitemporalDataTable $elementsDataTable = null;
-    private ?MySqlUnitemporalDataTable $itemsDataTable = null;
+    private ?UnitemporalDataTable $elementsDataTable = null;
+    private ?UnitemporalDataTable $itemsDataTable = null;
 
     /**
      * @var callable
@@ -176,7 +178,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
-    public function getElementsDataTable() : MySqlUnitemporalDataTable {
+    public function getElementsDataTable() : UnitemporalDataTable {
         if ($this->elementsDataTable === null) {
             $this->elementsDataTable = new MySqlUnitemporalDataTable(
                 $this->pdoProvider,
@@ -185,7 +187,10 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $this->elementsDataTable;
     }
 
-    public function getItemsDataTable() : MySqlUnitemporalDataTable {
+    /**
+     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
+     */
+    public function getItemsDataTable() : UnitemporalDataTable {
         if ($this->itemsDataTable === null) {
             $this->itemsDataTable = new MySqlUnitemporalDataTable(
                 $this->pdoProvider,
@@ -436,7 +441,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                     case ApItem::DELETION:
                     case ApItem::UNCLEAR:
                     case ApItem::MARGINAL_MARK:
-                        // these 3 item types can be replaced by an addition, let's see if there's one
+                        // an addition can replace these 3 types, let's see if there's one
                         $items[] = $inputRow;
                         $additionItem  = $this->getAdditionItemWithGivenTarget($itemId, $timeString);
                         if ($additionItem) {
@@ -466,7 +471,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                         // it could be that this addition item is already included in the item list
                         // because it replaced a mark, deletion or unclear item
                         if (!in_array($itemId, $additionItemsAlreadyInOutput)) {
-                            // not in the list already, so add it
+                            // not in the list, so add it
                             $items[] = $inputRow;
                         }
                         break;
@@ -727,9 +732,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
         $dbDocId = $this->getDocumentManager()->getLegacyDocId($docId);
-
-        // $this->logger->debug("Doc Id $docId, DB docId $dbDocId");
-
 
         $query = 'SELECT DISTINCT p.`page_number` AS page_number FROM ' .
             $tp . ' AS p' .
@@ -1112,6 +1114,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param string $timeString
      * @return Element[]
      * @throws InvalidTimeStringException
+     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
     public function getColumnElementsByPageId(int $pageId, int $col, string $timeString = ''): array
     {
@@ -1125,11 +1128,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         $theRows = iterator_to_array($rows);
         ArraySort::byKey($theRows, 'seq');
         $elements = [];
-//        $this->logger->debug("Got " . count($theRows) . " rows from database");
         foreach($theRows as $row) {
-//            $this->logger->debug("Processing row ", $row);
             $e = $this->createElementObjectFromRow($row);
-//            $this->logger->debug("Element ", get_object_vars($e));
             $e->items = $this->getItemsForElement($e, $timeString);
             $elements[] = $e;
         }
@@ -1171,16 +1171,12 @@ class ApmTranscriptionManager extends TranscriptionManager
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-//                    $this->logger->debug("KEEPING element @ pos " . $index . ", id=" . $oldElements[$index]->id);
                     if ($oldElements[$index]->seq
                         !== $newSeq) {
-//                        $this->logger->debug("... with new seq $newSeq");
-//                        $this->logger->debug("... seq was " . $oldElements[$index]->seq );
                         $newElements[$newElementsIndex]->seq =
                             $newSeq;
                     }
                     if ($oldElements[$index]->type === Element::SUBSTITUTION || $oldElements[$index]->type === Element::ADDITION) {
-//                        $this->logger->debug("Keeping substitution/addition element");
                         if ($oldElements[$index]->reference !== 0) {
                             if (!isset($newItemsIds[$oldElements[$index]->reference])) {
                                 $this->logger->warning('Found element without a valid target reference', get_object_vars($oldElements[$index]));
@@ -1200,31 +1196,23 @@ class ApmTranscriptionManager extends TranscriptionManager
                     break;
 
                 case MyersDiff::DELETE:
-//                    $this->logger->debug("DELETING element @ " . $index . ", id=" . $oldElements[$index]->id);
-//                    $this->logger->debug("... .... time=" . $time);
                     $this->deleteElement($oldElements[$index]->id, $time);
                     break;
 
                 case MyersDiff::INSERT:
-//                    $this->logger->debug("INSERTING element @ " . $index);
-//                    $this->logger->debug("...New Seq: " . $newSeq);
                     $newElements[$newElementsIndex]->seq = $newSeq;
                     if ($newElements[$index]->type === Element::SUBSTITUTION || $newElements[$index]->type === Element::ADDITION) {
-//                        $this->logger->debug("...Inserting substitution/addition element");
                         if ($newElements[$index]->reference !== 0) {
                             if (!isset($newItemsIds[$newElements[$index]->reference])) {
                                 $this->logger->warning('Found element without a valid target reference', get_object_vars($newElements[$index]));
                             }
                             else {
                                 if ($newElements[$index]->reference !== $newItemsIds[$newElements[$index]->reference]) {
-//                                    $this->logger->debug("... with new reference",
-//                                        [ 'oldRef' => $newElements[$index]->reference, 'newRef'=> $newItemsIds[$newElements[$index]->reference] ]);
                                     $newElements[$index]->reference = $newItemsIds[$newElements[$index]->reference];
                                 }
                             }
                         }
                     }
-//                    $this->logger->debug("... .... time=" . $time);
                     $element = $this->insertNewElement($newElements[$newElementsIndex], false, $newItemsIds, $time);
                     if ($element === false) {
                         $this->logger->error("Can't insert new element in DB", get_object_vars($newElements[$newElementsIndex]));
@@ -1234,12 +1222,10 @@ class ApmTranscriptionManager extends TranscriptionManager
                         $givenId = $newElements[$newElementsIndex]->items[$j]->id;
                         $newItemsIds[$givenId] = $element->items[$j]->id;
                     }
-//                    $this->logger->debug("...element id = " . $element->id);
                     $newElementsIndex++;
                     break;
             }
         }
-//        $this->logger->debug(":: finished UPDATING COLUMN ELEMENTS, pageId=$pageId, col=$columnNumber");
         return $newItemsIds;
     }
 
@@ -1248,7 +1234,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param string $time
      * @return int
      * @throws InvalidTimeStringException
-     * @throws RowAlreadyExists
+     * @throws RowAlreadyExists|\ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
     private function createNewElementInDB(Element $element, string $time = ''): int
     {
@@ -1272,9 +1258,11 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param Element $element
      * @param bool|string $time
      * @return bool
+     * @throws InvalidRowForUpdate
      * @throws InvalidRowUpdateTime
      * @throws InvalidTimeStringException
      * @throws RowDoesNotExist
+     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
     private function updateElementInDB(Element $element, bool|string $time = false): bool
     {
@@ -1282,7 +1270,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             $time = TimeString::now();
         }
 
-        $this->getElementsDataTable()->realUpdateRowWithTime([
+        $this->getElementsDataTable()->updateRowWithTime([
             'id' => $element->id,
             'type' => $element->type,
             'page_id' => $element->pageId,
@@ -1302,8 +1290,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      * Return the newly created element, which will be a copy of the
      * given element with system ids for itself and for its items.
      *
-     * if $insertAtEnd is false, the given element's sequence will be
-     * respected and the rest of the elements of the column will be
+     * If $insertAtEnd is false, the given element's sequence will be
+     * respected, and the rest of the elements of the column will be
      * moved to accommodate the new element's position.
      *
      * @param Element $element
@@ -1311,10 +1299,12 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param array $itemIds new Item Ids (so that addition targets can be set)
      * @param string $time
      * @return bool|Element
+     * @throws InvalidRowForUpdate
      * @throws InvalidRowUpdateTime
      * @throws InvalidTimeStringException
      * @throws RowAlreadyExists
      * @throws RowDoesNotExist
+     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
     public function insertNewElement(Element $element, bool $insertAtEnd = true, array $itemIds = [], string $time = ''): bool|Element
     {
@@ -1364,7 +1354,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         if ($element->columnNumber > $pageInfo->numCols) {
             $this->logger->error('Element being inserted in '
-                . 'non-existent colum',
+                . 'non-existent column',
                 [' pageId' => $element->pageId,
                     'colNum' => $element->columnNumber]);
             return false;
@@ -1509,7 +1499,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param int $col
      * @param string $time
      * @return Element[]
-     * @throws InvalidTimeStringException
+     * @throws InvalidTimeStringException|\ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
     public function getColumnElements(int $docId, int $page, int $col, string $time = ''): array
     {
@@ -1570,6 +1560,9 @@ class ApmTranscriptionManager extends TranscriptionManager
         return true;
     }
 
+    /**
+     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
+     */
     public function getElementById($elementId): bool|Element
     {
         $row = $this->getElementsDataTable()->getRow($elementId);
@@ -1591,7 +1584,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param Element $element
      * @param bool $time
      * @return Item[]
-     * @throws InvalidTimeStringException
+     * @throws InvalidTimeStringException|\ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
     private function getItemsForElement(Element $element, bool|string $time = false): array
     {
@@ -1950,7 +1943,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         $query = "SELECT DISTINCT $tp.id FROM $tp, $te " .
             "WHERE $te.editor_tid=$userTid AND $te.page_id = $tp.id  AND $tp.doc_id = $docId " .
             "AND $te.valid_until='$eot' AND $tp.valid_until='$eot'";
-//        $this->logger->debug("Querying: '$query'");
         $res = $this->getDatabaseHelper()->query($query);
         if ($res === false) {
             return [];
@@ -1993,8 +1985,6 @@ class ApmTranscriptionManager extends TranscriptionManager
             $newElement->id = $oldElement->id;
         }
 
-//        $this->logger->debug("   UPDATING ELEMENT $oldElement->id");
-
         // Force columnElementId in new element's items
         foreach ($newElement->items as $item) {
             $item->columnElementId = $newElement->id;
@@ -2013,10 +2003,8 @@ class ApmTranscriptionManager extends TranscriptionManager
             list ($index, $cmd, $newSeq) = $editInstruction;
             switch ($cmd) {
                 case MyersDiff::KEEP:
-//                    $this->logger->debug("   Keeping item $index");
                     if ($oldElement->items[$index]->seq
                         !== $newSeq) {
-//                        $this->logger->debug("   ... with new seq $newSeq");
                         $oldElement->items[$index]->seq =
                             $newSeq;
                         $this->updateItemInDB(
@@ -2026,17 +2014,13 @@ class ApmTranscriptionManager extends TranscriptionManager
                     }
 
                     if ($oldElement->items[$index]->type === Item::ADDITION) {
-//                        $this->logger->debug("   Keeping an addition",get_object_vars($oldElement->items[$index]));
                         if ($oldElement->items[$index]->target !== 0) {
-//                            $this->logger->debug("   ...with non-zero target", [ 'target'=>$oldElement->items[$index]->target]);
                             if (!isset($itemIds[$oldElement->items[$index]->target])) {
                                 $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($oldElement->items[$index]));
                             }
                             else {
                                 if ($oldElement->items[$index]->target !== $itemIds[$oldElement->items[$index]->target]) {
                                     $oldElement->items[$index]->target = $itemIds[$oldElement->items[$index]->target];
-//                                    $this->logger->debug("   ...with new target", [ 'target'=>$oldElement->items[$index]->target]);
-//                                    $this->logger->debug("  ... .... time=" . $time);
                                     $this->updateItemInDB(
                                         $oldElement->items[$index],
                                         $time
@@ -2050,8 +2034,6 @@ class ApmTranscriptionManager extends TranscriptionManager
                     break;
 
                 case MyersDiff::DELETE:
-//                    $this->logger->debug("  Deleting item $index");
-//                    $this->logger->debug("... .... time=" . $time);
                     $this->getItemsDataTable()->deleteRowWithTime(
                         $oldElement->items[$index]->id,
                         $time
@@ -2085,7 +2067,6 @@ class ApmTranscriptionManager extends TranscriptionManager
                         $this->logger->error("Could not create new item in DB", [ 'class' => __CLASS__, 'function' => __FUNCTION__]);
                         throw new RuntimeException("Could not add new item in DB");
                     }
-//                    $this->logger->debug("   ... with item Id = $newItemId");
 
                     $itemIds[$newElement->items[$newItemsIndex]->id] = $newItemId;
                     $newItemsIndex++;
@@ -2093,25 +2074,20 @@ class ApmTranscriptionManager extends TranscriptionManager
                     break;
             }
         }
-//        if (!$ignoreNewEditor && $newElement->editorTid !== $oldElement->editorTid) {
-//            $this->logger->debug("   ...changes by new editor: $newElement->editorTid");
-//        }
         if (!Element::isElementDataEqual($newElement, $oldElement, true, $ignoreNewEditor, false)) {
-//            $this->logger->debug("   ...updating element in DB");
-//            $this->logger->debug("... .... time=" . $time);
             $this->updateElementInDB($newElement, $time);
         }
 
         return [$newElement->id, $itemIds];
     }
 
-    private function updateItemInDB($item, $time = false): bool
+    private function updateItemInDB($item, string|bool $time = false): bool
     {
-        if (!$time) {
+        if ($time === false) {
             $time = TimeString::now();
         }
         try {
-            $this->getItemsDataTable()->realUpdateRowWithTime([
+            $this->getItemsDataTable()->updateRowWithTime([
                 'id' => $item->id,
                 'ce_id' => $item->columnElementId,
                 'type' => $item->type,
@@ -2124,7 +2100,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 'length' => $item->length,
                 'target' => $item->target
             ], $time);
-        } catch (InvalidRowUpdateTime|RowDoesNotExist|InvalidTimeStringException $e) {
+        } catch (InvalidRowUpdateTime|RowDoesNotExist|InvalidTimeStringException|InvalidRowForUpdate|\ThomasInstitut\DataTable\Exception\InvalidArgumentException $e) {
             throw new RuntimeException($e->getMessage(), $e->getCode());
         }
         return true;

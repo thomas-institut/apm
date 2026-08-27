@@ -7,6 +7,9 @@ use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\NodeService\NodeServiceClient;
 use APM\System\ApmContainerKey;
 use APM\System\ApmTableNames;
+use APM\System\Cache\SystemDirDataCache;
+use APM\System\Cache\SystemMemDataCache;
+use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\LanguageManager;
 use APM\System\PublicationManager\PublicationManagerInterface;
@@ -40,6 +43,9 @@ class CommonDefsProviderTest extends TestCase
             NodeServiceClient::class,
             MySqlHelper::class,
             ApmEntitySystemInterface::class,
+            SystemMemDataCache::class,
+            SystemMainDataCache::class,
+            SystemDirDataCache::class,
         ];
         $defKeys = array_keys($definitions);
 

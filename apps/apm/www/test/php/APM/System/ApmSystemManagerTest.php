@@ -44,8 +44,6 @@ class ApmSystemManagerTest extends TestCase
         $this->setProperty($systemManager, 'userManager', $this->createStub(ApmUserManager::class));
         $this->setProperty($systemManager, 'personManager', $this->createStub(PersonManagerInterface::class));
         $this->setProperty($systemManager, 'workManager', $this->createStub(WorkManager::class));
-        $this->setProperty($systemManager, 'typedMultiStorageEntitySystem', $this->createStub(TypedMultiStorageEntitySystem::class));
-        $this->setProperty($systemManager, 'apmEntitySystem', $this->createStub(ApmEntitySystem::class));
         $this->setProperty($systemManager, 'documentManager', $this->createStub(ApmDocumentManager::class));
 
         $normalizerManager = new ApmNormalizerManager();
@@ -60,8 +58,6 @@ class ApmSystemManagerTest extends TestCase
         $this->assertNull($this->getProperty($systemManager, 'userManager'));
         $this->assertNull($this->getProperty($systemManager, 'personManager'));
         $this->assertNull($this->getProperty($systemManager, 'workManager'));
-        $this->assertNull($this->getProperty($systemManager, 'typedMultiStorageEntitySystem'));
-        $this->assertNull($this->getProperty($systemManager, 'apmEntitySystem'));
         $this->assertNull($this->getProperty($systemManager, 'documentManager'));
         $this->assertSame($normalizerManager, $this->getProperty($systemManager, 'normalizerManager'));
     }

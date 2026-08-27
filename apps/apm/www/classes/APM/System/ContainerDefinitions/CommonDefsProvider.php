@@ -10,6 +10,12 @@ use APM\System\ApmLanguageManager;
 use APM\System\ApmPdoProvider;
 use APM\System\ApmSystemManager;
 use APM\System\ApmTableNames;
+use APM\System\Cache\DirectorySystemDirDataCache;
+use APM\System\Cache\SystemDirDataCache;
+use APM\System\Cache\SystemMemDataCache;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Cache\ValkeySystemMemDataCache;
+use APM\System\Cache\ValkeySystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\ApmEntitySystemFactory;
@@ -53,6 +59,9 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             EdNoteManager::class => autowire(EdNoteManager::class),
             MySqlHelper::class => autowire(MySqlHelper::class),
             ApmEntitySystemInterface::class => factory([ApmEntitySystemFactory::class, 'create']),
+            SystemMainDataCache::class => autowire(ValkeySystemMainDataCache::class),
+            SystemMemDataCache::class => autowire(ValkeySystemMemDataCache::class),
+            SystemDirDataCache::class => autowire(DirectorySystemDirDataCache::class)
         ];
     }
 }

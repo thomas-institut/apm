@@ -12,7 +12,8 @@ final readonly class ApmSystemConfig
         public UrlConfig         $url = new UrlConfig(),
         public LogConfig         $log = new LogConfig(),
         public DbConfig          $db = new DbConfig(),
-        public ValkeyConfig      $valkey = new ValkeyConfig()
+        public ValkeyConfig      $valkey = new ValkeyConfig(),
+        public CachesConfig      $caches = new CachesConfig(),
     )
     {
     }

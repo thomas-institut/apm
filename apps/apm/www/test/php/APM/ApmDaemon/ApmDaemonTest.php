@@ -11,7 +11,11 @@ use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ApmDaemonTest extends TestCase
 {
-    private array $configMock = [ 'version' =>  [ 'version' => '1.0.0', 'versionDate' => '2023-01-01', 'jsAppCacheDataId' => '1234567890'], 'log' => ['inStdErr' => false]];
+    private array $configMock = [
+        'version' =>  [ 'version' => '1.0.0', 'versionDate' => '2023-01-01', 'jsAppCacheDataId' => '1234567890'],
+        'nodeService' => [ 'url' => 'https://localhost/'],
+        'log' => ['inStdErr' => false]];
+
     public function testRunJobQueueRecoveryCallsManager(): void
     {
         $jobManager = $this->createMock(ValkeyJobQueueManager::class);

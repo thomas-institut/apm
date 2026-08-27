@@ -33,7 +33,6 @@ use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
 use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
 use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
-use APM\EntitySystem\ApmEntitySystem;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
@@ -46,6 +45,10 @@ use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\Jobs\UpdateAllPeopleDataCache;
 use APM\Jobs\UpdateWorksCache;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
+use APM\System\Cache\SystemDirDataCache;
+use APM\System\Cache\SystemMemDataCache;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Config\ApmSystemConfig;
 use APM\System\Document\ApmDocumentManager;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
@@ -77,20 +80,12 @@ use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\DirectoryDataCache;
-use ThomasInstitut\DataTable\DataTable;
+use ThomasInstitut\DataTable\Exception\InvalidArgumentException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
-use ThomasInstitut\EntitySystem\DataTableStatementStorage;
-use ThomasInstitut\EntitySystem\EntityData;
-use ThomasInstitut\EntitySystem\EntityDataCache\DataTableEntityDataCache;
-use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
-use ThomasInstitut\EntitySystem\StatementStorage;
-use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
-use ThomasInstitut\EntitySystem\TypeStorageConfig;
 use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
-use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
 
@@ -105,15 +100,6 @@ class ApmSystemManager extends SystemManager
 
     // Error codes
     const int ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
-
-    // Entity system Data ID: key for entity system caches
-    const string ES_DATA_ID = '0010'; // 2026 Jan 9
-
-    const string MemCachePrefix_Apm_ES = 'Es';
-    const string MemCachePrefix_TypedMultiStorage_ES = 'MsEs';
-
-    const int DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
-    const int DefaultMemCacheTtl = 24 * 3600;  // 1 day
 
     const int DefaultDirectoryDataCacheTtl = 365 * 24 * 3600; // 1 year
 
@@ -148,11 +134,7 @@ class ApmSystemManager extends SystemManager
     private ?JobQueueManagerInterface $jobManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
     private ?WorkManager $workManager = null;
-    private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem = null;
-    private ?DataCache $memDataCache = null;
-    private ?ValkeyDataCache $systemDataCache = null;
     private ?DirectoryDataCache $directoryDataCache = null;
-    private ?ApmEntitySystem $apmEntitySystem = null;
     private ?ApmDocumentManager $documentManager = null;
     private ?Client $typesenseClient = null;
     private ?UdPipeLemmatizer $lemmatizer = null;
@@ -162,7 +144,7 @@ class ApmSystemManager extends SystemManager
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function __construct(ContainerInterface $ci)
+    public function __construct(ContainerInterface $ci, private readonly ApmSystemConfig $systemConfig)
     {
         parent::__construct($ci);
         $config = $this->getSanitizedConfigArray($this->config);
@@ -228,8 +210,6 @@ class ApmSystemManager extends SystemManager
         $this->userManager = null;
         $this->personManager = null;
         $this->workManager = null;
-        $this->typedMultiStorageEntitySystem = null;
-        $this->apmEntitySystem = null;
         $this->documentManager = null;
         $this->searchManager = null;
     }
@@ -292,15 +272,6 @@ class ApmSystemManager extends SystemManager
 
 
     /**
-     * @return array<string, string>
-     * @deprecated use getTableNames()
-     */
-    public function getTableNamesArray(): array
-    {
-        return get_object_vars($this->getTableNames());
-    }
-
-    /**
      * Checks a configuration array and adds defaults.
      * Reports errors and warnings in the configuration in
      * the 'errors' and 'warnings' fields
@@ -353,7 +324,7 @@ class ApmSystemManager extends SystemManager
      */
     public function getBaseUrlSubDir(): string
     {
-        return $this->config['subDir'];
+        return $this->systemConfig->general->subDir;
     }
 
     public function getTranscriptionManager(): TranscriptionManager
@@ -383,12 +354,12 @@ class ApmSystemManager extends SystemManager
 
     public function getSystemDataCache(): DataCache
     {
-        if ($this->systemDataCache === null) {
-            $this->systemDataCache = new ValkeyDataCache("APM:Sys:", $this->getValkeyClient());
-            $this->systemDataCache->setDefaultTtl(self::DefaultSystemCacheTtl);
-        }
 
-        return $this->systemDataCache;
+        try {
+            return $this->ci->get(SystemMainDataCache::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Could not get system data cache", 0, $e);
+        }
     }
 
     private function getValkeyClient(): \Predis\Client
@@ -402,24 +373,24 @@ class ApmSystemManager extends SystemManager
 
     public function getMemDataCache(): DataCache
     {
-        if ($this->memDataCache === null) {
-            $this->memDataCache = new ValkeyDataCache('APM:Mem:', $this->getValkeyClient());
-            $this->memDataCache->setDefaultTtl(self::DefaultMemCacheTtl);
+        try {
+            return $this->ci->get(SystemMemDataCache::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Could not get mem data cache", 0, $e);
         }
-        return $this->memDataCache;
     }
 
     public function getDirectoryDataCache(): DataCache
     {
-        if ($this->directoryDataCache === null) {
-            $this->directoryDataCache = new DirectoryDataCache($this->config['directoryCachePath'], 'apm');
-            $this->directoryDataCache->setDefaultTtl(self::DefaultDirectoryDataCacheTtl);
+        try {
+            return $this->ci->get(SystemDirDataCache::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Could not get dir data cache", 0, $e);
         }
-        return $this->directoryDataCache;
     }
 
     /**
-     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function getCollationTableManager(): CollationTableManager
     {
@@ -513,7 +484,6 @@ class ApmSystemManager extends SystemManager
 
     public function setRouter(RouteParserInterface $router): void
     {
-//        $this->router = $router;
     }
 
     public function getRouter(): RouteParserInterface
@@ -525,7 +495,6 @@ class ApmSystemManager extends SystemManager
             $this->logger->error("Could not get router", ['exception' => $e]);
             throw new RuntimeException("Could not get router", 0, $e);
         }
-//        return $this->router;
     }
 
 
@@ -696,7 +665,6 @@ class ApmSystemManager extends SystemManager
     public function getPersonManager(): PersonManagerInterface
     {
         if ($this->personManager === null) {
-//            $this->logger->debug("Creating PersonManager");
             $this->personManager = new EntitySystemPersonManager($this->getEntitySystem(), $this->getUserManager());
         }
         return $this->personManager;
@@ -730,81 +698,14 @@ class ApmSystemManager extends SystemManager
 
     public function getEntitySystem(): ApmEntitySystemInterface
     {
-        if ($this->apmEntitySystem === null) {
-            $this->apmEntitySystem = new ApmEntitySystem(
-                function (): TypedMultiStorageEntitySystem {
-                    return $this->getRawEntitySystem();
-                },
-                function (): DataTable {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->esMerges, true);
-                },
-                $this->getMemDataCache(),
-                self::MemCachePrefix_Apm_ES
-            );
-            $this->apmEntitySystem->setLogger($this->logger);
+        try {
+            return $this->ci->get(ApmEntitySystemInterface::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            $this->logger->error("Could not get entity system from container", ['exception' => $e]);
+            throw new RuntimeException("Could not get entity system from container", 0, $e);
         }
-        return $this->apmEntitySystem;
     }
 
-    public function createDefaultStatementStorage(): StatementStorage
-    {
-        $defaultStatementDataTable = new MySqlDataTable($this->getPdoProvider(),
-            $this->getTableNames()->esStatementsDefault);
-        return new DataTableStatementStorage($defaultStatementDataTable, [
-            'author' => Entity::pStatementAuthor,
-            "timestamp" => ['predicate' => Entity::pStatementTimestamp, 'forceLiteralValue' => true],
-            'edNote' => Entity::pStatementEditorialNote,
-            'cancelledBy' => ['predicate' => Entity::pCancelledBy, 'cancellationMetadata' => true],
-            'cancellationTs' => ['predicate' => Entity::pCancellationTimestamp, 'cancellationMetadata' => true, 'forceLiteralValue' => true],
-        ]);
-    }
-
-
-    /**
-     * @inheritDoc
-     */
-    public function getRawEntitySystem(): TypedMultiStorageEntitySystem
-    {
-        if ($this->typedMultiStorageEntitySystem === null) {
-
-            $defaultConfig = new TypeStorageConfig();
-            $defaultConfig->withType(0);
-            $defaultConfig->statementStorageCallable = function () {
-                return $this->createDefaultStatementStorage();
-            };
-            $defaultConfig->useCache = true;
-            $defaultConfig->entityDataCacheCallable = function () {
-                $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->esCacheDefault);
-                return new DataTableEntityDataCache(
-                    $defaultEntityDataCacheDataTable,
-                    [
-                        'name' => function (EntityData $entityData) {
-                            return $entityData->getObjectForPredicate(Entity::pEntityName);
-                        },
-                        'type' =>
-                            function (EntityData $entityData) {
-                                return $entityData->getObjectForPredicate(Entity::pEntityType);
-                            }
-                    ]
-                );
-            };
-
-            $defaultConfig->useMemCache = true;
-
-            try {
-                $this->typedMultiStorageEntitySystem = new TypedMultiStorageEntitySystem(
-                    Entity::pEntityType, [$defaultConfig],
-                    self::ES_DATA_ID,
-                    $this->getMemDataCache(),
-                    self::MemCachePrefix_TypedMultiStorage_ES . ':' . self::ES_DATA_ID
-                );
-                $this->typedMultiStorageEntitySystem->setLogger($this->logger);
-            } catch (InvalidArgumentException) {
-                throw new RuntimeException("Bad entity system configuration");
-            }
-        }
-        return $this->typedMultiStorageEntitySystem;
-    }
 
     public function getDocumentManager(): DocumentManager
     {

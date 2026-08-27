@@ -32,7 +32,8 @@ class ApmSystemConfigTest extends TestCase
             ],
             'log' => [
                 'fileName' => 'test.log'
-            ]
+            ],
+            'nodeService' => [ 'url' => 'https://localhost/'],
         ];
 
         $config = $this->map($data);
@@ -53,7 +54,8 @@ class ApmSystemConfigTest extends TestCase
                 'version' => '1.0.0',
                 'versionDate' => '2024-05-22',
                 'jsAppCacheDataId' => 'xyz'
-            ]
+            ],
+            'nodeService' => [ 'url' => 'https://localhost/'],
         ];
 
         $config = $this->map($data);

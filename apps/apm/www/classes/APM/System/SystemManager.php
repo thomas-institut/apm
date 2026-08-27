@@ -170,16 +170,6 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getLemmatizer() : LemmatizerInterface;
     abstract public function getSearchManager() : SearchManagerInterface;
 
-    /**
-     * @internal
-     *
-     * Returns the more basic entity system in which the full-fledged entity system
-     * is based. Use this ONLY for low level operations such as data imports.
-     *
-     * @return TypedMultiStorageEntitySystem
-     */
-    abstract public function getRawEntitySystem(): TypedMultiStorageEntitySystem;
-
     public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
         return WitnessSystemId::buildFullTxId(
             $witness->getWorkId(),

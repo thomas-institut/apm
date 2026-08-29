@@ -8,10 +8,10 @@ devMode: false
 
 copyrightNotice: '2016-26, <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>'
 
-appName: 'APM'
-
-dbTablePrefix:  'ap_'
-defaultTimeZone:  'UTC'
+#appName: 'APM'
+#
+#dbTablePrefix:  'ap_'
+#defaultTimeZone:  'UTC'
 
 languages:
 

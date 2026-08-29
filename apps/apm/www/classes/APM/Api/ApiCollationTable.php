@@ -278,13 +278,19 @@ class ApiCollationTable extends ApiController
 
 
         // Check that language is valid
-        $languages = $this->languages;
+        $lm = $this->getLanguageManager();
+        $supportedLanguages = $lm->getSupportedTranscriptionLanguageCodes();
         $langInfo = null;
-        foreach($languages as $lang) {
-            if ($lang['code'] === $language) {
-                $langInfo = $lang;
-            }
+        if (in_array($language, $supportedLanguages)) {
+            $langInfo  = $lm->getLegacyLangInfo($language);
         }
+//        $languages = $this->languages;
+//        $langInfo = null;
+//        foreach($languages as $lang) {
+//            if ($lang['code'] === $language) {
+//                $langInfo = $lang;
+//            }
+//        }
         
         if (is_null($langInfo)) {
             $msg = 'Invalid language <b>' . $language . '</b>';

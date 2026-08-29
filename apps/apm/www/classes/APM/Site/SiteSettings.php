@@ -20,8 +20,7 @@ class SiteSettings extends SiteController
     public function getSiteSettings(Request $request, Response $response): Response
     {
         SystemProfiler::setName("Site:" . __FUNCTION__);
-        $appSettings = AppSettings::generateFromConfig($this->systemManager->getConfig());
-//        $appSettings = SystemConfig::genAppSettings($this->systemManager->getConfig());
+        $appSettings = AppSettings::generateFromConfig($this->systemConfig);
         $json = json_encode($appSettings);
         if ($json === false) {
             $this->logger->error("Error encoding app settings to JSON");

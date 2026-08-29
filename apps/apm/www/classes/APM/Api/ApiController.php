@@ -23,6 +23,7 @@ namespace APM\Api;
 use APM\CollationEngine\CollationEngine;
 use APM\System\ApmContainerKey;
 use APM\System\Config\ApmSystemConfig;
+use APM\System\LanguageManager;
 use Exception;
 use Monolog\Logger;
 use Psr\Container\ContainerExceptionInterface;
@@ -81,7 +82,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
     /** @deprecated Use container to get individual components */
     protected SystemManager $systemManager;
-    protected array $languages;
+//    protected array $languages;
     protected ContainerInterface $container;
     protected bool $debugMode;
     protected string $apiCallName;
@@ -107,7 +108,6 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
 
        $this->systemManager = $ci->get(SystemManager::class);
        $this->apiUserId = (int) $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
-       $this->languages = $this->systemManager->getConfig()['languages'];
 
        /** @var LoggerInterface $logger */
        $logger = $ci->get(LoggerInterface::class);
@@ -133,6 +133,10 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
      */
     protected function getCollationEngine(string $engineSystemId) : CollationEngine {
         return $this->systemManager->getCollationEngine($engineSystemId);
+    }
+
+    protected function getLanguageManager() : LanguageManager {
+        return $this->container->get(LanguageManager::class);
     }
 
 

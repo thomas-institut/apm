@@ -27,4 +27,19 @@ readonly class ApmLanguageManager implements LanguageManager
         }
     }
 
+    public function getSupportedTranscriptionLanguageCodes(): array
+    {
+        return ['la', 'ar', 'he', 'jrb'];
+    }
+
+    public function getLegacyLangInfo(string $langCode): array
+    {
+        return match ($langCode) {
+            'ar' => [ 'code' => 'ar', 'name' => 'Arabic', 'rtl' => true, 'fontsize' => 5],
+            'he' => [ 'code' => 'he', 'name' => 'Hebrew', 'rtl' => true, 'fontsize' => 3],
+            'la' => [ 'code' => 'la', 'name' => 'Latin', 'rtl' => false, 'fontsize' => 3],
+            'jrb' => [ 'code' => 'jrb', 'name' => 'Judeo Arabic', 'rtl' => true, 'fontsize' => 3],
+            default => null,
+        };
+    }
 }

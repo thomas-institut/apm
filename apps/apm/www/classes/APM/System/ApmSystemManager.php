@@ -79,7 +79,6 @@ use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\DirectoryDataCache;
 use ThomasInstitut\DataTable\Exception\InvalidArgumentException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
@@ -98,25 +97,7 @@ use Typesense\Exceptions\ConfigError;
 class ApmSystemManager extends SystemManager
 {
 
-    // Error codes
-    const int ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
 
-    const int DefaultDirectoryDataCacheTtl = 365 * 24 * 3600; // 1 year
-
-    const array REQUIRED_CONFIG_VARIABLES = [
-        'appName',
-        'version',
-        'copyrightNotice',
-        'db',
-        'subDir',
-        'log',
-        'languages',
-        'langCodes',
-        'dbTablePrefix',
-        'daemonPidFile',
-    ];
-
-    const array REQUIRED_CONFIG_VARIABLES_DB = ['host', 'db', 'user', 'pwd'];
     private array $imageSources;
     private LoggerInterface $logger;
 
@@ -134,7 +115,6 @@ class ApmSystemManager extends SystemManager
     private ?JobQueueManagerInterface $jobManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
     private ?WorkManager $workManager = null;
-    private ?DirectoryDataCache $directoryDataCache = null;
     private ?ApmDocumentManager $documentManager = null;
     private ?Client $typesenseClient = null;
     private ?UdPipeLemmatizer $lemmatizer = null;
@@ -147,29 +127,12 @@ class ApmSystemManager extends SystemManager
     public function __construct(ContainerInterface $ci, private readonly ApmSystemConfig $systemConfig)
     {
         parent::__construct($ci);
-        $config = $this->getSanitizedConfigArray($this->config);
-        if ($config[ApmConfigParameter::ERROR]) {
-            $msg = "Configuration file is not valid:\n";
-            foreach ($config[ApmConfigParameter::ERROR_MESSAGES] as $errorMsg) {
-                $msg .= $errorMsg . "\n";
-            }
-            $this->setError($msg, self::ERROR_CONFIG_ARRAY_IS_NOT_VALID);
-            return;
-        }
-
-        if ($this->fatalErrorOccurred()) {
-            return; // @codeCoverageIgnore
-        }
-
         $this->logger = $this->ci->get(LoggerInterface::class);
-        // Dump configuration warnings in the log
-        foreach ($config[ApmConfigParameter::WARNINGS] as $warning) {
-            $this->logger->debug($warning);
-        }
+
 
         $this->imageSources = [
-            Entity::ImageSourceBilderberg => new BilderbergImageSource($this->config['url']['bilderberg']),
-            Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
+            Entity::ImageSourceBilderberg => new BilderbergImageSource($this->systemConfig->url->bilderberg),
+            Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository($this->systemConfig->url->localImageRepository)
         ];
     }
 
@@ -270,53 +233,6 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-
-    /**
-     * Checks a configuration array and adds defaults.
-     * Reports errors and warnings in the configuration in
-     * the 'errors' and 'warnings' fields
-     * @param array $originalConfig
-     * @return array
-     */
-    protected function getSanitizedConfigArray(array $originalConfig): array
-    {
-
-        $config = $originalConfig;
-        $config[ApmConfigParameter::ERROR] = false;
-        $config[ApmConfigParameter::ERROR_MESSAGES] = [];
-        $config[ApmConfigParameter::WARNINGS] = [];
-
-        foreach (self::REQUIRED_CONFIG_VARIABLES as $requiredVariable) {
-            if (!isset($config[$requiredVariable])) {
-                $config[ApmConfigParameter::ERROR] = true;
-                $config[ApmConfigParameter::ERROR_MESSAGES][] = 'Missing required parameter "' .
-                    $requiredVariable . '"';
-            }
-        }
-        if ($config[ApmConfigParameter::ERROR]) {
-            return $config;
-        }
-
-
-        // Check database configuration 
-        foreach (self::REQUIRED_CONFIG_VARIABLES_DB as $requiredVariable) {
-            if (!isset($config[ApmConfigParameter::DB][$requiredVariable])) {
-                $config[ApmConfigParameter::ERROR] = true;
-                $config[ApmConfigParameter::ERROR_MESSAGES][] = 'Missing required DB parameter: "' .
-                    $requiredVariable . '"';
-            } else {
-                if (!is_string($config[ApmConfigParameter::DB][$requiredVariable]) ||
-                    $config[ApmConfigParameter::DB][$requiredVariable] === '') {
-                    $config[ApmConfigParameter::ERROR] = true;
-                    $config[ApmConfigParameter::ERROR_MESSAGES][] =
-                        'Required DB parameter must be an non-empty string: "' .
-                        $requiredVariable . '"';
-                }
-            }
-        }
-
-        return $config;
-    }
 
     /**
      * Returns the subdirectory part of a base Url

@@ -64,12 +64,10 @@ abstract class SystemManager implements ErrorReporter {
 
     const int ERROR_NO_ERROR = 0;
 
-    // User roles
-//    const ROLE_READ_ONLY = 'readOnly';
 
 
     // Tool Ids (for presets)
-//    const string TOOL_AUTOMATIC_COLLATION_V1 = 'automaticCollation';
+
     const string TOOL_AUTOMATIC_COLLATION = 'automaticCollation_v2';
     const string TOOL_SIGLA = 'sigla';
 

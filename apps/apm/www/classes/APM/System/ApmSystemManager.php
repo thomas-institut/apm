@@ -24,8 +24,6 @@ use APM\Api\ApiPeople;
 use APM\CollationEngine\CollatexHttp;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
-use APM\CollationTable\ApmCollationTableManager;
-use APM\CollationTable\ApmCollationTableVersionManager;
 use APM\CollationTable\CollationTableManager;
 use APM\Core\Token\Normalizer\IgnoreArabicVocalizationNormalizer;
 use APM\Core\Token\Normalizer\IgnoreIsolatedHamzaNormalizer;
@@ -55,17 +53,13 @@ use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Lemmatizer\UdPipeLemmatizer;
-use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
-use APM\System\Preset\DataTablePresetManager;
 use APM\System\Preset\PresetManager;
 use APM\System\Search\SearchManagerInterface;
 use APM\System\Search\TypesenseSearchManager;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\TranscriptionManager;
-use APM\System\User\ApmUserManager;
 use APM\System\User\UserManagerInterface;
-use APM\System\Work\EntitySystemWorkManager;
 use APM\System\Work\WorkManager;
 use APM\ToolBox\BaseUrlDetector;
 use APM\ToolBox\Resettable;
@@ -79,12 +73,9 @@ use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataTable\Exception\InvalidArgumentException;
-use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
-use ThomasInstitut\JobQueue\JobQueueManagerInterface;
-use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManager;
 use Typesense\Client;
 use Typesense\Exceptions\ConfigError;
 
@@ -96,8 +87,6 @@ use Typesense\Exceptions\ConfigError;
  */
 class ApmSystemManager extends SystemManager
 {
-
-
     private array $imageSources;
     private LoggerInterface $logger;
 
@@ -105,16 +94,10 @@ class ApmSystemManager extends SystemManager
     // Components
     //
     // (all initialized to null)
-    private ?DataTablePresetManager $presetsManager = null;
     private ?CollationEngine $collationEngine = null;
     private ?ApmTranscriptionManager $transcriptionManager = null;
-    private ?ApmCollationTableManager $collationTableManager = null;
     private ?ApmNormalizerManager $normalizerManager = null;
-    private ?ApmUserManager $userManager = null;
-    private ?PersonManagerInterface $personManager = null;
-    private ?JobQueueManagerInterface $jobManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
-    private ?WorkManager $workManager = null;
     private ?ApmDocumentManager $documentManager = null;
     private ?Client $typesenseClient = null;
     private ?UdPipeLemmatizer $lemmatizer = null;
@@ -166,13 +149,8 @@ class ApmSystemManager extends SystemManager
             $provider->reset();
         }
 
-        $this->presetsManager = null;
         $this->transcriptionManager = null;
-        $this->collationTableManager = null;
         $this->editionSourceManager = null;
-        $this->userManager = null;
-        $this->personManager = null;
-        $this->workManager = null;
         $this->documentManager = null;
         $this->searchManager = null;
     }
@@ -189,14 +167,11 @@ class ApmSystemManager extends SystemManager
 
     public function getPresetsManager(): PresetManager
     {
-        if ($this->presetsManager === null) {
-            // Set up PresetsManager
-            $presetsManagerDataTable = new MySqlDataTable($this->getPdoProvider(),
-                $this->getTableNames()->presets);
-            $this->presetsManager =
-                new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
+        try {
+            return $this->ci->get(PresetManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Could not get PresetManager from container', 0, $e);
         }
-        return $this->presetsManager;
     }
 
     public function getLogger(): Logger
@@ -278,15 +253,6 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-    private function getValkeyClient(): \Predis\Client
-    {
-        try {
-            return $this->ci->get(\Predis\Client::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get valkey client", 0, $e);
-        }
-    }
-
     public function getMemDataCache(): DataCache
     {
         try {
@@ -305,20 +271,13 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-    /**
-     * @throws InvalidArgumentException
-     */
     public function getCollationTableManager(): CollationTableManager
     {
-        if ($this->collationTableManager === null) {
-            // Set up collation table manager
-            $ctTable = new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()->cTables);
-            $ctVersionsTable = new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->ctVersions);
-            $ctVersionManager = new ApmCollationTableVersionManager($ctVersionsTable);
-            $ctVersionManager->setLogger($this->logger);
-            $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
+        try {
+            return $this->ci->get(CollationTableManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Could not get collation table manager", 0, $e);
         }
-        return $this->collationTableManager;
     }
 
     /**
@@ -329,8 +288,6 @@ class ApmSystemManager extends SystemManager
         try {
             return $this->ci->get(Twig::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            // should never happen
-            $this->logger->error("Could not get twig", ['exception' => $e]);
             throw new RuntimeException("Could not get twig", 0, $e);
         }
     }
@@ -413,16 +370,13 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
     public function getMultiChunkEditionManager(): MultiChunkEditionManager
     {
-        /** @var MultiChunkEditionManager $mceManager */
-        $mceManager = $this->ci->get(MultiChunkEditionManager::class);
-        return $mceManager;
+       try {
+           return $this->ci->get(MultiChunkEditionManager::class);
+       } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+           throw new RuntimeException("Could not get multi chunk edition manager", 0, $e);
+       }
     }
 
     public function getEditionSourceManager(): EditionSourceManager
@@ -563,53 +517,39 @@ class ApmSystemManager extends SystemManager
 
     public function getUserManager(): UserManagerInterface
     {
-        if ($this->userManager === null) {
-            $this->userManager = new ApmUserManager(
-                function () {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->users, false);
-                },
-                function () {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()->tokens, true);
-                },
-                $this->getSystemDataCache(),
-                'ApmUM_'
-            );
+        try {
+            return $this->ci->get(UserManagerInterface::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('User manager not found', 0, $e);
         }
-        return $this->userManager;
     }
 
     public function getPersonManager(): PersonManagerInterface
     {
-        if ($this->personManager === null) {
-            $this->personManager = new EntitySystemPersonManager($this->getEntitySystem(), $this->getUserManager());
+        try {
+            return $this->ci->get(PersonManagerInterface::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Person manager not found', 0, $e);
         }
-        return $this->personManager;
     }
 
     public function getWorkManager(): WorkManager
     {
-        if ($this->workManager === null) {
-            $this->workManager = new EntitySystemWorkManager($this->getEntitySystem());
-            $this->workManager->setLogger($this->getLogger()->withName("WorkManager"));
+        try {
+            return $this->ci->get(WorkManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Work manager not found', 0, $e);
         }
-        return $this->workManager;
     }
 
-    public function getJobQueueManager(): JobQueueManagerInterface
+    public function getJobQueueManager(): JobQueueManager
     {
-        $logger = $this->logger;
-        if ($logger instanceof Logger) {
-            $logger = $logger->withName("JOB_QUEUE");
+
+        try {
+            return $this->ci->get(JobQueueManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("JobQueueManager not found in container", 0, $e);
         }
-        if ($this->jobManager === null) {
-            $this->jobManager = new ValkeyJobQueueManager(
-                $this->getValkeyClient(),
-                $logger,
-                ValkeyJobQueueManager::DEFAULT_PREFIX,
-                $this->ci
-            );
-        }
-        return $this->jobManager;
     }
 
     public function getEntitySystem(): ApmEntitySystemInterface

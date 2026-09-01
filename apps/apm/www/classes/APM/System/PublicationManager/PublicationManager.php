@@ -5,7 +5,7 @@ namespace APM\System\PublicationManager;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
 use ThomasInstitut\ApmPublicationApi\PublicationListing;
 
-interface PublicationManagerInterface
+interface PublicationManager
 {
 
     /**

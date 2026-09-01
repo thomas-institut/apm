@@ -3,7 +3,7 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\CommandLine\CommandLineUtility;
-use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
@@ -69,7 +69,7 @@ class PublicationToolTest extends TestCase
         $publication->id = 123;
         $publication->type = PublicationType::Transcription;
 
-        $publicationManager = $this->createMock(PublicationManagerInterface::class);
+        $publicationManager = $this->createMock(PublicationManager::class);
         $publicationManager->expects($this->once())
             ->method('getPublication')
             ->with(123)
@@ -78,7 +78,7 @@ class PublicationToolTest extends TestCase
         $container = $this->createMock(ContainerInterface::class);
         $container->expects($this->once())
             ->method('get')
-            ->with(PublicationManagerInterface::class)
+            ->with(PublicationManager::class)
             ->willReturn($publicationManager);
 
         $tool = $this->createPublicationTool($container);

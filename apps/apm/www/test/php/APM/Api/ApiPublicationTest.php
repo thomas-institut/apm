@@ -3,7 +3,7 @@
 namespace APM\Api;
 
 use APM\System\ApmContainerKey;
-use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationManager;
 use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\SystemManager;
 use Monolog\Logger;
@@ -22,7 +22,7 @@ class ApiPublicationTest extends TestCase
 {
     private MockObject|ContainerInterface $container;
     private MockObject|SystemManager $systemManager;
-    private MockObject|PublicationManagerInterface $publicationManager;
+    private MockObject|PublicationManager $publicationManager;
     private Response $response;
     private MockObject|Request $request;
     private ApiPublication $controller;
@@ -31,7 +31,7 @@ class ApiPublicationTest extends TestCase
     {
         $this->container = $this->createMock(ContainerInterface::class);
         $this->systemManager = $this->createMock(SystemManager::class);
-        $this->publicationManager = $this->createMock(PublicationManagerInterface::class);
+        $this->publicationManager = $this->createMock(PublicationManager::class);
         $this->response = new SlimResponse();
         $this->request = $this->createMock(Request::class);
 
@@ -45,7 +45,7 @@ class ApiPublicationTest extends TestCase
         $this->container->method('get')->willReturnMap([
             [SystemManager::class, $this->systemManager],
             [ApmContainerKey::API_USER_ID, 1],
-            [PublicationManagerInterface::class, $this->publicationManager],
+            [PublicationManager::class, $this->publicationManager],
         ]);
 
         $this->controller = new ApiPublication($this->container);

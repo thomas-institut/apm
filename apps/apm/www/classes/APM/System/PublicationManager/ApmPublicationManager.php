@@ -35,7 +35,7 @@ use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\TimeString;
 
-class ApmPublicationManager implements PublicationManagerInterface
+class ApmPublicationManager implements PublicationManager
 {
 
     private const string valkeyPrefix = 'APM:PublicationManager:';

@@ -12,7 +12,7 @@ use APM\System\Cache\SystemMemDataCache;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\LanguageManager;
-use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationManager;
 use APM\System\SystemManager;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
@@ -38,7 +38,7 @@ class CommonDefsProviderTest extends TestCase
             Twig::class,
             SystemManager::class,
             LanguageManager::class,
-            PublicationManagerInterface::class,
+            PublicationManager::class,
             Client::class,
             NodeServiceClient::class,
             MySqlHelper::class,

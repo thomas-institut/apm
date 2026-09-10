@@ -20,6 +20,7 @@
 namespace APM\System\Transcription;
 
 use APM\System\ApmTableNames;
+use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
@@ -62,13 +63,6 @@ use APM\System\Transcription\TxText\Unclear;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
-use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
-use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
-use ThomasInstitut\DataTable\UnitemporalDataTable;
-use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\ArraySort;
 use APM\ToolBox\MyersDiff;
 use Exception;
@@ -79,16 +73,19 @@ use RuntimeException;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataCache\CacheAware;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
+use ThomasInstitut\DataTable\Exception\InvalidRowForUpdate;
 use ThomasInstitut\DataTable\Exception\InvalidRowUpdateTime;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
-use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
 use ThomasInstitut\DataTable\Exception\RowDoesNotExist;
+use ThomasInstitut\DataTable\MySqlDataTable;
+use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
+use ThomasInstitut\DataTable\UnitemporalDataTable;
+use ThomasInstitut\Profiler\SystemProfiler;
 use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\ToolBox\DataCacheToolBox;
 use ThomasInstitut\ToolBox\MySqlHelper;
@@ -107,82 +104,58 @@ class ApmTranscriptionManager extends TranscriptionManager
     const int CACHE_TTL = 60 * 24 * 3600;  // 30 days
 
     // Components that are generated when needed
-    private ?EdNoteManager $edNoteManager = null;
     private ?ApmColumnVersionManager $columnVersionManager = null;
-    private ?DocumentManager $docManager = null;
-    private ?PersonManagerInterface $personManager = null;
     private ?UnitemporalDataTable $elementsDataTable = null;
     private ?UnitemporalDataTable $itemsDataTable = null;
 
-    /**
-     * @var callable
-     */
-    private $docManagerCallable;
-    /**
-     * @var callable
-     */
-    private $personManagerCallable;
-    /**
-     * @var callable
-     */
-    private $getDbConnCallable;
+
+
     private InMemoryDataCache $localMemCache;
     private string $cacheKeyPrefix;
-    private ApmTableNames $tNames;
 
-    private PdoProvider $pdoProvider;
 
     /**
      * Language codes allowed in transcription
      * //TODO: use global configuration for this
      * @var string[]
      */
-    private array $langCodes = [ 'ar', 'he', 'la', 'jrb'];
+    private array $langCodes = ['ar', 'he', 'la', 'jrb'];
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function __construct(readonly private ContainerInterface $container,
-                                callable                            $docManager,
-                                callable                            $personManager,
-                                callable|DataCache                  $dataCache
+    public function __construct(
+        private readonly DocumentManager        $docManager,
+        private readonly PersonManagerInterface $personManager,
+        SystemMainDataCache                     $dataCache,
+        private readonly ApmTableNames          $tNames,
+        private readonly PdoProvider            $pdoProvider,
+        private readonly MySqlHelper            $databaseHelper,
+        private readonly EdNoteManager          $edNoteManager,
+        LoggerInterface                         $theLogger
     )
     {
         $this->resetError();
-        $this->docManagerCallable = $docManager;
-        $this->personManagerCallable = $personManager;
-        $this->tNames  = $container->get(ApmTableNames::class);
         $this->setCache($dataCache);
-        $this->setCacheKeyPrefix( self::DEFAULT_CACHE_KEY_PREFIX);
+        $this->setCacheKeyPrefix(self::DEFAULT_CACHE_KEY_PREFIX);
         $this->localMemCache = new InMemoryDataCache();
-        $this->pdoProvider = $this->container->get(PdoProvider::class);
-        $logger = $this->container->get(LoggerInterface::class);
-        $this->setLogger($logger);
+        $this->setLogger($theLogger);
         $this->cacheOn = true;
         $this->startCodeDebug();
     }
 
-    private function getDatabaseHelper() : MySqlHelper {
-        try {
-            return $this->container->get(MySqlHelper::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('Could not get MySqlHelper from container', 0, $e);
-        }
+    private function getDatabaseHelper(): MySqlHelper
+    {
+        return $this->databaseHelper;
     }
 
-    public function getEdNoteManager() : EdNoteManager {
-        try {
-            return $this->container->get(EdNoteManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('Could not get EdNoteManager from container', 0, $e);
-        }
+    public function getEdNoteManager(): EdNoteManager
+    {
+        return $this->edNoteManager;
     }
 
     /**
      * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
-    public function getElementsDataTable() : UnitemporalDataTable {
+    public function getElementsDataTable(): UnitemporalDataTable
+    {
         if ($this->elementsDataTable === null) {
             $this->elementsDataTable = new MySqlUnitemporalDataTable(
                 $this->pdoProvider,
@@ -194,7 +167,8 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
      */
-    public function getItemsDataTable() : UnitemporalDataTable {
+    public function getItemsDataTable(): UnitemporalDataTable
+    {
         if ($this->itemsDataTable === null) {
             $this->itemsDataTable = new MySqlUnitemporalDataTable(
                 $this->pdoProvider,
@@ -203,7 +177,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $this->itemsDataTable;
     }
 
-    public function getColumnVersionManager() : ColumnVersionManager {
+    public function getColumnVersionManager(): ColumnVersionManager
+    {
         if ($this->columnVersionManager === null) {
             $txVersionsTable = new MySqlDataTable($this->pdoProvider, $this->tNames->txVersions);
             $this->columnVersionManager = new ApmColumnVersionManager($txVersionsTable);
@@ -211,12 +186,14 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $this->columnVersionManager;
     }
 
-    public function setCacheKeyPrefix(string $prefix): void {
+    public function setCacheKeyPrefix(string $prefix): void
+    {
         $this->cacheKeyPrefix = $prefix;
     }
 
-    private function getCacheKeyForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp) : string {
-        return  $this->cacheKeyPrefix . 'w:' . WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
+    private function getCacheKeyForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp): string
+    {
+        return $this->cacheKeyPrefix . 'w:' . WitnessSystemId::buildFullTxId($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
     }
 
     /**
@@ -226,7 +203,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param string $localWitnessId
      * @return string
      */
-    public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId) : string {
+    public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId): string
+    {
         $chunkWitnesses = $this->getWitnessesForChunk($workId, $chunkNumber);
         $witnessFound = false;
         $timeStamp = '';
@@ -241,7 +219,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             }
         }
         if (!$witnessFound) {
-            $this->setError( "Document $docId not found not found among witnesses for work $workId chunk $chunkNumber",
+            $this->setError("Document $docId not found not found among witnesses for work $workId chunk $chunkNumber",
                 self::ERROR_DOCUMENT_NOT_FOUND);
             throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
         }
@@ -260,7 +238,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId,
                                             string $localWitnessId, string $timeStamp,
-                                            string $defaultLanguageCode) : ApmTranscriptionWitness
+                                            string $defaultLanguageCode): ApmTranscriptionWitness
     {
         $this->debugCode = false;
         $cacheKey = '';
@@ -297,7 +275,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $locations = $this->getSegmentLocationsForFullTxWitness($workId, $chunkNumber, $docId, $localWitnessId, $timeStamp);
 
         if (count($locations) === 0) {
-            $this->setError( "No locations found for $workId-$chunkNumber, doc $docId - $localWitnessId", self::ERROR_NO_LOCATIONS);
+            $this->setError("No locations found for $workId-$chunkNumber, doc $docId - $localWitnessId", self::ERROR_NO_LOCATIONS);
             throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
         }
         $this->codeDebug(count($locations) . " locations");
@@ -305,9 +283,9 @@ class ApmTranscriptionManager extends TranscriptionManager
         $itemIds = [];
         try {
             $docInfo = $this->getDocumentManager()->getDocInfo($docId);
-        } catch(DocumentNotFoundException) {
+        } catch (DocumentNotFoundException) {
             // no such document!
-            $this->setError( "Document $docId not found", self::ERROR_DOCUMENT_NOT_FOUND);
+            $this->setError("Document $docId not found", self::ERROR_DOCUMENT_NOT_FOUND);
             throw new InvalidArgumentException($this->getErrorMessage(), $this->getErrorCode());
         }
 
@@ -315,15 +293,15 @@ class ApmTranscriptionManager extends TranscriptionManager
         $segmentNumbers = array_keys($locations);
         sort($segmentNumbers);
 
-        foreach($segmentNumbers as $segmentNumber) {
+        foreach ($segmentNumbers as $segmentNumber) {
             $segLocation = $locations[$segmentNumber];
             /** @var ApmChunkSegmentLocation $segLocation */
             $this->codeDebug(sprintf("Processing segment Number %d, %d -> %d",
-                $segmentNumber,$this->calcSeqNumber($segLocation->getStart()), $this->calcSeqNumber($segLocation->getEnd()) ));
+                $segmentNumber, $this->calcSeqNumber($segLocation->getStart()), $this->calcSeqNumber($segLocation->getEnd())));
             if ($segLocation->isValid()) {
                 $apItemStream = $this->getItemStreamForSegmentLocation($segLocation, $timeStamp);
-                foreach($apItemStream as $row) {
-                    $itemIds[] = (int) $row['id'];
+                foreach ($apItemStream as $row) {
+                    $itemIds[] = (int)$row['id'];
                 }
                 $this->codeDebug(sprintf("Adding %d items to itemStream", count($apItemStream)));
                 $apStreams[] = $apItemStream;
@@ -331,7 +309,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             }
         }
 
-        $edNoteArrayFromDb =  $this->getEdNoteManager()->rawGetEditorialNotesForListOfItems($itemIds);
+        $edNoteArrayFromDb = $this->getEdNoteManager()->rawGetEditorialNotesForListOfItems($itemIds);
         $itemStream = new DatabaseItemStream($docId, $apStreams, LegacyLangData::getLangCode($docInfo->language), $edNoteArrayFromDb);
 
         $txWitness = new ApmTranscriptionWitness($docId, $workId, $chunkNumber, $localWitnessId, $timeStamp, $itemStream);
@@ -339,15 +317,15 @@ class ApmTranscriptionManager extends TranscriptionManager
         $firstLocation = $locations[array_keys($locations)[0]];
         $firstPageId = $firstLocation->getStart()->pageId;
         $firstColumn = $firstLocation->getStart()->columnNumber;
-        $firstLineNumber = $this->getInitialLineNumberForStartLocation( $firstLocation, $timeStamp);
+        $firstLineNumber = $this->getInitialLineNumberForStartLocation($firstLocation, $timeStamp);
         $this->logger->debug('First Line number: ' . $firstLineNumber);
         $txWitness->setInitialLineNumberForTextBox($firstPageId, $firstColumn, $firstLineNumber);
 
         if ($this->cacheOn) {
             $dataToSave = DataCacheToolBox::toStringToCache($txWitness, true);
             try {
-                $this->getDataCache()->set($cacheKey, $dataToSave,self::CACHE_TTL);
-            } catch(Exception $e) {
+                $this->getDataCache()->set($cacheKey, $dataToSave, self::CACHE_TTL);
+            } catch (Exception $e) {
                 $this->setError("Cannot set cache for key $cacheKey : " . $e->getMessage(), self::ERROR_CACHE_ERROR);
                 throw new RuntimeException('Cannot set cache for key ' . $cacheKey);
             }
@@ -361,14 +339,16 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $this->calcSeqNumberGeneric($loc->pageSequence, $loc->columnNumber, $loc->elementSequence, $loc->itemSequence);
     }
 
-    private function calcSeqNumberGeneric(int $pageSeq, int $colNumber, int $elementSeq, int $itemSeq) : int {
-        return $pageSeq*1000000 + $colNumber * 10000 + $elementSeq*100 + $itemSeq;
+    private function calcSeqNumberGeneric(int $pageSeq, int $colNumber, int $elementSeq, int $itemSeq): int
+    {
+        return $pageSeq * 1000000 + $colNumber * 10000 + $elementSeq * 100 + $itemSeq;
     }
 
-    private function getInitialLineNumberForStartLocation(ApmChunkSegmentLocation $location, string $timeString) : int {
+    private function getInitialLineNumberForStartLocation(ApmChunkSegmentLocation $location, string $timeString): int
+    {
         $this->codeDebug("Getting initial line numbers for start location");
         $seqNumberStart = $this->calcSeqNumber($location->getStart());
-        $seqNumberColumnStart = $this->calcSeqNumberGeneric($location->getStart()->pageSequence, $location->getStart()->columnNumber, 0 , 0);
+        $seqNumberColumnStart = $this->calcSeqNumberGeneric($location->getStart()->pageSequence, $location->getStart()->columnNumber, 0, 0);
 
         $rows = $this->getItemRowsBetweenSeqNumbers($seqNumberColumnStart, $seqNumberStart, $timeString, $location->getStart()->docId);
         $this->codeDebug("Got " . count($rows) . " rows");
@@ -378,16 +358,17 @@ class ApmTranscriptionManager extends TranscriptionManager
             if (intval($row['e.type']) === Element::LINE) {
                 $nNewLines = isset($row['text']) ? substr_count($row['text'], "\n") : 0;
                 $this->codeDebug("Got $nNewLines new lines in line element, index $i");
-                $lineNumber +=  $nNewLines;
+                $lineNumber += $nNewLines;
 
             } else {
-                $this->codeDebug("Got element type " . $row['e.type'] );
+                $this->codeDebug("Got element type " . $row['e.type']);
             }
         }
         return $lineNumber;
     }
 
-    private function getItemRowsBetweenSeqNumbers(int $seqNumberStart, int $seqNumberEnd, string $timeString, int $docId) : array {
+    private function getItemRowsBetweenSeqNumbers(int $seqNumberStart, int $seqNumberEnd, string $timeString, int $docId): array
+    {
 
         // TODO: Deal with line gaps, those will NOT appear in the results of the current query since they do not have items
 
@@ -405,7 +386,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             " FROM $ti" .
             " JOIN ($te FORCE INDEX (page_id_2), $tp)" .
             " ON ($te.id=$ti.ce_id AND $tp.id=$te.page_id)" .
-            " WHERE $tp.doc_id=" . $docId  .
+            " WHERE $tp.doc_id=" . $docId .
             " AND $te.type=" . Element::LINE .    // just include line elements
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) > $seqNumberStart" .
             " AND ($tp.seq*1000000 + $te.column_number*10000 + $te.seq * 100 + $ti.seq) < $seqNumberEnd" .
@@ -425,7 +406,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $rows;
     }
 
-    private function getItemStreamForSegmentLocation(ApmChunkSegmentLocation $location, string $timeString) : array {
+    private function getItemStreamForSegmentLocation(ApmChunkSegmentLocation $location, string $timeString): array
+    {
         $seqNumberStart = $this->calcSeqNumber($location->getStart());
         $seqNumberEnd = $this->calcSeqNumber($location->getEnd());
 
@@ -436,18 +418,18 @@ class ApmTranscriptionManager extends TranscriptionManager
         // places
         $items = [];
         $additionItemsAlreadyInOutput = [];
-        foreach($rows as $inputRow) {
+        foreach ($rows as $inputRow) {
             $elementType = intval($inputRow['e.type']);
             $itemType = intval($inputRow['type']);
             $itemId = intval($inputRow['id']);
             if ($elementType === Element::LINE) {
-                switch( $itemType) {
+                switch ($itemType) {
                     case ApItem::DELETION:
                     case ApItem::UNCLEAR:
                     case ApItem::MARGINAL_MARK:
                         // an addition can replace these 3 types, let's see if there's one
                         $items[] = $inputRow;
-                        $additionItem  = $this->getAdditionItemWithGivenTarget($itemId, $timeString);
+                        $additionItem = $this->getAdditionItemWithGivenTarget($itemId, $timeString);
                         if ($additionItem) {
                             // found an addition item that replaces the item
                             // force the addition to be located in the same element as the item it replaces
@@ -464,7 +446,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                             if ($additionElementId) {
                                 // found an addition element, just put its rows in the item list
                                 $additionElementItemStream = $this->getItemStreamForElementId($additionElementId, $timeString);
-                                foreach($additionElementItemStream as $additionItem) {
+                                foreach ($additionElementItemStream as $additionItem) {
                                     $items[] = $additionItem;
                                 }
                             }
@@ -489,7 +471,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $items;
     }
 
-    private function getAdditionItemWithGivenTarget(int $target, string $timeString) {
+    private function getAdditionItemWithGivenTarget(int $target, string $timeString)
+    {
         $ti = $this->tNames->items;
 
 
@@ -516,7 +499,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $r = $this->getDatabaseHelper()->query($query);
         $row = $r->fetch(PDO::FETCH_ASSOC);
         if ($row) {
-            return (int) $row['id'];
+            return (int)$row['id'];
         }
         return false;
     }
@@ -557,7 +540,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function getChunkLocationMapForDoc(int $docId, string $timeString): array
     {
-        return $this->getChunkLocationMapFromDatabase([ 'doc_id' => '=' . $docId], $timeString);
+        return $this->getChunkLocationMapFromDatabase(['doc_id' => '=' . $docId], $timeString);
     }
 
     /**
@@ -565,10 +548,10 @@ class ApmTranscriptionManager extends TranscriptionManager
      */
     public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string $timeString): array
     {
-        return $this->getChunkLocationMapFromDatabase([ 'work_id' => "='$workId'", 'chunk_number' => "=$chunkNumber"], $timeString);
+        return $this->getChunkLocationMapFromDatabase(['work_id' => "='$workId'", 'chunk_number' => "=$chunkNumber"], $timeString);
     }
 
-    public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array
+    public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString): array
     {
         $chunkLocationMap = $this->getChunkLocationMapFromDatabase(
             [
@@ -594,7 +577,8 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param ApmChunkMarkLocation[] $chunkMarkLocations
      * @return array
      */
-    private function createChunkLocationMapFromChunkMarkLocations(array $chunkMarkLocations) : array {
+    private function createChunkLocationMapFromChunkMarkLocations(array $chunkMarkLocations): array
+    {
 
         $chunkLocations = [];
 
@@ -622,7 +606,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 if ($segmentLocation->getStart()->hasNotBeenSet()) {
                     $segmentLocation->setStart($location);
                 } else {
-                    $this->logger->debug('Duplicate chunk start mark found', [ $location]);
+                    $this->logger->debug('Duplicate chunk start mark found', [$location]);
                     $segmentLocation->setDuplicateChunkMarkStatus(true);
                 }
             } else {
@@ -638,7 +622,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
 
-    private function getChunkLocationMapFromDatabase(array $conditions, string $timeString) : array
+    private function getChunkLocationMapFromDatabase(array $conditions, string $timeString): array
     {
 
 //        $this->codeDebug('Getting chunk map from DB', [ $conditions, $timeString]);
@@ -651,7 +635,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
         $conditionsSql = [];
-        foreach($conditions as $field => $condition) {
+        foreach ($conditions as $field => $condition) {
             $conditionsSql[] = match ($field) {
                 'work_id' => "$ti.text" . $condition,
                 'doc_id' => "$tp.doc_id" . $condition,
@@ -695,10 +679,10 @@ class ApmTranscriptionManager extends TranscriptionManager
         $chunkMarkLocations = [];
         while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
             $location = new ApmChunkMarkLocation();
-            $location->docId = (int) $row['doc_id'];
+            $location->docId = (int)$row['doc_id'];
             $location->workId = $row['work_id'];
             $location->witnessLocalId = $row['witness_local_id'];
-            $location->chunkNumber = (int) $row['chunk_number'];
+            $location->chunkNumber = (int)$row['chunk_number'];
             if (is_null($row['segment_number'])) {
                 $location->segmentNumber = 1;  // very old items in the db did not have a segment number!
             } else {
@@ -706,11 +690,11 @@ class ApmTranscriptionManager extends TranscriptionManager
             }
             $location->type = $row['type'];
 
-            $location->pageSequence = (int) $row['page_seq'];
-            $location->pageId = (int) $row['page_id'];
-            $location->columnNumber = (int) $row['column_number'];
-            $location->elementSequence = (int) $row['e_seq'];
-            $location->itemSequence = (int) $row['item_seq'];
+            $location->pageSequence = (int)$row['page_seq'];
+            $location->pageId = (int)$row['page_id'];
+            $location->columnNumber = (int)$row['column_number'];
+            $location->elementSequence = (int)$row['e_seq'];
+            $location->itemSequence = (int)$row['item_seq'];
             $location->validFrom = $row['from'];
             $location->validUntil = $row['until'];
             $chunkMarkLocations[] = $location;
@@ -725,7 +709,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array
+    public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array
     {
         $te = $this->tNames->elements;
         $tp = $this->tNames->pages;
@@ -746,7 +730,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             " ORDER BY p.`$orderBy`";
         $r = $this->getDatabaseHelper()->query($query);
         $pages = [];
-        while ($row = $r->fetch(PDO::FETCH_ASSOC)){
+        while ($row = $r->fetch(PDO::FETCH_ASSOC)) {
             $pages[] = intval($row['page_number']);
         }
         // $this->logger->debug("Pages", [ 'pages' => $pages]);
@@ -755,22 +739,11 @@ class ApmTranscriptionManager extends TranscriptionManager
 
     public function getDocumentManager(): DocumentManager
     {
-        if ($this->docManager === null) {
-            if ($this->docManagerCallable === null) {
-                throw new RuntimeException("Document manager cannot be created, no callable given");
-            }
-            $this->docManager = call_user_func($this->docManagerCallable);
-        }
         return $this->docManager;
     }
 
-    private function getPersonManager() : PersonManagerInterface {
-        if ($this->personManager === null) {
-            if ($this->personManagerCallable === null) {
-                throw new RuntimeException("Person manager cannot be created, no callable given");
-            }
-            $this->personManager = call_user_func($this->personManagerCallable);
-        }
+    private function getPersonManager(): PersonManagerInterface
+    {
         return $this->personManager;
     }
 
@@ -786,8 +759,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         $versions = $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageInfo->pageId, $location->columnNumber);
 
         $filteredVersions = [];
-        foreach($versions as $version) {
-            if (strcmp($version->timeUntil, $upToTimeString) <= 0 ){
+        foreach ($versions as $version) {
+            if (strcmp($version->timeUntil, $upToTimeString) <= 0) {
                 $filteredVersions[] = $version;
             }
         }
@@ -809,7 +782,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         $docId = $chunkSegmentLocation->getStart()->docId;
 
 
-
         $startPageSeq = $chunkSegmentLocation->getStart()->pageSequence;
         $startColumn = $chunkSegmentLocation->getStart()->columnNumber;
 
@@ -826,23 +798,23 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         $segmentVersions[$startPageSeq] = [];
         if ($startPageSeq === $endPageSeq) {
-            for($col = $startColumn; $col <= $endColumn; $col++) {
+            for ($col = $startColumn; $col <= $endColumn; $col++) {
                 $segmentVersions[$startPageSeq][$col] = $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($startPageInfo->pageId, $col);
             }
             return $segmentVersions;
         }
 
-        for($col = $startColumn; $col <= $startPageInfo->numCols; $col++) {
+        for ($col = $startColumn; $col <= $startPageInfo->numCols; $col++) {
             $segmentVersions[$startPageSeq][$col] = $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($startPageInfo->pageId, $col);
         }
-        for ($seq = $startPageSeq+1; $seq < $endPageSeq; $seq++) {
+        for ($seq = $startPageSeq + 1; $seq < $endPageSeq; $seq++) {
             try {
                 $pageInfo = $this->getPageInfoByDocSeq($docId, $seq);
             } catch (DocumentNotFoundException|PageNotFoundException) {
                 // TODO: check this
                 return [];
             }
-            for($col = 1; $col <= $pageInfo->numCols; $col++) {
+            for ($col = 1; $col <= $pageInfo->numCols; $col++) {
                 $segmentVersions[$seq][$col] = $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageInfo->pageId, $col);
             }
         }
@@ -851,12 +823,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         } catch (DocumentNotFoundException|PageNotFoundException) {
             return [];
         }
-        for($col = 1; $col <= $endPageInfo->numCols; $col++) {
+        for ($col = 1; $col <= $endPageInfo->numCols; $col++) {
             $segmentVersions[$endPageSeq][$col] = $this->getColumnVersionManager()->getColumnVersionInfoByPageCol($endPageInfo->pageId, $col);
         }
         return $segmentVersions;
     }
-
 
 
     /**
@@ -866,10 +837,10 @@ class ApmTranscriptionManager extends TranscriptionManager
     {
         $versionMap = [];
         foreach ($chunkLocationMap as $workId => $chunkNumberMap) {
-            foreach($chunkNumberMap as $chunkNumber => $docMap) {
+            foreach ($chunkNumberMap as $chunkNumber => $docMap) {
                 foreach ($docMap as $docId => $localWitnessIdMap) {
-                    foreach($localWitnessIdMap as $localWitnessId => $segmentMap) {
-                        foreach($segmentMap as $segmentNumber => $segmentLocation) {
+                    foreach ($localWitnessIdMap as $localWitnessId => $segmentMap) {
+                        foreach ($segmentMap as $segmentNumber => $segmentLocation) {
                             /** @var $segmentLocation ApmChunkSegmentLocation */
                             $versionMap[$workId][$chunkNumber][$docId][$localWitnessId][$segmentNumber] = $this->getVersionsForSegmentLocation($segmentLocation);
                         }
@@ -880,10 +851,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $versionMap;
     }
 
-    public function getLastChunkVersionFromVersionMap(array $versionMap) : array {
+    public function getLastChunkVersionFromVersionMap(array $versionMap): array
+    {
         $lastVersions = [];
         foreach ($versionMap as $workId => $chunkNumberMap) {
-            foreach($chunkNumberMap as $chunkNumber => $docMap) {
+            foreach ($chunkNumberMap as $chunkNumber => $docMap) {
                 foreach ($docMap as $docId => $localWitnessIdMap) {
                     foreach ($localWitnessIdMap as $localWitnessId => $segmentMap) {
 //                        $this->logger->debug("Processing version map: $workId-$chunkNumber, doc $docId", [ 'segmentMap' => $segmentMap]);
@@ -928,7 +900,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $queryResult = $this->getDatabaseHelper()->query($query);
 
         $versions = [];
-        while ($row = $queryResult->fetch(PDO::FETCH_ASSOC)){
+        while ($row = $queryResult->fetch(PDO::FETCH_ASSOC)) {
             $versions[] = ColumnVersionInfo::createFromDbRow($row);
         }
         return $versions;
@@ -961,7 +933,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $witnessInfoArray = [];
 
 
-        foreach($docArray as $docId => $localWitnessIdArray) {
+        foreach ($docArray as $docId => $localWitnessIdArray) {
             foreach ($localWitnessIdArray as $localWitnessId => $segmentArray) {
                 try {
                     $docInfo = $docManager->getDocInfo($docId);
@@ -1030,10 +1002,10 @@ class ApmTranscriptionManager extends TranscriptionManager
     public static function createElementArrayFromArray(array $theArray): array
     {
         $elements = [];
-        foreach($theArray as $elementArray) {
+        foreach ($theArray as $elementArray) {
             $e = self::createElementObjectFromArray($elementArray);
             $e->items = [];
-            foreach($elementArray['items'] as $itemArray) {
+            foreach ($elementArray['items'] as $itemArray) {
                 $item = self::createItemObjectFromArray($itemArray);
                 $e->items[] = $item;
             }
@@ -1046,7 +1018,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     {
         $fields = [
             'id' => 'id',
-            'type'=> 'type',
+            'type' => 'type',
             'page_id' => 'pageId',
             'column_number' => 'columnNumber',
             'seq' => 'seq',
@@ -1059,11 +1031,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         return self::createElementObjectFromArbitraryRow($fields, $theArray);
     }
 
-    public static function createItemObjectFromArray($theArray)  : Item
+    public static function createItemObjectFromArray($theArray): Item
     {
         $fields = [
             'id' => 'id',
-            'type'=> 'type',
+            'type' => 'type',
             'ce_id' => 'columnElementId',
             'seq' => 'seq',
             'lang' => 'lang',
@@ -1087,7 +1059,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $this->getDocumentManager()->updatePageSettings($pageId, $newSettings);
         if ($currentSettings->foliation !== $newSettings->foliation) {
             // add a new version to each column with transcription
-            for($i = 1; $i <= $newSettings->numCols; $i++) {
+            for ($i = 1; $i <= $newSettings->numCols; $i++) {
                 if ($this->hasTranscription($pageId, $i)) {
                     $this->codeDebug("Page $pageId, col $i, has transcription, adding new version");
                     $versionInfo = new ColumnVersionInfo();
@@ -1132,7 +1104,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $theRows = iterator_to_array($rows);
         ArraySort::byKey($theRows, 'seq');
         $elements = [];
-        foreach($theRows as $row) {
+        foreach ($theRows as $row) {
             $e = $this->createElementObjectFromRow($row);
             $e->items = $this->getItemsForElement($e, $timeString);
             $elements[] = $e;
@@ -1150,7 +1122,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     public function updateColumnElements(int $pageId, int $columnNumber, array $newElements, string $time = ''): bool|array
     {
         // force pageId and columnNumber in the elements in $newElements
-        foreach ($newElements as $element ) {
+        foreach ($newElements as $element) {
             $element->pageId = $pageId;
             $element->columnNumber = $columnNumber;
         }
@@ -1184,8 +1156,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                         if ($oldElements[$index]->reference !== 0) {
                             if (!isset($newItemsIds[$oldElements[$index]->reference])) {
                                 $this->logger->warning('Found element without a valid target reference', get_object_vars($oldElements[$index]));
-                            }
-                            else {
+                            } else {
                                 if ($oldElements[$index]->reference !== $newItemsIds[$oldElements[$index]->reference]) {
                                     $newElements[$index]->reference = $newItemsIds[$oldElements[$index]->reference];
                                 }
@@ -1193,7 +1164,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                         }
                     }
                     list (, $ids) = $this->updateElement($newElements[$newElementsIndex], $oldElements[$index], $newItemsIds, $time);
-                    foreach($ids as $oldId => $newId) {
+                    foreach ($ids as $oldId => $newId) {
                         $newItemsIds[$oldId] = $newId;
                     }
                     $newElementsIndex++;
@@ -1209,8 +1180,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                         if ($newElements[$index]->reference !== 0) {
                             if (!isset($newItemsIds[$newElements[$index]->reference])) {
                                 $this->logger->warning('Found element without a valid target reference', get_object_vars($newElements[$index]));
-                            }
-                            else {
+                            } else {
                                 if ($newElements[$index]->reference !== $newItemsIds[$newElements[$index]->reference]) {
                                     $newElements[$index]->reference = $newItemsIds[$newElements[$index]->reference];
                                 }
@@ -1330,7 +1300,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         if ($element->type !== Element::LINE_GAP && count($element->items) === 0) {
             $this->logger->error('Empty element being inserted',
-                [ 'pageId' => $element->pageId,
+                ['pageId' => $element->pageId,
                     'colNum' => $element->columnNumber,
                     'editorTid' => $element->editorTid]);
             return false;
@@ -1338,7 +1308,7 @@ class ApmTranscriptionManager extends TranscriptionManager
 
         if (!in_array($element->lang, $this->langCodes)) {
             $this->logger->error('Element with invalid language being inserted',
-                [   'pageId' => $element->pageId,
+                ['pageId' => $element->pageId,
                     'colNum' => $element->columnNumber,
                     'editorTid' => $element->editorTid,
                     'lang' => $element->lang]);
@@ -1355,7 +1325,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
 
-
         if ($element->columnNumber > $pageInfo->numCols) {
             $this->logger->error('Element being inserted in '
                 . 'non-existent column',
@@ -1370,7 +1339,6 @@ class ApmTranscriptionManager extends TranscriptionManager
         } catch (PersonNotFoundException) {
             $editorIsUser = false;
         }
-
 
 
         if (!$editorIsUser) {
@@ -1393,7 +1361,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $newElement = clone $element;
         if ($insertAtEnd) {
             // Simplest case, overwrite element's sequence
-            $newElement->seq = $maxSeq+1;
+            $newElement->seq = $maxSeq + 1;
         } else {
             // Need to reposition the rest of the elements in the column
             try {
@@ -1446,7 +1414,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                 $item->target = $itemIds[$item->target];
             }
             $newItemId = $this->createNewItemInDB($item, $time);
-            if ($newItemId === -1 ) {
+            if ($newItemId === -1) {
                 // This means a database error
                 // Can't reproduce in testing for now
                 // @codeCoverageIgnoreStart
@@ -1493,9 +1461,6 @@ class ApmTranscriptionManager extends TranscriptionManager
     }
 
 
-
-
-
     /**
      *
      * @param int $docId
@@ -1528,7 +1493,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             . "AND `valid_until`='9999-12-31 23:59:59.999999'";
         $row = $this->getDatabaseHelper()->getOneRow($sql);
         if (isset($row['m'])) {
-            return (int) $row['m'];
+            return (int)$row['m'];
         }
         return -1;
     }
@@ -1540,7 +1505,7 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @return bool
      * @throws Exception
      */
-    public function deleteElement(int $elementId, bool|string $timeString=false): bool
+    public function deleteElement(int $elementId, bool|string $timeString = false): bool
     {
 
         // TODO: do all deletes within a transaction
@@ -1605,7 +1570,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         $theRows = iterator_to_array($rows);
         ArraySort::byKey($theRows, 'seq');
 
-        $tt=[];
+        $tt = [];
 
         foreach ($theRows as $row) {
             try {
@@ -1618,11 +1583,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $tt;
     }
 
-    public static function createItemObjectFromRow(array $row) : Item
+    public static function createItemObjectFromRow(array $row): Item
     {
         $fields = [
             'id' => 'id',
-            'type'=> 'type',
+            'type' => 'type',
             'ce_id' => 'ce_id',
             'seq' => 'seq',
             'lang' => 'lang',
@@ -1640,7 +1605,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     {
         $fields = [
             'id' => 'id',
-            'type'=> 'type',
+            'type' => 'type',
             'page_id' => 'page_id',
             'column_number' => 'column_number',
             'seq' => 'seq',
@@ -1653,9 +1618,10 @@ class ApmTranscriptionManager extends TranscriptionManager
         return self::createElementObjectFromArbitraryRow($fields, $row);
     }
 
-    public static function createElementObjectFromArbitraryRow($fields, $row) : Element {
+    public static function createElementObjectFromArbitraryRow($fields, $row): Element
+    {
 
-        switch (intval($row[$fields['type']])){
+        switch (intval($row[$fields['type']])) {
             case Element::LINE:
                 $e = new Line();
                 break;
@@ -1691,14 +1657,14 @@ class ApmTranscriptionManager extends TranscriptionManager
         if (!isset($e)) {
             throw new RuntimeException("Unknown Element type in $row", $row);
         }
-        $e->columnNumber = (int) $row[$fields['column_number']];
-        $e->pageId = (int) $row[$fields['page_id']];
-        $e->seq = (int) $row[$fields['seq']];
+        $e->columnNumber = (int)$row[$fields['column_number']];
+        $e->pageId = (int)$row[$fields['page_id']];
+        $e->seq = (int)$row[$fields['seq']];
         $e->editorTid = intval($row[$fields['editor_tid']]);
-        $e->handId = (int) $row[$fields['hand_id']];
-        $e->id = (int) $row[$fields['id']];
+        $e->handId = (int)$row[$fields['hand_id']];
+        $e->id = (int)$row[$fields['id']];
         $e->lang = $row[$fields['lang']];
-        $e->reference = (int) $row[$fields['reference']];
+        $e->reference = (int)$row[$fields['reference']];
         $e->placement = $row[$fields['placement']];
         return $e;
     }
@@ -1709,9 +1675,9 @@ class ApmTranscriptionManager extends TranscriptionManager
      * @param array $row
      * @return ApItem
      */
-    public static function createItemObjectFromArbitraryRow(array $fields, array $row) : Item
+    public static function createItemObjectFromArbitraryRow(array $fields, array $row): Item
     {
-        switch (intval($row[$fields['type']])){
+        switch (intval($row[$fields['type']])) {
             case Item::TEXT:
                 $item = new Text(
                     intval($row[$fields['id']]),
@@ -1906,7 +1872,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function getDocIdsTranscribedByUser(int $userTid) : array
+    public function getDocIdsTranscribedByUser(int $userTid): array
     {
         $tp = $this->tNames->pages;
         $te = $this->tNames->elements;
@@ -1922,7 +1888,7 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
         $docIds = [];
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)){
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
             $docIds[] = intval($row['id']);
         }
         return $docIds;
@@ -1931,7 +1897,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array
+    public function getPageIdsTranscribedByUser(int $userTid, int $docId): array
     {
         $tp = $this->tNames->pages;
         $te = $this->tNames->elements;
@@ -1953,11 +1919,11 @@ class ApmTranscriptionManager extends TranscriptionManager
         }
 
         $pageIds = [];
-        while ($row = $res->fetch(PDO::FETCH_ASSOC)){
+        while ($row = $res->fetch(PDO::FETCH_ASSOC)) {
             $pageIds[] = intval($row['id']);
         }
         if ($docId > 2000) {
-            $this->logger->debug("Page Ids for user $userTid, doc $docId", [ 'pageIds' => $pageIds ]);
+            $this->logger->debug("Page Ids for user $userTid, doc $docId", ['pageIds' => $pageIds]);
         }
         return $pageIds;
     }
@@ -2021,8 +1987,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                         if ($oldElement->items[$index]->target !== 0) {
                             if (!isset($itemIds[$oldElement->items[$index]->target])) {
                                 $this->logger->warning("Addition without valid target @ pos $index", get_object_vars($oldElement->items[$index]));
-                            }
-                            else {
+                            } else {
                                 if ($oldElement->items[$index]->target !== $itemIds[$oldElement->items[$index]->target]) {
                                     $oldElement->items[$index]->target = $itemIds[$oldElement->items[$index]->target];
                                     $this->updateItemInDB(
@@ -2068,7 +2033,7 @@ class ApmTranscriptionManager extends TranscriptionManager
                         $time
                     );
                     if ($newItemId === -1) {
-                        $this->logger->error("Could not create new item in DB", [ 'class' => __CLASS__, 'function' => __FUNCTION__]);
+                        $this->logger->error("Could not create new item in DB", ['class' => __CLASS__, 'function' => __FUNCTION__]);
                         throw new RuntimeException("Could not add new item in DB");
                     }
 
@@ -2113,7 +2078,8 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function getEditorIdsByDocId(int $docId) : array {
+    public function getEditorIdsByDocId(int $docId): array
+    {
         $te = $this->tNames->elements;
         $tp = $this->tNames->pages;
 
@@ -2135,7 +2101,8 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function getWorksWithTranscription() : array {
+    public function getWorksWithTranscription(): array
+    {
         $ti = $this->tNames->items;
         $te = $this->tNames->elements;
 
@@ -2159,7 +2126,7 @@ class ApmTranscriptionManager extends TranscriptionManager
     /**
      * @inheritDoc
      */
-    public function getChunksWithTranscriptionForWorkId($apmWorkId) : array
+    public function getChunksWithTranscriptionForWorkId($apmWorkId): array
     {
         $ti = $this->tNames->items;
         $te = $this->tNames->elements;
@@ -2168,7 +2135,7 @@ class ApmTranscriptionManager extends TranscriptionManager
             " FROM $ti " .
             " JOIN $te ON ($ti.ce_id=$te.id) " .
             " WHERE $ti.type=" . Item::CHUNK_MARK .
-            " AND $ti.text='" . $apmWorkId . "'"  .
+            " AND $ti.text='" . $apmWorkId . "'" .
             " AND $ti.`valid_until`='9999-12-31 23:59:59.999999'" .
             " AND $te.`valid_until`='9999-12-31 23:59:59.999999'" .
             " ORDER BY $ti.target";
@@ -2182,7 +2149,8 @@ class ApmTranscriptionManager extends TranscriptionManager
         return $chunks;
     }
 
-    public function getTranscribedPageCount() : int {
+    public function getTranscribedPageCount(): int
+    {
         $te = $this->tNames->elements;
         $query = "SELECT count(DISTINCT(page_id)) AS c FROM `$te`";
         $r = $this->getDatabaseHelper()->query($query);

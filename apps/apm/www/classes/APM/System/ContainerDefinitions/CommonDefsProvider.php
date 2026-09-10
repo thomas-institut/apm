@@ -18,9 +18,11 @@ use APM\System\Cache\SystemMainDataCache;
 use APM\System\Cache\ValkeySystemMemDataCache;
 use APM\System\Cache\ValkeySystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
+use APM\System\Document\DocumentManager;
 use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\ApmEntitySystemFactory;
 use APM\System\Factories\CollationTableManagerFactory;
+use APM\System\Factories\DocumentManagerFactory;
 use APM\System\Factories\JobQueueManagerFactory;
 use APM\System\Factories\MultiChunkEditionManagerFactory;
 use APM\System\Factories\NodeServiceClientFactory;
@@ -80,6 +82,7 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             UserManagerInterface::class => factory([UserManagerFactory::class, 'create']),
             PersonManagerInterface::class => autowire(EntitySystemPersonManager::class),
             WorkManager::class => autowire(EntitySystemWorkManager::class),
+            DocumentManager::class => factory([DocumentManagerFactory::class, 'create']),
         ];
     }
 }

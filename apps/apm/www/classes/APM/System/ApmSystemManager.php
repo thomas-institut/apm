@@ -47,7 +47,6 @@ use APM\System\Cache\SystemDirDataCache;
 use APM\System\Cache\SystemMemDataCache;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
-use APM\System\Document\ApmDocumentManager;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
@@ -73,7 +72,6 @@ use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\JobQueue\JobQueueManager;
 use Typesense\Client;
@@ -98,7 +96,6 @@ class ApmSystemManager extends SystemManager
     private ?ApmTranscriptionManager $transcriptionManager = null;
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
-    private ?ApmDocumentManager $documentManager = null;
     private ?Client $typesenseClient = null;
     private ?UdPipeLemmatizer $lemmatizer = null;
     private ?TypesenseSearchManager $searchManager = null;
@@ -151,7 +148,6 @@ class ApmSystemManager extends SystemManager
 
         $this->transcriptionManager = null;
         $this->editionSourceManager = null;
-        $this->documentManager = null;
         $this->searchManager = null;
     }
 
@@ -565,18 +561,24 @@ class ApmSystemManager extends SystemManager
 
     public function getDocumentManager(): DocumentManager
     {
-        if ($this->documentManager === null) {
-            $this->documentManager = new ApmDocumentManager(
-                function () {
-                    return $this->getEntitySystem();
-                },
-                function () {
-                    return new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()->pages);
-                }
-            );
-            $this->documentManager->setLogger($this->logger);
+        try {
+            return $this->ci->get(DocumentManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            $this->logger->error("Could not get document manager from container", ['exception' => $e]);
+            throw new RuntimeException("Could not get document manager from container", 0, $e);
         }
-        return $this->documentManager;
+//        if ($this->documentManager === null) {
+//            $this->documentManager = new ApmDocumentManager(
+//                function () {
+//                    return $this->getEntitySystem();
+//                },
+//                function () {
+//                    return new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()->pages);
+//                }
+//            );
+//            $this->documentManager->setLogger($this->logger);
+//        }
+//        return $this->documentManager;
     }
 
     public function getTypesenseClient(): Client

@@ -29,7 +29,6 @@ use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Document\DocumentManager;
-use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
 use APM\System\Search\SearchManagerInterface;
@@ -42,7 +41,6 @@ use Psr\Container\ContainerInterface;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 use ThomasInstitut\JobQueue\JobQueueManager;
@@ -61,9 +59,6 @@ use Typesense\Client;
 abstract class SystemManager implements ErrorReporter {
 
     use SimpleErrorReporterTrait;
-
-    const int ERROR_NO_ERROR = 0;
-
 
 
     // Tool Ids (for presets)
@@ -84,11 +79,7 @@ abstract class SystemManager implements ErrorReporter {
         $this->ci = $ci;
         $this->config = $ci->get(ApmContainerKey::CONFIG_ARRAY);
     }
-    
-    public function fatalErrorOccurred() : bool {
-        return $this->errorCode !== self::ERROR_NO_ERROR;
-    }
-    
+
     public function getConfig() : array {
         return $this->config;
     }
@@ -165,7 +156,6 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
     abstract public function getDocumentManager() : DocumentManager;
     abstract public function getTypesenseClient() : Client;
-    abstract public function getLemmatizer() : LemmatizerInterface;
     abstract public function getSearchManager() : SearchManagerInterface;
 
     public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {

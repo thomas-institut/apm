@@ -29,6 +29,7 @@ use APM\System\Factories\NodeServiceClientFactory;
 use APM\System\Factories\PresetManagerFactory;
 use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TableNamesFactory;
+use APM\System\Factories\TranscriptionManagerFactory;
 use APM\System\Factories\TwigFactory;
 use APM\System\Factories\UserManagerFactory;
 use APM\System\Factories\ValkeyClientFactory;
@@ -39,6 +40,7 @@ use APM\System\Preset\PresetManager;
 use APM\System\PublicationManager\PublicationManager;
 use APM\System\SystemManager;
 use APM\System\Transcription\EdNoteManager;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\EntitySystemWorkManager;
 use APM\System\Work\WorkManager;
@@ -83,6 +85,7 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             PersonManagerInterface::class => autowire(EntitySystemPersonManager::class),
             WorkManager::class => autowire(EntitySystemWorkManager::class),
             DocumentManager::class => factory([DocumentManagerFactory::class, 'create']),
+            TranscriptionManager::class => factory([TranscriptionManagerFactory::class, 'create'])
         ];
     }
 }

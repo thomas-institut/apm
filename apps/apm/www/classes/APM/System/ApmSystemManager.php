@@ -50,13 +50,10 @@ use APM\System\Config\ApmSystemConfig;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
-use APM\System\Lemmatizer\LemmatizerInterface;
-use APM\System\Lemmatizer\UdPipeLemmatizer;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
 use APM\System\Search\SearchManagerInterface;
 use APM\System\Search\TypesenseSearchManager;
-use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
@@ -93,11 +90,9 @@ class ApmSystemManager extends SystemManager
     //
     // (all initialized to null)
     private ?CollationEngine $collationEngine = null;
-    private ?ApmTranscriptionManager $transcriptionManager = null;
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
     private ?Client $typesenseClient = null;
-    private ?UdPipeLemmatizer $lemmatizer = null;
     private ?TypesenseSearchManager $searchManager = null;
 
     /**
@@ -146,7 +141,6 @@ class ApmSystemManager extends SystemManager
             $provider->reset();
         }
 
-        $this->transcriptionManager = null;
         $this->editionSourceManager = null;
         $this->searchManager = null;
     }
@@ -216,27 +210,11 @@ class ApmSystemManager extends SystemManager
 
     public function getTranscriptionManager(): TranscriptionManager
     {
-        if ($this->transcriptionManager === null) {
-            // Set up TranscriptionManager
-            try {
-                $this->transcriptionManager = new ApmTranscriptionManager(
-                    $this->ci,
-                    function () {
-                        return $this->getDocumentManager();
-                    },
-                    function () {
-                        return $this->getPersonManager();
-                    },
-                    function () {
-                        return $this->getSystemDataCache();
-                    },
-                );
-                $this->transcriptionManager->setCache($this->getSystemDataCache());
-            } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-                throw new RuntimeException("Failed to initialize transcription manager", 0, $e);
-            }
+        try {
+            return $this->ci->get(TranscriptionManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Could not get transcription manager from container", 0, $e);
         }
-        return $this->transcriptionManager;
     }
 
     public function getSystemDataCache(): DataCache
@@ -567,18 +545,6 @@ class ApmSystemManager extends SystemManager
             $this->logger->error("Could not get document manager from container", ['exception' => $e]);
             throw new RuntimeException("Could not get document manager from container", 0, $e);
         }
-//        if ($this->documentManager === null) {
-//            $this->documentManager = new ApmDocumentManager(
-//                function () {
-//                    return $this->getEntitySystem();
-//                },
-//                function () {
-//                    return new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()->pages);
-//                }
-//            );
-//            $this->documentManager->setLogger($this->logger);
-//        }
-//        return $this->documentManager;
     }
 
     public function getTypesenseClient(): Client
@@ -609,14 +575,14 @@ class ApmSystemManager extends SystemManager
         return $this->typesenseClient;
     }
 
-    public function getLemmatizer(): LemmatizerInterface
-    {
-        if ($this->lemmatizer === null) {
-            $this->lemmatizer = new UdPipeLemmatizer($this->getSystemDataCache());
-        }
-        return $this->lemmatizer;
-
-    }
+//    public function getLemmatizer(): LemmatizerInterface
+//    {
+//        if ($this->lemmatizer === null) {
+//            $this->lemmatizer = new UdPipeLemmatizer($this->getSystemDataCache());
+//        }
+//        return $this->lemmatizer;
+//
+//    }
 
     public function getSearchManager(): SearchManagerInterface
     {

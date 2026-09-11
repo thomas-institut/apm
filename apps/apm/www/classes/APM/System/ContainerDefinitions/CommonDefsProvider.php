@@ -19,6 +19,8 @@ use APM\System\Cache\ValkeySystemMemDataCache;
 use APM\System\Cache\ValkeySystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Document\DocumentManager;
+use APM\System\EditionSourceManager;
+use APM\System\EntitySystemEditionSourceManager;
 use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\ApmEntitySystemFactory;
 use APM\System\Factories\CollationTableManagerFactory;
@@ -90,7 +92,8 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             DocumentManager::class => factory([DocumentManagerFactory::class, 'create']),
             TranscriptionManager::class => autowire(ApmTranscriptionManager::class),
             \Typesense\Client::class => factory([TypesenseClientFactory::class, 'create']),
-            SearchManagerInterface::class => autowire(TypesenseSearchManager::class)
+            SearchManagerInterface::class => autowire(TypesenseSearchManager::class),
+            EditionSourceManager::class => autowire(EntitySystemEditionSourceManager::class),
         ];
     }
 }

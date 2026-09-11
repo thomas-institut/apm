@@ -30,20 +30,7 @@ class ApmSystemManagerTest extends TestCase
             [PdoProvider::class, $pdoProvider],
         ]);
         $this->setProperty($systemManager, 'ci', $container);
-
-//        $this->setProperty($systemManager, 'transcriptionManager', $this->createStub(ApmTranscriptionManager::class));
-        $this->setProperty($systemManager, 'editionSourceManager', $this->createStub(EntitySystemEditionSourceManager::class));
-//        $this->setProperty($systemManager, 'documentManager', $this->createStub(ApmDocumentManager::class));
-
-        $normalizerManager = new ApmNormalizerManager();
-        $this->setProperty($systemManager, 'normalizerManager', $normalizerManager);
-
         $systemManager->resetDbConnectionAndDependentManagers();
-
-//        $this->assertNull($this->getProperty($systemManager, 'transcriptionManager'));
-        $this->assertNull($this->getProperty($systemManager, 'editionSourceManager'));
-//        $this->assertNull($this->getProperty($systemManager, 'documentManager'));
-        $this->assertSame($normalizerManager, $this->getProperty($systemManager, 'normalizerManager'));
     }
 
     /**

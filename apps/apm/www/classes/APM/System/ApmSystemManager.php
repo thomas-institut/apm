@@ -51,7 +51,6 @@ use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
-use APM\System\Search\SearchManagerInterface;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
@@ -86,7 +85,7 @@ class ApmSystemManager extends SystemManager
     // (all initialized to null)
     private ?CollationEngine $collationEngine = null;
     private ?ApmNormalizerManager $normalizerManager = null;
-    private ?EntitySystemEditionSourceManager $editionSourceManager = null;
+
 
     /**
      * @throws ContainerExceptionInterface
@@ -133,8 +132,6 @@ class ApmSystemManager extends SystemManager
         if ($provider instanceof Resettable) {
             $provider->reset();
         }
-
-        $this->editionSourceManager = null;
     }
 
      public function getImageSources(): array
@@ -306,13 +303,11 @@ class ApmSystemManager extends SystemManager
 
     public function getEditionSourceManager(): EditionSourceManager
     {
-        if (is_null($this->editionSourceManager)) {
-
-            $this->editionSourceManager = new EntitySystemEditionSourceManager(function () {
-                return $this->getEntitySystem();
-            });
+        try {
+            return $this->ci->get(EditionSourceManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Edition source manager not found', 0, $e);
         }
-        return $this->editionSourceManager;
     }
 
     public function onTranscriptionUpdated(int $userTid, int $docId, int $pageNumber, int $columnNumber): void

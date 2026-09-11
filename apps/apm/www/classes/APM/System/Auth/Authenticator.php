@@ -107,7 +107,7 @@ class Authenticator
     {
         $this->container = $ci;
         $this->systemManager = $ci->get(SystemManager::class);
-        $this->router = $this->systemManager->getRouter();
+        $this->router = $ci->get(RouteParserInterface::class);
         $this->userManager = $this->systemManager->getUserManager();
         $this->logger = $this->systemManager->getLogger()->withName('AUTH');
 //        $this->view = $this->systemManager->getTwig();

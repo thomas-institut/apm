@@ -40,7 +40,7 @@ class ApiPublicationTest extends TestCase
 
         $this->systemManager->method('getConfig')->willReturn(['languages' => [], 'devMode' => false]);
         $this->systemManager->method('getLogger')->willReturn($logger);
-        $this->systemManager->method('getRouter')->willReturn($this->createMock(RouteParserInterface::class));
+//        $this->systemManager->method('getRouter')->willReturn($this->createMock(RouteParserInterface::class));
 
         $this->container->method('get')->willReturnMap([
             [SystemManager::class, $this->systemManager],

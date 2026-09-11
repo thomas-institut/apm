@@ -27,7 +27,6 @@ use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Document\DocumentManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
@@ -38,8 +37,6 @@ use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use Monolog\Logger;
 use Psr\Container\ContainerInterface;
-use Slim\Interfaces\RouteParserInterface;
-use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
@@ -118,35 +115,21 @@ abstract class SystemManager implements ErrorReporter {
 
 
 
-    /**
-     * Set methods
-     */
-
-    /**
-     * @param RouteParserInterface $router
-     */
-    abstract public function setRouter(RouteParserInterface $router) : void;
-
 
     /**
      * Get methods for the different components
      */
 
     abstract public function getPresetsManager() : PresetManager;
-    abstract public function getAvailableImageSources() : array;
     abstract public function getImageSources() : array;
     abstract public function getLogger() : Logger;
     abstract public function getCollationEngine(string $engineSystemId = '') : CollationEngine;
     abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
-    /** @deprecated use container */
-    abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
     abstract public function getSystemDataCache() : DataCache;
     abstract public function getMemDataCache() : DataCache;
     abstract public function getDirectoryDataCache() : DataCache;
     abstract public function getBaseUrl(): string;
-    abstract public function getTwig() : Twig;
-    abstract public function getRouter() : RouteParserInterface;
     abstract public function getNormalizerManager() : NormalizerManager;
     abstract public function getEditionSourceManager(): EditionSourceManager;
     abstract public function getJobQueueManager() : JobQueueManager;

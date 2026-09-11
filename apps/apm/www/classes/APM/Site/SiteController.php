@@ -34,7 +34,6 @@ use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
-use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -42,12 +41,16 @@ use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Slim\Interfaces\RouteParserInterface;
 use Slim\Routing\RouteParser;
+use Slim\Views\Twig;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\Profiler\SystemProfiler;
 use Twig\Error\LoaderError;
 use Twig\Error\RuntimeError;
 use Twig\Error\SyntaxError;
@@ -86,9 +89,9 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         $this->container = $ci;
         $this->systemManager = $ci->get(SystemManager::class);
         $this->systemConfig = $ci->get(ApmSystemConfig::class);
-        $this->config = $this->systemManager->getConfig();
-        $this->logger = $this->systemManager->getLogger();
-        $this->router = $this->systemManager->getRouter();
+        $this->config = $ci->get(ApmContainerKey::CONFIG_ARRAY);
+        $this->logger = $ci->get(LoggerInterface::class);
+        $this->router = $ci->get(RouteParserInterface::class);
         $this->userAuthenticated = false;
 
         // Check if the user has been authenticated by the authentication middleware
@@ -96,6 +99,15 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         if ($ci->has(ApmContainerKey::SITE_USER_ID)) {
             $this->userAuthenticated = true;
             $this->userId = $ci->get(ApmContainerKey::SITE_USER_ID);
+        }
+    }
+
+    protected function getTwig() : Twig
+    {
+        try {
+            return $this->container->get(Twig::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Twig not found in container");
         }
     }
 
@@ -226,7 +238,7 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return preg_replace('/\"/', '\"', $string);
     }
 
-    private function getPageHtml(string $baseUrl, string $title, string $headImports, string $postBodyImports) : string
+    private function getPageHtml(string $baseUrl, string $title, string $headImports, string $postBodyImports): string
     {
         $viteReactPluginHtml = $this->getReactPluginModuleHtml();
 
@@ -302,7 +314,8 @@ END;
         return $html;
     }
 
-    protected function renderReactPage(ResponseInterface $response, string $title,  string $viteEntryPoint) : ResponseInterface {
+    protected function renderReactPage(ResponseInterface $response, string $title, string $viteEntryPoint): ResponseInterface
+    {
         $baseUrl = $this->getBaseUrl();
 
         // all imports are handled by Vite
@@ -401,9 +414,9 @@ END;
 
 
         [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint, ...$extraViteEntryPoints]);
-        $cssHtml = implode('', [ $cssHtml, $viteCssImportsHtml ]);
+        $cssHtml = implode('', [$cssHtml, $viteCssImportsHtml]);
 
-        $postBodyImports = implode('', [ $jsHtml, $viteJsImportsHtml, "<script> $script </script>" ]);
+        $postBodyImports = implode('', [$jsHtml, $viteJsImportsHtml, "<script> $script </script>"]);
         $html = $this->getPageHtml($baseUrl, $title, $cssHtml, $postBodyImports);
         $response->getBody()->write($html);
         if ($cacheKey !== '') {
@@ -461,11 +474,9 @@ END;
 
             foreach ($viteEntryPoints as $entryPoint) {
                 $viteImports = $this->getViteImportsFromManifest($entryPoint);
-                $viteJsImports = [...$viteJsImports, ...$viteImports['js']];;
+                $viteJsImports = [...$viteJsImports, ...$viteImports['js']];
                 $viteCssImports = [...$viteCssImports, ...$viteImports['css']];
             }
-//            $this->logger->debug("Vite JS imports: " . implode(', ', $viteJsImports));
-//            $this->logger->debug("Vite CSS imports: " . implode(', ', $viteCssImports));
             foreach ($viteJsImports as $import) {
                 $viteJsImportsHtml .= <<<END
     <script type="module" src="$baseUrl/dist/$import"></script>
@@ -477,7 +488,6 @@ END;
 END;
             }
         }
-//        $this->logger->debug("Vite imports HTML: " . $viteJsImportsHtml);
         return [$viteJsImportsHtml, $viteCssImportsHtml];
     }
 
@@ -523,10 +533,11 @@ END;
 
         array_push($cssImports, ...$mainCssImports);
 
-        return [ 'js' => $jsImports, 'css' => $cssImports] ;
+        return ['js' => $jsImports, 'css' => $cssImports];
     }
 
-    private function getCssImportsFromEntry(string $entryPoint, array $manifest): array {
+    private function getCssImportsFromEntry(string $entryPoint, array $manifest): array
+    {
         $cssImports = [];
 
         if (isset($manifest[$entryPoint]["css"])) {
@@ -559,7 +570,7 @@ END;
             $data['baseUrl'] = $this->getBaseUrl();
         }
         try {
-            $responseToReturn = $this->systemManager->getTwig()->render($response, $template, $data);
+            $responseToReturn = $this->getTwig()->render($response, $template, $data);
             SystemProfiler::lap('Response ready');
             $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
             return $responseToReturn;

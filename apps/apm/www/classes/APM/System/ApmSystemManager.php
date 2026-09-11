@@ -145,12 +145,7 @@ class ApmSystemManager extends SystemManager
         $this->searchManager = null;
     }
 
-    public function getAvailableImageSources(): array
-    {
-        return array_keys($this->imageSources);
-    }
-
-    public function getImageSources(): array
+     public function getImageSources(): array
     {
         return $this->imageSources;
     }
@@ -326,31 +321,6 @@ class ApmSystemManager extends SystemManager
             ]);
         }
         return $this->normalizerManager;
-    }
-
-
-    public function setRouter(RouteParserInterface $router): void
-    {
-    }
-
-    public function getRouter(): RouteParserInterface
-    {
-        try {
-            return $this->ci->get(RouteParserInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            // should never happen
-            $this->logger->error("Could not get router", ['exception' => $e]);
-            throw new RuntimeException("Could not get router", 0, $e);
-        }
-    }
-
-    public function getMultiChunkEditionManager(): MultiChunkEditionManager
-    {
-       try {
-           return $this->ci->get(MultiChunkEditionManager::class);
-       } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-           throw new RuntimeException("Could not get multi chunk edition manager", 0, $e);
-       }
     }
 
     public function getEditionSourceManager(): EditionSourceManager
@@ -574,15 +544,6 @@ class ApmSystemManager extends SystemManager
         }
         return $this->typesenseClient;
     }
-
-//    public function getLemmatizer(): LemmatizerInterface
-//    {
-//        if ($this->lemmatizer === null) {
-//            $this->lemmatizer = new UdPipeLemmatizer($this->getSystemDataCache());
-//        }
-//        return $this->lemmatizer;
-//
-//    }
 
     public function getSearchManager(): SearchManagerInterface
     {

@@ -28,6 +28,7 @@ use APM\System\Factories\DocumentManagerFactory;
 use APM\System\Factories\JobQueueManagerFactory;
 use APM\System\Factories\MultiChunkEditionManagerFactory;
 use APM\System\Factories\NodeServiceClientFactory;
+use APM\System\Factories\NormalizerManagerFactory;
 use APM\System\Factories\PresetManagerFactory;
 use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TableNamesFactory;
@@ -36,6 +37,7 @@ use APM\System\Factories\TypesenseClientFactory;
 use APM\System\Factories\UserManagerFactory;
 use APM\System\Factories\ValkeyClientFactory;
 use APM\System\LanguageManager;
+use APM\System\NormalizerManager;
 use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
@@ -94,6 +96,7 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             \Typesense\Client::class => factory([TypesenseClientFactory::class, 'create']),
             SearchManagerInterface::class => autowire(TypesenseSearchManager::class),
             EditionSourceManager::class => autowire(EntitySystemEditionSourceManager::class),
+            NormalizerManager::class => factory([NormalizerManagerFactory::class, 'create']),
         ];
     }
 }

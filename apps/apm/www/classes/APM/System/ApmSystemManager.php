@@ -241,64 +241,11 @@ class ApmSystemManager extends SystemManager
 
     public function getNormalizerManager(): NormalizerManager
     {
-        if ($this->normalizerManager === null) {
-            $this->normalizerManager = new ApmNormalizerManager();
-            // Add standard normalizers
-            $this->normalizerManager->registerNormalizer('la', 'standard',
-                'toLowerCase', new ToLowerCaseNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('toLowerCase', [
-                'automaticCollation' => [
-                    'label' => 'Ignore Letter Case',
-                    'help' => "E.g., 'Et' and 'et' will be taken to be the same word"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'removeHamzahMaddahFromAlifWawYah', new RemoveHamzahMaddahFromAlifWawYahNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('removeHamzahMaddahFromAlifWawYah', [
-                'automaticCollation' => [
-                    'label' => 'Ignore hamzah and maddah in ʾalif, wāw and yāʾ',
-                    'help' => "آ , أ, إ &larr; ا      ؤ &larr; و      ئ &larr; ي"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreVocalization', new IgnoreArabicVocalizationNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('ignoreVocalization', [
-                'automaticCollation' => [
-                    'label' => 'Ignore Vocalization',
-                    'help' => "Ignore vocal diacritics, e.g., الْحُرُوف &larr; الحروف"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreShadda', new IgnoreShaddaNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('ignoreShadda', [
-                'automaticCollation' => [
-                    'label' => 'Ignore Shaddah',
-                    'help' => "Ignore shaddah, e.g., درّس &larr; درس"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreTatwil', new IgnoreTatwilNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('ignoreTatwil', [
-                'automaticCollation' => [
-                    'label' => 'Ignore taṭwīl',
-                    'help' => "Ignore taṭwīl"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreIsolatedHamza', new IgnoreIsolatedHamzaNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('ignoreIsolatedHamza', [
-                'automaticCollation' => [
-                    'label' => 'Ignore isolated hamza',
-                    'help' => "Ignore hamza"
-                ]
-            ]);
+        try {
+            return $this->ci->get(NormalizerManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Normalizer manager not found', 0, $e);
         }
-        return $this->normalizerManager;
     }
 
     public function getEditionSourceManager(): EditionSourceManager

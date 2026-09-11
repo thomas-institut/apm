@@ -2,6 +2,7 @@
 
 namespace APM\System\ContainerDefinitions;
 
+use APM\CollationEngine\CollatexHttp;
 use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
@@ -23,6 +24,7 @@ use APM\System\EditionSourceManager;
 use APM\System\EntitySystemEditionSourceManager;
 use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\ApmEntitySystemFactory;
+use APM\System\Factories\CollatexHttpFactory;
 use APM\System\Factories\CollationTableManagerFactory;
 use APM\System\Factories\DocumentManagerFactory;
 use APM\System\Factories\JobQueueManagerFactory;
@@ -97,6 +99,7 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             SearchManagerInterface::class => autowire(TypesenseSearchManager::class),
             EditionSourceManager::class => autowire(EntitySystemEditionSourceManager::class),
             NormalizerManager::class => factory([NormalizerManagerFactory::class, 'create']),
+            CollatexHttp::class => factory([CollatexHttpFactory::class, 'create']),
         ];
     }
 }

@@ -25,12 +25,6 @@ use APM\CollationEngine\CollatexHttp;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
 use APM\CollationTable\CollationTableManager;
-use APM\Core\Token\Normalizer\IgnoreArabicVocalizationNormalizer;
-use APM\Core\Token\Normalizer\IgnoreIsolatedHamzaNormalizer;
-use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
-use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
-use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
-use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
@@ -43,8 +37,8 @@ use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\Jobs\UpdateAllPeopleDataCache;
 use APM\Jobs\UpdateWorksCache;
 use APM\System\Cache\SystemDirDataCache;
-use APM\System\Cache\SystemMemDataCache;
 use APM\System\Cache\SystemMainDataCache;
+use APM\System\Cache\SystemMemDataCache;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
@@ -79,15 +73,7 @@ class ApmSystemManager extends SystemManager
     private array $imageSources;
     private LoggerInterface $logger;
 
-    //
-    // Components
-    //
-    // (all initialized to null)
-    private ?CollationEngine $collationEngine = null;
-    private ?ApmNormalizerManager $normalizerManager = null;
-
-
-    /**
+      /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
@@ -134,7 +120,7 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-     public function getImageSources(): array
+    public function getImageSources(): array
     {
         return $this->imageSources;
     }
@@ -158,14 +144,11 @@ class ApmSystemManager extends SystemManager
         if ($engineSystemId === ApmCollationEngine::DO_NOTHING) {
             return new DoNothingCollationEngine();
         }
-        if ($this->collationEngine === null) {
-            $this->collationEngine = new CollatexHttp(
-                $this->config['collatexHttp']['host'],
-                $this->config['collatexHttp']['port']);
-            $this->collationEngine->setLogger($this->logger);
+        try {
+            return $this->ci->get(CollatexHttp::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('CollatexHttp collation engine not found in container', 0, $e);
         }
-
-        return $this->collationEngine;
     }
 
     public function getBaseUrl(): string

@@ -4,10 +4,9 @@ namespace APM\System\Config;
 
 final readonly class ApmSystemConfig
 {
-
     public function __construct(
         public VersionConfig     $version,
-        public NodeServiceConfig $nodeService,
+        public NodeServiceConfig $nodeService = new NodeServiceConfig(),
         public GeneralConfig     $general = new GeneralConfig(),
         public UrlConfig         $url = new UrlConfig(),
         public LogConfig         $log = new LogConfig(),
@@ -15,6 +14,7 @@ final readonly class ApmSystemConfig
         public ValkeyConfig      $valkey = new ValkeyConfig(),
         public CachesConfig      $caches = new CachesConfig(),
         public TypesenseConfig   $typesense = new TypesenseConfig(),
+        public CollatexHttpConfig $collatexHttp = new CollatexHttpConfig(),
     )
     {
     }

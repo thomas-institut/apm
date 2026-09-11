@@ -1,14 +1,18 @@
 <?php
 namespace APM\Api;
 
-use APM\System\ApmConfigParameter;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Config\ApmSystemConfig;
 use APM\System\Lemmatizer;
+use APM\System\Search\SearchManagerInterface;
 use APM\System\SystemManager;
 use Http\Client\Exception;
+use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use RuntimeException;
+use Throwable;
 use Typesense\Client;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -20,6 +24,21 @@ class ApiSearch extends ApiController
 {
 
     const string CLASS_NAME = 'Search';
+    private ApmSystemConfig $systemConfig;
+
+    private SearchManagerInterface $searchManager;
+
+    private Client $client;
+    private SystemMainDataCache $cache;
+
+    public function __construct(ContainerInterface $ci)
+    {
+        parent::__construct($ci);
+        $this->systemConfig = $ci->get(ApmSystemConfig::class);
+        $this->searchManager = $ci->get(SearchManagerInterface::class);
+        $this->client = $ci->get(Client::class);
+        $this->cache = $ci->get(SystemMainDataCache::class);
+    }
 
     /**
      * searches in a Typesense index and returns an api response to js
@@ -60,10 +79,8 @@ class ApiSearch extends ApiController
 
         // Instantiate Typesense client
         // Load authentication data from config-file
-        $config = $this->systemManager->getConfig();
-        $this->logger->debug('CONFIG ' . $config[ApmConfigParameter::TYPESENSE_HOST]);
+        $this->logger->debug('CONFIG ' . $this->systemConfig->typesense->host);
 
-        $client = $this->systemManager->getTypesenseClient();
 
         // If wished, lemmatize searched keywords
         if ($lemmatize) {
@@ -82,7 +99,7 @@ class ApiSearch extends ApiController
 
         // Query index
         try {
-            $query = $this->makeSingleTokenTypesenseSearchQuery($client, $indexName, $lang,  $title, $creator, $tokensForQuery[0], $lemmatize, $corpus, $queryPage, $tokensForQuery);
+            $query = $this->makeSingleTokenTypesenseSearchQuery($this->client, $indexName, $lang,  $title, $creator, $tokensForQuery[0], $lemmatize, $corpus, $queryPage, $tokensForQuery);
         } catch (Exception|TypesenseClientError $e) {
             $status = "Typesense query problem";
             return $this->responseWithJson($response,
@@ -124,15 +141,14 @@ class ApiSearch extends ApiController
     private function getLemmata (string $searchedPhrase, string $lang): array {
 
         // Lemmatization can be slow, so we cache it as much as possible
-        $cache = $this->systemManager->getSystemDataCache();
         $searchTokens = explode(' ', $searchedPhrase);
         $tokensToLemmatize = [];
         $tokensForQuery = [];
 
         foreach($searchTokens as $token) { // Try to get lemmata
             $cacheKey = $this->getLemmaCacheKey($token);
-            if ($cache->isInCache($cacheKey)) {
-                $lemma = explode(" ", $cache->get($cacheKey));
+            if ($this->cache->isInCache($cacheKey)) {
+                $lemma = explode(" ", $this->cache->get($cacheKey));
                 foreach ($lemma as $complexLemmaPart) {
                     $tokensForQuery[] = $complexLemmaPart;
                 }
@@ -148,7 +164,7 @@ class ApiSearch extends ApiController
             $lemmata = $tokensAndLemmata['lemmata'];
             foreach ($lemmata as $i => $lemma) {
                 $cacheKey = $this->getLemmaCacheKey($tokensToLemmatize[$i]);
-                $cache->set($cacheKey, $lemma);
+                $this->cache->set($cacheKey, $lemma);
                 $this->logger->debug("Cached lemma '$lemma' for token '$tokensToLemmatize[$i]' with cache key '$cacheKey'");
 
                 $lemma = explode(" ", $lemma); // check if it is a complex lemma, e.g. article + noun in arabic/hebrew
@@ -260,8 +276,6 @@ class ApiSearch extends ApiController
 
         $this->logger->debug("Making typesense query", [ 'index' => $index_name, 'token' => $token, 'title' => $title, 'creator' => $creator]);
 
-        $config = $this->systemManager->getConfig();
-
         // Check "lemmatize" (boolean) and corpus to determine the target of the query
         if ($lemmatize) {
             if ($corpus === 'transcriptions') {
@@ -293,7 +307,7 @@ class ApiSearch extends ApiController
         } else if (count($numSearchedTokens) > 1) {
             $pageSize = 10;
         } else {
-            $pageSize = $config[ApmConfigParameter::TYPESENSE_PAGESIZE];
+            $pageSize = $this->systemConfig->typesense->defaultPageSize;
         }
 
         $searchParameters = [
@@ -416,7 +430,7 @@ class ApiSearch extends ApiController
      * @param string $whichIndex
      * @param LoggerInterface|null $logger
      * @return bool
-     * @throws \Throwable
+     * @throws Throwable
      */
     static public function updateDataCache (SystemManager $systemManager, string $whichIndex, ?LoggerInterface $logger): bool
     {
@@ -444,7 +458,7 @@ class ApiSearch extends ApiController
 
     private function getStringArray(Request $request, Response $response, string $cacheKey): Response {
 
-        $sm = $this->systemManager->getSearchManager();
+        $sm = $this->searchManager;
 
         switch ($cacheKey) {
             case CacheKey::ApiSearchTranscriptions:

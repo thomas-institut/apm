@@ -14,6 +14,7 @@ final readonly class ApmSystemConfig
         public DbConfig          $db = new DbConfig(),
         public ValkeyConfig      $valkey = new ValkeyConfig(),
         public CachesConfig      $caches = new CachesConfig(),
+        public TypesenseConfig   $typesense = new TypesenseConfig(),
     )
     {
     }

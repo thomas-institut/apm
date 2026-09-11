@@ -30,7 +30,6 @@ use APM\EntitySystem\Schema\Entity;
 use APM\System\Document\DocumentManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
-use APM\System\Search\SearchManagerInterface;
 use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
@@ -139,7 +138,6 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
     abstract public function getDocumentManager() : DocumentManager;
     abstract public function getTypesenseClient() : Client;
-    abstract public function getSearchManager() : SearchManagerInterface;
 
     public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
         return WitnessSystemId::buildFullTxId(

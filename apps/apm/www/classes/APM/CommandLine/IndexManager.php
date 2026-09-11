@@ -32,6 +32,8 @@ use APM\System\Transcription\TxText\Item;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\DateTimeFormat;
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use Typesense\Exceptions\TypesenseClientError;
 
@@ -55,12 +57,14 @@ class IndexManager extends CommandLineUtility
     /**
      * This main function is called from the command line. Depending on the arguments given to the index manager command line tool,
      * a specific operation on a specific index will be executed.
-     * @param $argc
-     * @param $argv
+     * @param int $argc
+     * @param array $argv
      * @return bool
+     * @throws ContainerExceptionInterface
      * @throws DocumentNotFoundException
      * @throws EntityDoesNotExistException
      * @throws InvalidTimeStringException
+     * @throws NotFoundExceptionInterface
      * @throws PageNotFoundException
      * @throws TypesenseClientError
      * @throws \Http\Client\Exception
@@ -212,6 +216,8 @@ END;
      * @throws EntityDoesNotExistException
      * @throws InvalidTimeStringException
      * @throws PageNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     private function buildIndex(): void
     {

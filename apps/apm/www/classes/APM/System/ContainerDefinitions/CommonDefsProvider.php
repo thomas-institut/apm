@@ -30,6 +30,7 @@ use APM\System\Factories\PresetManagerFactory;
 use APM\System\Factories\PublicationManagerFactory;
 use APM\System\Factories\TableNamesFactory;
 use APM\System\Factories\TwigFactory;
+use APM\System\Factories\TypesenseClientFactory;
 use APM\System\Factories\UserManagerFactory;
 use APM\System\Factories\ValkeyClientFactory;
 use APM\System\LanguageManager;
@@ -37,6 +38,8 @@ use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
 use APM\System\PublicationManager\PublicationManager;
+use APM\System\Search\SearchManagerInterface;
+use APM\System\Search\TypesenseSearchManager;
 use APM\System\SystemManager;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\EdNoteManager;
@@ -86,6 +89,8 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             WorkManager::class => autowire(EntitySystemWorkManager::class),
             DocumentManager::class => factory([DocumentManagerFactory::class, 'create']),
             TranscriptionManager::class => autowire(ApmTranscriptionManager::class),
+            \Typesense\Client::class => factory([TypesenseClientFactory::class, 'create']),
+            SearchManagerInterface::class => autowire(TypesenseSearchManager::class)
         ];
     }
 }

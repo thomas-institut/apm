@@ -23,17 +23,7 @@ namespace APM\System;
 
 class ApmConfigParameter
 {
-
     const string DB = 'db';
-
-
     const string ERROR = 'error';
-    const string ERROR_MESSAGES = 'error_messages';
-    const string WARNINGS = 'warnings';
 
-    const string TYPESENSE_HOST = 'typesense_host';
-    const string TYPESENSE_KEY = 'typesense_key';
-    const string TYPESENSE_PORT = 'typesense_port';
-    const string TYPESENSE_PROTOCOL = 'typesense_protocol';
-    const string TYPESENSE_PAGESIZE = 'typesense_pagesize';
 }

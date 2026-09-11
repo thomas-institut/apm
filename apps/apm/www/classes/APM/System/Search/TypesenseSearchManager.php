@@ -3,6 +3,7 @@
 namespace APM\System\Search;
 
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\PageInfo;
 use APM\System\Lemmatizer;
 use APM\System\Search\Exception\SearchManagerException;
@@ -12,7 +13,6 @@ use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use ThomasInstitut\DataCache\CacheAware;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
 use Typesense\Client;
@@ -26,16 +26,11 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
     const string TranscriptionIndexPrefix = 'transcriptions';
     const string EditionIndexPrefix = 'editions';
 
-    /**
-     * @var callable
-     */
-    private $getTypesenseClientCallable;
-
-    private ?Client $client = null;
-
-    public function __construct(callable $getTypesenseClient, callable|DataCache $dataCache, ?LoggerInterface $logger = null)
+    public function __construct(
+        private readonly Client    $typesenseClient,
+        private readonly SystemMainDataCache $dataCache,
+        ?LoggerInterface           $logger = null)
     {
-        $this->getTypesenseClientCallable = $getTypesenseClient;
         if ($logger === null) {
             $this->logger = new NullLogger();
         } else {
@@ -47,10 +42,7 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
     }
 
     private function getTypesenseClient() : Client {
-        if ($this->client == null) {
-            $this->client = call_user_func($this->getTypesenseClientCallable);
-        }
-        return $this->client;
+        return $this->typesenseClient;
     }
 
     private function getIndexNameForLanguage(string $prefix, string $langCode) : string {

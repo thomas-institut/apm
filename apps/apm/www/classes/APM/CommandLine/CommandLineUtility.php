@@ -33,6 +33,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
 /**
  * Description of CommandLineUtility
@@ -41,11 +42,7 @@ use Psr\Log\LoggerInterface;
  */
 abstract class CommandLineUtility {
     protected ?LoggerInterface $logger;
-
     protected array $config;
-
-
-//    private ?ApmSystemManager $systemManager;
     protected array $processUserInfoArray;
 
     protected int $argc;
@@ -99,6 +96,7 @@ abstract class CommandLineUtility {
     /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
+     * @deprecated Use container instead
      */
     public function getSystemManager() : ApmSystemManager {
 
@@ -110,7 +108,8 @@ abstract class CommandLineUtility {
      * @throws NotFoundExceptionInterface
      */
     protected function getDbConn() : PDO {
-        return $this->getSystemManager()->getPdoProvider()->getPdo();
+        $pdoProvider = $this->container->get(PdoProvider::class);
+        return $pdoProvider->getPdo();
     }
     
     #[NoReturn] public function run(): void // @phpstan-ignore attribute.notFound

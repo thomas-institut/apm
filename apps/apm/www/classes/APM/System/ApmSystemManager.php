@@ -42,7 +42,6 @@ use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
 use APM\Jobs\SiteDocumentsUpdateDataCache;
 use APM\Jobs\UpdateAllPeopleDataCache;
 use APM\Jobs\UpdateWorksCache;
-use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Cache\SystemDirDataCache;
 use APM\System\Cache\SystemMemDataCache;
 use APM\System\Cache\SystemMainDataCache;
@@ -53,7 +52,6 @@ use APM\System\ImageSource\OldBilderbergStyleRepository;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
 use APM\System\Search\SearchManagerInterface;
-use APM\System\Search\TypesenseSearchManager;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
@@ -66,13 +64,10 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Slim\Interfaces\RouteParserInterface;
-use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\JobQueue\JobQueueManager;
 use Typesense\Client;
-use Typesense\Exceptions\ConfigError;
 
 
 /**
@@ -92,8 +87,6 @@ class ApmSystemManager extends SystemManager
     private ?CollationEngine $collationEngine = null;
     private ?ApmNormalizerManager $normalizerManager = null;
     private ?EntitySystemEditionSourceManager $editionSourceManager = null;
-    private ?Client $typesenseClient = null;
-    private ?TypesenseSearchManager $searchManager = null;
 
     /**
      * @throws ContainerExceptionInterface
@@ -142,7 +135,6 @@ class ApmSystemManager extends SystemManager
         }
 
         $this->editionSourceManager = null;
-        $this->searchManager = null;
     }
 
      public function getImageSources(): array
@@ -249,17 +241,6 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-    /**
-     * @return Twig
-     */
-    public function getTwig(): Twig
-    {
-        try {
-            return $this->ci->get(Twig::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get twig", 0, $e);
-        }
-    }
 
     public function getNormalizerManager(): NormalizerManager
     {
@@ -519,45 +500,11 @@ class ApmSystemManager extends SystemManager
 
     public function getTypesenseClient(): Client
     {
-
-        if ($this->typesenseClient === null) {
-            $config = $this->getConfig();
-            try {
-                $this->typesenseClient = new Client(
-                    [
-                        'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
-                        'nodes' => [
-                            [
-                                'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
-                                'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
-                                'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
-                            ],
-                        ],
-                        'connection_timeout_seconds' => 2,
-                    ]
-                );
-
-                return $this->typesenseClient;
-            } catch (ConfigError) {
-                throw new RuntimeException("Typesense incorrectly configured");
-            }
+        try {
+            return $this->ci->get(Client::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Could not get Typesense client from container", 0, $e);
         }
-        return $this->typesenseClient;
     }
 
-    public function getSearchManager(): SearchManagerInterface
-    {
-        if ($this->searchManager === null) {
-            $this->searchManager = new TypesenseSearchManager(
-                function () {
-                    return $this->getTypesenseClient();
-                },
-                function () {
-                    return $this->getSystemDataCache();
-                },
-                $this->getLogger()
-            );
-        }
-        return $this->searchManager;
-    }
 }

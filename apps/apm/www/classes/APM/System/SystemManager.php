@@ -63,8 +63,11 @@ abstract class SystemManager implements ErrorReporter {
     const string TOOL_SIGLA = 'sigla';
 
     const array VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
-    
-    /** @var array */
+
+    /**
+     * @var array
+     * @deprecated Use ApmSystemConfig from the container
+     */
     protected array $config;
 
     protected ContainerInterface $ci;
@@ -76,6 +79,10 @@ abstract class SystemManager implements ErrorReporter {
         $this->config = $ci->get(ApmContainerKey::CONFIG_ARRAY);
     }
 
+    /**
+     * @return array
+     * @deprecated Use ApmSystemConfig from the container
+     */
     public function getConfig() : array {
         return $this->config;
     }
@@ -128,7 +135,6 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getSystemDataCache() : DataCache;
     abstract public function getMemDataCache() : DataCache;
     abstract public function getDirectoryDataCache() : DataCache;
-    abstract public function getBaseUrl(): string;
     abstract public function getNormalizerManager() : NormalizerManager;
     abstract public function getEditionSourceManager(): EditionSourceManager;
     abstract public function getJobQueueManager() : JobQueueManager;

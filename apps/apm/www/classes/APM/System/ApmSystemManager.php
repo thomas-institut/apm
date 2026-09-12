@@ -48,7 +48,6 @@ use APM\System\Preset\PresetManager;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
-use APM\ToolBox\BaseUrlDetector;
 use APM\ToolBox\Resettable;
 use Monolog\Logger;
 use PDO;
@@ -151,11 +150,6 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-    public function getBaseUrl(): string
-    {
-        return BaseUrlDetector::detectBaseUrl($this->getBaseUrlSubDir());
-    }
-
     public function getTableNames(): ApmTableNames
     {
         try {
@@ -165,15 +159,6 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-
-    /**
-     * Returns the subdirectory part of a base Url
-     * @return string
-     */
-    public function getBaseUrlSubDir(): string
-    {
-        return $this->systemConfig->general->subDir;
-    }
 
     public function getTranscriptionManager(): TranscriptionManager
     {

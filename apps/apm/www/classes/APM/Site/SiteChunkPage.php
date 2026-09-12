@@ -101,7 +101,6 @@ class SiteChunkPage extends SiteController
         // get pages, authors and languages from witnesses
         $pagesMentioned = [];
         $languageInfoArray = [];
-        $this->startCodeDebug();
         $witnessInfoArrayForPage = [];
         foreach($witnessInfoArray as $witnessInfo) {
 
@@ -127,7 +126,7 @@ class SiteChunkPage extends SiteController
                     }
 //                    $this->logger->debug("Doc lang code from witness $docLangCode");
                     if (!isset($languageInfoArray[$docLangCode])) {
-                        $languageInfoArray[$docLangCode] = $this->getLanguagesByCode()[$docLangCode];
+                        $languageInfoArray[$docLangCode] = $this->languageManager->getLegacyLangInfo($docLangCode);
                         $languageInfoArray[$docLangCode]['totalWitnesses'] = 0;
                         $languageInfoArray[$docLangCode]['validWitnesses'] = 0;
                     }

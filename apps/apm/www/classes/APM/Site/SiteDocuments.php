@@ -27,6 +27,7 @@
 namespace APM\Site;
 
 use APM\EntitySystem\Schema\Entity;
+use APM\System\ApmImageType;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
@@ -338,6 +339,41 @@ class SiteDocuments extends SiteController
                 'selectedPage' => $selectedPage
             ],
         );
+    }
+
+    protected function buildPageArrayNew(array $legacyPageInfoArray, array $transcribedPages, array $legacyDocInfo): array
+    {
+        $thePages = [];
+        $docManager = $this->systemManager->getDocumentManager();
+        $imageSources = $this->systemManager->getImageSources();
+        foreach ($legacyPageInfoArray as $legacyPageInfo) {
+            try {
+                $thePage = $legacyPageInfo;
+                $pageNumber = $legacyPageInfo['page_number'];
+                $imageNumber = $legacyPageInfo['img_number'];
+                $thePage['pageId'] = $legacyPageInfo['id'];
+                $thePage['sequence'] = $legacyPageInfo['seq'];
+                $thePage['pageNumber'] = $legacyPageInfo['page_number'];
+                $thePage['imageNumber'] = $legacyPageInfo['img_number'];
+                $thePage['numCols'] = $legacyPageInfo['num_cols'];
+                $thePage['imageSource'] = $legacyDocInfo['image_source'];
+                $thePage['isDeepZoom'] = $legacyDocInfo['deep_zoom'];
+                $thePage['isTranscribed'] = in_array($pageNumber, $transcribedPages);
+
+                $thePage['imageUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $pageNumber, ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
+                $thePage['jpgUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
+                $thePage['thumbnailUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
+//                $this->logger->debug("The page", $thePage);
+                $thePages[$legacyPageInfo['id']] = $thePage;
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                throw new RuntimeException("Document not found:" . $e->getMessage());
+            }
+        }
+        return $thePages;
     }
 
 }

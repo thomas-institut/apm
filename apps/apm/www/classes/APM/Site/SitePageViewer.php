@@ -137,7 +137,7 @@ class SitePageViewer extends SiteController
         }
 
         [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([ 'js/pages/PageViewer/PageViewer.js']);
-        $legacyPrefix  = $this->config['devMode'] ? 'public' : 'dist';
+        $legacyPrefix  = $this->systemConfig->general->devMode ? 'public' : 'dist';
 
         return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => $byPage,  // i.e., navigate by sequence

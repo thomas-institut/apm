@@ -4,10 +4,6 @@
 # DO NOT EDIT IN PRODUCTION
 #
 
-devMode: false
-
-copyrightNotice: '2016-26, <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>'
-
 languages:
 
   - { code:  'ar', name:  'Arabic', rtl:  true, fontsize:  5}
@@ -15,20 +11,8 @@ languages:
   - { code:  'he', name:  'Hebrew', rtl:  true, fontsize:  3}
   - { code:  'la', name:  'Latin', rtl:  false, fontsize:  3}
 
-langCodes:  [ 'ar', 'jrb', 'he', 'la']
-
-daemonPidFile: '/tmp/apmd.pid'
 
 siteShowLanguageSelector:  false
 
 collationEngine: 'CollatexHttp'
-
-apiTypesetPdfHttpClientTimeOut: 45
-
-# Typesetting service configuration for the backend
-
-typesettingService:
-  host: 'localhost'
-  port: 4711
-  timeout: 45
 

@@ -26,6 +26,7 @@
 
 namespace APM\Site;
 
+use APM\CollationTable\TableNotFoundException;
 use APM\System\Document\DocInfo;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Person\PersonNotFoundException;
@@ -48,15 +49,7 @@ use ThomasInstitut\TimeString\TimeString;
  */
 class SiteCollationTable extends SiteController
 {
-    // This will be added to the error pages within an HTML comment so
-    // that unit testing can check that the right error pages are 
-    // generated
-    const string ERROR_SIGNATURE_PREFIX = 'CollationTableError_8kn7KjcyAp_';
-    
-    const string ERROR_NO_DATA = 'NoData';
-    const string ERROR_NO_OPTIONS = 'NoOptions';
-    const string ERROR_MISSING_REQUIRED_OPTION = 'MissingRequiredOption';
-    const string ERROR_UNKNOWN_PRESET = 'UnknownPreset';
+
 
     public function newChunkEdition(Request $request, Response $response) : Response{
         
@@ -166,7 +159,7 @@ class SiteCollationTable extends SiteController
                 $ctInfo = $ctManager->getCollationTableInfo($tableId, $version);
                 $timeStamp = $ctInfo->timeFrom;
                 $isLastVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
-            } catch(InvalidArgumentException $e) {
+            } catch(InvalidArgumentException|TableNotFoundException $e) {
                 $this->logger->error("Collation table $tableId not found");
                 return $this->getBasicErrorPage($response, "Error", "Collation table $tableId not found", HttpStatus::NOT_FOUND);
             }
@@ -370,7 +363,6 @@ class SiteCollationTable extends SiteController
     public function automaticCollationPageCustom(Request $request, Response $response): Response
     {
 
-        $this->codeDebug('automaticCollationPageCustom API call');
         $rawData = $request->getBody()->getContents();
         parse_str($rawData, $postData);
         $inputData = null;
@@ -428,11 +420,8 @@ class SiteCollationTable extends SiteController
         ];
 
         if (isset($collationPageOptions['normalizers'])) {
-            $this->codeDebug("Custom normalizers", $collationPageOptions['normalizers']);
             $apiCallOptions['normalizers'] = $collationPageOptions['normalizers'];
         }
-
-        $this->codeDebug('apiCallOptions', $apiCallOptions);
 
         $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
         

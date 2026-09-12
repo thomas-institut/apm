@@ -31,10 +31,18 @@ use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use RuntimeException;
+use Slim\Views\Twig;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\Profiler\SystemProfiler;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Site Controller class
@@ -139,7 +147,7 @@ class SitePageViewer extends SiteController
         [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([ 'js/pages/PageViewer/PageViewer.js']);
         $legacyPrefix  = $this->systemConfig->general->devMode ? 'public' : 'dist';
 
-        return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
+        return $this->renderLegacyPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => $byPage,  // i.e., navigate by sequence
             'doc' => $docId,
             'docIdString' => Tid::toBase36String($docId),
@@ -159,6 +167,39 @@ class SitePageViewer extends SiteController
             'viteCssImportsHtml' => $viteCssImportsHtml,
             'legacyPrefix' => $legacyPrefix,
         ]);
+    }
+
+
+    /**
+     * @param ResponseInterface $response
+     * @param string $template
+     * @param array $data
+     * @return ResponseInterface
+     */
+    protected function renderLegacyPage(ResponseInterface $response,
+                                        string            $template, array $data): ResponseInterface
+    {
+
+        $data['commonData'] = $this->getCommonData();
+        $data['baseUrl'] = $this->getBaseUrl();
+        try {
+            $responseToReturn = $this->getTwig()->render($response, $template, $data);
+            SystemProfiler::lap('Response ready');
+            $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
+            return $responseToReturn;
+        } catch (LoaderError|RuntimeError|SyntaxError $e) {
+            $this->logger->error("Twig error rendering page: " . $e->getMessage(), ['exception' => get_class($e)]);
+            return $this->getSystemErrorPage($response, "Error rendering page", []);
+        }
+    }
+
+    private function getTwig(): Twig
+    {
+        try {
+            return $this->container->get(Twig::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+            throw new RuntimeException("Twig not found in container");
+        }
     }
 
 }

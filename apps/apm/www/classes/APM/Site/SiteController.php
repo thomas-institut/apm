@@ -41,25 +41,18 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use Slim\Interfaces\RouteParserInterface;
-use Slim\Routing\RouteParser;
-use Slim\Views\Twig;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SystemProfiler;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
-
 
 /**
  * Site Controller class
  *
  */
-class SiteController implements LoggerAwareInterface
+class SiteController
 {
 
     const string VITE_DEV_BASE = 'http://localhost:5173';
@@ -75,7 +68,7 @@ class SiteController implements LoggerAwareInterface
     protected ApmSystemConfig $systemConfig;
     protected LanguageManager $languageManager;
     protected LoggerInterface $logger;
-    protected RouteParser $router;
+    protected RouteParserInterface $router;
 
     protected bool $userAuthenticated;
 
@@ -102,8 +95,13 @@ class SiteController implements LoggerAwareInterface
         $logger = $ci->get(LoggerInterface::class);
         $this->logger = $logger;
 
-        $this->router = $ci->get(RouteParserInterface::class);
-        $this->languageManager = $ci->get(LanguageManager::class);
+        /** @var RouteParserInterface $router */
+        $router = $ci->get(RouteParserInterface::class);
+        $this->router = $router;
+
+        /** @var LanguageManager $lm */
+        $lm = $ci->get(LanguageManager::class);
+        $this->languageManager = $lm;
 
         // Check if the user has been authenticated by the authentication middleware
         $this->userAuthenticated = false;
@@ -113,14 +111,7 @@ class SiteController implements LoggerAwareInterface
         }
     }
 
-    private function getTwig(): Twig
-    {
-        try {
-            return $this->container->get(Twig::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
-            throw new RuntimeException("Twig not found in container");
-        }
-    }
+
 
     protected function getLanguages(): array
     {
@@ -164,7 +155,7 @@ class SiteController implements LoggerAwareInterface
     /**
      *
      * Gets an array with info about the user.
-     * This is sent to all pages
+     * This is sent to all standard non-React pages
      *
      */
     protected function getSiteUserInfo(): array
@@ -197,7 +188,7 @@ class SiteController implements LoggerAwareInterface
         return $tagLine;
     }
 
-    private function getCommonData(): array
+    protected function getCommonData(): array
     {
         return [
             'appName' => $this->systemConfig->general->appName,
@@ -269,7 +260,7 @@ class SiteController implements LoggerAwareInterface
         return preg_replace('/\"/', '\"', $string);
     }
 
-    private function getPageHtml(string $baseUrl, string $title, string $headImports, string $postBodyImports): string
+    protected function getStandardPageHtml(string $baseUrl, string $title, string $headImports, string $postBodyImports): string
     {
         $viteReactPluginHtml = $this->getReactPluginModuleHtml();
 
@@ -343,19 +334,7 @@ $postBodyImports
 END;
     }
 
-    protected function renderReactPage(ResponseInterface $response, string $title, string $viteEntryPoint): ResponseInterface
-    {
-        $baseUrl = $this->getBaseUrl();
 
-        // all imports are handled by Vite
-        [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint]);
-        $html = $this->getPageHtml($baseUrl, $title, $viteJsImportsHtml . $viteCssImportsHtml, '');
-        $response->getBody()->write($html);
-        SystemProfiler::lap('Response ready');
-        $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms", SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
-            SystemProfiler::getLaps());
-        return $response;
-    }
 
     /**
      *
@@ -401,9 +380,7 @@ END;
             }
         }
 
-
         $baseUrl = $this->getBaseUrl();
-
         $prefix = $this->systemConfig->general->devMode ? 'public' : 'dist';
 
         $cssItems = [];
@@ -446,7 +423,7 @@ END;
         $cssHtml = implode('', [$cssHtml, $viteCssImportsHtml]);
 
         $postBodyImports = implode('', [$jsHtml, $viteJsImportsHtml, "<script> $script </script>"]);
-        $html = $this->getPageHtml($baseUrl, $title, $cssHtml, $postBodyImports);
+        $html = $this->getStandardPageHtml($baseUrl, $title, $cssHtml, $postBodyImports);
         $response->getBody()->write($html);
         if ($cacheKey !== '') {
             $this->getSystemDataCache()->set($cacheKey, $html, 3600);
@@ -582,32 +559,7 @@ END;
         return $cssImports;
     }
 
-    /**
-     * @param ResponseInterface $response
-     * @param string $template
-     * @param array $data
-     * @param bool $withBaseData
-     * @return ResponseInterface
-     */
-    protected function renderPage(ResponseInterface $response,
-                                  string            $template, array $data,
-                                  bool              $withBaseData = true): ResponseInterface
-    {
 
-        if ($withBaseData) {
-            $data['commonData'] = $this->getCommonData();
-            $data['baseUrl'] = $this->getBaseUrl();
-        }
-        try {
-            $responseToReturn = $this->getTwig()->render($response, $template, $data);
-            SystemProfiler::lap('Response ready');
-            $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
-            return $responseToReturn;
-        } catch (LoaderError|RuntimeError|SyntaxError $e) {
-            $this->logger->error("Twig error rendering page: " . $e->getMessage(), ['exception' => get_class($e)]);
-            return $this->getSystemErrorPage($response, "Error rendering page", []);
-        }
-    }
 
     protected function getSystemErrorPage(ResponseInterface $response, string $errorMessage,
                                           array             $errorData, int $httpStatus = HttpStatus::INTERNAL_SERVER_ERROR): ResponseInterface
@@ -671,39 +623,9 @@ END;
                 $thePage['foliation'] = $page['foliation'];
             }
             $thePage['isTranscribed'] = in_array($page['page_number'], $transcribedPages);
-
-//            $thePage['classes'] = '';
-//            if (!in_array($page['page_number'], $transcribedPages)) {
-//                $thePage['classes'] =
-//                    $thePage['classes'] . ' withouttranscription';
-//            }
-//            $thePage['classes'] .= ' type' . $page['type'];
             $thePages[] = $thePage;
         }
         return $thePages;
     }
 
-    // Utility function
-
-
-    protected function getNormalizerData(string $language, string $category): array
-    {
-        $normalizerManager = $this->systemManager->getNormalizerManager();
-
-        $standardNormalizerNames = $normalizerManager->getNormalizerNamesByLangAndCategory($language, $category);
-        $normalizerData = [];
-        foreach ($standardNormalizerNames as $normalizerName) {
-            $normalizerData[] = [
-                'name' => $normalizerName,
-                'metadata' => $normalizerManager->getNormalizerMetadata($normalizerName)
-            ];
-        }
-        return $normalizerData;
-    }
-
-
-    public function setLogger(LoggerInterface $logger): void
-    {
-        // TODO: Implement setLogger() method.
-    }
 }

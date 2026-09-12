@@ -30,12 +30,14 @@ use APM\CollationTable\TableNotFoundException;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\System\DataRetrieveHelper;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\NormalizerManager;
 use APM\System\Transcription\ApmChunkSegmentLocation;
 use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
-use ThomasInstitut\DataTable\Exception\InvalidArgumentException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\Profiler\SystemProfiler;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -56,7 +58,6 @@ class SiteChunkPage extends SiteController
      * @throws PageNotFoundException
      * @throws UserNotFoundException
      * @throws TableNotFoundException
-     * @throws InvalidArgumentException
      */
     public function singleChunkPage(Request $request, Response $response): Response
     {
@@ -155,7 +156,7 @@ class SiteChunkPage extends SiteController
         // Fill in normalizer data for chunk page languages
         $fullLanguageInfo = [];
         foreach($languageInfoArray as $lang => $langInfo) {
-            $langInfo['normalizerData'] = $this->getNormalizerData($lang, 'standard');
+            $langInfo['normalizerData'] = $this->getNormalizerData($lang);
             $fullLanguageInfo[$lang] = $langInfo;
         }
 
@@ -206,6 +207,17 @@ class SiteChunkPage extends SiteController
                 'chunkpage.css'
             ]
         );
+    }
+
+    private function getNormalizerData(string $lang): array {
+        /** @var NormalizerManager $lm */
+        try {
+            $lm = $this->container->get(NormalizerManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            $this->logger->error("System Error while getting NormalizerManager: " . $e->getMessage());
+            throw new RuntimeException("NormalizerManager not found in container", 0, $e);
+        }
+        return $lm->getNormalizerData($lang, 'standard');
     }
 
 

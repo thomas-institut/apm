@@ -417,10 +417,6 @@ export class ApmApiClient {
     }
   }
 
-  async getLegacySystemLanguagesArray(): Promise<any> {
-    return await this.getAlmostStaticData('SystemLanguages', urlGen.apiSystemGetLanguages());
-  }
-
   async getAuthors(): Promise<number[]> {
     return this.get(urlGen.apiWorksGetAuthors(), false, TtlOneHour);
   }

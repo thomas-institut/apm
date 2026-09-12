@@ -29,12 +29,16 @@ namespace APM\Site;
 use APM\CollationTable\TableNotFoundException;
 use APM\System\Document\DocInfo;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\NormalizerManager;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use RuntimeException;
 use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
@@ -506,7 +510,7 @@ class SiteCollationTable extends SiteController
             'isPreset' => $collationPageOptions['isPreset'],
             'availableWitnesses' => $validWitnesses,
             'suppressTimestampsInApiCalls' => $suppressTimestampsInApiCalls,
-            'normalizerData' => $this->getNormalizerData($language, 'standard'),
+            'normalizerData' => $this->getNormalizerData($language),
             'loadNow' => true
         ];
         if ($data['isPreset']) {
@@ -558,5 +562,16 @@ class SiteCollationTable extends SiteController
         $numWitnesses = count($vWL);
         $this->logger->debug("There are $numWitnesses available witnesses for $workId, $chunkNumber, $langCode");
         return $vWL;
+    }
+
+    private function getNormalizerData(string $lang): array {
+        /** @var NormalizerManager $lm */
+        try {
+            $lm = $this->container->get(NormalizerManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            $this->logger->error("System Error while getting NormalizerManager: " . $e->getMessage());
+            throw new RuntimeException("NormalizerManager not found in container", 0, $e);
+        }
+        return $lm->getNormalizerData($lang, 'standard');
     }
 }

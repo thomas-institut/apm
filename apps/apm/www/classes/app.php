@@ -471,22 +471,6 @@ function createApiWitnessRoutes(RouteCollectorProxy $group): void
 function createApiSystemRoutes(RouteCollectorProxy $group): void
 {
     /**
-     * Returns a list of all system languages and their names
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get('/system/languages',
-        [ApiSystem::class, 'getSystemLanguages']);
-
-
-    /**
      * Returns information about the authenticated API user.
      *
      * API Inventory:

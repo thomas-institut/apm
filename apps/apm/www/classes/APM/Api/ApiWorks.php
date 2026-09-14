@@ -2,9 +2,16 @@
 
 namespace APM\Api;
 
+use APM\CollationTable\CollationTableManager;
 use APM\Site\SiteWorks;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\Transcription\TranscriptionManager;
+use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 
@@ -17,12 +24,15 @@ class ApiWorks extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function getWorkInfoOld(Request $request, Response $response): Response
     {
         $workId =  $request->getAttribute('workId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
-        $workManager = $this->systemManager->getWorkManager();
+        $workManager = $this->container->get(WorkManager::class);
+        $personManager = $this->container->get(PersonManagerInterface::class);
         try {
             $workData = $workManager->getWorkDataByDareId($workId);
         } catch (WorkNotFoundException) {
@@ -32,7 +42,7 @@ class ApiWorks extends ApiController
             return $this->responseWithStatus($response, 409);
         }
         try {
-            $authorName = $this->systemManager->getPersonManager()->getPersonEssentialData($workData->authorId)->name;
+            $authorName = $personManager->getPersonEssentialData($workData->authorId)->name;
         } catch (PersonNotFoundException) {
             $this->logger->error("Author not found " . $workData->authorId);
             $authorName = '';
@@ -55,12 +65,15 @@ class ApiWorks extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function getWorkData(Request $request, Response $response): Response
     {
         $workId =  $request->getAttribute('workId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
-        $workManager = $this->systemManager->getWorkManager();
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
         try {
             return $this->responseWithJson($response, $workManager->getWorkDataByDareId($workId)->getExportObject());
         } catch(WorkNotFoundException) {
@@ -79,10 +92,14 @@ class ApiWorks extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function getAuthorList(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
-        return $this->responseWithJson($response, $this->systemManager->getWorkManager()->getAuthors());
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
+        return $this->responseWithJson($response, $workManager->getAuthors());
     }
 
 
@@ -91,26 +108,35 @@ class ApiWorks extends ApiController
      * @param Response $response
      * @return Response
      * TODO: move the data fetching out of the SiteWorks controller
-     *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function allWorksData(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
-        return $this->responseWithJson($response,  SiteWorks::getAllWorksData($this->systemManager));
+        $collationTableManager = $this->container->get(CollationTableManager::class);
+        $transcriptionManager = $this->container->get(TranscriptionManager::class);
+        $workManager = $this->container->get(WorkManager::class);
+        $systemMainDataCache = $this->container->get(SystemMainDataCache::class);
+        return $this->responseWithJson($response,  SiteWorks::getAllWorksData($collationTableManager, $transcriptionManager, $workManager, $systemMainDataCache, $this->logger));
     }
-
 
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function getChunksWithTranscription(Request $request, Response $response): Response
     {
         $workId =  $request->getAttribute('workId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $workId);
 
-        $chunks = $this->systemManager->getTranscriptionManager()->getChunksWithTranscriptionForWorkId($workId);
+        /** @var TranscriptionManager $transcriptionManager */
+        $transcriptionManager = $this->container->get(TranscriptionManager::class);
+
+        $chunks = $transcriptionManager->getChunksWithTranscriptionForWorkId($workId);
 
         return $this->responseWithJson($response, [
            'workId' => $workId,

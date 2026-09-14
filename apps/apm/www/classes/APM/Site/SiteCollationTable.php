@@ -26,15 +26,20 @@
 
 namespace APM\Site;
 
+use APM\CollationTable\CollationTableManager;
 use APM\CollationTable\TableNotFoundException;
+use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\EntitySystem\Schema\Entity;
 use APM\System\Document\DocInfo;
-use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\NormalizerManager;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\Preset\PresetManager;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessInfo;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
+use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -55,6 +60,11 @@ class SiteCollationTable extends SiteController
 {
 
 
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     * @throws UserNotFoundException
+     */
     public function newChunkEdition(Request $request, Response $response) : Response{
         
         $workId  = $request->getAttribute('workId');
@@ -63,12 +73,16 @@ class SiteCollationTable extends SiteController
         if ($workId === null || $chunkNumber === null || $lang === null) {
             return $this->getBasicErrorPage($response, "Error", "Invalid parameters for new chunk edition creation", HttpStatus::BAD_REQUEST);
         }
+        $collationTableManager = $this->container->get(CollationTableManager::class);
+        $workManager = $this->container->get(WorkManager::class);
+
+
         $this->logger->debug("New Chunk Edition, $workId-$chunkNumber, language = $lang");
 
-        $ctData = $this->systemManager->getCollationTableManager()->getEmptyChunkEdition($workId, $chunkNumber, $lang, "New Chunk Edition");
+        $ctData = $collationTableManager->getEmptyChunkEdition($workId, $chunkNumber, $lang, "New Chunk Edition");
 
         try {
-            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+            $workInfo = $workManager->getWorkDataByDareId($workId);
         } catch (WorkNotFoundException) {
 //          Not found!!!
             return $this->getBasicErrorPage(
@@ -79,7 +93,7 @@ class SiteCollationTable extends SiteController
 
         $peopleIds = [];
         $peopleIds[] = $workInfo->authorId;
-        $pm = $this->systemManager->getPersonManager();
+        $pm = $this->getPersonManager();
         $peopleInfo = [];
         foreach($peopleIds as $personId) {
             try {
@@ -107,7 +121,7 @@ class SiteCollationTable extends SiteController
                 'peopleInfo' => $peopleInfo,
                 'docInfo' => [],
                 'versionInfo' => [],
-                'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
+                'isTechSupport' => $this->getUserManager()->isRoot($this->userId),
                 'versionId' => -1,
                 'lastVersion' => true
             ],
@@ -137,7 +151,9 @@ class SiteCollationTable extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws UserNotFoundException|DocumentNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws UserNotFoundException
      */
     public function editCollationTable(Request $request, Response $response) : Response{
         $tableId = intval($request->getAttribute('tableId'));
@@ -153,7 +169,7 @@ class SiteCollationTable extends SiteController
             $version = TimeString::compactDecode($encodedTimeStamp);
         }
 
-        $ctManager = $this->systemManager->getCollationTableManager();
+        $ctManager = $this->container->get(CollationTableManager::class);
 
         if ($version === '') {
             $timeStamp = '';
@@ -163,11 +179,10 @@ class SiteCollationTable extends SiteController
                 $ctInfo = $ctManager->getCollationTableInfo($tableId, $version);
                 $timeStamp = $ctInfo->timeFrom;
                 $isLastVersion = $ctInfo->timeUntil === TimeString::END_OF_TIMES;
-            } catch(InvalidArgumentException|TableNotFoundException $e) {
+            } catch(InvalidArgumentException|TableNotFoundException) {
                 $this->logger->error("Collation table $tableId not found");
                 return $this->getBasicErrorPage($response, "Error", "Collation table $tableId not found", HttpStatus::NOT_FOUND);
             }
-
             $this->logger->debug("Edit collation table id $tableId, version $version, actual timestamp: $timeStamp");
         }
 
@@ -180,7 +195,7 @@ class SiteCollationTable extends SiteController
             'js/EditionComposer/EditionComposer.ts',
             [
                 'tableId' => $tableId,
-                'isTechSupport' => $this->systemManager->getUserManager()->isRoot($this->userId),
+                'isTechSupport' => $this->getUserManager()->isRoot($this->userId),
                 'version' => $timeStamp,
                 'lastVersion' => $isLastVersion
             ],
@@ -191,11 +206,14 @@ class SiteCollationTable extends SiteController
             ],
         );
     }
+
     /**
      * @param Request $request
      * @param Response $response
      * @param $args
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function automaticCollationPageGet(Request $request, Response $response, $args): Response
     {
@@ -283,6 +301,8 @@ class SiteCollationTable extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws PersonNotFoundException
      */
     public function automaticCollationPagePreset(Request $request, Response $response): Response
@@ -292,7 +312,7 @@ class SiteCollationTable extends SiteController
         $chunkNumber = $request->getAttribute('chunk');
         $presetId = $request->getAttribute('preset');
         
-        $presetManager = $this->systemManager->getPresetsManager();
+        $presetManager = $this->container->get(PresetManager::class);
 
         if (!$presetManager->presetExistsById($presetId)) {
             $msg = 'Preset not found';
@@ -307,7 +327,7 @@ class SiteCollationTable extends SiteController
         $ignorePunctuation = $presetData['ignorePunctuation'];
 
 
-        $presetUserName = $this->systemManager->getPersonManager()->getPersonEssentialData($preset->getUserId())->name;
+        $presetUserName = $this->getPersonManager()->getPersonEssentialData($preset->getUserId())->name;
         
         $collationPageOptions = [
             'work' => $workId,
@@ -363,6 +383,8 @@ class SiteCollationTable extends SiteController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function automaticCollationPageCustom(Request $request, Response $response): Response
     {
@@ -406,6 +428,8 @@ class SiteCollationTable extends SiteController
      * @param array $collationPageOptions
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     private function getCollationTablePage(array $collationPageOptions, Response $response): Response
     {
@@ -427,12 +451,6 @@ class SiteCollationTable extends SiteController
             $apiCallOptions['normalizers'] = $collationPageOptions['normalizers'];
         }
 
-        $pageName = "AutomaticCollation-$workId-$chunkNumber-$language";
-        
-        
-        $warnings = [];
-
-        
         // check that language is valid
         $languages = $this->getLanguages();
         $langInfo = null;
@@ -447,9 +465,11 @@ class SiteCollationTable extends SiteController
             return $this->getErrorPage($response, 'Auto Collation', $msg, HttpStatus::BAD_REQUEST);
         }
         
-        // get work info
+        // make sure work exists
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
         try {
-            $workInfo = $this->systemManager->getWorkManager()->getWorkDataByDareId($workId);
+            $workManager->getWorkDataByDareId($workId);
         } catch (WorkNotFoundException) {
             return $this->getBasicErrorPage($response, 'Error', "Work $workId not found", 404);
         }
@@ -461,7 +481,6 @@ class SiteCollationTable extends SiteController
 
         SystemProfiler::lap('getValidWitnessesForChunkLang');
 
-        //$this->codeDebug('Found ' . count($validWitnesses) . " valid witnesses");
 
         // put titles in fullTx witnesses that don't have one
 
@@ -532,19 +551,37 @@ class SiteCollationTable extends SiteController
             ['collationtable.css', 'act-settingsform.css'],
         );
     }
-    
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getLangIdFromCode(string $code) : int|null {
+        /** @var ApmEntitySystemInterface $entitySystem */
+        $entitySystem = $this->container->get(ApmEntitySystemInterface::class);
+        $statements = $entitySystem->getStatements(null, Entity::pLangIso639Code, $code);
+        if (count($statements) === 0) {
+            return null;
+        }
+        return $statements[0]->subject;
+    }
+
 
     /**
      * @param string $workId
      * @param int $chunkNumber
      * @param string $langCode
      * @return WitnessInfo[]
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getValidWitnessesForChunkLang(string $workId, int $chunkNumber, string $langCode) : array {
-//        $this->logger->debug("Getting valid witnesses for $workId, $chunkNumber, $langCode");
-        $tm = $this->systemManager->getTranscriptionManager();
+
+        /** @var TranscriptionManager $tm */
+        $tm = $this->container->get(TranscriptionManager::class);
+
         $vw = $tm->getWitnessesForChunk($workId, $chunkNumber);
-        $langId = $this->systemManager->getLangIdFromCode($langCode);
+        $langId = $this->getLangIdFromCode($langCode);
         if ($langId === null) {
             $this->logger->error("Invalid language code '$langCode'");
             return [];
@@ -552,8 +589,6 @@ class SiteCollationTable extends SiteController
 
         $vWL = [];
         foreach($vw as $witnessInfo) {
-//            $this->logger->debug("Witness for chunk $witnessInfo->chunkNumber, testing langId $langId",
-//            [ 'lang' => $witnessInfo->language, 'isValid' => $witnessInfo->isValid]);
             if ($witnessInfo->language === $langId && $witnessInfo->isValid) {
                 $vWL[] = $witnessInfo;
             }

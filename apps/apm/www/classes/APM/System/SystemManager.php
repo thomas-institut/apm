@@ -119,9 +119,6 @@ abstract class SystemManager implements ErrorReporter {
         return $this->getEntitySystem()->getEntityData($langId)->getObjectForPredicate(Entity::pLangIso639Code) ?? 'unknown';
     }
 
-
-
-
     /**
      * Get methods for the different components
      */

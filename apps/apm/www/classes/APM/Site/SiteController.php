@@ -43,7 +43,6 @@ use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Slim\Interfaces\RouteParserInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\Profiler\SystemProfiler;
@@ -57,18 +56,9 @@ class SiteController
 
     const string VITE_DEV_BASE = 'http://localhost:5173';
 
-    protected ContainerInterface $container;
-
-    /**
-     * @deprecated use component from SiteController (through container)
-     */
-    protected SystemManager $systemManager;
-
     // Default components for all controllers
     protected ApmSystemConfig $systemConfig;
-    protected LanguageManager $languageManager;
     protected LoggerInterface $logger;
-    protected RouteParserInterface $router;
 
     protected bool $userAuthenticated;
 
@@ -79,67 +69,65 @@ class SiteController
      * @throws NotFoundExceptionInterface
      * @throws ContainerExceptionInterface
      */
-    public function __construct(ContainerInterface $ci)
+    public function __construct(
+        protected ContainerInterface $container
+    )
     {
-        $this->container = $ci;
-
-        /** @var SystemManager $sm */
-        $sm = $ci->get(SystemManager::class);
-        $this->systemManager = $sm;
-
         /** @var ApmSystemConfig $sc */
-        $sc = $ci->get(ApmSystemConfig::class);
+        $sc = $this->container->get(ApmSystemConfig::class);
         $this->systemConfig = $sc;
 
         /** @var LoggerInterface $logger */
-        $logger = $ci->get(LoggerInterface::class);
+        $logger = $this->container->get(LoggerInterface::class);
         $this->logger = $logger;
-
-        /** @var RouteParserInterface $router */
-        $router = $ci->get(RouteParserInterface::class);
-        $this->router = $router;
-
-        /** @var LanguageManager $lm */
-        $lm = $ci->get(LanguageManager::class);
-        $this->languageManager = $lm;
 
         // Check if the user has been authenticated by the authentication middleware
         $this->userAuthenticated = false;
-        if ($ci->has(ApmContainerKey::SITE_USER_ID)) {
+        if ($this->container->has(ApmContainerKey::SITE_USER_ID)) {
             $this->userAuthenticated = true;
-            $this->userId = $ci->get(ApmContainerKey::SITE_USER_ID);
+            $this->userId = $this->container->get(ApmContainerKey::SITE_USER_ID);
         }
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    protected function getLanguageManager(): LanguageManager
+    {
+        return $this->container->get(LanguageManager::class);
+    }
 
-
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     protected function getLanguages(): array
     {
         $legacyLangArray = [];
-        foreach ($this->languageManager->getSupportedTranscriptionLanguageCodes() as $code) {
-            $legacyLangArray[] = $this->languageManager->getLegacyLangInfo($code);
+        $lm = $this->getLanguageManager();
+        foreach ($lm->getSupportedTranscriptionLanguageCodes() as $code) {
+            $legacyLangArray[] = $lm->getLegacyLangInfo($code);
         }
         return $legacyLangArray;
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     protected function getUserManager(): UserManagerInterface
     {
-        try {
-            return $this->container->get(UserManagerInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            $this->logger->error("System Error while getting UserManager: " . $e->getMessage());
-            throw new RuntimeException("UserManager not found in container", 0, $e);
-        }
+        return $this->container->get(UserManagerInterface::class);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     protected function getPersonManager(): PersonManagerInterface
     {
-        try {
-            return $this->container->get(PersonManagerInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            $this->logger->error("System Error while getting PersonManager: " . $e->getMessage());
-            throw new RuntimeException("PersonManager not found in container", 0, $e);
-        }
+        return $this->container->get(PersonManagerInterface::class);
     }
 
     protected function getSystemDataCache(): SystemMainDataCache
@@ -157,6 +145,8 @@ class SiteController
      * Gets an array with info about the user.
      * This is sent to all standard non-React pages
      *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getSiteUserInfo(): array
     {
@@ -188,6 +178,10 @@ class SiteController
         return $tagLine;
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     protected function getCommonData(): array
     {
         return [
@@ -335,7 +329,6 @@ END;
     }
 
 
-
     /**
      *
      * Renders a standard page with the given parameters
@@ -353,6 +346,8 @@ END;
      * @param array $extraJss
      * @param bool $withJsOptions
      * @return ResponseInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function renderStandardPage(ResponseInterface $response,
                                           string            $cacheKey, string $title,
@@ -560,7 +555,6 @@ END;
     }
 
 
-
     protected function getSystemErrorPage(ResponseInterface $response, string $errorMessage,
                                           array             $errorData, int $httpStatus = HttpStatus::INTERNAL_SERVER_ERROR): ResponseInterface
     {
@@ -577,6 +571,10 @@ END;
         return $response->withStatus($httpStatus);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     protected function getErrorPage(ResponseInterface $response, string $title, string $errorMessage, int $httpStatus): ResponseInterface
     {
 

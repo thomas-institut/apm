@@ -29,6 +29,9 @@ use APM\System\ApmImageType;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\SystemManager;
+use APM\System\Transcription\TranscriptionManager;
+use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
 use Psr\Container\ContainerExceptionInterface;
@@ -59,15 +62,19 @@ class SitePageViewer extends SiteController
      * legacy DataManager getActiveWorks
      *
      * @return string[]
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     private function getActiveWorks() : array {
-       $enabledWorks = $this->systemManager->getWorkManager()->getEnabledWorks();
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
+       $enabledWorks = $workManager->getEnabledWorks();
 //       $this->logger->debug("EnabledWorks: ".count($enabledWorks), [ $enabledWorks]);
 
        $activeWorks = [];
        foreach ($enabledWorks as $work) {
            try {
-               $workData = $this->systemManager->getWorkManager()->getWorkData($work);
+               $workData = $workManager->getWorkData($work);
            } catch (WorkNotFoundException $e) {
                // should never happen
                throw new RuntimeException($e->getMessage());
@@ -87,6 +94,8 @@ class SitePageViewer extends SiteController
      * @param Response $response
      * @param bool $byPage
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     function pageViewerPageByDoc(Request $request, Response $response, bool $byPage): Response
     {
@@ -108,8 +117,14 @@ class SitePageViewer extends SiteController
         if ($activeColumn === 0) {
             $activeColumn = 1;
         }
-        $docManager = $this->systemManager->getDocumentManager();
-        $txManager = $this->systemManager->getTranscriptionManager();
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
+
+        /** @var SystemManager $systemManager */
+        $systemManager = $this->container->get(SystemManager::class);
+
         try {
             $docInfo = $docManager->getLegacyDocInfo($docId);
             if ($byPage) {
@@ -123,7 +138,7 @@ class SitePageViewer extends SiteController
             $docPageCount = $docManager->getDocPageCount($docId);
             $legacyPageInfoArray = $docManager->getLegacyDocPageInfoArray($docId, DocumentManager::ORDER_BY_SEQ);
             $transcribedPages = $txManager->getTranscribedPageListByDocId($docId);
-            $imageSources = $this->systemManager->getImageSources();
+            $imageSources = $systemManager->getImageSources();
             $imageUrl = $docManager->getImageUrl($docId, $pageInfo['img_number'], ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
             $deepZoom = $docManager->isDocDeepZoom($docId) ? '1' : '0';
             $activeWorks = $this->getActiveWorks();

@@ -29,12 +29,13 @@ use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Document\DocumentManager;
 use APM\System\Person\PersonManagerInterface;
-use APM\System\Preset\PresetManager;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use Monolog\Logger;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
@@ -55,14 +56,6 @@ abstract class SystemManager implements ErrorReporter {
 
     use SimpleErrorReporterTrait;
 
-
-    // Tool Ids (for presets)
-
-    const string TOOL_AUTOMATIC_COLLATION = 'automaticCollation_v2';
-    const string TOOL_SIGLA = 'sigla';
-
-    const array VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
-
     /**
      * @var array
      * @deprecated Use ApmSystemConfig from the container
@@ -72,6 +65,10 @@ abstract class SystemManager implements ErrorReporter {
     protected ContainerInterface $ci;
 
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function __construct(ContainerInterface $ci) {
         $this->resetError();
         $this->ci = $ci;
@@ -84,10 +81,6 @@ abstract class SystemManager implements ErrorReporter {
      */
     public function getConfig() : array {
         return $this->config;
-    }
-
-    public function isToolValid(string $tool) : bool {
-        return in_array($tool, self::VALID_TOOL_IDS);
     }
 
     /**
@@ -105,7 +98,6 @@ abstract class SystemManager implements ErrorReporter {
      * Get methods for the different components
      */
 
-    abstract public function getPresetsManager() : PresetManager;
     abstract public function getImageSources() : array;
     abstract public function getLogger() : Logger;
     abstract public function getCollationEngine(string $engineSystemId = '') : CollationEngine;

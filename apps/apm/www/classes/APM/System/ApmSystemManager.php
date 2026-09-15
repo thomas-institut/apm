@@ -43,7 +43,6 @@ use APM\System\Jobs\UpdateApiUsersCtDataForUserJob;
 use APM\System\Jobs\UpdateApiUsersTranscribedPagesDataJob;
 use APM\System\Jobs\UpdateWorksCacheJob;
 use APM\System\Person\PersonManagerInterface;
-use APM\System\Preset\PresetManager;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
@@ -121,15 +120,6 @@ class ApmSystemManager extends SystemManager
     public function getImageSources(): array
     {
         return $this->imageSources;
-    }
-
-    public function getPresetsManager(): PresetManager
-    {
-        try {
-            return $this->ci->get(PresetManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('Could not get PresetManager from container', 0, $e);
-        }
     }
 
     public function getLogger(): Logger

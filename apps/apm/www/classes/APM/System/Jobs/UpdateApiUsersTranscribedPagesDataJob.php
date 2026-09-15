@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\Jobs;
+namespace APM\System\Jobs;
 
 use APM\Api\ApiUsers;
 use APM\System\Cache\SystemMainDataCache;

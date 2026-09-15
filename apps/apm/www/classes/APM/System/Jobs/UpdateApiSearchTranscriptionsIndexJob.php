@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\Jobs;
+namespace APM\System\Jobs;
 
 use APM\CommandLine\IndexManager;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
@@ -8,7 +8,6 @@ use APM\System\ApmContainerKey;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
-use APM\System\SystemManager;
 use Http\Client\Exception;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;

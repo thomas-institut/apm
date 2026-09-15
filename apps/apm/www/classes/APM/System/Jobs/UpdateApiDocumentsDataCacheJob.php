@@ -1,15 +1,14 @@
 <?php
 
-namespace APM\Jobs;
+namespace APM\System\Jobs;
 
-use APM\Api\ApiPeople;
-use APM\System\SystemManager;
+use APM\Api\ApiDocuments;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-readonly class UpdateAllPeopleDataCacheJob implements JobHandlerInterface
+readonly class UpdateApiDocumentsDataCacheJob implements JobHandlerInterface
 {
     public function __construct(private ContainerInterface $container) {}
 
@@ -19,13 +18,14 @@ readonly class UpdateAllPeopleDataCacheJob implements JobHandlerInterface
      */
     public function run(array $payload, string $jobName): bool
     {
-        return ApiPeople::updateCachedAllPeopleDataForPeoplePage($this->container);
+       return ApiDocuments::updateDataCache($this->container, $payload);
     }
 
     public function mustBeUnique(): bool
     {
         return true;
     }
+
     public function minTimeBetweenSchedules() : int {
         return 2;
     }

@@ -1,12 +1,11 @@
 <?php
 
-namespace APM\Jobs;
+namespace APM\System\Jobs;
 
 use APM\Api\ApiUsers;
 use APM\CollationTable\CollationTableManager;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Person\PersonManagerInterface;
-use APM\System\SystemManager;
 use APM\System\Work\WorkManager;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\JobQueue\JobHandlerInterface;

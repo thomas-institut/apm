@@ -28,21 +28,20 @@ use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\Jobs\UpdateApiSearchEditionsIndexJob;
-use APM\Jobs\ApiSearchUpdateTranscribersAndTranscriptionsCache;
-use APM\Jobs\UpdateApiSearchTranscriptionsIndexJob;
-use APM\Jobs\UpdateApiUsersCtDataForUserJob;
-use APM\Jobs\UpdateApiUsersTranscribedPagesDataJob;
-use APM\Jobs\UpdateApiDocumentsDataCache;
-use APM\Jobs\UpdateAllPeopleDataCacheJob;
-use APM\Jobs\UpdateWorksCacheJob;
 use APM\System\Cache\SystemDirDataCache;
 use APM\System\Cache\SystemMainDataCache;
-use APM\System\Cache\SystemMemDataCache;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
+use APM\System\Jobs\UpdateApiSearchTranscribersAndTranscriptionsCacheJob;
+use APM\System\Jobs\UpdateAllPeopleDataCacheJob;
+use APM\System\Jobs\UpdateApiDocumentsDataCacheJob;
+use APM\System\Jobs\UpdateApiSearchEditionsIndexJob;
+use APM\System\Jobs\UpdateApiSearchTranscriptionsIndexJob;
+use APM\System\Jobs\UpdateApiUsersCtDataForUserJob;
+use APM\System\Jobs\UpdateApiUsersTranscribedPagesDataJob;
+use APM\System\Jobs\UpdateWorksCacheJob;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
 use APM\System\Transcription\TranscriptionManager;
@@ -230,13 +229,13 @@ class ApmSystemManager extends SystemManager
         ];
         $jobManager->scheduleJob(UpdateWorksCacheJob::class,
             '', $siteWorkUpdateCacheJobPayload, 0, 3, 20);
-        $jobManager->scheduleJob(UpdateApiDocumentsDataCache::class,
+        $jobManager->scheduleJob(UpdateApiDocumentsDataCacheJob::class,
             '', [$docId], 0, 3, 20);
         $jobManager->scheduleJob(UpdateApiUsersTranscribedPagesDataJob::class,
             "User $userTid", ['userTid' => $userTid], 0, 3, 20);
         $jobManager->scheduleJob(UpdateApiSearchTranscriptionsIndexJob::class,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber], 0, 3, 20);
-        $jobManager->scheduleJob(ApiSearchUpdateTranscribersAndTranscriptionsCache::class,
+        $jobManager->scheduleJob(UpdateApiSearchTranscribersAndTranscriptionsCacheJob::class,
             '', [], 0, 3, 20);
     }
 
@@ -255,14 +254,14 @@ class ApmSystemManager extends SystemManager
             "User $userTid", ['userTid' => $userTid], 0, 3, 20);
         $jobManager->scheduleJob(UpdateApiSearchEditionsIndexJob::class,
             '', [$ctId], 0, 3, 20);
-        $jobManager->scheduleJob(ApiSearchUpdateTranscribersAndTranscriptionsCache::class,
+        $jobManager->scheduleJob(UpdateApiSearchTranscribersAndTranscriptionsCacheJob::class,
             '', [], 0, 3, 20);
     }
 
     public function onDocumentDeleted(int $userTid, int $docId): void
     {
         parent::onDocumentDeleted($userTid, $docId);
-        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCacheJob::class,
             '', [$docId], 0, 3, 20);
 
     }
@@ -301,14 +300,14 @@ class ApmSystemManager extends SystemManager
     public function onDocumentUpdated(int $userTid, int $docId): void
     {
         parent::onDocumentUpdated($userTid, $docId);
-        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCacheJob::class,
             '', [$docId], 0, 3, 20);
     }
 
     public function onDocumentAdded(int $userTid, int $docId): void
     {
         parent::onDocumentAdded($userTid, $docId);
-        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCacheJob::class,
             '', [$docId], 0, 3, 20);
     }
 

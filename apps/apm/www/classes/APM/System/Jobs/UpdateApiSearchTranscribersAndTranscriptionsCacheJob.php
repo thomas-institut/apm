@@ -1,12 +1,12 @@
 <?php
 
-namespace APM\Jobs;
+namespace APM\System\Jobs;
 
 use APM\Api\ApiSearch;
 use APM\System\SystemManager;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-class ApiSearchUpdateTranscribersAndTranscriptionsCache implements JobHandlerInterface
+class UpdateApiSearchTranscribersAndTranscriptionsCacheJob implements JobHandlerInterface
 
 {
     public function __construct(private SystemManager $sm) {}

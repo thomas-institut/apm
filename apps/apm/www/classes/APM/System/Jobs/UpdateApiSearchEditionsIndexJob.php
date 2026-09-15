@@ -1,10 +1,9 @@
 <?php
 
-namespace APM\Jobs;
+namespace APM\System\Jobs;
 
 use APM\CommandLine\IndexManager;
 use APM\System\ApmContainerKey;
-use APM\System\SystemManager;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;

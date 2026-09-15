@@ -4,12 +4,12 @@ namespace APM\ApmDaemon;
 
 use APM\Api\ApiDocuments;
 use APM\CommandLine\CommandLineUtility;
-use APM\Jobs\UpdateAllPeopleDataCacheJob;
-use APM\Jobs\UpdateApiDocumentsDataCache;
-use APM\Jobs\UpdateWorksCacheJob;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
+use APM\System\Jobs\UpdateAllPeopleDataCacheJob;
+use APM\System\Jobs\UpdateApiDocumentsDataCacheJob;
+use APM\System\Jobs\UpdateWorksCacheJob;
 use Monolog\Logger;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -110,7 +110,7 @@ class ApmDaemon extends CommandLineUtility
             ],
             [
                 'key' => ApiDocuments::DOCUMENT_DATA_CACHE_KEY,
-                'jobName' => UpdateApiDocumentsDataCache::class,
+                'jobName' => UpdateApiDocumentsDataCacheJob::class,
                 'payload' => []
             ],
             [

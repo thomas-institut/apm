@@ -1,13 +1,12 @@
 <?php
 
-namespace APM\Jobs;
+namespace APM\System\Jobs;
 
 use APM\CollationTable\CollationTableManager;
 use APM\Site\SiteWorks;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
-use APM\System\SystemManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\Transcription\TxText\ChunkMark;

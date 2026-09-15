@@ -1,13 +1,13 @@
 <?php
 
-namespace APM\Jobs;
+namespace APM\System\Jobs;
 
 use APM\Api\ApiSearch;
 use APM\System\SystemManager;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 use Throwable;
 
-class ApiSearchUpdateEditorsAndEditionsCache implements JobHandlerInterface
+class UpdateApiSearchEditorsAndEditionsCacheJob implements JobHandlerInterface
 
 {
     public function __construct(private SystemManager $sm) {}

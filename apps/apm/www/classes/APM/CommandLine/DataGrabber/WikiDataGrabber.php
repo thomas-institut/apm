@@ -6,6 +6,7 @@ use APM\CommandLine\ApmCtlUtility\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Cache\SystemMemDataCache;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
@@ -28,7 +29,9 @@ class WikiDataGrabber extends CommandLineUtility implements AdminUtility
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
-        $this->memCache = $this->getSystemManager()->getMemDataCache();
+        /** @var SystemMemDataCache $memCache */
+        $memCache  = $this->container->get(SystemMemDataCache::class);
+        $this->memCache = $memCache;
         $this->guzzleClient = new Client();
     }
 

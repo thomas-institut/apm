@@ -3,6 +3,8 @@
 namespace APM\Api\Action;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\System\Actions\PageUpdateDefinition;
+use APM\System\Actions\UpdatePageSettingsBulkAction;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
 use APM\System\Transcription\TranscriptionManager;

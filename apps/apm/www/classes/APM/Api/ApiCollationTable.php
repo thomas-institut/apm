@@ -34,6 +34,7 @@ use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\StandardData\CollationTableDataProvider;
 use APM\System\Cache\CacheKey;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\System\Work\WorkNotFoundException;
@@ -371,7 +372,7 @@ class ApiCollationTable extends ApiController
                         $this->logger->error($msg, [ 'exceptionError' => $e->getCode(), 'exceptionMsg' => $e->getMessage(), 'witness'=> $requestedWitness]);
                         return $this->responseWithJson($response, ['error' => self::ERROR_BAD_WITNESS, 'msg' => $msg], 409);
                     }
-                    $witnessIds[] = $this->systemManager->getFullTxWitnessId($fullTxWitness);
+                    $witnessIds[] = $this->getFullTxWitnessId($fullTxWitness);
 
                     try {
                         $collationTable->addWitness($requestedWitness['title'], $fullTxWitness);
@@ -538,6 +539,17 @@ class ApiCollationTable extends ApiController
 
         return $this->responseFactory->responseWithRawJson($response, $jsonToCache, HttpStatus::SUCCESS);
     }
+
+    public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
+        return WitnessSystemId::buildFullTxId(
+            $witness->getWorkId(),
+            $witness->getChunk(),
+            $witness->getDocId(),
+            $witness->getLocalWitnessId(),
+            $witness->getTimeStamp()
+        );
+    }
+
 
     public function save(Request $request, Response $response): Response
     {

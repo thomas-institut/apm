@@ -4,6 +4,7 @@ namespace APM\CommandLine\DataGrabber;
 
 use APM\CommandLine\ApmCtlUtility\AdminUtility;
 use APM\CommandLine\CommandLineUtility;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidObjectException;
 use APM\EntitySystem\Exception\InvalidStatementException;
@@ -12,13 +13,16 @@ use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
 use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Cache\SystemMemDataCache;
 use APM\ToolBox\HttpStatus;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
-use ThomasInstitut\DataCache\DataCache;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
 class ViafIdGrabber extends CommandLineUtility implements AdminUtility
 {
@@ -29,13 +33,15 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
 
     const string MemCachedPrefix = 'ViafIdGrabber:';
     const int MemCachedTtl = 86400;
-    private DataCache $memCache;
+    private SystemMemDataCache $memCache;
     private Client $guzzleClient;
 
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
-        $this->memCache = $this->getSystemManager()->getMemDataCache();
+        /** @var SystemMemDataCache $memCache */
+        $memCache = $this->container->get(SystemMemDataCache::class);
+        $this->memCache = $memCache;
         $this->guzzleClient = new Client();
     }
 
@@ -55,9 +61,14 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
     }
 
     /**
+     * @param int $argc
+     * @param array $argv
+     * @return int
      * @throws InvalidObjectException
-     * @throws InvalidSubjectException
      * @throws InvalidStatementException
+     * @throws InvalidSubjectException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function main(int $argc, array $argv) : int
     {
@@ -67,9 +78,13 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
         }
 
         array_shift($argv);
-        $pdo = $this->getSystemManager()->getDbConnection();
 
-        $es = $this->getSystemManager()->getEntitySystem();
+        /** @var PdoProvider $pdoProvider */
+        $pdoProvider = $this->container->get(PdoProvider::class);
+        $pdo = $pdoProvider->getPdo();
+
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
         if (in_array('all', $argv)){
             $tids = $es->getAllEntitiesForType(Entity::tPerson);
         } else {

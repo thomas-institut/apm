@@ -20,19 +20,28 @@
 
 namespace APM\Api;
 
-use APM\Api\Action\PageUpdateDefinition;
-use APM\Api\Action\UpdatePageSettingsBulkAction;
+use APM\EntitySystem\ApmEntitySystem;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Schema\Entity;
 use APM\Site\SiteDocuments;
+use APM\System\Actions\PageUpdateDefinition;
+use APM\System\Actions\UpdatePageSettingsBulkAction;
 use APM\System\ApmImageType;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
 use Exception;
-use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
@@ -47,19 +56,167 @@ class ApiDocuments extends ApiController
 
     const string CLASS_NAME = 'Documents';
 
+    const string DOCUMENT_DATA_CACHE_KEY = 'ApiDocuments-DocumentData';
+    const int DOCUMENT_DATA_TTL = 8 * 24 * 3600;
+
 
     /**
      * Returns data for all the documents in the system
      *
-     * TODO: move the actual data fetching out of the SiteDocuments controller into the system manager
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function allDocumentsData(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-        return $this->responseWithJson($response,  SiteDocuments::getAllDocumentsData($this->systemManager));
+        /** @var SystemMainDataCache $cache */
+        $cache = $this->container->get(SystemMainDataCache::class);
+        try {
+            $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
+        } catch (ItemNotInCacheException) {
+            // not in cache
+            $this->logger->debug("Cache miss for ApiDocuments document data");
+            $data = self::buildDocumentData($this->container);
+            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data), self::DOCUMENT_DATA_TTL);
+        }
+
+        return $this->responseWithJson($response,  $data['docs']);
+    }
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    static public function buildDocumentData(ContainerInterface $container): array
+    {
+        $docs = [];
+
+        /** @var ApmEntitySystemInterface $apmEntitySystem */
+        $apmEntitySystem = $container->get(ApmEntitySystemInterface::class);
+
+        /** @var LoggerInterface $logger */
+        $logger = $container->get(LoggerInterface::class);
+
+        $docIds = $apmEntitySystem->getAllEntitiesForType(Entity::tDocument);
+        foreach ($docIds as $docId) {
+            try {
+                $docs[] = self::getDocData($docId, $container);
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                $logger->error("Document not found: " . $e->getMessage());
+                continue;
+            }
+        }
+
+        return ['docs' => $docs];
+    }
+
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws DocumentNotFoundException
+     * @throws ContainerExceptionInterface
+     */
+    static private function getDocData(int $docId, ContainerInterface $container): array
+    {
+        /** @var DocumentManager $docManager */
+        $docManager = $container->get(DocumentManager::class);
+
+        /** @var TranscriptionManager $txManager */
+        $txManager = $container->get(TranscriptionManager::class);
+
+        $legacyDocId = $docManager->getLegacyDocId($docId);
+        $doc = [];
+        $doc['numPages'] = $docManager->getDocPageCount($docId);
+        $transcribedPages = $txManager->getTranscribedPageListByDocId($legacyDocId);
+        $doc['numTranscribedPages'] = count($transcribedPages);
+        $doc['transcribers'] = $txManager->getEditorIdsByDocId($legacyDocId);
+        $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
+        $doc['id'] = $docId;
+        return $doc;
+    }
+
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     */
+    public static function updateDataCache(ContainerInterface $container, array $docIds): bool
+    {
+
+        /** @var SystemMainDataCache $cache */
+        $cache = $container->get(SystemMainDataCache::class);
+
+        /** @var LoggerInterface $logger */
+        $logger = $container->get(LoggerInterface::class);
+
+        $data = [];
+        $completeRebuild = false;
+        if (count($docIds) !== 0) {
+            try {
+                $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
+            } catch (ItemNotInCacheException) {
+                $completeRebuild = true;
+            }
+        }
+        if ($completeRebuild || count($docIds) === 0) {
+            // redo the whole thing!
+            $logger->info("Rebuilding document data cache entirely");
+            try {
+                $data = self::buildDocumentData($container);
+            } catch (Exception $e) {
+                $logger->error("Exception while building DocumentData",
+                    [
+                        'code' => $e->getCode(),
+                        'msg' => $e->getMessage()
+                    ]);
+                return false;
+            }
+        }
+
+        if (count($docIds) !== 0) {
+            $updatedDocs = [];
+
+            // updating existing docs
+            foreach ($data['docs'] as $docData) {
+                if (in_array($docData['id'], $docIds)) {
+                    try {
+                        $newDocData = self::getDocData($docData['id'], $container);
+                    } catch (DocumentNotFoundException) {
+                        // a deleted document!
+                        // nothing to do
+                        continue;
+                    }
+                    $logger->info("Updating doc data for doc {$docData['id']}");
+                    $updatedDocs[] = $newDocData;
+                } else {
+                    $updatedDocs[] = $docData;
+                }
+            }
+
+            // adding new
+            foreach ($docIds as $docId) {
+                if (!in_array($docId, array_column($updatedDocs, 'id'))) {
+                    $logger->info("Adding doc data for new doc $docId");
+                    try {
+                        $newDocData = self::getDocData($docId, $container);
+                    } catch (DocumentNotFoundException) {
+                        // a deleted document!
+                        // nothing to do
+                        continue;
+                    }
+                    $updatedDocs[] = $newDocData;
+                }
+            }
+            $data['docs'] = $updatedDocs;
+        }
+
+        if (count($data) !== 0) {
+            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data), self::DOCUMENT_DATA_TTL);
+        }
+
+        return true;
     }
 
     /**
@@ -355,6 +512,8 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function updatePageSettingsBulk(Request $request, Response $response) : Response
     {
@@ -374,13 +533,11 @@ class ApiDocuments extends ApiController
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
         
-        $pageDefinitions = array_map(
-            fn(array $data) => PageUpdateDefinition::fromArray($data),
-            $inputArray
-        );
+        $pageDefinitions = array_map(fn(array $data) => PageUpdateDefinition::fromArray($data), $inputArray);
+
         $action = new UpdatePageSettingsBulkAction(
-            $this->systemManager->getTranscriptionManager(),
-            $this->systemManager->getEntitySystem(),
+            $this->container->get(TranscriptionManager::class),
+            $this->container->get(ApmEntitySystemInterface::class),
             $this->logger
         );
 

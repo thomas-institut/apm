@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\Api\Action;
+namespace APM\System\Actions;
 
 class PageUpdateDefinition
 {

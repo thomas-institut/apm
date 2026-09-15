@@ -6,7 +6,12 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\Api\ApiPeople;
 use APM\CommandLine\CommandLineUtility;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Cache\SystemMemDataCache;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 
 class CacheTool extends CommandLineUtility implements AdminUtility
@@ -23,6 +28,10 @@ class CacheTool extends CommandLineUtility implements AdminUtility
     }
 
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function main(int $argc, array $argv) : int
     {
        if ($argc === 1) {
@@ -54,6 +63,10 @@ class CacheTool extends CommandLineUtility implements AdminUtility
        return 1;
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function printCacheInfo(): void
     {
 
@@ -69,13 +82,21 @@ class CacheTool extends CommandLineUtility implements AdminUtility
         }
      }
 
-     private function getCaches() : array {
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getCaches() : array {
         return [
-            'Mem' => $this->getSystemManager()->getMemDataCache(),
-            'Sys' => $this->getSystemManager()->getSystemDataCache(),
+            'Mem' => $this->container->get(SystemMemDataCache::class),
+            'Sys' => $this->container->get(SystemMainDataCache::class),
             ];
      }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function deleteKey() : void {
         if ($this->argc < 3) {
             print "Need a cache key to delete\n";
@@ -83,12 +104,15 @@ class CacheTool extends CommandLineUtility implements AdminUtility
         }
 
         $key = $this->argv[2];
-        $sm = $this->getSystemManager();
-        $cache = $sm->getSystemDataCache();
+        /** @var ApmEntitySystemInterface $apmEntitySystem */
+        $apmEntitySystem = $this->container->get(ApmEntitySystemInterface::class);
+
+        /** @var SystemMainDataCache $cache */
+        $cache = $this->container->get(SystemMainDataCache::class);
 
         switch ($key) {
             case 'PeoplePageData':
-                ApiPeople::invalidatePeoplePageDataAllParts($sm->getEntitySystem(),$cache, $this->logger);
+                ApiPeople::invalidatePeoplePageDataAllParts($apmEntitySystem,$cache, $this->logger);
                 $cache->delete(CacheKey::ApiPeople_PeoplePageData_Parts);
                 $cache->delete(CacheKey::ApiPeople_PeoplePageData_All);
                 break;
@@ -103,6 +127,10 @@ class CacheTool extends CommandLineUtility implements AdminUtility
         print $msg . "\n";
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function flushCache(): void
     {
         if ($this->argc < 4) {
@@ -140,9 +168,15 @@ class CacheTool extends CommandLineUtility implements AdminUtility
 
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function cleanCache() : void
     {
-        $this->getSystemManager()->getSystemDataCache()->clean();
+        /** @var SystemMainDataCache $cache */
+        $cache = $this->container->get(SystemMainDataCache::class);
+        $cache->clean();
     }
 
     public function getCommand(): string

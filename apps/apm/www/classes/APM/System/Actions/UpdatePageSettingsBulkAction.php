@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\Api\Action;
+namespace APM\System\Actions;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Schema\Entity;

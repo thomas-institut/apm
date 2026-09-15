@@ -20,7 +20,7 @@ use Psr\Log\LoggerInterface;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-readonly class UpdateWorksCache implements JobHandlerInterface
+readonly class UpdateWorksCacheJob implements JobHandlerInterface
 {
     public function __construct(private ContainerInterface $ci) {}
 

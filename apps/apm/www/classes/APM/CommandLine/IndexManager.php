@@ -35,6 +35,7 @@ use Exception;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
+use Typesense\Client;
 use Typesense\Exceptions\TypesenseClientError;
 
 /**
@@ -52,6 +53,8 @@ class IndexManager extends CommandLineUtility
      * @var string[]
      */
     private array $indices;
+
+    private ?Client $client = null;
 
 
     /**
@@ -207,6 +210,19 @@ END;
         print($help);
     }
 
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getTypesenseClient() : Client {
+        if ($this->client === null) {
+            $this->client = $this->container->get(Client::class);
+        }
+        return $this->client;
+    }
+    
+
     /**
      * Builds the transcriptions or editions index in typesense after getting all relevant data from the sql database.
      * Deletes already existing transcriptions or editions index.
@@ -226,7 +242,7 @@ END;
 
         // delete existing and create a new index
         foreach ($this->indices as $indexName) {
-            $this->resetIndex($this->getSystemManager()->getTypesenseClient(), $indexName);
+            $this->resetIndex($this->getTypesenseClient(), $indexName);
         }
 
         switch ($this->indexNamePrefix) {
@@ -305,7 +321,7 @@ END;
                         $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
                         $currentVersionInfo = (array)(end($versionsInfo));
                         $timeFrom = (string)$currentVersionInfo['timeFrom'];
-                        $this->indexTranscription($this->getSystemManager()->getTypesenseClient(), null, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
+                        $this->indexTranscription($this->getTypesenseClient(), null, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
                     }
 
                     $pagesIndexed++;
@@ -492,7 +508,7 @@ END;
                 continue;
             }
 
-            $this->indexEdition($this->getSystemManager()->getTypesenseClient(), null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
+            $this->indexEdition($this->getTypesenseClient(), null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
             $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
             $this->logger->debug("Indexed Edition – $log_data\n");
         }
@@ -1152,7 +1168,7 @@ END;
         }
         $elements = $this->getSystemManager()->getTranscriptionManager()->getColumnElementsBypageID($pageId, $col);
         $transcription = $this->getPlainTextFromElements($elements);
-        $this->indexTranscription($this->getSystemManager()->getTypesenseClient(), $indexId, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
+        $this->indexTranscription($this->getTypesenseClient(), $indexId, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
     }
 
     /**
@@ -1165,7 +1181,7 @@ END;
 
         // get collationTableManager
         $ctm = $this->getSystemManager()->getCollationTableManager();
-        $client = $this->getSystemManager()->getTypesenseClient();
+        $client = $this->getTypesenseClient();
 
         try {
             $edition = $this->getEditionData($ctm, $tableID);
@@ -1268,7 +1284,7 @@ END;
             $index = $data['index'];
             $id = $data['id'];
 
-            $this->getSystemManager()->getTypesenseClient()->collections[$index]->documents[$id]->delete();
+            $this->getTypesenseClient()->collections[$index]->documents[$id]->delete();
 
             if ($context !== 'update') {
                 switch ($this->indexNamePrefix) {
@@ -1412,7 +1428,7 @@ END;
 
         foreach ($this->indices as $indexName) {
 
-            $data = $this->getSystemManager()->getTypesenseClient()->collections[$indexName]->documents->search($searchParameters);
+            $data = $this->getTypesenseClient()->collections[$indexName]->documents->search($searchParameters);
 
             if ($data['found'] === 1) {
                 return ($data['hits'][0]['document']);
@@ -1452,7 +1468,7 @@ END;
             ];
 
             try {
-                $query = $this->getSystemManager()->getTypesenseClient()->collections[$indexName]->documents->search($searchParameters);
+                $query = $this->getTypesenseClient()->collections[$indexName]->documents->search($searchParameters);
             } catch (\Http\Client\Exception|TypesenseClientError $e) {
                 return [];
             }
@@ -1499,7 +1515,7 @@ END;
 
         foreach ($this->indices as $index) {
             try {
-                $query = $this->getSystemManager()->getTypesenseClient()->collections[$index]->documents->search($searchParameters);
+                $query = $this->getTypesenseClient()->collections[$index]->documents->search($searchParameters);
                 if ($query['found'] !== 0) {
                     return ['index' => $index, 'id' => $query['hits'][0]['document']['id']];
                 }

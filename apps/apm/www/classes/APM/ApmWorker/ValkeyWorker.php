@@ -10,6 +10,8 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
+use ThomasInstitut\JobQueue\JobQueueManager;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
@@ -37,6 +39,8 @@ class ValkeyWorker
     private int $lastDbConnectionResetTime = 0;
     private int $dbConnectionResetIntervalInSeconds;
 
+    private ValkeyJobQueueManager $jobManager;
+
     /**
      * @param ContainerInterface $ci
      * @param int $instanceId
@@ -54,7 +58,18 @@ class ValkeyWorker
         int $microSecondsToSleep = self::DefaultMicroSecondsToSleep,
     )
     {
-        $this->systemManager = $ci->get(SystemManager::class);
+        /** @var ApmSystemManager $sm */
+        $sm = $ci->get(SystemManager::class);
+        $this->systemManager = $sm;
+
+        /** @var JobQueueManager $jm */
+        $jm = $ci->get(JobQueueManager::class);
+        if ($jm instanceof ValkeyJobQueueManager) {
+            $this->jobManager = $jm;
+        } else {
+            throw new RuntimeException("Job manager in container not a ValkeyJobQueueManager");
+        }
+
         $this->instanceId = $instanceId;
         $this->maxJobs = max(self::MinMaxJobs, $maxJobs );
         $this->microSecondsToSleep = $microSecondsToSleep;
@@ -83,22 +98,15 @@ class ValkeyWorker
 
         $this->setupSignals();
 
-        $jobManager = $this->systemManager->getJobQueueManager();
-        // this check would be needed if we ever support other job managers
-//        if (!($jobManager instanceof ValkeyJobQueueManager)) {
-//            $this->logger->error("Job manager is not ValkeyJobQueueManager, exiting");
-//            return;
-//        }
-
         while (!$this->stopRequested && $this->jobsProcessed < $this->maxJobs) {
             try {
-                $this->checkRecovery($jobManager);
+                $this->checkRecovery($this->jobManager);
                 $this->checkDbConnectionResetInterval();
 
-                $job = $jobManager->fetchJob($this->workerId);
+                $job = $this->jobManager->fetchJob($this->workerId);
                 if ($job) {
                     $now = microtime(true);
-                    $this->processJob($jobManager, $job);
+                    $this->processJob($this->jobManager, $job);
                     $durationInMs = round(1000000 * (microtime(true) - $now)) / 1000;
                     $this->jobsProcessed++;
                     $this->logger->info("Job processed", [

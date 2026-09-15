@@ -2,6 +2,7 @@
 
 namespace APM\Api\Action;
 
+use APM\System\Actions\PageUpdateDefinition;
 use PHPUnit\Framework\TestCase;
 
 class PageUpdateDefinitionTest extends TestCase

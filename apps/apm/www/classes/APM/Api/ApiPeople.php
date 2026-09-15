@@ -3,10 +3,12 @@
 
 namespace APM\Api;
 
+use APM\EntitySystem\ApmEntitySystem;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
 use APM\System\Person\InvalidPersonNameException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
@@ -14,6 +16,9 @@ use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
@@ -186,13 +191,27 @@ class ApiPeople extends ApiController
         return $dataArray;
     }
 
-    public static function updateCachedAllPeopleDataForPeoplePage(SystemManager $systemManager) : bool {
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     */
+    public static function updateCachedAllPeopleDataForPeoplePage(ContainerInterface $container) : bool {
+
+        /** @var ApmEntitySystemInterface $apmEntitySystem */
+        $apmEntitySystem = $container->get(ApmEntitySystemInterface::class);
+
+        /** @var SystemMainDataCache $dataCache */
+        $dataCache = $container->get(SystemMainDataCache::class);
+
+        /** @var LoggerInterface $logger */
+        $logger = $container->get(LoggerInterface::class);
+
         try {
-            $data = self::buildAllPeopleDataForPeoplePage($systemManager->getEntitySystem(), $systemManager->getSystemDataCache(), $systemManager->getLogger());
-            $systemManager->getSystemDataCache()->set(CacheKey::ApiPeople_PeoplePageData_All,
+            $data = self::buildAllPeopleDataForPeoplePage($apmEntitySystem, $dataCache, $logger);
+            $dataCache->set(CacheKey::ApiPeople_PeoplePageData_All,
                 serialize($data), self::AllPeopleDataForPeoplePageTtl);
         } catch (Exception $e) {
-            $systemManager->getLogger()->error("Exception while updating cached AllPeopleEssentialData",
+            $logger->error("Exception while updating cached AllPeopleEssentialData",
                 [
                     'code' => $e->getCode(),
                     'msg' => $e->getMessage()

@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\System\Actions;
+namespace APM\System\Actions\UpdatePageSettingsBulk;
 
 /**
  * Result of a bulk page settings update operation.

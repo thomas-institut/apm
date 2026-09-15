@@ -1,10 +1,10 @@
 <?php
 
-namespace APM\Api\Action;
+namespace APM\System\Actions;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
-use APM\System\Actions\PageUpdateDefinition;
-use APM\System\Actions\UpdatePageSettingsBulkAction;
+use APM\System\Actions\UpdatePageSettingsBulk\UpdatePageSettingsBulkAction;
+use APM\System\Actions\UpdatePageSettingsBulk\UpdatePageSettingsBulkPayload;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
 use APM\System\Transcription\TranscriptionManager;
@@ -56,7 +56,7 @@ class UpdatePageSettingsBulkActionTest extends TestCase
             'type' => 5,
         ]);
 
-        $result = $action->execute([$pageDef], 999);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload([$pageDef], 999));
 
         $this->assertEmpty($result->errors);
         $this->assertSame([10], $result->updatedPageIds);
@@ -72,7 +72,7 @@ class UpdatePageSettingsBulkActionTest extends TestCase
 
         $pageDef = PageUpdateDefinition::fromArray([]);
 
-        $result = $action->execute([$pageDef], 999);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload([$pageDef], 999));
 
         $this->assertCount(1, $result->errors);
         $this->assertStringContainsString('No docId or page', $result->errors[0]);
@@ -95,7 +95,7 @@ class UpdatePageSettingsBulkActionTest extends TestCase
             'page' => 99,
         ]);
 
-        $result = $action->execute([$pageDef], 999);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload([$pageDef], 999));
 
         $this->assertCount(1, $result->errors);
         $this->assertStringContainsString('Page not found', $result->errors[0]);
@@ -122,7 +122,7 @@ class UpdatePageSettingsBulkActionTest extends TestCase
             'foliation' => '5r',
         ]);
 
-        $result = $action->execute([$pageDef], 999);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload([$pageDef], 999));
 
         $this->assertCount(1, $result->errors);
         $this->assertStringContainsString('overwriteFoliation', $result->errors[0]);
@@ -155,7 +155,7 @@ class UpdatePageSettingsBulkActionTest extends TestCase
             'cols' => 2,
         ]);
 
-        $result = $action->execute([$pageDef], 999);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload([$pageDef], 999));
         $this->assertEmpty($result->errors);
     }
 
@@ -187,7 +187,7 @@ class UpdatePageSettingsBulkActionTest extends TestCase
             'lang' => 999,
         ]);
 
-        $result = $action->execute([$pageDef], 999);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload([$pageDef], 999));
         $this->assertEmpty($result->errors);
     }
 
@@ -219,7 +219,7 @@ class UpdatePageSettingsBulkActionTest extends TestCase
             'lang' => 200,
         ]);
 
-        $result = $action->execute([$pageDef], 999);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload([$pageDef], 999));
         $this->assertEmpty($result->errors);
     }
 
@@ -233,7 +233,7 @@ class UpdatePageSettingsBulkActionTest extends TestCase
 
         $pageDef = PageUpdateDefinition::fromArray([]);
 
-        $result = $action->execute([$pageDef], 999);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload([$pageDef], 999));
 
         $this->assertTrue($result->hasErrors());
     }

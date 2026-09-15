@@ -20,12 +20,11 @@
 
 namespace APM\Api;
 
-use APM\EntitySystem\ApmEntitySystem;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Schema\Entity;
-use APM\Site\SiteDocuments;
 use APM\System\Actions\PageUpdateDefinition;
-use APM\System\Actions\UpdatePageSettingsBulkAction;
+use APM\System\Actions\UpdatePageSettingsBulk\UpdatePageSettingsBulkAction;
+use APM\System\Actions\UpdatePageSettingsBulk\UpdatePageSettingsBulkPayload;
 use APM\System\ApmImageType;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\DocumentManager;
@@ -535,13 +534,9 @@ class ApiDocuments extends ApiController
         
         $pageDefinitions = array_map(fn(array $data) => PageUpdateDefinition::fromArray($data), $inputArray);
 
-        $action = new UpdatePageSettingsBulkAction(
-            $this->container->get(TranscriptionManager::class),
-            $this->container->get(ApmEntitySystemInterface::class),
-            $this->logger
-        );
-
-        $result = $action->execute($pageDefinitions, $this->apiUserId);
+        /** @var UpdatePageSettingsBulkAction $action */
+        $action = $this->container->get(UpdatePageSettingsBulkAction::class);
+        $result = $action->execute(new UpdatePageSettingsBulkPayload($pageDefinitions, $this->apiUserId));
 
         foreach ($result->updatedPageIds as $pageId) {
             $this->systemManager->onUpdatePageSettings($this->apiUserId, $pageId);

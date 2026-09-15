@@ -1,16 +1,18 @@
 <?php
 
-namespace APM\System\Actions;
+namespace APM\System\Actions\UpdatePageSettingsBulk;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Actions\ActionInterface;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Transcription\TranscriptionManager;
 use Exception;
+use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 
-readonly class UpdatePageSettingsBulkAction
+final readonly class UpdatePageSettingsBulkAction implements ActionInterface
 {
 
     public function __construct(
@@ -21,14 +23,18 @@ readonly class UpdatePageSettingsBulkAction
     }
 
     /**
-     * Execute the bulk update.
-     *
-     * @param PageUpdateDefinition[] $pageDefinitions
-     * @param int $userId The user performing the update
+     * @param UpdatePageSettingsBulkPayload $payload
      * @return UpdatePageSettingsBulkResult
      */
-    public function execute(array $pageDefinitions, int $userId): UpdatePageSettingsBulkResult
+    public function execute(mixed $payload): UpdatePageSettingsBulkResult
     {
+        if (!$payload instanceof UpdatePageSettingsBulkPayload) {
+            throw new InvalidArgumentException('Invalid payload');
+        }
+
+        $pageDefinitions = $payload->pageDefinitions;
+        $userId = $payload->userId;
+
         $errors = [];
         $updatedPageIds = [];
         $requestedPageIds = [];
@@ -88,11 +94,10 @@ readonly class UpdatePageSettingsBulkAction
                 $this->transcriptionManager->updatePageSettings($pageInfo->pageId, $newPageInfo, $userId);
                 $updatedPageIds[] = $pageInfo->pageId;
             } catch (Exception $e) {
-                $errors[] = "Error updating page {$pageInfo->pageId} ($docId:$pageNumber): " . $e->getMessage();
+                $errors[] = "Error updating page $pageInfo->pageId ($docId:$pageNumber): " . $e->getMessage();
             }
         }
 
         return new UpdatePageSettingsBulkResult($requestedPageIds, $updatedPageIds, $errors);
     }
-
 }

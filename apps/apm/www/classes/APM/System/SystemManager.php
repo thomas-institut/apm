@@ -83,16 +83,6 @@ abstract class SystemManager implements ErrorReporter {
         return $this->config;
     }
 
-    /**
-     * Language methods
-     */
-
-    /**
-     * @throws EntityDoesNotExistException
-     */
-    public function getLangCodeFromId(int $langId) : string {
-        return $this->getEntitySystem()->getEntityData($langId)->getObjectForPredicate(Entity::pLangIso639Code) ?? 'unknown';
-    }
 
     /**
      * Get methods for the different components
@@ -101,11 +91,8 @@ abstract class SystemManager implements ErrorReporter {
     abstract public function getImageSources() : array;
     abstract public function getLogger() : Logger;
     abstract public function getCollationEngine(string $engineSystemId = '') : CollationEngine;
-    abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
     abstract public function getSystemDataCache() : DataCache;
-    abstract public function getDirectoryDataCache() : DataCache;
-    abstract public function getNormalizerManager() : NormalizerManager;
     abstract public function getEditionSourceManager(): EditionSourceManager;
     abstract public function getJobQueueManager() : JobQueueManager;
     abstract public function getUserManager() : UserManagerInterface;

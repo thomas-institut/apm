@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
@@ -27,8 +28,13 @@ use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\Transcription\EdNoteManager;
+use APM\System\Transcription\TranscriptionManager;
+use APM\System\User\UserManagerInterface;
+use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
@@ -51,15 +57,23 @@ class ApiElements extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws Exception
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     * @throws UserNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function updateElementsByDocPageCol(Request $request, Response $response): Response
     {
 
-        $txManager = $this->systemManager->getTranscriptionManager();
-        $docManager = $this->systemManager->getDocumentManager();
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
 
-        $userManager = $this->systemManager->getUserManager();
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->container->get(UserManagerInterface::class);
          
         if ($userManager->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             $this->logger->error("User is not authorized to update elements",
@@ -339,7 +353,7 @@ class ApiElements extends ApiController
         $versionInfo->timeFrom = $updateTime;
 
         try {
-            $this->systemManager->getTranscriptionManager()->getColumnVersionManager()->registerNewColumnVersion($pageId, $columnNumber, $versionInfo);
+            $txManager->getColumnVersionManager()->registerNewColumnVersion($pageId, $columnNumber, $versionInfo);
         } catch (Exception $e) {
             $this->logger->error("Cannot register version: " . $e->getMessage());
         }
@@ -353,8 +367,10 @@ class ApiElements extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws PersonNotFoundException
+     * @throws ContainerExceptionInterface
      * @throws InvalidTimeStringException
+     * @throws NotFoundExceptionInterface
+     * @throws PersonNotFoundException
      */
     public function getElementsByDocPageCol(Request $request, Response $response): Response
     {
@@ -364,8 +380,11 @@ class ApiElements extends ApiController
         $versionId = $request->getAttribute('version');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$docId:$pageNumber:$columnNumber");
 
-        $docManager = $this->systemManager->getDocumentManager();
-        $txManager = $this->systemManager->getTranscriptionManager();
+
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
 
         $docId = Tid::fromString($docId);
 

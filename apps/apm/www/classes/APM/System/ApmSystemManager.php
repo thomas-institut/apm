@@ -149,15 +149,6 @@ class ApmSystemManager extends SystemManager
     }
 
 
-    public function getTranscriptionManager(): TranscriptionManager
-    {
-        try {
-            return $this->ci->get(TranscriptionManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get transcription manager from container", 0, $e);
-        }
-    }
-
     public function getSystemDataCache(): DataCache
     {
 
@@ -168,31 +159,12 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-    public function getDirectoryDataCache(): DataCache
-    {
-        try {
-            return $this->ci->get(SystemDirDataCache::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get dir data cache", 0, $e);
-        }
-    }
-
     public function getCollationTableManager(): CollationTableManager
     {
         try {
             return $this->ci->get(CollationTableManager::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             throw new RuntimeException("Could not get collation table manager", 0, $e);
-        }
-    }
-
-
-    public function getNormalizerManager(): NormalizerManager
-    {
-        try {
-            return $this->ci->get(NormalizerManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('Normalizer manager not found', 0, $e);
         }
     }
 

@@ -6,10 +6,15 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\ApmTableNames;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
+use APM\System\Transcription\TranscriptionManager;
 use APM\ToolBox\ArrayPrint;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\EntitySystem\Tid;
 
 
@@ -22,22 +27,37 @@ class TranscriptionTool extends CommandLineUtility implements AdminUtility
      transcription <option> 
      
      Options:
-        info <doc:page[:col]>|<page:pageId[:col]> : print info about a transcription
-        delete <doc:page[:col]>|<page:pageId[:col]> : delete a transcription
-        addCols <doc:page>|<page:pageId> <number> [magicWord] : add columns to a page
+        info <doc:page[:col]>|<page:pageId[:col]>: print info about a transcription
+        delete <doc:page[:col]>|<page:pageId[:col]>: delete a transcription
+        addCols <doc:page>|<page:pageId> <number> [magicWord]: add columns to a page
         move <doc:page[:col]>|<page:pageId[:col]> <doc:page[:col]>|<page:pageId[:col]> [magicWord]: move a transcription
 TXT;
 
     const string DESCRIPTION = "Transcription management functions";
     const string MAGIC_WORD = 'IKnowWhatImDoing';
+    
+    private TranscriptionManager $txManager;
+    private DocumentManager $docManager;
 
     public function __construct(array $config, int $argc, array $argv)
     {
         parent::__construct($config, $argc, $argv);
+        
+        /** @var TranscriptionManager $txm */
+        $txm = $this->container->get(TranscriptionManager::class);
+        $this->txManager = $txm;
+        
+        /** @var DocumentManager $dm */
+        $dm = $this->container->get(DocumentManager::class);
+        $this->docManager = $dm;
 
     }
 
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function main(int $argc, array $argv) : int
     {
        if ($argc === 1) {
@@ -167,7 +187,7 @@ TXT;
      * - `doc:<docId>:<pageNumber>[:<columnNumber>]`
      * - `page:<pageId>[:<columnNumber>]`
      *
-     * If the given input results in a page that is not defined in the system, *null* is returned in all elements of
+     * If the given input results in a page not defined in the system, *null* is returned in all elements of
      * the output array.
      *
      * If *columnNumber* is not given, it defaults to 1. If the given column number is not defined,
@@ -208,7 +228,7 @@ TXT;
                 $givenPageNumber = intval($fields[2]);
                 if ($givenPageNumber > 0) {
                     try {
-                        $pageInfo = $this->getSystemManager()->getTranscriptionManager()->getPageInfoByDocPage($givenDocId, $givenPageNumber);
+                        $pageInfo = $this->txManager->getPageInfoByDocPage($givenDocId, $givenPageNumber);
                         if ($givenColumnNumber <= $pageInfo->numCols) {
                             $realColumnNumber = $givenColumnNumber;
                         }
@@ -225,7 +245,7 @@ TXT;
             $givenPageId = intval($fields[1]);
             if ($givenColumnNumber > 0 && $givenPageId > 0) {
                 try {
-                    $pageInfo = $this->getSystemManager()->getDocumentManager()->getPageInfo($givenPageId);
+                    $pageInfo = $this->docManager->getPageInfo($givenPageId);
                     if ($givenColumnNumber <= $pageInfo->numCols) {
                         $realColumnNumber = $givenColumnNumber;
                     }
@@ -238,7 +258,7 @@ TXT;
     }
 
     private function getTranscriptionInfo(PageInfo $pageInfo, int $columnNumber) : ?array {
-        $txManager = $this->getSystemManager()->getTranscriptionManager();
+        $txManager = $this->txManager;
         $txInfo = [
             'pageId' => $pageInfo->pageId,
             'docId' => $pageInfo->docId,
@@ -249,7 +269,7 @@ TXT;
         ];
 
         try {
-            $docInfo = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo($txInfo["docId"]);
+            $docInfo = $this->docManager->getLegacyDocInfo($txInfo["docId"]);
         } catch (DocumentNotFoundException) {
             $txInfo["error"] = "Doc not found: $txInfo[docId]";
             return $txInfo;
@@ -272,19 +292,25 @@ TXT;
         return isset($txInfo["error"]);
     }
 
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     */
     private function deleteTranscription(PageInfo $pageInfo, int $column, bool $forReal = false) : void {
         $pageId = $pageInfo->pageId;
         $docId = $pageInfo->docId;
 
         if (!$this->printTranscriptionInfo($pageInfo,$column)) { // "!" added by lukas, correct?
             if ($this->userRespondsYes("Are you sure you want to delete this transcription?")) {
-                $tableNames = $this->getSystemManager()->getTableNames();
+
+                /** @var ApmTableNames $tableNames */
+                $tableNames = $this->container->get(ApmTableNames::class);
                 $dbConn = $this->getDbConn();
                 $edNotes = $tableNames->edNotes;
                 $elements = $tableNames->elements;
                 $items = $tableNames->items;
                 $versionsTable = $tableNames->txVersions;
-                $txManager = $this->getSystemManager()->getTranscriptionManager();
+                $txManager = $this->txManager;
                 $versions = $txManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $column);
                 $lastAuthor = $versions[count($versions) - 1]->authorTid;
 
@@ -306,7 +332,7 @@ TXT;
                 $query3 = "DELETE FROM $elements WHERE page_id=$pageId AND column_number=$column ";
                 print "Query: $query3\n";
                 $result = $dbConn->query($query3);
-//                print " - Deleted " . $result->rowCount() . " elements\n";
+                print " - Deleted " . $result->rowCount() . " elements\n";
 
                 // 4. Delete versions
                 $query4 = "DELETE FROM $versionsTable WHERE page_id=$pageId AND col=$column";
@@ -326,6 +352,10 @@ TXT;
         }
     }
 
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     */
     private function moveTranscription(PageInfo $fromPage, int $fromColumn, PageInfo $toPage, int $toColumn, bool $requireConfirmation) : void {
 
         // get page and doc ids
@@ -334,14 +364,15 @@ TXT;
         $toDocId = $toPage->docId;
 
         // get versions and last author of fromPage
-        $txManager = $this->getSystemManager()->getTranscriptionManager();
+        $txManager = $this->txManager;
         $versions = $txManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($fromPageId, $fromColumn);
         $lastAuthor = $versions[count($versions) - 1]->authorTid;
 
         if (!$this->printTranscriptionInfo($fromPage, $fromColumn) and count($versions) != 0) { // check if there is data to move
             if (!$requireConfirmation || $this->userRespondsYes("Are you sure you want to move this transcription?")) {
-                // get table names and setup database connection
-                $tableNames = $this->getSystemManager()->getTableNames();
+                // get table names and set up database connection
+                /** @var ApmTableNames $tableNames */
+                $tableNames = $this->container->get(ApmTableNames::class);
                 $elements = $tableNames->elements;
                 $versionsTable = $tableNames->txVersions;
 
@@ -401,7 +432,7 @@ TXT;
     {
         $tidString = Tid::toBase36String($pageInfo->docId);
         if (!$requireConfirmation || $this->userRespondsYes("Do you want to add $columNumber columns to page $pageInfo->pageId, which currently has $pageInfo->numCols column(s) (doc $tidString = $pageInfo->docId, page number $pageInfo->pageNumber)")) {
-            $txManager = $this->getSystemManager()->getTranscriptionManager();
+            $txManager = $this->txManager;
             for ($i = 0; $i < $columNumber; $i++) {
                 $pageInfo->numCols++;
             }

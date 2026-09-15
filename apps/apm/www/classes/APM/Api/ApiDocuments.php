@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Actions\PageUpdateDefinition;
 use APM\System\Actions\UpdateApiDocumentsDataCache\RebuildApiDocumentsDataCacheAction;
@@ -27,8 +28,11 @@ use APM\System\Actions\UpdatePageSettingsBulk\UpdatePageSettingsBulkAction;
 use APM\System\Actions\UpdatePageSettingsBulk\UpdatePageSettingsBulkPayload;
 use APM\System\ApmImageType;
 use APM\System\Cache\SystemMainDataCache;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Transcription\TranscriptionManager;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
@@ -63,7 +67,8 @@ class ApiDocuments extends ApiController
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function allDocumentsData(Request $request, Response $response): Response {
+    public function allDocumentsData(Request $request, Response $response): Response
+    {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         /** @var SystemMainDataCache $cache */
@@ -113,7 +118,7 @@ class ApiDocuments extends ApiController
         }
 
         // this info can be cached forever, it will never change
-        $cacheKey = implode(':', [ 'ApiDocuments', 'docId',  $givenDocId ]);
+        $cacheKey = implode(':', ['ApiDocuments', 'docId', $givenDocId]);
 
         try {
             $docId = intval($this->systemManager->getSystemDataCache()->get($cacheKey));
@@ -121,7 +126,7 @@ class ApiDocuments extends ApiController
                 'givenDocId' => $givenDocId,
                 'docId' => $docId,
             ]);
-        }  catch (ItemNotInCacheException) {
+        } catch (ItemNotInCacheException) {
             // keep going
         }
 
@@ -144,34 +149,41 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws UserNotFoundException
      */
-    public function updatePageSettings(Request $request, Response $response) : Response
+    public function updatePageSettings(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         if ($this->systemManager->getUserManager()->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             $this->logger->error("User is not authorized to update page settings",
-                    [ 'apiUserTid' => $this->apiUserId,
-                      'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,
-                    ]);
+                ['apiUserTid' => $this->apiUserId,
+                    'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                ]);
             return $this->responseWithJson($response,
-                    ['error' => ApiController::API_ERROR_NOT_AUTHORIZED,
-                     'msg' => 'User is not authorized to update page settings'
-                    ], 409);
+                ['error' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                    'msg' => 'User is not authorized to update page settings'
+                ], 409);
         }
-        
-        $pageId = (int) $request->getAttribute('pageId');
+
+        $pageId = (int)$request->getAttribute('pageId');
         $postData = $request->getParsedBody();
-        $this->logger->debug("Update page settings, postData", [ $postData]);
+        $this->logger->debug("Update page settings, postData", [$postData]);
         $foliation = $postData['foliation'];
-        $type = (int) $postData['type'];
+        $type = (int)$postData['type'];
         $lang = intval($postData['lang']);
 
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
+        /** @var DocumentManager $dm */
+        $dm = $this->container->get(DocumentManager::class);
+
         try {
-            $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+            $pageInfo = $dm->getPageInfo($pageId);
         } catch (PageNotFoundException) {
-            $this->logger->info("Page not found", [ 'pageId' => $pageId]);
+            $this->logger->info("Page not found", ['pageId' => $pageId]);
             return $this->responseWithText($response, "Page not found", HttpStatus::NOT_FOUND);
         }
         $pageInfo->foliation = $foliation;
@@ -181,7 +193,7 @@ class ApiDocuments extends ApiController
         $pageInfo->lang = $lang;
 
         try {
-            $this->systemManager->getTranscriptionManager()->updatePageSettings($pageId, $pageInfo, $this->apiUserId);
+            $txManager->updatePageSettings($pageId, $pageInfo, $this->apiUserId);
         } catch (Exception $e) {
             $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), get_object_vars($pageInfo));
             return $this->responseWithStatus($response, 409);
@@ -192,48 +204,54 @@ class ApiDocuments extends ApiController
 
     public function getPageTypes(Request $request, Response $response): Response
     {
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
         return $this->responseWithJson($response,
-            $this->systemManager->getEntitySystem()->getAllEntitiesForType(Entity::tPageType));
+            $es->getAllEntitiesForType(Entity::tPageType));
     }
 
     /**
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function addPages(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $this->debugMode = true;
-        $documentManager = $this->systemManager->getDocumentManager();
 
-        $docId = (int) $request->getAttribute('id');
+        /** @var DocumentManager $documentManager */
+        $documentManager = $this->container->get(DocumentManager::class);
+
+        $docId = (int)$request->getAttribute('id');
         try {
             $docData = $documentManager->getDocumentEntityData($docId);
         } catch (DocumentNotFoundException) {
             $this->logger->error("Add Pages: document does not exist",
-                [ 'apiUserTid' => $this->apiUserId,
+                ['apiUserTid' => $this->apiUserId,
                     'apiError' => ApiController::API_ERROR_WRONG_DOCUMENT,
-                    'docId' => $docId ]);
+                    'docId' => $docId]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_WRONG_DOCUMENT, 'msg' => 'Document does not exist'], 409);
         }
 
-        
+
         $rawData = $request->getBody()->getContents();
         $postData = [];
         parse_str($rawData, $postData);
-        
-        
+
+
         if (!isset($postData['numPages'])) {
             $this->logger->error("Add pages: no data in input",
-                    [ 'apiUserTid' => $this->apiUserId,
-                      'apiError' => ApiController::API_ERROR_NO_DATA,
-                      'data' => $postData]);
+                ['apiUserTid' => $this->apiUserId,
+                    'apiError' => ApiController::API_ERROR_NO_DATA,
+                    'data' => $postData]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
-        
-        $numPages = (int) json_decode($postData['numPages'], true);
-        
+
+        $numPages = (int)json_decode($postData['numPages'], true);
+
         if ($numPages === 0) {
             // nothing to do!
             $this->debug("addPages: request for 0 pages, nothing to do");
@@ -251,7 +269,7 @@ class ApiDocuments extends ApiController
         $docLang = $docData->getObjectForPredicate(Entity::pDocumentLanguage);
 
         $this->debug("Doc $docId has $curNumPages pages, creating $numPages more with language $docLang");
-        for ($i = $curNumPages; $i < ($numPages+$curNumPages); $i++) {
+        for ($i = $curNumPages; $i < ($numPages + $curNumPages); $i++) {
             try {
                 $documentManager->createPage($docId, $i + 1, $docLang);
             } catch (DocumentNotFoundException $e) {
@@ -260,7 +278,7 @@ class ApiDocuments extends ApiController
                 return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
             } catch (Exception $e) {
                 $this->logger->error("Add pages: cannot create page",
-                    [ 'apiUserTid' => $this->apiUserId,
+                    ['apiUserTid' => $this->apiUserId,
                         'apiError' => ApiController::API_ERROR_DB_UPDATE_ERROR,
                         'curNumPages' => $curNumPages,
                         'requestedNewPages' => $numPages,
@@ -275,20 +293,31 @@ class ApiDocuments extends ApiController
         return $this->responseWithStatus($response, 200);
     }
 
-    public function getDocumentInfo(Request $request, Response $response): Response {
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws DocumentNotFoundException
+     */
+    public function getDocumentInfo(Request $request, Response $response): Response
+    {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $docId = $request->getAttribute('docId');
-        $pageInfoToInclude = $request->getAttribute('pageInfoToInclude', 'none') ;
+        $pageInfoToInclude = $request->getAttribute('pageInfoToInclude', 'none');
         if (intval($docId) !== 0) {
             $docId = intval($docId);
         } else {
             $docId = Tid::fromString($docId);
         }
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
 
         $this->logger->debug("getDocumentInfo: docId $docId, pageInfoToInclude $pageInfoToInclude");
         $withPages = $pageInfoToInclude !== 'none';
         try {
-            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($docId, $withPages);
+            $docInfo = $docManager->getDocInfo($docId, $withPages);
         } catch (DocumentNotFoundException $e) {
             $this->logger->error("Document not found getting info: " . $e->getMessage());
             return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
@@ -297,11 +326,10 @@ class ApiDocuments extends ApiController
         if ($pageInfoToInclude === 'withFullPageInfo') {
             $dataToReturn['pageInfoArray'] = [];
 
-            $docManager = $this->systemManager->getDocumentManager();
             $imageSources = $this->systemManager->getImageSources();
-            $transcribedPages = $this->systemManager->getTranscriptionManager()->getTranscribedPageListByDocId($docId);
+            $transcribedPages = $txManager->getTranscribedPageListByDocId($docId);
 
-            foreach($docInfo->pageIds as $pageId) {
+            foreach ($docInfo->pageIds as $pageId) {
                 try {
                     $pageInfo = $docManager->getPageInfo($pageId);
                     $pageVars = get_object_vars($pageInfo);
@@ -316,6 +344,8 @@ class ApiDocuments extends ApiController
                     // should never happen
                     $this->logger->error("Page not found getting info: " . $e->getMessage());
                     return $this->responseWithStatus($response, HttpStatus::INTERNAL_SERVER_ERROR);
+                } catch (DocumentNotFoundException $e) {
+                    throw new RuntimeException("Cannot find document $docId", 0, $e);
                 }
                 $dataToReturn['pageInfoArray'][] = $pageVars;
             }
@@ -329,14 +359,22 @@ class ApiDocuments extends ApiController
      * @param Response $response
      * @param array $args
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws UserNotFoundException
      */
     public function createDocument(Request $request, Response $response, array $args): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->container->get(UserManagerInterface::class);
+
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+
         // TODO: implement proper user permissions
-        if (!$this->systemManager->getUserManager()->isRoot($this->apiUserId)) {
+        if (!$userManager->isRoot($this->apiUserId)) {
             $this->logger->warning("Create document: unauthorized request",
                 ['apiUserTid' => $this->apiUserId]
             );
@@ -344,7 +382,7 @@ class ApiDocuments extends ApiController
         }
 
         $inputJson = $request->getBody()->getContents();
-        $postData =  json_decode($inputJson, true);
+        $postData = json_decode($inputJson, true);
 
         if (is_null($postData)) {
             $this->logger->error("New Document: no data in input");
@@ -364,7 +402,7 @@ class ApiDocuments extends ApiController
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
 
-        $newDocId = $this->systemManager->getDocumentManager()->createDocument($name, $type,
+        $newDocId = $docManager->createDocument($name, $type,
             $lang, $imageSource, $imageSourceData, $this->apiUserId);
 
         $this->systemManager->onDocumentAdded($this->apiUserId, $newDocId);
@@ -379,7 +417,7 @@ class ApiDocuments extends ApiController
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function updatePageSettingsBulk(Request $request, Response $response) : Response
+    public function updatePageSettingsBulk(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $rawData = $request->getBody()->getContents();
@@ -389,14 +427,14 @@ class ApiDocuments extends ApiController
         if (isset($postData['data'])) {
             $inputArray = json_decode($postData['data'], true);
         }
-        if (is_null($inputArray) ) {
+        if (is_null($inputArray)) {
             $this->logger->error("Bulk page settings update: no data in input",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => ApiController::API_ERROR_NO_DATA,
-                      'data' => $postData]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => ApiController::API_ERROR_NO_DATA,
+                    'data' => $postData]);
             return $this->responseWithJson($response, ['error' => ApiController::API_ERROR_NO_DATA], 409);
         }
-        
+
         $pageDefinitions = array_map(fn(array $data) => PageUpdateDefinition::fromArray($data), $inputArray);
 
         /** @var UpdatePageSettingsBulkAction $action */
@@ -418,22 +456,25 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    public function getNumColumns(Request $request, Response $response) : Response
+    public function getNumColumns(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
 
-        $docManager = $this->systemManager->getDocumentManager();
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
 
         try {
             $numColumns = $docManager->getPageInfo($docManager->getPageIdByDocPage($docId, $pageNumber))->numCols;
-        } catch (DocumentNotFoundException|PageNotFoundException $e) {
+        } catch (DocumentNotFoundException|PageNotFoundException) {
             $this->logger->info("Doc/Page not found in API call to getNumColumns: $docId:$pageNumber");
             return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
         }
-        $this->info("getNumColumns successful", [ 'docId' => $docId, 'pageNumber' => $pageNumber]);
+        $this->info("getNumColumns successful", ['docId' => $docId, 'pageNumber' => $pageNumber]);
 
         return $this->responseWithJson($response, $numColumns);
     }
@@ -442,26 +483,33 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws UserNotFoundException
      */
-    public function addNewColumn(Request $request, Response $response) : Response
+    public function addNewColumn(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $docId = $request->getAttribute('document');
         $pageNumber = $request->getAttribute('page');
 
-        if ($this->systemManager->getUserManager()->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->container->get(UserManagerInterface::class);
+
+        if ($userManager->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             $this->logger->error("User is not authorized to add new column",
-                    [ 'apiUserTd' => $this->apiUserId,
-                      'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,
-                    ]);
+                ['apiUserTd' => $this->apiUserId,
+                    'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                ]);
             return $this->responseWithJson($response,
-                    ['error' => ApiController::API_ERROR_NOT_AUTHORIZED,
-                     'msg' => 'User is not authorized to add new columns'
-                    ], HttpStatus::UNAUTHORIZED);
+                ['error' => ApiController::API_ERROR_NOT_AUTHORIZED,
+                    'msg' => 'User is not authorized to add new columns'
+                ], HttpStatus::UNAUTHORIZED);
         }
 
-        $documentManager = $this->systemManager->getDocumentManager();
+        /** @var DocumentManager $docManager */
+        $documentManager = $this->container->get(DocumentManager::class);
+
 
         try {
             $pageId = $documentManager->getPageIdByDocPage($docId, $pageNumber);
@@ -484,7 +532,7 @@ class ApiDocuments extends ApiController
             $documentManager->addColumn($pageId);
         } catch (PageNotFoundException $e) {
             // should never happen!
-            $this->logger->error("Runtime Error: " . $e->getMessage(), [ 'docId' => $docId, 'pageNumber' => $pageNumber]);
+            $this->logger->error("Runtime Error: " . $e->getMessage(), ['docId' => $docId, 'pageNumber' => $pageNumber]);
             return $this->responseWithJson($response,
                 ['error' => ApiController::API_ERROR_RUNTIME_ERROR,
                     'msg' => "Server runtime error"
@@ -495,32 +543,36 @@ class ApiDocuments extends ApiController
             $numColumns = $documentManager->getNumColumns($pageId);
         } catch (PageNotFoundException $e) {
             // should never happen!
-            $this->logger->error("Runtime Error: " . $e->getMessage(), [ 'docId' => $docId, 'pageNumber' => $pageNumber]);
+            $this->logger->error("Runtime Error: " . $e->getMessage(), ['docId' => $docId, 'pageNumber' => $pageNumber]);
             return $this->responseWithJson($response,
                 ['error' => ApiController::API_ERROR_RUNTIME_ERROR,
                     'msg' => "Server runtime error"
                 ], HttpStatus::INTERNAL_SERVER_ERROR);
         }
 
-        $this->logger->info("User $this->apiUserId added one column to page $pageId", [ 'docId' => $docId, 'pageNumber' => $pageNumber]);
+        $this->logger->info("User $this->apiUserId added one column to page $pageId", ['docId' => $docId, 'pageNumber' => $pageNumber]);
         return $this->responseWithJson($response, $numColumns);
-   }
+    }
 
-   public function getPageInfo(Request $request, Response $response) : Response {
+    public function getPageInfo(Request $request, Response $response): Response
+    {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $pageId = $request->getAttribute('pageId');
 
-       try {
-           $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
-       } catch (PageNotFoundException $e) {
-           $this->logger->error("Page not found", ['pageId' => $pageId]);
-           return $this->responseWithJson($response,
-               ['error' => ApiController::API_ERROR_WRONG_PAGE_ID,
-                   'msg' => "Page $pageId not found "
-               ], HttpStatus::BAD_REQUEST);
-       }
-       return $this->responseWithJson($response, get_object_vars($pageInfo));
-   }
+        /** @var DocumentManager $docManager */
+        $documentManager = $this->container->get(DocumentManager::class);
+
+        try {
+            $pageInfo = $documentManager->getPageInfo($pageId);
+        } catch (PageNotFoundException $e) {
+            $this->logger->error("Page not found", ['pageId' => $pageId]);
+            return $this->responseWithJson($response,
+                ['error' => ApiController::API_ERROR_WRONG_PAGE_ID,
+                    'msg' => "Page $pageId not found "
+                ], HttpStatus::BAD_REQUEST);
+        }
+        return $this->responseWithJson($response, get_object_vars($pageInfo));
+    }
 
     /**
      * Returns page information for a list of pages identified by page id
@@ -528,8 +580,11 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    public function getPageInfoBulk(Request $request, Response $response) : Response {
+    public function getPageInfoBulk(Request $request, Response $response): Response
+    {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
         $inputData = $this->checkAndGetInputData($request, $response, ['pages']);
@@ -537,15 +592,18 @@ class ApiDocuments extends ApiController
             return $inputData;
         }
 
+        /** @var DocumentManager $docManager */
+        $documentManager = $this->container->get(DocumentManager::class);
+
         $returnData = [];
 
-        for($i = 0; $i<count($inputData['pages']); $i++) {
+        for ($i = 0; $i < count($inputData['pages']); $i++) {
             $pageId = $inputData['pages'][$i];
             try {
-                $pageInfo = $this->systemManager->getDocumentManager()->getPageInfo($pageId);
+                $pageInfo = $documentManager->getPageInfo($pageId);
             } catch (PageNotFoundException $e) {
-                    $this->logger->error("Page $pageId not found", [ 'errorMsg' => $e->getMessage(), 'errorCode' ]);
-                    return $this->responseWithText($response,"Page $pageId not found", HttpStatus::NOT_FOUND);
+                $this->logger->error("Page $pageId not found", ['errorMsg' => $e->getMessage(), 'errorCode']);
+                return $this->responseWithText($response, "Page $pageId not found", HttpStatus::NOT_FOUND);
             } catch (RuntimeException $e) {
                 $this->logException($e, "Generic Exception from getPageInfoById, page $pageId");
                 return $this->responseWithText($response, "Server error", HttpStatus::INTERNAL_SERVER_ERROR);
@@ -561,5 +619,4 @@ class ApiDocuments extends ApiController
         }
         return $this->responseWithJson($response, $returnData);
     }
-   
 }

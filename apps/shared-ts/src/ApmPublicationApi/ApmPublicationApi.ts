@@ -98,6 +98,7 @@ export interface MainTextToken {
   text: CompactFmtText;
   style: string;
   lang?: string;
+  chunkId?: string;
 }
 
 /**

@@ -1,5 +1,5 @@
 import { Action } from "#src/Actions/Action.js"
-import {MceDataInterface} from "#www-js/MceData/MceDataInterface.js";
+import {MceDataInterfaceAny} from "#www-js/MceData/MceDataInterface.js";
 import {CtDataInterface} from "#www-js/CtData/CtDataInterface.js";
 import {LoggerInterface} from "#www-js/lib/Logger/LoggerInterface.js";
 import {EditionInterface} from "#www-js/Edition/EditionInterface.js";
@@ -9,10 +9,11 @@ import {toCompactFmtText} from "@thomas-inst/fmt-text";
 import {CtData} from "#www-js/CtData/CtData.js";
 import {hrtime} from "node:process";
 import {getDurationInMs} from "#src/util/getDurationInMs.js";
+import {MceData} from "#www-js/MceData/MceData.js";
 
 
 interface GenerateEditionInput {
-  mceData: MceDataInterface;
+  mceData: MceDataInterfaceAny;
   editionId: number;
   publicationId: number;
   versionString: string;
@@ -36,7 +37,7 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
   }
 
   async execute(input: GenerateEditionInput): Promise<GenerateEditionOutput> {
-    const mceData = input.mceData;
+    const mceData = MceData.update(input.mceData);
     const numChunks = input.mceData.chunks.length;
     const logPrefix = `PUB-${input.publicationId}:`;
 
@@ -106,7 +107,7 @@ export class GenerateEditionPublicationFromMceData implements Action<GenerateEdi
         lang: token.lang,
       })),
       apparatuses: edition.apparatuses.map(app => {
-        const validApparatusTypes = ['criticus', 'fontium', 'comparativus', 'marginalia'];
+        const validApparatusTypes = ['criticus', 'fontium', 'comparativus', 'marginalia', 'endnotes'];
         if (!validApparatusTypes.includes(app.type)) {
           this.logger.warn(`Apparatus type mismatch: '${app.type}' is not one of the expected literal types: ${validApparatusTypes.join(', ')}`);
         }

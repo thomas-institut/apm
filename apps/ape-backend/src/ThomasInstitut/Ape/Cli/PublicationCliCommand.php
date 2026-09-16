@@ -18,7 +18,7 @@ readonly class PublicationCliCommand implements CommandInterface
     public function run(int $argc, array $argv): CommandResult
     {
         if ($argc === 0) {
-            return new CommandResult(false, "No command given", true);
+            return new CommandResult(false, "No command given: list, get, update, info", true);
         }
         $command = $argv[0];
         return match ($command) {

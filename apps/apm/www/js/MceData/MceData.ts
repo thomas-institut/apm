@@ -14,7 +14,7 @@ import * as ArrayUtil from "../lib/ToolBox/ArrayUtil.js";
 import {CtDataInterface, SiglaGroupInterface} from "../CtData/CtDataInterface.js";
 import {deepCopy} from "../toolbox/Util.js";
 import {ValidationError} from "../lib/Error/SystemError.js";
-import {StandardizedStringInstanceStatus} from "@/MceData/StandardizedString";
+import {StandardizedStringInstanceStatus} from "./StandardizedString.js";
 
 
 export class MceData {

@@ -48,8 +48,8 @@ class ApeControlCli
         $this->container->set(PublicationApiClient::class, factory([ ApmApiClientFactory::class, 'create']));
         $this->container->set(PublicationManager::class, factory([PublicationManagerFactory::class, 'create']));
 
-        $this->registerCommand('query-apm', QueryApmCliCommand::class);
-        $this->registerCommand('publication', PublicationCliCommand::class);
+        $this->registerCommand('apm-query', QueryApmCliCommand::class);
+        $this->registerCommand('pub', PublicationCliCommand::class);
         $this->registerCommand('info', InfoCliCommand::class);
     }
 

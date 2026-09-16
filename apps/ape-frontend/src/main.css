@@ -43,6 +43,43 @@ html, body {
 }
 
 
+.pub-section {
+
+  margin-bottom: 4em;
+
+  h2 {
+    font-size: 1.4em;
+    margin-bottom: 1em;
+  }
+
+  ul {
+    margin: 0;
+    padding: 0;
+  }
+
+
+  li {
+    margin: 2em;
+    list-style: none;
+  }
+
+  .pub-title-link {
+    font-size: 1.2em;
+    text-decoration: none;
+    border: 1px solid silver;
+    padding: 0.5em;
+    border-radius: 0.5em;
+    color: #181829;
+    background-color: whitesmoke;
+  }
+
+  .pub-title-link:hover {
+    background-color: white;
+    color: #414171;
+  }
+
+}
+
 
 
 

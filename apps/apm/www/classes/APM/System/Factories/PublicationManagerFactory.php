@@ -2,39 +2,36 @@
 
 namespace APM\System\Factories;
 
+use APM\CollationTable\CollationTableManager;
+use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\NodeService\NodeServiceClient;
+use APM\System\Document\DocumentManager;
 use APM\System\LanguageManager;
 use APM\System\PublicationManager\ApmPublicationManager;
-use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationManager;
 use APM\System\SystemManager;
+use APM\System\Transcription\TranscriptionManager;
 use Predis\Client;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 
 class PublicationManagerFactory
 {
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public static function create(ContainerInterface $ci): PublicationManagerInterface
+    public static function create(SystemManager            $sm,
+                                  DocumentManager          $dm,
+                                  TranscriptionManager     $tm,
+                                  CollationTableManager    $ctm,
+                                  LanguageManager          $lm,
+                                  Client                   $valkeyClient,
+                                  NodeServiceClient        $nodeServiceClient,
+                                  MultiChunkEditionManager $mceManager,
+                                  LoggerInterface          $logger): PublicationManager
     {
-        /** @var SystemManager $sm */
-        $sm = $ci->get(SystemManager::class);
-        /** @var LanguageManager $lm */
-        $lm = $ci->get(LanguageManager::class);
-        $valkeyClient = $ci->get(Client::class);
-        $nodeServiceClient = $ci->get(NodeServiceClient::class);
-        $logger = $ci->get(LoggerInterface::class);
-
         return new ApmPublicationManager(
-            $sm->getDocumentManager(),
-            $sm->getTranscriptionManager(),
+            $dm,
+            $tm,
             $lm,
-            $sm->getMultiChunkEditionManager(),
-            $sm->getCollationTableManager(),
+            $mceManager,
+            $ctm,
             $nodeServiceClient,
             $logger,
             $sm->getImageSources(),

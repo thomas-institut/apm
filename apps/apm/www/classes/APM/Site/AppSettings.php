@@ -2,6 +2,7 @@
 
 namespace APM\Site;
 
+use APM\System\Config\ApmSystemConfig;
 use APM\ToolBox\BaseUrlDetector;
 use ThomasInstitut\TimeString\TimeString;
 
@@ -19,20 +20,20 @@ final class AppSettings
     public string $cacheDataId;
 
 
-    static public function generateFromConfig(array $config): self
+    static public function generateFromConfig(ApmSystemConfig $config): self
     {
         $now = TimeString::now();
         $settings = new AppSettings();
         $settings->info = "Auto generated $now";
-        $settings->baseUrl = BaseUrlDetector::detectBaseUrl($config['subDir']);
-        $settings->devMode = $config['devMode'];
-        $settings->showLanguageSelector = $config['siteShowLanguageSelector'];
-        $settings->copyrightNotice = $config['copyrightNotice'];
-        $settings->appName = $config['appName'];
-        $settings->appVersion = $config['version']['version'];
-        $settings->versionDate = $config['version']['versionDate'];
-        $settings->versionExtra = $config['version']['versionExtra'];
-        $settings->cacheDataId = $config['version']['jsAppCacheDataId'];
+        $settings->baseUrl = BaseUrlDetector::detectBaseUrl($config->general->subDir);
+        $settings->devMode = $config->general->devMode;
+        $settings->showLanguageSelector = false;
+        $settings->copyrightNotice = $config->general->copyrightNotice;
+        $settings->appName = $config->general->appName;
+        $settings->appVersion = $config->version->version;
+        $settings->versionDate = $config->version->versionDate;
+        $settings->versionExtra = $config->version->versionExtra;
+        $settings->cacheDataId = $config->version->jsAppCacheDataId;
         return $settings;
 
     }

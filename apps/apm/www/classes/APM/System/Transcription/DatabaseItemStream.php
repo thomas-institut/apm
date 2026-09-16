@@ -33,18 +33,20 @@ use ThomasInstitut\TimeString\MalformedStringException;
 
 
 /**
- * A DatabaseItemStream is in essence  an array of rows coming straight
+ * A DatabaseItemStream is, in essence,  an array of rows coming straight
  * from the database. The main purpose of this class is to couple this
- * raw data to the Witness abstractions in the new APM design.
+ * raw data with the Witness abstractions in the new APM design.
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class DatabaseItemStream implements CodeDebugInterface{
+class DatabaseItemStream implements CodeDebugInterface
+{
 
     use PrintCodeDebugTrait;
+
     /**
      *
-     * @var array 
+     * @var array
      */
     private array $items;
 
@@ -64,7 +66,8 @@ class DatabaseItemStream implements CodeDebugInterface{
      * @param array $edNotes
      * @param bool $debugMode
      */
-    public function __construct(int $docId, array $itemSegments, string $defaultLangCode = 'la', array $edNotes = [], bool $debugMode = false) {
+    public function __construct(int $docId, array $itemSegments, string $defaultLangCode = 'la', array $edNotes = [], bool $debugMode = false)
+    {
         $this->items = [];
         $itemFactory = new ItemStreamItemFactory($defaultLangCode);
         $languages = [];
@@ -72,22 +75,22 @@ class DatabaseItemStream implements CodeDebugInterface{
         $this->debugMode = $debugMode;
         $this->codeDebug("Constructing DatabaseItemStream");
 
-        foreach($itemSegments as $itemRows){
+        foreach ($itemSegments as $itemRows) {
             $previousElementId = -1;
             $previousTbIndex = -1;
             $previousElementType = -1;
-            // the first fakeItemId to be used, it should be only relevant locally within the item stream
-            // but in order to avoid unintended problems it's better to use a number that is unlikely
+            // the first fakeItemId to be used, it should be only relevant locally within the item stream,
+            // but to avoid unintended problems, it's better to use a number that is unlikely
             // to be used as an item id for real in a long time. For reference, after about 3 years of use,
             // as of Feb 2020, the highest itemId in the production database is around 660 000
-            $fakeItemIdStart  = 999000000000;
-            
+            $fakeItemIdStart = 999000000000;
+
             foreach ($itemRows as $i => $row) {
-                $this->codeDebug("** ItemRow $i: pei $previousElementId, previous tbi $previousTbIndex, pet $previousElementType, text='" . $row['text'] . "'") ;
+                $this->codeDebug("** ItemRow $i: pei $previousElementId, previous tbi $previousTbIndex, pet $previousElementType, text='" . $row['text'] . "'");
                 $address = new AddressInDatabaseItemStream();
                 $address->setFromItemStreamRow($docId, $row);
                 $ceId = intval($row['ce_id']);
-                
+
                 if ($ceId !== $previousElementId && $address->getTbIndex() === $previousTbIndex) {
                     // a change of element within the same text box
                     // this is a change from a line to another line
@@ -119,7 +122,7 @@ class DatabaseItemStream implements CodeDebugInterface{
                     $this->items[] = new ItemInDatabaseItemStream($fakeAddress, new Mark(MarkType::TEXT_BOX_BREAK));
                 }
 
-                if ( intval($row['type']) === ApItem::ADDITION && isset($row['target']) && !is_null($row['target']) && intval($row['target']) !== 0) {
+                if (intval($row['type']) === ApItem::ADDITION && isset($row['target']) && !is_null($row['target']) && intval($row['target']) !== 0) {
                     // this is an item that replaces a previous item
                     // add a "ghost" mark item to signal this
                     $fakeAddress = new AddressInDatabaseItemStream();
@@ -139,7 +142,7 @@ class DatabaseItemStream implements CodeDebugInterface{
                 $item = $itemFactory->createItemFromRow($row);
 
                 $itemId = $address->getItemId();
-                $noteIndexes = $this->findNoteIndexesById($edNotes, $itemId );
+                $noteIndexes = $this->findNoteIndexesById($edNotes, $itemId);
                 foreach ($noteIndexes as $noteIndex) {
                     try {
                         $note = $itemFactory->createItemNoteFromRow($edNotes[$noteIndex]);
@@ -158,7 +161,7 @@ class DatabaseItemStream implements CodeDebugInterface{
         }
         $maxLang = 0;
         $streamLang = '';
-        foreach($languages as $code => $itemCount) {
+        foreach ($languages as $code => $itemCount) {
             if ($itemCount > $maxLang) {
                 $streamLang = $code;
                 $maxLang = $itemCount;
@@ -167,40 +170,42 @@ class DatabaseItemStream implements CodeDebugInterface{
         $this->langCode = $streamLang;
     }
 
-    public function getLang(): string {
+    public function getLang(): string
+    {
         return $this->langCode;
     }
-    
-    public function getItems() : array {
+
+    public function getItems(): array
+    {
         return $this->items;
     }
-    
+
     public function addItem(ItemInDatabaseItemStream $item): void
     {
         $this->items[] = $item;
     }
-    
+
     /**
      * Searches the item stream for an item with the given item id
-     * 
+     *
      * @param int $itemId
      * @return boolean
      */
     public function getItemById(int $itemId): bool
     {
-        foreach($this->items as $item) {
+        foreach ($this->items as $item) {
             if ($item->getAddress()->getItemIndex() === $itemId) {
                 return $item->getItem();
             }
         }
         return false;
     }
-    
+
     private function findNoteIndexesById(array $noteArrayFromDb, int $id): array
     {
         $indexes = [];
         foreach ($noteArrayFromDb as $index => $note) {
-            $noteTarget = isset($note['target']) ? (int) $note['target'] : -1;
+            $noteTarget = isset($note['target']) ? (int)$note['target'] : -1;
             if ($id === $noteTarget) {
                 $indexes[] = $index;
             }

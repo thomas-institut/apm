@@ -514,10 +514,6 @@ export class ApmUrlGenerator {
     return `${this.apiBase}/search/editions`;
   }
 
-  apiSystemGetLanguages() {
-    return `${this.apiBase}/system/languages`;
-  }
-
   apiPeopleSaveData() {
     return `${this.apiBase}/person/save`;
   }

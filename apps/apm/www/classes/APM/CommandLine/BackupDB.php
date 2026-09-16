@@ -20,8 +20,6 @@
 
 namespace APM\CommandLine;
 
-use APM\System\ApmMySqlTableName;
-
 /**
  * Utility to perform a database backup with mysqldump 
  *
@@ -32,8 +30,7 @@ class BackupDB extends CommandLineUtility {
     
     const string USAGE = "USAGE: backupdb <output_directory> --schemaOnly\n";
 
-    const array CACHE_TABLES = [ ApmMySqlTableName::TABLE_SYSTEM_CACHE];
-    
+
     public function __construct(array $config, int $argc, array $argv) {
         parent::__construct($config, $argc, $argv);
 //        $this->logger = $this->logger->withName('BACKUP');
@@ -63,8 +60,10 @@ class BackupDB extends CommandLineUtility {
         $tableNames = $this->getSystemManager()->getTableNames();
         $databaseName = $this->config['db']['db'];
         $ignoreTablesCommand = '';
-        foreach(self::CACHE_TABLES as $table) {
-            $tableName = $tableNames[$table];
+
+        $cacheTableNames = [ $tableNames->systemCache];
+
+        foreach($cacheTableNames as $tableName) {
             $ignoreTablesCommand .= ' --ignore-table=' . $databaseName . '.' . $tableName;
         }
 

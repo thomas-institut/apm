@@ -4,7 +4,7 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\Actions\GetTranscriptionDataForDocument;
 use APM\CommandLine\CommandLineUtility;
-use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationManager;
 use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\PublicationManager\ResourceNotFoundException;
 use Psr\Container\ContainerExceptionInterface;
@@ -81,8 +81,8 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
         try {
-            /** @var PublicationManagerInterface $pm */
-            $pm = $this->container->get(PublicationManagerInterface::class);
+            /** @var PublicationManager $pm */
+            $pm = $this->container->get(PublicationManager::class);
             $data = $pm->createPublication($type, $resourceId, $version);
             print "Publication $data->id created\n";
             return 0;
@@ -100,8 +100,8 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             print "Error: publication id must be greater than 0\n";
         }
         try {
-            /** @var PublicationManagerInterface $pm */
-            $pm = $this->container->get(PublicationManagerInterface::class);
+            /** @var PublicationManager $pm */
+            $pm = $this->container->get(PublicationManager::class);
             $pm->updatePublication($pubId, $version);
             print "Publication $pubId updated\n";
             return 0;
@@ -120,8 +120,8 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
 
     private function list() : int {
         try {
-            /** @var PublicationManagerInterface $pm */
-            $pm = $this->container->get(PublicationManagerInterface::class);
+            /** @var PublicationManager $pm */
+            $pm = $this->container->get(PublicationManager::class);
             $listings = $pm->list();
             if (count($listings) === 0) {
                 print "No publications found\n";
@@ -144,8 +144,8 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
         try {
-            /** @var PublicationManagerInterface $pm */
-            $pm = $this->container->get(PublicationManagerInterface::class);
+            /** @var PublicationManager $pm */
+            $pm = $this->container->get(PublicationManager::class);
             $pm->deletePublication($pubId);
             return 0;
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
@@ -163,8 +163,8 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
         try {
-            /** @var PublicationManagerInterface $pm */
-            $pm = $this->container->get(PublicationManagerInterface::class);
+            /** @var PublicationManager $pm */
+            $pm = $this->container->get(PublicationManager::class);
             $data = $pm->getPublication($pubId);
             if ($data->type === PublicationType::Transcription) {
                 /** @var TranscriptionData $data */
@@ -198,8 +198,8 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         }
 
         try {
-            /** @var PublicationManagerInterface $pm */
-            $pm = $this->container->get(PublicationManagerInterface::class);
+            /** @var PublicationManager $pm */
+            $pm = $this->container->get(PublicationManager::class);
             $data = $pm->getPublication($pubId);
 
             $publicationType = is_object($data->type) && isset($data->type->value)

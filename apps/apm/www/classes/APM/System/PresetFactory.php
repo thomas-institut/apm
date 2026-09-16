@@ -22,6 +22,7 @@ namespace APM\System;
 
 
 use APM\System\Preset\Preset;
+use APM\System\Preset\PresetManager;
 
 /**
  * Handles the creation of different kinds of presets
@@ -33,9 +34,9 @@ class PresetFactory {
     public function create($toolId, int $userTid, string $title, array $theData): Preset
     {
         
-        if ($toolId === SystemManager::TOOL_AUTOMATIC_COLLATION) {
+        if ($toolId === PresetManager::TOOL_AUTOMATIC_COLLATION) {
                 return new Preset(
-                        SystemManager::TOOL_AUTOMATIC_COLLATION,
+                        PresetManager::TOOL_AUTOMATIC_COLLATION,
                         $userTid,
                         $title, 
                         ['lang' => $theData['lang'], 'witnesses' => $theData['witnesses']], 

@@ -22,20 +22,16 @@ namespace ThomasInstitut\ToolBox;
 
 use PDO;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
 /**
  * Utility methods to handle MySQL queries
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class MySqlHelper {
+readonly class MySqlHelper {
 
-    private PDO $dbConn;
-    private LoggerInterface $logger;
-    
-    public function __construct(PDO $dbConn, LoggerInterface $logger) {
-        $this->dbConn = $dbConn;
-        $this->logger = $logger;
+    public function __construct(private PdoProvider $pdoProvider, private LoggerInterface $logger) {
     }
     
     /**
@@ -43,9 +39,9 @@ class MySqlHelper {
      */
 
     function query(string $sql){
-        $r = $this->dbConn->query($sql);
+        $r = $this->pdoProvider->getPdo()->query($sql);
         if ($r===false){
-           $this->logger->error("Problem with query: $sql", $this->dbConn->errorInfo());
+           $this->logger->error("Problem with query: $sql", $this->pdoProvider->getPdo()->errorInfo());
         }
         return $r;
     }

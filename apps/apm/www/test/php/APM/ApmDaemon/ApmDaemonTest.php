@@ -2,16 +2,24 @@
 
 namespace APM\ApmDaemon;
 
-use APM\System\ApmSystemManager;
-use Monolog\Handler\NullHandler;
-use Monolog\Logger;
+use APM\CommandLine\CommandLineUtility;
 use PHPUnit\Framework\TestCase;
+use Psr\Container\ContainerInterface;
 use ReflectionClass;
+use ReflectionProperty;
+use ThomasInstitut\JobQueue\JobQueueManager;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ApmDaemonTest extends TestCase
 {
-    private array $configMock = [ 'version' =>  [ 'version' => '1.0.0', 'versionDate' => '2023-01-01', 'jsAppCacheDataId' => '1234567890'], 'log' => ['inStdErr' => false]];
+    private array $configMock = [
+        'version' =>  [ 'version' => '1.0.0', 'versionDate' => '2023-01-01', 'jsAppCacheDataId' => '1234567890'],
+        'nodeService' => [ 'url' => 'https://localhost/'],
+        'log' => ['inStdErr' => false]];
+
+    /**
+     * Test that recovery is run using the job queue manager from the container.
+     */
     public function testRunJobQueueRecoveryCallsManager(): void
     {
         $jobManager = $this->createMock(ValkeyJobQueueManager::class);
@@ -20,26 +28,16 @@ class ApmDaemonTest extends TestCase
             ->with(ApmDaemon::JOB_TIMEOUT)
             ->willReturn(5);
 
-        $systemManager = $this->createStub(ApmSystemManager::class);
-        $systemManager->method('getJobQueueManager')->willReturn($jobManager);
-        $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
+        $daemon = $this->createDaemonWithJobManager($jobManager);
 
-        $config = $this->configMock;
-        $config['authorizedCommandLineUsers']  = [posix_getpwuid(posix_geteuid())['name']];
-        
-        $daemon = $this->getMockBuilder(ApmDaemon::class)
-            ->setConstructorArgs([$config, 0, []])
-            ->onlyMethods(['getSystemManager'])
-            ->getMock();
-
-        $daemon->expects($this->atLeastOnce())->method('getSystemManager')->willReturn($systemManager);
-
-        // Use reflection to call the private method
         $reflection = new ReflectionClass(ApmDaemon::class);
         $method = $reflection->getMethod('runJobQueueRecovery');
         $method->invoke($daemon);
     }
 
+    /**
+     * Test that recovery is not run again before the recovery interval elapses.
+     */
     public function testRunJobQueueRecoveryRespectsInterval(): void
     {
         $jobManager = $this->createMock(ValkeyJobQueueManager::class);
@@ -47,24 +45,32 @@ class ApmDaemonTest extends TestCase
             ->method('runRecovery')
             ->willReturn(0);
 
-        $systemManager = $this->createStub(ApmSystemManager::class);
-        $systemManager->method('getJobQueueManager')->willReturn($jobManager);
-        $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
-
-        $config = $this->configMock;
-        $config['authorizedCommandLineUsers']  = [posix_getpwuid(posix_geteuid())['name']];
-
-        $daemon = $this->getMockBuilder(ApmDaemon::class)
-            ->setConstructorArgs([$config, 0, []])
-            ->onlyMethods(['getSystemManager'])
-            ->getMock();
-
-        $daemon->expects($this->atLeastOnce())->method('getSystemManager')->willReturn($systemManager);
+        $daemon = $this->createDaemonWithJobManager($jobManager);
 
         $reflection = new ReflectionClass(ApmDaemon::class);
         $method = $reflection->getMethod('runJobQueueRecovery');
 
         $method->invoke($daemon);
         $method->invoke($daemon); // Second call should be skipped due to interval
+    }
+
+    /**
+     * Create a daemon whose container returns the supplied job queue manager.
+     */
+    private function createDaemonWithJobManager(ValkeyJobQueueManager $jobManager): ApmDaemon
+    {
+        $config = $this->configMock;
+        $config['authorizedCommandLineUsers'] = [posix_getpwuid(posix_geteuid())['name']];
+
+        $daemon = new ApmDaemon($config, 0, []);
+        $container = $this->createStub(ContainerInterface::class);
+        $container->method('get')->willReturnMap([
+            [JobQueueManager::class, $jobManager],
+        ]);
+
+        $containerProperty = new ReflectionProperty(CommandLineUtility::class, 'container');
+        $containerProperty->setValue($daemon, $container);
+
+        return $daemon;
     }
 }

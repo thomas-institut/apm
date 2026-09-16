@@ -22,25 +22,33 @@ namespace APM\Api;
 
 use APM\Api\DataSchema\ApiUsersMultiChunkEditions;
 use APM\Api\DataSchema\MceShortInfo;
+use APM\CollationTable\CollationTableManager;
 use APM\MultiChunkEdition\MceVersionInfo;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
-use APM\System\SystemManager;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\InvalidEmailAddressException;
 use APM\System\User\InvalidPasswordException;
 use APM\System\User\InvalidUserNameException;
 use APM\System\User\UserNameAlreadyInUseException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
 use Exception;
 use InvalidArgumentException;
-use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
+use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
@@ -55,6 +63,7 @@ class ApiUsers extends ApiController
     const string CLASS_NAME = 'Users';
     const int CACHE_TTL_TRANSCRIBED_PAGES = 7 * 24 * 3600;  // 7 days
     const int CACHE_TTL_CT_INFO = 7 * 24 * 3600;  // 7 days
+
     /**
      * @param Request $request
      * @param Response $response
@@ -63,7 +72,7 @@ class ApiUsers extends ApiController
      */
     public function userUpdateProfile(Request $request, Response $response): Response
     {
-        $profileUserTid =  (int) $request->getAttribute('userTid');
+        $profileUserTid = (int)$request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserTid);
 
         $userManager = $this->systemManager->getUserManager();
@@ -87,7 +96,7 @@ class ApiUsers extends ApiController
             $userData = $userManager->getUserData($profileUserTid);
         } catch (UserNotFoundException) {
             $this->logger->error("User $profileUserTid not found");
-            return $this->responseWithJson($response, [ 'errorMsg' => 'User not found' ], HttpStatus::NOT_FOUND);
+            return $this->responseWithJson($response, ['errorMsg' => 'User not found'], HttpStatus::NOT_FOUND);
         }
 
         $changesMade = false;
@@ -99,16 +108,16 @@ class ApiUsers extends ApiController
                 $changesMade = true;
             } catch (InvalidEmailAddressException) {
                 $this->logger->error("Invalid email address '$email' updating user profile $profileUserTid");
-                return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid email address' ], HttpStatus::BAD_REQUEST);
+                return $this->responseWithJson($response, ['errorMsg' => 'Invalid email address'], HttpStatus::BAD_REQUEST);
             } catch (Exception $e) {
                 $this->logException($e, "SystemError");
-                return $this->responseWithJson($response, [ 'errorMsg' => 'System Error' ], HttpStatus::INTERNAL_SERVER_ERROR);
+                return $this->responseWithJson($response, ['errorMsg' => 'System Error'], HttpStatus::INTERNAL_SERVER_ERROR);
             }
         }
 
         if ($password1 !== '' && $password2 !== $password1) {
             $this->logger->error("Passwords do not match in request to update user profile $profileUserTid");
-            return $this->responseWithJson($response, [ 'errorMsg' => 'Passwords do not match' ], HttpStatus::BAD_REQUEST);
+            return $this->responseWithJson($response, ['errorMsg' => 'Passwords do not match'], HttpStatus::BAD_REQUEST);
         }
 
         if ($password1 !== '') {
@@ -117,10 +126,10 @@ class ApiUsers extends ApiController
                 $changesMade = true;
             } catch (InvalidPasswordException) {
                 $this->logger->error("Invalid password updating user profile $profileUserTid");
-                return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid password' ], HttpStatus::BAD_REQUEST);
+                return $this->responseWithJson($response, ['errorMsg' => 'Invalid password'], HttpStatus::BAD_REQUEST);
             } catch (Exception $e) {
                 $this->logException($e, "SystemError");
-                return $this->responseWithJson($response, [ 'errorMsg' => 'System Error' ], HttpStatus::INTERNAL_SERVER_ERROR);
+                return $this->responseWithJson($response, ['errorMsg' => 'System Error'], HttpStatus::INTERNAL_SERVER_ERROR);
             }
         }
         if (!$changesMade) {
@@ -156,12 +165,12 @@ class ApiUsers extends ApiController
             $personData = $personManager->getPersonEssentialData($personTid);
         } catch (PersonNotFoundException) {
             $this->logger->error("Person $personTid not found");
-            return $this->responseWithJson($response, [ 'errorMsg' => 'Person not found' ], HttpStatus::NOT_FOUND);
+            return $this->responseWithJson($response, ['errorMsg' => 'Person not found'], HttpStatus::NOT_FOUND);
         }
 
         if ($personData->isUser) {
             $this->logger->info("Person $personTid is already a user");
-            return $this->responseWithJson($response, [ 'info' => 'Person already a user' ], HttpStatus::SUCCESS);
+            return $this->responseWithJson($response, ['info' => 'Person already a user'], HttpStatus::SUCCESS);
         }
 
         $inputData = json_decode($request->getBody()->getContents(), true) ?? [];
@@ -170,7 +179,7 @@ class ApiUsers extends ApiController
 
         if ($userName === '') {
             $this->logger->error("No username given for user creation");
-            return $this->responseWithJson($response, [ 'errorMsg' => 'Username not given' ], HttpStatus::BAD_REQUEST);
+            return $this->responseWithJson($response, ['errorMsg' => 'Username not given'], HttpStatus::BAD_REQUEST);
         }
 
 
@@ -179,10 +188,10 @@ class ApiUsers extends ApiController
             $apmUserManager->createUser($personTid, $userName);
         } catch (InvalidUserNameException) {
             $this->logger->error("Invalid username creating user $personTid");
-            return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid username' ], HttpStatus::BAD_REQUEST);
+            return $this->responseWithJson($response, ['errorMsg' => 'Invalid username'], HttpStatus::BAD_REQUEST);
         } catch (UserNameAlreadyInUseException) {
             $this->logger->error("Username already exists creating user $personTid");
-            return $this->responseWithJson($response, [ 'errorMsg' => 'Username already in use' ], HttpStatus::CONFLICT);
+            return $this->responseWithJson($response, ['errorMsg' => 'Username already in use'], HttpStatus::CONFLICT);
         }
         // the user has been created
         return $this->responseWithStatus($response, HttpStatus::SUCCESS);
@@ -192,63 +201,73 @@ class ApiUsers extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    public function getTranscribedPages(Request $request, Response $response) : Response
+    public function getTranscribedPages(Request $request, Response $response): Response
     {
-        
-        $userTid =  (int) $request->getAttribute('userTid');
+
+        $userTid = (int)$request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . $userTid);
 
         $cacheKey = CacheKey::ApiUsersTranscribedPages . $userTid;
         $cacheHit = true;
-        $dataCache = $this->systemManager->getSystemDataCache();
+
+        /** @var SystemMainDataCache $dataCache */
+        $dataCache = $this->container->get(SystemMainDataCache::class);
+
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
+
         try {
             $data = unserialize($dataCache->get($cacheKey));
         } catch (ItemNotInCacheException) {
             $cacheHit = false;
-            $data = self::buildTranscribedPagesData($this->systemManager, $userTid);
+            $data = self::buildTranscribedPagesData($userTid, $docManager, $txManager, $this->logger);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
         }
 
         return $this->responseWithJson($response, $data);
     }
 
-    static public function updateTranscribedPagesData(SystemManager $systemManager, int $userId): bool {
+    static public function updateTranscribedPagesData(int $userId, DocumentManager $docManager, TranscriptionManager $txManager, LoggerInterface $logger, SystemMainDataCache $systemMainDataCache): bool
+    {
         try {
-            $data = self::buildTranscribedPagesData($systemManager, $userId);
-        } catch(Exception $e) {
-            $systemManager->getLogger()->error("Exception while building TranscribedPages Data for user $userId",
+            $data = self::buildTranscribedPagesData($userId, $docManager, $txManager, $logger);
+        } catch (Exception $e) {
+            $logger->error("Exception while building TranscribedPages Data for user $userId",
                 [
                     'code' => $e->getCode(),
                     'msg' => $e->getMessage()
                 ]);
             return false;
         }
-        $systemManager->getSystemDataCache()->set(CacheKey::ApiUsersTranscribedPages. $userId,
+        $systemMainDataCache->set(CacheKey::ApiUsersTranscribedPages . $userId,
             serialize($data), self::CACHE_TTL_TRANSCRIBED_PAGES);
         return true;
     }
 
 
-    static public function buildTranscribedPagesData(SystemManager $systemManager, int $userId) : array {
-        $docManager = $systemManager->getDocumentManager();
-        $txManager = $systemManager->getTranscriptionManager();
-
+    static public function buildTranscribedPagesData(int $userId, DocumentManager $docManager, TranscriptionManager $txManager, LoggerInterface $logger): array
+    {
         $helper = new DataRetrieveHelper();
-        $helper->setLogger($systemManager->getLogger());
+        $helper->setLogger($logger);
         $docIds = $txManager->getDocIdsTranscribedByUser($userId);
         $docInfoArray = $helper->getDocInfoArrayFromList($docIds, $docManager);
         $allPageIds = [];
 
-        foreach($docIds as $docId) {
+        foreach ($docIds as $docId) {
             $pageIds = $txManager->getPageIdsTranscribedByUser($userId, $docId);
             $docInfoArray[$docId]->pageIds = $pageIds;
-            foreach($pageIds as $pageId) {
+            foreach ($pageIds as $pageId) {
                 $allPageIds[] = $pageId;
             }
         }
 
-        $pageInfoArray = array_map( function ($pageId) use ($docManager) {
+        $pageInfoArray = array_map(function ($pageId) use ($docManager) {
             try {
                 $pageInfo = $docManager->getPageInfo($pageId);
             } catch (PageNotFoundException) {
@@ -264,37 +283,58 @@ class ApiUsers extends ApiController
     }
 
 
-    public function userCollationTables(Request $request, Response $response) : Response
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function userCollationTables(Request $request, Response $response): Response
     {
-        
-        $userTid =  (int) $request->getAttribute('userId');
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
 
-        $cacheKey = CacheKey::ApiUsersCollationTableInfoData . $userTid;
+        $userId = (int)$request->getAttribute('userId');
+        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userId));
+
+        $cacheKey = CacheKey::ApiUsersCollationTableInfoData . $userId;
 
         $cacheHit = true;
-        $dataCache = $this->systemManager->getSystemDataCache();
+
+        /** @var SystemMainDataCache $dataCache */
+        $dataCache = $this->container->get(SystemMainDataCache::class);
+
+        /** @var CollationTableManager $ctManager */
+        $ctManager = $this->container->get(CollationTableManager::class);
+
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
+
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
+
         try {
             $data = unserialize($dataCache->get($cacheKey));
         } catch (ItemNotInCacheException) {
             $cacheHit = false;
-            $data = self::buildCollationTableInfoForUser($this->systemManager, $userTid);
+            $data = self::buildCollationTableInfoForUser($userId, $ctManager, $workManager, $personManager, $this->logger);
             $dataCache->set($cacheKey, serialize($data), self::CACHE_TTL_CT_INFO);
         }
 
         return $this->responseWithJson($response, $data);
     }
 
-    static public function buildCollationTableInfoForUser(SystemManager $systemManager, int $userTid) : array {
-        $ctManager = $systemManager->getCollationTableManager();
-        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUser($userTid);
-        $logger = $systemManager->getLogger();
+    static public function buildCollationTableInfoForUser(
+        int                    $userId,
+        CollationTableManager  $ctManager,
+        WorkManager            $workManager,
+        PersonManagerInterface $personManager,
+        LoggerInterface        $logger
+    ): array
+    {
+        $tableIds = $ctManager->getCollationTableVersionManager()->getActiveCollationTableIdsForUser($userId);
         $tableInfo = [];
         $worksCited = [];
-        foreach($tableIds as $tableId) {
+        foreach ($tableIds as $tableId) {
             try {
                 $ctData = $ctManager->getCollationTableById($tableId);
-            } catch(InvalidArgumentException) {
+            } catch (InvalidArgumentException) {
                 $logger->error("Table $tableId reported as being active does not exist. Is version table consistent?");
                 continue;
             }
@@ -303,7 +343,7 @@ class ApiUsers extends ApiController
             }
             //$this->debug("Processing table id $tableId", ['ctData' => $ctData]);
             $chunkId = $ctData['chunkId'] ?? $ctData['witnesses'][0]['chunkId'];
-            [ $work, $chunk] = explode('-', $chunkId);
+            [$work, $chunk] = explode('-', $chunkId);
             $worksCited[$work] = true;
 
             $tableInfo[] = [
@@ -318,10 +358,10 @@ class ApiUsers extends ApiController
         $workInfo = [];
         foreach (array_keys($worksCited) as $work) {
             try {
-                $workData= get_object_vars($systemManager->getWorkManager()->getWorkDataByDareId($work));
+                $workData = get_object_vars($workManager->getWorkDataByDareId($work));
                 $authorId = $workData['authorId'];
-                $authorName = $systemManager->getPersonManager()->getPersonEssentialData($authorId)->name;
-                $workData['author_name'] =$authorName;
+                $authorName = $personManager->getPersonEssentialData($authorId)->name;
+                $workData['author_name'] = $authorName;
                 $workInfo[$work] = $workData;
 
             } catch (WorkNotFoundException) {
@@ -334,24 +374,37 @@ class ApiUsers extends ApiController
         return ['tableInfo' => $tableInfo, 'workInfo' => $workInfo];
     }
 
-    static public function updateCtInfoData(SystemManager $systemManager, int $userTid) : bool {
+    static public function updateCtInfoData(
+        int                    $userTid,
+        CollationTableManager  $ctManager,
+        WorkManager            $workManager,
+        PersonManagerInterface $personManager,
+        SystemMainDataCache    $dataCache,
+        LoggerInterface        $logger
+    ): bool
+    {
         try {
-            $data = self::buildCollationTableInfoForUser($systemManager, $userTid);
-        } catch(Exception $e) {
-            $systemManager->getLogger()->error("Exception while building CollationTable Data for user $userTid",
+            $data = self::buildCollationTableInfoForUser($userTid, $ctManager, $workManager, $personManager, $logger);
+        } catch (Exception $e) {
+            $logger->error("Exception while building CollationTable Data for user $userTid",
                 [
                     'code' => $e->getCode(),
                     'msg' => $e->getMessage()
                 ]);
             return false;
         }
-        $systemManager->getSystemDataCache()->set(CacheKey::ApiUsersCollationTableInfoData . $userTid,
+        $dataCache->set(CacheKey::ApiUsersCollationTableInfoData . $userTid,
             serialize($data), self::CACHE_TTL_CT_INFO);
         return true;
     }
 
-    public function userMultiChunkEditions(Request $request, Response $response) : Response {
-        $userTid =  (int) $request->getAttribute('userId');
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    public function userMultiChunkEditions(Request $request, Response $response): Response
+    {
+        $userTid = (int)$request->getAttribute('userId');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":" . Tid::toBase36String($userTid));
         /** @var MultiChunkEditionManager $mceManager */
         $mceManager = $this->container->get(MultiChunkEditionManager::class);

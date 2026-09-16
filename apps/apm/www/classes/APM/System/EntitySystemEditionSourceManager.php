@@ -8,27 +8,16 @@ use APM\EntitySystem\Schema\Entity;
 use InvalidArgumentException;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
+use RuntimeException;
 use ThomasInstitut\EntitySystem\EntityData;
 
 class EntitySystemEditionSourceManager implements EditionSourceManager, LoggerAwareInterface
 {
     use LoggerAwareTrait;
 
-    /**
-     * @var callable
-     */
-    private $entitySystemCallable;
-
-    private ?ApmEntitySystemInterface $entitySystem;
-
-
-    /**
-     * @param callable $getEntitySystem
-     */
-    public function __construct(callable $getEntitySystem)
+    public function __construct( private readonly ApmEntitySystemInterface $entitySystem)
     {
-        $this->entitySystemCallable = $getEntitySystem;
-        $this->entitySystem = null;
+
     }
 
     public function getSourceByTid(int $tid): array
@@ -49,7 +38,7 @@ class EntitySystemEditionSourceManager implements EditionSourceManager, LoggerAw
                 $allSources[] = $this->entityDataToSourceData($this->getEntitySystem()->getEntityData($entityId));
             } catch (EntityDoesNotExistException) {
                 // Should NEVER happen
-                throw new \RuntimeException("Source $entityId not found");
+                throw new RuntimeException("Source $entityId not found");
             }
         }
         return $allSources;
@@ -71,9 +60,6 @@ class EntitySystemEditionSourceManager implements EditionSourceManager, LoggerAw
     }
 
     private function getEntitySystem() : ApmEntitySystemInterface {
-        if ($this->entitySystem === null) {
-            $this->entitySystem =call_user_func($this->entitySystemCallable);
-        }
         return $this->entitySystem;
     }
 

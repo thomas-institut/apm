@@ -20,12 +20,12 @@
 
 namespace APM\System\Transcription;
 
-use APM\System\ApmMySqlTableName;
-use PDO;
+use APM\System\ApmTableNames;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataTable\MySqlDataTable;
 use ThomasInstitut\DataTable\Exception\RowAlreadyExists;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\TimeString\TimeString;
 use ThomasInstitut\ToolBox\MySqlHelper;
 
@@ -34,20 +34,14 @@ use ThomasInstitut\ToolBox\MySqlHelper;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class EdNoteManager {
+readonly class EdNoteManager {
     
-    private MySqlHelper $dbh;
-    private array $tNames;
-    private LoggerInterface $logger;
     private MySqlDataTable $edNotesDataTable;
+
             
-    public function __construct(PDO $dbConn, MySqlHelper $dbh, array $tableNames, LoggerInterface $logger)
+    public function __construct(private PdoProvider $pdoProvider, private MySqlHelper $dbh, private ApmTableNames $tableNames, private LoggerInterface $logger)
     {
-        $this->dbh = $dbh;
-        $this->tNames = $tableNames;
-        $this->logger = $logger;
-        $this->edNotesDataTable = new MySqlDataTable($dbConn, 
-                $tableNames[ApmMySqlTableName::TABLE_EDNOTES]);
+        $this->edNotesDataTable = new MySqlDataTable($this->pdoProvider,$this->tableNames->edNotes);
     }
 
     /**
@@ -64,10 +58,10 @@ class EdNoteManager {
         
     public function getEditorialNotesByDocPageCol($docId, $pageNum, $colNumber=1): array
     {
-        $edNotesTable = $this->tNames['ednotes'];
-        $itemsTable = $this->tNames['items'];
-        $elementsTable = $this->tNames['elements'];
-        $pagesTable = $this->tNames['pages'];
+        $edNotesTable = $this->tableNames->edNotes;
+        $itemsTable = $this->tableNames->items;
+        $elementsTable = $this->tableNames->elements;
+        $pagesTable = $this->tableNames->pages;
         
         $query = "SELECT `$edNotesTable`.* from `$edNotesTable` " .
                 "JOIN `$itemsTable` on `$edNotesTable`.`target`=`$itemsTable`.`id` " .
@@ -91,9 +85,9 @@ class EdNoteManager {
      */
     public function getEditorialNotesByPageIdColWithTime(int $pageId, int $colNumber, string $time): array
     {
-        $edNotes = $this->tNames['ednotes'];
-        $items = $this->tNames['items'];
-        $elements = $this->tNames['elements'];
+        $edNotes = $this->tableNames->edNotes;
+        $items = $this->tableNames->items;
+        $elements = $this->tableNames->elements;
 
         $query = "SELECT  $edNotes.* from $edNotes, $items, $elements " .
             "WHERE $edNotes.target=$items.id AND $elements.id=$items.ce_id " .
@@ -113,7 +107,7 @@ class EdNoteManager {
             return [];
         }
         $idSet = implode(',', $itemIds);
-        $edNotes = $this->tNames['ednotes'];
+        $edNotes = $this->tableNames->edNotes;
         $query = "SELECT `$edNotes`.* FROM `$edNotes` WHERE target IN ($idSet)";
         return $this->dbh->getAllRows($query);
     }

@@ -13,6 +13,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
+use ThomasInstitut\JobQueue\JobQueueManager;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ValkeyWorkerTest extends TestCase
@@ -44,6 +45,7 @@ class ValkeyWorkerTest extends TestCase
         $this->ci = $this->createStub(ContainerInterface::class);
         $this->ci->method('get')->willReturnMap([
             [SystemManager::class, $this->systemManager],
+            [JobQueueManager::class, $this->jm],
             [LoggerInterface::class, new Logger('test', [new NullHandler()])],
         ]);
     }
@@ -198,6 +200,7 @@ class ValkeyWorkerTest extends TestCase
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
+            [JobQueueManager::class, $jobManager],
             [LoggerInterface::class, $systemManager->getLogger()],
         ]);
 
@@ -229,6 +232,7 @@ class ValkeyWorkerTest extends TestCase
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
+            [JobQueueManager::class, $jobManager],
             [LoggerInterface::class, $systemManager->getLogger()],
         ]);
 
@@ -247,6 +251,7 @@ class ValkeyWorkerTest extends TestCase
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
+            [JobQueueManager::class, $this->jm],
             [LoggerInterface::class, $systemManager->getLogger()],
         ]);
         $mins = ValkeyWorker::MinDbResetConnectionIntervalInMinutes;

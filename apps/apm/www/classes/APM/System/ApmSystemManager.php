@@ -24,47 +24,28 @@ use APM\Api\ApiPeople;
 use APM\CollationEngine\CollatexHttp;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
-use APM\CollationTable\ApmCollationTableManager;
-use APM\CollationTable\ApmCollationTableVersionManager;
 use APM\CollationTable\CollationTableManager;
-use APM\Core\Token\Normalizer\IgnoreArabicVocalizationNormalizer;
-use APM\Core\Token\Normalizer\IgnoreIsolatedHamzaNormalizer;
-use APM\Core\Token\Normalizer\IgnoreShaddaNormalizer;
-use APM\Core\Token\Normalizer\IgnoreTatwilNormalizer;
-use APM\Core\Token\Normalizer\RemoveHamzahMaddahFromAlifWawYahNormalizer;
-use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
-use APM\EntitySystem\ApmEntitySystem;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\Jobs\ApiSearchUpdateEditionsIndex;
-use APM\Jobs\ApiSearchUpdateTranscribersAndTranscriptionsCache;
-use APM\Jobs\ApiSearchUpdateTranscriptionsIndex;
-use APM\Jobs\ApiUsersUpdateCtDataForUser;
-use APM\Jobs\ApiUsersUpdateTranscribedPagesData;
-use APM\Jobs\SiteDocumentsUpdateDataCache;
-use APM\Jobs\UpdateAllPeopleDataCache;
-use APM\Jobs\UpdateWorksCache;
-use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\System\Document\ApmDocumentManager;
+use APM\System\Cache\SystemDirDataCache;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Config\ApmSystemConfig;
 use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
-use APM\System\Lemmatizer\LemmatizerInterface;
-use APM\System\Lemmatizer\UdPipeLemmatizer;
-use APM\System\Person\EntitySystemPersonManager;
+use APM\System\Jobs\UpdateApiSearchTranscribersAndTranscriptionsCacheJob;
+use APM\System\Jobs\UpdateAllPeopleDataCacheJob;
+use APM\System\Jobs\UpdateApiDocumentsDataCacheJob;
+use APM\System\Jobs\UpdateApiSearchEditionsIndexJob;
+use APM\System\Jobs\UpdateApiSearchTranscriptionsIndexJob;
+use APM\System\Jobs\UpdateApiUsersCtDataForUserJob;
+use APM\System\Jobs\UpdateApiUsersTranscribedPagesDataJob;
+use APM\System\Jobs\UpdateWorksCacheJob;
 use APM\System\Person\PersonManagerInterface;
-use APM\System\Preset\DataTablePresetManager;
-use APM\System\Preset\PresetManager;
-use APM\System\Search\SearchManagerInterface;
-use APM\System\Search\TypesenseSearchManager;
-use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\TranscriptionManager;
-use APM\System\User\ApmUserManager;
 use APM\System\User\UserManagerInterface;
-use APM\System\Work\EntitySystemWorkManager;
 use APM\System\Work\WorkManager;
-use APM\ToolBox\BaseUrlDetector;
 use APM\ToolBox\Resettable;
 use Monolog\Logger;
 use PDO;
@@ -73,26 +54,10 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Slim\Interfaces\RouteParserInterface;
-use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\DirectoryDataCache;
-use ThomasInstitut\DataTable\DataTable;
-use ThomasInstitut\DataTable\MySqlDataTable;
-use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
-use ThomasInstitut\EntitySystem\DataTableStatementStorage;
-use ThomasInstitut\EntitySystem\EntityData;
-use ThomasInstitut\EntitySystem\EntityDataCache\DataTableEntityDataCache;
-use ThomasInstitut\EntitySystem\Exception\InvalidArgumentException;
-use ThomasInstitut\EntitySystem\StatementStorage;
-use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
-use ThomasInstitut\EntitySystem\TypeStorageConfig;
-use ThomasInstitut\JobQueue\JobQueueManagerInterface;
-use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
-use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
+use ThomasInstitut\JobQueue\JobQueueManager;
 use Typesense\Client;
-use Typesense\Exceptions\ConfigError;
 
 
 /**
@@ -102,92 +67,22 @@ use Typesense\Exceptions\ConfigError;
  */
 class ApmSystemManager extends SystemManager
 {
-
-    // Error codes
-    const int ERROR_CONFIG_ARRAY_IS_NOT_VALID = 1007;
-
-    // Entity system Data ID: key for entity system caches
-    const string ES_DATA_ID = '0010'; // 2026 Jan 9
-
-    const string MemCachePrefix_Apm_ES = 'Es';
-    const string MemCachePrefix_TypedMultiStorage_ES = 'MsEs';
-
-    const int DefaultSystemCacheTtl = 30 * 24 * 3600;  // 30 days
-    const int DefaultMemCacheTtl = 24 * 3600;  // 1 day
-
-    const int DefaultDirectoryDataCacheTtl = 365 * 24 * 3600; // 1 year
-
-    const array REQUIRED_CONFIG_VARIABLES = [
-        'appName',
-        'version',
-        'copyrightNotice',
-        'db',
-        'subDir',
-        'log',
-        'languages',
-        'langCodes',
-        'dbTablePrefix',
-        'daemonPidFile',
-    ];
-
-    const array REQUIRED_CONFIG_VARIABLES_DB = ['host', 'db', 'user', 'pwd'];
     private array $imageSources;
     private LoggerInterface $logger;
 
-    //
-    // Components
-    //
-    // (all initialized to null)
-    private ?DataTablePresetManager $presetsManager = null;
-    private ?CollationEngine $collationEngine = null;
-    private ?ApmTranscriptionManager $transcriptionManager = null;
-    private ?ApmCollationTableManager $collationTableManager = null;
-    private ?ApmNormalizerManager $normalizerManager = null;
-    private ?ApmUserManager $userManager = null;
-    private ?PersonManagerInterface $personManager = null;
-    private ?JobQueueManagerInterface $jobManager = null;
-    private ?EntitySystemEditionSourceManager $editionSourceManager = null;
-    private ?WorkManager $workManager = null;
-    private ?TypedMultiStorageEntitySystem $typedMultiStorageEntitySystem = null;
-    private ?DataCache $memDataCache = null;
-    private ?ValkeyDataCache $systemDataCache = null;
-    private ?DirectoryDataCache $directoryDataCache = null;
-    private ?ApmEntitySystem $apmEntitySystem = null;
-    private ?ApmDocumentManager $documentManager = null;
-    private ?Client $typesenseClient = null;
-    private ?UdPipeLemmatizer $lemmatizer = null;
-    private ?TypesenseSearchManager $searchManager = null;
-
-    /**
+      /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function __construct(ContainerInterface $ci)
+    public function __construct(ContainerInterface $ci, private readonly ApmSystemConfig $systemConfig)
     {
         parent::__construct($ci);
-        $config = $this->getSanitizedConfigArray($this->config);
-        if ($config[ApmConfigParameter::ERROR]) {
-            $msg = "Configuration file is not valid:\n";
-            foreach ($config[ApmConfigParameter::ERROR_MESSAGES] as $errorMsg) {
-                $msg .= $errorMsg . "\n";
-            }
-            $this->setError($msg, self::ERROR_CONFIG_ARRAY_IS_NOT_VALID);
-            return;
-        }
-
-        if ($this->fatalErrorOccurred()) {
-            return; // @codeCoverageIgnore
-        }
-
         $this->logger = $this->ci->get(LoggerInterface::class);
-        // Dump configuration warnings in the log
-        foreach ($config[ApmConfigParameter::WARNINGS] as $warning) {
-            $this->logger->debug($warning);
-        }
+
 
         $this->imageSources = [
-            Entity::ImageSourceBilderberg => new BilderbergImageSource($this->config['url']['bilderberg']),
-            Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository('https://averroes.uni-koeln.de/localrep')
+            Entity::ImageSourceBilderberg => new BilderbergImageSource($this->systemConfig->url->bilderberg),
+            Entity::ImageSourceAverroesServer => new OldBilderbergStyleRepository($this->systemConfig->url->localImageRepository)
         ];
     }
 
@@ -220,40 +115,11 @@ class ApmSystemManager extends SystemManager
         if ($provider instanceof Resettable) {
             $provider->reset();
         }
-
-        $this->presetsManager = null;
-        $this->transcriptionManager = null;
-        $this->collationTableManager = null;
-        $this->editionSourceManager = null;
-        $this->userManager = null;
-        $this->personManager = null;
-        $this->workManager = null;
-        $this->typedMultiStorageEntitySystem = null;
-        $this->apmEntitySystem = null;
-        $this->documentManager = null;
-        $this->searchManager = null;
-    }
-
-    public function getAvailableImageSources(): array
-    {
-        return array_keys($this->imageSources);
     }
 
     public function getImageSources(): array
     {
         return $this->imageSources;
-    }
-
-    public function getPresetsManager(): PresetManager
-    {
-        if ($this->presetsManager === null) {
-            // Set up PresetsManager
-            $presetsManagerDataTable = new MySqlDataTable($this->getPdoProvider(),
-                $this->getTableNames()[ApmMySqlTableName::TABLE_PRESETS]);
-            $this->presetsManager =
-                new DataTablePresetManager($presetsManagerDataTable, ['lang' => 'key1']);
-        }
-        return $this->presetsManager;
     }
 
     public function getLogger(): Logger
@@ -266,279 +132,49 @@ class ApmSystemManager extends SystemManager
         if ($engineSystemId === ApmCollationEngine::DO_NOTHING) {
             return new DoNothingCollationEngine();
         }
-        if ($this->collationEngine === null) {
-            $this->collationEngine = new CollatexHttp(
-                $this->config['collatexHttp']['host'],
-                $this->config['collatexHttp']['port']);
-            $this->collationEngine->setLogger($this->logger);
+        try {
+            return $this->ci->get(CollatexHttp::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('CollatexHttp collation engine not found in container', 0, $e);
         }
-
-        return $this->collationEngine;
     }
 
-    public function getBaseUrl(): string
-    {
-        return BaseUrlDetector::detectBaseUrl($this->getBaseUrlSubDir());
-    }
-
-    /**
-     * @return array<string, string>
-     */
-    public function getTableNames(): array
+    public function getTableNames(): ApmTableNames
     {
         try {
-            return $this->ci->get(ApmContainerKey::TABLE_NAMES);
+            return $this->ci->get(ApmTableNames::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             throw new RuntimeException("Could not get table names: " . $e->getMessage(), $e->getCode(), $e);
         }
     }
-    /**
-     * Checks a configuration array and adds defaults.
-     * Reports errors and warnings in the configuration in
-     * the 'errors' and 'warnings' fields
-     * @param array $originalConfig
-     * @return array
-     */
-    protected function getSanitizedConfigArray(array $originalConfig): array
-    {
 
-        $config = $originalConfig;
-        $config[ApmConfigParameter::ERROR] = false;
-        $config[ApmConfigParameter::ERROR_MESSAGES] = [];
-        $config[ApmConfigParameter::WARNINGS] = [];
-
-        foreach (self::REQUIRED_CONFIG_VARIABLES as $requiredVariable) {
-            if (!isset($config[$requiredVariable])) {
-                $config[ApmConfigParameter::ERROR] = true;
-                $config[ApmConfigParameter::ERROR_MESSAGES][] = 'Missing required parameter "' .
-                    $requiredVariable . '"';
-            }
-        }
-        if ($config[ApmConfigParameter::ERROR]) {
-            return $config;
-        }
-
-
-        // Check database configuration 
-        foreach (self::REQUIRED_CONFIG_VARIABLES_DB as $requiredVariable) {
-            if (!isset($config[ApmConfigParameter::DB][$requiredVariable])) {
-                $config[ApmConfigParameter::ERROR] = true;
-                $config[ApmConfigParameter::ERROR_MESSAGES][] = 'Missing required DB parameter: "' .
-                    $requiredVariable . '"';
-            } else {
-                if (!is_string($config[ApmConfigParameter::DB][$requiredVariable]) ||
-                    $config[ApmConfigParameter::DB][$requiredVariable] === '') {
-                    $config[ApmConfigParameter::ERROR] = true;
-                    $config[ApmConfigParameter::ERROR_MESSAGES][] =
-                        'Required DB parameter must be an non-empty string: "' .
-                        $requiredVariable . '"';
-                }
-            }
-        }
-
-        return $config;
-    }
-
-    /**
-     * Returns the subdirectory part of a base Url
-     * @return string
-     */
-    public function getBaseUrlSubDir(): string
-    {
-        return $this->config['subDir'];
-    }
-
-    public function getTranscriptionManager(): TranscriptionManager
-    {
-        if ($this->transcriptionManager === null) {
-            // Set up TranscriptionManager
-            $this->transcriptionManager = new ApmTranscriptionManager(
-                $this->getPdoProvider(),
-                $this->getTableNames(),
-                $this->logger,
-                function () {
-                    return $this->getDocumentManager();
-                },
-                function () {
-                    return $this->getPersonManager();
-                },
-                function () {
-                    return $this->getSystemDataCache();
-                },
-            );
-            $this->transcriptionManager->setCache($this->getSystemDataCache());
-        }
-        return $this->transcriptionManager;
-    }
 
     public function getSystemDataCache(): DataCache
     {
-        if ($this->systemDataCache === null) {
-            $this->systemDataCache = new ValkeyDataCache("APM:Sys:", $this->getValkeyClient());
-            $this->systemDataCache->setDefaultTtl(self::DefaultSystemCacheTtl);
-        }
 
-        return $this->systemDataCache;
-    }
-
-    private function getValkeyClient(): \Predis\Client
-    {
         try {
-            return $this->ci->get(\Predis\Client::class);
+            return $this->ci->get(SystemMainDataCache::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get valkey client", 0, $e);
+            throw new RuntimeException("Could not get system data cache", 0, $e);
         }
     }
 
-    public function getMemDataCache(): DataCache
-    {
-        if ($this->memDataCache === null) {
-            $this->memDataCache = new ValkeyDataCache('APM:Mem:', $this->getValkeyClient());
-            $this->memDataCache->setDefaultTtl(self::DefaultMemCacheTtl);
-        }
-        return $this->memDataCache;
-    }
-
-    public function getDirectoryDataCache(): DataCache
-    {
-        if ($this->directoryDataCache === null) {
-            $this->directoryDataCache = new DirectoryDataCache($this->config['directoryCachePath'], 'apm');
-            $this->directoryDataCache->setDefaultTtl(self::DefaultDirectoryDataCacheTtl);
-        }
-        return $this->directoryDataCache;
-    }
-
-    /**
-     * @throws \ThomasInstitut\DataTable\Exception\InvalidArgumentException
-     */
     public function getCollationTableManager(): CollationTableManager
     {
-        if ($this->collationTableManager === null) {
-            // Set up collation table manager
-            $ctTable = new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE]);
-            $ctVersionsTable = new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_VERSIONS_CT]);
-            $ctVersionManager = new ApmCollationTableVersionManager($ctVersionsTable);
-            $ctVersionManager->setLogger($this->logger);
-            $this->collationTableManager = new ApmCollationTableManager($ctTable, $ctVersionManager, $this->logger);
-        }
-        return $this->collationTableManager;
-    }
-
-    /**
-     * @return Twig
-     */
-    public function getTwig(): Twig
-    {
         try {
-            return $this->ci->get(Twig::class);
+            return $this->ci->get(CollationTableManager::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            // should never happen
-            $this->logger->error("Could not get twig", ['exception' => $e]);
-            throw new RuntimeException("Could not get twig", 0, $e);
+            throw new RuntimeException("Could not get collation table manager", 0, $e);
         }
-    }
-
-    public function getNormalizerManager(): NormalizerManager
-    {
-        if ($this->normalizerManager === null) {
-            $this->normalizerManager = new ApmNormalizerManager();
-            // Add standard normalizers
-            $this->normalizerManager->registerNormalizer('la', 'standard',
-                'toLowerCase', new ToLowerCaseNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('toLowerCase', [
-                'automaticCollation' => [
-                    'label' => 'Ignore Letter Case',
-                    'help' => "E.g., 'Et' and 'et' will be taken to be the same word"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'removeHamzahMaddahFromAlifWawYah', new RemoveHamzahMaddahFromAlifWawYahNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('removeHamzahMaddahFromAlifWawYah', [
-                'automaticCollation' => [
-                    'label' => 'Ignore hamzah and maddah in ʾalif, wāw and yāʾ',
-                    'help' => "آ , أ, إ &larr; ا      ؤ &larr; و      ئ &larr; ي"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreVocalization', new IgnoreArabicVocalizationNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('ignoreVocalization', [
-                'automaticCollation' => [
-                    'label' => 'Ignore Vocalization',
-                    'help' => "Ignore vocal diacritics, e.g., الْحُرُوف &larr; الحروف"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreShadda', new IgnoreShaddaNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('ignoreShadda', [
-                'automaticCollation' => [
-                    'label' => 'Ignore Shaddah',
-                    'help' => "Ignore shaddah, e.g., درّس &larr; درس"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreTatwil', new IgnoreTatwilNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('ignoreTatwil', [
-                'automaticCollation' => [
-                    'label' => 'Ignore taṭwīl',
-                    'help' => "Ignore taṭwīl"
-                ]
-            ]);
-
-            $this->normalizerManager->registerNormalizer('ar', 'standard',
-                'ignoreIsolatedHamza', new IgnoreIsolatedHamzaNormalizer());
-            $this->normalizerManager->setNormalizerMetadata('ignoreIsolatedHamza', [
-                'automaticCollation' => [
-                    'label' => 'Ignore isolated hamza',
-                    'help' => "Ignore hamza"
-                ]
-            ]);
-        }
-        return $this->normalizerManager;
-    }
-
-
-    public function setRouter(RouteParserInterface $router): void
-    {
-//        $this->router = $router;
-    }
-
-    public function getRouter(): RouteParserInterface
-    {
-        try {
-            return $this->ci->get(RouteParserInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            // should never happen
-            $this->logger->error("Could not get router", ['exception' => $e]);
-            throw new RuntimeException("Could not get router", 0, $e);
-        }
-//        return $this->router;
-    }
-
-
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function getMultiChunkEditionManager(): MultiChunkEditionManager
-    {
-        /** @var MultiChunkEditionManager $mceManager */
-        $mceManager = $this->ci->get(MultiChunkEditionManager::class);
-        return $mceManager;
     }
 
     public function getEditionSourceManager(): EditionSourceManager
     {
-        if (is_null($this->editionSourceManager)) {
-
-            $this->editionSourceManager = new EntitySystemEditionSourceManager(function () {
-                return $this->getEntitySystem();
-            });
+        try {
+            return $this->ci->get(EditionSourceManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Edition source manager not found', 0, $e);
         }
-        return $this->editionSourceManager;
     }
 
     public function onTranscriptionUpdated(int $userTid, int $docId, int $pageNumber, int $columnNumber): void
@@ -553,22 +189,22 @@ class ApmSystemManager extends SystemManager
             'pageNumber' => $pageNumber,
             'columnNumber' => $columnNumber
         ];
-        $jobManager->scheduleJob(UpdateWorksCache::class,
+        $jobManager->scheduleJob(UpdateWorksCacheJob::class,
             '', $siteWorkUpdateCacheJobPayload, 0, 3, 20);
-        $jobManager->scheduleJob(SiteDocumentsUpdateDataCache::class,
+        $jobManager->scheduleJob(UpdateApiDocumentsDataCacheJob::class,
             '', [$docId], 0, 3, 20);
-        $jobManager->scheduleJob(ApiUsersUpdateTranscribedPagesData::class,
+        $jobManager->scheduleJob(UpdateApiUsersTranscribedPagesDataJob::class,
             "User $userTid", ['userTid' => $userTid], 0, 3, 20);
-        $jobManager->scheduleJob(ApiSearchUpdateTranscriptionsIndex::class,
+        $jobManager->scheduleJob(UpdateApiSearchTranscriptionsIndexJob::class,
             '', ['doc_id' => $docId, 'page' => $pageNumber, 'col' => $columnNumber], 0, 3, 20);
-        $jobManager->scheduleJob(ApiSearchUpdateTranscribersAndTranscriptionsCache::class,
+        $jobManager->scheduleJob(UpdateApiSearchTranscribersAndTranscriptionsCacheJob::class,
             '', [], 0, 3, 20);
     }
 
     public function onUpdatePageSettings(int $userTid, int $pageId): void
     {
         parent::onUpdatePageSettings($userTid, $pageId);
-        $this->getJobQueueManager()->scheduleJob(ApiUsersUpdateTranscribedPagesData::class,
+        $this->getJobQueueManager()->scheduleJob(UpdateApiUsersTranscribedPagesDataJob::class,
             "User $userTid", ['userTid' => $userTid], 0, 3, 20);
     }
 
@@ -576,18 +212,18 @@ class ApmSystemManager extends SystemManager
     {
         parent::onCollationTableSaved($userTid, $ctId);
         $jobManager = $this->getJobQueueManager();
-        $jobManager->scheduleJob(ApiUsersUpdateCtDataForUser::class,
+        $jobManager->scheduleJob(UpdateApiUsersCtDataForUserJob::class,
             "User $userTid", ['userTid' => $userTid], 0, 3, 20);
-        $jobManager->scheduleJob(ApiSearchUpdateEditionsIndex::class,
+        $jobManager->scheduleJob(UpdateApiSearchEditionsIndexJob::class,
             '', [$ctId], 0, 3, 20);
-        $jobManager->scheduleJob(ApiSearchUpdateTranscribersAndTranscriptionsCache::class,
+        $jobManager->scheduleJob(UpdateApiSearchTranscribersAndTranscriptionsCacheJob::class,
             '', [], 0, 3, 20);
     }
 
     public function onDocumentDeleted(int $userTid, int $docId): void
     {
         parent::onDocumentDeleted($userTid, $docId);
-        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCacheJob::class,
             '', [$docId], 0, 3, 20);
 
     }
@@ -620,20 +256,20 @@ class ApmSystemManager extends SystemManager
         parent::onPersonDataChanged($personTid);
         $part = ApiPeople::onPersonDataChanged($personTid, $this->getEntitySystem(), $this->getSystemDataCache(), $this->logger);
         $this->logger->debug("Invalidated ApiPeople data cache, part $part");
-        $this->getJobQueueManager()->scheduleJob(UpdateAllPeopleDataCache::class, '', [], 0, 3, 20);
+        $this->getJobQueueManager()->scheduleJob(UpdateAllPeopleDataCacheJob::class, '', [], 0, 3, 20);
     }
 
     public function onDocumentUpdated(int $userTid, int $docId): void
     {
         parent::onDocumentUpdated($userTid, $docId);
-        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCacheJob::class,
             '', [$docId], 0, 3, 20);
     }
 
     public function onDocumentAdded(int $userTid, int $docId): void
     {
         parent::onDocumentAdded($userTid, $docId);
-        $this->getJobQueueManager()->scheduleJob(SiteDocumentsUpdateDataCache::class,
+        $this->getJobQueueManager()->scheduleJob(UpdateApiDocumentsDataCacheJob::class,
             '', [$docId], 0, 3, 20);
     }
 
@@ -668,205 +304,69 @@ class ApmSystemManager extends SystemManager
 
     public function getUserManager(): UserManagerInterface
     {
-        if ($this->userManager === null) {
-            $this->userManager = new ApmUserManager(
-                function () {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_USERS], false);
-                },
-                function () {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_TOKENS], true);
-                },
-                $this->getSystemDataCache(),
-                'ApmUM_'
-            );
+        try {
+            return $this->ci->get(UserManagerInterface::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('User manager not found', 0, $e);
         }
-        return $this->userManager;
     }
 
     public function getPersonManager(): PersonManagerInterface
     {
-        if ($this->personManager === null) {
-//            $this->logger->debug("Creating PersonManager");
-            $this->personManager = new EntitySystemPersonManager($this->getEntitySystem(), $this->getUserManager());
+        try {
+            return $this->ci->get(PersonManagerInterface::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Person manager not found', 0, $e);
         }
-        return $this->personManager;
     }
 
     public function getWorkManager(): WorkManager
     {
-        if ($this->workManager === null) {
-//            $this->logger->debug("Creating WorkManager");
-//            $this->workManager = new DataTableWorkManager(
-//                new MySqlDataTable($this->getDbConnection(),
-//                    $this->tableNames[ApmMySqlTableName::TABLE_WORKS], true));
-
-            $this->workManager = new EntitySystemWorkManager($this->getEntitySystem());
-            $this->workManager->setLogger($this->getLogger()->withName("WorkManager"));
+        try {
+            return $this->ci->get(WorkManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException('Work manager not found', 0, $e);
         }
-        return $this->workManager;
     }
 
-    public function getJobQueueManager(): JobQueueManagerInterface
+    public function getJobQueueManager(): JobQueueManager
     {
-        $logger = $this->logger;
-        if ($logger instanceof Logger) {
-            $logger = $logger->withName("JOB_QUEUE");
+
+        try {
+            return $this->ci->get(JobQueueManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("JobQueueManager not found in container", 0, $e);
         }
-        if ($this->jobManager === null) {
-            $this->jobManager = new ValkeyJobQueueManager(
-                $this->getValkeyClient(),
-                $logger,
-                ValkeyJobQueueManager::DEFAULT_PREFIX,
-                $this->ci
-            );
-        }
-        return $this->jobManager;
     }
 
     public function getEntitySystem(): ApmEntitySystemInterface
     {
-        if ($this->apmEntitySystem === null) {
-            $this->apmEntitySystem = new ApmEntitySystem(
-                function (): TypedMultiStorageEntitySystem {
-                    return $this->getRawEntitySystem();
-                },
-                function (): DataTable {
-                    return new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::ES_Merges], true);
-                },
-                $this->getMemDataCache(),
-                self::MemCachePrefix_Apm_ES
-            );
-            $this->apmEntitySystem->setLogger($this->logger);
+        try {
+            return $this->ci->get(ApmEntitySystemInterface::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            $this->logger->error("Could not get entity system from container", ['exception' => $e]);
+            throw new RuntimeException("Could not get entity system from container", 0, $e);
         }
-        return $this->apmEntitySystem;
     }
 
-    public function createDefaultStatementStorage(): StatementStorage
-    {
-        $defaultStatementDataTable = new MySqlDataTable($this->getPdoProvider(),
-            $this->getTableNames()[ApmMySqlTableName::ES_Statements_Default]);
-        return new DataTableStatementStorage($defaultStatementDataTable, [
-            'author' => Entity::pStatementAuthor,
-            "timestamp" => ['predicate' => Entity::pStatementTimestamp, 'forceLiteralValue' => true],
-            'edNote' => Entity::pStatementEditorialNote,
-            'cancelledBy' => ['predicate' => Entity::pCancelledBy, 'cancellationMetadata' => true],
-            'cancellationTs' => ['predicate' => Entity::pCancellationTimestamp, 'cancellationMetadata' => true, 'forceLiteralValue' => true],
-        ]);
-    }
-
-
-    /**
-     * @inheritDoc
-     */
-    public function getRawEntitySystem(): TypedMultiStorageEntitySystem
-    {
-        if ($this->typedMultiStorageEntitySystem === null) {
-
-            $defaultConfig = new TypeStorageConfig();
-            $defaultConfig->withType(0);
-            $defaultConfig->statementStorageCallable = function () {
-                return $this->createDefaultStatementStorage();
-            };
-            $defaultConfig->useCache = true;
-            $defaultConfig->entityDataCacheCallable = function () {
-                $defaultEntityDataCacheDataTable = new MySqlDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::ES_Cache_Default]);
-                return new DataTableEntityDataCache(
-                    $defaultEntityDataCacheDataTable,
-                    [
-                        'name' => function (EntityData $entityData) {
-                            return $entityData->getObjectForPredicate(Entity::pEntityName);
-                        },
-                        'type' =>
-                            function (EntityData $entityData) {
-                                return $entityData->getObjectForPredicate(Entity::pEntityType);
-                            }
-                    ]
-                );
-            };
-
-            $defaultConfig->useMemCache = true;
-
-            try {
-                $this->typedMultiStorageEntitySystem = new TypedMultiStorageEntitySystem(
-                    Entity::pEntityType, [$defaultConfig],
-                    self::ES_DATA_ID,
-                    $this->getMemDataCache(),
-                    self::MemCachePrefix_TypedMultiStorage_ES . ':' . self::ES_DATA_ID
-                );
-                $this->typedMultiStorageEntitySystem->setLogger($this->logger);
-            } catch (InvalidArgumentException) {
-                throw new RuntimeException("Bad entity system configuration");
-            }
-        }
-        return $this->typedMultiStorageEntitySystem;
-    }
 
     public function getDocumentManager(): DocumentManager
     {
-        if ($this->documentManager === null) {
-            $this->documentManager = new ApmDocumentManager(
-                function () {
-                    return $this->getEntitySystem();
-                },
-                function () {
-                    return new MySqlUnitemporalDataTable($this->getPdoProvider(), $this->getTableNames()[ApmMySqlTableName::TABLE_PAGES]);
-                }
-            );
-            $this->documentManager->setLogger($this->logger);
+        try {
+            return $this->ci->get(DocumentManager::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            $this->logger->error("Could not get document manager from container", ['exception' => $e]);
+            throw new RuntimeException("Could not get document manager from container", 0, $e);
         }
-        return $this->documentManager;
     }
 
     public function getTypesenseClient(): Client
     {
-
-        if ($this->typesenseClient === null) {
-            $config = $this->getConfig();
-            try {
-                $this->typesenseClient = new Client(
-                    [
-                        'api_key' => $config[ApmConfigParameter::TYPESENSE_KEY],
-                        'nodes' => [
-                            [
-                                'host' => $config[ApmConfigParameter::TYPESENSE_HOST], // For Typesense Cloud use xxx.a1.typesense.net
-                                'port' => $config[ApmConfigParameter::TYPESENSE_PORT],      // For Typesense Cloud use 443
-                                'protocol' => $config[ApmConfigParameter::TYPESENSE_PROTOCOL],      // For Typesense Cloud use https
-                            ],
-                        ],
-                        'connection_timeout_seconds' => 2,
-                    ]
-                );
-
-                return $this->typesenseClient;
-            } catch (ConfigError) {
-                throw new RuntimeException("Typesense incorrectly configured");
-            }
+        try {
+            return $this->ci->get(Client::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Could not get Typesense client from container", 0, $e);
         }
-        return $this->typesenseClient;
     }
 
-    public function getLemmatizer(): LemmatizerInterface
-    {
-        if ($this->lemmatizer === null) {
-            $this->lemmatizer = new UdPipeLemmatizer($this->getSystemDataCache());
-        }
-        return $this->lemmatizer;
-
-    }
-
-    public function getSearchManager(): SearchManagerInterface
-    {
-        if ($this->searchManager === null) {
-            $this->searchManager = new TypesenseSearchManager(
-                function () {
-                    return $this->getTypesenseClient();
-                },
-                function () {
-                    return $this->getSystemDataCache();
-                },
-                $this->getLogger()
-            );
-        }
-        return $this->searchManager;
-    }
 }

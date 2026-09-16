@@ -44,6 +44,11 @@ abstract class PresetManager {
 
     const int ERROR_PRESET_NOT_FOUND = 101;
 
+    const string TOOL_AUTOMATIC_COLLATION = 'automaticCollation_v2';
+    const string TOOL_SIGLA = 'sigla';
+
+    const array VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
+
      // BASIC OPERATIONS
 
     /**
@@ -182,6 +187,10 @@ abstract class PresetManager {
 
     protected function newPresetNotFoundException() : InvalidArgumentException {
         return  new InvalidArgumentException('Preset not found', self::ERROR_PRESET_NOT_FOUND);
+    }
+
+    public function isToolValid(string $tool) : bool {
+        return in_array($tool, self::VALID_TOOL_IDS);
     }
     
 }

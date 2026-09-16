@@ -156,4 +156,17 @@ class ApmNormalizerManager extends NormalizerManager
         $rows = $this->dt->findRows([ FIELD_LANG => $lang, FIELD_CATEGORY => $category]);
         return array_map( fn($row) =>  $row[FIELD_NAME], iterator_to_array($rows));
     }
+
+    public function getNormalizerData(string $lang, string $category): array
+    {
+        $standardNormalizerNames = $this->getNormalizerNamesByLangAndCategory($lang, $category);
+        $normalizerData = [];
+        foreach ($standardNormalizerNames as $normalizerName) {
+            $normalizerData[] = [
+                'name' => $normalizerName,
+                'metadata' => $this->getNormalizerMetadata($normalizerName)
+            ];
+        }
+        return $normalizerData;
+    }
 }

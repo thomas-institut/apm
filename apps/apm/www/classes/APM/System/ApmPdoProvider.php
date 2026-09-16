@@ -70,8 +70,7 @@ class ApmPdoProvider implements PdoProvider, Resettable
         }
         // Set up SettingsManager
         try {
-            $settingsTable = new MySqlDataTable($this->getPdoWithoutCheck(),
-                $this->getTableNames()[ApmMySqlTableName::TABLE_SETTINGS]);
+            $settingsTable = new MySqlDataTable($this->getPdoWithoutCheck(), $this->getTableNames()->settings);
         } catch (Exception $e) {
             throw new RuntimeException("Cannot read settings from database", $e->getCode(), $e);
         }
@@ -87,8 +86,10 @@ class ApmPdoProvider implements PdoProvider, Resettable
 
     private function isDatabaseInitialized(): bool
     {
+
+        $actualTableNames = get_object_vars($this->getTableNames());
         // Check that all tables exist
-        foreach ($this->getTableNames() as $table) {
+        foreach ($actualTableNames as $table) {
             if (!$this->tableExists($table)) {
                 return false;
             }
@@ -118,13 +119,11 @@ class ApmPdoProvider implements PdoProvider, Resettable
         return false;
     }
 
-    /**
-     * @return array<string, string>
-     */
-    public function getTableNames(): array
+
+    public function getTableNames(): ApmTableNames
     {
         try {
-            return $this->container->get(ApmContainerKey::TABLE_NAMES);
+            return $this->container->get(ApmTableNames::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             throw new RuntimeException("Could not get table names: " . $e->getMessage(), $e->getCode(), $e);
         }

@@ -3,7 +3,9 @@
 
 namespace APM\Api;
 
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -14,21 +16,12 @@ class ApiSystem extends ApiController
 {
     const string CLASS_NAME = 'System';
 
-    public function __construct(ContainerInterface $ci)
+    public function __construct(
+        ContainerInterface                      $ci,
+        private readonly UserManagerInterface   $userManager,
+        private readonly PersonManagerInterface $personManager)
     {
         parent::__construct($ci);
-    }
-
-    /**
-     * @param Request $request
-     * @param Response $response
-     * @return Response
-     */
-    public function getSystemLanguages(Request $request,  Response $response) : Response
-    {
-        $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-
-        return $this->responseWithJson($response, $this->systemManager->getConfig()['languages']);
     }
 
     public function whoAmI(Request $request, Response $response) : Response
@@ -43,11 +36,11 @@ class ApiSystem extends ApiController
      * Gets an array with info about the user.
      *
      */
-    protected function getSiteUserInfo(): array
+    private function getSiteUserInfo(): array
     {
         try {
-            $userData = $this->systemManager->getUserManager()->getUserData($this->apiUserId);
-            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($this->apiUserId);
+            $userData = $this->userManager->getUserData($this->apiUserId);
+            $personData = $this->personManager->getPersonEssentialData($this->apiUserId);
 
             $userInfo = $userData->getExportObject();
             unset($userInfo['passwordHash']);

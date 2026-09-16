@@ -27,25 +27,19 @@ use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\System\Document\DocumentManager;
-use APM\System\Lemmatizer\LemmatizerInterface;
 use APM\System\Person\PersonManagerInterface;
-use APM\System\Preset\PresetManager;
-use APM\System\Search\SearchManagerInterface;
-use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use Monolog\Logger;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
-use Slim\Interfaces\RouteParserInterface;
-use Slim\Views\Twig;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
-use ThomasInstitut\JobQueue\JobQueueManagerInterface;
+use ThomasInstitut\JobQueue\JobQueueManager;
 use Typesense\Client;
 
 /**
@@ -62,139 +56,55 @@ abstract class SystemManager implements ErrorReporter {
 
     use SimpleErrorReporterTrait;
 
-    const int ERROR_NO_ERROR = 0;
-
-    // User roles
-//    const ROLE_READ_ONLY = 'readOnly';
-
-
-    // Tool Ids (for presets)
-//    const string TOOL_AUTOMATIC_COLLATION_V1 = 'automaticCollation';
-    const string TOOL_AUTOMATIC_COLLATION = 'automaticCollation_v2';
-    const string TOOL_SIGLA = 'sigla';
-
-    const array VALID_TOOL_IDS = [ self::TOOL_AUTOMATIC_COLLATION];
-    
-    /** @var array */
+    /**
+     * @var array
+     * @deprecated Use ApmSystemConfig from the container
+     */
     protected array $config;
 
     protected ContainerInterface $ci;
 
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function __construct(ContainerInterface $ci) {
         $this->resetError();
         $this->ci = $ci;
         $this->config = $ci->get(ApmContainerKey::CONFIG_ARRAY);
     }
-    
-    public function fatalErrorOccurred() : bool {
-        return $this->errorCode !== self::ERROR_NO_ERROR;
-    }
-    
+
+    /**
+     * @return array
+     * @deprecated Use ApmSystemConfig from the container
+     */
     public function getConfig() : array {
         return $this->config;
     }
-
-    public function isToolValid(string $tool) : bool {
-        return in_array($tool, self::VALID_TOOL_IDS);
-    }
-
-    /**
-     * Language methods
-     */
-
-    /**
-     * Returns the entity id of the language with the given ISO 649 code
-     *
-     * If the language is not defined, returns null
-     *
-     * @param string $code
-     * @return int|null
-     */
-    public function getLangIdFromCode(string $code) : int|null {
-
-        $statements = $this->getEntitySystem()->getStatements(null, Entity::pLangIso639Code, $code);
-        if (count($statements) === 0) {
-            return null;
-        }
-        return $statements[0]->subject;
-    }
-
-    /**
-     * @throws EntityDoesNotExistException
-     */
-    public function getLangCodeFromId(int $langId) : string {
-        return $this->getEntitySystem()->getEntityData($langId)->getObjectForPredicate(Entity::pLangIso639Code) ?? 'unknown';
-    }
-
-
-
-    /**
-     * Set methods
-     */
-
-    /**
-     * @param RouteParserInterface $router
-     */
-    abstract public function setRouter(RouteParserInterface $router) : void;
 
 
     /**
      * Get methods for the different components
      */
 
-    abstract public function getPresetsManager() : PresetManager;
-    abstract public function getAvailableImageSources() : array;
     abstract public function getImageSources() : array;
     abstract public function getLogger() : Logger;
     abstract public function getCollationEngine(string $engineSystemId = '') : CollationEngine;
-    abstract public function getTranscriptionManager() : TranscriptionManager;
     abstract public function getCollationTableManager() : CollationTableManager;
-    /** @deprecated use container */
-    abstract public function getMultiChunkEditionManager() : MultiChunkEditionManager;
     abstract public function getSystemDataCache() : DataCache;
-    abstract public function getMemDataCache() : DataCache;
-    abstract public function getDirectoryDataCache() : DataCache;
-    abstract public function getBaseUrl(): string;
-    abstract public function getTwig() : Twig;
-    abstract public function getRouter() : RouteParserInterface;
-    abstract public function getNormalizerManager() : NormalizerManager;
     abstract public function getEditionSourceManager(): EditionSourceManager;
-    abstract public function getJobQueueManager() : JobQueueManagerInterface;
+    abstract public function getJobQueueManager() : JobQueueManager;
     abstract public function getUserManager() : UserManagerInterface;
     abstract public function getPersonManager() : PersonManagerInterface;
     abstract public function getWorkManager() : WorkManager;
     abstract public function getEntitySystem() : ApmEntitySystemInterface;
     abstract public function getDocumentManager() : DocumentManager;
     abstract public function getTypesenseClient() : Client;
-    abstract public function getLemmatizer() : LemmatizerInterface;
-    abstract public function getSearchManager() : SearchManagerInterface;
-
-    /**
-     * @internal
-     *
-     * Returns the more basic entity system in which the full-fledged entity system
-     * is based. Use this ONLY for low level operations such as data imports.
-     *
-     * @return TypedMultiStorageEntitySystem
-     */
-    abstract public function getRawEntitySystem(): TypedMultiStorageEntitySystem;
-
-    public function getFullTxWitnessId(ApmTranscriptionWitness $witness) : string {
-        return WitnessSystemId::buildFullTxId(
-            $witness->getWorkId(),
-            $witness->getChunk(),
-            $witness->getDocId(),
-            $witness->getLocalWitnessId(),
-            $witness->getTimeStamp()
-        );
-    }
 
 
     // EVENTS
-    // Instead of a generic event handler, for the sake of clean(ish) development, it's better to explicitly define
-    // here all the internal events generated by the system.
-    //
+    // TODO: refactor these into event emitters and listeners
 
     /**
      * Event handler for changes in entity data

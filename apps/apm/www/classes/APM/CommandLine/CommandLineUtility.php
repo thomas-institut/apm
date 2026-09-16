@@ -20,37 +20,20 @@
 
 namespace APM\CommandLine;
 
-use APM\MultiChunkEdition\MultiChunkEditionManager;
-use APM\NodeService\NodeServiceClient;
-use APM\System\ApmContainerKey;
-use APM\System\ApmPdoProvider;
+
 use APM\System\ApmSystemManager;
-use APM\System\Config\ApmSystemConfig;
-use APM\System\Factories\LanguageManagerFactory;
-use APM\System\Factories\LoggerFactory;
-use APM\System\Factories\ApmSystemConfigFactory;
-use APM\System\Factories\MultiChunkEditionManagerFactory;
-use APM\System\Factories\NodeServiceClientFactory;
-use APM\System\Factories\PublicationManagerFactory;
-use APM\System\Factories\TableNamesFactory;
-use APM\System\Factories\TwigFactory;
-use APM\System\Factories\ValkeyClientFactory;
-use APM\System\LanguageManager;
-use APM\System\PublicationManager\PublicationManagerInterface;
+
+use APM\System\ContainerDefinitions\CliDefsProvider;
 use APM\System\SystemManager;
 use DI\ContainerBuilder;
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
 use PDO;
-use Predis\Client;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
-use Slim\Views\Twig;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
-use function DI\autowire;
-use function DI\factory;
 
 /**
  * Description of CommandLineUtility
@@ -59,11 +42,7 @@ use function DI\factory;
  */
 abstract class CommandLineUtility {
     protected ?LoggerInterface $logger;
-
     protected array $config;
-
-
-//    private ?ApmSystemManager $systemManager;
     protected array $processUserInfoArray;
 
     protected int $argc;
@@ -110,29 +89,14 @@ abstract class CommandLineUtility {
      */
     public function buildContainer() : void{
         $builder = new ContainerBuilder();
-        $builder->addDefinitions([
-            ApmContainerKey::CONFIG_ARRAY => $this->config,
-            ApmSystemConfig::class => factory([ApmSystemConfigFactory::class, 'create']),
-            ApmContainerKey::TABLE_NAMES => factory([TableNamesFactory::class, 'create']),
-            PdoProvider::class => autowire(ApmPdoProvider::class),
-            LoggerInterface::class => factory([LoggerFactory::class, 'createForCli']),
-            MultiChunkEditionManager::class => factory([MultiChunkEditionManagerFactory::class, 'create']),
-            Twig::class => factory([TwigFactory::class, 'create']),
-            SystemManager::class => autowire(ApmSystemManager::class),
-            LanguageManager::class => factory([LanguageManagerFactory::class, 'create']),
-            PublicationManagerInterface::class => factory([PublicationManagerFactory::class, 'create']),
-            Client::class => factory([ValkeyClientFactory::class, 'create']),
-            NodeServiceClient::class => factory([NodeServiceClientFactory::class, 'create']),
-            'processUserInfoArray' => posix_getpwuid(posix_geteuid()),
-            'cmd' => $this->argv[0] ?? '',
-            'pid' => posix_getpid(),
-        ]);
+        $builder->addDefinitions((new CliDefsProvider())->getContainerDefs($this->config));
         $this->container = $builder->build();
     }
 
     /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
+     * @deprecated Use container instead
      */
     public function getSystemManager() : ApmSystemManager {
 
@@ -144,7 +108,8 @@ abstract class CommandLineUtility {
      * @throws NotFoundExceptionInterface
      */
     protected function getDbConn() : PDO {
-        return $this->getSystemManager()->getPdoProvider()->getPdo();
+        $pdoProvider = $this->container->get(PdoProvider::class);
+        return $pdoProvider->getPdo();
     }
     
     #[NoReturn] public function run(): void // @phpstan-ignore attribute.notFound

@@ -48,9 +48,12 @@ class ValkeyPublicationManager implements PublicationManager
 
     public function updateFromApm(): void
     {
+        $this->logger->info("Updating publications from APM");
         try {
             $apiResponse = $this->publicationApiClient->list();
             $apmListings = $apiResponse->publications;
+
+            $this->logger->info("APM reports " . count($apmListings) . " publications");
 
             $localListings = $this->getPublicationListings();
             $localListingsById = [];
@@ -77,9 +80,15 @@ class ValkeyPublicationManager implements PublicationManager
                 }
 
                 if ($needsDataUpdate) {
+                    if ($localListing === null) {
+                        $this->logger->info("Publication $id is new, retrieving data from APM...");
+                    } else {
+                        $this->logger->info("Data for publication $id needs to be updated, retrieving from APM...");
+                    }
                     try {
                         $dataResponse = $this->publicationApiClient->get($id);
                         $this->valkeyClient->set(self::KEY_DATA_PREFIX . $id, serialize($dataResponse->publicationData));
+                        $this->logger->info("Data for publication $id saved");
                     } catch (Exception $e) {
                         $this->logger->error("Error fetching data for publication $id: " . $e->getMessage());
                         throw new ApmCommunicationProblemException("Error fetching data for publication $id", 0, $e);
@@ -87,6 +96,7 @@ class ValkeyPublicationManager implements PublicationManager
                 }
 
                 if ($needsListingUpdate || $needsDataUpdate) {
+                    $this->logger->info("Listing for publication $id updated");
                     $newListings[] = $apmListing;
                 } else {
                     $newListings[] = $localListing;
@@ -98,6 +108,7 @@ class ValkeyPublicationManager implements PublicationManager
             $idsToRemove = array_diff($localIds, $apmIds);
             foreach ($idsToRemove as $idToRemove) {
                 $this->valkeyClient->del([self::KEY_DATA_PREFIX . $idToRemove]);
+                $this->logger->info("Publication $idToRemove has been deleted since it is no longer in APM");
             }
 
             $this->valkeyClient->set(self::KEY_LISTINGS, serialize($newListings));

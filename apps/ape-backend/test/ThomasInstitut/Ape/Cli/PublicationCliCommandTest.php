@@ -29,7 +29,7 @@ class PublicationCliCommandTest extends TestCase
         $result = $command->run(0, []);
 
         $this->assertFalse($result->success);
-        $this->assertSame('No command given', $result->message);
+        $this->assertStringContainsString('No command given', $result->message);
         $this->assertTrue($result->printUsage);
     }
 

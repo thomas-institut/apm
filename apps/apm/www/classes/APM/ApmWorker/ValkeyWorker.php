@@ -28,6 +28,8 @@ class ValkeyWorker
     const int DefaultDbConnectionResetIntervalInMinutes = 360;
     private ApmSystemManager $systemManager;
     private int $instanceId;
+
+    private int $pid;
     private LoggerInterface $logger;
     private bool $stopRequested = false;
     private int $jobsProcessed = 0;
@@ -74,10 +76,11 @@ class ValkeyWorker
         $this->maxJobs = max(self::MinMaxJobs, $maxJobs );
         $this->microSecondsToSleep = $microSecondsToSleep;
         $this->dbConnectionResetIntervalInSeconds = max(self::MinDbResetConnectionIntervalInMinutes, $dbConnectionResetIntervalInMinutes) * 60;
-        $this->workerId = gethostname() . ':' . getmypid() . ':' . $instanceId;
+        $this->pid = getmypid();
+        $this->workerId = gethostname() . ':' . $this->pid . ':' . $instanceId;
         $this->logger = $ci->get(LoggerInterface::class);
         if ($this->logger instanceof Logger) {
-            $this->logger = $this->logger->withName(sprintf("WORKER_%02d", $instanceId));
+            $this->logger = $this->logger->withName(sprintf("WORKER_%02d:$this->pid", $instanceId));
         }
 
         $this->lastDbConnectionResetTime = time();
@@ -88,7 +91,7 @@ class ValkeyWorker
      */
     public function run(): bool
     {
-        $this->logger->info("Worker $this->instanceId starting", [
+        $this->logger->info("Worker $this->instanceId starting with PID $this->pid", [
             'worker_id' => $this->workerId,
             'max_jobs' => $this->maxJobs,
             'microsecs_to_sleep' => $this->microSecondsToSleep,

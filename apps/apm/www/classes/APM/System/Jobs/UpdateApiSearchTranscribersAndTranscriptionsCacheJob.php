@@ -6,7 +6,7 @@ use APM\Api\ApiSearch;
 use APM\System\SystemManager;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 
-class UpdateApiSearchTranscribersAndTranscriptionsCacheJob implements JobHandlerInterface
+final readonly class UpdateApiSearchTranscribersAndTranscriptionsCacheJob implements JobHandlerInterface
 
 {
     public function __construct(private SystemManager $sm) {}

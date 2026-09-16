@@ -3,6 +3,7 @@
 namespace APM\System\PublicationManager;
 
 use APM\EntitySystem\Schema\Entity;
+use APM\MultiChunkEdition\MultiChunkEditionDoesNotExist;
 use APM\System\ApmImageType;
 use APM\NodeService\GenEditionPublicationInputData;
 use APM\NodeService\NodeServiceClient;
@@ -206,7 +207,7 @@ class ApmPublicationManager implements PublicationManager
     }
 
     /**
-     * @throws MappingError
+     * @throws MultiChunkEditionDoesNotExist
      */
     private function mapEditionData(int $resourceId, int $id): EditionPublicationData
     {
@@ -218,12 +219,23 @@ class ApmPublicationManager implements PublicationManager
         try {
             return EditionPublicationDataMapper::map($rawEditionData);
         } catch (CustomMapperErrorException $e) {
-            $this->logger->error("Error mapping edition data: " . $e->getMessage());
+            $this->logger->error("Custom mapping error in edition data: " . $e->getMessage());
             throw new RuntimeException("Error mapping edition data: " . $e->getMessage(), 0, $e);
+        } catch (MappingError $exception) {
+            $this->logger->error("Mapping error in edition data: " . $exception->getMessage());
+            $messages = $exception->messages();
+            foreach ($messages as $i => $message) {
+                $this->logger->error("  Message $i: $message");
+            }
+
+            throw new RuntimeException("Error mapping edition data: " . $exception->getMessage(), 0, $exception);
         }
 
     }
 
+    /**
+     * @throws MultiChunkEditionDoesNotExist
+     */
     private function getEditionDataForMce(int $resourceId, int $publicationId): array
     {
         $inputData = $this->getMceDataForNodeService($resourceId, $publicationId);
@@ -238,6 +250,9 @@ class ApmPublicationManager implements PublicationManager
         }
     }
 
+    /**
+     * @throws MultiChunkEditionDoesNotExist
+     */
     private function getMceDataForNodeService(int $mceId, int $publicationId): GenEditionPublicationInputData
     {
         $this->logger->debug("Retrieving MCE data for edition ID $mceId");

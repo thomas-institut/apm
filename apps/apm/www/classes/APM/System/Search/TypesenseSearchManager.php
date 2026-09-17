@@ -11,7 +11,6 @@ use Http\Client\Exception;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use ThomasInstitut\DataCache\CacheAware;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
@@ -23,29 +22,26 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
 
     use LoggerAwareTrait;
     use SimpleCacheAwareTrait;
+
     const string TranscriptionIndexPrefix = 'transcriptions';
     const string EditionIndexPrefix = 'editions';
 
     public function __construct(
-        private readonly Client    $typesenseClient,
-        private readonly SystemMainDataCache $dataCache,
-        ?LoggerInterface           $logger = null)
+        private readonly Client $typesenseClient,
+        SystemMainDataCache     $dataCache,
+        LoggerInterface         $logger)
     {
-        if ($logger === null) {
-            $this->logger = new NullLogger();
-        } else {
-            $this->logger = $logger;
-        }
-
+        $this->logger = $logger;
         $this->setCache($dataCache);
-
     }
 
-    private function getTypesenseClient() : Client {
+    private function getTypesenseClient(): Client
+    {
         return $this->typesenseClient;
     }
 
-    private function getIndexNameForLanguage(string $prefix, string $langCode) : string {
+    private function getIndexNameForLanguage(string $prefix, string $langCode): string
+    {
         if ($langCode === 'jrb') {
             $langCode = 'he';
         }
@@ -74,8 +70,7 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
             // get tokenized and lemmatized transcript
             $transcription_tokenized = $tokens_and_lemmata['tokens'];
             $transcription_lemmatized = $tokens_and_lemmata['lemmata'];
-        }
-        else {
+        } else {
             $transcription_tokenized = [];
             $transcription_lemmatized = [];
             $this->logger->debug("Transcript is too short for lemmatization...");
@@ -135,8 +130,7 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
             // Get tokenized and lemmatized transcript
             $editionTokenized = $tokensAndLemmata['tokens'];
             $edition_lemmatized = $tokensAndLemmata['lemmata'];
-        }
-        else {
+        } else {
             $editionTokenized = [];
             $edition_lemmatized = [];
             $this->logger->debug("Text is too short for lemmatization...");
@@ -168,10 +162,11 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
      */
     public function getTranscriberNames(): array
     {
-       return $this->getStringArray(CacheKey::ApiSearchTranscribers, 'transcribers');
+        return $this->getStringArray(CacheKey::ApiSearchTranscribers, 'transcribers');
     }
 
-    private function getStringArray(string $cacheKey, $queryKey) : array {
+    private function getStringArray(string $cacheKey, $queryKey): array
+    {
         try {
             return unserialize($this->getDataCache()->get($cacheKey));
         } catch (ItemNotInCacheException) {
@@ -182,21 +177,19 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
         }
     }
 
-    private function getStringArrayFromIndex (string $queryKey): array
+    private function getStringArrayFromIndex(string $queryKey): array
     {
         // Get names of target indices
         if ($queryKey === 'transcriptions' || $queryKey === 'transcribers') {
             $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
-        }
-        else {
+        } else {
             $index_names = ['editions_la', 'editions_ar', 'editions_he'];
         }
 
         // Get keys to query
         if ($queryKey === 'transcribers' || $queryKey === 'editors') {
             $queryKey = 'creator';
-        }
-        else {
+        } else {
             $queryKey = 'title';
         }
 
@@ -207,9 +200,9 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
 
         foreach ($index_names as $index_name) {
 
-            $query=['hits' => [1]];
+            $query = ['hits' => [1]];
             $hits = [];
-            $page=1;
+            $page = 1;
 
             // collect all documents from the index
             while (count($query['hits']) !== 0) {
@@ -222,7 +215,7 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
                 try {
                     $query = $this->getTypesenseClient()->collections[$index_name]->documents->search($searchParameters);
                 } catch (Exception|TypesenseClientError $e) {
-                    $this->logger->error("Search Exception: " . $e->getMessage(), [ 'index' => $index_name]);
+                    $this->logger->error("Search Exception: " . $e->getMessage(), ['index' => $index_name]);
                     return [];
                 }
 

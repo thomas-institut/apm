@@ -1,7 +1,8 @@
 <?php
 
-namespace APM\System;
+namespace APM\System\Search;
 
+use APM\System\Lemmatizer\LemmatizationResult;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
@@ -13,7 +14,6 @@ use ThomasInstitut\DataCache\ItemNotInCacheException;
  *
  * @author Lukas Reichert
  */
-
 class Lemmatizer
 {
 
@@ -22,11 +22,12 @@ class Lemmatizer
     /**
      * Returns an array of tokens and lemmata for a given text in a given language.
      * @param string $lang
-     * @param string $text_clean
+     * @param string $cleanText
      * @param DataCache|null $dataCache
-     * @return array|array[]
+     * @return LemmatizationResult
      */
-    static public function runLemmatizer(string $lang, string $text_clean, ?DataCache $dataCache = null): array {
+    static public function run(string $lang, string $cleanText, ?DataCache $dataCache = null): LemmatizationResult
+    {
 
         // get language code for api call to udpipe2
         switch ($lang) {
@@ -43,22 +44,22 @@ class Lemmatizer
                 $lang = 'hebrew';
         }
         $data = null;
-        $hash = hash('sha512', $text_clean);
-        $key = implode(':', [ self::CACHE_PREFIX, $hash ]);
+        $hash = hash('sha512', $cleanText);
+        $key = implode(':', [self::CACHE_PREFIX, $hash]);
         if ($dataCache !== null) {
             try {
                 $data = unserialize($dataCache->get($key));
-            } catch (ItemNotInCacheException $e) {
+            } catch (ItemNotInCacheException) {
                 // just keep going
             }
         }
 
         if ($data === null) {
             $tempDir = '/tmp';
-            $inputFileName =  "$tempDir/lemmatizer-$hash-in.txt";
-            if (!file_put_contents($inputFileName, $text_clean)) {
+            $inputFileName = "$tempDir/lemmatizer-$hash-in.txt";
+            if (!file_put_contents($inputFileName, $cleanText)) {
                 throw new RuntimeException("Cannot write temp file for lemmatization");
-            };
+            }
             exec("curl -s -F data=@$inputFileName -F model=$lang -F tokenizer= -F tagger= https://lindat.mff.cuni.cz/services/udpipe/api/process", $data);
             $dataCache?->set($key, serialize($data));
         }
@@ -74,12 +75,13 @@ class Lemmatizer
     /**
      * Extracts the tokens and its lemmata from the api response, which is plain text that contains a lot more information than needed here.
      * @param string|null $data
-     * @return array|array[]
+     * @return LemmatizationResult
      */
-    static private function getTokensAndLemmata (string $data=null): array {
+    static private function getTokensAndLemmata(string $data = null): LemmatizationResult
+    {
 
         // array of arrays to be returned
-        $tokens_and_lemmata = ['tokens' => [], 'lemmata' => []];
+        $result = new LemmatizationResult();
 
         // split plain text data from the udpipe api into encoded sentences
         $sentences = explode(' text ', $data);
@@ -106,13 +108,13 @@ class Lemmatizer
             $numComplexTokens = 0;
 
             // get start and end indices of complex tokens
-            foreach ($sentence as $k => $token) {
+            foreach ($sentence as $token) {
                 if (str_contains(substr($token, 0, 4), '-')) {
                     $token = explode('-', $token);
                     //print_r($token);
                     $start = (int)$token[0] + $numComplexTokens;
                     if (is_numeric($token[1][0])) {
-                        $end = (int) explode('\t', $token[1])[0] + $numComplexTokens;
+                        $end = (int)explode('\t', $token[1])[0] + $numComplexTokens;
                         $complexTokenPositions[] = [$start, $end];
                         $numComplexTokens++;
                     }
@@ -152,21 +154,14 @@ class Lemmatizer
                 $sentence[$l] = $decToken;
             }
 
-            //print("SENTENCE COUNT: " . count($sentence) .  "\n");
-            //if (count($sentence) === 58) {
-            //print_r($sentence);
-            //print_r($complexTokenPositions);
-            //}
-
-
             // normalize complex tokens with blanks
             foreach ($complexTokenPositions as $positions) {
                 for ($n = $positions[0]; $n <= $positions[1]; $n++) {
                     if ($n === $positions[0]) {
-                        $sentence[$positions[0]-1][2] = " " . $sentence[$n][2] . " ";
+                        $sentence[$positions[0] - 1][2] = " " . $sentence[$n][2] . " ";
                     } else {
                         //print($n . "\n");
-                        $sentence[$positions[0]-1][2] = $sentence[$positions[0]-1][2] . " " . $sentence[$n][2] . " ";
+                        $sentence[$positions[0] - 1][2] = $sentence[$positions[0] - 1][2] . " " . $sentence[$n][2] . " ";
                     }
                     unset($sentence[$n]);
                 }
@@ -175,27 +170,20 @@ class Lemmatizer
             $sentence = array_values($sentence);
 
             foreach ($sentence as $tokenAsList) {
-                $tokens_and_lemmata['tokens'][] = $tokenAsList[1];
-                $tokens_and_lemmata['lemmata'][] = $tokenAsList[2];
+                $result->tokens[] = $tokenAsList[1];
+                $result->lemmata[] = $tokenAsList[2];
             }
         }
-
-        // signal missing words or lemmata in the returned data
-//        foreach ($tokens_and_lemmata['tokens'] as $word) {
-//            if ($word === null or $word === '') {
-//                print("EMPTY WORD IN LIST OF WORDS!\n");
-//            }
-//        }
 
         // in some rare cases, there seems to be no lemma returned from the api, then: use the word itself as the lemma
         /** @var string $key */
-        foreach ($tokens_and_lemmata['lemmata'] as $key => $lemma) {
+        foreach ($result->lemmata as $key => $lemma) {
             if ($lemma === null or $lemma === '') {
-                $tokens_and_lemmata['lemmata'][$key] =  $tokens_and_lemmata['tokens'][$key];
+                $result->lemmata[$key] = $result->tokens[$key];
             }
         }
 
-        return $tokens_and_lemmata;
+        return $result;
     }
 
 }

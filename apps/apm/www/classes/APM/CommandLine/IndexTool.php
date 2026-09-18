@@ -28,10 +28,10 @@ use APM\System\Cache\SystemDirDataCache;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
-use APM\System\Lemmatizer;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Search\IndexType;
+use APM\System\Search\Lemmatizer;
 use APM\System\Search\SearchIndexManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TranscriptionManager;
@@ -39,7 +39,6 @@ use APM\System\Transcription\TxText\Item;
 use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\DateTimeFormat;
-use Cassandra\Index;
 use Exception;
 use InvalidArgumentException;
 use Psr\Container\ContainerExceptionInterface;
@@ -1686,7 +1685,7 @@ END;
 
             /** @var SystemDirDataCache $dirDataCache */
             $dirDataCache = $this->container->get(SystemDirDataCache::class);
-            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $transcription_clean, $dirDataCache);
+            $tokens_and_lemmata = Lemmatizer::run($lang, $transcription_clean, $dirDataCache);
 
             // get tokenized and lemmatized transcript
             $transcription_tokenized = $tokens_and_lemmata['tokens'];
@@ -1810,7 +1809,7 @@ END;
         /** @var SystemDirDataCache $dirDataCache */
         $dirDataCache = $this->container->get(SystemDirDataCache::class);
         if (strlen($text_clean) > 3) {
-            $tokens_and_lemmata = Lemmatizer::runLemmatizer($lang, $text_clean, $dirDataCache);
+            $tokens_and_lemmata = Lemmatizer::run($lang, $text_clean, $dirDataCache);
             // Get tokenized and lemmatized transcript
             $edition_tokenized = $tokens_and_lemmata['tokens'];
             $edition_lemmatized = $tokens_and_lemmata['lemmata'];

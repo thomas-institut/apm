@@ -39,6 +39,8 @@ use APM\System\Factories\TypesenseClientFactory;
 use APM\System\Factories\UserManagerFactory;
 use APM\System\Factories\ValkeyClientFactory;
 use APM\System\LanguageManager;
+use APM\System\Lemmatizer\LemmatizerInterface;
+use APM\System\Lemmatizer\UdPipeLemmatizer;
 use APM\System\NormalizerManager;
 use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
@@ -60,6 +62,7 @@ use ThomasInstitut\JobQueue\JobQueueManager;
 use ThomasInstitut\ToolBox\MySqlHelper;
 use function DI\autowire;
 use function DI\factory;
+use function DI\get;
 
 class CommonDefsProvider implements ApmContainerDefsProvider
 {
@@ -100,6 +103,7 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             EditionSourceManager::class => autowire(EntitySystemEditionSourceManager::class),
             NormalizerManager::class => factory([NormalizerManagerFactory::class, 'create']),
             CollatexHttp::class => factory([CollatexHttpFactory::class, 'create']),
+            LemmatizerInterface::class => autowire(UdPipeLemmatizer::class)->constructor(get(SystemDirDataCache::class)),
         ];
     }
 }

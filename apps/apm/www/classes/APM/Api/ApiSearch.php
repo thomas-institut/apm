@@ -5,7 +5,7 @@ namespace APM\Api;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
-use APM\System\Lemmatizer;
+use APM\System\Search\Lemmatizer;
 use APM\System\Search\SearchIndexManager;
 use APM\System\SystemManager;
 use Http\Client\Exception;
@@ -168,7 +168,7 @@ class ApiSearch extends ApiController
         if (count($tokensToLemmatize) > 0) { // Get lemmata from lemmatizer
             $this->logger->debug(count($tokensToLemmatize) . " token(s) not in cache, need to run lemmatizer", $tokensToLemmatize);
             $phrase = implode(' ', $tokensToLemmatize);
-            $tokensAndLemmata = Lemmatizer::runLemmatizer($lang, $phrase);
+            $tokensAndLemmata = Lemmatizer::run($lang, $phrase);
             $lemmata = $tokensAndLemmata['lemmata'];
             foreach ($lemmata as $i => $lemma) {
                 $cacheKey = $this->getLemmaCacheKey($tokensToLemmatize[$i]);

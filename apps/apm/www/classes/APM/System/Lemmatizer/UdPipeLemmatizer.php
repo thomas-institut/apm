@@ -8,37 +8,31 @@ use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
 use RuntimeException;
 use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 
 class UdPipeLemmatizer implements LemmatizerInterface
 {
-
     const string DefaultUdPipeApiUrl = 'https://lindat.mff.cuni.cz/services/udpipe/api/process';
-    private DataCache $dataCache;
+
+    const string CacheKeyPrefix = 'UdPipeLemmatizer';
     private string $udPipeApiUrl;
 
 
 
-    public function __construct(?DataCache $cache = null, string $udPipeApiUrl = self::DefaultUdPipeApiUrl)
+    public function __construct(private readonly DataCache $dataCache)
     {
-        if ($cache === null) {
-            $this->dataCache = new InMemoryDataCache();
-        } else {
-            $this->dataCache = $cache;
-        }
-        $this->udPipeApiUrl = $udPipeApiUrl;
+        $this->udPipeApiUrl = self::DefaultUdPipeApiUrl;
     }
 
     private function getCacheKey(string $text, string $langCode) : string {
         $hash = hash('sha256', $text);
-        return "UdPipeLemmatizer:$langCode:$hash";
+        return implode(':', [self::CacheKeyPrefix, $langCode, $hash]);
     }
 
     /**
      * @inheritDoc
      */
-    public function lemmatize(string $text, string $langCode): array
+    public function lemmatize(string $text, string $langCode): LemmatizationResult
     {
         $cacheKey = $this->getCacheKey($text, $langCode);
         try {
@@ -81,10 +75,10 @@ class UdPipeLemmatizer implements LemmatizerInterface
     }
 
 
-    private function getTokensAndLemmata(string $data): array {
+    private function getTokensAndLemmata(string $data): LemmatizationResult {
 
         // Array of arrays to be returned
-        $tokensAndLemmata = ['tokens' => [], 'lemmata' => []];
+        $tokensAndLemmata = new LemmatizationResult();
 
         // Split plain text data from the udpipe API into encoded sentences
         $sentences = explode(' text ', $data);
@@ -165,17 +159,15 @@ class UdPipeLemmatizer implements LemmatizerInterface
             $sentence = array_values($sentence);
 
             foreach ($sentence as $tokenAsList) {
-                $tokensAndLemmata['tokens'][] = $tokenAsList[1];
-                $tokensAndLemmata['lemmata'][] = $tokenAsList[2];
+                $tokensAndLemmata->tokens[] = $tokenAsList[1];
+                $tokensAndLemmata->lemmata[] = $tokenAsList[2];
             }
         }
-
         // In some rare cases, there seems to be no lemma returned from the API, then use the word itself as the lemma
-        // TODO: check this: why is setting $key as string necessary?
-        /** @var string $key */
-        foreach ($tokensAndLemmata['lemmata'] as $key => $lemma) {
+
+        foreach ($tokensAndLemmata->lemmata as $lemmaIndex => $lemma) {
             if ($lemma === null || $lemma === '') {
-                $tokensAndLemmata['lemmata'][$key] = $tokensAndLemmata['tokens'][$key];
+                $tokensAndLemmata->lemmata[$lemmaIndex] = $tokensAndLemmata->tokens[$lemmaIndex];
             }
         }
 

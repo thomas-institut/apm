@@ -17,6 +17,7 @@ use Psr\Log\LoggerInterface;
 use Typesense\Client;
 use Typesense\Collection;
 use Typesense\Collections;
+use Typesense\Document;
 use Typesense\Documents;
 
 class TypesenseSearchIndexManagerTest extends TestCase
@@ -30,6 +31,7 @@ class TypesenseSearchIndexManagerTest extends TestCase
 
         $this->assertSame(0, $result->updatesNeeded);
         $this->assertSame(0, $result->updatesPerformed);
+        $this->assertSame(0, $result->deletionsPerformed);
     }
 
     public function testUpdateIndexHandlesEditionSourceItemsSeparately(): void
@@ -40,6 +42,63 @@ class TypesenseSearchIndexManagerTest extends TestCase
 
         $this->assertSame(0, $result->updatesNeeded);
         $this->assertSame(0, $result->updatesPerformed);
+        $this->assertSame(0, $result->deletionsPerformed);
+    }
+
+    public function testUpdateIndexDeletesOrphanedEditionEntries(): void
+    {
+        $documents = $this->createMock(Documents::class);
+        $documents->expects($this->exactly(3))
+            ->method('search')
+            ->with($this->callback(function (array $query): bool {
+                return ($query['q'] ?? null) === '*' &&
+                    ($query['query_by'] ?? null) === 'table_id' &&
+                    ($query['include_fields'] ?? null) === 'table_id';
+            }))
+            ->willReturnOnConsecutiveCalls(
+                ['hits' => [['document' => ['id' => 'orphan', 'table_id' => '99']]]],
+                ['hits' => []],
+                ['hits' => []],
+            );
+        $indexedDocument = $this->createMock(Document::class);
+        $indexedDocument->expects($this->once())->method('delete');
+        $documents->method('offsetGet')->willReturn($indexedDocument);
+
+        $manager = $this->createManager($this->createTypesenseClient($documents));
+
+        $result = $manager->updateIndex(IndexType::Editions, -1);
+
+        $this->assertSame(0, $result->updatesNeeded);
+        $this->assertSame(0, $result->updatesPerformed);
+        $this->assertSame(1, $result->deletionsPerformed);
+    }
+
+    public function testUpdateIndexDeletesOrphanedTranscriptionEntries(): void
+    {
+        $documents = $this->createMock(Documents::class);
+        $documents->expects($this->exactly(3))
+            ->method('search')
+            ->with($this->callback(function (array $query): bool {
+                return ($query['q'] ?? null) === '*' &&
+                    ($query['query_by'] ?? null) === 'pageID' &&
+                    ($query['include_fields'] ?? null) === 'pageID,column';
+            }))
+            ->willReturnOnConsecutiveCalls(
+                ['hits' => [['document' => ['id' => 'orphan', 'pageID' => '99', 'column' => '2']]]],
+                ['hits' => []],
+                ['hits' => []],
+            );
+        $indexedDocument = $this->createMock(Document::class);
+        $indexedDocument->expects($this->once())->method('delete');
+        $documents->method('offsetGet')->willReturn($indexedDocument);
+
+        $manager = $this->createManager($this->createTypesenseClient($documents));
+
+        $result = $manager->updateIndex(IndexType::Transcriptions, -1);
+
+        $this->assertSame(0, $result->updatesNeeded);
+        $this->assertSame(0, $result->updatesPerformed);
+        $this->assertSame(1, $result->deletionsPerformed);
     }
 
     public function testUpdateIndexDoesNotLoadEditionDataWhenEntryIsMissingAndLimitIsZero(): void
@@ -56,11 +115,12 @@ class TypesenseSearchIndexManagerTest extends TestCase
         $collationTableManager->expects($this->never())->method('getCollationTableVersionManager');
 
         $documents = $this->createMock(Documents::class);
-        $documents->expects($this->exactly(3))
+        $documents->expects($this->exactly(6))
             ->method('search')
             ->with($this->callback(function (array $query): bool {
-                return ($query['limit'] ?? null) === 1 &&
-                    ($query['include_fields'] ?? null) === 'timeFrom,edition_tokens,edition_lemmata';
+                return ($query['q'] ?? null) === '*' ||
+                    (($query['limit'] ?? null) === 1 &&
+                        ($query['include_fields'] ?? null) === 'timeFrom,edition_tokens,edition_lemmata');
             }))
             ->willReturn(['hits' => []]);
 
@@ -73,6 +133,7 @@ class TypesenseSearchIndexManagerTest extends TestCase
 
         $this->assertSame(1, $result->updatesNeeded);
         $this->assertSame(0, $result->updatesPerformed);
+        $this->assertSame(0, $result->deletionsPerformed);
     }
 
     public function testUpdateIndexDoesNotLoadEditionDataWhenIndexedEntryIsCurrent(): void
@@ -95,11 +156,12 @@ class TypesenseSearchIndexManagerTest extends TestCase
         $collationTableManager->method('getCollationTableVersionManager')->willReturn($versionManager);
 
         $documents = $this->createMock(Documents::class);
-        $documents->expects($this->exactly(3))
+        $documents->expects($this->exactly(6))
             ->method('search')
             ->with($this->callback(function (array $query): bool {
-                return ($query['limit'] ?? null) === 1 &&
-                    ($query['include_fields'] ?? null) === 'timeFrom,edition_tokens,edition_lemmata';
+                return ($query['q'] ?? null) === '*' ||
+                    (($query['limit'] ?? null) === 1 &&
+                        ($query['include_fields'] ?? null) === 'timeFrom,edition_tokens,edition_lemmata');
             }))
             ->willReturn([
                 'hits' => [[
@@ -120,6 +182,7 @@ class TypesenseSearchIndexManagerTest extends TestCase
 
         $this->assertSame(0, $result->updatesNeeded);
         $this->assertSame(0, $result->updatesPerformed);
+        $this->assertSame(0, $result->deletionsPerformed);
     }
 
     private function createManager(
@@ -128,7 +191,7 @@ class TypesenseSearchIndexManagerTest extends TestCase
     ): TypesenseSearchIndexManager
     {
         return new TypesenseSearchIndexManager(
-            $client ?? $this->createStub(Client::class),
+            $client ?? $this->createTypesenseClient($this->createStub(Documents::class)),
             $this->createStub(SystemMainDataCache::class),
             $this->createStub(LoggerInterface::class),
             $this->createStub(DocumentManager::class),

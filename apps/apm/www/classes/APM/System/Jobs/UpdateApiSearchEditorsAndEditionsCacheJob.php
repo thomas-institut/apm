@@ -3,21 +3,28 @@
 namespace APM\System\Jobs;
 
 use APM\Api\ApiSearch;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Search\SearchIndexManager;
 use APM\System\SystemManager;
+use Psr\Log\LoggerInterface;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 use Throwable;
 
-class UpdateApiSearchEditorsAndEditionsCacheJob implements JobHandlerInterface
+readonly class UpdateApiSearchEditorsAndEditionsCacheJob implements JobHandlerInterface
 
 {
-    public function __construct(private SystemManager $sm) {}
+    public function __construct(
+        private SearchIndexManager $searchIndexManager,
+        private SystemMainDataCache $cache,
+        private LoggerInterface $logger
+    ) {}
 
     public function run(array $payload, string $jobName): bool
     {
         try {
-            return ApiSearch::updateDataCache($this->sm, 'editions',  $this->sm->getLogger());
+            return ApiSearch::updateDataCache($this->searchIndexManager, $this->cache, 'editions',  $this->logger);
         } catch (Throwable $e) {
-            $this->sm->getLogger()->error("Error updating editors and editions cache: " . $e->getMessage());
+            $this->logger->error("Error updating editors and editions cache: " . $e->getMessage());
             return false;
         }
     }

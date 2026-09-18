@@ -6,7 +6,9 @@ namespace APM\System\Lemmatizer;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\GuzzleException;
 use InvalidArgumentException;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
+use Slim\Logger;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 
@@ -19,14 +21,17 @@ class UdPipeLemmatizer implements LemmatizerInterface
 
 
 
-    public function __construct(private readonly DataCache $dataCache)
+    public function __construct(
+        private readonly DataCache $dataCache,
+//        private readonly LoggerInterface $logger
+    )
     {
         $this->udPipeApiUrl = self::DefaultUdPipeApiUrl;
     }
 
     private function getCacheKey(string $text, string $langCode) : string {
         $hash = hash('sha256', $text);
-        return implode(':', [self::CacheKeyPrefix, $langCode, $hash]);
+        return implode('_', [self::CacheKeyPrefix, $langCode, $hash]);
     }
 
     /**
@@ -51,7 +56,7 @@ class UdPipeLemmatizer implements LemmatizerInterface
             throw new InvalidArgumentException("Language $langCode is not a valid language code.");
         }
 
-        $text = preg_replace('/\s+/', '', $text);
+//        $text = preg_replace('/\s+/', '', $text);
 
         $guzzleClient = new Client();
 
@@ -164,7 +169,6 @@ class UdPipeLemmatizer implements LemmatizerInterface
             }
         }
         // In some rare cases, there seems to be no lemma returned from the API, then use the word itself as the lemma
-
         foreach ($tokensAndLemmata->lemmata as $lemmaIndex => $lemma) {
             if ($lemma === null || $lemma === '') {
                 $tokensAndLemmata->lemmata[$lemmaIndex] = $tokensAndLemmata->tokens[$lemmaIndex];

@@ -142,7 +142,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         try {
             $this->getTypesenseClient()->collections[$indexName]->documents->create([
                 'table_id' => (string)$tableId,
-                'chunk' => $chunk,
+                'chunk' => (int) $chunk,
                 'creator' => $editorName,
                 'title' => $title,
                 'lang' => $langCode,
@@ -451,7 +451,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         $this->deleteIndexedDocuments($indexedDocuments, null, 'edition', (string)$tableId);
         $this->indexEdition(
             $tableId,
-            (string)$edition['chunk'],
+            (int)$edition['chunk'],
             $edition['title'],
             $edition['lang'],
             $edition['text'],
@@ -537,6 +537,15 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
 
         $this->logger->info("Found " . count($itemsToUpdate) . " potential items to update");
 
+        $sourceItemKeys = $this->getSourceItemKeys($indexType, $itemsToUpdate);
+        $orphanedDocuments = $this->getOrphanedIndexedDocuments($indexType, $sourceItemKeys);
+        $deletionsPerformed = $updateCountLimit === 0 ? 0 : $this->deleteIndexedDocuments(
+            $orphanedDocuments,
+            null,
+            $indexType === IndexType::Editions ? 'edition' : 'transcription',
+            'orphaned index entry'
+        );
+
         foreach ($itemsToUpdate as $item) {
             if (!$this->itemNeedsUpdate($indexType, $item)) {
                 continue;
@@ -555,7 +564,84 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $updatesPerformed++;
         }
 
-        return new UpdateIndexResult($updatesNeeded, $updatesPerformed);
+        return new UpdateIndexResult($updatesNeeded, $updatesPerformed, $deletionsPerformed);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $items
+     * @return array<string, true>
+     */
+    private function getSourceItemKeys(IndexType $indexType, array $items): array
+    {
+        $keys = [];
+        foreach ($items as $item) {
+            $key = $indexType === IndexType::Editions
+                ? (string)$item['tableId']
+                : $item['pageId'] . ':' . $item['column'];
+            $keys[$key] = true;
+        }
+        return $keys;
+    }
+
+    /**
+     * @param array<string, true> $sourceItemKeys
+     * @return array<int, array{index: string, document: array<string, mixed>}>
+     * @throws SearchManagerException
+     */
+    private function getOrphanedIndexedDocuments(IndexType $indexType, array $sourceItemKeys): array
+    {
+        $orphanedDocuments = [];
+        $identityField = $indexType === IndexType::Editions ? 'table_id' : 'pageID,column';
+        foreach ($this->getAllIndexedDocuments($indexType, $identityField) as $indexedDocument) {
+            $document = $indexedDocument['document'];
+            $key = $indexType === IndexType::Editions
+                ? (string)($document['table_id'] ?? '')
+                : ($document['pageID'] ?? '') . ':' . ($document['column'] ?? '');
+            if (!isset($sourceItemKeys[$key])) {
+                $orphanedDocuments[] = $indexedDocument;
+            }
+        }
+        return $orphanedDocuments;
+    }
+
+    /**
+     * @return array<int, array{index: string, document: array<string, mixed>}>
+     * @throws SearchManagerException
+     */
+    private function getAllIndexedDocuments(IndexType $indexType, string $includeFields): array
+    {
+        $documents = [];
+        $query = [
+            'q' => '*',
+            'query_by' => $indexType === IndexType::Transcriptions ? 'pageID' : 'table_id',
+            'page' => 1,
+            'limit' => 250,
+            'include_fields' => $includeFields,
+        ];
+
+        foreach ($this->getIndexNames($indexType) as $indexName) {
+            $page = 1;
+            do {
+                $query['page'] = $page;
+                try {
+                    $result = $this->getTypesenseClient()->collections[$indexName]->documents->search($query);
+                } catch (Exception|TypesenseClientError $e) {
+                    $message = "Error searching index $indexName: " . $e->getMessage();
+                    $this->logger->error($message);
+                    throw new SearchManagerException($message, 0, $e);
+                }
+
+                $hits = $result['hits'] ?? [];
+                foreach ($hits as $hit) {
+                    if (isset($hit['document'])) {
+                        $documents[] = ['index' => $indexName, 'document' => $hit['document']];
+                    }
+                }
+                $page++;
+            } while (count($hits) === 250);
+        }
+
+        return $documents;
     }
 
     /**
@@ -716,10 +802,12 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      * @param string|null $timeFrom
      * @param string $itemType
      * @param string $identifier
+     * @return int Number of documents deleted.
      * @throws SearchManagerException
      */
-    private function deleteIndexedDocuments(array $indexedDocuments, ?string $timeFrom, string $itemType, string $identifier): void
+    private function deleteIndexedDocuments(array $indexedDocuments, ?string $timeFrom, string $itemType, string $identifier): int
     {
+        $deletionsPerformed = 0;
         foreach ($indexedDocuments as $indexedDocument) {
             $document = $indexedDocument['document'];
             if ($timeFrom !== null && ($document['time_from'] ?? $document['timeFrom'] ?? null) !== $timeFrom) {
@@ -731,12 +819,14 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
 
             try {
                 $this->getTypesenseClient()->collections[$indexedDocument['index']]->documents[$document['id']]->delete();
+                $deletionsPerformed++;
             } catch (Exception|TypesenseClientError $e) {
                 $message = "Error deleting $itemType $identifier from index {$indexedDocument['index']}: " . $e->getMessage();
                 $this->logger->error($message);
                 throw new SearchManagerException($message, 0, $e);
             }
         }
+        return $deletionsPerformed;
     }
 
     /**

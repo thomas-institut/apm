@@ -7,17 +7,14 @@ use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Search\Lemmatizer;
 use APM\System\Search\SearchIndexManager;
-use APM\System\SystemManager;
 use Http\Client\Exception;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
-use Throwable;
 use Typesense\Client;
 use Typesense\Exceptions\TypesenseClientError;
 
@@ -57,7 +54,6 @@ class ApiSearch extends ApiController
      */
     public function search(Request $request, Response $response): Response
     {
-
 
         // Name of the index that should be queried and informative variables for the API response
         // Informative variables for the API response
@@ -357,98 +353,23 @@ class ApiSearch extends ApiController
     }
 
     /**
-     * returns all creators or titles stored in the transcriptions or edition indices
-     * @param Client $client
-     * @param string $queryKey , can be 'transcription' or 'transcriber' or 'editor' or 'edition'
-     * @param LoggerInterface|null $logger
-     * @return array
-     */
-    static private function getAllEntriesFromIndex(Client $client, string $queryKey, ?LoggerInterface $logger): array
-    {
-
-        if ($logger === null) {
-            $logger = new NullLogger();
-        }
-        // Get names of target indices
-        if ($queryKey === 'transcription' || $queryKey === 'transcriber') {
-            $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
-        } else {
-            $index_names = ['editions_la', 'editions_ar', 'editions_he'];
-        }
-
-        // Get keys to query
-        if ($queryKey === 'transcriber' || $queryKey === 'editor') {
-            $queryKey = 'creator';
-        } else {
-            $queryKey = 'title';
-        }
-
-        // Array to return
-        $values = [];
-
-        // Make a match_all query
-
-        foreach ($index_names as $index_name) {
-
-            $query = ['hits' => [1]];
-            $hits = [];
-            $page = 1;
-
-            // collect all documents from the index
-            while (count($query['hits']) !== 0) {
-                $searchParameters = [
-                    'q' => '*',
-                    'page' => $page,
-                    'limit' => 250
-                ];
-
-                try {
-                    $query = $client->collections[$index_name]->documents->search($searchParameters);
-                } catch (Exception|TypesenseClientError $e) {
-                    $logger->error("Search Exception: " . $e->getMessage(), ['index' => $index_name]);
-                    return [];
-                }
-
-                foreach ($query['hits'] as $hit) {
-                    $hits[] = $hit;
-                }
-
-                $page++;
-            }
-
-            // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
-            foreach ($hits as $hit) {
-                $value = $hit['document'][$queryKey];
-                if (in_array($value, $values) === false) {
-                    $values[] = $value;
-                }
-            }
-        }
-        return $values;
-    }
-
-    /**
-     * @param SystemManager $systemManager
+     * @param SearchIndexManager $searchIndexManager
+     * @param SystemMainDataCache $cache
      * @param string $whichIndex
-     * @param LoggerInterface|null $logger
+     * @param LoggerInterface $logger
      * @return bool
-     * @throws Throwable
      */
-    static public function updateDataCache(SystemManager $systemManager, string $whichIndex, ?LoggerInterface $logger): bool
+    static public function updateDataCache(SearchIndexManager $searchIndexManager, SystemMainDataCache $cache, string $whichIndex, LoggerInterface $logger): bool
     {
-
-        $cache = $systemManager->getSystemDataCache();
-        $client = $systemManager->getTypesenseClient();
-
         if ($whichIndex === 'transcriptions') {
-            $transcriptions = self::getAllEntriesFromIndex($client, 'transcription', $logger);
-            $transcribers = self::getAllEntriesFromIndex($client, 'transcriber', $logger);
+            $transcriptions = $searchIndexManager->getTranscribedDocuments();
+            $transcribers = $searchIndexManager->getTranscriberNames();
             $cache->set(CacheKey::ApiSearchTranscriptions, serialize($transcriptions));
             $cache->set(CacheKey::ApiSearchTranscribers, serialize($transcribers));
 
         } else if ($whichIndex === 'editions') {
-            $editions = self::getAllEntriesFromIndex($client, 'edition', $logger);
-            $editors = self::getAllEntriesFromIndex($client, 'editor', $logger);
+            $editions = $searchIndexManager->getEditionTitles();
+            $editors = $searchIndexManager->getEditors();
             $cache->set(CacheKey::ApiSearchEditions, serialize($editions));
             $cache->set(CacheKey::ApiSearchEditors, serialize($editors));
         }

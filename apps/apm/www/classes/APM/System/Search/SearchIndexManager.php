@@ -149,7 +149,8 @@ interface SearchIndexManager
      *
      * Performs up to $updateCountLimit updates. If $updateCountLimit is -1, all updates are performed.
      *
-     * Returns the number of updates required for a complete update and the number of updates performed.
+     * Returns the number of updates required for a complete update, the number of updates performed, and the
+     * number of orphaned index entries deleted.
      *
      * @param IndexType $indexType
      * @param int $updateCountLimit

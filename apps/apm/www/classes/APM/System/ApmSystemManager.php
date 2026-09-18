@@ -139,6 +139,10 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @return ApmTableNames
+     * @deprecated
+     */
     public function getTableNames(): ApmTableNames
     {
         try {
@@ -149,6 +153,10 @@ class ApmSystemManager extends SystemManager
     }
 
 
+    /**
+     * @return DataCache
+     * @deprecated
+     */
     public function getSystemDataCache(): DataCache
     {
 
@@ -159,6 +167,10 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @return CollationTableManager
+     * @deprecated
+     */
     public function getCollationTableManager(): CollationTableManager
     {
         try {
@@ -168,6 +180,10 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @return EditionSourceManager
+     * @deprecated
+     */
     public function getEditionSourceManager(): EditionSourceManager
     {
         try {
@@ -177,6 +193,13 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @param int $userTid
+     * @param int $docId
+     * @param int $pageNumber
+     * @param int $columnNumber
+     * @return void
+     */
     public function onTranscriptionUpdated(int $userTid, int $docId, int $pageNumber, int $columnNumber): void
     {
         parent::onTranscriptionUpdated($userTid, $docId, $pageNumber, $columnNumber);
@@ -311,6 +334,10 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @return PersonManagerInterface
+     * @deprecated
+     */
     public function getPersonManager(): PersonManagerInterface
     {
         try {
@@ -320,6 +347,10 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @return WorkManager
+     * @deprecated
+     */
     public function getWorkManager(): WorkManager
     {
         try {
@@ -329,6 +360,9 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @return JobQueueManager
+     */
     public function getJobQueueManager(): JobQueueManager
     {
 
@@ -339,6 +373,10 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @return ApmEntitySystemInterface
+     * @deprecated
+     */
     public function getEntitySystem(): ApmEntitySystemInterface
     {
         try {
@@ -350,6 +388,10 @@ class ApmSystemManager extends SystemManager
     }
 
 
+    /**
+     * @return DocumentManager
+     * @deprecated
+     */
     public function getDocumentManager(): DocumentManager
     {
         try {
@@ -360,6 +402,10 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @return Client
+     * @deprecated
+     */
     public function getTypesenseClient(): Client
     {
         try {

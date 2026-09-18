@@ -2,7 +2,7 @@
 
 namespace APM\System\Jobs;
 
-use APM\CommandLine\IndexManager;
+use APM\CommandLine\IndexTool;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\System\ApmContainerKey;
 use APM\System\Document\DocumentManager;
@@ -50,7 +50,7 @@ readonly class UpdateApiSearchTranscriptionsIndexJob implements JobHandlerInterf
         $col = $payload['col'];
         $pageId = $documentManager->getPageIdByDocPage($docId, $page);
 
-        $im = new IndexManager($config, 0, []);
+        $im = new IndexTool($config, 0, []);
         $im->setIndexNamePrefix('transcriptions');
 
 

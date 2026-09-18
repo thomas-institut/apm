@@ -31,13 +31,17 @@ use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Lemmatizer;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\Search\IndexType;
+use APM\System\Search\SearchIndexManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\Transcription\TxText\Item;
 use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\DateTimeFormat;
+use Cassandra\Index;
 use Exception;
+use InvalidArgumentException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use RuntimeException;
@@ -53,9 +57,12 @@ use Typesense\Exceptions\TypesenseClientError;
  *
  * @author Lukas Reichert
  */
-class IndexManager extends CommandLineUtility
+class IndexTool extends CommandLineUtility
 {
     private string $indexNamePrefix;
+
+
+    private IndexType $indexType;
     /**
      * @var string[]
      */
@@ -69,6 +76,20 @@ class IndexManager extends CommandLineUtility
     
     private ?ApmEntitySystemInterface $entitySystem = null;
 
+    private ?SearchIndexManager $searchManager = null;
+
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getSearchManager(): SearchIndexManager
+    {
+        if ($this->searchManager === null) {
+            $this->searchManager = $this->container->get(SearchIndexManager::class);
+        }
+        return $this->searchManager;
+    }
 
     /**
      * @throws ContainerExceptionInterface
@@ -106,6 +127,16 @@ class IndexManager extends CommandLineUtility
         return $this->entitySystem;
     }
 
+    private function getIndexTypeFromString(string $indexTypeString): IndexType
+    {
+        $indexTypeString = strtolower($indexTypeString);
+        return match ($indexTypeString) {
+            'transcriptions', 'tx' => IndexType::Transcriptions,
+            'editions', 'ed' => IndexType::Editions,
+            default => throw new InvalidArgumentException("Invalid index type string: $indexTypeString"),
+        };
+    }
+
 
     /**
      * This main function is called from the command line. Depending on the arguments given to the index manager command line tool,
@@ -133,26 +164,18 @@ class IndexManager extends CommandLineUtility
         if ($argv[1] === '-h') {
             $this->printHelp();
             return true;
-        } else if ($argv[1] === 'transcriptions' || $argv[1] === 't') {
-            // get target index and operation
-            $this->indexNamePrefix = 'transcriptions';
-        } else if ($argv[1] === 'editions' || $argv[1] === 'e') {
-            // get target index and operation
-            $this->indexNamePrefix = 'editions';
-        } else {
+        }
+
+        try {
+            $this->indexType = $this->getIndexTypeFromString($argv[1]);
+        } catch (InvalidArgumentException) {
             print ("Command not found. Please check the help via -h.\n");
             return false;
         }
 
-        // get t operation
         $operation = $argv[2];
 
-        // get names of the indices in typesense
-        $this->indices = [$this->indexNamePrefix . '_la', $this->indexNamePrefix . '_ar', $this->indexNamePrefix . '_he'];
 
-        // handle empty arguments
-        if (!isset($argv[3])) {$argv[3] = null;}
-        if (!isset($argv[4])) {$argv[4] = "";}
 
         switch ($operation) {
 //            case 'csvFromDocTitles':
@@ -174,7 +197,7 @@ class IndexManager extends CommandLineUtility
 //                break;
 
             case 'build': // create new or replace existing index with a specific name
-                $this->buildIndex();
+                $this->buildIndex($this->indexType);
                 break;
 
             case 'show':
@@ -243,10 +266,10 @@ class IndexManager extends CommandLineUtility
     private function printHelp(): void
     {
         $help = <<<END
-Usage: indexmanager [transcriptions/editions] [operation] [pageID/tableID] [column]
+Usage: indextool [transcriptions/editions] [operation] <...operation arguments...>
 
 Available operations are:
-  build - builds the index, deletes already existing one
+  build - completely re-builds the search indices
   add [arg1] ([arg2]) - adds a single item to an index
   remove [arg1] ([arg2]) - removes a single item from an index
   update [arg1] ([arg2]) - updates an already indexed item
@@ -254,7 +277,6 @@ Available operations are:
   showdb [arg1] ([arg2]) - shows an item from the database
   check ([arg1] ([arg2])) - checks the completeness of an index in total or the correctness of a single item in it
   fix ([arg1] ([arg2])) - fixes a single item or an index in total by indexing not indexed items and updating outdated items
-
 END;
 
         print($help);
@@ -288,26 +310,13 @@ END;
      * @throws TypesenseClientError
      * @throws \Http\Client\Exception
      */
-    private function buildIndex(): void
+    private function buildIndex(IndexType $indexType): void
     {
 
-        print ("Building index $this->indexNamePrefix\n");
+        $this->logger->info("Building index $indexType->name\n");
+        $searchManager = $this->getSearchManager();
+        $searchManager->resetIndex($indexType);
 
-        // delete existing and create a new index
-        foreach ($this->indices as $indexName) {
-            $this->resetIndex($this->getTypesenseClient(), $indexName);
-        }
-
-        switch ($this->indexNamePrefix) {
-            case 'transcriptions':
-                $this->buildIndexTranscriptions();
-                break;
-            case 'editions':
-                $this->buildIndexEditions();
-                break;
-        }
-
-        print("Check and fix the index...\n ");
 
         $this->checkAndFixIndex();
 

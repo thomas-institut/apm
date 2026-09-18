@@ -3,7 +3,6 @@
 
 namespace APM\Api;
 
-use APM\EntitySystem\ApmEntitySystem;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;

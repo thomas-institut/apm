@@ -6,7 +6,7 @@ use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Lemmatizer;
-use APM\System\Search\SearchManagerInterface;
+use APM\System\Search\SearchIndexManager;
 use APM\System\SystemManager;
 use Http\Client\Exception;
 use Psr\Container\ContainerInterface;
@@ -27,7 +27,7 @@ class ApiSearch extends ApiController
     const string CLASS_NAME = 'Search';
     private ApmSystemConfig $systemConfig;
 
-    private SearchManagerInterface $searchManager;
+    private SearchIndexManager $searchManager;
 
     private Client $client;
     private SystemMainDataCache $cache;
@@ -37,8 +37,8 @@ class ApiSearch extends ApiController
         parent::__construct($ci);
         $this->systemConfig = $ci->get(ApmSystemConfig::class);
 
-        /** @var SearchManagerInterface $sm */
-        $sm = $ci->get(SearchManagerInterface::class);
+        /** @var SearchIndexManager $sm */
+        $sm = $ci->get(SearchIndexManager::class);
         $this->searchManager = $sm;
 
         /** @var Client $client */
@@ -370,14 +370,14 @@ class ApiSearch extends ApiController
             $logger = new NullLogger();
         }
         // Get names of target indices
-        if ($queryKey === 'transcription' or $queryKey === 'transcriber') {
+        if ($queryKey === 'transcription' || $queryKey === 'transcriber') {
             $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
         } else {
             $index_names = ['editions_la', 'editions_ar', 'editions_he'];
         }
 
         // Get keys to query
-        if ($queryKey === 'transcriber' or $queryKey === 'editor') {
+        if ($queryKey === 'transcriber' || $queryKey === 'editor') {
             $queryKey = 'creator';
         } else {
             $queryKey = 'title';

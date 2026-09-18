@@ -37,7 +37,6 @@ use APM\System\SystemManager;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use Psr\Log\LoggerInterface;
-use Slim\Interfaces\RouteParserInterface;
 use ThomasInstitut\ApiResponseFactory\ApiResponseFactory;
 use ThomasInstitut\CodeDebug\CodeDebugInterface;
 use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
@@ -80,9 +79,7 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
     const int API_ERROR_DB_UPDATE_ERROR = 1200;
     const int API_ERROR_WRONG_TYPE = 1300;
 
-    /** @deprecated Use container to get individual components */
     protected SystemManager $systemManager;
-//    protected array $languages;
     protected ContainerInterface $container;
     protected bool $debugMode;
     protected string $apiCallName;
@@ -106,7 +103,10 @@ abstract class ApiController implements LoggerAwareInterface, CodeDebugInterface
        /** @var ApmSystemConfig $apmConfig */
        $apmConfig = $ci->get(ApmSystemConfig::class);
 
-       $this->systemManager = $ci->get(SystemManager::class);
+       /** @var SystemManager $sm */
+       $sm = $ci->get(SystemManager::class);
+
+       $this->systemManager = $sm;
        $this->apiUserId = (int) $ci->get(ApmContainerKey::API_USER_ID); // this should be set by the authenticator!
 
        /** @var LoggerInterface $logger */

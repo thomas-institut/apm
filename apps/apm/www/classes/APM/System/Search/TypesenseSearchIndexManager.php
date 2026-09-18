@@ -17,7 +17,7 @@ use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
 use Typesense\Client;
 use Typesense\Exceptions\TypesenseClientError;
 
-class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInterface, CacheAware
+class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInterface, CacheAware
 {
 
     use LoggerAwareTrait;
@@ -25,6 +25,9 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
 
     const string TranscriptionIndexPrefix = 'transcriptions';
     const string EditionIndexPrefix = 'editions';
+
+
+    const array LanguageCodes = ['ar', 'he', 'la'];
 
     public function __construct(
         private readonly Client $typesenseClient,
@@ -259,5 +262,183 @@ class TypesenseSearchManager implements SearchManagerInterface, LoggerAwareInter
     public function getEditionTitles(): array
     {
         return $this->getStringArray(CacheKey::ApiSearchEditions, 'editions');
+    }
+
+    private function getIndexPrefix(IndexType $indexType): string
+    {
+        return match ($indexType) {
+            IndexType::Transcriptions => self::TranscriptionIndexPrefix,
+            IndexType::Editions => self::EditionIndexPrefix,
+        };
+    }
+
+    private function getIndexName(IndexType $indexType, string $langCode): string
+    {
+        return implode('_', [$this->getIndexPrefix($indexType), $langCode]);
+    }
+
+    private function getTranscriptionsIndexSchema(string $langCode): array
+    {
+        return [
+            'name' => $this->getIndexName(IndexType::Transcriptions, $langCode),
+            'fields' => [
+                [
+                    'name' => 'title',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'page',
+                    'type' => 'int32',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'seq',
+                    'type' => 'int32',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'docID',
+                    'type' => 'int32',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'foliation',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'pageID',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'column',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'transcription_tokens',
+                    'type' => 'string[]',
+                ],
+                [
+                    'name' => 'transcription_lemmata',
+                    'type' => 'string[]',
+                ],
+                [
+                    'name' => 'time_from',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'lang',
+                    'type' => 'string',
+                ],
+                [
+                    'name' => 'creator',
+                    'type' => 'string',
+                    'sort' => true
+                ]
+            ],
+            'default_sorting_field' => 'title'
+        ];
+    }
+
+    private function getEditionsIndexSchema(string $langCode): array
+    {
+        return [
+            'name' => $this->getIndexName(IndexType::Editions, $langCode),
+            'fields' => [
+                [
+                    'name' => 'title',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'table_id',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'chunk',
+                    'type' => 'int32',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'edition_tokens',
+                    'type' => 'string[]',
+                ],
+                [
+                    'name' => 'edition_lemmata',
+                    'type' => 'string[]',
+                ],
+                [
+                    'name' => 'timeFrom',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'lang',
+                    'type' => 'string',
+                ],
+                [
+                    'name' => 'creator',
+                    'type' => 'string',
+                    'sort' => true
+                ]
+            ],
+        ];
+    }
+
+    private function getIndexSchema(IndexType $indexType, string $langCode): array
+    {
+        return match ($indexType) {
+            IndexType::Transcriptions => $this->getTranscriptionsIndexSchema($langCode),
+            IndexType::Editions => $this->getEditionsIndexSchema($langCode),
+        };
+    }
+
+
+    /**
+     * @throws Exception
+     * @throws TypesenseClientError
+     */
+    public function resetIndex(IndexType $indexType): void
+    {
+        $client = $this->getTypesenseClient();
+
+        foreach (self::LanguageCodes as $langCode) {
+            $indexName = $this->getIndexName($indexType, $langCode);
+            if ($client->collections[$indexName]->exists()) {
+                $client->collections[$indexName]->delete();
+            }
+            $client->collections->create($this->getIndexSchema($indexType, $langCode));
+            $this->logger->info("Typesense index '$indexName' created");
+        }
+    }
+
+    public function deleteEditionFromIndex(int $tableId, ?string $timeFrom = null): void
+    {
+        // TODO: Implement deleteEditionFromIndex() method.
+    }
+
+    public function updateEditionInIndex(int $tableId, bool $forceUpdate = false): void
+    {
+        // TODO: Implement updateEditionInIndex() method.
+    }
+
+    public function deleteTranscriptionFromIndex(int $docId, int $pageNumber, int $column, ?string $timeFrom = null): void
+    {
+        // TODO: Implement deleteTranscriptionFromIndex() method.
+    }
+
+    public function updateTranscriptionInIndex(int $docId, int $pageNumber, int $column, bool $forceUpdate = false): void
+    {
+        // TODO: Implement updateTranscriptionInIndex() method.
+    }
+
+    public function updateIndex(IndexType $indexType, int $updateCountLimit = 0): UpdateIndexResult
+    {
+        return new UpdateIndexResult(0, 0);
     }
 }

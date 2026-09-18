@@ -25,7 +25,7 @@ use APM\Api\ItemStreamFormatter\WitnessPageFormatter;
 use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
 use APM\Api\DataSchema\WitnessUpdateData;
 use APM\Api\DataSchema\WitnessUpdateInfo;
-use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\CollationTable\TableNotFoundException;
 use APM\StandardData\FullTxWitnessDataProvider;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\DocumentManager;
@@ -62,7 +62,10 @@ class ApiWitness extends ApiController
     const int WITNESS_DATA_CACHE_TTL = 60 * 24 * 3600; // 30 days
 
 
-
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getWitnessesForChunk(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -76,6 +79,9 @@ class ApiWitness extends ApiController
         return $this->responseWithJson($response, $witnessInfoArray);
     }
 
+    /**
+     * @throws TableNotFoundException
+     */
     public function getCollationTablesForChunk(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -108,6 +114,10 @@ class ApiWitness extends ApiController
         return $this->responseWithJson($response, $data);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getWitness(Request $request, Response $response): Response
     {
 
@@ -141,6 +151,10 @@ class ApiWitness extends ApiController
         }
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function checkWitnessUpdates(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);

@@ -2,7 +2,7 @@
 
 namespace APM\System\Jobs;
 
-use APM\CommandLine\IndexManager;
+use APM\CommandLine\IndexTool;
 use APM\System\ApmContainerKey;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -30,7 +30,7 @@ readonly class UpdateApiSearchEditionsIndexJob implements JobHandlerInterface
         // Fetch data from payload
         $table_id = $payload[0];
 
-        $im = new IndexManager($config, 0, []);
+        $im = new IndexTool($config, 0, []);
         $im->setIndexNamePrefix('editions');
 
         try {

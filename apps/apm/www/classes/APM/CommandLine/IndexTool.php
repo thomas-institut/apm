@@ -38,7 +38,6 @@ use APM\System\Transcription\TranscriptionManager;
 use APM\System\Transcription\TxText\Item;
 use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
-use APM\ToolBox\DateTimeFormat;
 use Exception;
 use InvalidArgumentException;
 use Psr\Container\ContainerExceptionInterface;
@@ -199,6 +198,11 @@ class IndexTool extends CommandLineUtility
                 $this->buildIndex($this->indexType);
                 break;
 
+            case 'update':
+                $limit = isset($argv[3]) ? intval($argv[3]) : -1;
+                $this->updateIndex($this->indexType, $limit);
+                break;
+
             case 'show':
                 print("Querying…\n");
                 $item = $this->getIndexedItemInfo($argv[3], $argv[4], 'show');
@@ -231,10 +235,10 @@ class IndexTool extends CommandLineUtility
                 $this->addItem($argv[3], $argv[4]);
                 break;
 
-            case 'update':
-                // updates an existing item in an index
-                $this->updateItem($argv[3], $argv[4]);
-                break;
+//            case 'update':
+//                // updates an existing item in an index
+//                $this->updateItem($argv[3], $argv[4]);
+//                break;
 
             case 'update-add':
                 // updates an item if already indexed, otherwise adds the item to the index
@@ -269,6 +273,7 @@ Usage: indextool [transcriptions/editions] [operation] <...operation arguments..
 
 Available operations are:
   build - completely re-builds the search indices
+  update [limit] - updates the index, use limit to limit the number of updates, -1 means no limit
   add [arg1] ([arg2]) - adds a single item to an index
   remove [arg1] ([arg2]) - removes a single item from an index
   update [arg1] ([arg2]) - updates an already indexed item
@@ -276,6 +281,7 @@ Available operations are:
   showdb [arg1] ([arg2]) - shows an item from the database
   check ([arg1] ([arg2])) - checks the completeness of an index in total or the correctness of a single item in it
   fix ([arg1] ([arg2])) - fixes a single item or an index in total by indexing not indexed items and updating outdated items
+  
 END;
 
         print($help);
@@ -298,120 +304,81 @@ END;
      * Builds the transcriptions or editions index in typesense after getting all relevant data from the sql database.
      * Deletes already existing transcriptions or editions index.
      *
+     * @param IndexType $indexType
      * @return void
      * @throws ContainerExceptionInterface
-     * @throws DocumentNotFoundException
-     * @throws EntityDoesNotExistException
-     * @throws InvalidTimeStringException
      * @throws NotFoundExceptionInterface
-     * @throws PageNotFoundException
-     * @throws Throwable
-     * @throws TypesenseClientError
-     * @throws \Http\Client\Exception
      */
     private function buildIndex(IndexType $indexType): void
     {
 
-        $this->logger->info("Building index $indexType->name\n");
+        $doIt = $this->userRespondsYes("Are you sure you want to rebuild the $indexType->name index? This will delete all existing data and will probably take a very long time. Type 'yes' to continue: ");
+        if (!$doIt) {
+            return;
+        }
+
+
+        print("Building index $indexType->name\n");
+        $absStart = microtime(true);
         $searchManager = $this->getSearchManager();
         $searchManager->resetIndex($indexType);
 
+        if ($indexType === IndexType::Transcriptions) {
+            // get a list of all docIDs in the sql-database
+            $docIds = $this->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
 
-        $this->checkAndFixIndex();
+            $transcribedPageCount = $this->getTranscriptionManager()->getTranscribedPageCount();
 
-        print("BUILDING COMPLETE!\n ");
+            printf("There are %d documents in the system with %d transcribed pages in total\n", count($docIds), $transcribedPageCount);
+        } else {
+            /** @var CollationTableManager $ctm */
+            $ctm = $this->container->get(CollationTableManager::class);
+            $tablesInfo = $ctm->getTablesInfo();
+
+            $editionIds = [];
+
+            foreach ($tablesInfo as $tableInfo) {
+                if ($tableInfo->type === 'edition') {
+                    $editionIds[] = $tableInfo['id'];
+                }
+            }
+
+            $this->logger->debug(sprintf("There are %d active tables in the system of which %d are editions",
+                count($tablesInfo), count($editionIds)));
+        }
+
+        $result = $searchManager->updateIndex($this->indexType);
+
+        $elapsedTime = time() - $absStart;
+
+        printf("Done in %.2f minutes, %.2f secs/update\n",
+            $elapsedTime / 60, $result->updatesPerformed !== 0 ? $elapsedTime/$result->updatesPerformed : 0);
 
     }
 
     /**
-     * Builds the transcription index in Typesense after getting all relevant data from the MySQL database.
-     * @return void
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    private function buildIndexTranscriptions(): void
-    {
-
-        // get a list of all docIDs in the sql-database
-        $docIds = $this->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
-
-        $transcribedPageCount = $this->getTranscriptionManager()->getTranscribedPageCount();
-
-        printf("There are %d documents in the system with %d transcribed pages in total\n", count($docIds), $transcribedPageCount);
+    private function updateIndex(IndexType $indexType, int $limit): void {
         $absStart = microtime(true);
-        $pagesIndexed = 0;
-        foreach ($docIds as $docId) {
-            // get the list of transcribed pages
-            try {
-                $title = $this->getTitle($docId);
-                $pages_transcribed = $this->getTranscriptionManager()->getTranscribedPageListByDocId($docId);
-            } catch (DocumentNotFoundException) {
-                print "\nERROR: document $docId not found\n";
-                return;
-            }
+        $searchManager = $this->getSearchManager();
 
-            $pageCount = count($pages_transcribed);
 
-            if ($pageCount === 0) {
-                continue;
-            }
-            // iterate over transcribed pages
-            foreach ($pages_transcribed as $i => $page) {
-                try {
-                    $pageId = $this->getPageId($docId, $page);
-                    $page_info = $this->getDocumentManager()->getPageInfo($pageId);
-                    $numCols = $page_info->numCols;
-                    $seq = $this->getSeq($docId, $page);
-                    // iterate over all columns of the page and get the corresponding transcripts and transcribers
-                    for ($col = 1; $col <= $numCols; $col++) {
-                        $versions = $this->getTranscriptionManager()->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $col);
-                        if (count($versions) === 0) {
-                            // no transcription in this column
-                            continue;
-                        }
-
-                        $transcription = $this->getTranscription($docId, $page, $col);
-                        $transcriber = $this->getTranscriber($docId, $page, $col);
-
-                        // get language of the current column (same as the document)
-                        $lang = $this->getLang($pageId);
-
-                        // get the foliation number of the current page/sequence number
-                        $foliation = $this->getFoliation($docId, $page);
-
-                        // get timestamp
-                        $versionManager = $this->getTranscriptionManager()->getColumnVersionManager();
-                        $versionsInfo = $versionManager->getColumnVersionInfoByPageCol($pageId, $col);
-                        $currentVersionInfo = (array)(end($versionsInfo));
-                        $timeFrom = (string)$currentVersionInfo['timeFrom'];
-                        $this->indexTranscription($this->getTypesenseClient(), null, $title, $page, $seq, $foliation, $col, $transcriber, $pageId, $docId, $transcription, $lang, $timeFrom);
-                    }
-
-                    $pagesIndexed++;
-                    $totalTime = microtime(true) - $absStart;
-                    $timePerPage = $totalTime / $pagesIndexed;
-                    $estTotalTime = intval($timePerPage * $transcribedPageCount);
-                    $remainingTime = intval($timePerPage * ($transcribedPageCount - $pagesIndexed));
-                    printf("%05d of %d pages indexed (%.2f%%) : Time elapsed %s : Est. Total %s : Est. Remaining %s : Doc %d, page %d of %d, %-50s\r" ,
-                        $pagesIndexed, $transcribedPageCount, 100 * $pagesIndexed / $transcribedPageCount,
-                        DateTimeFormat::getFormattedTime(intval($totalTime)),
-                        DateTimeFormat::getFormattedTime($estTotalTime),
-                        DateTimeFormat::getFormattedTime($remainingTime),
-                        $docId, $i+1, $pageCount, $title
-                    );
-                } catch (DocumentNotFoundException|PageNotFoundException|InvalidTimeStringException|EntityDoesNotExistException $e) {
-                    printf("\nERROR while processing page %d (id %s): '%s'\n", $i+1, $pageId, $e->getMessage());
-                }
-            }
+        if ($limit === 0) {
+            print "Just checking for needed updates...\n";
         }
-
-
-        printf("%d pages indexed in total\n", $pagesIndexed);
+        $result = $searchManager->updateIndex($indexType, $limit);
         $elapsedTime = time() - $absStart;
 
-        printf("Done in %.2f minutes, %.2f secs/doc,  %.2f secs/page\n",
-            $elapsedTime / 60, $elapsedTime / count ($docIds), $elapsedTime/$pagesIndexed);
+        if ($limit === 0) {
+            printf("%d updates are needed, none performed.\n", $result->updatesNeeded);
+            printf("Done in %.2f minutes\n",$elapsedTime / 60);
+            return;
+        }
 
+        printf("%d updates of %d done in %.2f minutes, %.2f secs/update\n", $result->updatesPerformed, $result->updatesNeeded,
+            $elapsedTime / 60, $result->updatesPerformed !== 0 ? $elapsedTime/$result->updatesPerformed : 0);
     }
 
     /**
@@ -554,46 +521,6 @@ END;
         $text_clean = str_replace(' ', ' ', $text_clean);
         $text_clean = str_replace(' ', ' ', $text_clean);
         return str_replace('- ', '', $text_clean);
-    }
-
-    /**
-     * Builds the editions index in typesense after getting all relevant data from the sql database.
-     * @return void
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    private function buildIndexEditions(): void {
-
-        /** @var CollationTableManager $ctm */
-        $ctm = $this->container->get(CollationTableManager::class);
-
-        $tablesInfo = $ctm->getTablesInfo();
-
-        $editionIds = [];
-
-        foreach ($tablesInfo as $tableInfo) {
-            if ($tableInfo->type === 'edition') {
-                $editionIds[] = $tableInfo['id'];
-            }
-        }
-
-        $this->logger->debug(sprintf("There are %d active tables in the system of which %d are editions",
-            count($tablesInfo), count($editionIds)));
-
-        // print_r($editionIds);
-
-        foreach ($editionIds as $id) {
-            $edition =  $this->getEditionData($ctm, $id);
-            if (count($edition) === 0) {
-                // empty data
-                $this->logger->info("Edition $id returned empty data, skipping");
-                continue;
-            }
-
-            $this->indexEdition($this->getTypesenseClient(), null, $edition['editor'], $edition['text'], $edition['title'], $edition['chunk_id'], $edition['lang'], $edition['table_id'], $edition['timeFrom']);
-            $log_data = 'Title: ' . $edition['title'] . ', Editor: ' . $edition['editor'] . ', Table ID: ' . $edition['table_id'] . ', Chunk: ' . $edition['chunk_id'] . ", TimeFrom: " . $edition['timeFrom'];
-            $this->logger->debug("Indexed Edition – $log_data\n");
-        }
     }
 
     /**

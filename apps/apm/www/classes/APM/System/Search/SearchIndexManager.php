@@ -147,12 +147,14 @@ interface SearchIndexManager
     /**
      * Compares the index with the system and updates the index if necessary.
      *
-     * Performs up to $updateCountLimit updates. If $updateCountLimit is 0, all updates are performed.
+     * Performs up to $updateCountLimit updates. If $updateCountLimit is -1, all updates are performed.
+     *
+     * Returns the number of updates required for a complete update and the number of updates performed.
      *
      * @param IndexType $indexType
      * @param int $updateCountLimit
      * @return UpdateIndexResult
      */
-    public function updateIndex(IndexType $indexType, int $updateCountLimit = 0): UpdateIndexResult;
+    public function updateIndex(IndexType $indexType, int $updateCountLimit = -1): UpdateIndexResult;
 
 }

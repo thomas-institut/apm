@@ -158,4 +158,21 @@ interface SearchIndexManager
      */
     public function updateIndex(IndexType $indexType, int $updateCountLimit = -1): UpdateIndexResult;
 
+    /**
+     * Searches one token in the specified index.
+     *
+     * @param IndexType $indexType
+     * @param string $lang
+     * @param string $token
+     * @param bool $lemmatize
+     * @param int $page
+     * @param string $docTitle
+     * @param string $creatorName
+     * @param int $pageSize
+     * @return SearchQueryResult
+     * @throws SearchManagerException
+     */
+    public function searchToken(IndexType $indexType, string $lang, string $token, bool $lemmatize, int $page,
+                                string $docTitle = '', string $creatorName = '', int $pageSize = 100): SearchQueryResult;
+
 }

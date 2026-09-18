@@ -45,6 +45,30 @@ class TypesenseSearchIndexManagerTest extends TestCase
         $this->assertSame(0, $result->deletionsPerformed);
     }
 
+    public function testSearchTokenBuildsTranscriptionQuery(): void
+    {
+        $documents = $this->createMock(Documents::class);
+        $documents->expects($this->once())
+            ->method('search')
+            ->with($this->callback(function (array $query): bool {
+                return ($query['q'] ?? null) === 'token' &&
+                    ($query['query_by'] ?? null) === 'transcription_lemmata' &&
+                    ($query['filter_by'] ?? null) === 'lang:=ar && creator:Author* && title:=Title' &&
+                    ($query['sort_by'] ?? null) === 'title:asc, seq:asc, column:asc' &&
+                    ($query['page'] ?? null) === 2 &&
+                    ($query['limit'] ?? null) === 20;
+            }))
+            ->willReturn(['hits' => [['document' => ['id' => '1']]]]);
+
+        $manager = $this->createManager($this->createTypesenseClient($documents));
+
+        $result = $manager->searchToken(IndexType::Transcriptions, 'ar', 'token', true, 2, 'Title', 'Author', 20);
+
+        $this->assertSame([['document' => ['id' => '1']]], $result->hits);
+        $this->assertSame(2, $result->page);
+        $this->assertFalse($result->queryFinished);
+    }
+
     public function testUpdateIndexDeletesOrphanedEditionEntries(): void
     {
         $documents = $this->createMock(Documents::class);

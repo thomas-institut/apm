@@ -1084,4 +1084,84 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         }
         return $text;
     }
+
+    /**
+     * @throws SearchManagerException
+     */
+    public function searchToken(IndexType $indexType, string $lang, string $token, bool $lemmatize, int $page, string $docTitle = '', string $creatorName = '', int $pageSize = 100): SearchQueryResult
+    {
+
+        $indexName = $this->getIndexName($indexType, $lang);
+
+        $this->logger->debug("Making typesense query", ['index' => $indexName, 'token' => $token, 'title' => $docTitle, 'creator' => $creatorName]);
+
+        // Check "lemmatize" (boolean) and corpus to determine the target of the query
+        if ($lemmatize) {
+            if ($indexType === IndexType::Transcriptions) {
+                $area_of_query = 'transcription_lemmata';
+                $sortingSchema = "title:asc, seq:asc, column:asc";
+            } else {
+                $area_of_query = 'edition_lemmata';
+                $sortingSchema = "title:asc, chunk:asc, table_id:asc";
+
+            }
+        } else {
+            if ($indexType === IndexType::Transcriptions) {
+                $area_of_query = 'transcription_tokens';
+                $sortingSchema = "title:asc, seq:asc, column:asc";
+            } else {
+                $area_of_query = 'edition_tokens';
+                $sortingSchema = "title:asc, chunk:asc, table_id:asc";
+            }
+        }
+
+
+
+        $searchParameters = [
+            'q' => $token,
+            'query_by' => $area_of_query,
+            'filter_by' => "lang:=$lang",
+            "sort_by" => $sortingSchema,
+            'num_typos' => 0,
+            'prefix' => true,
+            'infix' => 'off',
+            'page' => $page,
+            'limit' => $pageSize
+        ];
+
+        if ($creatorName !== '') {
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:$creatorName*";
+        }
+
+        if ($docTitle !== '') {
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && title:=$docTitle";
+        }
+
+        $queryFinished = true;
+
+        $this->logger->debug("getting typesense matches page no. " . $page);
+
+
+        $start = microtime(true);
+        try {
+            $query = $this->typesenseClient->collections[$indexName]->documents->search($searchParameters);
+        } catch (Exception|TypesenseClientError $e) {
+            $message = "Error searching index $indexName: " . $e->getMessage();
+            $this->logger->error($message);
+            throw new SearchManagerException($message, 0, $e);
+        }
+        $hits = $query['hits'];
+
+        $this->logger->debug(sprintf("TS query with %d hits done in %.2f ms",
+            count($query['hits']), 1000 * (microtime(true) - $start)));
+
+
+        $this->logger->debug("got " . count($hits) . " matching items from typesense matches page no. " . $page);
+
+        if (count($hits) !== 0) {
+            $queryFinished = false;
+        }
+
+        return new SearchQueryResult($hits, $page, $queryFinished);
+    }
 }

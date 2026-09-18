@@ -5,7 +5,6 @@ namespace APM\System\Jobs;
 use APM\Api\ApiSearch;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Search\SearchIndexManager;
-use APM\System\SystemManager;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 use Throwable;
@@ -22,7 +21,7 @@ readonly class UpdateApiSearchEditorsAndEditionsCacheJob implements JobHandlerIn
     public function run(array $payload, string $jobName): bool
     {
         try {
-            return ApiSearch::updateDataCache($this->searchIndexManager, $this->cache, 'editions',  $this->logger);
+            return ApiSearch::updateDataCache($this->searchIndexManager, $this->cache, 'editions');
         } catch (Throwable $e) {
             $this->logger->error("Error updating editors and editions cache: " . $e->getMessage());
             return false;

@@ -12,7 +12,6 @@ use APM\System\Search\SearchIndexManager;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Log\LoggerInterface;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
@@ -279,10 +278,9 @@ class ApiSearch extends ApiController
      * @param SearchIndexManager $searchIndexManager
      * @param SystemMainDataCache $cache
      * @param string $whichIndex
-     * @param LoggerInterface $logger
      * @return bool
      */
-    static public function updateDataCache(SearchIndexManager $searchIndexManager, SystemMainDataCache $cache, string $whichIndex, LoggerInterface $logger): bool
+    static public function updateDataCache(SearchIndexManager $searchIndexManager, SystemMainDataCache $cache, string $whichIndex): bool
     {
         if ($whichIndex === 'transcriptions') {
             $transcriptions = $searchIndexManager->getTranscribedDocuments();

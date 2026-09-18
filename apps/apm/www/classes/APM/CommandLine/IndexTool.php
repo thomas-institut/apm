@@ -22,31 +22,14 @@ namespace APM\CommandLine;
 
 use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\ApmEntitySystemInterface;
-use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\System\Cache\SystemDirDataCache;
-use APM\System\Document\DocumentManager;
-use APM\System\Document\Exception\DocumentNotFoundException;
-use APM\System\Document\Exception\PageNotFoundException;
-use APM\System\Person\PersonManagerInterface;
-use APM\System\Person\PersonNotFoundException;
 use APM\System\Search\IndexType;
-use APM\System\Search\Lemmatizer;
 use APM\System\Search\SearchIndexManager;
-use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\TranscriptionManager;
-use APM\System\Transcription\TxText\Item;
-use APM\System\Work\WorkManager;
-use APM\System\Work\WorkNotFoundException;
-use Exception;
 use InvalidArgumentException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use RuntimeException;
-use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use Throwable;
-use Typesense\Client;
-use Typesense\Exceptions\TypesenseClientError;
 
 /**
  * Description of IndexManager

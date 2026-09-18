@@ -5,7 +5,6 @@ namespace APM\System\Jobs;
 use APM\Api\ApiSearch;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Search\SearchIndexManager;
-use APM\System\SystemManager;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 use Throwable;
@@ -23,7 +22,7 @@ final readonly class UpdateApiSearchTranscribersAndTranscriptionsCacheJob implem
     public function run(array $payload, string $jobName): bool
     {
         try {
-            return ApiSearch::updateDataCache($this->searchIndexManager, $this->cache, 'transcriptions', $this->logger);
+            return ApiSearch::updateDataCache($this->searchIndexManager, $this->cache, 'transcriptions');
         }  catch (Throwable $e) {
             $this->logger->error("Error updating transcriptions and transcribers cache: " . $e->getMessage());
             return false;

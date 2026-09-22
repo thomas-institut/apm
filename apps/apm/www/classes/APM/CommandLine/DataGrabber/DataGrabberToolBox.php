@@ -4,7 +4,7 @@ namespace APM\CommandLine\DataGrabber;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
 
-class DataGrabberUtil
+class DataGrabberToolBox
 {
 
     /**

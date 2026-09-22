@@ -1,7 +1,8 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidEntityTypeException;
@@ -12,7 +13,7 @@ use RuntimeException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
 
-class EntityTool  implements ApmCtlUtility
+class EntityTool  implements MultiToolCliUtility
 {
 
     const string CMD = 'entity';

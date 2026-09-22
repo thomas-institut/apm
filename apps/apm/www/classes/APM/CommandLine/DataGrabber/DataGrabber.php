@@ -3,9 +3,9 @@
 namespace APM\CommandLine\DataGrabber;
 
 
-use APM\CommandLine\ApmCtlUtility\AdminUtilityManager;
+use APM\CommandLine\MultiToolCli\MultiToolCliUtilityManager;
 
-class GrabData extends AdminUtilityManager
+class DataGrabber extends MultiToolCliUtilityManager
 {
     public function __construct(array $config, int $argc, array $argv)
     {

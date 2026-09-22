@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\MultiToolCli;
 
 
 
@@ -9,11 +9,11 @@ use APM\CommandLine\ApmCliUtility;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
-class AdminUtilityManager extends ApmCliUtility
+class MultiToolCliUtilityManager extends ApmCliUtility
 {
 
     /**
-     * @var array<string, UtilityDefinition>
+     * @var array<string, MultiToolCliUtilityDefinition>
      */
     private array $utilities;
 
@@ -35,7 +35,7 @@ class AdminUtilityManager extends ApmCliUtility
 
     protected  function defineUtilities(array $utilityClasses) : void {
         foreach($utilityClasses as $utilityClass) {
-            $this->utilities[$utilityClass::getName()] = new UtilityDefinition(
+            $this->utilities[$utilityClass::getName()] = new MultiToolCliUtilityDefinition(
                 $utilityClass::getName(),
                 $utilityClass::getDescription(),
                 $utilityClass::getUsage(),
@@ -72,7 +72,7 @@ class AdminUtilityManager extends ApmCliUtility
             printf("Unknown command '%s'\n", $utility);
         } else {
             try {
-                /** @var ApmCtlUtility $utilityObject */
+                /** @var MultiToolCliUtility $utilityObject */
                 $utilityObject = $this->container->get($this->utilities[$utility]->class);
                 $utilityObject->run($this->commandArgc, $this->commandArgv);
             } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {

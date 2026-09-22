@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\MultiToolCli;
 
 /**
  * Interface to a CLI utility that can be run from apmctl as:
@@ -11,7 +11,7 @@ namespace APM\CommandLine\ApmCtlUtility;
  *
  *
  */
-interface ApmCtlUtility
+interface MultiToolCliUtility
 {
     public static function getName() : string;
     public static function getUsage() : string;

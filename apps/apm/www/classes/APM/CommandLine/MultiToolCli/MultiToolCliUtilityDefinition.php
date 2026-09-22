@@ -1,8 +1,8 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\MultiToolCli;
 
-final class UtilityDefinition
+final class MultiToolCliUtilityDefinition
 {
     public function __construct(
         public string $name,

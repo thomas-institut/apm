@@ -1,13 +1,14 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use ThomasInstitut\EntitySystem\Tid;
 
-class DocTool implements ApmCtlUtility
+class DocTool implements MultiToolCliUtility
 {
 
     const string CMD = 'doc';

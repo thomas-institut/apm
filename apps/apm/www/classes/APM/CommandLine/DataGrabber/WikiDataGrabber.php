@@ -2,7 +2,7 @@
 
 namespace APM\CommandLine\DataGrabber;
 
-use APM\CommandLine\ApmCtlUtility\ApmCtlUtility;
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
@@ -13,7 +13,7 @@ use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 
-class WikiDataGrabber implements ApmCtlUtility
+class WikiDataGrabber implements MultiToolCliUtility
 {
     const string CMD = 'wikidata';
 

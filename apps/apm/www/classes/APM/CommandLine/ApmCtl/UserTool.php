@@ -1,8 +1,9 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
 use APM\CommandLine\CliToolBox;
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\InvalidObjectException;
 use APM\EntitySystem\Exception\InvalidStatementException;
@@ -21,7 +22,7 @@ use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use ThomasInstitut\EntitySystem\Tid;
 
-class UserTool implements ApmCtlUtility
+class UserTool implements MultiToolCliUtility
 {
 
     const string CMD = 'user';

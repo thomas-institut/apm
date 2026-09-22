@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine;
 
 /**
  * Generates TEI XML from edition data.

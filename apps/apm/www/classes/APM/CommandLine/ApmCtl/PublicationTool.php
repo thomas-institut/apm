@@ -1,7 +1,9 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
+use APM\CommandLine\TEIGenerator;
 use APM\System\PublicationManager\PublicationManager;
 use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\PublicationManager\ResourceNotFoundException;
@@ -9,7 +11,7 @@ use Exception;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
 
-class PublicationTool implements ApmCtlUtility
+class PublicationTool implements MultiToolCliUtility
 {
     const string CMD = 'pub';
 

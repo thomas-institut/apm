@@ -2,7 +2,7 @@
 
 namespace APM\CommandLine\DataGrabber;
 
-use APM\CommandLine\ApmCtlUtility\ApmCtlUtility;
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidObjectException;
@@ -23,7 +23,7 @@ use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
-class ViafIdGrabber implements ApmCtlUtility
+class ViafIdGrabber implements MultiToolCliUtility
 {
     const string CMD = 'viaf';
 
@@ -85,7 +85,7 @@ class ViafIdGrabber implements ApmCtlUtility
         if (in_array('all', $argv)){
             $entityIds = $es->getAllEntitiesForType(Entity::tPerson);
         } else {
-            $entityIds = DataGrabberUtil::getTidsFromArgv($es,$argv);
+            $entityIds = DataGrabberToolBox::getTidsFromArgv($es,$argv);
         }
         if (count($entityIds) === 0) {
             print "Please enter a list of entities separated by spaces\n";

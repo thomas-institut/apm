@@ -1,7 +1,8 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
@@ -12,7 +13,7 @@ use APM\System\Work\WorkNotFoundException;
 use Exception;
 use ThomasInstitut\EntitySystem\Tid;
 
-class WorkTool implements ApmCtlUtility
+class WorkTool implements MultiToolCliUtility
 {
 
     const string CMD = 'work';

@@ -1,15 +1,16 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
 use APM\CommandLine\CliToolBox;
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use Random\RandomException;
 use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\NullJobHandler;
 use ThomasInstitut\JobQueue\ScheduledJobState;
 
 
-class JobQueueTool implements ApmCtlUtility
+class JobQueueTool implements MultiToolCliUtility
 {
 
     const string CMD = 'jobs';

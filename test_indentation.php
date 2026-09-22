@@ -3,7 +3,7 @@ require_once __DIR__ . '/apps/apm/www/classes/APM/CommandLine/CommandLineUtility
 require_once __DIR__ . '/apps/apm/www/classes/APM/CommandLine/ApmCtlUtility/AdminUtility.php';
 require_once __DIR__ . '/apps/apm/www/classes/APM/CommandLine/ApmCtlUtility/PublicationTool.php';
 
-use APM\CommandLine\ApmCtlUtility\PublicationTool;
+use APM\CommandLine\ApmCtl\PublicationTool;
 
 $tool = new class extends PublicationTool {
     public function __construct() {}

@@ -3,6 +3,7 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 use APM\CommandLine\ApmCliUtility;
+use APM\CommandLine\ApmCtl\PublicationTool;
 use APM\System\PublicationManager\PublicationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;

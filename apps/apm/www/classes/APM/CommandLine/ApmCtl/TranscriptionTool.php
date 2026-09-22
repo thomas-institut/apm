@@ -1,10 +1,11 @@
 <?php
 
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
 
 use APM\CommandLine\CliToolBox;
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\ApmTableNames;
 use APM\System\Document\DocumentManager;
@@ -19,8 +20,7 @@ use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\EntitySystem\Tid;
 
 
-
-class TranscriptionTool implements ApmCtlUtility
+class TranscriptionTool implements MultiToolCliUtility
 {
     const string CMD = 'transcription';
 

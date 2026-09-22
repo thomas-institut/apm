@@ -1,11 +1,12 @@
 <?php
 
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
 
 use APM\Api\ApiPeople;
 use APM\CommandLine\CliToolBox;
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemDirDataCache;
@@ -15,7 +16,7 @@ use Psr\Log\LoggerInterface;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 
-class CacheTool implements ApmCtlUtility
+class CacheTool implements MultiToolCliUtility
 {
     const string CMD = 'cache';
 

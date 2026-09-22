@@ -1,8 +1,12 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
-class ApmCtl extends AdminUtilityManager
+
+
+use APM\CommandLine\MultiToolCli\MultiToolCliUtilityManager;
+
+class ApmCtl extends MultiToolCliUtilityManager
 {
 
     public function __construct(array $config, int $argc, array $argv)

@@ -11,11 +11,10 @@ class GrabData extends AdminUtilityManager
     {
         parent::__construct($config, $argc, $argv, "Grab Data Tools");
 
-        $utilities = [
-            new ViafIdGrabber($config, $this->commandArgc, $this->commandArgv),
-            new WikiDataGrabber($config, $this->commandArgc, $this->commandArgv)
-        ];
-        $this->setCommands($utilities);
+        $this->defineUtilities([
+            ViafIdGrabber::class,
+            WikiDataGrabber::class
+        ]);
     }
 
 }

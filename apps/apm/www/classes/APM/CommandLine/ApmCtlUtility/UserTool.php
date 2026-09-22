@@ -2,47 +2,62 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\CliToolBox;
+use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\EntitySystem\Exception\InvalidObjectException;
+use APM\EntitySystem\Exception\InvalidStatementException;
+use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Person\InvalidPersonNameException;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\User\InvalidEmailAddressException;
 use APM\System\User\InvalidPasswordException;
 use APM\System\User\InvalidUserNameException;
 use APM\System\User\UserEntityDataUpdater;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNameAlreadyInUseException;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use ThomasInstitut\EntitySystem\Tid;
 
-class UserTool extends CommandLineUtility implements AdminUtility
+class UserTool implements ApmCtlUtility
 {
 
-    const CMD = 'user';
+    const string CMD = 'user';
 
-    const USAGE = self::CMD . " <option> [<username>]\n\n" .
+    const string USAGE = self::CMD . " <option> [<username>]\n\n" .
        "Options:\n  list: list all users\n  create: creates a new user\n" .
        "  makeRoot: make a user root\n  changePassword: changes a user's password\n  disable: disables a user\n" .
        "  enable: enables a user\n  updateEntitySystem: updates user-related data in the entity system";
-    const DESCRIPTION = "User management functions";
+    const string DESCRIPTION = "User management functions";
 
 
-    public function getCommand(): string
+    public function __construct(
+        private readonly ApmEntitySystemInterface $entitySystem,
+        private readonly PersonManagerInterface $personManager,
+        private readonly UserManagerInterface $userManager,
+        private readonly UserEntityDataUpdater $userEntityDataUpdater,
+    )
+    {
+    }
+
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
 
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print self::USAGE . "\n";
@@ -55,23 +70,23 @@ class UserTool extends CommandLineUtility implements AdminUtility
                 break;
 
             case 'create':
-                $this->createNewUser();
+                $this->createNewUser($argc, $argv);
                 break;
 
             case 'changePassword':
-                $this->changePassword();
+                $this->changePassword($argc, $argv);
                 break;
 
             case 'disable':
-                $this->enableDisableUser(true);
+                $this->enableDisableUser($argc, $argv, true);
                 break;
 
             case 'enable':
-                $this->enableDisableUser(false);
+                $this->enableDisableUser($argc, $argv, false);
                 break;
 
             case 'makeRoot':
-                $this->makeRoot();
+                $this->makeRoot($argc, $argv);
                 break;
 
             case 'updateEntitySystem':
@@ -87,13 +102,13 @@ class UserTool extends CommandLineUtility implements AdminUtility
     }
 
     private function updateEntitySystem(bool $hotRun) : void {
-        $es = $this->getSystemManager()->getEntitySystem();
+        $es = $this->entitySystem;
 
         $peopleTids = $es->getAllEntitiesForType(Entity::tPerson);
 
         print "Updating entity system for " . count($peopleTids) . " people:\n";
 
-        $updater = new UserEntityDataUpdater($this->getSystemManager());
+        $updater = $this->userEntityDataUpdater;
 
         $changes = false;
 
@@ -102,12 +117,15 @@ class UserTool extends CommandLineUtility implements AdminUtility
                $info = $updater->updateUserEntityData($tid, $hotRun);
                if (count($info) !== 0) {
                    $changes = true;
-                  $name = $this->getSystemManager()->getPersonManager()->getPersonEssentialData($tid)->name;
+                  $name = $this->personManager->getPersonEssentialData($tid)->name;
                    print "  $name, tid $tid (" . Tid::toBase36String($tid) . "): ";
                    print (implode(",   ", $info) . "\n");
                }
             } catch (PersonNotFoundException) {
                 print "ERROR: person $tid not found... this should NEVER happen\n";
+            } catch (InvalidObjectException|InvalidSubjectException|InvalidStatementException $e) {
+                // should never happen
+                CliToolBox::printStdErr("ERROR: Runtime exception updating entity data: " . $e->getMessage());
             }
         }
 
@@ -116,14 +134,14 @@ class UserTool extends CommandLineUtility implements AdminUtility
         }
     }
 
-    private function checkUserName() : array {
-        if ($this->argc < 3) {
+    private function checkUserName(int $argc, array $argv) : array {
+        if ($argc < 3) {
             print "Please enter a userName\n";
             return ['', -1];
         }
 
-        $userName = $this->argv[2];
-        $um = $this->getSystemManager()->getUserManager();
+        $userName = $argv[2];
+        $um = $this->userManager;
 
         $userTid = $um->getUserIdForUserName($userName);
 
@@ -131,16 +149,16 @@ class UserTool extends CommandLineUtility implements AdminUtility
             print "$userName is not a user in the system\n";
             return ['', -1];
         }
-        return $userName;
+        return [$userName, $userTid];
     }
 
-    private function changePassword(): void
+    private function changePassword(int $argc, array $argv): void
     {
-        [$userName, $userTid]  = $this->checkUserName();
+        [$userName, $userTid]  = $this->checkUserName($argc, $argv);
         if ($userName === '') {
             return;
         }
-        $um = $this->getSystemManager()->getUserManager();
+        $um = $this->userManager;
 
         try {
             if (!$um->isEnabled($userTid)) {
@@ -175,7 +193,7 @@ class UserTool extends CommandLineUtility implements AdminUtility
 
     private function listUsers() : void {
 
-        $um = $this->getSystemManager()->getUserManager();
+        $um = $this->userManager;
         $allUsersData = $um->getAllUsersData();
 
         foreach($allUsersData as $userData) {
@@ -186,16 +204,16 @@ class UserTool extends CommandLineUtility implements AdminUtility
 
     }
 
-    private function createNewUser() : void
+    private function createNewUser(int $argc, array $argv) : void
     {
-        if ($this->argc < 3) {
+        if ($argc < 3) {
             print "Please enter a userName\n";
             return;
         }
 
-        $um = $this->getSystemManager()->getUserManager();
-        $personManager = $this->getSystemManager()->getPersonManager();
-        $userName = $this->argv[2];
+        $um = $this->userManager;
+        $personManager = $this->personManager;
+        $userName = $argv[2];
 
         if (!$um->isStringValidUserName($userName)) {
             print "The given username '$userName' is not a valid userName\n";
@@ -264,13 +282,13 @@ class UserTool extends CommandLineUtility implements AdminUtility
         print "User $userName created with tid $newUserTid. You should now set a new password for them\n";
     }
 
-    private function enableDisableUser(bool $disable): void{
-        [$userName, $userTid]  = $this->checkUserName();
+    private function enableDisableUser(int $argc, array $argv, bool $disable): void{
+        [$userName, $userTid]  = $this->checkUserName($argc, $argv);
         if ($userName === '') {
             return;
         }
 
-        $um = $this->getSystemManager()->getUserManager();
+        $um = $this->userManager;
 
         try {
             if ($um->isEnabled($userTid)) {
@@ -293,14 +311,14 @@ class UserTool extends CommandLineUtility implements AdminUtility
         }
     }
 
-    private function makeRoot() : void {
+    private function makeRoot(int $argc, array $argv) : void {
 
-        [$userName, $userTid]  = $this->checkUserName();
+        [$userName, $userTid]  = $this->checkUserName($argc, $argv);
         if ($userName === '') {
             return;
         }
 
-        $um = $this->getSystemManager()->getUserManager();
+        $um = $this->userManager;
 
         try {
             if ($um->isRoot($userTid)) {

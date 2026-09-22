@@ -9,7 +9,7 @@ use ThomasInstitut\ToolBox\MySqlHelper;
  * Checks the consistency of a MySqlUnitemporal table
  * @package AverroesProject\CommandLine
  */
-class UnitemporalConsistency extends CommandLineUtility
+class UnitemporalConsistency extends ApmCliUtility
 {
 
     const string DB_TIME_FORMAT = 'Y-m-d H:i:s.u';

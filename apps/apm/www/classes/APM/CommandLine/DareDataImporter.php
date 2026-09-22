@@ -40,7 +40,7 @@ use stdClass;
  *
  * @author Lukas Reichert
  */
-class DareDataImporter extends CommandLineUtility
+class DareDataImporter extends ApmCliUtility
 {
 
     private ApmEntitySystemInterface $es;

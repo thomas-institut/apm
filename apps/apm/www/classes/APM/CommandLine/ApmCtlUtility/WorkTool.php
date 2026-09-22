@@ -2,15 +2,17 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\CommandLineUtility;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\SystemManager;
 use APM\System\Work\WorkData;
+use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
 use Exception;
 use ThomasInstitut\EntitySystem\Tid;
 
-class WorkTool extends CommandLineUtility implements AdminUtility
+class WorkTool implements ApmCtlUtility
 {
 
     const string CMD = 'work';
@@ -21,23 +23,32 @@ class WorkTool extends CommandLineUtility implements AdminUtility
         " reset-cache <entity or APM id>: resets the cached data associated with a work\n" .
         " create: creates a new work\n";
     const string DESCRIPTION = "Work related functions";
+    
+    
+    public function __construct(
+        private readonly WorkManager   $workManager,
+        private readonly SystemManager $systemManager,
+        private readonly PersonManagerInterface $personManager
+    )
+    {
+    }
 
-    public function getCommand(): string
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
 
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print self::USAGE . "\n";
@@ -94,7 +105,7 @@ class WorkTool extends CommandLineUtility implements AdminUtility
      * @throws WorkNotFoundException
      */
     private function getWorkData(string $entityOrApmId) : WorkData {
-        $wm = $this->getSystemManager()->getWorkManager();
+        $wm = $this->workManager;
         // first try as ApmId, which will surely be the most common case
         try {
             return $wm->getWorkDataByDareId($entityOrApmId);
@@ -114,13 +125,13 @@ class WorkTool extends CommandLineUtility implements AdminUtility
             print "Work $entityOrApmId not found\n";
             return;
         }
-        $this->getSystemManager()->onWorkUpdated($workData->entityId);
+        $this->systemManager->onWorkUpdated($workData->entityId);
 
     }
 
     private function setEnableFlag(string $entityOrApmId, string $newFlag): void
     {
-        $wm = $this->getSystemManager()->getWorkManager();
+        $wm = $this->workManager;
         $entityOrApmId = trim($entityOrApmId);
         $newFlag = trim($newFlag);
         if (!in_array($newFlag, ['1', '0'], true)) {
@@ -169,7 +180,7 @@ class WorkTool extends CommandLineUtility implements AdminUtility
 
 
         try {
-            $authorData = $this->getSystemManager()->getPersonManager()->getPersonEssentialData($author);
+            $authorData = $this->personManager->getPersonEssentialData($author);
         } catch (PersonNotFoundException) {
             print "ERROR: author $author not found or not a person\n";
             return;
@@ -214,7 +225,7 @@ class WorkTool extends CommandLineUtility implements AdminUtility
         }
 
         try {
-            $workId = $this->getSystemManager()->getWorkManager()->createWork(
+            $workId = $this->workManager->createWork(
                 $title,
                 $shortTitle,
                 $authorData->tid,
@@ -227,7 +238,7 @@ class WorkTool extends CommandLineUtility implements AdminUtility
             return;
         }
 
-        $this->getSystemManager()->onWorkAdded($workId);
+        $this->systemManager->onWorkAdded($workId);
         printf("New work created, id = %d = %s\n", $workId, Tid::toBase36String($workId));
     }
 
@@ -246,7 +257,7 @@ class WorkTool extends CommandLineUtility implements AdminUtility
         }
 
         try {
-            $authorInfo = $this->getSystemManager()->getPersonManager()->getPersonEssentialData($workData->authorId);
+            $authorInfo = $this->personManager->getPersonEssentialData($workData->authorId);
         } catch (PersonNotFoundException) {
             // should never happen
             print "ERROR: author $workData->authorId not found\n";

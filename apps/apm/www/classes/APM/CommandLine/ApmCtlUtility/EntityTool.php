@@ -2,38 +2,47 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\CommandLineUtility;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidEntityTypeException;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\SystemManager;
 use Exception;
 use RuntimeException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
 
-class EntityTool extends CommandLineUtility implements AdminUtility
+class EntityTool  implements ApmCtlUtility
 {
 
-    const CMD = 'entity';
+    const string CMD = 'entity';
 
-    const USAGE = self::CMD . " <option>\n\nOptions:\n" .
+    const string USAGE = self::CMD . " <option>\n\nOptions:\n" .
         " info <id>: prints info about the given entity\n" .
         " newId: generates a new unique entity id\n" .
-        " merge <entity1> <entity2>:  merges entity 1 into entity 2\n" .
+        " merge <entity1> <entity2>: merges entity 1 into entity 2\n" .
         " create <type>: creates a new entity\n";
-    const DESCRIPTION = "Entity related functions";
+    const string DESCRIPTION = "Entity related functions";
 
-    public function getCommand(): string
+
+    public function __construct(
+        private readonly ApmEntitySystemInterface $entitySystem,
+        private readonly SystemManager $systemManager
+    )
+    {
+    }
+
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
@@ -42,7 +51,7 @@ class EntityTool extends CommandLineUtility implements AdminUtility
      * @throws InvalidTimeZoneException|InvalidEntityTypeException
      * @throws EntityDoesNotExistException
      */
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print self::USAGE . "\n";
@@ -105,7 +114,7 @@ class EntityTool extends CommandLineUtility implements AdminUtility
             print "ERROR: invalid entity id1 '$entity1'\n";
             return;
         }
-        $es = $this->getSystemManager()->getEntitySystem();
+        $es = $this->entitySystem;
         try {
             $data1 = $es->getEntityData($id1);
         } catch (EntityDoesNotExistException) {
@@ -165,14 +174,14 @@ class EntityTool extends CommandLineUtility implements AdminUtility
      */
     private function createEntity(int $type) : void {
 
-        $es = $this->getSystemManager()->getEntitySystem();
+        $es = $this->entitySystem;
 
         try {
             if ($es->getEntityType($type) !== Entity::tEntityType) {
                 print "ERROR: Given type $type is not actually a type\n";
                 return;
             }
-        } catch (EntityDoesNotExistException $e) {
+        } catch (EntityDoesNotExistException) {
             print "ERROR: Given type $type does not exist\n";
             return;
         }
@@ -196,7 +205,7 @@ class EntityTool extends CommandLineUtility implements AdminUtility
 
         $id = $es->createEntity($type, $name, '', Entity::System);
 
-        $this->getSystemManager()->onEntityDataChange($id, Entity::System);
+        $this->systemManager->onEntityDataChange($id, Entity::System);
         printf("New entity created, id = %d = %s\n", $id, Tid::toBase36String($id));
     }
 
@@ -213,7 +222,7 @@ class EntityTool extends CommandLineUtility implements AdminUtility
 
         printf("Entity %s ( = %d, 0x%s), timestamp %s\n", Tid::toBase36String($tid), $tid, Tid::toHexString($tid), Tid::toTimeString($tid));
         try {
-            $data = $this->getSystemManager()->getEntitySystem()->getEntityData($tid);
+            $data = $this->entitySystem->getEntityData($tid);
         } catch (EntityDoesNotExistException) {
             print "ERROR: Entity does not exist\n";
             return;

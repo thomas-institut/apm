@@ -2,30 +2,32 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\Actions\GetTranscriptionDataForDocument;
-use APM\CommandLine\CommandLineUtility;
 use APM\System\PublicationManager\PublicationManager;
 use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\PublicationManager\ResourceNotFoundException;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
-use RuntimeException;
+use Exception;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
-use JsonException;
 
-class PublicationTool extends CommandLineUtility implements AdminUtility
+class PublicationTool implements ApmCtlUtility
 {
     const string CMD = 'pub';
 
     const string DESCRIPTION = "Publication management functions";
 
-    public function getCommand(): string
+
+    public function __construct(
+        private readonly PublicationManager $publicationManager
+    )
+    {
+    }
+
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
        $options = [
            'list' => 'prints current publications',
@@ -38,16 +40,16 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         return implode("\n", array_map(function($key, $value) { return "  $key: $value"; }, array_keys($options), $options));
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
 
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv) : int
     {
 
         if ($argc === 1) {
-            print "Usage:\n" . $this->getHelp() . "\n";
+            print "Usage:\n" . $this->getUsage() . "\n";
             return 0;
         }
 
@@ -81,14 +83,10 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
         try {
-            /** @var PublicationManager $pm */
-            $pm = $this->container->get(PublicationManager::class);
+            $pm = $this->publicationManager;
             $data = $pm->createPublication($type, $resourceId, $version);
             print "Publication $data->id created\n";
             return 0;
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
-            print "Error initializing system\n";
-            return 1;
         } catch (ResourceNotFoundException $e) {
             print "Error: resource not found" . $e->getMessage() . "\n";
             return 1;
@@ -100,18 +98,14 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             print "Error: publication id must be greater than 0\n";
         }
         try {
-            /** @var PublicationManager $pm */
-            $pm = $this->container->get(PublicationManager::class);
+            $pm = $this->publicationManager;
             $pm->updatePublication($pubId, $version);
             print "Publication $pubId updated\n";
             return 0;
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
-            print "Error initializing system\n";
-            return 1;
         } catch (PublicationNotFoundException) {
             print "Error: publication not found\n";
             return 1;
-        } catch (ResourceNotFoundException $e) {
+        } catch (ResourceNotFoundException) {
             print "Error: publication's resource data not found\n";
             return 1;
         }
@@ -119,23 +113,17 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
 
 
     private function list() : int {
-        try {
-            /** @var PublicationManager $pm */
-            $pm = $this->container->get(PublicationManager::class);
-            $listings = $pm->list();
-            if (count($listings) === 0) {
-                print "No publications found\n";
-                return 0;
-            }
-            print "Current Publications\n";
-            foreach ($listings as $listing) {
-                print " - $listing->id  {$listing->type->value}  $listing->title $listing->versionTimeString\n";
-            }
+        $pm = $this->publicationManager;
+        $listings = $pm->list();
+        if (count($listings) === 0) {
+            print "No publications found\n";
             return 0;
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
-            print "Error initializing system\n";
-            return 1;
         }
+        print "Current Publications\n";
+        foreach ($listings as $listing) {
+            print " - $listing->id  {$listing->type->value}  $listing->title $listing->versionTimeString\n";
+        }
+        return 0;
     }
 
     private function remove(int $pubId) : int {
@@ -144,13 +132,9 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
         try {
-            /** @var PublicationManager $pm */
-            $pm = $this->container->get(PublicationManager::class);
+            $pm = $this->publicationManager;
             $pm->deletePublication($pubId);
             return 0;
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
-            print "Error initializing system\n";
-            return 1;
         } catch (PublicationNotFoundException) {
             print "Error: publication not found\n";
             return 1;
@@ -163,8 +147,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             return 1;
         }
         try {
-            /** @var PublicationManager $pm */
-            $pm = $this->container->get(PublicationManager::class);
+            $pm = $this->publicationManager;
             $data = $pm->getPublication($pubId);
             if ($data->type === PublicationType::Transcription) {
                 /** @var TranscriptionData $data */
@@ -176,9 +159,6 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
                 return 1;
             }
             return 0;
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
-            print "Error initializing system\n";
-            return 1;
         } catch (PublicationNotFoundException) {
             print "Error: publication not found\n";
             return 1;
@@ -198,8 +178,7 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
         }
 
         try {
-            /** @var PublicationManager $pm */
-            $pm = $this->container->get(PublicationManager::class);
+            $pm = $this->publicationManager;
             $data = $pm->getPublication($pubId);
 
             $publicationType = is_object($data->type) && isset($data->type->value)
@@ -215,8 +194,6 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
                     $data,
                     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 ) . "\n";
-
-            $fileName = '';
 
             if ($format === 'json') {
                 $fileName = sprintf('%s.json', $pubId);
@@ -252,13 +229,10 @@ class PublicationTool extends CommandLineUtility implements AdminUtility
             print "Publication $pubId exported to '$fileName'\n";
             return 0;
 
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
-            print "Error initializing system\n";
-            return 1;
         } catch (PublicationNotFoundException) {
             print "Error: publication not found\n";
             return 1;
-        } catch (JsonException $e) {
+        } catch (Exception $e) {
             print "Error: could not encode publication as JSON: " . $e->getMessage() . "\n";
             return 1;
         }

@@ -2,36 +2,43 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\CommandLineUtility;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use ThomasInstitut\EntitySystem\Tid;
 
-class DocTool extends CommandLineUtility implements AdminUtility
+class DocTool implements ApmCtlUtility
 {
 
-    const CMD = 'doc';
+    const string CMD = 'doc';
 
     const string USAGE = self::CMD . " <docId> <option>\n\nOptions:\n" .
     " page <pageNumber> setSeq <seq>\n";
     const string DESCRIPTION = "Document related functions";
 
-    public function getCommand(): string
+
+    public function __construct(
+        private readonly DocumentManager $documentManager
+    )
+    {
+    }
+
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
 
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv) : int
     {
         if ($argc < 2) {
             print self::USAGE . "\n";
@@ -47,7 +54,7 @@ class DocTool extends CommandLineUtility implements AdminUtility
 
         $docId = Tid::fromString($docIdStr);
 
-        $docMgr = $this->getSystemManager()->getDocumentManager();
+        $docMgr = $this->documentManager;
 
         try {
             $docInfo = $docMgr->getDocInfo($docId);

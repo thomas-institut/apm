@@ -28,7 +28,7 @@ use PDO;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class CheckElementSequence extends CommandLineUtility {
+class CheckElementSequence extends ApmCliUtility {
      const USAGE = "usage: checkelementsequence [fix]\n";
     
     public function main(int $argc, array $argv) : bool

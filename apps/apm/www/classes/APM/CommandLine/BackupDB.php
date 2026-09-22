@@ -26,7 +26,7 @@ namespace APM\CommandLine;
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
-class BackupDB extends CommandLineUtility {
+class BackupDB extends ApmCliUtility {
     
     const string USAGE = "USAGE: backupdb <output_directory> --schemaOnly\n";
 

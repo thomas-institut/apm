@@ -5,46 +5,45 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 
 
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\ApmCliUtility;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 
-class AdminUtilityManager extends CommandLineUtility
+class AdminUtilityManager extends ApmCliUtility
 {
 
     /**
-     * @var array
+     * @var array<string, UtilityDefinition>
      */
-    private array $commands;
+    private array $utilities;
+
     private string $calledScriptName;
     protected array $commandArgv;
     protected int $commandArgc;
     private string $description;
 
-    public function __construct(array $config, int $argc, array $argv, $description)
+    public function __construct(array $config, int $argc, array $argv, string $description)
     {
         parent::__construct($config, $argc, $argv);
 
         $this->calledScriptName = basename($argv[0]);
         $this->commandArgv = array_slice($argv, 1);
         $this->commandArgc = $argc -1;
-
         $this->description = $description;
-        $this->setCommands([]);
 
     }
 
-
-    protected function setCommands(array $utilityObjectArray) : void {
-        $commandObject = [];
-        foreach ($utilityObjectArray as $utilityObject) {
-            /** @var AdminUtility $utilityObject */
-            $commandObject[$utilityObject->getCommand()] = [
-                'description' => $utilityObject->getDescription(),
-                'help' => $utilityObject->getHelp(),
-                'object' => $utilityObject
-            ];
+    protected  function defineUtilities(array $utilityClasses) : void {
+        foreach($utilityClasses as $utilityClass) {
+            $this->utilities[$utilityClass::getName()] = new UtilityDefinition(
+                $utilityClass::getName(),
+                $utilityClass::getDescription(),
+                $utilityClass::getUsage(),
+                $utilityClass
+            );
         }
-        $this->commands = $commandObject;
     }
+
 
 
     public function main(int $argc, array $argv) : int
@@ -54,31 +53,38 @@ class AdminUtilityManager extends CommandLineUtility
             return 1;
         }
 
-        $command = $argv[1];
+        $utility = $argv[1];
 
-        if ($command === 'help') {
+        if ($utility === 'help' || $utility === 'usage') {
             if (!isset($argv[2])) {
                 $this->printGeneralHelp();
                 return 1;
             }
-            $command = $argv[2];
-            if (!$this->commandExists($command)) {
-                printf("Unknown command '%s'\n", $command);
+            $utility = $argv[2];
+            if (!$this->utilityExists($utility)) {
+                printf("Unknown command '%s'\n", $utility);
             } else {
-                printf("%s\n", $this->commands[$command]['help']);
+                printf("%s\n", $this->utilities[$utility]->usage);
             }
             return 1;
         }
-        if (!$this->commandExists($command)) {
-            printf("Unknown command '%s'\n", $command);
+        if (!$this->utilityExists($utility)) {
+            printf("Unknown command '%s'\n", $utility);
         } else {
-            $this->commands[$command]['object']->main($this->commandArgc, $this->commandArgv);
+            try {
+                /** @var ApmCtlUtility $utilityObject */
+                $utilityObject = $this->container->get($this->utilities[$utility]->class);
+                $utilityObject->run($this->commandArgc, $this->commandArgv);
+            } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+                printf("Error: %s\n", $e->getMessage());
+                return 0;
+            }
         }
         return 1;
     }
 
-    private function commandExists($command) : bool{
-        return isset($this->commands[$command]);
+    private function utilityExists($command) : bool{
+        return isset($this->utilities[$command]);
     }
 
     private function printGeneralHelp() : void {
@@ -88,8 +94,8 @@ class AdminUtilityManager extends CommandLineUtility
         printf("   %s help <command>: Prints help message for the given command\n", $this->calledScriptName);
         print("\n");
         printf("Commands:\n");
-        foreach ($this->commands as $command => $commandInfo) {
-            printf("   %s: %s\n", $command, $commandInfo['description']);
+        foreach ($this->utilities as $command => $commandInfo) {
+            printf("   %s: %s\n", $command, $commandInfo->description);
         }
         print("\n");
     }

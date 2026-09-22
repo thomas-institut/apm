@@ -38,7 +38,7 @@ use Throwable;
  *
  * @author Lukas Reichert
  */
-class IndexTool extends CommandLineUtility
+class IndexTool extends ApmCliUtility
 {
     private IndexType $indexType;
 

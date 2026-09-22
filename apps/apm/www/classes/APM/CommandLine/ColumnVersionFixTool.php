@@ -24,7 +24,7 @@ use ThomasInstitut\TimeString\TimeString;
  *
  * @package APM\CommandLine
  */
-class ColumnVersionFixTool extends CommandLineUtility
+class ColumnVersionFixTool extends ApmCliUtility
 {
     const string USAGE = "usage: columnversionfixtool.php doc|page <id> [fix]\n";
 

@@ -4,22 +4,23 @@
 namespace APM\CommandLine\ApmCtlUtility;
 
 
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\CliToolBox;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\ApmTableNames;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
+use APM\System\SystemManager;
 use APM\System\Transcription\TranscriptionManager;
 use APM\ToolBox\ArrayPrint;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
+use PDO;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\EntitySystem\Tid;
 
 
 
-class TranscriptionTool extends CommandLineUtility implements AdminUtility
+class TranscriptionTool implements ApmCtlUtility
 {
     const string CMD = 'transcription';
 
@@ -36,29 +37,30 @@ TXT;
     const string DESCRIPTION = "Transcription management functions";
     const string MAGIC_WORD = 'IKnowWhatImDoing';
     
-    private TranscriptionManager $txManager;
-    private DocumentManager $docManager;
 
-    public function __construct(array $config, int $argc, array $argv)
+
+    public function __construct(
+        private readonly TranscriptionManager $txManager,
+        private readonly DocumentManager $docManager,
+        private readonly ApmTableNames $apmTableNames,
+        private readonly SystemManager $systemManager,
+        private readonly PdoProvider $pdoProvider
+    )
     {
-        parent::__construct($config, $argc, $argv);
-        
-        /** @var TranscriptionManager $txm */
-        $txm = $this->container->get(TranscriptionManager::class);
-        $this->txManager = $txm;
-        
-        /** @var DocumentManager $dm */
-        $dm = $this->container->get(DocumentManager::class);
-        $this->docManager = $dm;
 
     }
 
+    private function getDbConn(): PDO
+    {
+        return $this->pdoProvider->getPdo();
+    }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function main(int $argc, array $argv) : int
+    private function printErrorMsg(string $str): void
+    {
+        CliToolBox::printErrorMessage($str);
+    }
+
+    public function run(int $argc, array $argv) : int
     {
        if ($argc === 1) {
            print self::USAGE . "\n";
@@ -292,19 +294,14 @@ TXT;
         return isset($txInfo["error"]);
     }
 
-    /**
-     * @throws NotFoundExceptionInterface
-     * @throws ContainerExceptionInterface
-     */
+
     private function deleteTranscription(PageInfo $pageInfo, int $column, bool $forReal = false) : void {
         $pageId = $pageInfo->pageId;
         $docId = $pageInfo->docId;
 
         if (!$this->printTranscriptionInfo($pageInfo,$column)) { // "!" added by lukas, correct?
-            if ($this->userRespondsYes("Are you sure you want to delete this transcription?")) {
-
-                /** @var ApmTableNames $tableNames */
-                $tableNames = $this->container->get(ApmTableNames::class);
+            if (CliToolBox::userRespondsYes("Are you sure you want to delete this transcription?")) {
+                $tableNames = $this->apmTableNames;
                 $dbConn = $this->getDbConn();
                 $edNotes = $tableNames->edNotes;
                 $elements = $tableNames->elements;
@@ -341,7 +338,7 @@ TXT;
                 print " - Deleted " . $result->rowCount() . " versions\n";
                 if ($forReal) {
                     $dbConn->commit();
-                    $this->getSystemManager()->onTranscriptionUpdated($lastAuthor, $docId,$pageId, $column);
+                    $this->systemManager->onTranscriptionUpdated($lastAuthor, $docId,$pageId, $column);
                 } else {
                     print "Not really, need the magic word to actually do it.\n";
                     $dbConn->rollBack();
@@ -352,10 +349,6 @@ TXT;
         }
     }
 
-    /**
-     * @throws NotFoundExceptionInterface
-     * @throws ContainerExceptionInterface
-     */
     private function moveTranscription(PageInfo $fromPage, int $fromColumn, PageInfo $toPage, int $toColumn, bool $requireConfirmation) : void {
 
         // get page and doc ids
@@ -369,10 +362,10 @@ TXT;
         $lastAuthor = $versions[count($versions) - 1]->authorTid;
 
         if (!$this->printTranscriptionInfo($fromPage, $fromColumn) and count($versions) != 0) { // check if there is data to move
-            if (!$requireConfirmation || $this->userRespondsYes("Are you sure you want to move this transcription?")) {
+            if (!$requireConfirmation || CliToolBox::userRespondsYes("Are you sure you want to move this transcription?")) {
                 // get table names and set up database connection
-                /** @var ApmTableNames $tableNames */
-                $tableNames = $this->container->get(ApmTableNames::class);
+
+                $tableNames = $this->apmTableNames;
                 $elements = $tableNames->elements;
                 $versionsTable = $tableNames->txVersions;
 
@@ -400,8 +393,8 @@ TXT;
 
                     // commit changes and schedule update jobs
                     $dbConn->commit();
-                    $this->getSystemManager()->onTranscriptionUpdated($lastAuthor, $fromPage->docId, $fromPage->pageNumber, $fromColumn);
-                    $this->getSystemManager()->onTranscriptionUpdated($lastAuthor, $toDocId, $toPage->pageNumber, $toColumn);
+                    $this->systemManager->onTranscriptionUpdated($lastAuthor, $fromPage->docId, $fromPage->pageNumber, $fromColumn);
+                    $this->systemManager->onTranscriptionUpdated($lastAuthor, $toDocId, $toPage->pageNumber, $toColumn);
 
                     print("\nRESULT:\n");
                     $this->printTranscriptionInfo($toPage,$toColumn);
@@ -413,17 +406,17 @@ TXT;
     }
 
 
-    public function getCommand(): string
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
@@ -431,7 +424,7 @@ TXT;
     private function addTranscriptionColumn(PageInfo $pageInfo, int $columNumber, bool $requireConfirmation): void
     {
         $tidString = Tid::toBase36String($pageInfo->docId);
-        if (!$requireConfirmation || $this->userRespondsYes("Do you want to add $columNumber columns to page $pageInfo->pageId, which currently has $pageInfo->numCols column(s) (doc $tidString = $pageInfo->docId, page number $pageInfo->pageNumber)")) {
+        if (!$requireConfirmation || CliToolBox::userRespondsYes("Do you want to add $columNumber columns to page $pageInfo->pageId, which currently has $pageInfo->numCols column(s) (doc $tidString = $pageInfo->docId, page number $pageInfo->pageNumber)")) {
             $txManager = $this->txManager;
             for ($i = 0; $i < $columNumber; $i++) {
                 $pageInfo->numCols++;

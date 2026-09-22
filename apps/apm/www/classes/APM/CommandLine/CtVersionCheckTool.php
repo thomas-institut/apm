@@ -5,7 +5,7 @@ namespace APM\CommandLine;
 use Exception;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
 
-class CtVersionCheckTool extends CommandLineUtility
+class CtVersionCheckTool extends ApmCliUtility
 {
 
     const string USAGE = "usage: ctversioncheck check|fix [<ctId1> <ctId2> ... ]\n";

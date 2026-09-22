@@ -5,68 +5,83 @@ namespace APM\CommandLine\ApmCtlUtility;
 
 
 use APM\Api\ApiPeople;
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\CliToolBox;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemDirDataCache;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Cache\SystemMemDataCache;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\NotFoundExceptionInterface;
+use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 
-class CacheTool extends CommandLineUtility implements AdminUtility
+class CacheTool implements ApmCtlUtility
 {
     const string CMD = 'cache';
 
-    const string USAGE = self::CMD . " <option>\n\nOptions:\  info: print cache size, length, etc\n  delete <key>: deletes a key\n  flush <all|Sys|Mem>: erases all cache entries in given cache\n  clean: removes all expired entries\n";
+    const string USAGE = self::CMD . " <option>\n\nOptions:\n  info: print cache size, length, etc\n  delete <key>: deletes a key\n  flush <all|Sys|Mem>: erases all cache entries in given cache\n  clean: removes all expired entries\n";
     const string DESCRIPTION = "Cache management functions: info, clean, etc";
     const string FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
 
-    public function __construct(array $config, int $argc, array $argv)
+    public function __construct(
+        private readonly SystemMainDataCache      $systemMainDataCache,
+        private readonly SystemMemDataCache       $systemMemDataCache,
+        private readonly SystemDirDataCache       $systemDirDataCache,
+        private readonly ApmEntitySystemInterface $apmEntitySystem,
+        private readonly LoggerInterface          $logger,
+    )
     {
-        parent::__construct($config, $argc, $argv);
+
     }
 
-
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv): int
     {
-       if ($argc === 1) {
-           print self::USAGE . "\n";
-           return 0;
-       }
+        if ($argc === 1) {
+            print self::USAGE . "\n";
+            return 0;
+        }
 
-       switch($argv[1]) {
-           case 'info':
-               $this->printCacheInfo();
-               break;
+        switch ($argv[1]) {
+            case 'info':
+                $this->printCacheInfo();
+                break;
 
-           case 'flush':
-               $this->flushCache();
-               break;
+            case 'flush':
+                if ($argc < 4) {
+                    print "Please use 'cache flush <cacheName> <theSafeWord>' to actually flush the cache\n";
+                    return 0;
+                }
 
-           case 'clean':
-               $this->cleanCache();
-               break;
+                if ($argv[3] !== self::FLUSH_SAFE_WORD) {
+                    print "Sorry, you don't seem to know what you're doing\n";
+                    return 0;
+                }
+                $this->flushCache(CliToolBox::sanitizeArg($argv[2]));
+                break;
 
-           case 'delete':
-               $this->deleteKey();
-               break;
+            case 'clean':
+                $cacheName = 'all';
+                if (isset($argv[2])) {
+                    $cacheName = CliToolBox::sanitizeArg($argv[2]);
+                }
+                $this->cleanCache($cacheName);
+                break;
 
-           default:
-               print "Unrecognized option: "  . $argv[1] ."\n";
-               return 0;
-       }
-       return 1;
+            case 'delete':
+                if ($argc < 3) {
+                    print "Need a cache key to delete\n";
+                    return 0;
+                }
+                $this->deleteKey(CliToolBox::sanitizeArg($argv[2]));
+                break;
+
+            default:
+                print "Unrecognized option: " . $argv[1] . "\n";
+                return 0;
+        }
+        return 1;
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
     private function printCacheInfo(): void
     {
 
@@ -80,39 +95,29 @@ class CacheTool extends CommandLineUtility implements AdminUtility
                 print "$cacheName: No info available\n";
             }
         }
-     }
+    }
 
     /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
+     * @return array<string, DataCache>
      */
-    private function getCaches() : array {
+    private function getCaches(): array
+    {
         return [
-            'Mem' => $this->container->get(SystemMemDataCache::class),
-            'Sys' => $this->container->get(SystemMainDataCache::class),
-            ];
-     }
+            'Mem' => $this->systemMemDataCache,
+            'Sys' => $this->systemMainDataCache,
+            'Dir' => $this->systemDirDataCache,
+        ];
+    }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    private function deleteKey() : void {
-        if ($this->argc < 3) {
-            print "Need a cache key to delete\n";
-            return;
-        }
+    private function deleteKey(string $key): void
+    {
 
-        $key = $this->argv[2];
-        /** @var ApmEntitySystemInterface $apmEntitySystem */
-        $apmEntitySystem = $this->container->get(ApmEntitySystemInterface::class);
-
-        /** @var SystemMainDataCache $cache */
-        $cache = $this->container->get(SystemMainDataCache::class);
+        $apmEntitySystem = $this->apmEntitySystem;
+        $cache = $this->systemMainDataCache;
 
         switch ($key) {
             case 'PeoplePageData':
-                ApiPeople::invalidatePeoplePageDataAllParts($apmEntitySystem,$cache, $this->logger);
+                ApiPeople::invalidatePeoplePageDataAllParts($apmEntitySystem, $cache, $this->logger);
                 $cache->delete(CacheKey::ApiPeople_PeoplePageData_Parts);
                 $cache->delete(CacheKey::ApiPeople_PeoplePageData_All);
                 break;
@@ -127,34 +132,20 @@ class CacheTool extends CommandLineUtility implements AdminUtility
         print $msg . "\n";
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    private function flushCache(): void
+    private function flushCache(string $cacheName): void
     {
-        if ($this->argc < 4) {
-            print "Please use 'cache flush <cacheName> <theSafeWord>' to actually flush the cache\n";
-            return;
-        }
-
-        if ($this->argv[3] !== self::FLUSH_SAFE_WORD) {
-            print "Sorry, you don't seem to know what you're doing\n";
-            return;
-        }
-
         $caches = $this->getCaches();
         $cacheNames = array_keys($caches);
 
-        if (in_array($this->argv[2], $cacheNames)) {
-            $caches[$this->argv[2]]->flush();
-            $msg = "Cache flushed: " . $this->argv[2];
+        if (in_array($cacheName, $cacheNames)) {
+            $caches[$cacheName]->flush();
+            $msg = "Cache flushed: " . $cacheName;
             $this->logger->info($msg);
             print $msg . "\n";
             return;
         }
 
-        if ($this->argv[2] === 'all') {
+        if ($cacheName === 'all') {
             foreach ($caches as $cacheName => $cache) {
                 $cache->flush();
                 $msg = "Cache flushed: " . $cacheName;
@@ -164,32 +155,48 @@ class CacheTool extends CommandLineUtility implements AdminUtility
             return;
         }
 
-        printf("Unrecognized cache name '%s', valid names are: %s, or all\n", $this->argv[2], implode(', ', $cacheNames));
+        printf("Unrecognized cache name '%s', valid names are: %s, or all\n", $cacheName, implode(', ', $cacheNames));
 
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
-    private function cleanCache() : void
+    private function cleanCache(string $cacheName): void
     {
-        /** @var SystemMainDataCache $cache */
-        $cache = $this->container->get(SystemMainDataCache::class);
-        $cache->clean();
+        $caches = $this->getCaches();
+        $cacheNames = array_keys($caches);
+
+        if (in_array($cacheName, $cacheNames)) {
+            $caches[$cacheName]->clean();
+            $msg = "Cache cleaned: " . $cacheName;
+            $this->logger->info($msg);
+            print $msg . "\n";
+            return;
+        }
+
+        if ($cacheName === 'all') {
+            foreach ($caches as $cacheName => $cache) {
+                $cache->clean();
+                $msg = "Cache cleaned: " . $cacheName;
+                $this->logger->info($msg);
+                print $msg . "\n";
+            }
+            return;
+        }
+
+        printf("Unrecognized cache name '%s', valid names are: %s, or all\n", $cacheName, implode(', ', $cacheNames));
+
     }
 
-    public function getCommand(): string
+    static public function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    static public function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    static public function getDescription(): string
     {
         return self::DESCRIPTION;
     }

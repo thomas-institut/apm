@@ -33,7 +33,7 @@ use GuzzleHttp\Client as HttpClient;
  *
  * @author Lukas Reichert
  */
-class LocationDataGrabber extends CommandLineUtility
+class LocationDataGrabber extends ApmCliUtility
 {
     /**
      * This main function is called from the command line. Depending on the arguments given to the location grabber command line tool,

@@ -2,7 +2,7 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\ApmCliUtility;
 use APM\System\PublicationManager\PublicationManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
@@ -22,7 +22,7 @@ class PublicationToolTest extends TestCase
     private function createPublicationTool(ContainerInterface $container): PublicationTool
     {
         $tool = (new ReflectionClass(PublicationTool::class))->newInstanceWithoutConstructor();
-        $containerProperty = (new ReflectionClass(CommandLineUtility::class))->getProperty('container');
+        $containerProperty = (new ReflectionClass(ApmCliUtility::class))->getProperty('container');
         $containerProperty->setAccessible(true);
         $containerProperty->setValue($tool, $container);
 
@@ -54,7 +54,7 @@ class PublicationToolTest extends TestCase
         $container = $this->createStub(ContainerInterface::class);
         $tool = $this->createPublicationTool($container);
 
-        $help = $tool->getHelp();
+        $help = $tool->getUsage();
 
         $this->assertStringContainsString('export <format> <id>', $help);
         $this->assertStringContainsString('TEI-XML for edition publications', $help);

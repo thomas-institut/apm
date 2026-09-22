@@ -2,13 +2,14 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\CliToolBox;
 use Random\RandomException;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\NullJobHandler;
 use ThomasInstitut\JobQueue\ScheduledJobState;
 
 
-class JobQueueTool extends CommandLineUtility implements AdminUtility
+class JobQueueTool implements ApmCtlUtility
 {
 
     const string CMD = 'jobs';
@@ -27,64 +28,20 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
     const string CMD_LIST = 'list';
     const string CMD_RESCHEDULE = 'reschedule';
 
-    private array $commandInfo = [];
 
-
-    public function __construct(array $config, int $argc, array $argv)
+    public function __construct(
+        private readonly JobQueueManagerInterface $jobQueueManager
+    )
     {
-        parent::__construct($config, $argc, $argv);
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_INFO,
-            'info' => "prints information about the current job queue",
-        ];
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_STATS,
-            'info' => "displays the number of completed and failed tasks per day",
-        ];
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_RESET_STATS,
-            'info' => "resets all job statistics",
-        ];
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_LIST,
-            'usage' => '[waiting|running|error]',
-            'info' => "lists all jobs or jobs in the given state",
-        ];
-
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_CLEAN,
-            'info' => "removes all dead jobs from the queue"
-        ];
-
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_RESCHEDULE,
-            'usage' => ' <jobId> [<jobId2> ...]',
-            'info' => 'reschedules the given jobs'
-        ];
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_TEST,
-            'info' => "adds " . self::NUM_TEST_JOBS . " test jobs to the queue"
-        ];
-
-
-        $this->commandInfo[] = [
-            'command' => self::CMD_PROCESS,
-            'info' => "process the current job queue (normally done automatically by the APM daemon)"
-        ];
-
     }
 
-    public function main(int $argc, array $argv) : int
+    /**
+     * @throws RandomException
+     */
+    public function run(int $argc, array $argv): int
     {
         if ($argc === 1) {
-            print $this->getHelp();
+            print $this->getUsage();
             return 1;
         }
 
@@ -116,7 +73,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
             case self::CMD_LIST:
 
                 if (!isset($argv[2])) {
-                    $this->printErrorMsg("Need a type of job to list: all, waiting, running, error");
+                    CliToolBox::printStdErr("Need a type of job to list: all, waiting, running, error");
                     return 1;
                 }
                 $this->list($argv[2]);
@@ -124,14 +81,14 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
             case self::CMD_RESCHEDULE:
                 if (!isset($argv[2])) {
-                    $this->printErrorMsg("Need at least one jobId to reschedule");
+                    CliToolBox::printStdErr("Need at least one jobId to reschedule");
                     return 1;
                 }
                 $errors = false;
                 for ($i = 2; $i < $argc; $i++) {
                     $jobId = $argv[$i];
                     if ($jobId === '') {
-                        $this->printErrorMsg("Invalid job ID '$argv[$i]'");
+                        CliToolBox::printStdErr("Invalid job ID '$argv[$i]'");
                     } else {
                         $result = $this->rescheduleJob($jobId);
                         if (!$result) {
@@ -148,9 +105,14 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         return 0;
     }
 
+    private function printErrorMsg(string $msg): void
+    {
+        CliToolBox::printStdErr($msg);
+    }
+
     private function rescheduleJob(string $jobId): bool
     {
-        $result = $this->getSystemManager()->getJobQueueManager()->rescheduleJob($jobId);
+        $result = $this->jobQueueManager->rescheduleJob($jobId);
         if ($result === '') {
             $this->printErrorMsg("Job $jobId does not exist");
             return false;
@@ -176,7 +138,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         }
 
         foreach ($statesToList as $state) {
-            $jobs = $this->getSystemManager()->getJobQueueManager()->getJobsByState($state);
+            $jobs = $this->jobQueueManager->getJobsByState($state);
             $countJobs = count($jobs);
             printf("%s, %d job(s)", $state, $countJobs);
             if ($countJobs === 0) {
@@ -199,7 +161,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
     private function info(): void
     {
-        $jm = $this->getSystemManager()->getJobQueueManager();
+        $jm = $this->jobQueueManager;
 
         $counts = $jm->getJobCountsByState();
 
@@ -229,7 +191,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
      */
     private function stats(): void
     {
-        $jm = $this->getSystemManager()->getJobQueueManager();
+        $jm = $this->jobQueueManager;
         $jobStats = $jm->getJobStats();
 
         if ($jobStats->isEmpty()) {
@@ -258,7 +220,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
      */
     private function resetStats(): void
     {
-        $this->getSystemManager()->getJobQueueManager()->resetJobStats();
+        $this->jobQueueManager->resetJobStats();
         print "Job statistics reset successfully.\n";
     }
 
@@ -267,7 +229,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
      */
     private function test(): void
     {
-        $jm = $this->getSystemManager()->getJobQueueManager();
+        $jm = $this->jobQueueManager;
 
         $testId = random_int(1000, 9999);
 
@@ -278,26 +240,72 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
 
     private function process(): void
     {
-        $this->getSystemManager()->getJobQueueManager()->process();
+        $this->jobQueueManager->process();
     }
 
     private function clean(): void
     {
-        $this->getSystemManager()->getJobQueueManager()->cleanQueue();
+        $this->jobQueueManager->cleanQueue();
     }
 
-    public function getCommand(): string
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         $tab = '   ';
 
+        $commandInfo[] = [
+            'command' => self::CMD_INFO,
+            'info' => "prints information about the current job queue",
+        ];
+
+        $commandInfo[] = [
+            'command' => self::CMD_STATS,
+            'info' => "displays the number of completed and failed tasks per day",
+        ];
+
+        $commandInfo[] = [
+            'command' => self::CMD_RESET_STATS,
+            'info' => "resets all job statistics",
+        ];
+
+        $commandInfo[] = [
+            'command' => self::CMD_LIST,
+            'usage' => '[waiting|running|error]',
+            'info' => "lists all jobs or jobs in the given state",
+        ];
+
+
+        $commandInfo[] = [
+            'command' => self::CMD_CLEAN,
+            'info' => "removes all dead jobs from the queue"
+        ];
+
+
+        $commandInfo[] = [
+            'command' => self::CMD_RESCHEDULE,
+            'usage' => ' <jobId> [<jobId2> ...]',
+            'info' => 'reschedules the given jobs'
+        ];
+
+        $commandInfo[] = [
+            'command' => self::CMD_TEST,
+            'info' => "adds " . self::NUM_TEST_JOBS . " test jobs to the queue"
+        ];
+
+
+        $commandInfo[] = [
+            'command' => self::CMD_PROCESS,
+            'info' => "process the current job queue (normally done automatically by the APM daemon)"
+        ];
+
+
         $help = self::CMD . " <option>\n\n";
 
-        foreach ($this->commandInfo as $cmdInfo) {
+        foreach ($commandInfo as $cmdInfo) {
             $usage = $cmdInfo['command'];
             if (isset($cmdInfo['usage'])) {
                 $usage .= ' ' . $cmdInfo['usage'];
@@ -307,7 +315,7 @@ class JobQueueTool extends CommandLineUtility implements AdminUtility
         return $help;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }

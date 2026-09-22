@@ -2,8 +2,7 @@
 
 namespace APM\CommandLine\DataGrabber;
 
-use APM\CommandLine\ApmCtlUtility\AdminUtility;
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\ApmCtlUtility\ApmCtlUtility;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidObjectException;
@@ -24,7 +23,7 @@ use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
-class ViafIdGrabber extends CommandLineUtility implements AdminUtility
+class ViafIdGrabber implements ApmCtlUtility
 {
     const string CMD = 'viaf';
 
@@ -33,29 +32,29 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
 
     const string MemCachedPrefix = 'ViafIdGrabber:';
     const int MemCachedTtl = 86400;
-    private SystemMemDataCache $memCache;
+
     private Client $guzzleClient;
 
-    public function __construct(array $config, int $argc, array $argv)
+    public function __construct(
+        private readonly SystemMemDataCache $memCache,
+        private readonly PdoProvider $pdoProvider,
+        private readonly ApmEntitySystemInterface $entitySystem
+    )
     {
-        parent::__construct($config, $argc, $argv);
-        /** @var SystemMemDataCache $memCache */
-        $memCache = $this->container->get(SystemMemDataCache::class);
-        $this->memCache = $memCache;
         $this->guzzleClient = new Client();
     }
 
-    public function getCommand(): string
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
@@ -70,7 +69,7 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print "USAGE: " . self::USAGE . "\n";
@@ -79,18 +78,16 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
 
         array_shift($argv);
 
-        /** @var PdoProvider $pdoProvider */
-        $pdoProvider = $this->container->get(PdoProvider::class);
-        $pdo = $pdoProvider->getPdo();
 
-        /** @var ApmEntitySystemInterface $es */
-        $es = $this->container->get(ApmEntitySystemInterface::class);
+        $pdo = $this->pdoProvider->getPdo();
+        $es = $this->entitySystem;
+
         if (in_array('all', $argv)){
-            $tids = $es->getAllEntitiesForType(Entity::tPerson);
+            $entityIds = $es->getAllEntitiesForType(Entity::tPerson);
         } else {
-            $tids = DataGrabberUtil::getTidsFromArgv($es,$argv);
+            $entityIds = DataGrabberUtil::getTidsFromArgv($es,$argv);
         }
-        if (count($tids) === 0) {
+        if (count($entityIds) === 0) {
             print "Please enter a list of entities separated by spaces\n";
             return 0;
         }
@@ -148,7 +145,7 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
         ];
 
 
-        foreach ($tids as $tid) {
+        foreach ($entityIds as $tid) {
             print "Entity $tid: ";
 
             try {

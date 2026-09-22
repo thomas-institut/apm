@@ -40,7 +40,7 @@ use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-abstract class CommandLineUtility {
+abstract class ApmCliUtility {
     protected ?LoggerInterface $logger;
     protected array $config;
     protected array $processUserInfoArray;
@@ -87,7 +87,7 @@ abstract class CommandLineUtility {
     /**
      * @throws Exception
      */
-    public function buildContainer() : void{
+    private function buildContainer() : void{
         $builder = new ContainerBuilder();
         $builder->addDefinitions((new CliDefsProvider())->getContainerDefs($this->config));
         $this->container = $builder->build();

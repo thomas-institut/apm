@@ -2,8 +2,8 @@
 
 namespace APM\CommandLine\DataGrabber;
 
-use APM\CommandLine\ApmCtlUtility\AdminUtility;
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\ApmCtlUtility\ApmCtlUtility;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Cache\SystemMemDataCache;
@@ -11,10 +11,9 @@ use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 
-class WikiDataGrabber extends CommandLineUtility implements AdminUtility
+class WikiDataGrabber implements ApmCtlUtility
 {
     const string CMD = 'wikidata';
 
@@ -23,41 +22,40 @@ class WikiDataGrabber extends CommandLineUtility implements AdminUtility
 
     const string MemCachedPrefix = 'WikiDataGrabber:';
     const int MemCachedTtl = 86400;
-    private DataCache $memCache;
+
     private Client $guzzleClient;
 
-    public function __construct(array $config, int $argc, array $argv)
+    public function __construct(
+        private readonly SystemMemDataCache $memCache,
+        private readonly ApmEntitySystemInterface $entitySystem
+    )
     {
-        parent::__construct($config, $argc, $argv);
-        /** @var SystemMemDataCache $memCache */
-        $memCache  = $this->container->get(SystemMemDataCache::class);
-        $this->memCache = $memCache;
         $this->guzzleClient = new Client();
     }
 
-    public function getCommand(): string
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
 
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print "USAGE: " . self::USAGE . "\n";
             return 0;
         }
 
-        $tids = $this->getTidsFromArgv();
+        $tids = $this->getTidsFromArgv($argc, $argv);
 
         if (count($tids) === 0) {
             print "Please enter a list of entities separated by spaces\n";
@@ -71,7 +69,7 @@ class WikiDataGrabber extends CommandLineUtility implements AdminUtility
         }
 
 
-        $es = $this->getSystemManager()->getEntitySystem();
+        $es = $this->entitySystem;
 
         $getDateFromWikiDataTimeValue = function (string $wikiDataValue) : string {
 
@@ -193,21 +191,21 @@ class WikiDataGrabber extends CommandLineUtility implements AdminUtility
     }
 
 
-    private function getTidsFromArgv() : array {
-        if ($this->argc < 2) {
+    private function getTidsFromArgv(int $argc, array $argv) : array {
+        if ($argc < 2) {
             return [];
 
         }
-        $es = $this->getSystemManager()->getEntitySystem();
-        if ($this->argv[1] === 'all') {
+        $es = $this->entitySystem;
+        if ($argv[1] === 'all') {
             return $es->getAllEntitiesForType(Entity::tPerson);
         }
         $tids = [];
-        for($i  = 1; $i < $this->argc; $i++) {
-            if ($this->argv[$i] === 'doIt') {
+        for($i  = 1; $i < $argc; $i++) {
+            if ($argv[$i] === 'doIt') {
                 continue;
             }
-            $tid = $es->getEntityIdFromString($this->argv[$i]);
+            $tid = $es->getEntityIdFromString($argv[$i]);
             if ($tid !== -1) {
                 $tids[] = $tid;
             }

@@ -79,7 +79,9 @@ class ApiPeople extends ApiController
         try {
             return $this->responseWithJson($response, unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_All)));
         } catch (ItemNotInCacheException) {
-            $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getEntitySystem(), $cache, $this->logger);
+            /** @var ApmEntitySystemInterface $entitySystem */
+            $entitySystem = $this->container->get(ApmEntitySystemInterface::class);
+            $dataToServe = self::buildAllPeopleDataForPeoplePage($entitySystem, $cache, $this->logger);
             $cache->set(CacheKey::ApiPeople_PeoplePageData_All, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
             return $this->responseWithJson($response, $dataToServe);
         }

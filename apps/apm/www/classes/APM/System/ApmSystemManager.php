@@ -300,19 +300,4 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-    /**
-     * @return ApmEntitySystemInterface
-     * @deprecated
-     */
-    public function getEntitySystem(): ApmEntitySystemInterface
-    {
-        try {
-            return $this->ci->get(ApmEntitySystemInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            $this->logger->error("Could not get entity system from container", ['exception' => $e]);
-            throw new RuntimeException("Could not get entity system from container", 0, $e);
-        }
-    }
-
-
 }

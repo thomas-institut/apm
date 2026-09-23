@@ -20,6 +20,7 @@ use APM\System\Events\PersonDataChangedPayload;
 use APM\System\Events\TranscriptionUpdated;
 use APM\System\Events\TranscriptionUpdatedPayload;
 use APM\System\Events\WorkChangedPayload;
+use APM\System\Factories\EventRegistryFactory;
 use APM\System\Jobs\UpdateAllPeopleDataCacheJob;
 use APM\System\Jobs\UpdateApiDocumentsDataCacheJob;
 use APM\System\Jobs\UpdateApiSearchEditionsIndexJob;
@@ -69,7 +70,7 @@ class EventListenersTest extends TestCase
             ->willReturnCallback(static function (string $id) use ($listeners): EventListener {
                 return $listeners[$id];
             });
-        $eventManager = new EventManager($container, EventRegistry::createDefault());
+        $eventManager = new EventManager($container, EventRegistryFactory::create());
 
         $eventManager->emit(TranscriptionUpdated::class, new TranscriptionUpdatedPayload(17, 23, 5, 2));
 
@@ -137,7 +138,7 @@ class EventListenersTest extends TestCase
         $listener = new DocumentChangedListener($jobQueueManager);
         $container = $this->createMock(ContainerInterface::class);
         $container->expects($this->exactly(3))->method('get')->willReturn($listener);
-        $eventManager = new EventManager($container, EventRegistry::createDefault());
+        $eventManager = new EventManager($container, EventRegistryFactory::create());
 
         $eventManager->emit(DocumentAdded::class, new DocumentChangedPayload(9, 101));
         $eventManager->emit(DocumentUpdated::class, new DocumentChangedPayload(9, 102));

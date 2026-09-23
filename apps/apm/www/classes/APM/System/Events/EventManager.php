@@ -3,10 +3,12 @@
 namespace APM\System\Events;
 
 use InvalidArgumentException;
+use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use UnexpectedValueException;
 
-final class EventManager
+final readonly class EventManager
 {
 
     /**
@@ -16,8 +18,8 @@ final class EventManager
      * @param EventRegistry $eventRegistry Declares event payload types and ordered listeners.
      */
     public function __construct(
-        private readonly ContainerInterface $container,
-        private readonly EventRegistry $eventRegistry
+        private ContainerInterface $container,
+        private EventRegistry      $eventRegistry
     ) {
     }
 
@@ -26,8 +28,8 @@ final class EventManager
      *
      * @param string $eventClass The event marker class name.
      * @param object $payload The caller-created event payload.
-     * @throws InvalidArgumentException If the event is unregistered or its payload has the wrong type.
-     * @throws UnexpectedValueException If a resolved listener does not implement EventListener.
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function emit(string $eventClass, object $payload): void
     {

@@ -2,6 +2,10 @@
 
 namespace APM\System\Events;
 
+use APM\System\Factories\EventRegistryFactory;
+use APM\System\Events\Listeners\TranscriptionSearchListener;
+use APM\System\Events\Listeners\TranscriptionUserDataListener;
+use APM\System\Events\Listeners\TranscriptionWorkAndDocumentCacheListener;
 use InvalidArgumentException;
 use PHPUnit\Framework\TestCase;
 
@@ -10,6 +14,40 @@ use PHPUnit\Framework\TestCase;
  */
 class EventRegistryTest extends TestCase
 {
+
+    /**
+     * Test that the factory creates the application's default event registrations.
+     */
+    public function testFactoryCreatesDefaultRegistrations(): void
+    {
+        $registry = EventRegistryFactory::create();
+
+        $this->assertSame([
+            'payload' => TranscriptionUpdatedPayload::class,
+            'listeners' => [
+                TranscriptionWorkAndDocumentCacheListener::class,
+                TranscriptionUserDataListener::class,
+                TranscriptionSearchListener::class,
+            ],
+        ], $registry->getRegistration(TranscriptionUpdated::class));
+        $eventClasses = [
+            TranscriptionUpdated::class,
+            PageSettingsUpdated::class,
+            CollationTableSaved::class,
+            DocumentAdded::class,
+            DocumentUpdated::class,
+            DocumentDeleted::class,
+            EntityDataChanged::class,
+            PersonDataChanged::class,
+            WorkAdded::class,
+            WorkUpdated::class,
+            WorkDeleted::class,
+        ];
+        $this->assertCount(11, $eventClasses);
+        foreach ($eventClasses as $eventClass) {
+            $this->assertNotNull($registry->getRegistration($eventClass));
+        }
+    }
 
     /**
      * Test that registrations retain their payload type and ordered listeners.

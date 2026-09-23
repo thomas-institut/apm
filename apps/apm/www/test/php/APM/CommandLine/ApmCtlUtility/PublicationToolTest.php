@@ -2,11 +2,9 @@
 
 namespace APM\CommandLine\ApmCtlUtility;
 
-use APM\CommandLine\ApmCliUtility;
 use APM\CommandLine\ApmCtl\PublicationTool;
 use APM\System\PublicationManager\PublicationManager;
 use PHPUnit\Framework\TestCase;
-use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
@@ -14,20 +12,14 @@ use ThomasInstitut\ApmPublicationApi\TranscriptionData;
 class PublicationToolTest extends TestCase
 {
     /**
-     * Creates a PublicationTool instance without running the CLI bootstrap constructor.
+     * Creates a PublicationTool instance.
      *
-     * @param ContainerInterface $container
+     * @param PublicationManager $publicationManager
      * @return PublicationTool
-     * @throws \ReflectionException
      */
-    private function createPublicationTool(ContainerInterface $container): PublicationTool
+    private function createPublicationTool(PublicationManager $publicationManager): PublicationTool
     {
-        $tool = (new ReflectionClass(PublicationTool::class))->newInstanceWithoutConstructor();
-        $containerProperty = (new ReflectionClass(ApmCliUtility::class))->getProperty('container');
-        $containerProperty->setAccessible(true);
-        $containerProperty->setValue($tool, $container);
-
-        return $tool;
+        return new PublicationTool($publicationManager);
     }
 
     /**
@@ -52,13 +44,13 @@ class PublicationToolTest extends TestCase
      */
     public function testGetHelpDocumentsTeiExportAsEditionOnly(): void
     {
-        $container = $this->createStub(ContainerInterface::class);
-        $tool = $this->createPublicationTool($container);
+        $publicationManager = $this->createStub(PublicationManager::class);
+        $tool = $this->createPublicationTool($publicationManager);
 
         $help = $tool->getUsage();
 
-        $this->assertStringContainsString('export <format> <id>', $help);
-        $this->assertStringContainsString('TEI-XML for edition publications', $help);
+        $this->assertStringContainsString('export json|evt <id>', $help);
+        $this->assertStringContainsString('only for editions', $help);
     }
 
     /**
@@ -76,13 +68,7 @@ class PublicationToolTest extends TestCase
             ->with(123)
             ->willReturn($publication);
 
-        $container = $this->createMock(ContainerInterface::class);
-        $container->expects($this->once())
-            ->method('get')
-            ->with(PublicationManager::class)
-            ->willReturn($publicationManager);
-
-        $tool = $this->createPublicationTool($container);
+        $tool = $this->createPublicationTool($publicationManager);
 
         ob_start();
         $result = $this->invokeExport($tool, 'tei', 123);

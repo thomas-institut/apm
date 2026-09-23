@@ -82,7 +82,7 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             MultiChunkEditionManager::class => factory([MultiChunkEditionManagerFactory::class, 'create']),
             Twig::class => factory([TwigFactory::class, 'create']),
             SystemManager::class => autowire(ApmSystemManager::class),
-            EventRegistry::class => autowire(EventRegistry::class),
+            EventRegistry::class => factory([EventRegistry::class, 'createDefault']),
             EventManager::class => autowire(EventManager::class),
             LanguageManager::class => autowire(ApmLanguageManager::class),
             PublicationManager::class => factory([PublicationManagerFactory::class, 'create']),

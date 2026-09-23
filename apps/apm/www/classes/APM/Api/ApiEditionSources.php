@@ -2,6 +2,7 @@
 
 namespace APM\Api;
 
+use APM\System\EditionSourceManager;
 use InvalidArgumentException;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -15,7 +16,8 @@ class ApiEditionSources extends ApiController
     public function getAllSources(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        $mgr = $this->systemManager->getEditionSourceManager();
+        /** @var EditionSourceManager $mgr */
+        $mgr = $this->container->get(EditionSourceManager::class);
         $data = $mgr->getAllSources();
         return $this->responseWithJson($response, $data);
     }
@@ -34,7 +36,8 @@ class ApiEditionSources extends ApiController
             ], 400);
         }
 
-        $mgr = $this->systemManager->getEditionSourceManager();
+        /** @var EditionSourceManager $mgr */
+        $mgr = $this->container->get(EditionSourceManager::class);
         try {
             $data = $mgr->getSourceByTid($tid);
         } catch (InvalidArgumentException $e) {

@@ -85,12 +85,6 @@ abstract class SystemManager implements ErrorReporter
     abstract public function getCollationEngine(string $engineSystemId = ''): CollationEngine;
 
     /**
-     * @return EditionSourceManager
-     * @deprecated Use container to get individual components
-     */
-    abstract public function getEditionSourceManager(): EditionSourceManager;
-
-    /**
      * @return UserManagerInterface
      * @deprecated Use container to get individual components
      */

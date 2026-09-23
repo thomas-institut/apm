@@ -30,7 +30,6 @@ use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\Presets\DataTablePresetManager;
 use APM\Presets\PresetManager;
 use APM\System\ApmConfigParameter;
-use APM\System\EditionSourceManager;
 use APM\System\Job\JobQueueManager;
 use APM\System\NormalizerManager;
 use APM\System\SystemManager;
@@ -141,11 +140,6 @@ class SystemManagerMockup extends SystemManager {
     public function getMultiChunkEditionManager(): MultiChunkEditionManager
     {
         // TODO: Implement getMultiChunkEditionManager() method.
-    }
-
-    public function getEditionSourceManager(): EditionSourceManager
-    {
-        // TODO: Implement getEditionSourceManager() method.
     }
 
     public function getJobManager(): JobQueueManager

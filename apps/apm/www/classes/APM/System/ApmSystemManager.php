@@ -122,19 +122,6 @@ class ApmSystemManager extends SystemManager
     }
 
     /**
-     * @return EditionSourceManager
-     * @deprecated
-     */
-    public function getEditionSourceManager(): EditionSourceManager
-    {
-        try {
-            return $this->ci->get(EditionSourceManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('Edition source manager not found', 0, $e);
-        }
-    }
-
-    /**
      * @param int $userTid
      * @param int $docId
      * @param int $pageNumber

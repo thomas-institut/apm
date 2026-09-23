@@ -11,7 +11,6 @@ use APM\System\Cache\SystemMainDataCache;
 use APM\System\Person\InvalidPersonNameException;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
-use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\System\Work\WorkManager;
@@ -71,7 +70,8 @@ class ApiPeople extends ApiController
 
     public function getAllPeopleDataForPeoplePage(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
-        $cache = $this->systemManager->getSystemDataCache();
+        /** @var SystemMainDataCache $cache */
+        $cache = $this->container->get(SystemMainDataCache::class);
         try {
             return $this->responseWithJson($response, unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_All)));
         } catch (ItemNotInCacheException) {
@@ -222,11 +222,17 @@ class ApiPeople extends ApiController
         return true;
     }
 
-    static public function invalidateWorksByPersonCache(SystemManager $systemManager, int $personId) : void {
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    static public function invalidateWorksByPersonCache(ContainerInterface $container, int $personId) : void {
         if ($personId === -1) {
             return;
         }
-       $systemManager->getSystemDataCache()->delete(CacheKey::ApiPeopleWorksByPerson . $personId);
+        /** @var SystemMainDataCache $cache */
+        $cache = $container->get(SystemMainDataCache::class);
+        $cache->delete(CacheKey::ApiPeopleWorksByPerson . $personId);
     }
 
     public function getWorksByPerson(Request $request, Response $response): Response {

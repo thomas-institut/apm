@@ -15,6 +15,7 @@ use APM\EntitySystem\Schema\Entity;
 use APM\StringMatcher\NameMatcher;
 use APM\StringMatcher\SimpleIndexElement;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
@@ -481,7 +482,8 @@ class ApiEntity extends ApiController
             }
         }
 
-        $cache = $this->systemManager->getSystemDataCache();
+        /** @var SystemMainDataCache $cache */
+        $cache = $this->container->get(SystemMainDataCache::class);
 
         $index = [];
         foreach($types as $type) {

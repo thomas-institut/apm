@@ -48,7 +48,6 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\JobQueue\JobQueueManager;
 
@@ -121,21 +120,6 @@ class ApmSystemManager extends SystemManager
             throw new RuntimeException('CollatexHttp collation engine not found in container', 0, $e);
         }
     }
-
-    /**
-     * @return DataCache
-     * @deprecated
-     */
-    public function getSystemDataCache(): DataCache
-    {
-
-        try {
-            return $this->ci->get(SystemMainDataCache::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get system data cache", 0, $e);
-        }
-    }
-
 
     /**
      * @return EditionSourceManager
@@ -278,7 +262,7 @@ class ApmSystemManager extends SystemManager
     public function onWorkAdded(int $workId): void
     {
         parent::onWorkAdded($workId);
-        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+        ApiPeople::invalidateWorksByPersonCache($this->ci, $this->getWorkAuthor($workId));
     }
 
     /**
@@ -288,7 +272,7 @@ class ApmSystemManager extends SystemManager
     public function onWorkDeleted($workId): void
     {
         parent::onWorkAdded($workId);
-        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+        ApiPeople::invalidateWorksByPersonCache($this->ci, $this->getWorkAuthor($workId));
     }
 
     /**
@@ -299,7 +283,7 @@ class ApmSystemManager extends SystemManager
     {
         parent::onWorkUpdated($workId);
         // TODO: find previous author and invalidate cache too!
-        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+        ApiPeople::invalidateWorksByPersonCache($this->ci, $this->getWorkAuthor($workId));
     }
 
     /**

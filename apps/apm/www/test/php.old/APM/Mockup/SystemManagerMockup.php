@@ -37,8 +37,6 @@ use APM\System\SystemManager;
 use APM\System\SettingsManager;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Views\Twig;
-use ThomasInstitut\DataCache\DataCache;
-use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataTable\InMemoryDataTable;
 /**
  * Description of SystemManagerMockup
@@ -102,11 +100,6 @@ class SystemManagerMockup extends SystemManager {
     public function getTranscriptionManager(): TranscriptionManager
     {
         return $this->tm;
-    }
-
-    public function getSystemDataCache(): DataCache
-    {
-        return new InMemoryDataCache();
     }
 
     public function getCollationTableManager(): CollationTableManager

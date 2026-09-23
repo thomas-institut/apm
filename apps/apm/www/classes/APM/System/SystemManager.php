@@ -29,7 +29,6 @@ use APM\System\User\UserManagerInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\ErrorReporter\ErrorReporter;
 use ThomasInstitut\ErrorReporter\SimpleErrorReporterTrait;
 
@@ -84,12 +83,6 @@ abstract class SystemManager implements ErrorReporter
     abstract public function getImageSources(): array;
 
     abstract public function getCollationEngine(string $engineSystemId = ''): CollationEngine;
-
-    /**
-     * @return DataCache
-     * @deprecated Use container to get individual components
-     */
-    abstract public function getSystemDataCache(): DataCache;
 
     /**
      * @return EditionSourceManager

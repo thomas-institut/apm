@@ -27,99 +27,132 @@
 namespace APM\Site;
 
 use APM\System\ApmContainerKey;
-use APM\System\ApmImageType;
-use APM\System\ApmSystemManager;
+use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
-use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\LanguageManager;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
-use ThomasInstitut\Profiler\SystemProfiler;
+use APM\ToolBox\BaseUrlDetector;
 use APM\ToolBox\HttpStatus;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
 use RuntimeException;
-use Slim\Routing\RouteParser;
-use ThomasInstitut\CodeDebug\CodeDebugInterface;
-use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
-use Twig\Error\LoaderError;
-use Twig\Error\RuntimeError;
-use Twig\Error\SyntaxError;
-
+use ThomasInstitut\Profiler\SystemProfiler;
 
 /**
  * Site Controller class
  *
  */
-class SiteController implements LoggerAwareInterface, CodeDebugInterface
+class SiteController
 {
-
-
-    use LoggerAwareTrait;
-    use CodeDebugWithLoggerTrait;
 
     const string VITE_DEV_BASE = 'http://localhost:5173';
 
-    protected ContainerInterface $container;
-    protected ApmSystemManager $systemManager;
-    protected array $config;
+    // Default components for all controllers
     protected ApmSystemConfig $systemConfig;
+    protected LoggerInterface $logger;
 
     protected bool $userAuthenticated;
-    protected RouteParser $router;
+
     protected int $userId;
 
     /**
      * SiteController constructor.
-     * @param ContainerInterface $ci
-     * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
      */
-    public function __construct(ContainerInterface $ci)
+    public function __construct(
+        protected ContainerInterface $container
+    )
     {
-        $this->container = $ci;
-        $this->systemManager = $ci->get(SystemManager::class);
-        $this->systemConfig = $ci->get(ApmSystemConfig::class);
-        $this->config = $this->systemManager->getConfig();
-        $this->logger = $this->systemManager->getLogger();
-        $this->router = $this->systemManager->getRouter();
-        $this->userAuthenticated = false;
+        /** @var ApmSystemConfig $sc */
+        $sc = $this->container->get(ApmSystemConfig::class);
+        $this->systemConfig = $sc;
+
+        /** @var LoggerInterface $logger */
+        $logger = $this->container->get(LoggerInterface::class);
+        $this->logger = $logger;
 
         // Check if the user has been authenticated by the authentication middleware
-        //$this->logger->debug('Checking user authentication');
-        if ($ci->has(ApmContainerKey::SITE_USER_ID)) {
+        $this->userAuthenticated = false;
+        if ($this->container->has(ApmContainerKey::SITE_USER_ID)) {
             $this->userAuthenticated = true;
-            $this->userId = $ci->get(ApmContainerKey::SITE_USER_ID);
+            $this->userId = $this->container->get(ApmContainerKey::SITE_USER_ID);
         }
     }
 
-    protected function getLanguagesByCode(): array
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    protected function getLanguageManager(): LanguageManager
     {
-        return $this->buildLanguageByCodeArray($this->getLanguages());
+        return $this->container->get(LanguageManager::class);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     protected function getLanguages(): array
     {
-        return $this->systemManager->getConfig()['languages'];
+        $legacyLangArray = [];
+        $lm = $this->getLanguageManager();
+        foreach ($lm->getSupportedTranscriptionLanguageCodes() as $code) {
+            $legacyLangArray[] = $lm->getLegacyLangInfo($code);
+        }
+        return $legacyLangArray;
+    }
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    protected function getUserManager(): UserManagerInterface
+    {
+        return $this->container->get(UserManagerInterface::class);
+    }
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    protected function getPersonManager(): PersonManagerInterface
+    {
+        return $this->container->get(PersonManagerInterface::class);
+    }
+
+    protected function getSystemDataCache(): SystemMainDataCache
+    {
+        try {
+            return $this->container->get(SystemMainDataCache::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            $this->logger->error("System Error while getting SystemDataCache: " . $e->getMessage());
+            throw new RuntimeException("SystemDataCache not found in container", 0, $e);
+        }
     }
 
     /**
      *
      * Gets an array with info about the user.
-     * This is sent to all pages
+     * This is sent to all standard non-React pages
      *
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function getSiteUserInfo(): array
     {
         try {
-            $userData = $this->systemManager->getUserManager()->getUserData($this->userId);
-            $personData = $this->systemManager->getPersonManager()->getPersonEssentialData($this->userId);
+            $userData = $this->getUserManager()->getUserData($this->userId);
+            $personData = $this->getPersonManager()->getPersonEssentialData($this->userId);
 
             $userInfo = $userData->getExportObject();
             unset($userInfo['passwordHash']);
@@ -136,34 +169,29 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         }
     }
 
-    private function buildLanguageByCodeArray(array $languagesConfigArray): array
-    {
-        $langArrayByCode = [];
-        foreach ($languagesConfigArray as $lang) {
-            $langArrayByCode[$lang['code']] = $lang;
-        }
-        return $langArrayByCode;
-    }
-
     private function getVersionTagLine(): string
     {
-        $tagLine = $this->config['version'] . " (" . $this->config['versionDate'] . ")";
-        if ($this->config['versionExtra'] !== '') {
-            $tagLine .= ' ' . $this->config['versionExtra'];
+        $tagLine = $this->systemConfig->version->version . " (" . $this->systemConfig->version->versionDate . ")";
+        if ($this->systemConfig->version->versionExtra !== '') {
+            $tagLine .= ' ' . $this->systemConfig->version->versionExtra;
         }
         return $tagLine;
     }
 
-    private function getCommonData(): array
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    protected function getCommonData(): array
     {
         return [
-            'appName' => $this->config['appName'],
+            'appName' => $this->systemConfig->general->appName,
             'appVersion' => $this->getVersionTagLine(),
-            'copyrightNotice' => $this->config['copyrightNotice'],
+            'copyrightNotice' => $this->systemConfig->general->copyrightNotice,
             'renderTimestamp' => time(),
-            'cacheDataId' => $this->config['jsAppCacheDataId'],
+            'cacheDataId' => $this->systemConfig->version->jsAppCacheDataId,
             'userInfo' => $this->getSiteUserInfo(),
-            'showLanguageSelector' => $this->config['siteShowLanguageSelector'],
+            'showLanguageSelector' => $this->systemConfig->general->siteShowLanguageSelector,
             'baseUrl' => $this->getBaseUrl()
         ];
     }
@@ -226,11 +254,11 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
         return preg_replace('/\"/', '\"', $string);
     }
 
-    private function getPageHtml(string $baseUrl, string $title, string $headImports, string $postBodyImports) : string
+    protected function getStandardPageHtml(string $baseUrl, string $title, string $headImports, string $postBodyImports): string
     {
         $viteReactPluginHtml = $this->getReactPluginModuleHtml();
 
-        $html = <<<END
+        return <<<END
 <!doctype html>
 <html lang="en">
 <head>
@@ -298,22 +326,8 @@ class SiteController implements LoggerAwareInterface, CodeDebugInterface
 $postBodyImports
 </html>    
 END;
-
-        return $html;
     }
 
-    protected function renderReactPage(ResponseInterface $response, string $title,  string $viteEntryPoint) : ResponseInterface {
-        $baseUrl = $this->getBaseUrl();
-
-        // all imports are handled by Vite
-        [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint]);
-        $html = $this->getPageHtml($baseUrl, $title, $viteJsImportsHtml . $viteCssImportsHtml, '');
-        $response->getBody()->write($html);
-        SystemProfiler::lap('Response ready');
-        $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms", SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
-            SystemProfiler::getLaps());
-        return $response;
-    }
 
     /**
      *
@@ -332,6 +346,8 @@ END;
      * @param array $extraJss
      * @param bool $withJsOptions
      * @return ResponseInterface
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     protected function renderStandardPage(ResponseInterface $response,
                                           string            $cacheKey, string $title,
@@ -345,10 +361,10 @@ END;
     ): ResponseInterface
     {
         SystemProfiler::lap("Ready to render");
-        if ($cacheKey !== '' && !$this->systemManager->getConfig()['devMode']) {
-            $cacheKey = implode(':', ['Site', $this->config['version'], $cacheKey]);
+        if ($cacheKey !== '' && !$this->systemConfig->general->devMode) {
+            $cacheKey = implode(':', ['Site', $this->systemConfig->version->version, $cacheKey]);
             try {
-                $html = $this->systemManager->getSystemDataCache()->get($cacheKey);
+                $html = $this->getSystemDataCache()->get($cacheKey);
                 $response->getBody()->write($html);
                 SystemProfiler::lap('Cached Response ready');
                 $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms", SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
@@ -359,10 +375,8 @@ END;
             }
         }
 
-
         $baseUrl = $this->getBaseUrl();
-
-        $prefix = $this->config['devMode'] ? 'public' : 'dist';
+        $prefix = $this->systemConfig->general->devMode ? 'public' : 'dist';
 
         $cssItems = [];
         $cssItems[] = "$prefix/legacy/bootstrap.css";
@@ -401,13 +415,13 @@ END;
 
 
         [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint, ...$extraViteEntryPoints]);
-        $cssHtml = implode('', [ $cssHtml, $viteCssImportsHtml ]);
+        $cssHtml = implode('', [$cssHtml, $viteCssImportsHtml]);
 
-        $postBodyImports = implode('', [ $jsHtml, $viteJsImportsHtml, "<script> $script </script>" ]);
-        $html = $this->getPageHtml($baseUrl, $title, $cssHtml, $postBodyImports);
+        $postBodyImports = implode('', [$jsHtml, $viteJsImportsHtml, "<script> $script </script>"]);
+        $html = $this->getStandardPageHtml($baseUrl, $title, $cssHtml, $postBodyImports);
         $response->getBody()->write($html);
         if ($cacheKey !== '') {
-            $this->systemManager->getSystemDataCache()->set($cacheKey, $html, 3600);
+            $this->getSystemDataCache()->set($cacheKey, $html, 3600);
         }
         SystemProfiler::lap('Response ready');
         $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms", SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),
@@ -417,7 +431,7 @@ END;
 
     protected function getReactPluginModuleHtml(): string
     {
-        if ($this->systemManager->getConfig()['devMode']) {
+        if ($this->systemConfig->general->devMode) {
             $html = <<<END
 <script type="module">
   import RefreshRuntime from '%s/@react-refresh'
@@ -443,7 +457,7 @@ END;
     {
         $viteJsImportsHtml = '';
         $viteCssImportsHtml = '';
-        if ($this->systemManager->getConfig()['devMode']) {
+        if ($this->systemConfig->general->devMode) {
             $viteJsImportsHtml = sprintf(
                 "<script type=\"module\" src=\"%s/@vite/client\"></script>\n",
                 self::VITE_DEV_BASE
@@ -461,11 +475,9 @@ END;
 
             foreach ($viteEntryPoints as $entryPoint) {
                 $viteImports = $this->getViteImportsFromManifest($entryPoint);
-                $viteJsImports = [...$viteJsImports, ...$viteImports['js']];;
+                $viteJsImports = [...$viteJsImports, ...$viteImports['js']];
                 $viteCssImports = [...$viteCssImports, ...$viteImports['css']];
             }
-//            $this->logger->debug("Vite JS imports: " . implode(', ', $viteJsImports));
-//            $this->logger->debug("Vite CSS imports: " . implode(', ', $viteCssImports));
             foreach ($viteJsImports as $import) {
                 $viteJsImportsHtml .= <<<END
     <script type="module" src="$baseUrl/dist/$import"></script>
@@ -477,7 +489,6 @@ END;
 END;
             }
         }
-//        $this->logger->debug("Vite imports HTML: " . $viteJsImportsHtml);
         return [$viteJsImportsHtml, $viteCssImportsHtml];
     }
 
@@ -523,10 +534,11 @@ END;
 
         array_push($cssImports, ...$mainCssImports);
 
-        return [ 'js' => $jsImports, 'css' => $cssImports] ;
+        return ['js' => $jsImports, 'css' => $cssImports];
     }
 
-    private function getCssImportsFromEntry(string $entryPoint, array $manifest): array {
+    private function getCssImportsFromEntry(string $entryPoint, array $manifest): array
+    {
         $cssImports = [];
 
         if (isset($manifest[$entryPoint]["css"])) {
@@ -542,32 +554,6 @@ END;
         return $cssImports;
     }
 
-    /**
-     * @param ResponseInterface $response
-     * @param string $template
-     * @param array $data
-     * @param bool $withBaseData
-     * @return ResponseInterface
-     */
-    protected function renderPage(ResponseInterface $response,
-                                  string            $template, array $data,
-                                  bool              $withBaseData = true): ResponseInterface
-    {
-
-        if ($withBaseData) {
-            $data['commonData'] = $this->getCommonData();
-            $data['baseUrl'] = $this->getBaseUrl();
-        }
-        try {
-            $responseToReturn = $this->systemManager->getTwig()->render($response, $template, $data);
-            SystemProfiler::lap('Response ready');
-            $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
-            return $responseToReturn;
-        } catch (LoaderError|RuntimeError|SyntaxError $e) {
-            $this->logger->error("Twig error rendering page: " . $e->getMessage(), ['exception' => get_class($e)]);
-            return $this->getSystemErrorPage($response, "Error rendering page", []);
-        }
-    }
 
     protected function getSystemErrorPage(ResponseInterface $response, string $errorMessage,
                                           array             $errorData, int $httpStatus = HttpStatus::INTERNAL_SERVER_ERROR): ResponseInterface
@@ -585,6 +571,10 @@ END;
         return $response->withStatus($httpStatus);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     protected function getErrorPage(ResponseInterface $response, string $title, string $errorMessage, int $httpStatus): ResponseInterface
     {
 
@@ -606,7 +596,7 @@ END;
 
     protected function getBaseUrl(): string
     {
-        return $this->systemManager->getBaseUrl();
+        return BaseUrlDetector::detectBaseUrl($this->systemConfig->general->subDir);
     }
 
     /**
@@ -631,69 +621,9 @@ END;
                 $thePage['foliation'] = $page['foliation'];
             }
             $thePage['isTranscribed'] = in_array($page['page_number'], $transcribedPages);
-
-//            $thePage['classes'] = '';
-//            if (!in_array($page['page_number'], $transcribedPages)) {
-//                $thePage['classes'] =
-//                    $thePage['classes'] . ' withouttranscription';
-//            }
-//            $thePage['classes'] .= ' type' . $page['type'];
             $thePages[] = $thePage;
         }
         return $thePages;
     }
-
-    // Utility function
-    protected function buildPageArrayNew(array $legacyPageInfoArray, array $transcribedPages, array $legacyDocInfo): array
-    {
-        $thePages = [];
-        $docManager = $this->systemManager->getDocumentManager();
-        $imageSources = $this->systemManager->getImageSources();
-        foreach ($legacyPageInfoArray as $legacyPageInfo) {
-            try {
-                $thePage = $legacyPageInfo;
-                $pageNumber = $legacyPageInfo['page_number'];
-                $imageNumber = $legacyPageInfo['img_number'];
-                $thePage['pageId'] = $legacyPageInfo['id'];
-                $thePage['sequence'] = $legacyPageInfo['seq'];
-                $thePage['pageNumber'] = $legacyPageInfo['page_number'];
-                $thePage['imageNumber'] = $legacyPageInfo['img_number'];
-                $thePage['numCols'] = $legacyPageInfo['num_cols'];
-                $thePage['imageSource'] = $legacyDocInfo['image_source'];
-                $thePage['isDeepZoom'] = $legacyDocInfo['deep_zoom'];
-                $thePage['isTranscribed'] = in_array($pageNumber, $transcribedPages);
-
-                $thePage['imageUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
-                    $pageNumber, ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
-                $thePage['jpgUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
-                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
-                $thePage['thumbnailUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
-                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
-//                $this->logger->debug("The page", $thePage);
-                $thePages[$legacyPageInfo['id']] = $thePage;
-            } catch (DocumentNotFoundException $e) {
-                // should never happen
-                throw new RuntimeException("Document not found:" . $e->getMessage());
-            }
-        }
-        return $thePages;
-    }
-
-
-    protected function getNormalizerData(string $language, string $category): array
-    {
-        $normalizerManager = $this->systemManager->getNormalizerManager();
-
-        $standardNormalizerNames = $normalizerManager->getNormalizerNamesByLangAndCategory($language, $category);
-        $normalizerData = [];
-        foreach ($standardNormalizerNames as $normalizerName) {
-            $normalizerData[] = [
-                'name' => $normalizerName,
-                'metadata' => $normalizerManager->getNormalizerMetadata($normalizerName)
-            ];
-        }
-        return $normalizerData;
-    }
-
 
 }

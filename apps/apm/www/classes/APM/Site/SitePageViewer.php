@@ -29,12 +29,23 @@ use APM\System\ApmImageType;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\SystemManager;
+use APM\System\Transcription\TranscriptionManager;
+use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
 use APM\ToolBox\HttpStatus;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
+use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use RuntimeException;
+use Slim\Views\Twig;
 use ThomasInstitut\EntitySystem\Tid;
+use ThomasInstitut\Profiler\SystemProfiler;
+use Twig\Error\LoaderError;
+use Twig\Error\RuntimeError;
+use Twig\Error\SyntaxError;
 
 /**
  * Site Controller class
@@ -51,15 +62,19 @@ class SitePageViewer extends SiteController
      * legacy DataManager getActiveWorks
      *
      * @return string[]
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     private function getActiveWorks() : array {
-       $enabledWorks = $this->systemManager->getWorkManager()->getEnabledWorks();
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
+       $enabledWorks = $workManager->getEnabledWorks();
 //       $this->logger->debug("EnabledWorks: ".count($enabledWorks), [ $enabledWorks]);
 
        $activeWorks = [];
        foreach ($enabledWorks as $work) {
            try {
-               $workData = $this->systemManager->getWorkManager()->getWorkData($work);
+               $workData = $workManager->getWorkData($work);
            } catch (WorkNotFoundException $e) {
                // should never happen
                throw new RuntimeException($e->getMessage());
@@ -79,6 +94,8 @@ class SitePageViewer extends SiteController
      * @param Response $response
      * @param bool $byPage
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     function pageViewerPageByDoc(Request $request, Response $response, bool $byPage): Response
     {
@@ -100,8 +117,14 @@ class SitePageViewer extends SiteController
         if ($activeColumn === 0) {
             $activeColumn = 1;
         }
-        $docManager = $this->systemManager->getDocumentManager();
-        $txManager = $this->systemManager->getTranscriptionManager();
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
+
+        /** @var SystemManager $systemManager */
+        $systemManager = $this->container->get(SystemManager::class);
+
         try {
             $docInfo = $docManager->getLegacyDocInfo($docId);
             if ($byPage) {
@@ -115,7 +138,7 @@ class SitePageViewer extends SiteController
             $docPageCount = $docManager->getDocPageCount($docId);
             $legacyPageInfoArray = $docManager->getLegacyDocPageInfoArray($docId, DocumentManager::ORDER_BY_SEQ);
             $transcribedPages = $txManager->getTranscribedPageListByDocId($docId);
-            $imageSources = $this->systemManager->getImageSources();
+            $imageSources = $systemManager->getImageSources();
             $imageUrl = $docManager->getImageUrl($docId, $pageInfo['img_number'], ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
             $deepZoom = $docManager->isDocDeepZoom($docId) ? '1' : '0';
             $activeWorks = $this->getActiveWorks();
@@ -137,9 +160,9 @@ class SitePageViewer extends SiteController
         }
 
         [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([ 'js/pages/PageViewer/PageViewer.js']);
-        $legacyPrefix  = $this->config['devMode'] ? 'public' : 'dist';
+        $legacyPrefix  = $this->systemConfig->general->devMode ? 'public' : 'dist';
 
-        return $this->renderPage($response, self::PAGE_VIEWER_TWIG, [
+        return $this->renderLegacyPage($response, self::PAGE_VIEWER_TWIG, [
             'navByPage' => $byPage,  // i.e., navigate by sequence
             'doc' => $docId,
             'docIdString' => Tid::toBase36String($docId),
@@ -159,6 +182,39 @@ class SitePageViewer extends SiteController
             'viteCssImportsHtml' => $viteCssImportsHtml,
             'legacyPrefix' => $legacyPrefix,
         ]);
+    }
+
+
+    /**
+     * @param ResponseInterface $response
+     * @param string $template
+     * @param array $data
+     * @return ResponseInterface
+     */
+    protected function renderLegacyPage(ResponseInterface $response,
+                                        string            $template, array $data): ResponseInterface
+    {
+
+        $data['commonData'] = $this->getCommonData();
+        $data['baseUrl'] = $this->getBaseUrl();
+        try {
+            $responseToReturn = $this->getTwig()->render($response, $template, $data);
+            SystemProfiler::lap('Response ready');
+            $this->logger->info("SITE PROFILER " . SystemProfiler::getName(), SystemProfiler::getLaps());
+            return $responseToReturn;
+        } catch (LoaderError|RuntimeError|SyntaxError $e) {
+            $this->logger->error("Twig error rendering page: " . $e->getMessage(), ['exception' => get_class($e)]);
+            return $this->getSystemErrorPage($response, "Error rendering page", []);
+        }
+    }
+
+    private function getTwig(): Twig
+    {
+        try {
+            return $this->container->get(Twig::class);
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface) {
+            throw new RuntimeException("Twig not found in container");
+        }
     }
 
 }

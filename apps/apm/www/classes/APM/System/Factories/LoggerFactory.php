@@ -24,7 +24,8 @@ class LoggerFactory
     ];
 
 
-    private static function createBasicLogger(ApmSystemConfig $config): Logger {
+    private static function createBasicLogger(ApmSystemConfig $config): Logger
+    {
         $loggerLevel = Level::Info;
         if ($config->log->includeDebugInfo) {
             $loggerLevel = Level::Debug;

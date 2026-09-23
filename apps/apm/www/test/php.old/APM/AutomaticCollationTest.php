@@ -105,7 +105,7 @@ class AutomaticCollationTest extends TestCase
         /** @var SystemManager $systemManager */
         $systemManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER);
 
-        self::$logger = $systemManager->getLogger()->withName('TEST');
+        self::$logger = self::$container->get(LoggerInterface::class)->withName('TEST');
 
         self::$logger->debug('Setting up before class');
 

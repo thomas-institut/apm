@@ -2,8 +2,8 @@
 
 namespace APM\CommandLine\DataGrabber;
 
-use APM\CommandLine\ApmCtlUtility\AdminUtility;
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidObjectException;
 use APM\EntitySystem\Exception\InvalidStatementException;
@@ -12,15 +12,18 @@ use APM\EntitySystem\Exception\PredicateCannotBeCancelledException;
 use APM\EntitySystem\Exception\StatementAlreadyCancelledException;
 use APM\EntitySystem\Exception\StatementNotFoundException;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Cache\SystemMemDataCache;
 use APM\ToolBox\HttpStatus;
 use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\GuzzleException;
-use ThomasInstitut\DataCache\DataCache;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
-class ViafIdGrabber extends CommandLineUtility implements AdminUtility
+class ViafIdGrabber implements MultiToolCliUtility
 {
     const string CMD = 'viaf';
 
@@ -29,37 +32,44 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
 
     const string MemCachedPrefix = 'ViafIdGrabber:';
     const int MemCachedTtl = 86400;
-    private DataCache $memCache;
+
     private Client $guzzleClient;
 
-    public function __construct(array $config, int $argc, array $argv)
+    public function __construct(
+        private readonly SystemMemDataCache $memCache,
+        private readonly PdoProvider $pdoProvider,
+        private readonly ApmEntitySystemInterface $entitySystem
+    )
     {
-        parent::__construct($config, $argc, $argv);
-        $this->memCache = $this->getSystemManager()->getMemDataCache();
         $this->guzzleClient = new Client();
     }
 
-    public function getCommand(): string
+    public static function getName(): string
     {
         return self::CMD;
     }
 
-    public function getHelp(): string
+    public static function getUsage(): string
     {
         return self::USAGE;
     }
 
-    public function getDescription(): string
+    public static function getDescription(): string
     {
         return self::DESCRIPTION;
     }
 
     /**
+     * @param int $argc
+     * @param array $argv
+     * @return int
      * @throws InvalidObjectException
-     * @throws InvalidSubjectException
      * @throws InvalidStatementException
+     * @throws InvalidSubjectException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    public function main(int $argc, array $argv) : int
+    public function run(int $argc, array $argv) : int
     {
         if ($argc === 1) {
             print "USAGE: " . self::USAGE . "\n";
@@ -67,15 +77,17 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
         }
 
         array_shift($argv);
-        $pdo = $this->getSystemManager()->getDbConnection();
 
-        $es = $this->getSystemManager()->getEntitySystem();
+
+        $pdo = $this->pdoProvider->getPdo();
+        $es = $this->entitySystem;
+
         if (in_array('all', $argv)){
-            $tids = $es->getAllEntitiesForType(Entity::tPerson);
+            $entityIds = $es->getAllEntitiesForType(Entity::tPerson);
         } else {
-            $tids = DataGrabberUtil::getTidsFromArgv($es,$argv);
+            $entityIds = DataGrabberToolBox::getTidsFromArgv($es,$argv);
         }
-        if (count($tids) === 0) {
+        if (count($entityIds) === 0) {
             print "Please enter a list of entities separated by spaces\n";
             return 0;
         }
@@ -133,7 +145,7 @@ class ViafIdGrabber extends CommandLineUtility implements AdminUtility
         ];
 
 
-        foreach ($tids as $tid) {
+        foreach ($entityIds as $tid) {
             print "Entity $tid: ";
 
             try {

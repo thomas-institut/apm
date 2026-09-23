@@ -30,4 +30,4 @@ if (!is_array($config)) {
 }
 
 
-(new CommandLine\ApmCtlUtility\ApmCtl($config, $argc, $argv))->run();
+(new CommandLine\ApmCtl\ApmCtl($config, $argc, $argv))->run();

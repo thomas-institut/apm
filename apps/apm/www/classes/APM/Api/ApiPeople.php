@@ -7,13 +7,22 @@ use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Events\EntityDataChanged;
+use APM\System\Events\EntityDataChangedPayload;
+use APM\System\Events\EventManager;
 use APM\System\Person\InvalidPersonNameException;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
-use APM\System\SystemManager;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\System\Work\WorkManager;
 use APM\ToolBox\HttpStatus;
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Log\LoggerInterface;
@@ -41,7 +50,8 @@ class ApiPeople extends ApiController
         $personTid =  (int) $request->getAttribute('tid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
 
-        $pm = $this->systemManager->getPersonManager();
+        /** @var PersonManagerInterface $pm */
+        $pm = $this->container->get(PersonManagerInterface::class);
 
         try {
             $data = $pm->getPersonEssentialData($personTid);
@@ -50,7 +60,9 @@ class ApiPeople extends ApiController
             return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
         }
         try {
-            if ($data->isUser && !$this->systemManager->getUserManager()->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
+            /** @var UserManagerInterface $userManager */
+            $userManager = $this->container->get(UserManagerInterface::class);
+            if ($data->isUser && !$userManager->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
                 $data->userEmailAddress = "N/A";
                 $data->userName = 'N/A';
                 $data->userTags = [];
@@ -65,11 +77,14 @@ class ApiPeople extends ApiController
 
     public function getAllPeopleDataForPeoplePage(Request $request, Response $response): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ );
-        $cache = $this->systemManager->getSystemDataCache();
+        /** @var SystemMainDataCache $cache */
+        $cache = $this->container->get(SystemMainDataCache::class);
         try {
             return $this->responseWithJson($response, unserialize($cache->get(CacheKey::ApiPeople_PeoplePageData_All)));
         } catch (ItemNotInCacheException) {
-            $dataToServe = self::buildAllPeopleDataForPeoplePage($this->systemManager->getEntitySystem(), $cache, $this->logger);
+            /** @var ApmEntitySystemInterface $entitySystem */
+            $entitySystem = $this->container->get(ApmEntitySystemInterface::class);
+            $dataToServe = self::buildAllPeopleDataForPeoplePage($entitySystem, $cache, $this->logger);
             $cache->set(CacheKey::ApiPeople_PeoplePageData_All, serialize($dataToServe), self::AllPeopleDataForPeoplePageTtl);
             return $this->responseWithJson($response, $dataToServe);
         }
@@ -186,13 +201,27 @@ class ApiPeople extends ApiController
         return $dataArray;
     }
 
-    public static function updateCachedAllPeopleDataForPeoplePage(SystemManager $systemManager) : bool {
+    /**
+     * @throws NotFoundExceptionInterface
+     * @throws ContainerExceptionInterface
+     */
+    public static function updateCachedAllPeopleDataForPeoplePage(ContainerInterface $container) : bool {
+
+        /** @var ApmEntitySystemInterface $apmEntitySystem */
+        $apmEntitySystem = $container->get(ApmEntitySystemInterface::class);
+
+        /** @var SystemMainDataCache $dataCache */
+        $dataCache = $container->get(SystemMainDataCache::class);
+
+        /** @var LoggerInterface $logger */
+        $logger = $container->get(LoggerInterface::class);
+
         try {
-            $data = self::buildAllPeopleDataForPeoplePage($systemManager->getEntitySystem(), $systemManager->getSystemDataCache(), $systemManager->getLogger());
-            $systemManager->getSystemDataCache()->set(CacheKey::ApiPeople_PeoplePageData_All,
+            $data = self::buildAllPeopleDataForPeoplePage($apmEntitySystem, $dataCache, $logger);
+            $dataCache->set(CacheKey::ApiPeople_PeoplePageData_All,
                 serialize($data), self::AllPeopleDataForPeoplePageTtl);
         } catch (Exception $e) {
-            $systemManager->getLogger()->error("Exception while updating cached AllPeopleEssentialData",
+            $logger->error("Exception while updating cached AllPeopleEssentialData",
                 [
                     'code' => $e->getCode(),
                     'msg' => $e->getMessage()
@@ -202,32 +231,45 @@ class ApiPeople extends ApiController
         return true;
     }
 
-    static public function invalidateWorksByPersonCache(SystemManager $systemManager, int $personId) : void {
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    static public function invalidateWorksByPersonCache(ContainerInterface $container, int $personId) : void {
         if ($personId === -1) {
             return;
         }
-       $systemManager->getSystemDataCache()->delete(CacheKey::ApiPeopleWorksByPerson . $personId);
+        /** @var SystemMainDataCache $cache */
+        $cache = $container->get(SystemMainDataCache::class);
+        $cache->delete(CacheKey::ApiPeopleWorksByPerson . $personId);
     }
 
     public function getWorksByPerson(Request $request, Response $response): Response {
 
         $personTid =  (int) $request->getAttribute('tid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
+
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
+        /** @var SystemMainDataCache $systemMainDataCache */
+        $cache = $this->container->get(SystemMainDataCache::class);
+
         // check cache
         $cacheKey = CacheKey::ApiPeopleWorksByPerson . $personTid;
-        $cache = $this->systemManager->getSystemDataCache();
 
         try {
             $cachedString = $cache->get($cacheKey);
             $data = unserialize($cachedString);
         } catch (ItemNotInCacheException) {
             try {
-                $this->systemManager->getPersonManager()->getPersonEssentialData($personTid);
+                $personManager->getPersonEssentialData($personTid);
             } catch (PersonNotFoundException) {
                 $this->logger->info("Person $personTid not found");
                 return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
             }
-            $works = $this->systemManager->getWorkManager()->getWorksByAuthor($personTid);
+            $works = $workManager->getWorksByAuthor($personTid);
             $data = ExportableObject::getArrayExportObject($works);
             $cache->set($cacheKey, serialize($data), self::WorksByPersonTtl);
         }
@@ -247,7 +289,8 @@ class ApiPeople extends ApiController
             return $this->responseWithJson($response, [ 'errorMsg' => 'No name or sortName provided' ], HttpStatus::BAD_REQUEST);
         }
 
-        $pm = $this->systemManager->getPersonManager();
+        /** @var PersonManagerInterface $pm */
+        $pm = $this->container->get(PersonManagerInterface::class);
 
         try {
             $newPersonId = $pm->createPerson($name, $sortName, $this->apiUserId);
@@ -255,7 +298,9 @@ class ApiPeople extends ApiController
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);
         }
-        $this->systemManager->onEntityDataChange($newPersonId, $this->apiUserId);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(EntityDataChanged::class, new EntityDataChangedPayload($newPersonId, $this->apiUserId));
         // the person has been created
         return $this->responseWithJson($response, $newPersonId, HttpStatus::SUCCESS);
     }

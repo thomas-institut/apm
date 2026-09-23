@@ -1,9 +1,9 @@
 import {useContext} from "react";
 import {ApeContext} from "@/App/App";
 import {useQuery} from "@tanstack/react-query";
-import {Card, Col, Row} from "react-bootstrap";
 import {Link} from "react-router";
 import PageLayout from "@/ui/ApeUx/PageLayout";
+import {PublicationListing} from "@shared/ts";
 
 
 export function Home() {
@@ -26,41 +26,57 @@ export function Home() {
     enabled: !!apiClient,
   });
 
+  const PubSection = (title: string, publications: PublicationListing[]) => {
+    if (publications.length === 0) {
+      return null;
+    }
+    return (
+      <div className={'pub-section'}>
+        <h2>{title}</h2>
+        <ul>
+          {publications.map((publication) => (
+            <li key={publication.id}><Link to={`/publication/${publication.id}`} className="pub-title-link">{publication.title}</Link></li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
   let actualContent = null;
 
   if (publicationListingsQuery.isLoading) {
     actualContent = <div>Loading publications...</div>;
+  } else {
+    if (publicationListingsQuery.isError) {
+      actualContent = <div>Error: {publicationListingsQuery.error.message}</div>;
+    } else {
+      const publications = publicationListingsQuery.data || [];
+
+      if( publications.length === 0 ) {
+        return "No publications found"
+      }
+
+      const transcriptions = publications
+        .filter((publication) => publication.type ==='transcription')
+        .sort((a, b) => a.title.localeCompare(b.title));
+
+      const editions = publications
+        .filter((publication) => publication.type ==='edition')
+        .sort((a, b) => a.title.localeCompare(b.title));
+
+      const texts = publications
+        .filter((publication) => publication.type ==='text')
+        .sort((a, b) => a.title.localeCompare(b.title));
+
+      actualContent = (
+        <>
+          {PubSection("Editions", editions)}
+          {PubSection("Transcriptions", transcriptions)}
+          {PubSection("Texts", texts)}
+        </>
+      );
+    }
   }
-
-  if (publicationListingsQuery.isError) {
-    actualContent = <div>Error: {publicationListingsQuery.error.message}</div>;
-  }
-
-  const publications = publicationListingsQuery.data || [];
-
-  actualContent = (
-    <Row xs={1} md={2} lg={3} className="g-4">
-      {publications.map((publication) => (
-        <Col key={publication.id}>
-          <Card className="h-100">
-            <Card.Body>
-              <Card.Title>{publication.title}</Card.Title>
-              <Card.Subtitle className="mb-2 text-muted">
-                {publication.type} (ID: {publication.id})
-              </Card.Subtitle>
-              <Card.Text>
-                {publication.description}
-              </Card.Text>
-              <Link to={`/publication/${publication.id}`} className="btn btn-sm btn-secondary">
-                View Publication
-              </Link>
-            </Card.Body>
-          </Card>
-        </Col>
-      ))}
-    </Row>
-  )
-
 
 
   return (<PageLayout>

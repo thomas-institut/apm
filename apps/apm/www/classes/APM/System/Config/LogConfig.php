@@ -2,15 +2,18 @@
 
 namespace APM\System\Config;
 
-class LogConfig
+final readonly class LogConfig
 {
-    public string $appName = 'APM';
-    public bool $includeDebugInfo = false;
-    public string $fileName = '';
-    public bool $inPhpErrorHandler = false;
-
-    /**
-     * If set, the log will be written to stderr for CLI utilities
-     */
-    public bool $inStdErr = true;
+    public function __construct(
+        public string $appName = 'APM',
+        public bool   $includeDebugInfo = false,
+        public string $fileName = '',
+        public bool   $inPhpErrorHandler = false,
+        /**
+         * If set, the log will be written to stderr for CLI utilities
+         */
+        public bool   $inStdErr = true
+    )
+    {
+    }
 }

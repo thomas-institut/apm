@@ -26,18 +26,27 @@
 
 namespace APM\Site;
 
+use APM\CollationTable\CollationTableManager;
+use APM\CollationTable\TableNotFoundException;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Schema\Entity;
 use APM\System\DataRetrieveHelper;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\NormalizerManager;
 use APM\System\Transcription\ApmChunkSegmentLocation;
-use APM\System\Transcription\ColumnVersionInfo;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\WitnessType;
+use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
-use ThomasInstitut\Profiler\SystemProfiler;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
+use ThomasInstitut\Profiler\SystemProfiler;
 use ThomasInstitut\TimeString\TimeString;
 
 
@@ -48,33 +57,48 @@ use ThomasInstitut\TimeString\TimeString;
 class SiteChunkPage extends SiteController
 {
     /**
-     * @throws UserNotFoundException
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws PageNotFoundException
+     * @throws TableNotFoundException
+     * @throws UserNotFoundException
+     * @throws EntityDoesNotExistException
      */
     public function singleChunkPage(Request $request, Response $response): Response
     {
-       
-        $transcriptionManager = $this->systemManager->getTranscriptionManager();
-        $ctManager = $this->systemManager->getCollationTableManager();
+
+        /** @var TranscriptionManager $transcriptionManager */
+        $transcriptionManager = $this->container->get(TranscriptionManager::class);
+
+        /** @var CollationTableManager $ctManager */
+        $ctManager = $this->container->get(CollationTableManager::class);
+
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
+
+
         $workId = $request->getAttribute('work');
         $chunkNumber = $request->getAttribute('chunk');
         SystemProfiler::setName("Site:" . __FUNCTION__ . ":$workId-$chunkNumber");
-        
+
         try {
-            $workInfo = get_object_vars($this->systemManager->getWorkManager()->getWorkDataByDareId($workId));
+            $workInfo = get_object_vars($workManager->getWorkDataByDareId($workId));
         } catch (WorkNotFoundException) {
             return $this->getBasicErrorPage($response, "Error", "Work $workId not found", 404);
         }
 
         $witnessInfoArray = $transcriptionManager->getWitnessesForChunk($workId, $chunkNumber);
-        $time =  TimeString::now();
+        $time = TimeString::now();
         $savedCollationTableIds = $ctManager->getCollationTableIdsForChunk("$workId-$chunkNumber", $time);
 
         $savedCollationTableInfoArray = [];
 //        $authorsMentioned = [];
         foreach ($savedCollationTableIds as $tableId) {
             $tableVersions = $ctManager->getCollationTableVersionManager()->getCollationTableVersionInfo($tableId, 1);
-            if (count($tableVersions) !== 0 ){
+            if (count($tableVersions) !== 0) {
 //                $authorsMentioned[] =  $tableVersions[0]->authorTid;
                 $ctInfo = $ctManager->getCollationTableInfo($tableId, $time);
                 if ($ctInfo->archived) {
@@ -86,7 +110,7 @@ class SiteChunkPage extends SiteController
                     'lastSave' => $tableVersions[0]->timeFrom,
                     'title' => $ctInfo->title,
                     'type' => $ctInfo->type
-                    ];
+                ];
             }
         }
         //$this->codeDebug("Saved collation tables", $savedCollationTableInfoArray);
@@ -94,33 +118,26 @@ class SiteChunkPage extends SiteController
         // get pages, authors and languages from witnesses
         $pagesMentioned = [];
         $languageInfoArray = [];
-        $this->startCodeDebug();
         $witnessInfoArrayForPage = [];
-        foreach($witnessInfoArray as $witnessInfo) {
+        foreach ($witnessInfoArray as $witnessInfo) {
 
             $witnessInfoForPage = get_object_vars($witnessInfo);
 
 //            $this->codeDebug("Processing witness info", $witnessInfoForPage);
             try {
-                $witnessInfoForPage['languageCode'] = $this->systemManager->getLangCodeFromId($witnessInfo->language);
+                $witnessInfoForPage['languageCode'] = $this->getLangCodeFromId($witnessInfo->language);
             } catch (EntityDoesNotExistException $e) {
                 // should never happen
                 throw new RuntimeException($e->getMessage(), $e->getCode());
             }
             $witnessInfoArrayForPage[] = $witnessInfoForPage;
 
-            switch($witnessInfo->type) {
+            switch ($witnessInfo->type) {
                 case WitnessType::FULL_TRANSCRIPTION:
                     $docInfo = $witnessInfo->typeSpecificInfo['docInfo'];
-                    try {
-                        $docLangCode = $this->systemManager->getLangCodeFromId($docInfo->language);
-                    } catch (EntityDoesNotExistException $e) {
-                        // should never happen
-                        throw new RuntimeException($e->getMessage(), $e->getCode());
-                    }
-//                    $this->logger->debug("Doc lang code from witness $docLangCode");
+                    $docLangCode = $this->getLangCodeFromId($docInfo->language);
                     if (!isset($languageInfoArray[$docLangCode])) {
-                        $languageInfoArray[$docLangCode] = $this->getLanguagesByCode()[$docLangCode];
+                        $languageInfoArray[$docLangCode] = $this->getLanguageManager()->getLegacyLangInfo($docLangCode);
                         $languageInfoArray[$docLangCode]['totalWitnesses'] = 0;
                         $languageInfoArray[$docLangCode]['validWitnesses'] = 0;
                     }
@@ -129,12 +146,10 @@ class SiteChunkPage extends SiteController
                         $languageInfoArray[$docLangCode]['validWitnesses']++;
                     }
                     $lastVersion = $witnessInfo->typeSpecificInfo['lastVersion'];
-                    /** @var $lastVersion ColumnVersionInfo */
-//                    $authorsMentioned[] = $lastVersion->authorTid;
-                        $pagesMentioned[] = $lastVersion->pageId;
+                    $pagesMentioned[] = $lastVersion->pageId;
 
 
-                    $segmentArray =  $witnessInfo->typeSpecificInfo['segments'];
+                    $segmentArray = $witnessInfo->typeSpecificInfo['segments'];
                     foreach ($segmentArray as $segment) {
                         /** @var $segment ApmChunkSegmentLocation */
                         $pagesMentioned[] = $segment->getStart()->pageId;
@@ -148,26 +163,30 @@ class SiteChunkPage extends SiteController
 
         // Fill in normalizer data for chunk page languages
         $fullLanguageInfo = [];
-        foreach($languageInfoArray as $lang => $langInfo) {
-            $langInfo['normalizerData'] = $this->getNormalizerData($lang, 'standard');
+        foreach ($languageInfoArray as $lang => $langInfo) {
+            $langInfo['normalizerData'] = $this->getNormalizerData($lang);
             $fullLanguageInfo[$lang] = $langInfo;
         }
 
         $helper = new DataRetrieveHelper();
         $helper->setLogger($this->logger);
 
-        $pagesMentioned = array_values(array_filter($pagesMentioned, function($page) { return $page !== 0;}));
-        $pageInfoArray = array_map( function ($pageId) {
-            return $this->systemManager->getDocumentManager()->getPageInfo($pageId);
-        }, $pagesMentioned);
+        $pagesMentioned = array_values(array_filter($pagesMentioned, function ($page) {
+            return $page !== 0;
+        }));
+
+        /** @var DocumentManager $documentManager */
+        $documentManager = $this->container->get(DocumentManager::class);
+
+        $pageInfoArray = array_map(fn ($pageId) => $documentManager->getPageInfo($pageId), $pagesMentioned);
 
         $showAdminInfo = false;
-        if ($this->systemManager->getUserManager()->isRoot($this->userId)) {
+        if ($this->getUserManager()->isRoot($this->userId)) {
             $showAdminInfo = true;
         }
 
-        $validChunks = $this->systemManager->getTranscriptionManager()->getChunksWithTranscriptionForWorkId($workId);
-        $tablesInfo = $this->systemManager->getCollationTableManager()->getTablesInfo(false, $workId);
+        $validChunks = $transcriptionManager->getChunksWithTranscriptionForWorkId($workId);
+        $tablesInfo = $ctManager->getTablesInfo(false, $workId);
         foreach ($tablesInfo as $tableInfo) {
             if (!in_array($tableInfo->chunkNumber, $validChunks)) {
                 $validChunks[] = $tableInfo->chunkNumber;
@@ -202,6 +221,30 @@ class SiteChunkPage extends SiteController
         );
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getNormalizerData(string $lang): array
+    {
+        /** @var NormalizerManager $lm */
+        $lm = $this->container->get(NormalizerManager::class);
+        return $lm->getNormalizerData($lang, 'standard');
+    }
 
-   
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws EntityDoesNotExistException
+     */
+    public function getLangCodeFromId(int $langId): string
+    {
+
+        /** @var ApmEntitySystemInterface $apmEntitySystem */
+        $apmEntitySystem = $this->container->get(ApmEntitySystemInterface::class);
+
+        return $apmEntitySystem->getEntityData($langId)->getObjectForPredicate(Entity::pLangIso639Code) ?? 'unknown';
+    }
+
+
 }

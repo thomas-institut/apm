@@ -20,15 +20,25 @@
 
 namespace APM\Api;
 
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Events\EventManager;
+use APM\System\Events\TranscriptionUpdated;
+use APM\System\Events\TranscriptionUpdatedPayload;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\ColumnElement\Element;
 use APM\System\Transcription\ColumnVersionInfo;
 use APM\System\Transcription\EdNoteManager;
+use APM\System\Transcription\TranscriptionManager;
+use APM\System\User\UserManagerInterface;
+use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
@@ -51,15 +61,23 @@ class ApiElements extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws Exception
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     * @throws UserNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function updateElementsByDocPageCol(Request $request, Response $response): Response
     {
 
-        $txManager = $this->systemManager->getTranscriptionManager();
-        $docManager = $this->systemManager->getDocumentManager();
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
 
-        $userManager = $this->systemManager->getUserManager();
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->container->get(UserManagerInterface::class);
          
         if ($userManager->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             $this->logger->error("User is not authorized to update elements",
@@ -339,12 +357,17 @@ class ApiElements extends ApiController
         $versionInfo->timeFrom = $updateTime;
 
         try {
-            $this->systemManager->getTranscriptionManager()->getColumnVersionManager()->registerNewColumnVersion($pageId, $columnNumber, $versionInfo);
+            $txManager->getColumnVersionManager()->registerNewColumnVersion($pageId, $columnNumber, $versionInfo);
         } catch (Exception $e) {
             $this->logger->error("Cannot register version: " . $e->getMessage());
         }
 
-        $this->systemManager->onTranscriptionUpdated($this->apiUserId, $docId, $pageNumber, $columnNumber);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(
+            TranscriptionUpdated::class,
+            new TranscriptionUpdatedPayload($this->apiUserId, $docId, $pageNumber, $columnNumber)
+        );
         return $this->responseWithStatus($response, 200);
     }
 
@@ -353,8 +376,10 @@ class ApiElements extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
-     * @throws PersonNotFoundException
+     * @throws ContainerExceptionInterface
      * @throws InvalidTimeStringException
+     * @throws NotFoundExceptionInterface
+     * @throws PersonNotFoundException
      */
     public function getElementsByDocPageCol(Request $request, Response $response): Response
     {
@@ -364,8 +389,14 @@ class ApiElements extends ApiController
         $versionId = $request->getAttribute('version');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ":$docId:$pageNumber:$columnNumber");
 
-        $docManager = $this->systemManager->getDocumentManager();
-        $txManager = $this->systemManager->getTranscriptionManager();
+
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+        /** @var TranscriptionManager $txManager */
+        $txManager = $this->container->get(TranscriptionManager::class);
+
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
 
         $docId = Tid::fromString($docId);
 
@@ -435,19 +466,19 @@ class ApiElements extends ApiController
         foreach ($elements as $e){
             if (!isset($people[$e->editorTid])){
                 $people[$e->editorTid] =
-                    $this->systemManager->getPersonManager()->getPersonEssentialData($e->editorTid)->getExportObject();
+                    $personManager->getPersonEssentialData($e->editorTid)->getExportObject();
             }
         }
         foreach($ednotes as $e){
             if (!isset($people[$e->authorTid])){
                 $people[$e->authorTid] =
-                    $this->systemManager->getPersonManager()->getPersonEssentialData($e->authorTid)->getExportObject();
+                    $personManager->getPersonEssentialData($e->authorTid)->getExportObject();
             }
         }
         // Add API user info as well
         if (!isset($people[$this->apiUserId])){
             $people[$this->apiUserId] =
-                $this->systemManager->getPersonManager()->getPersonEssentialData($this->apiUserId)->getExportObject();
+                $personManager->getPersonEssentialData($this->apiUserId)->getExportObject();
         }
 
         $versionData = $this->getVersionDataWithAuthorInfo($versionInfoArray);
@@ -493,7 +524,8 @@ class ApiElements extends ApiController
             }
         }
         $authorData = [];
-        $pm = $this->systemManager->getPersonManager();
+        /** @var PersonManagerInterface $pm */
+        $pm = $this->container->get(PersonManagerInterface::class);
         foreach($authorIds as $authorId) {
             try {
                 $authorData[$authorId] = $pm->getPersonEssentialData($authorId);

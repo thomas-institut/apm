@@ -2,20 +2,14 @@
 
 namespace APM\System;
 
-use APM\EntitySystem\ApmEntitySystem;
-use APM\CollationTable\ApmCollationTableManager;
+
 use APM\System\Document\ApmDocumentManager;
-use APM\System\Person\PersonManagerInterface;
-use APM\System\Preset\DataTablePresetManager;
 use APM\System\Transcription\ApmTranscriptionManager;
-use APM\System\User\ApmUserManager;
-use APM\System\Work\WorkManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionException;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
-use ThomasInstitut\EntitySystem\TypedMultiStorageEntitySystem;
 
 class ApmSystemManagerTest extends TestCase
 {
@@ -36,34 +30,7 @@ class ApmSystemManagerTest extends TestCase
             [PdoProvider::class, $pdoProvider],
         ]);
         $this->setProperty($systemManager, 'ci', $container);
-
-        $this->setProperty($systemManager, 'presetsManager', $this->createStub(DataTablePresetManager::class));
-        $this->setProperty($systemManager, 'transcriptionManager', $this->createStub(ApmTranscriptionManager::class));
-        $this->setProperty($systemManager, 'collationTableManager', $this->createStub(ApmCollationTableManager::class));
-        $this->setProperty($systemManager, 'editionSourceManager', $this->createStub(EntitySystemEditionSourceManager::class));
-        $this->setProperty($systemManager, 'userManager', $this->createStub(ApmUserManager::class));
-        $this->setProperty($systemManager, 'personManager', $this->createStub(PersonManagerInterface::class));
-        $this->setProperty($systemManager, 'workManager', $this->createStub(WorkManager::class));
-        $this->setProperty($systemManager, 'typedMultiStorageEntitySystem', $this->createStub(TypedMultiStorageEntitySystem::class));
-        $this->setProperty($systemManager, 'apmEntitySystem', $this->createStub(ApmEntitySystem::class));
-        $this->setProperty($systemManager, 'documentManager', $this->createStub(ApmDocumentManager::class));
-
-        $normalizerManager = new ApmNormalizerManager();
-        $this->setProperty($systemManager, 'normalizerManager', $normalizerManager);
-
         $systemManager->resetDbConnectionAndDependentManagers();
-
-        $this->assertNull($this->getProperty($systemManager, 'presetsManager'));
-        $this->assertNull($this->getProperty($systemManager, 'transcriptionManager'));
-        $this->assertNull($this->getProperty($systemManager, 'collationTableManager'));
-        $this->assertNull($this->getProperty($systemManager, 'editionSourceManager'));
-        $this->assertNull($this->getProperty($systemManager, 'userManager'));
-        $this->assertNull($this->getProperty($systemManager, 'personManager'));
-        $this->assertNull($this->getProperty($systemManager, 'workManager'));
-        $this->assertNull($this->getProperty($systemManager, 'typedMultiStorageEntitySystem'));
-        $this->assertNull($this->getProperty($systemManager, 'apmEntitySystem'));
-        $this->assertNull($this->getProperty($systemManager, 'documentManager'));
-        $this->assertSame($normalizerManager, $this->getProperty($systemManager, 'normalizerManager'));
     }
 
     /**

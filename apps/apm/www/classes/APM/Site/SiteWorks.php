@@ -26,7 +26,10 @@
 
 namespace APM\Site;
 
-use APM\System\SystemManager;
+use APM\CollationTable\CollationTableManager;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Transcription\TranscriptionManager;
+use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
 use Exception;
 use Psr\Log\LoggerInterface;
@@ -46,25 +49,32 @@ class SiteWorks extends SiteController
     const int WORK_DATA_TTL = 8 * 24 * 3600;
 
 
-    public static function getAllWorksData(SystemManager $systemManager) : array {
-        $cache = $systemManager->getSystemDataCache();
+    public static function getAllWorksData(
+        CollationTableManager $collationTableManager,
+        TranscriptionManager  $transcriptionManager,
+        WorkManager           $workManager,
+        SystemMainDataCache   $systemMainDataCache,
+        LoggerInterface       $logger
+    ): array
+    {
         try {
-            $works = unserialize($cache->get(self::WORK_DATA_CACHE_KEY));
+            $works = unserialize($systemMainDataCache->get(self::WORK_DATA_CACHE_KEY));
         } catch (ItemNotInCacheException) {
             // not in cache
-            $works = self::buildWorkData($systemManager, $systemManager->getLogger());
-            $cache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
+            $works = self::buildWorkData($collationTableManager, $transcriptionManager, $workManager, $logger);
+            $systemMainDataCache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
         }
         return $works;
     }
 
-    private static function getWorkDataBasicInfo(string $workId, SystemManager $systemManager) : array {
+    private static function getWorkDataBasicInfo(string $workId, WorkManager $workManager): array
+    {
         $workDataBasicInfo = [
             'workId' => $workId,
             'isValid' => true,
         ];
         try {
-            $workData = $systemManager->getWorkManager()->getWorkDataByDareId($workId);
+            $workData = $workManager->getWorkDataByDareId($workId);
             $workDataBasicInfo['entityId'] = $workData->entityId;
             $workDataBasicInfo['authorId'] = $workData->authorId;
             $workDataBasicInfo['title'] = $workData->title;
@@ -76,7 +86,8 @@ class SiteWorks extends SiteController
         return $workDataBasicInfo;
     }
 
-    private static function getChunkBasicArray(int $chunkNumber) : array {
+    private static function getChunkBasicArray(int $chunkNumber): array
+    {
         return
             [
                 'n' => $chunkNumber,
@@ -116,21 +127,24 @@ class SiteWorks extends SiteController
      * ```
      *
      *
-     * @param SystemManager $systemManager
+     * @param CollationTableManager $collationTableManager
+     * @param TranscriptionManager $transcriptionManager
+     * @param WorkManager $workManager
      * @param LoggerInterface $logger
      * @return array
      */
-    public static function buildWorkData(SystemManager $systemManager, LoggerInterface $logger) : array {
+    public static function buildWorkData(CollationTableManager $collationTableManager, TranscriptionManager $transcriptionManager, WorkManager $workManager, LoggerInterface $logger): array
+    {
         try {
             $debug = true;
             $debug && $logger->debug("BuildWorkData: Starting");
             $works = [];
-            $tableInfoArray = $systemManager->getCollationTableManager()->getTablesInfo();
+            $tableInfoArray = $collationTableManager->getTablesInfo();
             $debug && $logger->debug('BuildWorkData: Found ' . count($tableInfoArray) . ' active collation tables / editions');
-            foreach ($tableInfoArray as $index => $table) {
+            foreach ($tableInfoArray as $table) {
                 $workId = $table->workId;
                 if (!isset($works[$workId])) {
-                    $works[$workId] = self::getWorkDataBasicInfo($workId, $systemManager);
+                    $works[$workId] = self::getWorkDataBasicInfo($workId, $workManager);
                     if (!$works[$workId]['isValid']) {
                         $logger->error("BuildWorkData: found an invalid work while processing active collation tables", [
                             'work' => $works[$workId],
@@ -150,19 +164,19 @@ class SiteWorks extends SiteController
                     }
                 }
             }
-            $worksWithTranscriptions = $systemManager->getTranscriptionManager()->getWorksWithTranscription();
+            $worksWithTranscriptions = $transcriptionManager->getWorksWithTranscription();
             $debug && $logger->debug('BuildWorkData: Found ' . count($worksWithTranscriptions) . ' works with transcriptions');
-            foreach($worksWithTranscriptions as $workId) {
+            foreach ($worksWithTranscriptions as $workId) {
                 if (!isset($works[$workId])) {
-                    $works[$workId] = self::getWorkDataBasicInfo($workId, $systemManager);
+                    $works[$workId] = self::getWorkDataBasicInfo($workId, $workManager);
                     if (!$works[$workId]['isValid']) {
                         $logger->error("BuildWorkData: Found an invalid work while processing works with transcriptions",
-                            [ 'data' => $works[$workId] ]);
+                            ['data' => $works[$workId]]);
                     }
                 }
                 if ($works[$workId]['isValid']) {
-                    $chunksWithTranscriptions = $systemManager->getTranscriptionManager()->getChunksWithTranscriptionForWorkId($workId);
-                    foreach($chunksWithTranscriptions as $chunkNumber) {
+                    $chunksWithTranscriptions = $transcriptionManager->getChunksWithTranscriptionForWorkId($workId);
+                    foreach ($chunksWithTranscriptions as $chunkNumber) {
                         if ($chunkNumber >= 1) {
                             if (!isset($works[$workId]['chunks'][$chunkNumber])) {
                                 $works[$workId]['chunks'][$chunkNumber] = self::getChunkBasicArray($chunkNumber);
@@ -175,7 +189,9 @@ class SiteWorks extends SiteController
             // Sort the data
             $workIds = array_keys($works);
             foreach ($workIds as $workId) {
-                usort($works[$workId]['chunks'], function($a, $b) {return $a['n'] - $b['n']; });
+                usort($works[$workId]['chunks'], function ($a, $b) {
+                    return $a['n'] - $b['n'];
+                });
             }
             $debug && $logger->debug('BuildWorkData: Finished building work data, there are ' . count($works) . ' active works');
             return $works;
@@ -184,13 +200,18 @@ class SiteWorks extends SiteController
         }
     }
 
-    public static function updateCachedWorkData(SystemManager $systemManager): bool
+    public static function updateCachedWorkData(
+        CollationTableManager $collationTableManager,
+        TranscriptionManager  $transcriptionManager,
+        WorkManager           $workManager,
+        SystemMainDataCache   $systemMainDataCache,
+        LoggerInterface       $logger): bool
     {
         try {
-            $works = self::buildWorkData($systemManager, $systemManager->getLogger());
-            $systemManager->getSystemDataCache()->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
-        } catch(Exception $e) {
-            $systemManager->getLogger()->error("Exception while updating cached WorkData",
+            $works = self::buildWorkData($collationTableManager, $transcriptionManager, $workManager, $logger);
+            $systemMainDataCache->set(self::WORK_DATA_CACHE_KEY, serialize($works), self::WORK_DATA_TTL);
+        } catch (Exception $e) {
+            $logger->error("Exception while updating cached WorkData",
                 [
                     'code' => $e->getCode(),
                     'msg' => $e->getMessage()

@@ -35,8 +35,6 @@ namespace APM\System\Auth;
 use APM\Api\DataSchema\ApiLoginRequest;
 use APM\Api\DataSchema\ApiLoginResponse;
 use APM\System\ApmContainerKey;
-use APM\System\Person\PersonNotFoundException;
-use APM\System\SystemManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\ToolBox\HttpStatus;
@@ -45,7 +43,9 @@ use DateTime;
 use Dflydev\FigCookies\FigRequestCookies;
 use Dflydev\FigCookies\FigResponseCookies;
 use Dflydev\FigCookies\SetCookie;
+use DI\Container;
 use Exception;
+use InvalidArgumentException;
 use Monolog\Logger;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
@@ -53,6 +53,7 @@ use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use Psr\Http\Server\RequestHandlerInterface;
+use Psr\Log\LoggerInterface;
 use Random\RandomException;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response;
@@ -68,10 +69,7 @@ class Authenticator
 {
 
 
-    /**
-     * @var ContainerInterface
-     */
-    private ContainerInterface $container;
+    private Container $container;
 
     /**
      * @var Logger
@@ -90,9 +88,6 @@ class Authenticator
 
     //Constructor
 
-
-//    private Twig $view;
-    private SystemManager $systemManager;
     private UserManagerInterface $userManager;
 
     private ApiResponseFactory $responseFactory;
@@ -105,16 +100,26 @@ class Authenticator
      */
     public function __construct(ContainerInterface $ci)
     {
-        $this->container = $ci;
-        $this->systemManager = $ci->get(SystemManager::class);
-        $this->router = $this->systemManager->getRouter();
-        $this->userManager = $this->systemManager->getUserManager();
-        $this->logger = $this->systemManager->getLogger()->withName('AUTH');
-//        $this->view = $this->systemManager->getTwig();
-        $this->apiLogger = $this->logger->withName('AUTH-API');
-        $this->siteLogger = $this->logger->withName('AUTH-SITE');
+        if ($ci instanceof Container) {
+            $this->container = $ci;
+        } else {
+            throw new InvalidArgumentException('Container must be an instance of DI\Container');
+        }
+        $this->router = $ci->get(RouteParserInterface::class);
+        $this->userManager = $ci->get(UserManagerInterface::class);
+
+        $logger = $ci->get(LoggerInterface::class);
+        if ($logger instanceof Logger) {
+            $this->logger = $logger->withName('AUTH');
+            $this->siteLogger = $logger->withName('AUTH-SITE');
+            $this->apiLogger = $logger->withName('AUTH-API');
+        } else {
+            $this->logger = $logger;
+            $this->siteLogger = $logger;
+            $this->apiLogger = $logger;
+        }
         $this->debugMode = false;
-//        $this->devMode = $this->systemManager->getConfig()['devMode'] ?? false;
+
         $this->responseFactory = new ApiResponseFactory($this->apiLogger);
     }
 
@@ -157,10 +162,6 @@ class Authenticator
         }
     }
 
-    /**
-     * @throws UserNotFoundException
-     * @throws PersonNotFoundException
-     */
     public function authenticateSiteRequest(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
     {
         session_start();
@@ -274,7 +275,7 @@ class Authenticator
 
                 $response = FigResponseCookies::set($response, $cookie);
                 $data = new ApiLoginResponse();
-                $data->result =  ApiResult::Success;
+                $data->result = ApiResult::Success;
                 $data->message = 'Login successful';
                 $data->token = $fullToken;
                 $data->ttl = $rememberMe === 'on' ? 30 * 24 * 3600 : 24 * 3600;

@@ -1,7 +1,7 @@
 {
   "name": "thomas-institut/ape-backend",
   "description": "description",
-  "version": "1.5.0",
+  "version": "1.5.1",
   "minimum-stability": "stable",
   "license": "GPL-3.0-or-later",
   "authors": [
@@ -20,7 +20,7 @@
     "ext-yaml": "*",
     "thomas-institut/php-backend-common": "0.0.2",
     "thomas-institut/standard-api": "^1.0.0",
-    "thomas-institut/apm-publication-api": "0.0.16",
+    "thomas-institut/apm-publication-api": "0.0.17",
     "thomas-institut/datatable" : "^3.0.2",
     "thomas-institut/timestring" : "^v1.3",
     "slim/slim": "^4.15",

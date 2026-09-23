@@ -20,7 +20,7 @@
 
 namespace APM\CommandLine;
 
-use APM\System\ApmMySqlTableName;
+use APM\System\ApmTableNames;
 use PDO;
 
 /**
@@ -29,13 +29,13 @@ use PDO;
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
-class CheckElementSequence extends CommandLineUtility {
+class CheckElementSequence extends ApmCliUtility {
      const USAGE = "usage: checkelementsequence [fix]\n";
     
     public function main(int $argc, array $argv) : bool
     {
         
-        $te = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_ELEMENTS];
+        $te = $this->container->get(ApmTableNames::class)->elements;
         
         $doFix = false;
         

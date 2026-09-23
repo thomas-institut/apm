@@ -3,7 +3,7 @@
 namespace APM\Api;
 
 use APM\System\ApmContainerKey;
-use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationManager;
 use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\SystemManager;
 use Monolog\Logger;
@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Log\LoggerInterface;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response as SlimResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
@@ -22,7 +23,7 @@ class ApiPublicationTest extends TestCase
 {
     private MockObject|ContainerInterface $container;
     private MockObject|SystemManager $systemManager;
-    private MockObject|PublicationManagerInterface $publicationManager;
+    private MockObject|PublicationManager $publicationManager;
     private Response $response;
     private MockObject|Request $request;
     private ApiPublication $controller;
@@ -31,7 +32,7 @@ class ApiPublicationTest extends TestCase
     {
         $this->container = $this->createMock(ContainerInterface::class);
         $this->systemManager = $this->createMock(SystemManager::class);
-        $this->publicationManager = $this->createMock(PublicationManagerInterface::class);
+        $this->publicationManager = $this->createMock(PublicationManager::class);
         $this->response = new SlimResponse();
         $this->request = $this->createMock(Request::class);
 
@@ -39,13 +40,13 @@ class ApiPublicationTest extends TestCase
         $logger->method('withName')->willReturn($logger);
 
         $this->systemManager->method('getConfig')->willReturn(['languages' => [], 'devMode' => false]);
-        $this->systemManager->method('getLogger')->willReturn($logger);
-        $this->systemManager->method('getRouter')->willReturn($this->createMock(RouteParserInterface::class));
+//        $this->systemManager->method('getRouter')->willReturn($this->createMock(RouteParserInterface::class));
 
         $this->container->method('get')->willReturnMap([
             [SystemManager::class, $this->systemManager],
             [ApmContainerKey::API_USER_ID, 1],
-            [PublicationManagerInterface::class, $this->publicationManager],
+            [LoggerInterface::class, $logger],
+            [PublicationManager::class, $this->publicationManager],
         ]);
 
         $this->controller = new ApiPublication($this->container);

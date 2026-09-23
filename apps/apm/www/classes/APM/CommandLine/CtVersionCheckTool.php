@@ -2,15 +2,16 @@
 
 namespace APM\CommandLine;
 
-use APM\System\ApmMySqlTableName;
+use APM\CollationTable\CollationTableManager;
+use APM\System\ApmTableNames;
 use Exception;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
-use ThomasInstitut\DataTable\RowDoesNotExist;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
-class CtVersionCheckTool extends CommandLineUtility
+class CtVersionCheckTool extends ApmCliUtility
 {
 
-    const USAGE = "usage: ctversioncheck check|fix [<ctId1> <ctId2> ... ]\n";
+    const string USAGE = "usage: ctversioncheck check|fix [<ctId1> <ctId2> ... ]\n";
 
 
     public function main(int $argc, array $argv): bool
@@ -25,7 +26,7 @@ class CtVersionCheckTool extends CommandLineUtility
             $fix = true;
         }
 
-        $ctManager = $this->getSystemManager()->getCollationTableManager();
+        $ctManager = $this->container->get(CollationTableManager::class);
         $versionManager = $ctManager->getCollationTableVersionManager();
         $ctIds = [];
         $reportEveryId = true;
@@ -136,13 +137,11 @@ class CtVersionCheckTool extends CommandLineUtility
     }
 
 
-    /**
-     * @throws RowDoesNotExist
-     */
+
     private function bruteForceDataTableConsistencyFix($ctId): void
     {
-        $tableName = $this->getSystemManager()->getTableNames()[ApmMySqlTableName::TABLE_COLLATION_TABLE];
-        $dataTable = new MySqlUnitemporalDataTable($this->getSystemManager()->getDbConnection(), $tableName);
+        $tableName = $this->container->get(ApmTableNames::class)->cTables;
+        $dataTable = new MySqlUnitemporalDataTable($this->container->get(PdoProvider::class), $tableName);
         $versions = $dataTable->getRowHistory($ctId);
         if (count($versions) < 2) {
             return;

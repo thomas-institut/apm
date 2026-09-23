@@ -3,13 +3,14 @@
 
 namespace APM\CommandLine;
 
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\ToolBox\MySqlHelper;
 
 /**
  * Checks the consistency of a MySqlUnitemporal table
  * @package AverroesProject\CommandLine
  */
-class UnitemporalConsistency extends CommandLineUtility
+class UnitemporalConsistency extends ApmCliUtility
 {
 
     const string DB_TIME_FORMAT = 'Y-m-d H:i:s.u';
@@ -18,10 +19,7 @@ class UnitemporalConsistency extends CommandLineUtility
 
     public function main(int $argc, array $argv): bool
     {
-        $db = $this->getSystemManager()->getDbConnection();
-//        $dbh = $this->getSystemManager()->getMySqlHelper();
-
-        $dbh = new MySqlHelper($db, $this->logger);
+        $dbh = new MySqlHelper($this->container->get(PdoProvider::class), $this->logger);
 
         if ($argc != 2) {
             print self::USAGE;
@@ -29,11 +27,6 @@ class UnitemporalConsistency extends CommandLineUtility
         }
 
         $table = $argv[1];
-
-//        if (!preg_match('/^ap_[a-z]+$/', $table)) {
-//            $this->printErrorMsg('Invalid table name');
-//            return false;
-//        }
 
         $allRows = $dbh->getAllRows("SELECT * from `$table` ORDER BY id, valid_from");
 

@@ -20,7 +20,9 @@
 
 namespace APM\CommandLine;
 
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use stdClass;
 use GuzzleHttp\Client as HttpClient;
@@ -33,7 +35,7 @@ use GuzzleHttp\Client as HttpClient;
  *
  * @author Lukas Reichert
  */
-class LocationDataGrabber extends CommandLineUtility
+class LocationDataGrabber extends ApmCliUtility
 {
     /**
      * This main function is called from the command line. Depending on the arguments given to the location grabber command line tool,
@@ -131,7 +133,7 @@ END;
 
         print("getting bilderberg ids from the apm database...\n");
         $bilderbergIdsFromApm = [];
-        $docsFromApm = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        $docsFromApm = $this->container->get(ApmEntitySystemInterface::class)->getAllEntitiesForType(Entity::tDocument);
         foreach ($docsFromApm as $docId) {
             $bilderbergId = $this->getBilderbergIdFromApm($docId);
             $bilderbergIdsFromApm[] = $bilderbergId;
@@ -277,7 +279,7 @@ END;
 
         print("getting bilderberg ids from the apm database...\n");
         $bilderbergIdsFromApm = [];
-        $docsFromApm = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        $docsFromApm = $this->container->get(ApmEntitySystemInterface::class)->getAllEntitiesForType(Entity::tDocument);
         foreach ($docsFromApm as $docId) {
             $bilderbergId = $this->getBilderbergIdFromApm($docId);
             $bilderbergIdsFromApm[] = $bilderbergId;
@@ -802,7 +804,7 @@ END;
      */
     public function getBilderbergIdFromApm(string $doc_id): string
     {
-        $doc_info = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int)$doc_id);
+        $doc_info = $this->container->get(DocumentManager::class)->getLegacyDocInfo((int)$doc_id);
         return $doc_info['title'];
     }
 

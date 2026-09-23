@@ -28,6 +28,7 @@ use APM\EntitySystem\Exception\InvalidStatementException;
 use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\Schema\Languages;
+use APM\System\Document\DocumentManager;
 use GuzzleHttp\Client as HttpClient;
 use PHPUnit\Exception;
 use stdClass;
@@ -40,7 +41,7 @@ use stdClass;
  *
  * @author Lukas Reichert
  */
-class DareDataImporter extends CommandLineUtility
+class DareDataImporter extends ApmCliUtility
 {
 
     private ApmEntitySystemInterface $es;
@@ -67,7 +68,7 @@ class DareDataImporter extends CommandLineUtility
     public function main(int $argc, array $argv): bool
     {
 
-        $this->es = $this->getSystemManager()->getEntitySystem();
+        $this->es = $this->container->get(ApmEntitySystemInterface::class);
 
         // print help
         if (count($argv) < 1 || $argv[1] === '-h') {
@@ -1675,7 +1676,7 @@ END;
 
         $locationCodesToInstitutionTids = [];
 
-        $institutionTids = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tInstitution);
+        $institutionTids = $this->container->get(ApmEntitySystemInterface::class)->getAllEntitiesForType(Entity::tInstitution);
 
         foreach ($institutionTids as $tid) {
             $instData = $this->es->getEntityData($tid);
@@ -1884,14 +1885,14 @@ SPARQL;
         $numAddedSignatures=0;
         $numSkippedDocs=0;
 
-        $docsFromApm = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        $docsFromApm = $this->container->get(ApmEntitySystemInterface::class)->getAllEntitiesForType(Entity::tDocument);
         $numFoundDocs = count($docsFromApm);
 
         print("found $numFoundDocs documents in the apm entity system.\n");
 
         foreach ($docsFromApm as $entityId) {
 
-            $docInfo = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int) $entityId);
+            $docInfo = $this->container->get(DocumentManager::class)->getLegacyDocInfo((int) $entityId);
             $bilderbergId = $docInfo['title'];
             $bilderbergIdSplitted = explode('-', $bilderbergId);
 
@@ -1939,12 +1940,12 @@ SPARQL;
         $numAddedStoredAtRelations=0;
         $numSkippedDocs=0;
 
-        $docsFromApm = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
+        $docsFromApm = $this->container->get(ApmEntitySystemInterface::class)->getAllEntitiesForType(Entity::tDocument);
         $numFoundDocs = count($docsFromApm);
         print("found $numFoundDocs documents in the apm entity system.\n");
 
 
-        $institutionEntities = $this->getSystemManager()->getEntitySystem()->getAllEntitiesForType(Entity::tInstitution);
+        $institutionEntities = $this->container->get(ApmEntitySystemInterface::class)->getAllEntitiesForType(Entity::tInstitution);
         $numInstitutionEntities = count($institutionEntities);
         print("found $numInstitutionEntities institution entities in the apm entity system.\n");
 
@@ -1972,7 +1973,7 @@ SPARQL;
                 }
             }
 
-            $docInfo = $this->getSystemManager()->getDocumentManager()->getLegacyDocInfo((int)$entityId);
+            $docInfo = $this->container->get(DocumentManager::class)->getLegacyDocInfo((int)$entityId);
             $bilderbergId = $docInfo['title'];
             $bilderbergIdSplitted = explode('-', $bilderbergId);
 

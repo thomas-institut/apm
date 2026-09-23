@@ -2,10 +2,14 @@
 
 namespace APM\Site;
 
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\Profiler\SystemProfiler;
 use APM\ToolBox\HttpStatus;
 use Psr\Http\Message\ServerRequestInterface as Request;
@@ -16,6 +20,8 @@ class SitePeople extends SiteController
 {
 
     /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function personPage(Request $request, Response $response): Response
     {
@@ -26,8 +32,11 @@ class SitePeople extends SiteController
         if ($id === -1) {
             return $this->getBasicErrorPage($response, 'Error', "Invalid entity id", HttpStatus::BAD_REQUEST);
         }
+
+        /** @var ApmEntitySystemInterface $apmEntitySystem */
+        $apmEntitySystem = $this->container->get(ApmEntitySystemInterface::class);
         try {
-            $rawEntityData = $this->systemManager->getEntitySystem()->getEntityData($id);
+            $rawEntityData = $apmEntitySystem->getEntityData($id);
         } catch (EntityDoesNotExistException) {
             return $this->getBasicErrorPage($response, 'Error', "Person $id does not exist", HttpStatus::NOT_FOUND);
         }
@@ -36,7 +45,8 @@ class SitePeople extends SiteController
             return $this->getBasicErrorPage($response, 'Error', "Person $id does not exist", HttpStatus::NOT_FOUND);
         }
 
-        $um = $this->systemManager->getUserManager();
+        /** @var UserManagerInterface $um */
+        $um = $this->container->get(UserManagerInterface::class);
         $canManageUsers = false;
         try {
             $canManageUsers = $um->isUserAllowedTo($this->userId, UserTag::MANAGE_USERS);

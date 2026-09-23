@@ -20,6 +20,7 @@
 
 namespace APM\Api;
 
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 
 use APM\System\Preset\Preset;
@@ -29,6 +30,9 @@ use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\ToolBox\HttpStatus;
 use InvalidArgumentException;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\ContainerInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
 
@@ -55,6 +59,19 @@ class ApiPresets extends ApiController
 
     const string COMMAND_NEW = 'new';
     const string COMMAND_UPDATE = 'update';
+
+    private PresetManager $presetManager;
+
+
+    public function __construct(ContainerInterface $ci)
+    {
+        parent::__construct($ci);
+        /** @var PresetManager $pm */
+        $pm = $this->container->get(PresetManager::class);
+        $this->presetManager = $pm;
+    }
+
+
 
     /**
      * API call to get all the presets by tool
@@ -87,6 +104,8 @@ class ApiPresets extends ApiController
         $tool = $inputData['tool'];
         $userId = intval($inputData['userId']);
         $keyArrayToMatch = $inputData['keyArrayToMatch'];
+
+        $presetManager = $this->presetManager;
         
         // Check that the input parameters make sense
         if (!is_string($tool) || $tool==='') {
@@ -97,7 +116,7 @@ class ApiPresets extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
         
-        if (!$this->systemManager->isToolValid($tool)) {
+        if (!$presetManager->isToolValid($tool)) {
             $this->logger->error("Unrecognized tool",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
@@ -114,7 +133,7 @@ class ApiPresets extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
 
-        $presetManager = $this->systemManager->getPresetsManager();
+
         
         if ($userId < 0) {
             $presets = $presetManager->getPresetsByToolAndKeys($tool, $keyArrayToMatch);
@@ -154,6 +173,8 @@ class ApiPresets extends ApiController
      * @param Response $response
      * @return Response
      * @throws PersonNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function  getAutomaticCollationPresets(Request $request, Response $response): Response
     {
@@ -172,7 +193,7 @@ class ApiPresets extends ApiController
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_BAD_REQUEST], HttpStatus::BAD_REQUEST);
             }
         }
-        $tool = SystemManager::TOOL_AUTOMATIC_COLLATION;
+        $tool = PresetManager::TOOL_AUTOMATIC_COLLATION;
         
         $userId = intval($inputData['userId']);
         $lang = $inputData['lang'];
@@ -209,8 +230,7 @@ class ApiPresets extends ApiController
         }
 
         // let's get those presets!
-
-        $presetManager = $this->systemManager->getPresetsManager();
+        $presetManager = $this->presetManager;
         //$presets = [];
         if ($userId < 0) {
             $presets = $presetManager->getPresetsByToolAndKeys($tool, ['lang' => $lang]);
@@ -227,10 +247,13 @@ class ApiPresets extends ApiController
                 $filteredPresets[] = $preset;
             }
         }
+
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
         $presetsInArrayForm = [];
         foreach($filteredPresets as $preset) {
             $userId = $preset->getUserId();
-            $userInfo = $this->systemManager->getPersonManager()->getPersonEssentialData($userId);
+            $userInfo = $personManager->getPersonEssentialData($userId);
             $presetsInArrayForm[] = [
                 'userId' => $preset->getUserId(),
                 'userName' => $userInfo->name,
@@ -264,6 +287,8 @@ class ApiPresets extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws PersonNotFoundException
      */
     public function  getSiglaPresets(Request $request, Response $response): Response
@@ -274,7 +299,7 @@ class ApiPresets extends ApiController
         $lang = $inputData['lang'] ?? null;
         $requestedWitnesses = $inputData['witnesses'] ?? null;
         $userId = isset($inputData['userId']) ? intval($inputData['userId']) : 0;
-        $tool = SystemManager::TOOL_SIGLA;
+        $tool = PresetManager::TOOL_SIGLA;
 
         // Check that the input parameters make sense
         if ($lang === null || $requestedWitnesses === null) {
@@ -308,7 +333,7 @@ class ApiPresets extends ApiController
 
         // let's get those presets!
 
-        $presetManager = $this->systemManager->getPresetsManager();
+        $presetManager = $this->presetManager;
 
         if ($userId === 0) {
             $presets = $presetManager->getPresetsByToolAndKeys($tool, ['lang' => $lang]);
@@ -326,10 +351,13 @@ class ApiPresets extends ApiController
                 $filteredPresets[] = $preset;
             }
         }
+
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
         $presetsInArrayForm = [];
         foreach($filteredPresets as $preset) {
             $userId = $preset->getUserId();
-            $userInfo = $this->systemManager->getPersonManager()->getPersonEssentialData($preset->getUserId());
+            $userInfo = $personManager->getPersonEssentialData($preset->getUserId());
             $presetsInArrayForm[] = [
                 'userId' => $userId,
                 'userName' => $userInfo->name,
@@ -346,36 +374,10 @@ class ApiPresets extends ApiController
     private function convertFullTxIdToSiglaPresetId(string $longFormId) : string {
         $info = WitnessSystemId::getFullTxInfo($longFormId);
         return implode('-', [ 'fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
-//        try {
-//            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo(intval($info->typeSpecificInfo['docId']));
-//        } catch (DocumentNotFoundException) {
-//            $this->logger->warning("Could not find document for fullTx witness $longFormId", ['docId' => $info->typeSpecificInfo['docId']]);
-//            return implode('-', [ 'fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
-//        }
-//
-//        return implode('-', [ 'fullTx', $docInfo->id, $info->typeSpecificInfo['localWitnessId']]);
     }
 
     private function getPresetDataWithNewDocIds(Preset $preset): array {
         return $preset->getData();
-//        $presetData = $preset->getData();
-//        $newWitnesses = [];
-//        foreach($presetData['witnesses'] as $witnessId => $siglum) {
-//            [ $witnessType, $docId, $localWitnessId] = explode('-', $witnessId);
-//            if ($witnessType === 'fullTx') {
-//                try {
-//                    $docInfo = $this->systemManager->getDocumentManager()->getDocInfo(intval($docId));
-//                    $newWitnessId = implode('-', [ 'fullTx', $docInfo->id, $localWitnessId]);
-//                    $newWitnesses[$newWitnessId] = $siglum;
-//                } catch (DocumentNotFoundException) {
-//                    $this->logger->warning("Could not find document for fullTx witness $docId");
-//                    $newWitnesses[$witnessId] = $siglum;
-//                }
-//            } else {
-//                $newWitnesses[$witnessId] = $siglum;
-//            }
-//        }
-//        return ['lang' => $presetData['lang'], 'witnesses' => $newWitnesses];
     }
 
     /**
@@ -410,7 +412,7 @@ class ApiPresets extends ApiController
             return $inputData;
         }
 
-        $pm = $this->systemManager->getPresetsManager();
+        $pm = $this->presetManager;
         $pf = new PresetFactory();
         $apiUserId = $this->apiUserId;
         $lang = $inputData['lang'];
@@ -444,7 +446,7 @@ class ApiPresets extends ApiController
                 $this->codeDebug('New Sigla Preset', [ 'apiUserId' => $apiUserId, 'title' => $title, 'presetData' => $presetData]);
 
 
-                $preset = $pf->create(SystemManager::TOOL_SIGLA, $apiUserId, $title, $presetData);
+                $preset = $pf->create(PresetManager::TOOL_SIGLA, $apiUserId, $title, $presetData);
                 if ($pm->correspondingPresetExists($preset)) {
                     $this->logger->error("Preset already exists",
                         [ 'apiUserId' => $this->apiUserId,
@@ -462,7 +464,7 @@ class ApiPresets extends ApiController
                     // @codeCoverageIgnoreEnd
                 }
                 // success
-                $newId = $pm->getPreset(SystemManager::TOOL_SIGLA, $apiUserId, $title)->getPresetId();
+                $newId = $pm->getPreset(PresetManager::TOOL_SIGLA, $apiUserId, $title)->getPresetId();
                 return $this->responseWithJson($response, ['presetId' => $newId], 200);
 
             case self::COMMAND_UPDATE:
@@ -495,7 +497,7 @@ class ApiPresets extends ApiController
                     $title = $inputData['title'];
                 }
 
-                $updatedPreset = $pf->create(SystemManager::TOOL_SIGLA, $this->apiUserId, $title, $presetData);
+                $updatedPreset = $pf->create(PresetManager::TOOL_SIGLA, $this->apiUserId, $title, $presetData);
                 if (!$pm->updatePresetById($presetId, $updatedPreset)) {
                     // @codeCoverageIgnoreStart
                     $this->logger->error("Could not update preset",
@@ -539,9 +541,12 @@ class ApiPresets extends ApiController
         
         $tool = $inputData['tool'];
         $title = $inputData['title'];
+
+
+        $pm = $this->presetManager;
         
         // check that tool is valid
-        if (!$this->systemManager->isToolValid($tool)){
+        if (!$pm->isToolValid($tool)){
             $this->logger->error("Unrecognized tool " . $tool,
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
@@ -561,8 +566,7 @@ class ApiPresets extends ApiController
                       'data' => $inputData ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
         }
-        
-        $pm = $this->systemManager->getPresetsManager();
+
         $pf = new PresetFactory();
         $apiUserId = $this->apiUserId;
         if ($command === self::COMMAND_NEW) {
@@ -603,7 +607,7 @@ class ApiPresets extends ApiController
 
         $currentPreset = $pm->getPresetById($presetId);
         // check that userId is the same as the current preset's userId
-        if (intval($this->apiUserId) !== $currentPreset->getUserId()) {
+        if ($this->apiUserId !== $currentPreset->getUserId()) {
             $this->logger->error("API user not authorized to update preset",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_NOT_AUTHORIZED,
@@ -631,7 +635,7 @@ class ApiPresets extends ApiController
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $presetId = intval($request->getAttribute('id'));
         
-        $presetsManager = $this->systemManager->getPresetsManager();
+        $presetsManager = $this->presetManager;
 
         try {
             $currentPreset = $presetsManager->getPresetById($presetId);
@@ -647,7 +651,7 @@ class ApiPresets extends ApiController
             throw $e;
         }
 
-        if ($currentPreset->getUserId() !== intval($this->apiUserId)) {
+        if ($currentPreset->getUserId() !== $this->apiUserId) {
             $this->logger->error("API user not authorized to delete preset",
                     [ 'apiUserId' => $this->apiUserId,
                       'apiError' => self::API_ERROR_NOT_AUTHORIZED,
@@ -668,6 +672,8 @@ class ApiPresets extends ApiController
         // success
         return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
+
+
     
 }
 

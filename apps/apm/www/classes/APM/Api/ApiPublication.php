@@ -9,18 +9,18 @@ use Psr\Http\Message\ServerRequestInterface as Request;
 
 use ThomasInstitut\ApmPublicationApi\PublicationApiGetResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationApiListResponse;
-use APM\System\PublicationManager\PublicationManagerInterface;
+use APM\System\PublicationManager\PublicationManager;
 use APM\System\PublicationManager\PublicationNotFoundException;
 
 
 class ApiPublication extends ApiController
 {
-    private PublicationManagerInterface $publicationManager;
+    private PublicationManager $publicationManager;
 
     public function __construct(ContainerInterface $ci)
     {
         parent::__construct($ci);
-        $this->publicationManager = $ci->get(PublicationManagerInterface::class);
+        $this->publicationManager = $ci->get(PublicationManager::class);
     }
 
     /**

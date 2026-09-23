@@ -12,7 +12,7 @@ import {formatDuration} from "#src/util/formatDuration.js";
 import {GenerateEditionPublicationFromMceData} from "#src/Actions/GenerateEditionPublication/GenerateEditionPublicationFromMceData.js";
 import {getDurationInMs} from "#src/util/getDurationInMs.js";
 
-const VERSION = '1.5.0';
+const VERSION = '1.5.1';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;
@@ -59,7 +59,7 @@ logger.debug(`PdfRenderer: ${PdfRenderer}`);
 logger.setFileName(LogFile);
 
 const nodeServiceServer = express();
-nodeServiceServer.use(bodyParser.json({limit: '50mb'}));
+nodeServiceServer.use(bodyParser.json({limit: '256mb'}));
 
 nodeServiceServer.get('/api/measure', (req, res) => {
   let text = req.query.text?.toString() ?? 'Sample string';
@@ -155,7 +155,7 @@ nodeServiceServer.post('/api/edition/publication/fromMceData', async (req, res) 
     versionString: data.versionString,
   });
   if (generateEditionOutput.error) {
-    logger.error(`Error typesetting: ${generateEditionOutput.errorMessage}`);
+    logger.error(`Error generating edition output: ${generateEditionOutput.errorMessage}`);
     res.json({error: true, errorMsg: generateEditionOutput.errorMessage});
     return;
   }

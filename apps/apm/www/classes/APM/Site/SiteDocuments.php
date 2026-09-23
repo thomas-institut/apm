@@ -26,20 +26,27 @@
 
 namespace APM\Site;
 
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\ApmImageType;
+use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\Transcription\ApmChunkSegmentLocation;
 use APM\System\Transcription\ChunkSegmentLocationStatus;
+use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
 use Exception;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
 use RuntimeException;
+use Slim\Interfaces\RouteParserInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\EntitySystem\Tid;
 
@@ -49,131 +56,48 @@ use ThomasInstitut\EntitySystem\Tid;
  */
 class SiteDocuments extends SiteController
 {
-
-    const string DOCUMENT_DATA_CACHE_KEY = 'SiteDocuments-DocumentData';
-    const int DOCUMENT_DATA_TTL = 8 * 24 * 3600;
-
-    public static function getAllDocumentsData(SystemManager $systemManager): array
+   /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getDocumentManager(): DocumentManager
     {
-        $cache = $systemManager->getSystemDataCache();
-        try {
-            $data = json_decode($cache->get(self::DOCUMENT_DATA_CACHE_KEY), true);
-        } catch (ItemNotInCacheException) {
-            // not in cache
-            $systemManager->getLogger()->debug("Cache miss for SiteDocuments document data");
-            $data = self::buildDocumentData($systemManager);
-            $cache->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data));
-        }
-        return $data['docs'];
+        return $this->container->get(DocumentManager::class);
     }
 
     /**
-     * @throws DocumentNotFoundException
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
-    static private function getDocData(SystemManager $systemManager, int $docId): array
+    private function getRouter(): RouteParserInterface
     {
-        $docManager = $systemManager->getDocumentManager();
-        $txManager = $systemManager->getTranscriptionManager();
-        $legacyDocId = $docManager->getLegacyDocId($docId);
-        $doc = [];
-        $doc['numPages'] = $docManager->getDocPageCount($docId);
-        $transcribedPages = $txManager->getTranscribedPageListByDocId($legacyDocId);
-        $doc['numTranscribedPages'] = count($transcribedPages);
-        $doc['transcribers'] = $txManager->getEditorIdsByDocId($legacyDocId);
-        $doc['docInfo'] = $docManager->getLegacyDocInfo($docId);
-        $doc['id'] = $docId;
-        return $doc;
+        return $this->container->get(RouteParserInterface::class);
     }
 
-    static public function buildDocumentData(SystemManager $systemManager): array
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getTranscriptionManager(): TranscriptionManager
     {
-        $docs = [];
-
-        $docIds = $systemManager->getEntitySystem()->getAllEntitiesForType(Entity::tDocument);
-
-        foreach ($docIds as $docId) {
-            try {
-                $docs[] = self::getDocData($systemManager, $docId);
-            } catch (DocumentNotFoundException $e) {
-                // should never happen
-                $systemManager->getLogger()->error("Document not found: " . $e->getMessage());
-                continue;
-            }
-        }
-
-        return ['docs' => $docs];
+        return $this->container->get(TranscriptionManager::class);
     }
 
-
-    public static function updateDataCache(SystemManager $systemManager, array $docIds): bool
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getEntitySystem(): ApmEntitySystemInterface
     {
-//        $systemManager->getLogger()->info("Updating data cache",  ['docIds' => $docIds]);
-        $data = [];
-        $completeRebuild = false;
-        if (count($docIds) !== 0) {
-            try {
-                $data = json_decode($systemManager->getSystemDataCache()->get(self::DOCUMENT_DATA_CACHE_KEY), true);
-            } catch (ItemNotInCacheException) {
-                $completeRebuild = true;
-            }
-        }
-        if ($completeRebuild || count($docIds) === 0) {
-            // redo the whole thing!
-            $systemManager->getLogger()->info("Rebuilding document data cache entirely");
-            try {
-                $data = self::buildDocumentData($systemManager);
-            } catch (Exception $e) {
-                $systemManager->getLogger()->error("Exception while building DocumentData",
-                    [
-                        'code' => $e->getCode(),
-                        'msg' => $e->getMessage()
-                    ]);
-                return false;
-            }
-        }
+        return $this->container->get(ApmEntitySystemInterface::class);
+    }
 
-        if (count($docIds) !== 0) {
-            $updatedDocs = [];
-
-            // updating existing docs
-            foreach ($data['docs'] as $docData) {
-                if (in_array($docData['id'], $docIds)) {
-                    try {
-                        $newDocData = self::getDocData($systemManager, $docData['id']);
-                    } catch (DocumentNotFoundException) {
-                        // a deleted document!
-                        // nothing to do
-                        continue;
-                    }
-                    $systemManager->getLogger()->info("Updating doc data for doc {$docData['id']}");
-                    $updatedDocs[] = $newDocData;
-                } else {
-                    $updatedDocs[] = $docData;
-                }
-            }
-
-            // adding new
-            foreach ($docIds as $docId) {
-                if (!in_array($docId, array_column($updatedDocs, 'id'))) {
-                    $systemManager->getLogger()->info("Adding doc data for new doc $docId");
-                    try {
-                        $newDocData = self::getDocData($systemManager, $docId);
-                    } catch (DocumentNotFoundException) {
-                        // a deleted document!
-                        // nothing to do
-                        continue;
-                    }
-                    $updatedDocs[] = $newDocData;
-                }
-            }
-            $data['docs'] = $updatedDocs;
-        }
-
-        if (count($data) !== 0) {
-            $systemManager->getSystemDataCache()->set(self::DOCUMENT_DATA_CACHE_KEY, json_encode($data), self::DOCUMENT_DATA_TTL);
-        }
-
-        return true;
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    private function getSystemManager() : SystemManager {
+        return $this->container->get(SystemManager::class);
     }
 
     /**
@@ -181,6 +105,8 @@ class SiteDocuments extends SiteController
      * @param Response $response
      * @param array $args
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws PersonNotFoundException
      * @throws UserNotFoundException
      */
@@ -189,7 +115,7 @@ class SiteDocuments extends SiteController
 
         $id = $args['id'];
         $selectedPage = intval($request->getQueryParams()['selectedPage'] ?? '0');
-        $docId = $this->systemManager->getEntitySystem()->getEntityIdFromString($id);
+        $docId = $this->getEntitySystem()->getEntityIdFromString($id);
 
         if ($docId === -1) {
             return $this->getBasicErrorPage($response, "Invalid Document ID",
@@ -208,9 +134,9 @@ class SiteDocuments extends SiteController
         $chunkSegmentErrorMessages[ChunkSegmentLocationStatus::DUPLICATE_CHUNK_END_MARKS] = 'Duplicate end marks';
 
 
-        $docManager = $this->systemManager->getDocumentManager();
-        $transcriptionManager = $this->systemManager->getTranscriptionManager();
-        $userManager = $this->systemManager->getUserManager();
+        $docManager = $this->getDocumentManager();
+        $transcriptionManager = $this->getTranscriptionManager();
+        $userManager = $this->getUserManager();
         if ($docId < 2000) {
             // a legacy doc id
             $this->logger->debug("Id $docId is a legacy id");
@@ -222,7 +148,7 @@ class SiteDocuments extends SiteController
                     "Document $id not found", HttpStatus::NOT_FOUND);
             }
             $this->logger->debug("Entity id for legacy doc id $docId is $docData->id");
-            $newUrl = $this->router->urlFor("doc.details", ['id' => Tid::toBase36String($docData->id)]);
+            $newUrl = $this->getRouter()->urlFor("docPage", ['id' => Tid::toBase36String($docData->id)]);
             $this->logger->warning("Redirecting to $newUrl");
             return $response->withHeader('Location', $newUrl)->withStatus(HttpStatus::MOVED_PERMANENTLY);
         }
@@ -256,7 +182,7 @@ class SiteDocuments extends SiteController
         foreach ($lastSaves as $saveVersionInfo) {
             if (!isset($authorInfo[$saveVersionInfo->authorTid])) {
                 $authorInfo[$saveVersionInfo->authorTid] =
-                    $this->systemManager->getPersonManager()->getPersonEssentialData($saveVersionInfo->authorTid);
+                    $this->getPersonManager()->getPersonEssentialData($saveVersionInfo->authorTid);
             }
         }
 
@@ -268,7 +194,7 @@ class SiteDocuments extends SiteController
                         $lastChunkVersion = $lastChunkVersions[$workId][$chunkNumber][$docIdInMap][$witnessLocalId];
                         $versionInfo[$workId][$chunkNumber] = $lastChunkVersion;
                         if ($lastChunkVersion->authorTid !== 0 && !isset($authorInfo[$lastChunkVersion->authorTid])) {
-                            $authorInfo[$lastChunkVersion->authorTid] = $this->systemManager->getPersonManager()->getPersonEssentialData($lastChunkVersion->authorTid);
+                            $authorInfo[$lastChunkVersion->authorTid] = $this->getPersonManager()->getPersonEssentialData($lastChunkVersion->authorTid);
                         }
                         foreach ($segmentArray as $segmentNumber => $location) {
                             /** @var $location ApmChunkSegmentLocation */
@@ -338,6 +264,45 @@ class SiteDocuments extends SiteController
                 'selectedPage' => $selectedPage
             ],
         );
+    }
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    protected function buildPageArrayNew(array $legacyPageInfoArray, array $transcribedPages, array $legacyDocInfo): array
+    {
+        $thePages = [];
+        $docManager = $this->getDocumentManager();
+        $imageSources = $this->getSystemManager()->getImageSources();
+        foreach ($legacyPageInfoArray as $legacyPageInfo) {
+            try {
+                $thePage = $legacyPageInfo;
+                $pageNumber = $legacyPageInfo['page_number'];
+                $imageNumber = $legacyPageInfo['img_number'];
+                $thePage['pageId'] = $legacyPageInfo['id'];
+                $thePage['sequence'] = $legacyPageInfo['seq'];
+                $thePage['pageNumber'] = $legacyPageInfo['page_number'];
+                $thePage['imageNumber'] = $legacyPageInfo['img_number'];
+                $thePage['numCols'] = $legacyPageInfo['num_cols'];
+                $thePage['imageSource'] = $legacyDocInfo['image_source'];
+                $thePage['isDeepZoom'] = $legacyDocInfo['deep_zoom'];
+                $thePage['isTranscribed'] = in_array($pageNumber, $transcribedPages);
+
+                $thePage['imageUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $pageNumber, ApmImageType::IMAGE_TYPE_DEFAULT, $imageSources);
+                $thePage['jpgUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG, $imageSources);
+                $thePage['thumbnailUrl'] = $docManager->getImageUrl($legacyDocInfo['id'],
+                    $imageNumber, ApmImageType::IMAGE_TYPE_JPG_THUMBNAIL, $imageSources);
+//                $this->logger->debug("The page", $thePage);
+                $thePages[$legacyPageInfo['id']] = $thePage;
+            } catch (DocumentNotFoundException $e) {
+                // should never happen
+                throw new RuntimeException("Document not found:" . $e->getMessage());
+            }
+        }
+        return $thePages;
     }
 
 }

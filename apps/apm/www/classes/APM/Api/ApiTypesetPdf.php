@@ -24,6 +24,8 @@ use APM\NodeService\CouldNotContactServiceException;
 use APM\NodeService\InvalidNodeServiceResponseException;
 use APM\NodeService\NodeServiceClient;
 use APM\NodeService\NodeServiceFailedException;
+use APM\System\Config\ApmSystemConfig;
+use APM\ToolBox\BaseUrlDetector;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Http\Message\ResponseInterface as Response;
@@ -51,6 +53,8 @@ class ApiTypesetPdf extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function toPdf(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -63,7 +67,7 @@ class ApiTypesetPdf extends ApiController
         $requestId = "APM-" . hash('sha256', $inputJson);
         $this->logger->debug("GeneratePDF request id is " . $requestId);
         $fileToDownload = self::PDF_DOWNLOAD_SUBDIR . '/' . $requestId . '.pdf';
-        $url = $this->systemManager->getBaseUrl() . '/' . $fileToDownload;
+        $url = $this->getBaseUrl() . '/' . $fileToDownload;
 
         if ($useCache) {
             if (file_exists($fileToDownload) && filesize($fileToDownload) > self::MIN_VALID_PDF_FILE_SIZE) {
@@ -90,38 +94,6 @@ class ApiTypesetPdf extends ApiController
             $this->logger->error("$this->apiCallName: " . $e->getMessage());
             return $this->responseFactory->internalServerError($response, 'Node service error');
         }
-
-
-//        $serviceUrl = sprintf(
-//                "http://%s:%s/api/typeset",
-//                $this->systemManager->getConfig()['typesettingService']['host'],
-//                $this->systemManager->getConfig()['typesettingService']['port'],
-//        );
-//
-//        $guzzleClient = new Client([
-//            'base_uri' => $serviceUrl,
-//            'timeout'  => $this->systemManager->getConfig()['apiTypesetPdfHttpClientTimeOut'],
-//            'headers' => [ 'Content-Type' => 'application/json' ]
-//        ]);
-//
-//        try {
-//            $typesettingServiceResponse = $guzzleClient->post('', ['body' => json_encode($inputData)]);
-//        } catch (GuzzleException $e) {
-//            $this->logger->error("$this->apiCallName: " . $e->getMessage());
-//            return $this->responseFactory->internalServerError($response, 'Could not contact typesetting service');
-//        }
-//
-//        if ($typesettingServiceResponse->getStatusCode() !== HttpStatus::SUCCESS) {
-//            $this->logger->error("$this->apiCallName: Typesetting service failed with code " . $typesettingServiceResponse->getBody());
-//            return $this->responseFactory->internalServerError($response, "Typesetting service failed");
-//        }
-//
-//        $pdfString =  $typesettingServiceResponse->getBody();
-//
-//        if (strlen($pdfString) < self::MIN_VALID_PDF_FILE_SIZE) {
-//            $this->logger->error("$this->apiCallName: Typesetting service returned empty or very small PDF");
-//            return $this->responseFactory->internalServerError($response, "Typesetting service returned invalid PDF");
-//        }
 
         $this->logger->debug("$this->apiCallName: PDF generated in $url");
         if ($this->saveStringToFile($fileToDownload, $pdfString)){
@@ -153,6 +125,17 @@ class ApiTypesetPdf extends ApiController
         fwrite($handle, $data);
         fclose($handle);
         return true;
+    }
+
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
+    protected function getBaseUrl(): string
+    {
+        /** @var ApmSystemConfig $systemConfig */
+        $systemConfig = $this->container->get(ApmSystemConfig::class);
+        return BaseUrlDetector::detectBaseUrl($systemConfig->general->subDir);
     }
 
 

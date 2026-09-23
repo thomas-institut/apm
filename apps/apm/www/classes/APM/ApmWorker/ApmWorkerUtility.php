@@ -2,14 +2,14 @@
 
 namespace APM\ApmWorker;
 
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\ApmCliUtility;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 
 /**
  * CLI utility wrapper for ValkeyWorker.
  */
-class ApmWorkerUtility extends CommandLineUtility
+class ApmWorkerUtility extends ApmCliUtility
 {
     /**
      * @param int $argc

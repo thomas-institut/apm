@@ -2,19 +2,23 @@
 
 namespace APM\ApmDaemon;
 
-use APM\CommandLine\CommandLineUtility;
-use APM\Jobs\UpdateAllPeopleDataCache;
-use APM\Jobs\SiteDocumentsUpdateDataCache;
-use APM\Jobs\UpdateWorksCache;
-use APM\Site\SiteDocuments;
+use APM\Api\ApiDocuments;
+use APM\CommandLine\ApmCliUtility;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Jobs\UpdateAllPeopleDataCacheJob;
+use APM\System\Jobs\UpdateApiDocumentsDataCacheJob;
+use APM\System\Jobs\UpdateWorksCacheJob;
 use Monolog\Logger;
+use Psr\Container\ContainerExceptionInterface;
+use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\JobQueue\JobQueueManager;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
-class ApmDaemon extends CommandLineUtility
+class ApmDaemon extends ApmCliUtility
 {
     const int MICROSECONDS_TO_SLEEP = 100 * 1000;
     const int RECOVERY_INTERVAL = 300; // 5 minutes
@@ -25,8 +29,6 @@ class ApmDaemon extends CommandLineUtility
 
     public function main(int $argc, array $argv): bool
     {
-
-        $this->getSystemManager(); // just to get the right logger
         if (is_a($this->logger, Logger::class)) {
             $this->logger = $this->logger->withName('DAEMON');
         }
@@ -88,25 +90,32 @@ class ApmDaemon extends CommandLineUtility
         return unlink($this->config['daemonPidFile']);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function scheduleCacheRebuildJobs(): void
     {
-        $jobManager = $this->getSystemManager()->getJobQueueManager();
-        $cache = $this->getSystemManager()->getSystemDataCache();
+        /** @var JobQueueManager $jobManager */
+        $jobManager = $this->container->get(JobQueueManager::class);
+
+        /** @var SystemMainDataCache $cache */
+        $cache = $this->container->get(SystemMainDataCache::class);
 
         $tasks = [
             [
                 'key' => SiteWorks::WORK_DATA_CACHE_KEY,
-                'jobName' => UpdateWorksCache::class,
+                'jobName' => UpdateWorksCacheJob::class,
                 'payload' => []
             ],
             [
-                'key' => SiteDocuments::DOCUMENT_DATA_CACHE_KEY,
-                'jobName' => SiteDocumentsUpdateDataCache::class,
+                'key' => ApiDocuments::DOCUMENT_DATA_CACHE_KEY,
+                'jobName' => UpdateApiDocumentsDataCacheJob::class,
                 'payload' => []
             ],
             [
                 'key' => CacheKey::ApiPeople_PeoplePageData_All,
-                'jobName' => UpdateAllPeopleDataCache::class,
+                'jobName' => UpdateAllPeopleDataCacheJob::class,
                 'payload' => []
             ],
         ];
@@ -124,13 +133,18 @@ class ApmDaemon extends CommandLineUtility
         }
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function runJobQueueRecovery(): void
     {
         if (time() - $this->lastRecoveryRun < self::RECOVERY_INTERVAL) {
             return;
         }
 
-        $jobManager = $this->getSystemManager()->getJobQueueManager();
+        /** @var JobQueueManager $jobManager */
+        $jobManager = $this->container->get(JobQueueManager::class);
         if ($jobManager instanceof ValkeyJobQueueManager) {
             $this->logger->info("Running Job Queue Recovery check");
             $recovered = $jobManager->runRecovery(self::JOB_TIMEOUT);

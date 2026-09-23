@@ -38,8 +38,8 @@ use ThomasInstitut\CodeDebug\CodeDebugWithLoggerTrait;
  */
 abstract class NormalizerManager implements LoggerAwareInterface, CodeDebugInterface {
 
-    const ERROR_NAME_ALREADY_IN_USE = 1001;
-    const ERROR_CATEGORY_CANNOT_BE_EMPTY = 1002;
+    const int ERROR_NAME_ALREADY_IN_USE = 1001;
+    const int ERROR_CATEGORY_CANNOT_BE_EMPTY = 1002;
 
     use LoggerAwareTrait, CodeDebugWithLoggerTrait;
 
@@ -48,11 +48,10 @@ abstract class NormalizerManager implements LoggerAwareInterface, CodeDebugInter
     abstract public function applyNormalizersByLangAndCategory(Token $token, string $lang, string $category);
     abstract public function getNormalizersByLangAndCategory(string $lang, string $category) : array;
     abstract public function getNormalizerNamesByLangAndCategory(string $lang, string $category) : array;
-
     abstract public function getNormalizerByName(string $name) : WitnessTokenNormalizer;
 
     /**
-     * Stores metadata for the given named normalizer, e.g:
+     * Stores metadata for the given named normalizer, e.g.:
      *   [ 'title' => 'Some nice title', 'help' => 'A more thorough explanation' ]
      * @param string $name
      * @param array $metaData  any array with standard types (string, int, float)
@@ -60,5 +59,22 @@ abstract class NormalizerManager implements LoggerAwareInterface, CodeDebugInter
      */
     abstract public function setNormalizerMetadata(string $name, array $metaData) : void;
     abstract public function getNormalizerMetadata(string $name) : array;
+
+    /**
+     * Returns an array of normalizer names and metadata for the given language and category
+     *
+     * ```
+     * [
+     *   [ 'name' => 'normalizer1', 'metadata' =>  [...] ],
+     *   [ 'name' => 'normalizer2', 'metadata' =>  [...] ]
+     *   ...
+     * ]
+     * ```
+     *
+     * @param string $lang
+     * @param string $category
+     * @return array
+     */
+    abstract public function getNormalizerData(string $lang, string $category):  array;
 
 }

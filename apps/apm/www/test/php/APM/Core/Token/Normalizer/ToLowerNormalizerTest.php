@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\Core\Token;
+namespace APM\Core\Token\Normalizer;
 
 use APM\Core\Token\Normalizer\ToLowerCaseNormalizer;
 use APM\Core\Token\Token;

@@ -1,7 +1,7 @@
 <?php
 
 
-namespace APM\System;
+namespace APM\System\Transcription;
 
 
 use APM\System\Transcription\ApmColumnVersionManager;

@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Core;
+namespace APM\Core\Collation;
 
 
 use APM\Core\Token\TokenType;

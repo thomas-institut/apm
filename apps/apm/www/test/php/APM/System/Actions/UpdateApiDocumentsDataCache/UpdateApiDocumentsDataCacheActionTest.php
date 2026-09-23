@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\System\Actions;
+namespace APM\System\Actions\UpdateApiDocumentsDataCache;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\System\Actions\UpdateApiDocumentsDataCache\RebuildApiDocumentsDataCacheAction;

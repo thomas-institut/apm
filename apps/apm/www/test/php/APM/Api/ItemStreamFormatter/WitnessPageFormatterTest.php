@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Api;
+namespace APM\Api\ItemStreamFormatter;
 
 
 use APM\Api\ItemStreamFormatter\WitnessPageFormatter;

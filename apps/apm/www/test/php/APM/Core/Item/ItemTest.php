@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Core;
+namespace APM\Core\Item;
 
 
 use APM\Core\Item\Item;

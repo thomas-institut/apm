@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\System;
+namespace APM\System\Transcription;
 
 use APM\System\Transcription\EditorialNote;
 use PHPUnit\Framework\TestCase;

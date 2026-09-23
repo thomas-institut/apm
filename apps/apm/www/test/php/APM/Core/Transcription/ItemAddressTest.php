@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Core;
+namespace APM\Core\Transcription;
 
 use APM\Core\Transcription\ItemAddressInDocument;
 use APM\Core\Transcription\ItemAddressInPage;

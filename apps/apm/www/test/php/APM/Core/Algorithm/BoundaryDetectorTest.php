@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Core;
+namespace APM\Core\Algorithm;
 
 
 use PHPUnit\Framework\TestCase;

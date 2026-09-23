@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\System\EntitySystem;
+namespace APM\EntitySystem;
 
 
 use APM\EntitySystem\ApmEntitySystem;

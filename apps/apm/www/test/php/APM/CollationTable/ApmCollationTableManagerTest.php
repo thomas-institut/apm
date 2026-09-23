@@ -1,7 +1,7 @@
 <?php
 
 
-namespace APM\System;
+namespace APM\CollationTable;
 
 
 use APM\CollationTable\ApmCollationTableVersionManager;

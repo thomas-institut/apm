@@ -1,6 +1,6 @@
 <?php
 
-namespace APM\CommandLine\ApmCtlUtility;
+namespace APM\CommandLine\ApmCtl;
 
 use APM\CommandLine\ApmCtl\PublicationTool;
 use APM\System\PublicationManager\PublicationManager;

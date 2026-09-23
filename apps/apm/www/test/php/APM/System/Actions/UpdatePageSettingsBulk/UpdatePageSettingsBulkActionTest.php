@@ -1,8 +1,9 @@
 <?php
 
-namespace APM\System\Actions;
+namespace APM\System\Actions\UpdatePageSettingsBulk;
 
 use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\System\Actions\PageUpdateDefinition;
 use APM\System\Actions\UpdatePageSettingsBulk\UpdatePageSettingsBulkAction;
 use APM\System\Actions\UpdatePageSettingsBulk\UpdatePageSettingsBulkPayload;
 use APM\System\Document\Exception\PageNotFoundException;

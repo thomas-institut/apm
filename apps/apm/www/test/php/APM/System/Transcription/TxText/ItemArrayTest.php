@@ -18,7 +18,7 @@
  *  
  */
 
-namespace APM\Core;
+namespace APM\System\Transcription\TxText;
 
 
 

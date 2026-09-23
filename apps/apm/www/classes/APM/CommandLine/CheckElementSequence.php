@@ -20,6 +20,7 @@
 
 namespace APM\CommandLine;
 
+use APM\System\ApmTableNames;
 use PDO;
 
 /**
@@ -34,7 +35,7 @@ class CheckElementSequence extends ApmCliUtility {
     public function main(int $argc, array $argv) : bool
     {
         
-        $te = $this->getSystemManager()->getTableNames()->elements;
+        $te = $this->container->get(ApmTableNames::class)->elements;
         
         $doFix = false;
         

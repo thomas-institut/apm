@@ -3,6 +3,7 @@
 
 namespace APM\CommandLine;
 
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\ToolBox\MySqlHelper;
 
 /**
@@ -18,7 +19,7 @@ class UnitemporalConsistency extends ApmCliUtility
 
     public function main(int $argc, array $argv): bool
     {
-        $dbh = new MySqlHelper($this->getSystemManager()->getPdoProvider(), $this->logger);
+        $dbh = new MySqlHelper($this->container->get(PdoProvider::class), $this->logger);
 
         if ($argc != 2) {
             print self::USAGE;

@@ -194,8 +194,6 @@ class ColumnVersionFixTool extends ApmCliUtility
     }
 
     /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
      */
     private function getLastPageSettingsChangeTime($pageId): string
     {

@@ -2,8 +2,11 @@
 
 namespace APM\CommandLine;
 
+use APM\CollationTable\CollationTableManager;
+use APM\System\ApmTableNames;
 use Exception;
 use ThomasInstitut\DataTable\MySqlUnitemporalDataTable;
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
 class CtVersionCheckTool extends ApmCliUtility
 {
@@ -23,7 +26,7 @@ class CtVersionCheckTool extends ApmCliUtility
             $fix = true;
         }
 
-        $ctManager = $this->getSystemManager()->getCollationTableManager();
+        $ctManager = $this->container->get(CollationTableManager::class);
         $versionManager = $ctManager->getCollationTableVersionManager();
         $ctIds = [];
         $reportEveryId = true;
@@ -137,8 +140,8 @@ class CtVersionCheckTool extends ApmCliUtility
 
     private function bruteForceDataTableConsistencyFix($ctId): void
     {
-        $tableName = $this->getSystemManager()->getTableNames()->cTables;
-        $dataTable = new MySqlUnitemporalDataTable($this->getSystemManager()->getDbConnection(), $tableName);
+        $tableName = $this->container->get(ApmTableNames::class)->cTables;
+        $dataTable = new MySqlUnitemporalDataTable($this->container->get(PdoProvider::class), $tableName);
         $versions = $dataTable->getRowHistory($ctId);
         if (count($versions) < 2) {
             return;

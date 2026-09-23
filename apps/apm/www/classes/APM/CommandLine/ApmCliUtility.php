@@ -20,11 +20,7 @@
 
 namespace APM\CommandLine;
 
-
-use APM\System\ApmSystemManager;
-
 use APM\System\ContainerDefinitions\CliDefsProvider;
-use APM\System\SystemManager;
 use DI\ContainerBuilder;
 use Exception;
 use JetBrains\PhpStorm\NoReturn;
@@ -33,6 +29,7 @@ use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 
 /**
@@ -93,23 +90,14 @@ abstract class ApmCliUtility {
         $this->container = $builder->build();
     }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     * @deprecated Use container instead
-     */
-    public function getSystemManager() : ApmSystemManager {
 
-        return $this->container->get(SystemManager::class);
-    }
-
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
     protected function getDbConn() : PDO {
-        $pdoProvider = $this->container->get(PdoProvider::class);
-        return $pdoProvider->getPdo();
+        try {
+            $pdoProvider = $this->container->get(PdoProvider::class);
+            return $pdoProvider->getPdo();
+        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
+            throw new RuntimeException("Failed to get PDO connection: " . $e->getMessage());
+        }
     }
     
     #[NoReturn] public function run(): void // @phpstan-ignore attribute.notFound
@@ -123,23 +111,7 @@ abstract class ApmCliUtility {
     
     protected function printErrorMsg($msg): void
     {
-        $this->printStdErr("ERROR: $msg \n");
-    }
-
-    protected function printStdErr($str): void
-    {
-        fwrite(STDERR, $str);
-    }
-
-    protected function getAnswerFromCommandLine(string $question) : string {
-        print $question;
-        return fgets(STDIN);
-    }
-
-    protected function userRespondsYes(string $question) : bool {
-        $question = trim($question);
-        $question = "$question Type 'yes' to proceed: ";
-        return strtolower(trim($this->getAnswerFromCommandLine($question))) === 'yes';
+        CliToolBox::printErrorMessage($msg);
     }
 
 

@@ -4,9 +4,12 @@ namespace APM\CommandLine\ApmCtl;
 
 use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
 use APM\EntitySystem\Schema\Entity;
+use APM\System\Events\EventManager;
+use APM\System\Events\WorkAdded;
+use APM\System\Events\WorkChangedPayload;
+use APM\System\Events\WorkUpdated;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
-use APM\System\SystemManager;
 use APM\System\Work\WorkData;
 use APM\System\Work\WorkManager;
 use APM\System\Work\WorkNotFoundException;
@@ -28,7 +31,7 @@ class WorkTool implements MultiToolCliUtility
     
     public function __construct(
         private readonly WorkManager   $workManager,
-        private readonly SystemManager $systemManager,
+        private readonly EventManager  $eventManager,
         private readonly PersonManagerInterface $personManager
     )
     {
@@ -126,7 +129,7 @@ class WorkTool implements MultiToolCliUtility
             print "Work $entityOrApmId not found\n";
             return;
         }
-        $this->systemManager->onWorkUpdated($workData->entityId);
+        $this->eventManager->emit(WorkUpdated::class, new WorkChangedPayload($workData->entityId));
 
     }
 
@@ -239,7 +242,7 @@ class WorkTool implements MultiToolCliUtility
             return;
         }
 
-        $this->systemManager->onWorkAdded($workId);
+        $this->eventManager->emit(WorkAdded::class, new WorkChangedPayload($workId));
         printf("New work created, id = %d = %s\n", $workId, Tid::toBase36String($workId));
     }
 

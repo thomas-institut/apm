@@ -7,7 +7,9 @@ use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidEntityTypeException;
 use APM\EntitySystem\Schema\Entity;
-use APM\System\SystemManager;
+use APM\System\Events\EntityDataChanged;
+use APM\System\Events\EntityDataChangedPayload;
+use APM\System\Events\EventManager;
 use Exception;
 use RuntimeException;
 use ThomasInstitut\EntitySystem\Tid;
@@ -28,7 +30,7 @@ class EntityTool implements MultiToolCliUtility
 
     public function __construct(
         private readonly ApmEntitySystemInterface $entitySystem,
-        private readonly SystemManager            $systemManager
+        private readonly EventManager             $eventManager
     )
     {
     }
@@ -208,7 +210,7 @@ class EntityTool implements MultiToolCliUtility
 
         $id = $es->createEntity($type, $name, '', Entity::System);
 
-        $this->systemManager->onEntityDataChange($id, Entity::System);
+        $this->eventManager->emit(EntityDataChanged::class, new EntityDataChangedPayload($id, Entity::System));
         printf("New entity created, id = %d = %s\n", $id, Tid::toBase36String($id));
     }
 

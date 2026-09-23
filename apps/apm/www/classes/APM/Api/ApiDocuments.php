@@ -31,6 +31,12 @@ use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Events\DocumentAdded;
+use APM\System\Events\DocumentChangedPayload;
+use APM\System\Events\DocumentUpdated;
+use APM\System\Events\EventManager;
+use APM\System\Events\PageSettingsUpdated;
+use APM\System\Events\PageSettingsUpdatedPayload;
 use APM\System\Transcription\TranscriptionManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
@@ -209,7 +215,9 @@ class ApiDocuments extends ApiController
             $this->logger->error("Can't update page settings for page $pageId: " . $e->getMessage(), get_object_vars($pageInfo));
             return $this->responseWithStatus($response, 409);
         }
-        $this->systemManager->onUpdatePageSettings($this->apiUserId, $pageId);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(PageSettingsUpdated::class, new PageSettingsUpdatedPayload($this->apiUserId, $pageId));
         return $this->responseWithStatus($response, 200);
     }
 
@@ -304,7 +312,9 @@ class ApiDocuments extends ApiController
             }
         }
 
-        $this->systemManager->onDocumentUpdated($this->apiUserId, $docId);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(DocumentUpdated::class, new DocumentChangedPayload($this->apiUserId, $docId));
         return $this->responseWithStatus($response, 200);
     }
 
@@ -420,7 +430,9 @@ class ApiDocuments extends ApiController
         $newDocId = $docManager->createDocument($name, $type,
             $lang, $imageSource, $imageSourceData, $this->apiUserId);
 
-        $this->systemManager->onDocumentAdded($this->apiUserId, $newDocId);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(DocumentAdded::class, new DocumentChangedPayload($this->apiUserId, $newDocId));
         return $this->responseWithJson($response, $newDocId);
     }
 
@@ -456,8 +468,10 @@ class ApiDocuments extends ApiController
         $action = $this->container->get(UpdatePageSettingsBulkAction::class);
         $result = $action->execute(new UpdatePageSettingsBulkPayload($pageDefinitions, $this->apiUserId));
 
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
         foreach ($result->updatedPageIds as $pageId) {
-            $this->systemManager->onUpdatePageSettings($this->apiUserId, $pageId);
+            $eventManager->emit(PageSettingsUpdated::class, new PageSettingsUpdatedPayload($this->apiUserId, $pageId));
         }
 
         if ($result->hasErrors()) {

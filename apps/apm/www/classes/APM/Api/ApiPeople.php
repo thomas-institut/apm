@@ -8,6 +8,9 @@ use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
+use APM\System\Events\EntityDataChanged;
+use APM\System\Events\EntityDataChangedPayload;
+use APM\System\Events\EventManager;
 use APM\System\Person\InvalidPersonNameException;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
@@ -295,7 +298,9 @@ class ApiPeople extends ApiController
             $this->logger->error("Invalid name creating person");
             return $this->responseWithJson($response, [ 'errorMsg' => 'Invalid name' ], HttpStatus::BAD_REQUEST);
         }
-        $this->systemManager->onEntityDataChange($newPersonId, $this->apiUserId);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(EntityDataChanged::class, new EntityDataChangedPayload($newPersonId, $this->apiUserId));
         // the person has been created
         return $this->responseWithJson($response, $newPersonId, HttpStatus::SUCCESS);
     }

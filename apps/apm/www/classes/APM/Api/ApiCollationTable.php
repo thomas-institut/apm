@@ -36,6 +36,9 @@ use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Events\CollationTableSaved;
+use APM\System\Events\CollationTableSavedPayload;
+use APM\System\Events\EventManager;
 use APM\System\LanguageManager;
 use APM\System\NormalizerManager;
 use APM\System\Person\PersonManagerInterface;
@@ -664,7 +667,12 @@ class ApiCollationTable extends ApiController
                 'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
             ];
 
-            $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
+            /** @var EventManager $eventManager */
+            $eventManager = $this->container->get(EventManager::class);
+            $eventManager->emit(
+                CollationTableSaved::class,
+                new CollationTableSavedPayload($this->apiUserId, $collationTableId)
+            );
             $this->info("Collation Table $collationTableId saved");
             return $this->responseWithJson($response, $responseData);
         }
@@ -678,7 +686,12 @@ class ApiCollationTable extends ApiController
             'versionInfo' => $ctManager->getCollationTableVersions($collationTableId)
         ];
 
-        $this->systemManager->onCollationTableSaved($this->apiUserId, $collationTableId);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(
+            CollationTableSaved::class,
+            new CollationTableSavedPayload($this->apiUserId, $collationTableId)
+        );
         $this->info("Collation Table $collationTableId saved (new table)");
         return $this->responseWithJson($response, $responseData);
     }
@@ -858,7 +871,9 @@ class ApiCollationTable extends ApiController
         /** @var CollationTableManager $ctManager */
         $ctManager = $this->container->get(CollationTableManager::class);
 
-        $this->systemManager->onCollationTableSaved($this->apiUserId, $tableId);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(CollationTableSaved::class, new CollationTableSavedPayload($this->apiUserId, $tableId));
 
         try {
             $ctManager->convertToEdition($tableId, $initStrategy, $this->apiUserId, TimeString::now());

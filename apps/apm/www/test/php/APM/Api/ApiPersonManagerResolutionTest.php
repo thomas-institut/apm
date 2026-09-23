@@ -5,6 +5,11 @@ namespace APM\Api;
 use APM\System\ApmContainerKey;
 use APM\System\Config\ApmSystemConfig;
 use APM\System\Config\VersionConfig;
+use APM\System\Events\EntityDataChanged;
+use APM\System\Events\EntityDataChangedPayload;
+use APM\System\Events\EventListener;
+use APM\System\Events\EventManager;
+use APM\System\Events\EventRegistry;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\SystemManager;
 use PHPUnit\Framework\TestCase;
@@ -31,14 +36,34 @@ class ApiPersonManagerResolutionTest extends TestCase
         $request->method('getBody')->willReturn($requestBody);
 
         $container = $this->createStub(ContainerInterface::class);
+        $eventListener = new class implements EventListener {
+            public ?object $payload = null;
+
+            public function handle(object $payload): void
+            {
+                $this->payload = $payload;
+            }
+        };
+        $eventManager = new EventManager($container, new EventRegistry([
+            EntityDataChanged::class => [
+                'payload' => EntityDataChangedPayload::class,
+                'listeners' => [$eventListener::class],
+            ],
+        ]));
         $container->method('get')->willReturnMap([
             [ApmSystemConfig::class, new ApmSystemConfig(new VersionConfig('', '', ''))],
             [SystemManager::class, $this->createStub(SystemManager::class)],
             [ApmContainerKey::API_USER_ID, 1],
             [LoggerInterface::class, $this->createStub(LoggerInterface::class)],
             [PersonManagerInterface::class, $personManager],
+            [EventManager::class, $eventManager],
+            [$eventListener::class, $eventListener],
         ]);
 
         (new ApiPeople($container))->personCreate($request, new Response());
+
+        $this->assertInstanceOf(EntityDataChangedPayload::class, $eventListener->payload);
+        $this->assertSame(123, $eventListener->payload->entityIdOrIds);
+        $this->assertSame(1, $eventListener->payload->userId);
     }
 }

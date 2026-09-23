@@ -23,6 +23,7 @@ namespace Test\APM\Mockup;
 use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use APM\System\Person\InvalidPersonNameException;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\User\InvalidUserNameException;
 use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNameAlreadyInUseException;
@@ -87,7 +88,8 @@ class DatabaseTestEnvironment {
     public function createUserByUserName(string $userName) : int {
         /** @var UserManagerInterface $userManager */
         $userManager = $this->getContainer()->get(UserManagerInterface::class);
-        $personManager = $this->getSystemManager()->getPersonManager();
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->getContainer()->get(PersonManagerInterface::class);
         try {
             $userTid = $personManager->createPerson($userName, $userName);
         } catch (InvalidPersonNameException) {

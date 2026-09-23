@@ -516,7 +516,8 @@ class ApiElements extends ApiController
             }
         }
         $authorData = [];
-        $pm = $this->systemManager->getPersonManager();
+        /** @var PersonManagerInterface $pm */
+        $pm = $this->container->get(PersonManagerInterface::class);
         foreach($authorIds as $authorId) {
             try {
                 $authorData[$authorId] = $pm->getPersonEssentialData($authorId);

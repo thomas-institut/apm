@@ -24,7 +24,6 @@ namespace APM\System;
 
 use APM\CollationEngine\CollationEngine;
 use APM\EntitySystem\ApmEntitySystemInterface;
-use APM\System\Person\PersonManagerInterface;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -82,13 +81,6 @@ abstract class SystemManager implements ErrorReporter
     abstract public function getImageSources(): array;
 
     abstract public function getCollationEngine(string $engineSystemId = ''): CollationEngine;
-
-    /**
-     * @return PersonManagerInterface
-     * @deprecated Use container to get individual components
-     */
-    abstract public function getPersonManager(): PersonManagerInterface;
-
 
     /**
      * @return ApmEntitySystemInterface

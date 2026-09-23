@@ -153,7 +153,8 @@ class ApiUsers extends ApiController
 
         /** @var UserManagerInterface $apmUserManager */
         $apmUserManager = $this->container->get(UserManagerInterface::class);
-        $personManager = $this->systemManager->getPersonManager();
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
 
         $personTid = intval($request->getAttribute('personTid'));
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $personTid);

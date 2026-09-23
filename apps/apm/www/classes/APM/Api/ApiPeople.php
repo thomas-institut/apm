@@ -47,7 +47,8 @@ class ApiPeople extends ApiController
         $personTid =  (int) $request->getAttribute('tid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
 
-        $pm = $this->systemManager->getPersonManager();
+        /** @var PersonManagerInterface $pm */
+        $pm = $this->container->get(PersonManagerInterface::class);
 
         try {
             $data = $pm->getPersonEssentialData($personTid);
@@ -283,7 +284,8 @@ class ApiPeople extends ApiController
             return $this->responseWithJson($response, [ 'errorMsg' => 'No name or sortName provided' ], HttpStatus::BAD_REQUEST);
         }
 
-        $pm = $this->systemManager->getPersonManager();
+        /** @var PersonManagerInterface $pm */
+        $pm = $this->container->get(PersonManagerInterface::class);
 
         try {
             $newPersonId = $pm->createPerson($name, $sortName, $this->apiUserId);

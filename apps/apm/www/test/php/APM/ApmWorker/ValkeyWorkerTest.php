@@ -37,7 +37,6 @@ class ValkeyWorkerTest extends TestCase
         $this->jm = new ValkeyJobQueueManager($this->valkey, new NullLogger(), $this->prefix);
 
         $this->systemManager = $this->createStub(ApmSystemManager::class);
-        $this->systemManager->method('getJobQueueManager')->willReturn($this->jm);
 
         $this->ci = $this->createStub(ContainerInterface::class);
         $this->ci->method('get')->willReturnMap([

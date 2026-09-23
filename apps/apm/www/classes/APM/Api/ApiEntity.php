@@ -17,6 +17,9 @@ use APM\StringMatcher\NameMatcher;
 use APM\StringMatcher\SimpleIndexElement;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
+use APM\System\Events\EntityDataChanged;
+use APM\System\Events\EntityDataChangedPayload;
+use APM\System\Events\EventManager;
 use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
@@ -334,7 +337,9 @@ class ApiEntity extends ApiController
             }
         }
 
-        $this->systemManager->onEntityDataChange($entitiesInvolved, $this->apiUserId);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(EntityDataChanged::class, new EntityDataChangedPayload($entitiesInvolved, $this->apiUserId));
 
 
         return $this->responseWithJson($response, [

@@ -125,16 +125,14 @@ class SearchIndexTool implements MultiToolCliUtility
 
             foreach ($tablesInfo as $tableInfo) {
                 if ($tableInfo->type === 'edition') {
-                    $editionIds[] = $tableInfo['id'];
+                    $editionIds[] = $tableInfo->id;
                 }
             }
 
             $this->logger->debug(sprintf("There are %d active tables in the system of which %d are editions",
                 count($tablesInfo), count($editionIds)));
         }
-
-        $result = $searchManager->updateIndex($this->indexType);
-
+        $result = $searchManager->updateIndex($this->indexType, -1);
         $elapsedTime = time() - $absStart;
 
         printf("Done in %.2f minutes, %.2f secs/update\n",

@@ -12,7 +12,9 @@ use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
 use APM\System\Document\PageInfo;
-use APM\System\SystemManager;
+use APM\System\Events\EventManager;
+use APM\System\Events\TranscriptionUpdated;
+use APM\System\Events\TranscriptionUpdatedPayload;
 use APM\System\Transcription\TranscriptionManager;
 use APM\ToolBox\ArrayPrint;
 use PDO;
@@ -42,7 +44,7 @@ TXT;
         private readonly TranscriptionManager $txManager,
         private readonly DocumentManager      $docManager,
         private readonly ApmTableNames        $apmTableNames,
-        private readonly SystemManager        $systemManager,
+        private readonly EventManager         $eventManager,
         private readonly PdoProvider          $pdoProvider
     )
     {
@@ -342,7 +344,10 @@ TXT;
                 print " - Deleted " . $result->rowCount() . " versions\n";
                 if ($forReal) {
                     $dbConn->commit();
-                    $this->systemManager->onTranscriptionUpdated($lastAuthor, $docId, $pageId, $column);
+                    $this->eventManager->emit(
+                        TranscriptionUpdated::class,
+                        new TranscriptionUpdatedPayload($lastAuthor, $docId, $pageId, $column)
+                    );
                 } else {
                     print "Not really, need the magic word to actually do it.\n";
                     $dbConn->rollBack();
@@ -398,8 +403,14 @@ TXT;
 
                     // commit changes and schedule update jobs
                     $dbConn->commit();
-                    $this->systemManager->onTranscriptionUpdated($lastAuthor, $fromPage->docId, $fromPage->pageNumber, $fromColumn);
-                    $this->systemManager->onTranscriptionUpdated($lastAuthor, $toDocId, $toPage->pageNumber, $toColumn);
+                    $this->eventManager->emit(
+                        TranscriptionUpdated::class,
+                        new TranscriptionUpdatedPayload($lastAuthor, $fromPage->docId, $fromPage->pageNumber, $fromColumn)
+                    );
+                    $this->eventManager->emit(
+                        TranscriptionUpdated::class,
+                        new TranscriptionUpdatedPayload($lastAuthor, $toDocId, $toPage->pageNumber, $toColumn)
+                    );
 
                     print("\nRESULT:\n");
                     $this->printTranscriptionInfo($toPage, $toColumn);

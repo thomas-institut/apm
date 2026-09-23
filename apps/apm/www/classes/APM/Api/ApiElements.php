@@ -23,6 +23,9 @@ namespace APM\Api;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Events\EventManager;
+use APM\System\Events\TranscriptionUpdated;
+use APM\System\Events\TranscriptionUpdatedPayload;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Transcription\ApmTranscriptionManager;
@@ -359,7 +362,12 @@ class ApiElements extends ApiController
             $this->logger->error("Cannot register version: " . $e->getMessage());
         }
 
-        $this->systemManager->onTranscriptionUpdated($this->apiUserId, $docId, $pageNumber, $columnNumber);
+        /** @var EventManager $eventManager */
+        $eventManager = $this->container->get(EventManager::class);
+        $eventManager->emit(
+            TranscriptionUpdated::class,
+            new TranscriptionUpdatedPayload($this->apiUserId, $docId, $pageNumber, $columnNumber)
+        );
         return $this->responseWithStatus($response, 200);
     }
 

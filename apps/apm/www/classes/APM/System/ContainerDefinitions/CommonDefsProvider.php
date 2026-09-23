@@ -22,6 +22,9 @@ use APM\System\Config\ApmSystemConfig;
 use APM\System\Document\DocumentManager;
 use APM\System\EditionSourceManager;
 use APM\System\EntitySystemEditionSourceManager;
+use APM\System\Events\EventManager;
+use APM\System\Events\EventRegistry;
+use APM\System\Factories\EventRegistryFactory;
 use APM\System\Factories\ApmSystemConfigFactory;
 use APM\System\Factories\ApmEntitySystemFactory;
 use APM\System\Factories\CollatexHttpFactory;
@@ -80,6 +83,8 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             MultiChunkEditionManager::class => factory([MultiChunkEditionManagerFactory::class, 'create']),
             Twig::class => factory([TwigFactory::class, 'create']),
             SystemManager::class => autowire(ApmSystemManager::class),
+            EventRegistry::class => factory([EventRegistryFactory::class, 'create']),
+            EventManager::class => autowire(EventManager::class),
             LanguageManager::class => autowire(ApmLanguageManager::class),
             PublicationManager::class => factory([PublicationManagerFactory::class, 'create']),
             Client::class => factory([ValkeyClientFactory::class, 'create']),

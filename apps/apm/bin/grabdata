@@ -21,7 +21,7 @@
 
 namespace APM;
 
-use APM\CommandLine\DataGrabber\GrabData;
+use APM\CommandLine\DataGrabber\DataGrabber;
 
 require __DIR__ . '/../www/vendor/autoload.php';
 
@@ -33,4 +33,4 @@ if (!is_array($config)) {
 
 
 
-(new GrabData($config, $argc, $argv))->run();
+(new DataGrabber($config, $argc, $argv))->run();

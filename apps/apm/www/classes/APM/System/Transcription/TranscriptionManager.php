@@ -61,6 +61,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
 
     use SimpleErrorReporterTrait;
     use LoggerAwareTrait;
+
     const int ORDER_BY_PAGE_NUMBER = 100;
     const int ORDER_BY_SEQ = 101;
 
@@ -69,19 +70,19 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * Returns the DocumentManager associated with the TranscriptionManager
      * @return DocumentManager
      */
-    abstract protected function getDocumentManager() : DocumentManager;
+    abstract protected function getDocumentManager(): DocumentManager;
 
     /**
      * Returns the EdNoteManager associated with the TranscriptionManager
      * @return EdNoteManager
      */
-    abstract public function getEdNoteManager() : EdNoteManager;
+    abstract public function getEdNoteManager(): EdNoteManager;
 
     /**
      * Returns the ColumnVersionManager associated with the TranscriptionManager
      * @return ColumnVersionManager
      */
-    abstract public function getColumnVersionManager() : ColumnVersionManager;
+    abstract public function getColumnVersionManager(): ColumnVersionManager;
 
     /**
      * Returns the ApmTranscriptionWitness contained in the given document for the given work and chunk number
@@ -92,13 +93,13 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param string $workId an APM work ID, e.g.  'AW47'
      * @param int $chunkNumber
      * @param int $docId
-     * @param string $localWitnessId  a letter to identify possible different versions of the same chunk in
+     * @param string $localWitnessId a letter to identify possible different versions of the same chunk in
      *      the same document, e.g. 'A', 'B', etc.
      * @param string $timeStamp the desired time for the state of the transcription to query
      * @param string $defaultLanguageCode the language code to assign to items and elements that do not have one explicitly
      * @return ApmTranscriptionWitness
      */
-    abstract public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp, string $defaultLanguageCode) : ApmTranscriptionWitness;
+    abstract public function getTranscriptionWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeStamp, string $defaultLanguageCode): ApmTranscriptionWitness;
 
     /**
      * Returns a "map" of work locations in a particular document at the given time.
@@ -164,7 +165,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param string $timeString
      * @return array
      */
-    abstract public function getChunkLocationMapForDoc(int $docId, string $timeString) : array;
+    abstract public function getChunkLocationMapForDoc(int $docId, string $timeString): array;
 
 
     /**
@@ -175,7 +176,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param string $timeString
      * @return array
      */
-    abstract public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string $timeString) : array;
+    abstract public function getChunkLocationMapForChunk(string $workId, int $chunkNumber, string $timeString): array;
 
     /**
      * Returns the page numbers of the pages with transcription
@@ -186,7 +187,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @return int[]
      * @throws DocumentNotFoundException
      */
-    abstract  public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER) : array;
+    abstract public function getTranscribedPageListByDocId(int $docId, int $order = self::ORDER_BY_PAGE_NUMBER): array;
 
 
     /**
@@ -217,7 +218,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param ApmChunkSegmentLocation $chunkSegmentLocation
      * @return array
      */
-    abstract public function getVersionsForSegmentLocation(ApmChunkSegmentLocation $chunkSegmentLocation) : array;
+    abstract public function getVersionsForSegmentLocation(ApmChunkSegmentLocation $chunkSegmentLocation): array;
 
 
     /**
@@ -233,9 +234,9 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param array $chunkLocationMap
      * @return array
      */
-    abstract public function getVersionsForChunkLocationMap(array $chunkLocationMap) : array;
+    abstract public function getVersionsForChunkLocationMap(array $chunkLocationMap): array;
 
-    abstract  public function getLastChunkVersionFromVersionMap(array $versionMap): array;
+    abstract public function getLastChunkVersionFromVersionMap(array $versionMap): array;
 
     /**
      * Returns the last saved versions for page/col in the given document
@@ -243,7 +244,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param int $numSaves
      * @return ColumnVersionInfo[]
      */
-    abstract public function getLastSavesForDoc(int $docId, int $numSaves) : array;
+    abstract public function getLastSavesForDoc(int $docId, int $numSaves): array;
 
     /**
      * Returns an array of WitnessInfo object with the available witnesses for given work
@@ -252,7 +253,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param int $chunkNumber
      * @return WitnessInfo[]
      */
-    abstract public function getWitnessesForChunk(string $workId, int $chunkNumber) : array;
+    abstract public function getWitnessesForChunk(string $workId, int $chunkNumber): array;
 
     /**
      * Returns an array of ApmSegmentLocation object with the locations
@@ -264,7 +265,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param string $timeString
      * @return array
      */
-    abstract public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString) : array;
+    abstract public function getSegmentLocationsForFullTxWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId, string $timeString): array;
 
     /**
      * @param string $workId
@@ -275,7 +276,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @throws DocumentNotFoundException
      * @throws PageNotFoundException
      */
-    abstract public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId) : string;
+    abstract public function getLastChangeTimestampForWitness(string $workId, int $chunkNumber, int $docId, string $localWitnessId): string;
 
     /**
      * Returns a full map of the transcriptions in the system at the given time
@@ -283,7 +284,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param string $timeString
      * @return array
      */
-    abstract public function getFullChunkMap(string $timeString) : array;
+    abstract public function getFullChunkMap(string $timeString): array;
 
 
     /**
@@ -300,7 +301,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @throws PageNotFoundException
      * @throws DocumentNotFoundException
      */
-    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userTid) : void;
+    abstract public function updatePageSettings(int $pageId, PageInfo $newSettings, int $userTid): void;
 
 
     /**
@@ -308,7 +309,8 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @throws PageNotFoundException
      * @throws DocumentNotFoundException
      */
-    public function getPageInfoByDocSeq(int $docId, int $seq): PageInfo {
+    public function getPageInfoByDocSeq(int $docId, int $seq): PageInfo
+    {
         return $this->getDocumentManager()->getPageInfo($this->getDocumentManager()->getPageIdByDocSeq($docId, $seq));
     }
 
@@ -317,7 +319,8 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @throws PageNotFoundException
      * @throws DocumentNotFoundException
      */
-    public function getPageInfoByDocPage(int $docId, int $pageNumber): PageInfo {
+    public function getPageInfoByDocPage(int $docId, int $pageNumber): PageInfo
+    {
         return $this->getDocumentManager()->getPageInfo($this->getDocumentManager()->getPageIdByDocPage($docId, $pageNumber));
     }
 
@@ -350,7 +353,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param int $userTid
      * @return int[]
      */
-    abstract public function getDocIdsTranscribedByUser(int $userTid) : array;
+    abstract public function getDocIdsTranscribedByUser(int $userTid): array;
 
 
     /**
@@ -360,7 +363,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param int $docId
      * @return int[]
      */
-    abstract public function getEditorIdsByDocId(int $docId) : array;
+    abstract public function getEditorIdsByDocId(int $docId): array;
 
 
     /**
@@ -369,7 +372,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      *
      * @return string[]
      */
-    abstract public function getWorksWithTranscription() : array;
+    abstract public function getWorksWithTranscription(): array;
 
 
     /**
@@ -379,7 +382,7 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param string $apmWorkId
      * @return array
      */
-    abstract public function getChunksWithTranscriptionForWorkId(string $apmWorkId) : array;
+    abstract public function getChunksWithTranscriptionForWorkId(string $apmWorkId): array;
 
     /**
      * Returns the page Ids transcribed by a user in a given document
@@ -388,12 +391,12 @@ abstract class TranscriptionManager implements ErrorReporter, LoggerAwareInterfa
      * @param int $docId
      * @return int[]
      */
-    abstract public function getPageIdsTranscribedByUser(int $userTid, int $docId) : array;
+    abstract public function getPageIdsTranscribedByUser(int $userTid, int $docId): array;
 
 
     /**
      * Returns the number of pages that have transcriptions in the system
      * @return int
      */
-    abstract public function getTranscribedPageCount() : int;
+    abstract public function getTranscribedPageCount(): int;
 }

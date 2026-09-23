@@ -24,40 +24,30 @@ use APM\Api\ApiPeople;
 use APM\CollationEngine\CollatexHttp;
 use APM\CollationEngine\CollationEngine;
 use APM\CollationEngine\DoNothingCollationEngine;
-use APM\CollationTable\CollationTableManager;
 use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Schema\Entity;
-use APM\System\Cache\SystemDirDataCache;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
-use APM\System\Document\DocumentManager;
 use APM\System\ImageSource\BilderbergImageSource;
 use APM\System\ImageSource\OldBilderbergStyleRepository;
-use APM\System\Jobs\UpdateApiSearchTranscribersAndTranscriptionsCacheJob;
 use APM\System\Jobs\UpdateAllPeopleDataCacheJob;
 use APM\System\Jobs\UpdateApiDocumentsDataCacheJob;
 use APM\System\Jobs\UpdateApiSearchEditionsIndexJob;
+use APM\System\Jobs\UpdateApiSearchTranscribersAndTranscriptionsCacheJob;
 use APM\System\Jobs\UpdateApiSearchTranscriptionsIndexJob;
 use APM\System\Jobs\UpdateApiUsersCtDataForUserJob;
 use APM\System\Jobs\UpdateApiUsersTranscribedPagesDataJob;
 use APM\System\Jobs\UpdateWorksCacheJob;
-use APM\System\Person\PersonManagerInterface;
-use APM\System\Transcription\TranscriptionManager;
-use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use APM\ToolBox\Resettable;
-use Monolog\Logger;
-use PDO;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\JobQueue\JobQueueManager;
-use Typesense\Client;
 
 
 /**
@@ -70,7 +60,7 @@ class ApmSystemManager extends SystemManager
     private array $imageSources;
     private LoggerInterface $logger;
 
-      /**
+    /**
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
@@ -97,11 +87,6 @@ class ApmSystemManager extends SystemManager
     }
 
 
-    public function getDbConnection(): PDO
-    {
-        return $this->getPdoProvider()->getPdo();
-    }
-
     /**
      * Resets the database connection and all cached managers that depend on it.
      *
@@ -122,11 +107,6 @@ class ApmSystemManager extends SystemManager
         return $this->imageSources;
     }
 
-    public function getLogger(): Logger
-    {
-        return $this->logger;
-    }
-
     public function getCollationEngine(string $engineSystemId = ''): CollationEngine
     {
         if ($engineSystemId === ApmCollationEngine::DO_NOTHING) {
@@ -139,44 +119,13 @@ class ApmSystemManager extends SystemManager
         }
     }
 
-    public function getTableNames(): ApmTableNames
-    {
-        try {
-            return $this->ci->get(ApmTableNames::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get table names: " . $e->getMessage(), $e->getCode(), $e);
-        }
-    }
-
-
-    public function getSystemDataCache(): DataCache
-    {
-
-        try {
-            return $this->ci->get(SystemMainDataCache::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get system data cache", 0, $e);
-        }
-    }
-
-    public function getCollationTableManager(): CollationTableManager
-    {
-        try {
-            return $this->ci->get(CollationTableManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get collation table manager", 0, $e);
-        }
-    }
-
-    public function getEditionSourceManager(): EditionSourceManager
-    {
-        try {
-            return $this->ci->get(EditionSourceManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('Edition source manager not found', 0, $e);
-        }
-    }
-
+    /**
+     * @param int $userTid
+     * @param int $docId
+     * @param int $pageNumber
+     * @param int $columnNumber
+     * @return void
+     */
     public function onTranscriptionUpdated(int $userTid, int $docId, int $pageNumber, int $columnNumber): void
     {
         parent::onTranscriptionUpdated($userTid, $docId, $pageNumber, $columnNumber);
@@ -229,13 +178,18 @@ class ApmSystemManager extends SystemManager
     }
 
     /**
+     * @param int|array $entityIdOrIds
+     * @param int $userId
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      * @throws EntityDoesNotExistException
      */
     public function onEntityDataChange(int|array $entityIdOrIds, int $userId): void
     {
         parent::onEntityDataChange($entityIdOrIds, $userId);
         $entities = is_int($entityIdOrIds) ? [$entityIdOrIds] : $entityIdOrIds;
-        $es = $this->getEntitySystem();
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->ci->get(ApmEntitySystemInterface::class);
 
         foreach ($entities as $entity) {
             $entityType = $es->getEntityType($entity);
@@ -251,10 +205,23 @@ class ApmSystemManager extends SystemManager
         }
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function onPersonDataChanged(int $personTid): void
     {
         parent::onPersonDataChanged($personTid);
-        $part = ApiPeople::onPersonDataChanged($personTid, $this->getEntitySystem(), $this->getSystemDataCache(), $this->logger);
+
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->ci->get(ApmEntitySystemInterface::class);
+
+
+        /** @var SystemMainDataCache $systemDataCache */
+        $systemDataCache = $this->ci->get(SystemMainDataCache::class);
+
+
+        $part = ApiPeople::onPersonDataChanged($personTid, $es, $systemDataCache, $this->logger);
         $this->logger->debug("Invalidated ApiPeople data cache, part $part");
         $this->getJobQueueManager()->scheduleJob(UpdateAllPeopleDataCacheJob::class, '', [], 0, 3, 20);
     }
@@ -273,62 +240,56 @@ class ApmSystemManager extends SystemManager
             '', [$docId], 0, 3, 20);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function onWorkAdded(int $workId): void
     {
         parent::onWorkAdded($workId);
-        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+        ApiPeople::invalidateWorksByPersonCache($this->ci, $this->getWorkAuthor($workId));
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function onWorkDeleted($workId): void
     {
         parent::onWorkAdded($workId);
-        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+        ApiPeople::invalidateWorksByPersonCache($this->ci, $this->getWorkAuthor($workId));
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function onWorkUpdated(int $workId): void
     {
         parent::onWorkUpdated($workId);
         // TODO: find previous author and invalidate cache too!
-        ApiPeople::invalidateWorksByPersonCache($this, $this->getWorkAuthor($workId));
+        ApiPeople::invalidateWorksByPersonCache($this->ci, $this->getWorkAuthor($workId));
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function getWorkAuthor(int $workId): int
     {
+        /** @var WorkManager $workManager */
+        $workManager = $this->ci->get(WorkManager::class);
         try {
-            $data = $this->getWorkManager()->getWorkData($workId);
+            $data = $workManager->getWorkData($workId);
         } catch (Work\WorkNotFoundException) {
             return -1;
         }
         return $data->authorId;
     }
 
-    public function getUserManager(): UserManagerInterface
-    {
-        try {
-            return $this->ci->get(UserManagerInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('User manager not found', 0, $e);
-        }
-    }
-
-    public function getPersonManager(): PersonManagerInterface
-    {
-        try {
-            return $this->ci->get(PersonManagerInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('Person manager not found', 0, $e);
-        }
-    }
-
-    public function getWorkManager(): WorkManager
-    {
-        try {
-            return $this->ci->get(WorkManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('Work manager not found', 0, $e);
-        }
-    }
-
+    /**
+     * @return JobQueueManager
+     */
     public function getJobQueueManager(): JobQueueManager
     {
 
@@ -336,36 +297,6 @@ class ApmSystemManager extends SystemManager
             return $this->ci->get(JobQueueManager::class);
         } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
             throw new RuntimeException("JobQueueManager not found in container", 0, $e);
-        }
-    }
-
-    public function getEntitySystem(): ApmEntitySystemInterface
-    {
-        try {
-            return $this->ci->get(ApmEntitySystemInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            $this->logger->error("Could not get entity system from container", ['exception' => $e]);
-            throw new RuntimeException("Could not get entity system from container", 0, $e);
-        }
-    }
-
-
-    public function getDocumentManager(): DocumentManager
-    {
-        try {
-            return $this->ci->get(DocumentManager::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            $this->logger->error("Could not get document manager from container", ['exception' => $e]);
-            throw new RuntimeException("Could not get document manager from container", 0, $e);
-        }
-    }
-
-    public function getTypesenseClient(): Client
-    {
-        try {
-            return $this->ci->get(Client::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException("Could not get Typesense client from container", 0, $e);
         }
     }
 

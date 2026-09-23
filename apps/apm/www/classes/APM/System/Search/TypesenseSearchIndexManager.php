@@ -1,0 +1,1188 @@
+<?php
+
+namespace APM\System\Search;
+
+use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\EntitySystem\Schema\Entity;
+use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\Document\DocumentManager;
+use APM\System\Document\Exception\DocumentNotFoundException;
+use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Document\PageInfo;
+use APM\System\LanguageManager;
+use APM\System\Lemmatizer\LemmatizationResult;
+use APM\System\Lemmatizer\LemmatizerInterface;
+use APM\System\Search\Exception\SearchManagerException;
+use APM\System\Transcription\ColumnElement\Element;
+use APM\System\Transcription\ColumnVersionInfo;
+use APM\System\Transcription\TranscriptionManager;
+use APM\System\Transcription\TxText\Item;
+use APM\System\Work\WorkManager;
+use APM\System\Work\WorkNotFoundException;
+use Http\Client\Exception;
+use Psr\Log\LoggerAwareInterface;
+use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataCache\CacheAware;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
+use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
+use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
+use Typesense\Client;
+use Typesense\Exceptions\TypesenseClientError;
+
+class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInterface, CacheAware
+{
+
+    use LoggerAwareTrait;
+    use SimpleCacheAwareTrait;
+
+    const string TranscriptionIndexPrefix = 'transcriptions';
+    const string EditionIndexPrefix = 'editions';
+
+
+    const array LanguageCodes = ['ar', 'he', 'la'];
+    const int StringArrayTtl = 3 * 24 * 3600; // 3 days
+
+    public function __construct(
+        private readonly Client                   $typesenseClient,
+        SystemMainDataCache                       $dataCache,
+        LoggerInterface                           $logger,
+        private readonly DocumentManager          $documentManager,
+        private readonly TranscriptionManager     $transcriptionManager,
+        private readonly ApmEntitySystemInterface $entitySystem,
+        private readonly CollationTableManager    $collationTableManager,
+        private readonly WorkManager              $workManager,
+        private readonly LemmatizerInterface      $lemmatizer,
+        private readonly LanguageManager          $languageManager,
+    )
+    {
+        $this->logger = $logger;
+        $this->setCache($dataCache);
+    }
+
+    private function getTypesenseClient(): Client
+    {
+        return $this->typesenseClient;
+    }
+
+    /**
+     * @inheritDocdeleteTranscriptionFromIndex(docId: int, pageNumber: int, column: int, [timeFrom: null|string = null]): void
+     */
+    public function indexTranscription(PageInfo $pageInfo, int $col,
+                                       string   $docTitle, string $transcriptionText, string $langCode,
+                                       string   $transcriberName, string $timeFrom): void
+    {
+        $indexName = $this->getIndexName(IndexType::Transcriptions, $langCode);
+        $cleanTranscriptionText = $this->encodeForLemmatization($transcriptionText);
+
+        $lemmatizationResult = new LemmatizationResult();
+
+        // tokenization and lemmatization
+        if (strlen($cleanTranscriptionText) > 3) {
+            $lemmatizationResult = $this->lemmatizer->lemmatize($cleanTranscriptionText, $langCode);
+        } else {
+            $this->logger->debug("Transcription is too short for lemmatization...");
+        }
+
+        try {
+            $this->getTypesenseClient()->collections[$indexName]->documents->create([
+                'title' => $docTitle,
+                'page' => $pageInfo->pageNumber,
+                'seq' => $pageInfo->sequence,
+                'foliation' => $pageInfo->foliation,
+                'column' => (string)$col,
+                'pageID' => (string)$pageInfo->pageId,
+                'docID' => $pageInfo->docId,
+                'lang' => $langCode,
+                'creator' => $transcriberName,
+                'transcription_tokens' => $lemmatizationResult->tokens,
+                'transcription_lemmata' => $lemmatizationResult->lemmata,
+                'time_from' => $timeFrom
+            ]);
+            $this->logger->debug("Indexed transcription in $indexName: Doc $pageInfo->docId ('$docTitle')" .
+                ", page no. $pageInfo->pageNumber (seq $pageInfo->sequence, fol. '$pageInfo->foliation', id $pageInfo->pageId), col $col" .
+                ", transcriber '$transcriberName', lang '$langCode', timeFrom '$timeFrom'");
+        } catch (Exception|TypesenseClientError $e) {
+            $this->logger->error("Error creating transcription entry in index $indexName: " . $e->getMessage());
+        }
+    }
+
+    private function encodeForLemmatization(string $text): string
+    {
+
+        $text_clean = str_replace("\n", " ", $text);
+        $text_clean = str_replace(' ', ' ', $text_clean);
+        $text_clean = str_replace(' ', ' ', $text_clean);
+        return str_replace('- ', '', $text_clean);
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function indexEdition(int $tableId, string $chunk, string $title, string $langCode, string $editionText, string $editorName, string $timeFrom): void
+    {
+        $indexName = $this->getIndexName(IndexType::Editions, $langCode);
+
+        // encode text for avoiding errors in exec shell command because of characters like "(", ")" or " "
+        $cleanText = $this->encodeForLemmatization($editionText);
+
+        // tokenization and lemmatization
+        // test existence of text and tokenize/lemmatize existing texts
+        $lemmatizationResult = new LemmatizationResult();
+        if (strlen($cleanText) > 3) {
+            $lemmatizationResult = $this->lemmatizer->lemmatize($cleanText, $langCode);
+        } else {
+            $this->logger->debug("Text is too short for lemmatization...");
+        }
+
+
+        try {
+            $this->getTypesenseClient()->collections[$indexName]->documents->create([
+                'table_id' => (string)$tableId,
+                'chunk' => (int)$chunk,
+                'creator' => $editorName,
+                'title' => $title,
+                'lang' => $langCode,
+                'edition_tokens' => $lemmatizationResult->tokens,
+                'edition_lemmata' => $lemmatizationResult->lemmata,
+                'timeFrom' => $timeFrom
+            ]);
+        } catch (Exception|TypesenseClientError $e) {
+            $message = "Error creating edition entry in index $indexName: " . $e->getMessage();
+            $this->logger->error($message);
+            throw new SearchManagerException($message);
+        }
+        $this->logger->info("Edition $tableId ('$title' by $editorName) created in index $indexName");
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getTranscriberNames(): array
+    {
+        return $this->getStringArray(CacheKey::ApiSearchTranscribers, 'transcribers');
+    }
+
+    private function getStringArray(string $cacheKey, $queryKey): array
+    {
+        try {
+            return unserialize($this->getDataCache()->get($cacheKey));
+        } catch (ItemNotInCacheException) {
+            // so, let's get it from the index
+            $strings = $this->getStringArrayFromIndex($queryKey);
+            $this->getDataCache()->set($cacheKey, serialize($strings), self::StringArrayTtl);
+            return $strings;
+        }
+    }
+
+    private function getStringArrayFromIndex(string $queryKey): array
+    {
+        // Get names of target indices
+        if ($queryKey === 'transcriptions' || $queryKey === 'transcribers') {
+            $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
+        } else {
+            $index_names = ['editions_la', 'editions_ar', 'editions_he'];
+        }
+
+        // Get keys to query
+        if ($queryKey === 'transcribers' || $queryKey === 'editors') {
+            $queryKey = 'creator';
+        } else {
+            $queryKey = 'title';
+        }
+
+        // Array to return
+        $values = [];
+
+        // Make a match_all query
+
+        foreach ($index_names as $index_name) {
+
+            $query = ['hits' => [1]];
+            $hits = [];
+            $page = 1;
+
+            // collect all documents from the index
+            while (count($query['hits']) !== 0) {
+                $searchParameters = [
+                    'q' => '*',
+                    'page' => $page,
+                    'limit' => 250
+                ];
+
+                try {
+                    $query = $this->getTypesenseClient()->collections[$index_name]->documents->search($searchParameters);
+                } catch (Exception|TypesenseClientError $e) {
+                    $this->logger->error("Search Exception: " . $e->getMessage(), ['index' => $index_name]);
+                    return [];
+                }
+
+                foreach ($query['hits'] as $hit) {
+                    $hits[] = $hit;
+                }
+
+                $page++;
+            }
+
+            // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
+            foreach ($hits as $hit) {
+                $value = $hit['document'][$queryKey];
+                if (in_array($value, $values) === false) {
+                    $values[] = $value;
+                }
+            }
+        }
+        return $values;
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEditors(): array
+    {
+        return $this->getStringArray(CacheKey::ApiSearchEditors, 'editors');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getTranscribedDocuments(): array
+    {
+        return $this->getStringArray(CacheKey::ApiSearchTranscriptions, 'transcriptions');
+    }
+
+    /**
+     * @inheritDoc
+     */
+    public function getEditionTitles(): array
+    {
+        return $this->getStringArray(CacheKey::ApiSearchEditions, 'editions');
+    }
+
+    private function getIndexPrefix(IndexType $indexType): string
+    {
+        return match ($indexType) {
+            IndexType::Transcriptions => self::TranscriptionIndexPrefix,
+            IndexType::Editions => self::EditionIndexPrefix,
+        };
+    }
+
+    private function getIndexName(IndexType $indexType, string $langCode): string
+    {
+        if ($langCode === 'jrb') {
+            $langCode = 'he';
+        }
+        return implode('_', [$this->getIndexPrefix($indexType), $langCode]);
+    }
+
+    private function getTranscriptionsIndexSchema(string $langCode): array
+    {
+        return [
+            'name' => $this->getIndexName(IndexType::Transcriptions, $langCode),
+            'fields' => [
+                [
+                    'name' => 'title',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'page',
+                    'type' => 'int32',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'seq',
+                    'type' => 'int32',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'docID',
+                    'type' => 'int32',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'foliation',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'pageID',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'column',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'transcription_tokens',
+                    'type' => 'string[]',
+                ],
+                [
+                    'name' => 'transcription_lemmata',
+                    'type' => 'string[]',
+                ],
+                [
+                    'name' => 'time_from',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'lang',
+                    'type' => 'string',
+                ],
+                [
+                    'name' => 'creator',
+                    'type' => 'string',
+                    'sort' => true
+                ]
+            ],
+            'default_sorting_field' => 'title'
+        ];
+    }
+
+    private function getEditionsIndexSchema(string $langCode): array
+    {
+        return [
+            'name' => $this->getIndexName(IndexType::Editions, $langCode),
+            'fields' => [
+                [
+                    'name' => 'title',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'table_id',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'chunk',
+                    'type' => 'int32',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'edition_tokens',
+                    'type' => 'string[]',
+                ],
+                [
+                    'name' => 'edition_lemmata',
+                    'type' => 'string[]',
+                ],
+                [
+                    'name' => 'timeFrom',
+                    'type' => 'string',
+                    'sort' => true
+                ],
+                [
+                    'name' => 'lang',
+                    'type' => 'string',
+                ],
+                [
+                    'name' => 'creator',
+                    'type' => 'string',
+                    'sort' => true
+                ]
+            ],
+        ];
+    }
+
+    private function getIndexSchema(IndexType $indexType, string $langCode): array
+    {
+        return match ($indexType) {
+            IndexType::Transcriptions => $this->getTranscriptionsIndexSchema($langCode),
+            IndexType::Editions => $this->getEditionsIndexSchema($langCode),
+        };
+    }
+
+
+    /**
+     * @throws Exception
+     * @throws TypesenseClientError
+     */
+    public function resetIndex(IndexType $indexType): void
+    {
+        $client = $this->getTypesenseClient();
+
+        foreach (self::LanguageCodes as $langCode) {
+            $indexName = $this->getIndexName($indexType, $langCode);
+            if ($client->collections[$indexName]->exists()) {
+                $client->collections[$indexName]->delete();
+            }
+            $client->collections->create($this->getIndexSchema($indexType, $langCode));
+            $this->logger->info("Typesense index '$indexName' created");
+        }
+    }
+
+    /**
+     * @inheritDoc
+     * @throws SearchManagerException
+     */
+    public function deleteEditionFromIndex(int $tableId, ?string $timeFrom = null): void
+    {
+        $indexedDocuments = $this->findIndexedDocuments(IndexType::Editions, (string)$tableId);
+        $this->deleteIndexedDocuments($indexedDocuments, $timeFrom, 'edition', (string)$tableId);
+    }
+
+    /**
+     * @inheritDoc
+     * @param int $tableId
+     * @param bool $forceUpdate
+     * @throws SearchManagerException
+     * @throws WorkNotFoundException
+     * @throws EntityDoesNotExistException
+     */
+    public function updateEditionInIndex(int $tableId, bool $forceUpdate = false): bool
+    {
+        $edition = $this->getEditionData($tableId);
+        if ($edition === null) {
+            return false;
+        }
+
+        $indexedDocuments = $this->findIndexedDocuments(IndexType::Editions, (string)$tableId);
+        if (!$forceUpdate && $this->hasCurrentDocument($indexedDocuments, $edition['timeFrom'])) {
+            return false;
+        }
+
+        $this->deleteIndexedDocuments($indexedDocuments, null, 'edition', (string)$tableId);
+        $this->indexEdition(
+            $tableId,
+            (int)$edition['chunk'],
+            $edition['title'],
+            $edition['lang'],
+            $edition['text'],
+            $edition['editor'],
+            $edition['timeFrom']
+        );
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     * @param int $docId
+     * @param int $pageNumber
+     * @param int $column
+     * @param string|null $timeFrom
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     * @throws SearchManagerException
+     */
+    public function deleteTranscriptionFromIndex(int $docId, int $pageNumber, int $column, ?string $timeFrom = null): void
+    {
+        $pageId = $this->documentManager->getPageIdByDocPage($docId, $pageNumber);
+        $indexedDocuments = $this->findIndexedDocuments(IndexType::Transcriptions, (string)$pageId, $column);
+        $this->deleteIndexedDocuments($indexedDocuments, $timeFrom, 'transcription', "$docId:$pageNumber:$column");
+    }
+
+    /**
+     * @inheritDoc
+     * @param int $docId
+     * @param int $pageNumber
+     * @param int $column
+     * @param bool $forceUpdate
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
+     * @throws SearchManagerException
+     */
+    public function updateTranscriptionInIndex(int $docId, int $pageNumber, int $column, bool $forceUpdate = false): bool
+    {
+        $pageId = $this->documentManager->getPageIdByDocPage($docId, $pageNumber);
+        $transcription = $this->getTranscriptionData($pageId, $column);
+        if ($transcription === null) {
+            // no transcription, this means the page should not be indexed;
+            // so, let's delete it from the index just to be sure
+            $this->deleteTranscriptionFromIndex($docId, $pageNumber, $column);
+            // but this is not an actual update, so return false
+            return false;
+        }
+
+        $indexedDocuments = $this->findIndexedDocuments(IndexType::Transcriptions, (string)$pageId, $column);
+        if (!$forceUpdate && $this->hasCurrentDocument($indexedDocuments, $transcription['timeFrom'])) {
+            $this->logger->info("Transcription for $docId:$pageNumber:$column, page $pageId is up to date, no update needed");
+            return false;
+        }
+
+        $this->deleteIndexedDocuments($indexedDocuments, null, 'transcription', "$docId:$pageNumber:$column");
+        $this->indexTranscription(
+            $transcription['pageInfo'],
+            $column,
+            $transcription['title'],
+            $transcription['text'],
+            $transcription['lang'],
+            $transcription['transcriber'],
+            $transcription['timeFrom']
+        );
+        return true;
+    }
+
+    /**
+     * @inheritDoc
+     * @param IndexType $indexType
+     * @param int $updateCountLimit
+     * @return UpdateIndexResult
+     * @throws DocumentNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     * @throws PageNotFoundException
+     * @throws SearchManagerException
+     * @throws WorkNotFoundException
+     */
+    public function updateIndex(IndexType $indexType, int $updateCountLimit = 0): UpdateIndexResult
+    {
+        if ($updateCountLimit < 0) {
+            $this->logger->info("Updating $indexType->name search index, no limit, all updates will be performed");
+            $updateCountLimit = PHP_INT_MAX;
+        } else {
+            $this->logger->info("Updating index for $indexType->name, no more than $updateCountLimit updates will be performed");
+        }
+
+        $updatesNeeded = 0;
+        $updatesPerformed = 0;
+
+        $itemsToUpdate = $this->getItemsToUpdate($indexType);
+
+        $this->logger->debug("Found " . count($itemsToUpdate) . " potential items to update");
+
+        $sourceItemKeys = $this->getSourceItemKeys($indexType, $itemsToUpdate);
+        $orphanedDocuments = $this->getOrphanedIndexedDocuments($indexType, $sourceItemKeys);
+        $deletionsPerformed = $updateCountLimit === 0 ? 0 : $this->deleteIndexedDocuments(
+            $orphanedDocuments,
+            null,
+            $indexType === IndexType::Editions ? 'edition' : 'transcription',
+            'orphaned index entry'
+        );
+
+        foreach ($itemsToUpdate as $item) {
+            if (!$this->itemNeedsUpdate($indexType, $item)) {
+                continue;
+            }
+
+            $updatesNeeded++;
+            if ($updatesPerformed >= $updateCountLimit) {
+                continue;
+            }
+
+            if ($indexType === IndexType::Transcriptions) {
+                $done = $this->updateTranscriptionInIndex($item['docId'], $item['page'], $item['column'], true);
+            } else {
+                $done = $this->updateEditionInIndex($item['tableId'], true);
+            }
+            if ($done) {
+                $updatesNeeded++;
+                $updatesPerformed++;
+            } else {
+                $updatesNeeded--;
+            }
+        }
+        if ($updatesNeeded === 0) {
+            $this->logger->info("$indexType->name search index is up to date, no updates needed");
+        }
+        return new UpdateIndexResult($updatesNeeded, $updatesPerformed, $deletionsPerformed);
+    }
+
+    /**
+     * @param array<int, array<string, mixed>> $items
+     * @return array<string, true>
+     */
+    private function getSourceItemKeys(IndexType $indexType, array $items): array
+    {
+        $keys = [];
+        foreach ($items as $item) {
+            $key = $indexType === IndexType::Editions
+                ? (string)$item['tableId']
+                : $item['pageId'] . ':' . $item['column'];
+            $keys[$key] = true;
+        }
+        return $keys;
+    }
+
+    /**
+     * @param array<string, true> $sourceItemKeys
+     * @return array<int, array{index: string, document: array<string, mixed>}>
+     * @throws SearchManagerException
+     */
+    private function getOrphanedIndexedDocuments(IndexType $indexType, array $sourceItemKeys): array
+    {
+        $orphanedDocuments = [];
+        $identityField = $indexType === IndexType::Editions ? 'table_id' : 'pageID,column';
+        foreach ($this->getAllIndexedDocuments($indexType, $identityField) as $indexedDocument) {
+            $document = $indexedDocument['document'];
+            $key = $indexType === IndexType::Editions
+                ? (string)($document['table_id'] ?? '')
+                : ($document['pageID'] ?? '') . ':' . ($document['column'] ?? '');
+            if (!isset($sourceItemKeys[$key])) {
+                $orphanedDocuments[] = $indexedDocument;
+            }
+        }
+        return $orphanedDocuments;
+    }
+
+    /**
+     * @return array<int, array{index: string, document: array<string, mixed>}>
+     * @throws SearchManagerException
+     */
+    private function getAllIndexedDocuments(IndexType $indexType, string $includeFields): array
+    {
+        $documents = [];
+        $query = [
+            'q' => '*',
+            'query_by' => $indexType === IndexType::Transcriptions ? 'pageID' : 'table_id',
+            'page' => 1,
+            'limit' => 250,
+            'include_fields' => $includeFields,
+        ];
+
+        foreach ($this->getIndexNames($indexType) as $indexName) {
+            $page = 1;
+            do {
+                $query['page'] = $page;
+                try {
+                    $result = $this->getTypesenseClient()->collections[$indexName]->documents->search($query);
+                } catch (Exception|TypesenseClientError $e) {
+                    $message = "Error searching index $indexName: " . $e->getMessage();
+                    $this->logger->error($message);
+                    throw new SearchManagerException($message, 0, $e);
+                }
+
+                $hits = $result['hits'] ?? [];
+                foreach ($hits as $hit) {
+                    if (isset($hit['document'])) {
+                        $documents[] = ['index' => $indexName, 'document' => $hit['document']];
+                    }
+                }
+                $page++;
+            } while (count($hits) === 250);
+        }
+
+        return $documents;
+    }
+
+    /**
+     * Returns all source items relevant to an index update.
+     *
+     * @param IndexType $indexType
+     * @return array<int, array<string, mixed>>
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     */
+    private function getItemsToUpdate(IndexType $indexType): array
+    {
+        $items = [];
+        if ($indexType === IndexType::Editions) {
+            foreach ($this->collationTableManager->getTablesInfo() as $tableInfo) {
+                if ($tableInfo->type !== 'edition') {
+                    continue;
+                }
+
+                $items[] = ['tableId' => $tableInfo->id];
+            }
+            return $items;
+        }
+
+        foreach ($this->entitySystem->getAllEntitiesForType(Entity::tDocument) as $docId) {
+            foreach ($this->transcriptionManager->getTranscribedPageListByDocId($docId) as $pageNumber) {
+                $pageId = $this->documentManager->getPageIdByDocPage($docId, $pageNumber);
+                $pageInfo = $this->documentManager->getPageInfo($pageId);
+                for ($column = 1; $column <= $pageInfo->numCols; $column++) {
+                    $items[] = [
+                        'docId' => $docId,
+                        'page' => $pageNumber,
+                        'column' => $column,
+                        'pageId' => $pageId,
+                    ];
+                }
+            }
+        }
+        return $items;
+    }
+
+    /**
+     * Determines whether a source item is absent or outdated in Typesense.
+     *
+     * @param IndexType $indexType
+     * @param array<int, array<string, mixed>> $item
+     * @return bool
+     * @throws SearchManagerException|InvalidTimeStringException
+     */
+    private function itemNeedsUpdate(IndexType $indexType, array $item): bool
+    {
+        if ($indexType === IndexType::Editions) {
+            $identifier = (string)$item['tableId'];
+            $indexedDocuments = $this->findIndexedDocuments(
+                IndexType::Editions,
+                $identifier,
+                null,
+                'timeFrom,edition_tokens,edition_lemmata'
+            );
+            if ($indexedDocuments === []) {
+                return true;
+            }
+
+            $timeFrom = $this->getEditionTimeFrom($item['tableId']);
+            if ($timeFrom === null || !$this->hasCurrentDocument($indexedDocuments, $timeFrom)) {
+                return true;
+            }
+
+            if (!$this->hasEmptyTokenData($indexedDocuments, 'edition_tokens', 'edition_lemmata')) {
+                return false;
+            }
+
+            return $this->hasEmptyTokensForText($indexedDocuments, $this->getEditionText($item['tableId']), 'edition_tokens', 'edition_lemmata');
+        }
+
+        // IndexType::Transcriptions
+
+        $indexedDocuments = $this->findIndexedDocuments(
+            IndexType::Transcriptions,
+            (string)$item['pageId'],
+            $item['column'],
+            'time_from,transcription_tokens,transcription_lemmata'
+        );
+        if ($indexedDocuments === []) {
+            return true;
+        }
+
+        $timeFrom = $this->getTranscriptionTimeFrom($item['pageId'], $item['column']);
+        if ($timeFrom === null || !$this->hasCurrentDocument($indexedDocuments, $timeFrom)) {
+            return true;
+        }
+
+        if (!$this->hasEmptyTokenData($indexedDocuments, 'transcription_tokens', 'transcription_lemmata')) {
+            return false;
+        }
+
+        return $this->hasEmptyTokensForText(
+            $indexedDocuments,
+            $this->getTranscriptionText($item['pageId'], $item['column']),
+            'transcription_tokens',
+            'transcription_lemmata'
+        );
+    }
+
+    /**
+     * Finds documents matching an index identity across all language collections.
+     *
+     * @param IndexType $indexType
+     * @param string $identifier
+     * @param int|null $column
+     * @param string|null $includeFields
+     * @return array<int, array{index: string, document: array<string, mixed>}>
+     * @throws SearchManagerException
+     */
+    private function findIndexedDocuments(
+        IndexType $indexType,
+        string    $identifier,
+        ?int      $column = null,
+        ?string   $includeFields = null
+    ): array
+    {
+        $documents = [];
+        $query = [
+            'q' => $identifier,
+            'query_by' => $indexType === IndexType::Transcriptions ? 'pageID' : 'table_id',
+            'prefix' => false,
+            'num_typos' => 0,
+        ];
+        if ($indexType === IndexType::Transcriptions) {
+            $query['filter_by'] = "column:=$column";
+        }
+        if ($includeFields !== null) {
+            $query['include_fields'] = $includeFields;
+            $query['limit'] = 1;
+        }
+
+        foreach ($this->getIndexNames($indexType) as $indexName) {
+            try {
+                $result = $this->getTypesenseClient()->collections[$indexName]->documents->search($query);
+            } catch (Exception|TypesenseClientError $e) {
+                $message = "Error searching index $indexName: " . $e->getMessage();
+                $this->logger->error($message);
+                throw new SearchManagerException($message, 0, $e);
+            }
+
+            foreach ($result['hits'] ?? [] as $hit) {
+                if (isset($hit['document'])) {
+                    $documents[] = ['index' => $indexName, 'document' => $hit['document']];
+                }
+            }
+        }
+
+        return $documents;
+    }
+
+    /**
+     * Deletes matching Typesense documents, optionally restricted by time.
+     *
+     * @param array<int, array{index: string, document: array<string, mixed>}> $indexedDocuments
+     * @param string|null $timeFrom
+     * @param string $itemType
+     * @param string $identifier
+     * @return int Number of documents deleted.
+     * @throws SearchManagerException
+     */
+    private function deleteIndexedDocuments(array $indexedDocuments, ?string $timeFrom, string $itemType, string $identifier): int
+    {
+        $deletionsPerformed = 0;
+        foreach ($indexedDocuments as $indexedDocument) {
+            $document = $indexedDocument['document'];
+            if ($timeFrom !== null && ($document['time_from'] ?? $document['timeFrom'] ?? null) !== $timeFrom) {
+                continue;
+            }
+            if (!isset($document['id'])) {
+                continue;
+            }
+
+            try {
+                $this->getTypesenseClient()->collections[$indexedDocument['index']]->documents[$document['id']]->delete();
+                $deletionsPerformed++;
+            } catch (Exception|TypesenseClientError $e) {
+                $message = "Error deleting $itemType $identifier from index {$indexedDocument['index']}: " . $e->getMessage();
+                $this->logger->error($message);
+                throw new SearchManagerException($message, 0, $e);
+            }
+        }
+        return $deletionsPerformed;
+    }
+
+    /**
+     * Checks whether at least one indexed document has the requested version.
+     *
+     * @param array<int, array{index: string, document: array<string, mixed>}> $indexedDocuments
+     */
+    private function hasCurrentDocument(array $indexedDocuments, string $timeFrom): bool
+    {
+        foreach ($indexedDocuments as $indexedDocument) {
+            $documentTime = $indexedDocument['document']['time_from'] ?? $indexedDocument['document']['timeFrom'] ?? null;
+            if ($documentTime === $timeFrom) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Checks whether an indexed text has missing token or lemma data.
+     *
+     * @param array<int, array{index: string, document: array<string, mixed>}> $indexedDocuments
+     */
+    private function hasEmptyTokensForText(array $indexedDocuments, string $text, string $tokensKey, string $lemmataKey): bool
+    {
+        if (!$this->containsIndexableText($text)) {
+            return false;
+        }
+        return $this->hasEmptyTokenData($indexedDocuments, $tokensKey, $lemmataKey);
+    }
+
+    /**
+     * Checks whether at least one indexed document is missing token or lemma data.
+     *
+     * @param array<int, array{index: string, document: array<string, mixed>}> $indexedDocuments
+     */
+    private function hasEmptyTokenData(array $indexedDocuments, string $tokensKey, string $lemmataKey): bool
+    {
+        foreach ($indexedDocuments as $indexedDocument) {
+            $document = $indexedDocument['document'];
+            if (($document[$tokensKey] ?? []) === [] || ($document[$lemmataKey] ?? []) === []) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Returns true when text contains characters handled by the lemmatizer.
+     */
+    private function containsIndexableText(string $text): bool
+    {
+        return preg_match('/[a-z]/i', $text) === 1 ||
+            preg_match('/\p{Hebrew}/u', $text) === 1 ||
+            preg_match('/\p{Arabic}/u', $text) === 1;
+    }
+
+    /**
+     * Gets the current edition version without loading the edition payload.
+     *
+     * @param int $tableId
+     * @return string|null
+     */
+    private function getEditionTimeFrom(int $tableId): ?string
+    {
+        $versions = $this->collationTableManager->getCollationTableVersionManager()
+            ->getCollationTableVersionInfo($tableId, 1);
+        if ($versions === []) {
+            return null;
+        }
+
+        return $versions[0]->timeFrom;
+    }
+
+    /**
+     * Gets the current transcription version without loading the transcription payload.
+     *
+     * @param int $pageId
+     * @param int $column
+     * @return string|null
+     */
+    private function getTranscriptionTimeFrom(int $pageId, int $column): ?string
+    {
+        $versions = $this->transcriptionManager->getColumnVersionManager()
+            ->getColumnVersionInfoByPageCol($pageId, $column, 1);
+        if ($versions === []) {
+            return null;
+        }
+
+        return $versions[0]->timeFrom;
+    }
+
+    /**
+     * Gets only the edition text needed to detect missing index token data.
+     *
+     * @param int $tableId
+     * @return string
+     */
+    private function getEditionText(int $tableId): string
+    {
+        $ctData = $this->collationTableManager->getCollationTableById($tableId);
+        if (($ctData['type'] ?? null) !== 'edition' || ($ctData['archived'] ?? false)) {
+            return '';
+        }
+
+        $editionWitnessIndex = $ctData['witnessOrder'][0] ?? null;
+        $tokens = $editionWitnessIndex === null ? [] : ($ctData['witnesses'][$editionWitnessIndex]['tokens'] ?? []);
+        $text = '';
+        foreach ($tokens as $token) {
+            if (($token['tokenType'] ?? null) !== 'empty') {
+                $text .= ' ' . ($token['text'] ?? '');
+            }
+        }
+
+        return $text;
+    }
+
+    /**
+     * Gets only the transcription text needed to detect missing index token data.
+     *
+     * @param int $pageId
+     * @param int $column
+     * @return string
+     * @throws InvalidTimeStringException
+     */
+    private function getTranscriptionText(int $pageId, int $column): string
+    {
+        if ($this->getTranscriptionTimeFrom($pageId, $column) === null) {
+            return '';
+        }
+
+        return $this->getPlainTextFromElements(
+            $this->transcriptionManager->getColumnElementsBypageID($pageId, $column)
+        );
+    }
+
+    /**
+     * Returns the names of the language-specific collections for an index type.
+     *
+     * @return string[]
+     */
+    private function getIndexNames(IndexType $indexType): array
+    {
+        return array_map(
+            fn(string $language): string => $this->getIndexName($indexType, $language),
+            self::LanguageCodes
+        );
+    }
+
+    /**
+     * Gets the current transcription data for a page column.
+     *
+     * @param int $pageId
+     * @param int $column
+     * @return array{pageInfo: PageInfo, title: string, text: string, lang: string, transcriber: string, timeFrom: string}|null
+     * @throws DocumentNotFoundException
+     * @throws PageNotFoundException
+     * @throws EntityDoesNotExistException
+     * @throws InvalidTimeStringException
+     */
+    private function getTranscriptionData(int $pageId, int $column): ?array
+    {
+
+        $pageInfo = $this->documentManager->getPageInfo($pageId);
+        $docInfo = $this->documentManager->getDocInfo($pageInfo->docId);
+        $versions = $this->transcriptionManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $column);
+        if ($versions === []) {
+            return null;
+        }
+
+        /** @var ColumnVersionInfo $currentVersion */
+        $currentVersion = end($versions);
+        $elements = $this->transcriptionManager->getColumnElementsBypageID($pageId, $column);
+
+        return [
+            'pageInfo' => $pageInfo,
+            'title' => $docInfo->title,
+            'text' => $this->getPlainTextFromElements($elements),
+            'lang' => $this->languageManager->getLanguageCode($pageInfo->lang),
+            'transcriber' => $this->entitySystem->getEntityName($currentVersion->authorTid),
+            'timeFrom' => $currentVersion->timeFrom,
+        ];
+    }
+
+    /**
+     * Gets the current edition data for a collation table.
+     *
+     * @param int $tableId
+     * @return array{editor: string, text: string, title: string, chunk: string, lang: string, timeFrom: string}|null
+     * @throws WorkNotFoundException
+     * @throws EntityDoesNotExistException
+     */
+    private function getEditionData(int $tableId): ?array
+    {
+        $ctData = $this->collationTableManager->getCollationTableById($tableId);
+        if (($ctData['type'] ?? null) !== 'edition' || ($ctData['archived'] ?? false)) {
+            return null;
+        }
+
+        $editionWitnessIndex = $ctData['witnessOrder'][0];
+        $tokens = $ctData['witnesses'][$editionWitnessIndex]['tokens'];
+        $versionInfo = $this->collationTableManager->getCollationTableVersionManager()->getCollationTableVersionInfo($tableId);
+        $currentVersion = end($versionInfo);
+        $editor = $this->entitySystem->getEntityName($currentVersion->authorTid);
+
+        $text = '';
+        foreach ($tokens as $token) {
+            if (($token['tokenType'] ?? null) !== 'empty') {
+                $text .= ' ' . ($token['text'] ?? '');
+            }
+        }
+
+        $chunkId = (string)$ctData['chunkId'];
+        $chunkParts = explode('-', $chunkId, 2);
+        $workId = $chunkParts[0];
+        $chunk = $chunkParts[1] ?? '';
+
+        return [
+            'editor' => $editor,
+            'text' => $text,
+            'title' => $this->workManager->getWorkDataByDareId($workId)->title,
+            'chunk' => (int)$chunk,
+            'lang' => $ctData['lang'],
+            'timeFrom' => $currentVersion->timeFrom,
+        ];
+    }
+
+    /**
+     * Converts column elements to the text indexed by Typesense.
+     */
+    private function getPlainTextFromElements(array $elements): string
+    {
+        $text = '';
+        foreach ($elements as $element) {
+            if ($element->type !== Element::LINE) {
+                continue;
+            }
+            foreach ($element->items as $item) {
+                switch ($item->type) {
+                    case Item::TEXT:
+                    case Item::HEADING:
+                    case Item::RUBRIC:
+                    case Item::BOLD_TEXT:
+                    case Item::ITALIC:
+                    case Item::MATH_TEXT:
+                    case Item::GLIPH:
+                    case Item::INITIAL:
+                        $text .= $item->theText;
+                        break;
+                    case Item::NO_WORD_BREAK:
+                        $text .= '-';
+                        break;
+                }
+            }
+            $text .= "\n";
+        }
+        return $text;
+    }
+
+    /**
+     * @throws SearchManagerException
+     */
+    public function searchToken(IndexType $indexType, string $lang, string $token, bool $lemmatize, int $page, string $docTitle = '', string $creatorName = '', int $pageSize = 100): SearchQueryResult
+    {
+
+        $indexName = $this->getIndexName($indexType, $lang);
+
+        $this->logger->debug("Making typesense query", ['index' => $indexName, 'token' => $token, 'title' => $docTitle, 'creator' => $creatorName]);
+
+        // Check "lemmatize" (boolean) and corpus to determine the target of the query
+        if ($lemmatize) {
+            if ($indexType === IndexType::Transcriptions) {
+                $area_of_query = 'transcription_lemmata';
+                $sortingSchema = "title:asc, seq:asc, column:asc";
+            } else {
+                $area_of_query = 'edition_lemmata';
+                $sortingSchema = "title:asc, chunk:asc, table_id:asc";
+
+            }
+        } else {
+            if ($indexType === IndexType::Transcriptions) {
+                $area_of_query = 'transcription_tokens';
+                $sortingSchema = "title:asc, seq:asc, column:asc";
+            } else {
+                $area_of_query = 'edition_tokens';
+                $sortingSchema = "title:asc, chunk:asc, table_id:asc";
+            }
+        }
+
+
+        $searchParameters = [
+            'q' => $token,
+            'query_by' => $area_of_query,
+            'filter_by' => "lang:=$lang",
+            "sort_by" => $sortingSchema,
+            'num_typos' => 0,
+            'prefix' => true,
+            'infix' => 'off',
+            'page' => $page,
+            'limit' => $pageSize
+        ];
+
+        if ($creatorName !== '') {
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:$creatorName*";
+        }
+
+        if ($docTitle !== '') {
+            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && title:=$docTitle";
+        }
+
+        $queryFinished = true;
+
+        $this->logger->debug("getting typesense matches page no. " . $page);
+
+
+        $start = microtime(true);
+        try {
+            $query = $this->typesenseClient->collections[$indexName]->documents->search($searchParameters);
+        } catch (Exception|TypesenseClientError $e) {
+            $message = "Error searching index $indexName: " . $e->getMessage();
+            $this->logger->error($message);
+            throw new SearchManagerException($message, 0, $e);
+        }
+        $hits = $query['hits'];
+
+        $this->logger->debug(sprintf("TS query with %d hits done in %.2f ms",
+            count($query['hits']), 1000 * (microtime(true) - $start)));
+
+
+        $this->logger->debug("got " . count($hits) . " matching items from typesense matches page no. " . $page);
+
+        if (count($hits) !== 0) {
+            $queryFinished = false;
+        }
+
+        return new SearchQueryResult($hits, $page, $queryFinished);
+    }
+}

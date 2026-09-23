@@ -39,13 +39,15 @@ use APM\System\Factories\TypesenseClientFactory;
 use APM\System\Factories\UserManagerFactory;
 use APM\System\Factories\ValkeyClientFactory;
 use APM\System\LanguageManager;
+use APM\System\Lemmatizer\LemmatizerInterface;
+use APM\System\Lemmatizer\UdPipeLemmatizer;
 use APM\System\NormalizerManager;
 use APM\System\Person\EntitySystemPersonManager;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Preset\PresetManager;
 use APM\System\PublicationManager\PublicationManager;
-use APM\System\Search\SearchManagerInterface;
-use APM\System\Search\TypesenseSearchManager;
+use APM\System\Search\SearchIndexManager;
+use APM\System\Search\TypesenseSearchIndexManager;
 use APM\System\SystemManager;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\EdNoteManager;
@@ -60,6 +62,7 @@ use ThomasInstitut\JobQueue\JobQueueManager;
 use ThomasInstitut\ToolBox\MySqlHelper;
 use function DI\autowire;
 use function DI\factory;
+use function DI\get;
 
 class CommonDefsProvider implements ApmContainerDefsProvider
 {
@@ -96,10 +99,11 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             DocumentManager::class => factory([DocumentManagerFactory::class, 'create']),
             TranscriptionManager::class => autowire(ApmTranscriptionManager::class),
             \Typesense\Client::class => factory([TypesenseClientFactory::class, 'create']),
-            SearchManagerInterface::class => autowire(TypesenseSearchManager::class),
+            SearchIndexManager::class => autowire(TypesenseSearchIndexManager::class),
             EditionSourceManager::class => autowire(EntitySystemEditionSourceManager::class),
             NormalizerManager::class => factory([NormalizerManagerFactory::class, 'create']),
             CollatexHttp::class => factory([CollatexHttpFactory::class, 'create']),
+            LemmatizerInterface::class => autowire(UdPipeLemmatizer::class)->constructor(get(SystemDirDataCache::class)),
         ];
     }
 }

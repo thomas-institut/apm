@@ -32,7 +32,7 @@ use Psr\Http\Message\ServerRequestInterface as Request;
  */
 class ApiIcons extends ApiController
 {
-    const CLASS_NAME = 'Icons';
+    const string CLASS_NAME = 'Icons';
 
     public function generateMarkIcon(Request $request, Response $response) : Response
     {

@@ -115,7 +115,7 @@ class ApiControllerTest extends TestCase {
         /** @var SystemManager $systemManager */
         $systemManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER);
 
-        self::$logger = $systemManager->getLogger();
+        self::$logger = self::$container->get(LoggerInterface::class);
 
 
         self::$logger->debug('Setting up before class');

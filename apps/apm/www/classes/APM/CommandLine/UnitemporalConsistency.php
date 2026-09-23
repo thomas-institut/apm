@@ -3,13 +3,14 @@
 
 namespace APM\CommandLine;
 
+use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
 use ThomasInstitut\ToolBox\MySqlHelper;
 
 /**
  * Checks the consistency of a MySqlUnitemporal table
  * @package AverroesProject\CommandLine
  */
-class UnitemporalConsistency extends CommandLineUtility
+class UnitemporalConsistency extends ApmCliUtility
 {
 
     const string DB_TIME_FORMAT = 'Y-m-d H:i:s.u';
@@ -18,7 +19,7 @@ class UnitemporalConsistency extends CommandLineUtility
 
     public function main(int $argc, array $argv): bool
     {
-        $dbh = new MySqlHelper($this->getSystemManager()->getPdoProvider(), $this->logger);
+        $dbh = new MySqlHelper($this->container->get(PdoProvider::class), $this->logger);
 
         if ($argc != 2) {
             print self::USAGE;

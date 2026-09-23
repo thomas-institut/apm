@@ -5,21 +5,16 @@ namespace APM\Api;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Config\ApmSystemConfig;
-use APM\System\Lemmatizer;
-use APM\System\Search\SearchManagerInterface;
-use APM\System\SystemManager;
-use Http\Client\Exception;
+use APM\System\Lemmatizer\LemmatizerInterface;
+use APM\System\Search\Exception\SearchManagerException;
+use APM\System\Search\IndexType;
+use APM\System\Search\SearchIndexManager;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
-use Psr\Log\LoggerInterface;
-use Psr\Log\NullLogger;
 use RuntimeException;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
 use ThomasInstitut\TimeString\TimeString;
-use Throwable;
-use Typesense\Client;
-use Typesense\Exceptions\TypesenseClientError;
 
 class ApiSearch extends ApiController
 {
@@ -27,23 +22,25 @@ class ApiSearch extends ApiController
     const string CLASS_NAME = 'Search';
     private ApmSystemConfig $systemConfig;
 
-    private SearchManagerInterface $searchManager;
+    private SearchIndexManager $searchManager;
 
-    private Client $client;
     private SystemMainDataCache $cache;
+
+
+    private LemmatizerInterface $lemmatizer;
 
     public function __construct(ContainerInterface $ci)
     {
         parent::__construct($ci);
         $this->systemConfig = $ci->get(ApmSystemConfig::class);
 
-        /** @var SearchManagerInterface $sm */
-        $sm = $ci->get(SearchManagerInterface::class);
+        /** @var SearchIndexManager $sm */
+        $sm = $ci->get(SearchIndexManager::class);
         $this->searchManager = $sm;
 
-        /** @var Client $client */
-        $client = $ci->get(Client::class);
-        $this->client = $client;
+        /** @var LemmatizerInterface $lemmatizer */
+        $lemmatizer = $ci->get(LemmatizerInterface::class);
+        $this->lemmatizer = $lemmatizer;
 
         $this->cache = $ci->get(SystemMainDataCache::class);
     }
@@ -57,7 +54,6 @@ class ApiSearch extends ApiController
      */
     public function search(Request $request, Response $response): Response
     {
-
 
         // Name of the index that should be queried and informative variables for the API response
         // Informative variables for the API response
@@ -79,16 +75,12 @@ class ApiSearch extends ApiController
 
         // Name of the index to query
         $indexName = $this->getIndexName($corpus, $lang);
+        $indexType = $corpus === 'transcriptions' ? IndexType::Transcriptions : IndexType::Editions;
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $indexName);
 
         // Log query
         $this->logger->debug("Input parameters", ['text' => $searchedPhrase, 'keywordDistance' => $keywordDistance, 'lang' => $lang, 'lemmatize' => $lemmatize]);
-
-        // Instantiate Typesense client
-        // Load authentication data from config-file
-        $this->logger->debug('CONFIG ' . $this->systemConfig->typesense->host);
-
 
         // If wished, lemmatize searched keywords
         if ($lemmatize) {
@@ -104,10 +96,29 @@ class ApiSearch extends ApiController
             }
         }
 
+        if ($tokensForQuery[0] === '*') {
+            $pageSize = 30;
+        } elseif (count($tokensForQuery) > 2) {
+            $pageSize = 20;
+        } elseif (count($tokensForQuery) > 1) {
+            $pageSize = 10;
+        } else {
+            $pageSize = $this->systemConfig->typesense->defaultPageSize;
+        }
+
         // Query index
         try {
-            $query = $this->makeSingleTokenTypesenseSearchQuery($this->client, $indexName, $lang, $title, $creator, $tokensForQuery[0], $lemmatize, $corpus, $queryPage, $tokensForQuery);
-        } catch (Exception|TypesenseClientError $e) {
+            $query = $this->searchManager->searchToken(
+                $indexType,
+                $lang,
+                $tokensForQuery[0],
+                $lemmatize,
+                $queryPage,
+                $title,
+                $creator,
+                $pageSize
+            );
+        } catch (SearchManagerException $e) {
             $status = "Typesense query problem";
             return $this->responseWithJson($response,
                 [
@@ -131,9 +142,9 @@ class ApiSearch extends ApiController
             'corpus' => $corpus,
             'keywordDistance' => $keywordDistance,
             'tokensForQuery' => $tokensForQuery,
-            'query' => $query['hits'],
-            'queryPage' => $query['page'],
-            'queryFinished' => $query['finished'],
+            'query' => $query->hits,
+            'queryPage' => $query->page,
+            'queryFinished' => $query->queryFinished,
             'serverTime' => $now,
             'status' => $status]);
     }
@@ -168,8 +179,8 @@ class ApiSearch extends ApiController
         if (count($tokensToLemmatize) > 0) { // Get lemmata from lemmatizer
             $this->logger->debug(count($tokensToLemmatize) . " token(s) not in cache, need to run lemmatizer", $tokensToLemmatize);
             $phrase = implode(' ', $tokensToLemmatize);
-            $tokensAndLemmata = Lemmatizer::runLemmatizer($lang, $phrase);
-            $lemmata = $tokensAndLemmata['lemmata'];
+            $tokensAndLemmata = $this->lemmatizer->lemmatize($phrase, $lang);
+            $lemmata = $tokensAndLemmata->lemmata;
             foreach ($lemmata as $i => $lemma) {
                 $cacheKey = $this->getLemmaCacheKey($tokensToLemmatize[$i]);
                 $this->cache->set($cacheKey, $lemma);
@@ -262,193 +273,24 @@ class ApiSearch extends ApiController
         return array_values(array_merge($tokensForQuery, $suffixes));
     }
 
-    /**
-     * make a single token query for a specific Typesense index
-     * @param Client $client
-     * @param string $index_name
-     * @param string $lang
-     * @param string $title
-     * @param string $creator
-     * @param string $token
-     * @param bool $lemmatize
-     * @param string $corpus
-     * @param int $page
-     * @param array $numSearchedTokens
-     * @return array
-     * @throws Exception
-     * @throws TypesenseClientError
-     */
-    private function makeSingleTokenTypesenseSearchQuery(Client $client, string $index_name, string $lang, string $title, string $creator, string $token, bool $lemmatize, string $corpus, int $page, array $numSearchedTokens): array
-    {
-
-        $this->logger->debug("Making typesense query", ['index' => $index_name, 'token' => $token, 'title' => $title, 'creator' => $creator]);
-
-        // Check "lemmatize" (boolean) and corpus to determine the target of the query
-        if ($lemmatize) {
-            if ($corpus === 'transcriptions') {
-                $area_of_query = 'transcription_lemmata';
-                $sortingSchema = "title:asc, seq:asc, column:asc";
-            } else {
-                $area_of_query = 'edition_lemmata';
-                $sortingSchema = "title:asc, chunk:asc, table_id:asc";
-
-            }
-        } else {
-            if ($corpus === 'transcriptions') {
-                $area_of_query = 'transcription_tokens';
-                $sortingSchema = "title:asc, seq:asc, column:asc";
-            } else {
-                $area_of_query = 'edition_tokens';
-                $sortingSchema = "title:asc, chunk:asc, table_id:asc";
-            }
-        }
-
-        // adjust page size for the typesense query depending on the search token and the number of total tokens in the searched phrase
-        if ($token === '*') {
-            $pageSize = 30;
-        } else if (count($numSearchedTokens) > 2) {
-            $pageSize = 20;
-        } else if (count($numSearchedTokens) > 1) {
-            $pageSize = 10;
-        } else {
-            $pageSize = $this->systemConfig->typesense->defaultPageSize;
-        }
-
-        $searchParameters = [
-            'q' => $token,
-            'query_by' => $area_of_query,
-            'filter_by' => "lang:=$lang",
-            "sort_by" => $sortingSchema,
-            'num_typos' => 0,
-            'prefix' => true,
-            'infix' => 'off',
-            'page' => $page,
-            'limit' => $pageSize
-        ];
-
-        if ($creator !== '') {
-            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:$creator*";
-        }
-
-        if ($title !== '') {
-            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && title:=$title";
-        }
-
-        $queryFinished = true;
-
-        $this->logger->debug("getting typesense matches page no. " . $page);
-
-
-        $start = microtime(true);
-        $query = $client->collections[$index_name]->documents->search($searchParameters);
-        $hits = $query['hits'];
-
-        $this->logger->debug(sprintf("TS query with %d hits done in %.2f ms",
-            count($query['hits']), 1000 * (microtime(true) - $start)));
-
-
-        $this->logger->debug("got " . count($hits) . " matching items from typesense matches page no. " . $page);
-
-        if (count($hits) !== 0) {
-            $queryFinished = false;
-        }
-
-        return ['hits' => $hits, 'page' => $page, 'finished' => $queryFinished];
-    }
 
     /**
-     * returns all creators or titles stored in the transcriptions or edition indices
-     * @param Client $client
-     * @param string $queryKey , can be 'transcription' or 'transcriber' or 'editor' or 'edition'
-     * @param LoggerInterface|null $logger
-     * @return array
-     */
-    static private function getAllEntriesFromIndex(Client $client, string $queryKey, ?LoggerInterface $logger): array
-    {
-
-        if ($logger === null) {
-            $logger = new NullLogger();
-        }
-        // Get names of target indices
-        if ($queryKey === 'transcription' or $queryKey === 'transcriber') {
-            $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
-        } else {
-            $index_names = ['editions_la', 'editions_ar', 'editions_he'];
-        }
-
-        // Get keys to query
-        if ($queryKey === 'transcriber' or $queryKey === 'editor') {
-            $queryKey = 'creator';
-        } else {
-            $queryKey = 'title';
-        }
-
-        // Array to return
-        $values = [];
-
-        // Make a match_all query
-
-        foreach ($index_names as $index_name) {
-
-            $query = ['hits' => [1]];
-            $hits = [];
-            $page = 1;
-
-            // collect all documents from the index
-            while (count($query['hits']) !== 0) {
-                $searchParameters = [
-                    'q' => '*',
-                    'page' => $page,
-                    'limit' => 250
-                ];
-
-                try {
-                    $query = $client->collections[$index_name]->documents->search($searchParameters);
-                } catch (Exception|TypesenseClientError $e) {
-                    $logger->error("Search Exception: " . $e->getMessage(), ['index' => $index_name]);
-                    return [];
-                }
-
-                foreach ($query['hits'] as $hit) {
-                    $hits[] = $hit;
-                }
-
-                $page++;
-            }
-
-            // Append every value of the queried field to the $values-array, if not already done before (no duplicates)
-            foreach ($hits as $hit) {
-                $value = $hit['document'][$queryKey];
-                if (in_array($value, $values) === false) {
-                    $values[] = $value;
-                }
-            }
-        }
-        return $values;
-    }
-
-    /**
-     * @param SystemManager $systemManager
+     * @param SearchIndexManager $searchIndexManager
+     * @param SystemMainDataCache $cache
      * @param string $whichIndex
-     * @param LoggerInterface|null $logger
      * @return bool
-     * @throws Throwable
      */
-    static public function updateDataCache(SystemManager $systemManager, string $whichIndex, ?LoggerInterface $logger): bool
+    static public function updateDataCache(SearchIndexManager $searchIndexManager, SystemMainDataCache $cache, string $whichIndex): bool
     {
-
-        $cache = $systemManager->getSystemDataCache();
-        $client = $systemManager->getTypesenseClient();
-
         if ($whichIndex === 'transcriptions') {
-            $transcriptions = self::getAllEntriesFromIndex($client, 'transcription', $logger);
-            $transcribers = self::getAllEntriesFromIndex($client, 'transcriber', $logger);
+            $transcriptions = $searchIndexManager->getTranscribedDocuments();
+            $transcribers = $searchIndexManager->getTranscriberNames();
             $cache->set(CacheKey::ApiSearchTranscriptions, serialize($transcriptions));
             $cache->set(CacheKey::ApiSearchTranscribers, serialize($transcribers));
 
         } else if ($whichIndex === 'editions') {
-            $editions = self::getAllEntriesFromIndex($client, 'edition', $logger);
-            $editors = self::getAllEntriesFromIndex($client, 'editor', $logger);
+            $editions = $searchIndexManager->getEditionTitles();
+            $editors = $searchIndexManager->getEditors();
             $cache->set(CacheKey::ApiSearchEditions, serialize($editions));
             $cache->set(CacheKey::ApiSearchEditors, serialize($editors));
         }

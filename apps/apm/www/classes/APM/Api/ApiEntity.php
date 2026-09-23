@@ -3,6 +3,7 @@
 namespace APM\Api;
 
 
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Exception\EntityDoesNotExistException;
 use APM\EntitySystem\Exception\InvalidObjectException;
 use APM\EntitySystem\Exception\InvalidStatementException;
@@ -15,6 +16,8 @@ use APM\EntitySystem\Schema\Entity;
 use APM\StringMatcher\NameMatcher;
 use APM\StringMatcher\SimpleIndexElement;
 use APM\System\Cache\CacheKey;
+use APM\System\Cache\SystemMainDataCache;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
@@ -116,7 +119,8 @@ class ApiEntity extends ApiController
     public function statementEdition(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-        $userManager = $this->systemManager->getUserManager();
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->container->get(UserManagerInterface::class);
 
         if ($userManager->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             return $this->responseWithError($response,
@@ -143,7 +147,8 @@ class ApiEntity extends ApiController
         }
 
         $commandResults = [];
-        $es = $this->systemManager->getEntitySystem();
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
         $timestamp = time();
 
         foreach ($commands as $command) {
@@ -384,12 +389,14 @@ class ApiEntity extends ApiController
      */
     public function getEntityData(Request $request, Response $response): Response {
         $tidString = $request->getAttribute('tid');
-        $tid = $this->systemManager->getEntitySystem()->getEntityIdFromString($tidString);
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
+        $tid = $es->getEntityIdFromString($tidString);
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':'  . $tid);
 
         try {
-            $data = $this->systemManager->getEntitySystem()->getEntityData($tid);
+            $data = $es->getEntityData($tid);
         } catch (EntityDoesNotExistException) {
             $this->logger->info("Entity $tid not found");
             return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
@@ -413,7 +420,8 @@ class ApiEntity extends ApiController
      */
     public function getEntitiesForType(Request $request, Response $response): Response {
         $tidString = $request->getAttribute('entityType');
-        $es = $this->systemManager->getEntitySystem();
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
         $type = $es->getEntityIdFromString($tidString);
         if ($type <= 0) {
             return $this->responseWithJson($response, [ 'error' => "Input '$type' not an entity id"], HttpStatus::BAD_REQUEST);
@@ -429,7 +437,9 @@ class ApiEntity extends ApiController
 
     public function getValidQualificationObjects(Request $request, Response $response, bool $onlyIds): Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':'  . ( $onlyIds ? 'onlyIds' : 'data' ));
-        return $this->responseWithJson($response,  $this->systemManager->getEntitySystem()->getValidQualificationObjects($onlyIds));
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
+        return $this->responseWithJson($response, $es->getValidQualificationObjects($onlyIds));
     }
 
 
@@ -467,7 +477,8 @@ class ApiEntity extends ApiController
                 return $this->responseWithJson($response, [ 'error' => "Invalid type in list at index $i"], HttpStatus::BAD_REQUEST);
             }
         }
-        $es = $this->systemManager->getEntitySystem();
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
 
         foreach($types as $type) {
             try {
@@ -481,7 +492,8 @@ class ApiEntity extends ApiController
             }
         }
 
-        $cache = $this->systemManager->getSystemDataCache();
+        /** @var SystemMainDataCache $cache */
+        $cache = $this->container->get(SystemMainDataCache::class);
 
         $index = [];
         foreach($types as $type) {
@@ -512,7 +524,8 @@ class ApiEntity extends ApiController
 
     public function getPredicateDefinition(Request $request, Response $response): Response {
         $predicate = intval($request->getAttribute('id'));
-        $es = $this->systemManager->getEntitySystem();
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
         try {
             $predicateDef = $es->getPredicateDefinition($predicate);
             return $this->responseWithJson($response, $predicateDef);
@@ -551,7 +564,8 @@ class ApiEntity extends ApiController
             return $this->responseWithText($response, "No entity id given", HttpStatus::BAD_REQUEST);
         }
 
-        $es = $this->systemManager->getEntitySystem();
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
         try {
             $entityType = $es->getEntityType($id);
         } catch (EntityDoesNotExistException $e) {
@@ -603,7 +617,8 @@ class ApiEntity extends ApiController
      * @return SimpleIndexElement[]
      */
     private function buildNamesIndex(int $type) : array {
-        $es = $this->systemManager->getEntitySystem();
+        /** @var ApmEntitySystemInterface $es */
+        $es = $this->container->get(ApmEntitySystemInterface::class);
         $entities = $es->getAllEntitiesForType($type);
 
         $index = [];

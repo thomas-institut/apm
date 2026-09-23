@@ -2,22 +2,27 @@
 
 namespace APM\System\User;
 
+use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\EntitySystem\Exception\InvalidObjectException;
+use APM\EntitySystem\Exception\InvalidStatementException;
+use APM\EntitySystem\Exception\InvalidSubjectException;
 use APM\EntitySystem\Schema\Entity;
 use APM\EntitySystem\ValueToolBox;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
-use APM\System\SystemManager;
 use RuntimeException;
 
-class UserEntityDataUpdater
+readonly class UserEntityDataUpdater
 {
 
-    private SystemManager $systemManager;
-    private int $authorTid;
 
-    public function __construct(SystemManager $systemManager, int $authorTid = Entity::System)
+    public function __construct(
+        private ApmEntitySystemInterface $entitySystem,
+        private PersonManagerInterface   $personManager,
+        private UserManagerInterface     $userManager,
+        private int                      $authorTid = Entity::System)
     {
-        $this->systemManager = $systemManager;
-        $this->authorTid = $authorTid;
+
     }
 
     /**
@@ -31,11 +36,15 @@ class UserEntityDataUpdater
      * @param bool $hotRun
      * @return array
      * @throws PersonNotFoundException
+     * @throws InvalidObjectException
+     * @throws InvalidStatementException
+     * @throws InvalidSubjectException
      */
-    public function updateUserEntityData(int $personTid, bool $hotRun = false) : array {
+    public function updateUserEntityData(int $personTid, bool $hotRun = false): array
+    {
 
-        $pm = $this->systemManager->getPersonManager();
-        $es = $this->systemManager->getEntitySystem();
+        $pm = $this->personManager;
+        $es = $this->entitySystem;
 
         $currentEntityData = $pm->getPersonEntityData($personTid);
         $currentEssentialData = $pm->getPersonEssentialData($personTid);
@@ -57,7 +66,7 @@ class UserEntityDataUpdater
 
         if ($isUser) {
             try {
-                $isEnabled = $this->systemManager->getUserManager()->isEnabled($personTid);
+                $isEnabled = $this->userManager->isEnabled($personTid);
             } catch (UserNotFoundException) {
                 // should never happen
                 throw new RuntimeException("User $personTid reported as user, not then not found by UserManager");
@@ -79,7 +88,6 @@ class UserEntityDataUpdater
 
         return $info;
     }
-
 
 
 }

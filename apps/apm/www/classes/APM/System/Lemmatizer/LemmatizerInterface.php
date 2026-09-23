@@ -21,7 +21,7 @@ interface LemmatizerInterface
      * ```
      * @param string $text
      * @param string $langCode
-     * @return array
+     * @return LemmatizationResult
      */
-    public function lemmatize(string $text, string $langCode) : array;
+    public function lemmatize(string $text, string $langCode) : LemmatizationResult;
 }

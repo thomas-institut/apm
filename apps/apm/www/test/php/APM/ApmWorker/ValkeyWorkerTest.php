@@ -4,8 +4,6 @@ namespace APM\ApmWorker;
 
 use APM\System\ApmSystemManager;
 use APM\System\SystemManager;
-use Monolog\Handler\NullHandler;
-use Monolog\Logger;
 use PDOException;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
@@ -40,13 +38,12 @@ class ValkeyWorkerTest extends TestCase
 
         $this->systemManager = $this->createStub(ApmSystemManager::class);
         $this->systemManager->method('getJobQueueManager')->willReturn($this->jm);
-        $this->systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
 
         $this->ci = $this->createStub(ContainerInterface::class);
         $this->ci->method('get')->willReturnMap([
             [SystemManager::class, $this->systemManager],
             [JobQueueManager::class, $this->jm],
-            [LoggerInterface::class, new Logger('test', [new NullHandler()])],
+            [LoggerInterface::class, new NullLogger()],
         ]);
     }
 
@@ -194,14 +191,13 @@ class ValkeyWorkerTest extends TestCase
         $jobManager->expects($this->never())->method('failJob');
 
         $systemManager = $this->createMock(ApmSystemManager::class);
-        $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
         $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
 
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
             [JobQueueManager::class, $jobManager],
-            [LoggerInterface::class, $systemManager->getLogger()],
+            [LoggerInterface::class, new NullLogger()],
         ]);
 
         $worker = new ValkeyWorker($ci, 1);
@@ -226,14 +222,13 @@ class ValkeyWorkerTest extends TestCase
             ->with('sig-2', $this->stringContains('2006'), true);
 
         $systemManager = $this->createMock(ApmSystemManager::class);
-        $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
         $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
 
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
             [JobQueueManager::class, $jobManager],
-            [LoggerInterface::class, $systemManager->getLogger()],
+            [LoggerInterface::class, new NullLogger()],
         ]);
 
         $worker = new ValkeyWorker($ci, 1);
@@ -246,13 +241,12 @@ class ValkeyWorkerTest extends TestCase
     public function testCheckDbConnectionResetIntervalCallsSystemManagerAtInterval(): void
     {
         $systemManager = $this->createMock(ApmSystemManager::class);
-        $systemManager->method('getLogger')->willReturn(new Logger('test', [new NullHandler()]));
         $systemManager->expects($this->once())->method('resetDbConnectionAndDependentManagers');
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
             [JobQueueManager::class, $this->jm],
-            [LoggerInterface::class, $systemManager->getLogger()],
+            [LoggerInterface::class, new NullLogger()],
         ]);
         $mins = ValkeyWorker::MinDbResetConnectionIntervalInMinutes;
 

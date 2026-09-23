@@ -20,13 +20,15 @@
 
 namespace APM\CommandLine;
 
+use APM\System\ApmTableNames;
+
 /**
  * Utility to perform a database backup with mysqldump 
  *
  * @author Rafael Nájera <rafael.najera@uni-koeln.de>
  */
 
-class BackupDB extends CommandLineUtility {
+class BackupDB extends ApmCliUtility {
     
     const string USAGE = "USAGE: backupdb <output_directory> --schemaOnly\n";
 
@@ -57,7 +59,7 @@ class BackupDB extends CommandLineUtility {
         $onlySchema = $argc > 2 && $argv[2] === '--schemaOnly';
         $hostName = gethostname();
 
-        $tableNames = $this->getSystemManager()->getTableNames();
+        $tableNames = $this->container->get(ApmTableNames::class);
         $databaseName = $this->config['db']['db'];
         $ignoreTablesCommand = '';
 

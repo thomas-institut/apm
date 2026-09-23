@@ -78,7 +78,7 @@ class ElementDatabaseTest extends TestCase {
         /** @var SystemManager $systemManager */
         $systemManager = self::$container->get(ApmContainerKey::SYSTEM_MANAGER);
         self::$dataManager = $systemManager->getDataManager();
-        self::$logger = $systemManager->getLogger();
+        self::$logger = self::$container->get(LoggerInterface::class);
     }
 
     /**

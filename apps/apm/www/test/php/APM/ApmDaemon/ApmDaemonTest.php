@@ -2,7 +2,7 @@
 
 namespace APM\ApmDaemon;
 
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\ApmCliUtility;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
@@ -68,7 +68,7 @@ class ApmDaemonTest extends TestCase
             [JobQueueManager::class, $jobManager],
         ]);
 
-        $containerProperty = new ReflectionProperty(CommandLineUtility::class, 'container');
+        $containerProperty = new ReflectionProperty(ApmCliUtility::class, 'container');
         $containerProperty->setValue($daemon, $container);
 
         return $daemon;

@@ -2,42 +2,27 @@
 
 namespace APM\System\Jobs;
 
-use APM\CommandLine\IndexManager;
-use APM\System\ApmContainerKey;
-use Psr\Container\ContainerExceptionInterface;
-use Psr\Container\ContainerInterface;
-use Psr\Container\NotFoundExceptionInterface;
+use APM\System\Search\SearchIndexManager;
 use Psr\Log\LoggerInterface;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
 use Throwable;
 
 readonly class UpdateApiSearchEditionsIndexJob implements JobHandlerInterface
 {
-    public function __construct(private ContainerInterface $container) {}
+    public function __construct(
+        private SearchIndexManager $searchIndexManager,
+        private LoggerInterface    $logger
+    )
+    {
+    }
 
-    /**
-     * @throws ContainerExceptionInterface
-     * @throws NotFoundExceptionInterface
-     */
     public function run(array $payload, string $jobName): bool
     {
-        /** @var array $config */
-        $config = $this->container->get(ApmContainerKey::CONFIG_ARRAY);
-
-        /** @var LoggerInterface $logger */
-        $logger = $this->container->get(LoggerInterface::class);
-
-        // Fetch data from payload
-        $table_id = $payload[0];
-
-        $im = new IndexManager($config, 0, []);
-        $im->setIndexNamePrefix('editions');
-
         try {
-            $im->updateOrAddItem($table_id);
+            $this->searchIndexManager->updateEditionInIndex($payload[0]);
             return true;
         } catch (Throwable $e) {
-            $logger->error("Error updating editions index for table $table_id: " . $e->getMessage());
+            $this->logger->error("Error updating editions index for table $payload[0]: " . $e->getMessage());
             return false;
         }
     }
@@ -47,7 +32,8 @@ readonly class UpdateApiSearchEditionsIndexJob implements JobHandlerInterface
         return true;
     }
 
-    public function minTimeBetweenSchedules() : int {
+    public function minTimeBetweenSchedules(): int
+    {
         return 2;
     }
 }

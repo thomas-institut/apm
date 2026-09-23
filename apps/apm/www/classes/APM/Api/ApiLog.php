@@ -8,22 +8,29 @@ use Monolog\Logger;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Log\LoggerInterface;
 
 class ApiLog extends ApiController
 {
-    const CLASS_NAME = 'Log';
-    public const SEVERITY_ERROR = 'error';
-    public const SEVERITY_INFO = 'info';
-    public const SEVERITY_DEBUG = 'debug';
-    public const SEVERITY_WARNING = 'warning';
+    const string CLASS_NAME = 'Log';
+    public const string SEVERITY_ERROR = 'error';
+    public const string SEVERITY_INFO = 'info';
+    public const string SEVERITY_DEBUG = 'debug';
+    public const string SEVERITY_WARNING = 'warning';
 
-    private Logger $frontEndLogger;
+    private LoggerInterface $frontEndLogger;
 
 
     public function __construct(ContainerInterface $ci)
     {
         parent::__construct($ci);
-        $this->frontEndLogger = $this->systemManager->getLogger()->withName('FRONT_END');
+        /** @var LoggerInterface $logger */
+        $logger = $ci->get(LoggerInterface::class);
+
+        $this->frontEndLogger = $logger;
+        if ($this->frontEndLogger instanceof Logger) {
+            $this->frontEndLogger = $this->frontEndLogger->withName('FRONT_END');
+        }
     }
 
     /**

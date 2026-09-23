@@ -37,6 +37,7 @@ use APM\System\User\InvalidEmailAddressException;
 use APM\System\User\InvalidPasswordException;
 use APM\System\User\InvalidUserNameException;
 use APM\System\User\UserNameAlreadyInUseException;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\System\Work\WorkManager;
@@ -75,7 +76,8 @@ class ApiUsers extends ApiController
         $profileUserTid = (int)$request->getAttribute('userTid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $profileUserTid);
 
-        $userManager = $this->systemManager->getUserManager();
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->container->get(UserManagerInterface::class);
 
         if ($profileUserTid === $this->apiUserId) {
             $this->logger->info("User $profileUserTid is changing their own user profile");
@@ -149,8 +151,10 @@ class ApiUsers extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-        $apmUserManager = $this->systemManager->getUserManager();
-        $personManager = $this->systemManager->getPersonManager();
+        /** @var UserManagerInterface $apmUserManager */
+        $apmUserManager = $this->container->get(UserManagerInterface::class);
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
 
         $personTid = intval($request->getAttribute('personTid'));
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . $personTid);

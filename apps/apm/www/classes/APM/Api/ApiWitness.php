@@ -25,12 +25,14 @@ use APM\Api\ItemStreamFormatter\WitnessPageFormatter;
 use APM\Api\PersonInfoProvider\ApmPersonInfoProvider;
 use APM\Api\DataSchema\WitnessUpdateData;
 use APM\Api\DataSchema\WitnessUpdateInfo;
-use APM\EntitySystem\Exception\EntityDoesNotExistException;
+use APM\CollationTable\CollationTableManager;
+use APM\CollationTable\TableNotFoundException;
 use APM\StandardData\FullTxWitnessDataProvider;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\LanguageManager;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\ApmTranscriptionWitness;
 use APM\System\Transcription\TranscriptionManager;
@@ -62,7 +64,10 @@ class ApiWitness extends ApiController
     const int WITNESS_DATA_CACHE_TTL = 60 * 24 * 3600; // 30 days
 
 
-
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getWitnessesForChunk(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -76,13 +81,22 @@ class ApiWitness extends ApiController
         return $this->responseWithJson($response, $witnessInfoArray);
     }
 
+    /**
+     * @param Request $request
+     * @param Response $response
+     * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     * @throws TableNotFoundException
+     */
     public function getCollationTablesForChunk(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $workId = $request->getAttribute('workId');
         $chunkNumber = intval($request->getAttribute('chunkNumber'));
         $chunkId = sprintf("%s-%02d", $workId, $chunkNumber);
-        $ctManager = $this->systemManager->getCollationTableManager();
+        /** @var CollationTableManager $ctManager */
+        $ctManager = $this->container->get(CollationTableManager::class);
         $time = TimeString::now();
         $ids = $ctManager->getCollationTableIdsForChunk($chunkId, $time);
         $data = [];
@@ -108,6 +122,10 @@ class ApiWitness extends ApiController
         return $this->responseWithJson($response, $data);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getWitness(Request $request, Response $response): Response
     {
 
@@ -141,6 +159,10 @@ class ApiWitness extends ApiController
         }
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function checkWitnessUpdates(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -357,10 +379,17 @@ class ApiWitness extends ApiController
     }
 
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     private function getWitnessHtml(ApmTranscriptionWitness $apmWitness): string
     {
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
+
         $formatter = new WitnessPageFormatter();
-        $personInfoProvider = new ApmPersonInfoProvider($this->systemManager->getPersonManager());
+        $personInfoProvider = new ApmPersonInfoProvider($personManager);
         $formatter->setPersonInfoProvider($personInfoProvider);
         return $formatter->formatItemStream($apmWitness->getDatabaseItemStream());
     }

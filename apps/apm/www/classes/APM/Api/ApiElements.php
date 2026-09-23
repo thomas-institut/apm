@@ -23,6 +23,7 @@ namespace APM\Api;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\Transcription\ApmTranscriptionManager;
 use APM\System\Transcription\ColumnElement\Element;
@@ -386,6 +387,9 @@ class ApiElements extends ApiController
         /** @var TranscriptionManager $txManager */
         $txManager = $this->container->get(TranscriptionManager::class);
 
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
+
         $docId = Tid::fromString($docId);
 
         // Get a list of versions
@@ -454,19 +458,19 @@ class ApiElements extends ApiController
         foreach ($elements as $e){
             if (!isset($people[$e->editorTid])){
                 $people[$e->editorTid] =
-                    $this->systemManager->getPersonManager()->getPersonEssentialData($e->editorTid)->getExportObject();
+                    $personManager->getPersonEssentialData($e->editorTid)->getExportObject();
             }
         }
         foreach($ednotes as $e){
             if (!isset($people[$e->authorTid])){
                 $people[$e->authorTid] =
-                    $this->systemManager->getPersonManager()->getPersonEssentialData($e->authorTid)->getExportObject();
+                    $personManager->getPersonEssentialData($e->authorTid)->getExportObject();
             }
         }
         // Add API user info as well
         if (!isset($people[$this->apiUserId])){
             $people[$this->apiUserId] =
-                $this->systemManager->getPersonManager()->getPersonEssentialData($this->apiUserId)->getExportObject();
+                $personManager->getPersonEssentialData($this->apiUserId)->getExportObject();
         }
 
         $versionData = $this->getVersionDataWithAuthorInfo($versionInfoArray);
@@ -512,7 +516,8 @@ class ApiElements extends ApiController
             }
         }
         $authorData = [];
-        $pm = $this->systemManager->getPersonManager();
+        /** @var PersonManagerInterface $pm */
+        $pm = $this->container->get(PersonManagerInterface::class);
         foreach($authorIds as $authorId) {
             try {
                 $authorData[$authorId] = $pm->getPersonEssentialData($authorId);

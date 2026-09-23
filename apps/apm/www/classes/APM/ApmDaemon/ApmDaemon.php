@@ -3,7 +3,7 @@
 namespace APM\ApmDaemon;
 
 use APM\Api\ApiDocuments;
-use APM\CommandLine\CommandLineUtility;
+use APM\CommandLine\ApmCliUtility;
 use APM\Site\SiteWorks;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
@@ -18,7 +18,7 @@ use ThomasInstitut\JobQueue\JobQueueManager;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
-class ApmDaemon extends CommandLineUtility
+class ApmDaemon extends ApmCliUtility
 {
     const int MICROSECONDS_TO_SLEEP = 100 * 1000;
     const int RECOVERY_INTERVAL = 300; // 5 minutes

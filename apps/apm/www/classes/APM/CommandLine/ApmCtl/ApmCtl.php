@@ -3,7 +3,6 @@
 namespace APM\CommandLine\ApmCtl;
 
 
-
 use APM\CommandLine\MultiToolCli\MultiToolCliUtilityManager;
 
 class ApmCtl extends MultiToolCliUtilityManager
@@ -22,6 +21,7 @@ class ApmCtl extends MultiToolCliUtilityManager
             UserTool::class,
             TranscriptionTool::class,
             PublicationTool::class,
+            SearchIndexTool::class,
         ]);
     }
 }

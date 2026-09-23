@@ -47,16 +47,16 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
     const int StringArrayTtl = 3 * 24 * 3600; // 3 days
 
     public function __construct(
-        private readonly Client $typesenseClient,
-        SystemMainDataCache     $dataCache,
-        LoggerInterface         $logger,
-        private readonly DocumentManager $documentManager,
-        private readonly TranscriptionManager $transcriptionManager,
+        private readonly Client                   $typesenseClient,
+        SystemMainDataCache                       $dataCache,
+        LoggerInterface                           $logger,
+        private readonly DocumentManager          $documentManager,
+        private readonly TranscriptionManager     $transcriptionManager,
         private readonly ApmEntitySystemInterface $entitySystem,
-        private readonly CollationTableManager $collationTableManager,
-        private readonly WorkManager $workManager,
-        private readonly LemmatizerInterface $lemmatizer,
-        private readonly LanguageManager $languageManager,
+        private readonly CollationTableManager    $collationTableManager,
+        private readonly WorkManager              $workManager,
+        private readonly LemmatizerInterface      $lemmatizer,
+        private readonly LanguageManager          $languageManager,
     )
     {
         $this->logger = $logger;
@@ -142,7 +142,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         try {
             $this->getTypesenseClient()->collections[$indexName]->documents->create([
                 'table_id' => (string)$tableId,
-                'chunk' => (int) $chunk,
+                'chunk' => (int)$chunk,
                 'creator' => $editorName,
                 'title' => $title,
                 'lang' => $langCode,
@@ -436,16 +436,16 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      * @throws WorkNotFoundException
      * @throws EntityDoesNotExistException
      */
-    public function updateEditionInIndex(int $tableId, bool $forceUpdate = false): void
+    public function updateEditionInIndex(int $tableId, bool $forceUpdate = false): bool
     {
         $edition = $this->getEditionData($tableId);
         if ($edition === null) {
-            return;
+            return false;
         }
 
         $indexedDocuments = $this->findIndexedDocuments(IndexType::Editions, (string)$tableId);
         if (!$forceUpdate && $this->hasCurrentDocument($indexedDocuments, $edition['timeFrom'])) {
-            return;
+            return false;
         }
 
         $this->deleteIndexedDocuments($indexedDocuments, null, 'edition', (string)$tableId);
@@ -458,6 +458,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $edition['editor'],
             $edition['timeFrom']
         );
+        return true;
     }
 
     /**
@@ -489,17 +490,22 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      * @throws PageNotFoundException
      * @throws SearchManagerException
      */
-    public function updateTranscriptionInIndex(int $docId, int $pageNumber, int $column, bool $forceUpdate = false): void
+    public function updateTranscriptionInIndex(int $docId, int $pageNumber, int $column, bool $forceUpdate = false): bool
     {
         $pageId = $this->documentManager->getPageIdByDocPage($docId, $pageNumber);
         $transcription = $this->getTranscriptionData($pageId, $column);
         if ($transcription === null) {
-            return;
+            // no transcription, this means the page should not be indexed;
+            // so, let's delete it from the index just to be sure
+            $this->deleteTranscriptionFromIndex($docId, $pageNumber, $column);
+            // but this is not an actual update, so return false
+            return false;
         }
 
         $indexedDocuments = $this->findIndexedDocuments(IndexType::Transcriptions, (string)$pageId, $column);
         if (!$forceUpdate && $this->hasCurrentDocument($indexedDocuments, $transcription['timeFrom'])) {
-            return;
+            $this->logger->info("Transcription for $docId:$pageNumber:$column, page $pageId is up to date, no update needed");
+            return false;
         }
 
         $this->deleteIndexedDocuments($indexedDocuments, null, 'transcription', "$docId:$pageNumber:$column");
@@ -512,6 +518,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $transcription['transcriber'],
             $transcription['timeFrom']
         );
+        return true;
     }
 
     /**
@@ -528,14 +535,19 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      */
     public function updateIndex(IndexType $indexType, int $updateCountLimit = 0): UpdateIndexResult
     {
-        $this->logger->info("Updating index for $indexType->name with limit $updateCountLimit");
+        if ($updateCountLimit < 0) {
+            $this->logger->info("Updating $indexType->name search index, no limit, all updates will be performed");
+            $updateCountLimit = PHP_INT_MAX;
+        } else {
+            $this->logger->info("Updating index for $indexType->name, no more than $updateCountLimit updates will be performed");
+        }
 
         $updatesNeeded = 0;
         $updatesPerformed = 0;
 
         $itemsToUpdate = $this->getItemsToUpdate($indexType);
 
-        $this->logger->info("Found " . count($itemsToUpdate) . " potential items to update");
+        $this->logger->debug("Found " . count($itemsToUpdate) . " potential items to update");
 
         $sourceItemKeys = $this->getSourceItemKeys($indexType, $itemsToUpdate);
         $orphanedDocuments = $this->getOrphanedIndexedDocuments($indexType, $sourceItemKeys);
@@ -552,18 +564,25 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             }
 
             $updatesNeeded++;
-            if ($updateCountLimit !== -1 && $updatesPerformed >= $updateCountLimit) {
+            if ($updatesPerformed >= $updateCountLimit) {
                 continue;
             }
 
             if ($indexType === IndexType::Transcriptions) {
-                $this->updateTranscriptionInIndex($item['docId'], $item['page'], $item['column'], true);
+                $done = $this->updateTranscriptionInIndex($item['docId'], $item['page'], $item['column'], true);
             } else {
-                $this->updateEditionInIndex($item['tableId'], true);
+                $done = $this->updateEditionInIndex($item['tableId'], true);
             }
-            $updatesPerformed++;
+            if ($done) {
+                $updatesNeeded++;
+                $updatesPerformed++;
+            } else {
+                $updatesNeeded--;
+            }
         }
-
+        if ($updatesNeeded === 0) {
+            $this->logger->info("$indexType->name search index is up to date, no updates needed");
+        }
         return new UpdateIndexResult($updatesNeeded, $updatesPerformed, $deletionsPerformed);
     }
 
@@ -717,6 +736,8 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             return $this->hasEmptyTokensForText($indexedDocuments, $this->getEditionText($item['tableId']), 'edition_tokens', 'edition_lemmata');
         }
 
+        // IndexType::Transcriptions
+
         $indexedDocuments = $this->findIndexedDocuments(
             IndexType::Transcriptions,
             (string)$item['pageId'],
@@ -756,9 +777,9 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      */
     private function findIndexedDocuments(
         IndexType $indexType,
-        string $identifier,
-        ?int $column = null,
-        ?string $includeFields = null
+        string    $identifier,
+        ?int      $column = null,
+        ?string   $includeFields = null
     ): array
     {
         $documents = [];
@@ -989,6 +1010,9 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      */
     private function getTranscriptionData(int $pageId, int $column): ?array
     {
+
+        $pageInfo = $this->documentManager->getPageInfo($pageId);
+        $docInfo = $this->documentManager->getDocInfo($pageInfo->docId);
         $versions = $this->transcriptionManager->getColumnVersionManager()->getColumnVersionInfoByPageCol($pageId, $column);
         if ($versions === []) {
             return null;
@@ -996,8 +1020,6 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
 
         /** @var ColumnVersionInfo $currentVersion */
         $currentVersion = end($versions);
-        $pageInfo = $this->documentManager->getPageInfo($pageId);
-        $docInfo = $this->documentManager->getDocInfo($pageInfo->docId);
         $elements = $this->transcriptionManager->getColumnElementsBypageID($pageId, $column);
 
         return [
@@ -1114,7 +1136,6 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 $sortingSchema = "title:asc, chunk:asc, table_id:asc";
             }
         }
-
 
 
         $searchParameters = [

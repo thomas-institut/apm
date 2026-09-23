@@ -14,20 +14,23 @@ class CliToolBox
         fwrite(STDERR, "ERROR: $str");
     }
 
-    public static function getAnswerFromCommandLine(string $question) : string {
+    public static function getAnswerFromCommandLine(string $question): string
+    {
         print $question;
         return fgets(STDIN);
     }
 
-    public static function userRespondsYes(string $question) : bool {
+    public static function userRespondsYes(string $question): bool
+    {
         $question = trim($question);
         $question = "$question Type 'yes' to proceed: ";
         return strtolower(trim(self::getAnswerFromCommandLine($question))) === 'yes';
     }
 
-    public static function sanitizeArg(string $arg, bool $normalizeCase = true) : string {
+    public static function sanitizeArg(string $arg, bool $normalizeCase = true): string
+    {
         $arg = trim($arg);
-        if  ($normalizeCase) {
+        if ($normalizeCase) {
             $arg = strtolower($arg);
         }
         return $arg;

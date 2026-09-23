@@ -22,7 +22,7 @@ interface SearchIndexManager
      */
     public function indexTranscription(PageInfo $pageInfo, int $col,
                                        string   $docTitle, string $transcriptionText, string $langCode,
-                                       string   $transcriberName, string $timeFrom) : void;
+                                       string   $transcriberName, string $timeFrom): void;
 
 
     /**
@@ -36,8 +36,8 @@ interface SearchIndexManager
      * @return void
      * @throws SearchManagerException
      */
-    public function indexEdition(int $tableId, string $chunk, string $title, string $langCode,
-                                 string $editionText, string $editorName,  string $timeFrom): void;
+    public function indexEdition(int    $tableId, string $chunk, string $title, string $langCode,
+                                 string $editionText, string $editorName, string $timeFrom): void;
 
     /**
      * Returns an array with the names of the people who have indexed transcriptions in
@@ -61,7 +61,7 @@ interface SearchIndexManager
      *
      * @return string[]
      */
-    public function getTranscribedDocuments() : array;
+    public function getTranscribedDocuments(): array;
 
     /**
      * Returns an array with the titles of all the editions in the
@@ -69,7 +69,7 @@ interface SearchIndexManager
      *
      * @return string[]
      */
-    public function getEditionTitles() : array;
+    public function getEditionTitles(): array;
 
 
     /**
@@ -80,7 +80,7 @@ interface SearchIndexManager
      * @param IndexType $indexType
      * @return void
      */
-    public function resetIndex(IndexType $indexType) : void;
+    public function resetIndex(IndexType $indexType): void;
 
 
     /**
@@ -96,7 +96,7 @@ interface SearchIndexManager
      * @param string|null $timeFrom
      * @return void
      */
-    public function deleteTranscriptionFromIndex(int $docId, int $pageNumber, int $column, ?string $timeFrom = null) : void;
+    public function deleteTranscriptionFromIndex(int $docId, int $pageNumber, int $column, ?string $timeFrom = null): void;
 
     /**
      * Deletes an edition from the search index if it matches the given tableId and timeFrom
@@ -104,12 +104,12 @@ interface SearchIndexManager
      * If timeFrom is null, the edition will be deleted regardless of the timeFrom field
      *
      * No error is thrown if the edition does not exist in the search index.
- *
+     *
      * @param int $tableId
      * @param string|null $timeFrom
      * @return void
      */
-    public function deleteEditionFromIndex(int $tableId, ?string $timeFrom = null) : void;
+    public function deleteEditionFromIndex(int $tableId, ?string $timeFrom = null): void;
 
 
     /**
@@ -122,9 +122,9 @@ interface SearchIndexManager
      *
      * @param int $tableId
      * @param bool $forceUpdate
-     * @return void
+     * @return bool
      */
-    public function updateEditionInIndex(int $tableId, bool $forceUpdate = false) : void;
+    public function updateEditionInIndex(int $tableId, bool $forceUpdate = false): bool;
 
 
     /**
@@ -135,13 +135,15 @@ interface SearchIndexManager
      *
      * If $forceUpdate is true, the transcription is updated even if there are no changes in the system.
      *
+     * Returns true if the transcription was not empty and needed an update, false otherwise.
+     *
      * @param int $docId
      * @param int $pageNumber
      * @param int $column
      * @param bool $forceUpdate
-     * @return void
+     * @return bool
      */
-    public function updateTranscriptionInIndex(int $docId, int $pageNumber, int $column, bool $forceUpdate = false) : void;
+    public function updateTranscriptionInIndex(int $docId, int $pageNumber, int $column, bool $forceUpdate = false): bool;
 
 
     /**
@@ -173,6 +175,6 @@ interface SearchIndexManager
      * @throws SearchManagerException
      */
     public function searchToken(IndexType $indexType, string $lang, string $token, bool $lemmatize, int $page,
-                                string $docTitle = '', string $creatorName = '', int $pageSize = 100): SearchQueryResult;
+                                string    $docTitle = '', string $creatorName = '', int $pageSize = 100): SearchQueryResult;
 
 }

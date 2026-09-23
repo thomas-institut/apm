@@ -72,7 +72,6 @@ class JobQueueTool implements MultiToolCliUtility
                 break;
 
             case self::CMD_LIST:
-
                 if (!isset($argv[2])) {
                     CliToolBox::printStdErr("Need a type of job to list: all, waiting, running, error");
                     return 1;

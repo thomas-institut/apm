@@ -3,10 +3,10 @@
 namespace APM\CommandLine\ApmCtl;
 
 use APM\CommandLine\MultiToolCli\MultiToolCliUtility;
-use APM\CommandLine\TEIGenerator;
 use APM\System\PublicationManager\PublicationManager;
 use APM\System\PublicationManager\PublicationNotFoundException;
 use APM\System\PublicationManager\ResourceNotFoundException;
+use APM\TEI\EvtTeiGenerator;
 use Exception;
 use ThomasInstitut\ApmPublicationApi\PublicationType;
 use ThomasInstitut\ApmPublicationApi\TranscriptionData;
@@ -31,15 +31,17 @@ class PublicationTool implements MultiToolCliUtility
 
     public static function getUsage(): string
     {
-       $options = [
-           'list' => 'prints current publications',
-           'add <type> <id> [version]' => 'adds a publication of type <type> for resource id <id> (version is a timestring and is optional, defaults to the current version)',
-           'update <id> [version]' => 'updates a publication by id (version is a timestring and is optional, defaults to the current version)',
-           'del <id>' => 'removes a publication by id',
-           'show <id>' => 'shows a publication by id',
-           'export <format> <id>' => 'exports a publication by id as JSON or as TEI-XML for edition publications',
-            ];
-        return implode("\n", array_map(function($key, $value) { return "  $key: $value"; }, array_keys($options), $options));
+        $options = [
+            'list' => 'prints current publications',
+            'add <type> <id> [version]' => 'adds a publication of type <type> for resource id <id> (version is a timestring and is optional, defaults to the current version)',
+            'update <id> [version]' => 'updates a publication by id (version is a timestring and is optional, defaults to the current version)',
+            'del <id>' => 'removes a publication by id',
+            'show <id>' => 'shows a publication by id',
+            'export json|evt <id>' => 'exports a publication by id as JSON or EVT-compatible TEI-XML (only for editions)',
+        ];
+        return implode("\n", array_map(function ($key, $value) {
+            return "  $key: $value";
+        }, array_keys($options), $options));
     }
 
     public static function getDescription(): string
@@ -47,7 +49,7 @@ class PublicationTool implements MultiToolCliUtility
         return self::DESCRIPTION;
     }
 
-    public function run(int $argc, array $argv) : int
+    public function run(int $argc, array $argv): int
     {
 
         if ($argc === 1) {
@@ -68,12 +70,13 @@ class PublicationTool implements MultiToolCliUtility
         };
     }
 
-    private function add(string $type, int $resourceId, string $version) : int {
+    private function add(string $type, int $resourceId, string $version): int
+    {
         if ($resourceId <= 0) {
             print "Error: resource id must be greater than 0\n";
             return 1;
         }
-        if ($type === 'tx' || $type === 'tx-full' ) {
+        if ($type === 'tx' || $type === 'tx-full') {
             $type = PublicationType::Transcription->value;
         }
         if ($type === 'ed' || $type === 'edition') {
@@ -95,7 +98,8 @@ class PublicationTool implements MultiToolCliUtility
         }
     }
 
-    private function update(int $pubId, string $version) : int {
+    private function update(int $pubId, string $version): int
+    {
         if ($pubId <= 0) {
             print "Error: publication id must be greater than 0\n";
         }
@@ -114,7 +118,8 @@ class PublicationTool implements MultiToolCliUtility
     }
 
 
-    private function list() : int {
+    private function list(): int
+    {
         $pm = $this->publicationManager;
         $listings = $pm->list();
         if (count($listings) === 0) {
@@ -128,7 +133,8 @@ class PublicationTool implements MultiToolCliUtility
         return 0;
     }
 
-    private function remove(int $pubId) : int {
+    private function remove(int $pubId): int
+    {
         if ($pubId <= 0) {
             print "Error: publication id must be greater than 0\n";
             return 1;
@@ -143,7 +149,8 @@ class PublicationTool implements MultiToolCliUtility
         }
     }
 
-    private function show(int $pubId) : int {
+    private function show(int $pubId): int
+    {
         if ($pubId <= 0) {
             print "Error: publication id must be greater than 0\n";
             return 1;
@@ -168,7 +175,8 @@ class PublicationTool implements MultiToolCliUtility
     }
 
 
-    private function export(string $format, int $pubId) : int {
+    private function export(string $format, int $pubId): int
+    {
         if ($pubId <= 0) {
             print "Error: publication id must be greater than 0\n";
             return 1;
@@ -181,19 +189,16 @@ class PublicationTool implements MultiToolCliUtility
 
         try {
             $pm = $this->publicationManager;
-            $data = $pm->getPublication($pubId);
+            $pubData = $pm->getPublication($pubId);
 
-            $publicationType = is_object($data->type) && isset($data->type->value)
-                ? $data->type->value
-                : $data->type;
 
-            if ($format === 'tei' && $publicationType !== PublicationType::Edition->value) {
+            if ($format === 'tei' && $pubData->type !== PublicationType::Edition) {
                 print "Error: TEI export is only supported for edition publications\n";
                 return 1;
             }
 
             $json = json_encode(
-                    $data,
+                    $pubData,
                     JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR
                 ) . "\n";
 
@@ -209,8 +214,8 @@ class PublicationTool implements MultiToolCliUtility
 
                 $publication = json_decode($json, false, 512, JSON_THROW_ON_ERROR);
 
-                $teiGenerator = new TEIGenerator();
-                $xmlCode = $teiGenerator->getTEI(
+                $teiGenerator = new EvtTeiGenerator();
+                $xmlCode = $teiGenerator->getEvtTEI(
                     $publication->title,
                     $publication->mainText,
                     $publication->apparatuses,
@@ -240,9 +245,10 @@ class PublicationTool implements MultiToolCliUtility
         }
     }
 
-    private function printTranscriptionData(TranscriptionData $data) : void {
+    private function printTranscriptionData(TranscriptionData $data): void
+    {
         $linesToPrint = [];
-        $linesToPrint[] =  sprintf("Document %d: %s", $data->id, $data->title);
+        $linesToPrint[] = sprintf("Document %d: %s", $data->id, $data->title);
         $linesToPrint[] = sprintf("(%s, %d pages)", $data->languageCode, count($data->pages));
         $linesToPrint[] = " ";
         foreach ($data->pages as $page) {

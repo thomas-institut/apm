@@ -36,15 +36,14 @@ TXT;
 
     const string DESCRIPTION = "Transcription management functions";
     const string MAGIC_WORD = 'IKnowWhatImDoing';
-    
 
 
     public function __construct(
         private readonly TranscriptionManager $txManager,
-        private readonly DocumentManager $docManager,
-        private readonly ApmTableNames $apmTableNames,
-        private readonly SystemManager $systemManager,
-        private readonly PdoProvider $pdoProvider
+        private readonly DocumentManager      $docManager,
+        private readonly ApmTableNames        $apmTableNames,
+        private readonly SystemManager        $systemManager,
+        private readonly PdoProvider          $pdoProvider
     )
     {
 
@@ -60,109 +59,110 @@ TXT;
         CliToolBox::printErrorMessage($str);
     }
 
-    public function run(int $argc, array $argv) : int
+    public function run(int $argc, array $argv): int
     {
-       if ($argc === 1) {
-           print self::USAGE . "\n";
-           return 0;
-       }
+        if ($argc === 1) {
+            print self::USAGE . "\n";
+            return 0;
+        }
 
-       switch($argv[1]) {
-           case 'info':
-               if (!isset($argv[2])) {
-                   $this->printErrorMsg("Need page and column information");
-                   return 1;
-               }
-               $data = $this->getPageColumnInfoFromArgumentString($argv[2]);
-               if (!$this->reportArgErrors($data, $argv[2])) {
-                   return 1;
-               }
-               [$pageInfo, $columNumber] = $data;
+        switch ($argv[1]) {
+            case 'info':
+                if (!isset($argv[2])) {
+                    $this->printErrorMsg("Need page and column information");
+                    return 1;
+                }
+                $data = $this->getPageColumnInfoFromArgumentString($argv[2]);
+                if (!$this->reportArgErrors($data, $argv[2])) {
+                    return 1;
+                }
+                [$pageInfo, $columNumber] = $data;
 
-               $this->printTranscriptionInfo($pageInfo, $columNumber);
-               break;
+                $this->printTranscriptionInfo($pageInfo, $columNumber);
+                break;
 
-           case 'addCol':
-               if (!isset($argv[3])) {
-                   $this->printErrorMsg("Need page and column information");
-                   return 1;
-               }
+            case 'addCol':
+                if (!isset($argv[3])) {
+                    $this->printErrorMsg("Need page and column information");
+                    return 1;
+                }
 
-               $data = $this->getPageColumnInfoFromArgumentString($argv[2]);
-               if (!$this->reportArgErrors($data, $argv[2], false)) {
-                   return 1;
-               }
-               [$pageInfo, ] = $data;
+                $data = $this->getPageColumnInfoFromArgumentString($argv[2]);
+                if (!$this->reportArgErrors($data, $argv[2], false)) {
+                    return 1;
+                }
+                [$pageInfo,] = $data;
 
-               $numCols = intval($argv[3]);
-               if ($numCols <= 0 || $numCols > 2) {
-                   $this->printErrorMsg("Sorry, won't add more than 2 columns at once");
-                   return 0;
-               }
-               $requireConfirmation = true;
+                $numCols = intval($argv[3]);
+                if ($numCols <= 0 || $numCols > 2) {
+                    $this->printErrorMsg("Sorry, won't add more than 2 columns at once");
+                    return 0;
+                }
+                $requireConfirmation = true;
 
-               if (isset($argv[4]) && $argv[4] === self::MAGIC_WORD) {
-                   $requireConfirmation = false;
-               }
+                if (isset($argv[4]) && $argv[4] === self::MAGIC_WORD) {
+                    $requireConfirmation = false;
+                }
 
-               $this->addTranscriptionColumn($pageInfo, $numCols, $requireConfirmation);
-               break;
+                $this->addTranscriptionColumn($pageInfo, $numCols, $requireConfirmation);
+                break;
 
-           case 'delete':
-               if (!isset($argv[2])) {
-                   $this->printErrorMsg("Need page and column information");
-                   return 1;
-               }
-               $forReal = false;
-               if (isset($argv[3]) && $argv[3] === self::MAGIC_WORD) {
-                   $forReal = true;
-               }
-               $data = $this->getPageColumnInfoFromArgumentString($argv[2]);
-               if (!$this->reportArgErrors($data, $argv[2])) {
-                   return 1;
-               }
-               [$pageInfo, $columNumber] = $data;
-               $this->deleteTranscription($pageInfo, $columNumber, $forReal);
-               break;
+            case 'delete':
+                if (!isset($argv[2])) {
+                    $this->printErrorMsg("Need page and column information");
+                    return 1;
+                }
+                $forReal = false;
+                if (isset($argv[3]) && $argv[3] === self::MAGIC_WORD) {
+                    $forReal = true;
+                }
+                $data = $this->getPageColumnInfoFromArgumentString($argv[2]);
+                if (!$this->reportArgErrors($data, $argv[2])) {
+                    return 1;
+                }
+                [$pageInfo, $columNumber] = $data;
+                $this->deleteTranscription($pageInfo, $columNumber, $forReal);
+                break;
 
-           case 'move':
-               if ($argc < 3) {
-                   $this->printErrorMsg("Need to/from page and column information");
-                   return 1;
-               }
-               $fromData = $this->getPageColumnInfoFromArgumentString($argv[2]);
-               if (!$this->reportArgErrors($fromData, $argv[2])) {
-                   return 1;
-               }
-               [$fromPageInfo, $fromColumNumber] = $fromData;
-               $toData = $this->getPageColumnInfoFromArgumentString($argv[3]);
-               if (!$this->reportArgErrors($toData, $argv[3])) {
-                   return 1;
-               }
-               [$toPageInfo, $toColumnNumber] = $toData;
-               $requireConfirmation = true;
+            case 'move':
+                if ($argc < 3) {
+                    $this->printErrorMsg("Need to/from page and column information");
+                    return 1;
+                }
+                $fromData = $this->getPageColumnInfoFromArgumentString($argv[2]);
+                if (!$this->reportArgErrors($fromData, $argv[2])) {
+                    return 1;
+                }
+                [$fromPageInfo, $fromColumNumber] = $fromData;
+                $toData = $this->getPageColumnInfoFromArgumentString($argv[3]);
+                if (!$this->reportArgErrors($toData, $argv[3])) {
+                    return 1;
+                }
+                [$toPageInfo, $toColumnNumber] = $toData;
+                $requireConfirmation = true;
 
-               if (isset($argv[4]) && $argv[4] === self::MAGIC_WORD) {
-                   $requireConfirmation = false;
-               }
+                if (isset($argv[4]) && $argv[4] === self::MAGIC_WORD) {
+                    $requireConfirmation = false;
+                }
 
-               $this->moveTranscription($fromPageInfo, $fromColumNumber, $toPageInfo, $toColumnNumber, $requireConfirmation);
-               break;
+                $this->moveTranscription($fromPageInfo, $fromColumNumber, $toPageInfo, $toColumnNumber, $requireConfirmation);
+                break;
 
-           default:
-               print "Unrecognized option: "  . $argv[1] ."\n";
-               return 0;
-       }
-       return 1;
+            default:
+                print "Unrecognized option: " . $argv[1] . "\n";
+                return 0;
+        }
+        return 1;
     }
 
-    private function reportArgErrors(?array $data, string $arg, bool $checkColumns = true) : bool {
+    private function reportArgErrors(?array $data, string $arg, bool $checkColumns = true): bool
+    {
         if ($data === null) {
             $this->printErrorMsg("Invalid page column information: $arg");
             return false;
         }
         /** PageInfo $pageInfo */
-        [ $pageInfo, $columNumber] = $data;
+        [$pageInfo, $columNumber] = $data;
         if ($pageInfo === null) {
             $this->printErrorMsg("Page does not exist: $arg");
             return false;
@@ -198,7 +198,8 @@ TXT;
      * @param string $arg
      * @return array{PageInfo, int}|null
      */
-    private function getPageColumnInfoFromArgumentString(string $arg) : ?array {
+    private function getPageColumnInfoFromArgumentString(string $arg): ?array
+    {
 
 
         $fields = explode(':', $arg);
@@ -256,10 +257,11 @@ TXT;
                 }
             }
         }
-        return [ $pageInfo, $realColumnNumber ];
+        return [$pageInfo, $realColumnNumber];
     }
 
-    private function getTranscriptionInfo(PageInfo $pageInfo, int $columnNumber) : ?array {
+    private function getTranscriptionInfo(PageInfo $pageInfo, int $columnNumber): ?array
+    {
         $txManager = $this->txManager;
         $txInfo = [
             'pageId' => $pageInfo->pageId,
@@ -283,23 +285,25 @@ TXT;
         if (count($versions) > 0) {
             $txInfo["firstChange"] = $versions[0]->timeFrom;
             $txInfo["lastChange"] = $versions[count($versions) - 1]->timeFrom;
-            $txInfo["lastAuthorId"] =  $versions[count($versions) - 1]->authorTid;
+            $txInfo["lastAuthorId"] = $versions[count($versions) - 1]->authorTid;
         }
         return $txInfo;
     }
 
-    private function printTranscriptionInfo(PageInfo $pageInfo, int $column) : bool {
+    private function printTranscriptionInfo(PageInfo $pageInfo, int $column): bool
+    {
         $txInfo = $this->getTranscriptionInfo($pageInfo, $column);
         print ArrayPrint::sPrintAssociativeArray($txInfo, ArrayPrint::STYLE_COLUMNS);
         return isset($txInfo["error"]);
     }
 
 
-    private function deleteTranscription(PageInfo $pageInfo, int $column, bool $forReal = false) : void {
+    private function deleteTranscription(PageInfo $pageInfo, int $column, bool $forReal = false): void
+    {
         $pageId = $pageInfo->pageId;
         $docId = $pageInfo->docId;
 
-        if (!$this->printTranscriptionInfo($pageInfo,$column)) { // "!" added by lukas, correct?
+        if (!$this->printTranscriptionInfo($pageInfo, $column)) { // "!" added by lukas, correct?
             if (CliToolBox::userRespondsYes("Are you sure you want to delete this transcription?")) {
                 $tableNames = $this->apmTableNames;
                 $dbConn = $this->getDbConn();
@@ -338,7 +342,7 @@ TXT;
                 print " - Deleted " . $result->rowCount() . " versions\n";
                 if ($forReal) {
                     $dbConn->commit();
-                    $this->systemManager->onTranscriptionUpdated($lastAuthor, $docId,$pageId, $column);
+                    $this->systemManager->onTranscriptionUpdated($lastAuthor, $docId, $pageId, $column);
                 } else {
                     print "Not really, need the magic word to actually do it.\n";
                     $dbConn->rollBack();
@@ -349,7 +353,8 @@ TXT;
         }
     }
 
-    private function moveTranscription(PageInfo $fromPage, int $fromColumn, PageInfo $toPage, int $toColumn, bool $requireConfirmation) : void {
+    private function moveTranscription(PageInfo $fromPage, int $fromColumn, PageInfo $toPage, int $toColumn, bool $requireConfirmation): void
+    {
 
         // get page and doc ids
         $fromPageId = $fromPage->pageId;
@@ -373,7 +378,7 @@ TXT;
                 $dbConn->beginTransaction();
 
                 // check if toPage not already has elements
-                $checkToPageElements= "SELECT * FROM $elements WHERE $elements.page_id=$toPageId AND $elements.column_number=$toColumn";
+                $checkToPageElements = "SELECT * FROM $elements WHERE $elements.page_id=$toPageId AND $elements.column_number=$toColumn";
                 $resultCheck = $dbConn->query($checkToPageElements);
                 $num_elements = $resultCheck->rowCount();
 
@@ -397,7 +402,7 @@ TXT;
                     $this->systemManager->onTranscriptionUpdated($lastAuthor, $toDocId, $toPage->pageNumber, $toColumn);
 
                     print("\nRESULT:\n");
-                    $this->printTranscriptionInfo($toPage,$toColumn);
+                    $this->printTranscriptionInfo($toPage, $toColumn);
                 }
             }
         } else {

@@ -19,10 +19,15 @@ use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 class CacheTool implements MultiToolCliUtility
 {
     const string CMD = 'cache';
-
-    const string USAGE = self::CMD . " <option>\n\nOptions:\n  info: print cache size, length, etc\n  delete <key>: deletes a key\n  flush <all|Sys|Mem>: erases all cache entries in given cache\n  clean: removes all expired entries\n";
     const string DESCRIPTION = "Cache management functions: info, clean, etc";
     const string FLUSH_SAFE_WORD = 'IKnowWhatImDoing';
+
+
+    const string CmdInfo = 'info';
+    const string CmdDelete = 'delete';
+    const string CmdFlush = 'flush';
+    const string CmdClean = 'clean';
+
 
     public function __construct(
         private readonly SystemMainDataCache      $systemMainDataCache,
@@ -33,21 +38,22 @@ class CacheTool implements MultiToolCliUtility
     )
     {
 
+
     }
 
     public function run(int $argc, array $argv): int
     {
         if ($argc === 1) {
-            print self::USAGE . "\n";
+            print $this->getUsage() . "\n";
             return 0;
         }
 
         switch ($argv[1]) {
-            case 'info':
+            case self::CmdInfo:
                 $this->printCacheInfo();
                 break;
 
-            case 'flush':
+            case self::CmdFlush:
                 if ($argc < 4) {
                     print "Please use 'cache flush <cacheName> <theSafeWord>' to actually flush the cache\n";
                     return 0;
@@ -60,7 +66,7 @@ class CacheTool implements MultiToolCliUtility
                 $this->flushCache(CliToolBox::sanitizeArg($argv[2]));
                 break;
 
-            case 'clean':
+            case self::CmdClean:
                 $cacheName = 'all';
                 if (isset($argv[2])) {
                     $cacheName = CliToolBox::sanitizeArg($argv[2]);
@@ -68,7 +74,7 @@ class CacheTool implements MultiToolCliUtility
                 $this->cleanCache($cacheName);
                 break;
 
-            case 'delete':
+            case self::CmdDelete:
                 if ($argc < 3) {
                     print "Need a cache key to delete\n";
                     return 0;
@@ -194,7 +200,28 @@ class CacheTool implements MultiToolCliUtility
 
     static public function getUsage(): string
     {
-        return self::USAGE;
+        $lines = [];
+
+        $lines[] = "Cache tool usage:";
+
+        $cacheNames = "Mem|Sys|Dir|all";
+
+        $def = [
+            self::CmdInfo => self::CmdInfo . ': prints cache size, length, etc.',
+            self::CmdFlush => sprintf("%s %s <magicWord>: flushes a cache", self::CmdFlush, $cacheNames),
+            self::CmdClean => sprintf("%s %s: removes expired entries from a cache", self::CmdClean, $cacheNames),
+            self::CmdDelete => sprintf("%s <key>: Deletes a cache key from the main cache", self::CmdDelete),
+        ];
+
+        $keys = array_keys($def);
+        sort($keys);
+
+        foreach ($keys as $key) {
+            $lines[] = "  " . $def[$key];
+        }
+
+        return implode("\n", $lines);
+
     }
 
     static public function getDescription(): string

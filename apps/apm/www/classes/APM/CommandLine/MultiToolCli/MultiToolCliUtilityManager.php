@@ -3,8 +3,6 @@
 namespace APM\CommandLine\MultiToolCli;
 
 
-
-
 use APM\CommandLine\ApmCliUtility;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
@@ -28,13 +26,14 @@ class MultiToolCliUtilityManager extends ApmCliUtility
 
         $this->calledScriptName = basename($argv[0]);
         $this->commandArgv = array_slice($argv, 1);
-        $this->commandArgc = $argc -1;
+        $this->commandArgc = $argc - 1;
         $this->description = $description;
 
     }
 
-    protected  function defineUtilities(array $utilityClasses) : void {
-        foreach($utilityClasses as $utilityClass) {
+    protected function defineUtilities(array $utilityClasses): void
+    {
+        foreach ($utilityClasses as $utilityClass) {
             $this->utilities[$utilityClass::getName()] = new MultiToolCliUtilityDefinition(
                 $utilityClass::getName(),
                 $utilityClass::getDescription(),
@@ -45,8 +44,7 @@ class MultiToolCliUtilityManager extends ApmCliUtility
     }
 
 
-
-    public function main(int $argc, array $argv) : int
+    public function main(int $argc, array $argv): int
     {
         if ($argc === 1) {
             $this->printGeneralHelp();
@@ -83,20 +81,22 @@ class MultiToolCliUtilityManager extends ApmCliUtility
         return 1;
     }
 
-    private function utilityExists($command) : bool{
+    private function utilityExists($command): bool
+    {
         return isset($this->utilities[$command]);
     }
 
-    private function printGeneralHelp() : void {
+    private function printGeneralHelp(): void
+    {
 
         printf("$this->description\n");
         printf("   %s <command> [<command arguments>]  : Runs the given command\n", $this->calledScriptName);
         printf("   %s help <command>: Prints help message for the given command\n", $this->calledScriptName);
         print("\n");
         printf("Commands:\n");
-        foreach ($this->utilities as $command => $commandInfo) {
-            printf("   %s: %s\n", $command, $commandInfo->description);
-        }
-        print("\n");
+
+        print MultiToolCliUtilityDefinition::getInfo($this->utilities, 'description');
+        print "\n";
+
     }
 }

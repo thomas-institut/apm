@@ -1,16 +1,16 @@
 <?php
 
-namespace APM\CommandLine;
+namespace APM\TEI;
 
 /**
  * Generates TEI XML from edition data.
  */
-class TEIGenerator
+class EvtTeiGenerator
 {
     /**
      *
      * Returns the TEI code for the given data extracted from a json encoding of an edition
-     * 
+     *
      * @param string $title
      * @param array $mainText
      * @param array $apparatuses
@@ -21,17 +21,18 @@ class TEIGenerator
      * @param array $siglas
      * @return string
      */
-    public function getTEI(
+    public function getEvtTEI(
         string $title,
-        array $mainText,
-        array $apparatuses,
-        array $witnesses,
+        array  $mainText,
+        array  $apparatuses,
+        array  $witnesses,
         string $lang = "",
         string $desc = "",
         string $date = "",
-        array $siglas = []
-    ): string {
-        
+        array  $siglas = []
+    ): string
+    {
+
         $witnessesFormatted = $this->formatWitnessesForTei($witnesses);
         $siglaMap = $this->buildSiglaMap($witnesses);
         [$appEntryFrom, $appEntryTo] = $this->indexApparatusEntries($apparatuses);
@@ -251,13 +252,14 @@ class TEIGenerator
      * @return void
      */
     private function appendRenderedToken(
-        string &$body,
-        array $mainText,
-        int $index,
-        object $token,
-        bool &$inItalic,
+        string   &$body,
+        array    $mainText,
+        int      $index,
+        object   $token,
+        bool     &$inItalic,
         callable $closeItalic
-    ): void {
+    ): void
+    {
         if ($token->type === 'text') {
             foreach ($token->text as $part) {
                 $isPartItalic = isset($part->fontStyle) && $part->fontStyle === 'italic';
@@ -510,7 +512,7 @@ class TEIGenerator
 
         try {
             if ($dom->loadXML(trim($xml))) {
-                return trim((string) $dom->saveXML());
+                return trim((string)$dom->saveXML());
             }
         } catch (\Exception $e) {
         }

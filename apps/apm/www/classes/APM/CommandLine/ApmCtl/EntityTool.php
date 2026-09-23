@@ -13,22 +13,22 @@ use RuntimeException;
 use ThomasInstitut\EntitySystem\Tid;
 use ThomasInstitut\TimeString\InvalidTimeZoneException;
 
-class EntityTool  implements MultiToolCliUtility
+class EntityTool implements MultiToolCliUtility
 {
 
     const string CMD = 'entity';
 
-    const string USAGE = self::CMD . " <option>\n\nOptions:\n" .
-        " info <id>: prints info about the given entity\n" .
-        " newId: generates a new unique entity id\n" .
-        " merge <entity1> <entity2>: merges entity 1 into entity 2\n" .
-        " create <type>: creates a new entity\n";
+    const string USAGE = "Entity tool usage:\n" .
+    "  info <id>: prints info about the given entity\n" .
+    "  newId: generates a new unique entity id\n" .
+    "  merge <entity1> <entity2>: merges entity 1 into entity 2\n" .
+    "  create <type>: creates a new entity\n";
     const string DESCRIPTION = "Entity related functions";
 
 
     public function __construct(
         private readonly ApmEntitySystemInterface $entitySystem,
-        private readonly SystemManager $systemManager
+        private readonly SystemManager            $systemManager
     )
     {
     }
@@ -52,14 +52,14 @@ class EntityTool  implements MultiToolCliUtility
      * @throws InvalidTimeZoneException|InvalidEntityTypeException
      * @throws EntityDoesNotExistException
      */
-    public function run(int $argc, array $argv) : int
+    public function run(int $argc, array $argv): int
     {
         if ($argc === 1) {
             print self::USAGE . "\n";
             return 0;
         }
 
-        switch(strtolower($argv[1])) {
+        switch (strtolower($argv[1])) {
             case 'newid':
                 $numTids = 1;
                 if (isset($argv[2])) {
@@ -100,14 +100,15 @@ class EntityTool  implements MultiToolCliUtility
                 break;
 
             default:
-                print "Unrecognized option: "  . $argv[1] ."\n";
+                print "Unrecognized option: " . $argv[1] . "\n";
                 return 0;
         }
         return 1;
     }
 
 
-    private function merge(string $entity1, string $entity2) : void {
+    private function merge(string $entity1, string $entity2): void
+    {
         $id1 = Tid::fromString($entity1);
         $id2 = Tid::fromString($entity2);
 
@@ -155,7 +156,7 @@ class EntityTool  implements MultiToolCliUtility
         print "Merge Editorial Note: ";
         $note = fgets(STDIN);
         $note = trim($note);
-        if ($note === '' ) {
+        if ($note === '') {
             print "Editorial note cannot be empty\n";
             return;
         }
@@ -173,7 +174,8 @@ class EntityTool  implements MultiToolCliUtility
      * @throws InvalidEntityTypeException
      * @throws EntityDoesNotExistException
      */
-    private function createEntity(int $type) : void {
+    private function createEntity(int $type): void
+    {
 
         $es = $this->entitySystem;
 
@@ -213,7 +215,8 @@ class EntityTool  implements MultiToolCliUtility
     /**
      * @throws InvalidTimeZoneException
      */
-    private function printInfo(string $tidString) : void {
+    private function printInfo(string $tidString): void
+    {
         $tid = Tid::fromString($tidString);
 
         if ($tid === -1) {
@@ -236,22 +239,23 @@ class EntityTool  implements MultiToolCliUtility
 
         foreach ($data->statements as $statement) {
             $objectString = gettype($statement->object) === 'string' ? "'$statement->object'" : $statement->object;
-            printf ("      %d %s %s\n", $statement->predicate, $objectString, $statement->isCancelled() ? '(Cancelled)' : '');
+            printf("      %d %s %s\n", $statement->predicate, $objectString, $statement->isCancelled() ? '(Cancelled)' : '');
         }
     }
 
     /**
      * @throws InvalidTimeZoneException
      */
-    private function getNewTid(int $numTids) : void{
+    private function getNewTid(int $numTids): void
+    {
         for ($i = 0; $i < $numTids; $i++) {
             try {
                 $tid = Tid::generateUnique();
-            } catch(RuntimeException $exception) {
+            } catch (RuntimeException $exception) {
                 print "ERROR: " . $exception->getMessage() . "\n";
                 return;
             }
-            printf("%s, %d, 0x%s, %s\n",Tid::toBase36String($tid), $tid,  Tid::toHexString($tid), Tid::toTimeString($tid) );
+            printf("%s, %d, 0x%s, %s\n", Tid::toBase36String($tid), $tid, Tid::toHexString($tid), Tid::toTimeString($tid));
         }
     }
 }

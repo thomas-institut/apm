@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Http\Message\ResponseInterface as Response;
 use Psr\Http\Message\ServerRequestInterface as Request;
+use Psr\Log\LoggerInterface;
 use Slim\Interfaces\RouteParserInterface;
 use Slim\Psr7\Response as SlimResponse;
 use ThomasInstitut\ApmPublicationApi\PublicationData;
@@ -39,12 +40,12 @@ class ApiPublicationTest extends TestCase
         $logger->method('withName')->willReturn($logger);
 
         $this->systemManager->method('getConfig')->willReturn(['languages' => [], 'devMode' => false]);
-        $this->systemManager->method('getLogger')->willReturn($logger);
 //        $this->systemManager->method('getRouter')->willReturn($this->createMock(RouteParserInterface::class));
 
         $this->container->method('get')->willReturnMap([
             [SystemManager::class, $this->systemManager],
             [ApmContainerKey::API_USER_ID, 1],
+            [LoggerInterface::class, $logger],
             [PublicationManager::class, $this->publicationManager],
         ]);
 

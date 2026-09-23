@@ -40,8 +40,6 @@ use Slim\Views\Twig;
 use ThomasInstitut\DataCache\DataCache;
 use ThomasInstitut\DataCache\InMemoryDataCache;
 use ThomasInstitut\DataTable\InMemoryDataTable;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
 /**
  * Description of SystemManagerMockup
  *
@@ -49,8 +47,7 @@ use Monolog\Handler\StreamHandler;
  */
 class SystemManagerMockup extends SystemManager {
     
-    private $logger;
-     private $sm;
+    private $sm;
     private $pm;
     /**
      * @var Twig
@@ -73,13 +70,6 @@ class SystemManagerMockup extends SystemManager {
 
     public function __construct() {
         parent::__construct([]);
-        $logStream = new StreamHandler('test.log', 
-            Logger::DEBUG);
-        $logger = new Logger('SM_MOCKUP');
-        $logger->pushHandler($logStream);
-        
-        $this->logger = $logger;
-
         $this->sm = new SettingsManager();
         $this->pm = new DataTablePresetManager(new InMemoryDataTable());
         $this->tm = new MockTranscriptionManager();
@@ -89,10 +79,6 @@ class SystemManagerMockup extends SystemManager {
     
     public function checkSystemSetup() {
         return true;
-    }
-
-    public function getLogger() : Logger {
-        return $this->logger;
     }
 
     public function getPresetsManager() : PresetManager {

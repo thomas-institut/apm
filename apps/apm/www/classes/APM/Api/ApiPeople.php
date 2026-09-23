@@ -9,10 +9,12 @@ use APM\EntitySystem\Schema\Entity;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Person\InvalidPersonNameException;
+use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
 use APM\System\SystemManager;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
+use APM\System\Work\WorkManager;
 use APM\ToolBox\HttpStatus;
 use Exception;
 use Psr\Container\ContainerExceptionInterface;
@@ -231,21 +233,28 @@ class ApiPeople extends ApiController
 
         $personTid =  (int) $request->getAttribute('tid');
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__ . ':' . Tid::toBase36String($personTid));
+
+        /** @var WorkManager $workManager */
+        $workManager = $this->container->get(WorkManager::class);
+        /** @var PersonManagerInterface $personManager */
+        $personManager = $this->container->get(PersonManagerInterface::class);
+        /** @var SystemMainDataCache $systemMainDataCache */
+        $cache = $this->container->get(SystemMainDataCache::class);
+
         // check cache
         $cacheKey = CacheKey::ApiPeopleWorksByPerson . $personTid;
-        $cache = $this->systemManager->getSystemDataCache();
 
         try {
             $cachedString = $cache->get($cacheKey);
             $data = unserialize($cachedString);
         } catch (ItemNotInCacheException) {
             try {
-                $this->systemManager->getPersonManager()->getPersonEssentialData($personTid);
+                $personManager->getPersonEssentialData($personTid);
             } catch (PersonNotFoundException) {
                 $this->logger->info("Person $personTid not found");
                 return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
             }
-            $works = $this->systemManager->getWorkManager()->getWorksByAuthor($personTid);
+            $works = $workManager->getWorksByAuthor($personTid);
             $data = ExportableObject::getArrayExportObject($works);
             $cache->set($cacheKey, serialize($data), self::WorksByPersonTtl);
         }

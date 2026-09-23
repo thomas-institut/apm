@@ -96,10 +96,19 @@ class ApiDocuments extends ApiController
      * @param Request $request
      * @param Response $response
      * @return Response
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
      */
     public function getDocId(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
+
+        /** @var DocumentManager $docManager */
+        $docManager = $this->container->get(DocumentManager::class);
+
+        /** @var SystemMainDataCache $sysMainDataCache */
+        $sysMainDataCache = $this->container->get(SystemMainDataCache::class);
+
         $givenDocId = intval($request->getAttribute('docId'));
 
         if ($givenDocId < 1) {
@@ -121,7 +130,7 @@ class ApiDocuments extends ApiController
         $cacheKey = implode(':', ['ApiDocuments', 'docId', $givenDocId]);
 
         try {
-            $docId = intval($this->systemManager->getSystemDataCache()->get($cacheKey));
+            $docId = intval($sysMainDataCache->get($cacheKey));
             return $this->responseWithJson($response, [
                 'givenDocId' => $givenDocId,
                 'docId' => $docId,
@@ -131,13 +140,13 @@ class ApiDocuments extends ApiController
         }
 
         try {
-            $docInfo = $this->systemManager->getDocumentManager()->getDocInfo($givenDocId);
+            $docInfo = $docManager->getDocInfo($givenDocId);
         } catch (DocumentNotFoundException) {
             return $this->responseWithJson($response, [
                 'error' => "Document not found"
             ], HttpStatus::NOT_FOUND);
         }
-        $this->systemManager->getSystemDataCache()->set($cacheKey, $docInfo->id, 0);
+        $sysMainDataCache->set($cacheKey, $docInfo->id, 0);
 
         return $this->responseWithJson($response, [
             'givenDocId' => $givenDocId,
@@ -202,6 +211,10 @@ class ApiDocuments extends ApiController
         return $this->responseWithStatus($response, 200);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getPageTypes(Request $request, Response $response): Response
     {
         /** @var ApmEntitySystemInterface $es */
@@ -554,6 +567,10 @@ class ApiDocuments extends ApiController
         return $this->responseWithJson($response, $numColumns);
     }
 
+    /**
+     * @throws ContainerExceptionInterface
+     * @throws NotFoundExceptionInterface
+     */
     public function getPageInfo(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);

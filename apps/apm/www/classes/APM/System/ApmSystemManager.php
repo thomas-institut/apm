@@ -40,7 +40,6 @@ use APM\System\Jobs\UpdateApiUsersCtDataForUserJob;
 use APM\System\Jobs\UpdateApiUsersTranscribedPagesDataJob;
 use APM\System\Jobs\UpdateWorksCacheJob;
 use APM\System\Person\PersonManagerInterface;
-use APM\System\User\UserManagerInterface;
 use APM\System\Work\WorkManager;
 use APM\ToolBox\Resettable;
 use Psr\Container\ContainerExceptionInterface;
@@ -287,15 +286,6 @@ class ApmSystemManager extends SystemManager
             return -1;
         }
         return $data->authorId;
-    }
-
-    public function getUserManager(): UserManagerInterface
-    {
-        try {
-            return $this->ci->get(UserManagerInterface::class);
-        } catch (NotFoundExceptionInterface|ContainerExceptionInterface $e) {
-            throw new RuntimeException('User manager not found', 0, $e);
-        }
     }
 
     /**

@@ -11,6 +11,7 @@ use APM\System\Cache\SystemMainDataCache;
 use APM\System\Person\InvalidPersonNameException;
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\System\Work\WorkManager;
@@ -55,7 +56,9 @@ class ApiPeople extends ApiController
             return $this->responseWithStatus($response, HttpStatus::NOT_FOUND);
         }
         try {
-            if ($data->isUser && !$this->systemManager->getUserManager()->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
+            /** @var UserManagerInterface $userManager */
+            $userManager = $this->container->get(UserManagerInterface::class);
+            if ($data->isUser && !$userManager->isUserAllowedTo($this->apiUserId, UserTag::MANAGE_USERS)) {
                 $data->userEmailAddress = "N/A";
                 $data->userName = 'N/A';
                 $data->userTags = [];

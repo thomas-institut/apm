@@ -166,7 +166,9 @@ class ApiDocuments extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-        if ($this->systemManager->getUserManager()->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->container->get(UserManagerInterface::class);
+        if ($userManager->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             $this->logger->error("User is not authorized to update page settings",
                 ['apiUserTid' => $this->apiUserId,
                     'apiError' => ApiController::API_ERROR_NOT_AUTHORIZED,

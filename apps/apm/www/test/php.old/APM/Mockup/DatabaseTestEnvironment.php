@@ -24,6 +24,7 @@ use APM\System\ApmConfigParameter;
 use APM\System\ApmContainerKey;
 use APM\System\Person\InvalidPersonNameException;
 use APM\System\User\InvalidUserNameException;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNameAlreadyInUseException;
 use APM\SystemProfiler;
 use AverroesProject\Data\DataManager;
@@ -84,7 +85,8 @@ class DatabaseTestEnvironment {
     }
 
     public function createUserByUserName(string $userName) : int {
-        $userManager = $this->getSystemManager()->getUserManager();
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->getContainer()->get(UserManagerInterface::class);
         $personManager = $this->getSystemManager()->getPersonManager();
         try {
             $userTid = $personManager->createPerson($userName, $userName);

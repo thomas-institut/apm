@@ -16,6 +16,7 @@ use APM\StringMatcher\NameMatcher;
 use APM\StringMatcher\SimpleIndexElement;
 use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
+use APM\System\User\UserManagerInterface;
 use APM\System\User\UserNotFoundException;
 use APM\System\User\UserTag;
 use APM\ToolBox\HttpStatus;
@@ -117,7 +118,8 @@ class ApiEntity extends ApiController
     public function statementEdition(Request $request, Response $response) : Response {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
 
-        $userManager = $this->systemManager->getUserManager();
+        /** @var UserManagerInterface $userManager */
+        $userManager = $this->container->get(UserManagerInterface::class);
 
         if ($userManager->hasTag($this->apiUserId, UserTag::READ_ONLY)) {
             return $this->responseWithError($response,

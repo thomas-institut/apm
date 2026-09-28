@@ -117,7 +117,7 @@ describe('EditionTypesettingHelper', () => {
     const entryTextBoxes = paragraphs[1].getList().filter((item) => item instanceof TextBox) as TextBox[];
     const singlePageEntryTextBoxes = paragraphs[2].getList().filter((item) => item instanceof TextBox) as TextBox[];
 
-    expect(entryTextBoxes[0].getText()).toBe('6r–6v:5–8');
+    expect(entryTextBoxes[0].getText()).toBe('6r:5-6v:8');
     expect(entryTextBoxes[0].getFontWeight()).toBe('bold');
     expect(entryTextBoxes.map((item) => item.getText()).join(' ')).toContain('lemma');
     expect(entryTextBoxes.map((item) => item.getText()).join(' ')).toContain('A note');

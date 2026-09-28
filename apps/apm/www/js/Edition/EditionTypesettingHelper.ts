@@ -455,11 +455,10 @@ export class EditionTypesettingHelper {
       const entry = endNotesApparatus.entries[i];
       const rangeInfo = this.getEndNoteRangeInfo(entry, pages);
       if (rangeInfo !== null) {
-        const pageRange = rangeInfo.pageFrom === rangeInfo.pageTo
-          ? rangeInfo.pageFrom
-          : `${rangeInfo.pageFrom}${enDash}${rangeInfo.pageTo}`;
-        const lineRange = this.getLineStringFromRange(rangeInfo.lineFrom, rangeInfo.lineTo);
-        typesetterItems.push(...await this.getTsItemsForString(`${pageRange}:${lineRange}`, 'apparatus apparatusLineNumbers', textDirection));
+        const locator = rangeInfo.pageFrom === rangeInfo.pageTo
+          ? `${rangeInfo.pageFrom}:${this.getLineStringFromRange(rangeInfo.lineFrom, rangeInfo.lineTo)}`
+          : `${rangeInfo.pageFrom}:${rangeInfo.lineFrom}-${rangeInfo.pageTo}:${rangeInfo.lineTo}`;
+        typesetterItems.push(...await this.getTsItemsForString(locator, 'apparatus apparatusLineNumbers', textDirection));
         typesetterItems.push(this.createPenalty(InfinitePenalty));
         typesetterItems.push((await this.createGlue('apparatus')).setTextDirection(textDirection));
       }

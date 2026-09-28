@@ -32,6 +32,7 @@ use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use Typesense\Client;
 use Typesense\Exceptions\TypesenseClientError;
+use function PHPUnit\Framework\countOf;
 
 class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInterface, CacheAware
 {
@@ -87,6 +88,8 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $this->logger->debug("Transcription is too short for lemmatization...");
         }
 
+        $transcriberId = $this->getPersonIdByName($transcriberName);
+
         try {
             $this->getTypesenseClient()->collections[$indexName]->documents->create([
                 'title' => $docTitle,
@@ -97,7 +100,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 'pageID' => (string)$pageInfo->pageId,
                 'docID' => $pageInfo->docId,
                 'lang' => $langCode,
-                'creator' => $transcriberName,
+                'creator' => $transcriberId,
                 'transcription_tokens' => $lemmatizationResult->tokens,
                 'transcription_lemmata' => $lemmatizationResult->lemmata,
                 'time_from' => $timeFrom
@@ -138,12 +141,13 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $this->logger->debug("Text is too short for lemmatization...");
         }
 
+        $editorId = $this->getPersonIdByName($editorName);
 
         try {
             $this->getTypesenseClient()->collections[$indexName]->documents->create([
                 'table_id' => (string)$tableId,
                 'chunk' => (int)$chunk,
-                'creator' => $editorName,
+                'creator' => $editorId,
                 'title' => $title,
                 'lang' => $langCode,
                 'edition_tokens' => $lemmatizationResult->tokens,
@@ -337,7 +341,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 ],
                 [
                     'name' => 'creator',
-                    'type' => 'string',
+                    'type' => 'int32',
                     'sort' => true
                 ]
             ],
@@ -384,7 +388,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 ],
                 [
                     'name' => 'creator',
-                    'type' => 'string',
+                    'type' => 'int32',
                     'sort' => true
                 ]
             ],
@@ -1073,6 +1077,55 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             'lang' => $ctData['lang'],
             'timeFrom' => $currentVersion->timeFrom,
         ];
+    }
+
+    /**
+     * Returns the person entity id for a given person name
+     * @param string $personName
+     * @return int
+     */
+    private function getPersonIdByName(string $personName): int
+    {
+        $nameStatements = $this->entitySystem->getStatements(
+            null,
+            Entity::pEntityName,
+            $personName
+        );
+
+        if ($nameStatements === []) {
+            $sortNameStatements = $this->entitySystem->getStatements(
+                null,
+                Entity::pSortName ?? null,
+                $personName
+            );
+            $nameStatements = $sortNameStatements ?? [];
+        }
+
+        if ($nameStatements === []) {
+            return 0;
+        }
+
+        $personTids = [];
+        foreach ($nameStatements as $st) {
+            $tid = $st->subject;
+
+            try {
+                $personTids[] = $tid;
+            } catch (\Throwable) {
+            }
+        }
+
+        if ($personTids === []) {
+            return 0;
+        }
+
+
+        if (count($personTids) > 1) {
+           print ("Found more than one matching person id for the given person name!");
+        }
+
+        sort($personTids);
+        return $personTids[0];
     }
 
     /**

@@ -127,6 +127,26 @@ export const defaultLatinEditionStyle: StyleSheetDefinition =  {
       keepWithNext: true
     }
   },
+  endNotesTitle : {
+    text: {
+      fontSize: '1.5 em',
+      fontWeight: 'bold',
+    },
+    paragraph: {
+      spaceBefore: '3 em',
+      spaceAfter: '1 em',
+      keepWithNext: true,
+      align: 'center'
+    }
+  },
+  endNotesInterEntryVerticalGlue: {
+    glue: {
+      width: '1 em',
+      stretch: '0',
+      shrink: '0'
+    }
+  },
+
   apparatus: {
     parent: "default",
     text: {

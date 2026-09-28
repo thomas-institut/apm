@@ -53,7 +53,8 @@ import {
   TokenForCountingPurposes,
   TokenOccurrenceInLine,
   TokenTotalOccurrencesInLine,
-  TypesetterItem, TypesetterPage,
+  TypesetterItem,
+  TypesetterPage,
   VerticalItemDirection
 } from '@thomas-inst/typesetter';
 import {LanguageDetector} from '../toolbox/LanguageDetector.js';
@@ -398,7 +399,7 @@ export class EditionTypesettingHelper {
     return uniq(indices);
   }
 
-  async generateEndNotesApparatusVerticalListToTypeset(app: ApparatusInterface, pages: TypesetterPage[]) : Promise<ItemList> {
+  async generateEndNotesApparatusVerticalListToTypeset(app: ApparatusInterface, pages: TypesetterPage[]): Promise<ItemList> {
     const textDirection = 'ltr'; // peg to LTR for now
     let outputList = new ItemList(VerticalItemDirection);
     outputList.setTextDirection(textDirection);
@@ -413,16 +414,44 @@ export class EditionTypesettingHelper {
     console.log(`Ignoring ${pages.length} typeset pages for now`);
 
     // just list the entries for now
-    let headerStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle('h1');
+    let headerStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle('endNotesTitle');
 
     const verticalParagraphs: TypesetterItem[] = [];
+
+    const headerSpaceBefore = Dimension.getPixelValue(headerStyleDef.spaceBefore ?? null, 12);
+    if (headerSpaceBefore !== 0) {
+      verticalParagraphs.push((new Glue(VerticalItemDirection)).setHeight(headerSpaceBefore));
+    }
+    const headerParagraph = new ItemList(HorizontalItemDirection);
+    headerParagraph.setTextDirection(textDirection);
+    const headerIndent = Dimension.getPixelValue(headerStyleDef.indent ?? null, 12);
+    if (headerIndent !== 0) {
+      headerParagraph.pushItem(this.createIndentBox(headerIndent, textDirection));
+    }
+    if (headerStyleDef.align === 'center') {
+      headerParagraph.pushItem((new Box().setWidth(0)));
+      headerParagraph.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection));
+    }
+    headerParagraph.pushItemArray(await this.getTsItemsForString('Endnotes', 'endNotesTitle', textDirection));
+    headerParagraph.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection));
+    headerParagraph.pushItem(Penalty.createForcedBreakPenalty());
+    FontConversions.applyFontConversions(headerParagraph, this.fontConversionDefinitions, this.edition.lang);
+    verticalParagraphs.push(headerParagraph);
+    if (headerStyleDef.keepWithNext) {
+      verticalParagraphs.push(Penalty.createNeverBreakPenalty());
+    }
+    const headerSpaceAfter = Dimension.getPixelValue(headerStyleDef.spaceAfter ?? null, 12);
+    if (headerSpaceAfter !== 0) {
+      verticalParagraphs.push((new Glue(VerticalItemDirection)).setHeight(headerSpaceAfter));
+    }
 
     for (let i = 0; i < endNotesApparatus.entries.length; i++) {
       const entryList = new ItemList(HorizontalItemDirection);
       const typesetterItems: TypesetterItem[] = [];
 
       const entry = endNotesApparatus.entries[i];
-      const subEntriesTs  = await Promise.all(entry.subEntries.map( async (subEntry) => subEntry.enabled ? await this.getSubEntryTsItems(subEntry) : [])) ;
+      const subEntriesTs = await Promise.all(entry.subEntries
+        .map(async (subEntry) => subEntry.enabled ? await this.getSubEntryTsItems(subEntry) : []));
       for (let subEntryIndex = 0; subEntryIndex < subEntriesTs.length; subEntryIndex++) {
         typesetterItems.push(...subEntriesTs[subEntryIndex]);
         if (subEntryIndex < entry.subEntries.length - 1) {
@@ -430,11 +459,14 @@ export class EditionTypesettingHelper {
           typesetterItems.push((await this.createGlue('apparatus emGlue')).setTextDirection(textDirection));
         }
       }
+      typesetterItems.push(Glue.createLineFillerGlue().setTextDirection(textDirection));
+      typesetterItems.push(Penalty.createForcedBreakPenalty());
       entryList.setList(typesetterItems);
       FontConversions.applyFontConversions(entryList, this.fontConversionDefinitions, this.edition.lang);
       verticalParagraphs.push(entryList);
     }
     outputList.setList(verticalParagraphs);
+    console.log(`End note list to typeset`, outputList);
     return outputList;
   }
 
@@ -444,7 +476,7 @@ export class EditionTypesettingHelper {
     let textDirection = getTextDirectionForLang(this.edition.lang);
     let outputList = new ItemList(HorizontalItemDirection);
     outputList.setTextDirection(textDirection);
-    console.log("Generating apparatus vertical list to typeset", { firstLine, lastLine, resetFirstLineNumber});
+    // console.log("Generating apparatus vertical list to typeset", { firstLine, lastLine, resetFirstLineNumber});
 
     if (apparatus.entries.length === 0) {
       return outputList;

@@ -107,6 +107,18 @@ export const arabicDeGruyterScheherazadeNew: StyleSheetDefinition = {
       spaceBefore: '0.5 em', spaceAfter: '0.25 em', keepWithNext: true
     }
   },
+  endNotesTitle : {
+    text: {
+      fontSize: '1.5 em',
+      fontWeight: 'bold',
+    },
+    paragraph: {
+      spaceBefore: '3 em',
+      spaceAfter: '1 em',
+      keepWithNext: true,
+      align: 'center'
+    }
+  },
   apparatus: {
     parent: 'default', text: {
       fontSize: '9 pt',

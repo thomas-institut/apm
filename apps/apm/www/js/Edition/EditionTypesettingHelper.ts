@@ -403,7 +403,7 @@ export class EditionTypesettingHelper {
   }
 
   async generateEndNotesApparatusVerticalListToTypeset(app: ApparatusInterface, pages: TypesetterPage[]): Promise<ItemList> {
-    const textDirection = 'ltr'; // peg to LTR for now
+    const textDirection = this.textDirection;
     let outputList = new ItemList(VerticalItemDirection);
     outputList.setTextDirection(textDirection);
 
@@ -448,43 +448,85 @@ export class EditionTypesettingHelper {
       verticalParagraphs.push((new Glue(VerticalItemDirection)).setHeight(headerSpaceAfter));
     }
 
+    const subEntryParagraphStyleDef = await this.ss.getParagraphStyle('endNotesSubEntry');
     for (let i = 0; i < endNotesApparatus.entries.length; i++) {
-      const entryList = new ItemList(HorizontalItemDirection);
-      const typesetterItems: TypesetterItem[] = [];
-
       const entry = endNotesApparatus.entries[i];
+      const referenceParagraph = new ItemList(HorizontalItemDirection);
+      referenceParagraph.setTextDirection(textDirection);
+      const referenceItems: TypesetterItem[] = [];
       const rangeInfo = this.getEndNoteRangeInfo(entry, pages);
       if (rangeInfo !== null) {
         const locator = rangeInfo.pageFrom === rangeInfo.pageTo
           ? `${rangeInfo.pageFrom}:${this.getLineStringFromRange(rangeInfo.lineFrom, rangeInfo.lineTo)}`
           : `${rangeInfo.pageFrom}:${rangeInfo.lineFrom}-${rangeInfo.pageTo}:${rangeInfo.lineTo}`;
-        typesetterItems.push(...await this.getTsItemsForString(locator, 'apparatus apparatusLineNumbers', textDirection));
-        typesetterItems.push(this.createPenalty(InfinitePenalty));
-        typesetterItems.push((await this.createGlue('apparatus')).setTextDirection(textDirection));
+        referenceItems.push(...await this.getTsItemsForString(locator, 'apparatus apparatusLineNumbers', textDirection));
+        referenceItems.push(this.createPenalty(InfinitePenalty));
+        referenceItems.push((await this.createGlue('apparatus')).setTextDirection(textDirection));
       }
-      typesetterItems.push(...await this.getTsItemsForPreLemma(entry));
-      typesetterItems.push(...await this.getTsItemsForLemma(entry));
-      typesetterItems.push(...await this.getTsItemsForPostLemma(entry));
-      typesetterItems.push(...await this.getTsItemsForSeparator(entry));
+      referenceItems.push(...await this.getTsItemsForPreLemma(entry));
+      referenceItems.push(...await this.getTsItemsForLemma(entry));
+      referenceItems.push(...await this.getTsItemsForPostLemma(entry));
+      referenceItems.push(...await this.getTsItemsForSeparator(entry));
+      referenceParagraph.pushItemArray(referenceItems);
+      referenceParagraph.pushItem(Glue.createLineFillerGlue().setTextDirection(textDirection));
+      referenceParagraph.pushItem(Penalty.createForcedBreakPenalty());
+      FontConversions.applyFontConversions(referenceParagraph, this.fontConversionDefinitions, this.edition.lang);
+      verticalParagraphs.push(referenceParagraph);
 
-      const subEntriesTs = await Promise.all(entry.subEntries
-        .map(async (subEntry) => subEntry.enabled ? await this.getSubEntryTsItems(subEntry) : []));
-      for (let subEntryIndex = 0; subEntryIndex < subEntriesTs.length; subEntryIndex++) {
-        typesetterItems.push(...subEntriesTs[subEntryIndex]);
-        if (subEntryIndex < entry.subEntries.length - 1) {
-          typesetterItems.push(this.createPenalty(GoodPointForBreak));
-          typesetterItems.push((await this.createGlue('apparatus emGlue')).setTextDirection(textDirection));
+      for (const subEntry of entry.subEntries) {
+        if (!subEntry.enabled) {
+          continue;
+        }
+
+        const spaceBefore = Dimension.getPixelValue(subEntryParagraphStyleDef.spaceBefore ?? null, 12);
+        if (spaceBefore !== 0) {
+          verticalParagraphs.push((new Glue(VerticalItemDirection)).setHeight(spaceBefore));
+        }
+
+        const subEntryParagraph = new ItemList(HorizontalItemDirection);
+        subEntryParagraph.setTextDirection('ltr');
+        const indent = Dimension.getPixelValue(subEntryParagraphStyleDef.indent ?? null, 12);
+        if (indent !== 0) {
+          subEntryParagraph.pushItem(this.createIndentBox(indent, 'ltr'));
+        }
+        if (subEntryParagraphStyleDef.align === 'center') {
+          subEntryParagraph.pushItem((new Box()).setWidth(0));
+          subEntryParagraph.pushItem(Glue.createLineFillerGlue().setTextDirection('ltr'));
+        }
+        subEntryParagraph.pushItemArray(await this.getSubEntryTsItems(subEntry, 'endNotesSubEntry', 'endNotesSubEntry apparatusKeyword'));
+        subEntryParagraph.pushItem(Glue.createLineFillerGlue().setTextDirection('ltr'));
+        subEntryParagraph.pushItem(Penalty.createForcedBreakPenalty());
+        FontConversions.applyFontConversions(subEntryParagraph, this.fontConversionDefinitions, this.edition.lang);
+        verticalParagraphs.push(subEntryParagraph);
+
+        if (subEntryParagraphStyleDef.keepWithNext) {
+          verticalParagraphs.push(Penalty.createNeverBreakPenalty());
+        }
+        const spaceAfter = Dimension.getPixelValue(subEntryParagraphStyleDef.spaceAfter ?? null, 12);
+        if (spaceAfter !== 0) {
+          verticalParagraphs.push((new Glue(VerticalItemDirection)).setHeight(spaceAfter));
         }
       }
-      typesetterItems.push(Glue.createLineFillerGlue().setTextDirection(textDirection));
-      typesetterItems.push(Penalty.createForcedBreakPenalty());
-      entryList.setList(typesetterItems);
-      FontConversions.applyFontConversions(entryList, this.fontConversionDefinitions, this.edition.lang);
-      verticalParagraphs.push(entryList);
+      verticalParagraphs.push(this.createEndNotesSeparatorGlue());
     }
     outputList.setList(verticalParagraphs);
     console.log(`End note list to typeset`, outputList);
     return outputList;
+  }
+
+  private createEndNotesSeparatorGlue(): Glue {
+    const verticalGlueStyleDef = this.ss.styleExists('endNotesSeparator')
+      ? this.ss.getStyleDef('endNotesSeparator').verticalGlue
+      : undefined;
+    const glue = (new Glue(VerticalItemDirection))
+      .setHeight(Dimension.getPixelValue(verticalGlueStyleDef?.height ?? '1 em', 12));
+    if (verticalGlueStyleDef?.stretch !== undefined) {
+      glue.setStretch(Dimension.getPixelValue(verticalGlueStyleDef.stretch, 12));
+    }
+    if (verticalGlueStyleDef?.shrink !== undefined) {
+      glue.setShrink(Dimension.getPixelValue(verticalGlueStyleDef.shrink, 12));
+    }
+    return glue;
   }
 
   private getEndNoteRangeInfo(entry: ApparatusEntryInterface, pages: TypesetterPage[]): {
@@ -788,7 +830,7 @@ export class EditionTypesettingHelper {
     return items;
   }
 
-  async getTsItemsForSigla(subEntry: ApparatusSubEntryInterface): Promise<TypesetterItem[]> {
+  async getTsItemsForSigla(subEntry: ApparatusSubEntryInterface, apparatusStyle: string = 'apparatus'): Promise<TypesetterItem[]> {
     let items = [];
     let siglaData = ApparatusUtil.getSiglaData(subEntry.witnessData, this.sigla, this.siglaGroups);
 
@@ -802,12 +844,12 @@ export class EditionTypesettingHelper {
       let siglumData = siglaData[i];
 
       // the siglum
-      let siglumItem = await this.ss.apply(TextBoxFactory.simpleText(siglumData.siglum), 'apparatus sigla');
+      let siglumItem = await this.ss.apply(TextBoxFactory.simpleText(siglumData.siglum), `${apparatusStyle} sigla`);
       siglumItem.setTextDirection(this.textDirection);
       items.push(siglumItem);
       // the hand
       if (siglumData.hand !== 0 || siglumData.forceHandDisplay) {
-        let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand + 1, this.edition.lang)), 'apparatus sigla hand');
+        let handItem = await this.ss.apply(TextBoxFactory.simpleText(this.getNumberString(siglumData.hand + 1, this.edition.lang)), `${apparatusStyle} sigla hand`);
         handItem.setTextDirection(this.textDirection);
         //this.__detectAndSetTextBoxTextDirection(handItem)
         items.push(handItem);
@@ -816,7 +858,7 @@ export class EditionTypesettingHelper {
         // add inter-siglum breaks or spaces if necessary
         if (this.edition.lang === 'ar') {
           items.push(this.createPenalty(InfinitePenalty));
-          items.push(await this.createGlue('apparatus', 0));
+          items.push(await this.createGlue(apparatusStyle, 0));
         }
         if (this.edition.lang === 'la' && interSiglaSpacing.includes(i)) {
           items.push(this.createPenalty(InfinitePenalty));
@@ -943,7 +985,7 @@ export class EditionTypesettingHelper {
         items.push(...await this.getTsItemsForFmtText(subEntry.fmtText, apparatusStyle, 'detect'));
         items.push(this.createPenalty(InfinitePenalty));
         items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
-        items.push(...await this.getTsItemsForSigla(subEntry));
+        items.push(...await this.getTsItemsForSigla(subEntry, apparatusStyle));
         break;
 
       case 'omission':
@@ -961,7 +1003,7 @@ export class EditionTypesettingHelper {
           items.push(this.createPenalty(InfinitePenalty));
           items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
         }
-        items.push(...await this.getTsItemsForSigla(subEntry));
+        items.push(...await this.getTsItemsForSigla(subEntry, apparatusStyle));
         break;
 
       case 'fullCustom':
@@ -979,7 +1021,7 @@ export class EditionTypesettingHelper {
         if (subEntry.type !== 'autoFoliation' && subEntry.witnessData.length !== 0) {
           items.push(this.createPenalty(InfinitePenalty));
           items.push((await this.createGlue(apparatusStyle)).setTextDirection(this.textDirection));
-          items.push(...await this.getTsItemsForSigla(subEntry));
+          items.push(...await this.getTsItemsForSigla(subEntry, apparatusStyle));
         }
         break;
       }

@@ -37,7 +37,7 @@ export const defaultLatinEditionStyle: StyleSheetDefinition =  {
       lineNumbersToTextDistance: "0.5 cm",
       lineNumbersFontSize: "0.8 em",
       lineNumbersPosition: "left",
-      resetLineNumbersEachPage: false
+      resetLineNumbersEachPage: false,
     },
     paragraph: {
       lineSkip: "18 pt",
@@ -139,14 +139,23 @@ export const defaultLatinEditionStyle: StyleSheetDefinition =  {
       align: 'center'
     }
   },
-  endNotesInterEntryVerticalGlue: {
-    glue: {
-      width: '1 em',
-      stretch: '0',
-      shrink: '0'
+  endNotesSubEntry: {
+    parent: "default",
+    text: {
+      fontSize: "11 pt",
+    },
+    paragraph: {
+      lineSkip: "15 pt",
+      indent: '1 em'
     }
   },
-
+  endNotesSeparator : {
+    verticalGlue: {
+      height: "1 em",
+      stretch: "0.25 em",
+      shrink: "0.1 em"
+    }
+  },
   apparatus: {
     parent: "default",
     text: {

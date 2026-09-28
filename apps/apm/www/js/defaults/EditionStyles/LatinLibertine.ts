@@ -147,6 +147,23 @@ export const latinLibertine: StyleSheetDefinition =  {
       align: 'center'
     }
   },
+  endNotesSubEntry: {
+    parent: "default",
+    text: {
+      fontSize: "11 pt",
+    },
+    paragraph: {
+      lineSkip: "15 pt",
+      indent: '1 em'
+    }
+  },
+  endNotesSeparator : {
+    verticalGlue: {
+      height: "2 em",
+      stretch: "0.25 em",
+      shrink: "0.1 em"
+    }
+  },
   apparatus: {
     parent: "default",
     text: {

@@ -65,7 +65,9 @@ class ApiSearch extends ApiController
         $corpus = $postParams['corpus'];
         $searchedPhrase = $this->removeSpaces(strtolower($postParams['searched_phrase'])); // Lower-case and without additional blanks
         $title = $postParams['title'];
-        $creator = $postParams['creator'];
+        $creatorId = isset($postParams['creatorId']) && $postParams['creatorId'] !== ''
+            ? (int)$postParams['creatorId']
+            : 0;
         $keywordDistance = $postParams['keywordDistance'];
         $lemmatize = filter_var($postParams['lemmatize'], FILTER_VALIDATE_BOOLEAN);
         $lang = $postParams['lang'] ?? 'detect';
@@ -115,7 +117,7 @@ class ApiSearch extends ApiController
                 $lemmatize,
                 $queryPage,
                 $title,
-                $creator,
+                $creatorId > 0 ? (string)$creatorId : '',
                 $pageSize
             );
         } catch (SearchManagerException $e) {

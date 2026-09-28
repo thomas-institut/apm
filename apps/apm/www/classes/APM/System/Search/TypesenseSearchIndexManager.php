@@ -74,7 +74,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      */
     public function indexTranscription(PageInfo $pageInfo, int $col,
                                        string   $docTitle, string $transcriptionText, string $langCode,
-                                       string   $transcriberName, string $timeFrom): void
+                                       string   $transcriberId, string $timeFrom): void
     {
         $indexName = $this->getIndexName(IndexType::Transcriptions, $langCode);
         $cleanTranscriptionText = $this->encodeForLemmatization($transcriptionText);
@@ -88,7 +88,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $this->logger->debug("Transcription is too short for lemmatization...");
         }
 
-        $transcriberId = $this->getPersonIdByName($transcriberName);
+        $transcriberId = ctype_digit((string)$transcriberId) ? (int)$transcriberId : 0;
 
         try {
             $this->getTypesenseClient()->collections[$indexName]->documents->create([
@@ -105,9 +105,11 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 'transcription_lemmata' => $lemmatizationResult->lemmata,
                 'time_from' => $timeFrom
             ]);
+            $transcriberName = '';
+            try { $transcriberName = $this->entitySystem->getEntityName($transcriberId); } catch (\Throwable) {}
             $this->logger->debug("Indexed transcription in $indexName: Doc $pageInfo->docId ('$docTitle')" .
                 ", page no. $pageInfo->pageNumber (seq $pageInfo->sequence, fol. '$pageInfo->foliation', id $pageInfo->pageId), col $col" .
-                ", transcriber '$transcriberName', lang '$langCode', timeFrom '$timeFrom'");
+                ", transcriber '$transcriberName' (#$transcriberId), lang '$langCode', timeFrom '$timeFrom'");
         } catch (Exception|TypesenseClientError $e) {
             $this->logger->error("Error creating transcription entry in index $indexName: " . $e->getMessage());
         }
@@ -125,7 +127,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
     /**
      * @inheritDoc
      */
-    public function indexEdition(int $tableId, string $chunk, string $title, string $langCode, string $editionText, string $editorName, string $timeFrom): void
+    public function indexEdition(int $tableId, string $chunk, string $title, string $langCode, string $editionText, string $editorId, string $timeFrom): void
     {
         $indexName = $this->getIndexName(IndexType::Editions, $langCode);
 
@@ -141,7 +143,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $this->logger->debug("Text is too short for lemmatization...");
         }
 
-        $editorId = $this->getPersonIdByName($editorName);
+        $editorId = ctype_digit((string)$editorId) ? (int)$editorId : 0;
 
         try {
             $this->getTypesenseClient()->collections[$indexName]->documents->create([
@@ -159,7 +161,9 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $this->logger->error($message);
             throw new SearchManagerException($message);
         }
-        $this->logger->info("Edition $tableId ('$title' by $editorName) created in index $indexName");
+        $editorName = '';
+        try { $editorName = $this->entitySystem->getEntityName($editorId); } catch (\Throwable) {}
+        $this->logger->info("Edition $tableId ('$title' by $editorName #$editorId) created in index $indexName");
     }
 
     /**
@@ -173,7 +177,24 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
     private function getStringArray(string $cacheKey, $queryKey): array
     {
         try {
-            return unserialize($this->getDataCache()->get($cacheKey));
+            $values = unserialize($this->getDataCache()->get($cacheKey));
+            $isPersonList = $queryKey === 'transcribers' || $queryKey === 'editors';
+            $hasPersonPairs = is_array($values) && array_is_list($values) && array_reduce(
+                $values,
+                static fn(bool $valid, mixed $value): bool => $valid && is_array($value)
+                    && isset($value['id'], $value['name'])
+                    && is_int($value['id'])
+                    && is_string($value['name']),
+                true
+            );
+
+            // Person lists used to be cached as plain strings. Rebuild those entries
+            // so the frontend can resolve creator IDs to names.
+            if ($isPersonList && !$hasPersonPairs) {
+                $values = $this->getStringArrayFromIndex($queryKey);
+                $this->getDataCache()->set($cacheKey, serialize($values), self::StringArrayTtl);
+            }
+            return $values;
         } catch (ItemNotInCacheException) {
             // so, let's get it from the index
             $strings = $this->getStringArrayFromIndex($queryKey);
@@ -185,6 +206,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
     private function getStringArrayFromIndex(string $queryKey): array
     {
         // Get names of target indices
+        $isPersonList = ($queryKey === 'transcribers' || $queryKey === 'editors');
         if ($queryKey === 'transcriptions' || $queryKey === 'transcribers') {
             $index_names = ['transcriptions_la', 'transcriptions_ar', 'transcriptions_he'];
         } else {
@@ -192,7 +214,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         }
 
         // Get keys to query
-        if ($queryKey === 'transcribers' || $queryKey === 'editors') {
+        if ($isPersonList) {
             $queryKey = 'creator';
         } else {
             $queryKey = 'title';
@@ -239,7 +261,29 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 }
             }
         }
-        return $values;
+        if (!$isPersonList) {
+            return $values;
+        }
+
+        $pairs = [];
+        foreach ($values as $id) {
+            $tid = (int)$id;
+            if ($tid <= 0) { continue; }
+            try {
+                $name = $this->entitySystem->getEntityName($tid);
+                $pairs[] = ['id' => $tid, 'name' => $name];
+            } catch (\Throwable $e) {
+                $this->logger->warning('Could not resolve person name for ID from index', ['id' => $tid]);
+            }
+        }
+        usort($pairs, function(array $a, array $b): int {
+            $na = $a['name'] ?? '';
+            $nb = $b['name'] ?? '';
+            $cmp = strcmp($na, $nb);
+            if ($cmp !== 0) return $cmp;
+            return ($a['id'] <=> $b['id']);
+        });
+        return $pairs;
     }
 
     /**
@@ -459,7 +503,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $edition['title'],
             $edition['lang'],
             $edition['text'],
-            $edition['editor'],
+            $edition['editorId'] ?? 0,
             $edition['timeFrom']
         );
         return true;
@@ -519,7 +563,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $transcription['title'],
             $transcription['text'],
             $transcription['lang'],
-            $transcription['transcriber'],
+            $transcription['transcriberId'] ?? 0,
             $transcription['timeFrom']
         );
         return true;
@@ -1006,7 +1050,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      *
      * @param int $pageId
      * @param int $column
-     * @return array{pageInfo: PageInfo, title: string, text: string, lang: string, transcriber: string, timeFrom: string}|null
+     * @return array{pageInfo: PageInfo, title: string, text: string, lang: string, transcriberId: int, timeFrom: string}|null
      * @throws DocumentNotFoundException
      * @throws PageNotFoundException
      * @throws EntityDoesNotExistException
@@ -1031,7 +1075,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             'title' => $docInfo->title,
             'text' => $this->getPlainTextFromElements($elements),
             'lang' => $this->languageManager->getLanguageCode($pageInfo->lang),
-            'transcriber' => $this->entitySystem->getEntityName($currentVersion->authorTid),
+            'transcriberId' => $currentVersion->authorTid,
             'timeFrom' => $currentVersion->timeFrom,
         ];
     }
@@ -1040,7 +1084,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      * Gets the current edition data for a collation table.
      *
      * @param int $tableId
-     * @return array{editor: string, text: string, title: string, chunk: string, lang: string, timeFrom: string}|null
+     * @return array{editorId: int, text: string, title: string, chunk: int, lang: string, timeFrom: string}|null
      * @throws WorkNotFoundException
      * @throws EntityDoesNotExistException
      */
@@ -1055,7 +1099,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         $tokens = $ctData['witnesses'][$editionWitnessIndex]['tokens'];
         $versionInfo = $this->collationTableManager->getCollationTableVersionManager()->getCollationTableVersionInfo($tableId);
         $currentVersion = end($versionInfo);
-        $editor = $this->entitySystem->getEntityName($currentVersion->authorTid);
+        $editorId = $currentVersion->authorTid;
 
         $text = '';
         foreach ($tokens as $token) {
@@ -1070,7 +1114,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         $chunk = $chunkParts[1] ?? '';
 
         return [
-            'editor' => $editor,
+            'editorId' => $editorId,
             'text' => $text,
             'title' => $this->workManager->getWorkDataByDareId($workId)->title,
             'chunk' => (int)$chunk,
@@ -1204,7 +1248,11 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         ];
 
         if ($creatorName !== '') {
-            $searchParameters['filter_by'] = $searchParameters['filter_by'] . " && creator:$creatorName*";
+            if (ctype_digit((string)$creatorName)) {
+                $searchParameters['filter_by'] .= ' && creator:=' . (int)$creatorName;
+            } else {
+                // ignorieren (namensbasierte Filter sind nicht mehr unterstützt)
+            }
         }
 
         if ($docTitle !== '') {

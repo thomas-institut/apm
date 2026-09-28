@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import {LanguageDetector} from '@/toolbox/LanguageDetector';
 import {urlGen} from '@/pages/common/SiteUrlGen';
@@ -19,12 +19,26 @@ export default function SearchPage() {
   const [errorMessage, setErrorMessage] = useState('');
   const [titleList, setTitleList] = useState<string[]>([]);
   const [creatorList, setCreatorList] = useState<string[]>([]);
+  type PersonPair = { id: number; name: string };
+  const [personPairs, setPersonPairs] = useState<PersonPair[]>([]);
   const [results, setResults] = useState<any[]>([]);
   const [searchStatus, setSearchStatus] = useState(STATE_INIT);
   const [isIdle, setIsIdle] = useState(true);
   const [globalContext, setGlobalContext] = useState(11);
 
   const isInvalidSearch = keywords.includes('*') && lemmatize;
+
+  // Maps for resolving names/IDs for the current corpus' creators
+  const idToNameMap = useMemo(() => {
+    const m = new Map<number, string>();
+    personPairs.forEach(p => { if (!m.has(p.id)) m.set(p.id, p.name); });
+    return m;
+  }, [personPairs]);
+  const nameToIdMap = useMemo(() => {
+    const m = new Map<string, number>();
+    personPairs.forEach(p => { if (!m.has(p.name)) m.set(p.name, p.id); });
+    return m;
+  }, [personPairs]);
 
   // reference data
   const storedData = useRef({
@@ -223,8 +237,10 @@ export default function SearchPage() {
       if (res.status === 'OK') {
         if (category === 'transcriptions' || category === 'editions') {
           setTitleList(res[category] || []);
-        } else {
-          setCreatorList(res[category] || []);
+        } else if (category === 'transcribers' || category === 'editors') {
+          const pairs: PersonPair[] = (res[category] || []) as PersonPair[];
+          setPersonPairs(pairs);
+          setCreatorList(pairs.map(p => p.name));
         }
       } else {
         console.warn(`API returned status ${res.status} for ${category}`, res);
@@ -266,12 +282,22 @@ export default function SearchPage() {
   const startSearch = async (page = 1) => {
     const ld = new LanguageDetector('la');
     const detectedLang = ld.detectLang(keywords);
+    // Determine creatorId from input (IDs are storage, names only for display)
+    let creatorId = 0;
+    const trimmed = creatorInput.trim();
+    if (trimmed !== '') {
+      if (/^\d+$/.test(trimmed)) {
+        creatorId = parseInt(trimmed, 10);
+      } else if (nameToIdMap.has(trimmed)) {
+        creatorId = nameToIdMap.get(trimmed) || 0;
+      }
+    }
     const inputs = {
       corpus,
       searched_phrase: keywords,
       lang: detectedLang,
       title: titleInput,
-      creator: creatorInput,
+      creatorId: creatorId > 0 ? String(creatorId) : '',
       keywordDistance: Number(distance) + 1,
       lemmatize,
       queryPage: Number(page)
@@ -354,6 +380,13 @@ export default function SearchPage() {
       });
     });
     setResults(prev => [...prev, ...newEntries]);
+  };
+
+  // Resolve a creator ID to a display name (fallback to #ID)
+  const renderCreator = (creator: unknown): string => {
+    const id = typeof creator === 'string' ? parseInt(creator, 10) : Number(creator);
+    if (!Number.isFinite(id) || id <= 0) return '';
+    return idToNameMap.get(id) ?? `#${id}`;
   };
 
   /**
@@ -589,12 +622,12 @@ export default function SearchPage() {
             <td>
               <input list="titleList" value={titleInput} onChange={(e) => setTitleInput(e.target.value)}
                      style={inputStyle}/>
-              <datalist id="titleList">{titleList.map(t => <option key={t} value={t}/>)}</datalist>
+              <datalist id="titleList">{titleList.map((t, i) => <option key={`${t}-${i}`} value={t}/>)}</datalist>
             </td>
             <td>
               <input list="creatorList" value={creatorInput} onChange={(e) => setCreatorInput(e.target.value)}
                      style={inputStyle}/>
-              <datalist id="creatorList">{creatorList.map(c => <option key={c} value={c}/>)}</datalist>
+              <datalist id="creatorList">{creatorList.map((c, i) => <option key={`${c}-${i}`} value={c}/>)}</datalist>
             </td>
             <td style={{textAlign: 'right', display: 'flex', justifyContent: 'center'}}>
               <button
@@ -654,7 +687,7 @@ export default function SearchPage() {
                   </td>
                   <td className="text-center">{res.title}</td>
                   <td className="text-center">{res.identifier}</td>
-                  <td className="text-center">{res.user}</td>
+                  <td className="text-center">{renderCreator(res.user)}</td>
                   <td className="text-center">
                     <a className="fas fa-external-link-alt" target="_blank" href={res.link} rel="noreferrer"
                        style={{color: '#007bff'}}></a>

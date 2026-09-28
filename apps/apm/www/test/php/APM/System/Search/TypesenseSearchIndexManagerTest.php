@@ -53,7 +53,7 @@ class TypesenseSearchIndexManagerTest extends TestCase
             ->with($this->callback(function (array $query): bool {
                 return ($query['q'] ?? null) === 'token' &&
                     ($query['query_by'] ?? null) === 'transcription_lemmata' &&
-                    ($query['filter_by'] ?? null) === 'lang:=ar && creator:Author* && title:=Title' &&
+                    ($query['filter_by'] ?? null) === 'lang:=ar && creator:=123 && title:=Title' &&
                     ($query['sort_by'] ?? null) === 'title:asc, seq:asc, column:asc' &&
                     ($query['page'] ?? null) === 2 &&
                     ($query['limit'] ?? null) === 20;
@@ -62,7 +62,7 @@ class TypesenseSearchIndexManagerTest extends TestCase
 
         $manager = $this->createManager($this->createTypesenseClient($documents));
 
-        $result = $manager->searchToken(IndexType::Transcriptions, 'ar', 'token', true, 2, 'Title', 'Author', 20);
+        $result = $manager->searchToken(IndexType::Transcriptions, 'ar', 'token', true, 2, 'Title', '123', 20);
 
         $this->assertSame([['document' => ['id' => '1']]], $result->hits);
         $this->assertSame(2, $result->page);

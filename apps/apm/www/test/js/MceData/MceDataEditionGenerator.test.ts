@@ -434,6 +434,48 @@ describe('MceDataEditionGenerator', () => {
       expect(edition.mainText[6].editionWitnessTokenIndex).toBe(6);
     });
 
+    it('aggregates endnotes across chunks and shifts their references into the multi-chunk main text', async () => {
+      const makeEndNotesApparatus = (from: number) => {
+        const apparatus = new Apparatus();
+        apparatus.type = 'endnotes';
+        const entry = new ApparatusEntry();
+        entry.from = from;
+        entry.to = from;
+        entry.mainTextWords = [`t${from}`];
+        entry.subEntries = [new ApparatusSubEntry()];
+        apparatus.entries = [entry];
+        return apparatus;
+      };
+
+      const criticalApparatus = new Apparatus();
+      criticalApparatus.type = 'critical';
+      const criticalEntry = new ApparatusEntry();
+      criticalEntry.from = 0;
+      criticalEntry.to = 0;
+      criticalEntry.mainTextWords = ['t0'];
+      criticalEntry.subEntries = [new ApparatusSubEntry()];
+      criticalApparatus.entries = [criticalEntry];
+
+      mockCtDataGeneratorState.generatedEditionsQueue.push(
+        makeSingleChunkEdition({
+          tokenIndices: [0],
+          apparatuses: [criticalApparatus, makeEndNotesApparatus(0)],
+        }),
+        makeSingleChunkEdition({
+          tokenIndices: [0],
+          apparatuses: [makeEndNotesApparatus(0)],
+        }),
+      );
+
+      const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
+      const edition = await generator.generate(buildMceData(), 1);
+      const endNotesApparatus = edition.apparatuses.find((apparatus) => apparatus.type === 'endnotes');
+      const outputCriticalApparatus = edition.apparatuses.find((apparatus) => apparatus.type === 'critical');
+
+      expect(endNotesApparatus?.entries.map((entry) => [entry.from, entry.to])).toEqual([[1, 1], [5, 5]]);
+      expect(outputCriticalApparatus?.entries).toHaveLength(1);
+    });
+
     it('maps apparatus witness indices to global indices and shifts entry from/to', async () => {
       const apparatus = new Apparatus();
       apparatus.type = 'critical';

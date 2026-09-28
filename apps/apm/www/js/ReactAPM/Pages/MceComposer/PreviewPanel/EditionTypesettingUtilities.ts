@@ -1,6 +1,6 @@
 import {Edition} from "@/Edition/Edition";
 import {
-  BasicTypesetter,
+  BasicTypesetter, BasicTypesetterData,
   BasicTypesetterOptions,
   Dimension,
   ItemList,
@@ -20,7 +20,7 @@ interface TypesettingParameters {
   helper: EditionTypesettingHelper,
   helperOptions: EditionTypesettingHelperOptions,
   mainTextList: ItemList,
-  extraData: { apparatuses: ApparatusInterface[] }
+  extraData: BasicTypesetterData<ApparatusInterface>
 }
 
 export async function getTypesettingParameters(edition: Edition, styleSheet: StyleSheet, styleId: string): Promise<TypesettingParameters> {
@@ -160,6 +160,9 @@ export async function getTypesettingParameters(edition: Edition, styleSheet: Sty
     getApparatusListToTypeset: (mainTextVerticalList: ItemList, apparatus, lineFrom: number, lineTo: number, resetFirstLine: boolean) => {
       return helper.generateApparatusVerticalListToTypeset(mainTextVerticalList, apparatus, lineFrom, lineTo, resetFirstLine);
     },
+    getEndNotesVerticalListToTypeset: (app, pages) => {
+      return helper.generateEndNotesApparatusVerticalListToTypeset(app, pages);
+    },
     preTypesetApparatuses: () => {
       helper.resetExtractedMetadataInfo();
       return Promise.resolve(true);
@@ -170,7 +173,9 @@ export async function getTypesettingParameters(edition: Edition, styleSheet: Sty
     debug: false
   };
 
-  const extraData = { apparatuses: edition.apparatuses }
+  const endNoteApparatus = edition.apparatuses.find((app) => app.type === 'endnotes');
+
+  const extraData: BasicTypesetterData<ApparatusInterface> = { apparatuses: edition.apparatuses, endNoteApparatus: endNoteApparatus}
 
   await helper.setup();
   const mainTextList = await helper.generateListToTypesetFromMainText();

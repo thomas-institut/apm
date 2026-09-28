@@ -19,6 +19,7 @@ import {CtDataEditionGenerator} from "../Edition/EditionGenerator/CtDataEditionG
 import {uniq} from "../lib/ToolBox/ArrayUtil.js";
 import {getPlainText} from "@thomas-inst/fmt-text";
 import {getWordStandardizedByString, StandardizedString, wordMatchesStandardizedString} from "./StandardizedString.js";
+import {END_NOTES} from "../constants/ApparatusType.js";
 
 export type CtDataGetter = (mceData: MceDataInterface, chunkIndex: number) => Promise<CtDataInterface>;
 export type SingleChunkEditionSaver = (mceData: MceDataInterface, chunkIndex: number, edition: EditionInterface) => Promise<void>;
@@ -83,6 +84,8 @@ export class MceDataEditionGenerator {
     let currentMainTextIndexShift = 0;
     let nextChunkShift = 0;
     let currentFoliationChanges: FoliationChangeInfoInterface[] = [];
+    const apparatusesByIndex = new Map<number, Apparatus>();
+    let endNotesApparatus: Apparatus | undefined;
 
     // merge main text
     for (let chunkOrderIndex = 0; chunkOrderIndex < mceData.chunkOrder.length; chunkOrderIndex++) {
@@ -158,14 +161,18 @@ export class MceDataEditionGenerator {
       // process apparatuses
       for (let appIndex = 0; appIndex < singleChunkEdition.apparatuses.length; appIndex++) {
         let singleChunkApparatus = singleChunkEdition.apparatuses[appIndex];
-        let currentApparatus;
-        if (edition.apparatuses[appIndex] === undefined) {
-          // console.log(`At chunk index ${chunkIndex}, apparatus ${appIndex} is empty, creating empty apparatus`);
-          currentApparatus = ApparatusTools.createEmpty();
+        let currentApparatus: Apparatus | undefined = singleChunkApparatus.type === END_NOTES
+          ? endNotesApparatus
+          : apparatusesByIndex.get(appIndex);
+        if (currentApparatus === undefined) {
+          currentApparatus = new Apparatus().setFromInterface(ApparatusTools.createEmpty());
           currentApparatus.type = singleChunkApparatus.type;
-          edition.apparatuses.push((new Apparatus()).setFromInterface(currentApparatus));
+          if (singleChunkApparatus.type === END_NOTES) {
+            endNotesApparatus = currentApparatus;
+          } else {
+            apparatusesByIndex.set(appIndex, currentApparatus);
+          }
         }
-        currentApparatus = edition.apparatuses[appIndex];
 
         let apparatusEntriesToAdd = singleChunkApparatus.entries.map((entry) => {
           let newEntry = new ApparatusEntry();
@@ -203,6 +210,10 @@ export class MceDataEditionGenerator {
 
         currentApparatus.entries.push(...apparatusEntriesToAdd);
       }
+    }
+    edition.apparatuses = [...apparatusesByIndex.values()];
+    if (endNotesApparatus !== undefined) {
+      edition.apparatuses.push(endNotesApparatus);
     }
     // apply standardization
     this.applyStandardization(edition, mceData);

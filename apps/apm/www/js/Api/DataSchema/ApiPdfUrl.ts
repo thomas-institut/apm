@@ -1,5 +1,5 @@
 import {ApiResponse} from "@/Api/DataSchema/ApiResponse";
-import {BasicTypesetterOptions, ItemList} from "@thomas-inst/typesetter";
+import {BasicTypesetterData, BasicTypesetterOptions} from "@thomas-inst/typesetter";
 import {ApparatusInterface} from "@/Edition/EditionInterface";
 import {EditionTypesettingHelperOptions} from "@/Edition/EditionTypesettingHelper";
 
@@ -17,7 +17,7 @@ export interface ApiTypesetPdfRequestData {
    * The export object of the main text ItemList to typeset
    */
   mainTextList: Record<string, any>,
-  extraData: { apparatuses: ApparatusInterface[] }
+  extraData: BasicTypesetterData<ApparatusInterface>
 }
 
 export interface ApiClientPdfUrlResponse {

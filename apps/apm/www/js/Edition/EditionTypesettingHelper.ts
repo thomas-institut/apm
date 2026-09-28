@@ -34,6 +34,7 @@ import {
   LineList,
   LineNumber,
   ListType,
+  MainTextBlockList,
   MainTextOriginalIndex,
   Marginalia,
   MergedItem,
@@ -41,6 +42,8 @@ import {
   OriginalText,
   ParagraphStyleDef,
   Penalty,
+  PageFoliation,
+  PageNumber,
   ReallyGoodPointForBreak,
   SourceItems,
   SplitInSyllablesItem,
@@ -411,7 +414,7 @@ export class EditionTypesettingHelper {
     }
 
     console.log("Endnotes apparatus found");
-    console.log(`Ignoring ${pages.length} typeset pages for now`);
+    console.log(`Using ${pages.length} typeset pages for endnote references`);
 
     // just list the entries for now
     let headerStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle('endNotesTitle');
@@ -450,6 +453,21 @@ export class EditionTypesettingHelper {
       const typesetterItems: TypesetterItem[] = [];
 
       const entry = endNotesApparatus.entries[i];
+      const rangeInfo = this.getEndNoteRangeInfo(entry, pages);
+      if (rangeInfo !== null) {
+        const pageRange = rangeInfo.pageFrom === rangeInfo.pageTo
+          ? rangeInfo.pageFrom
+          : `${rangeInfo.pageFrom}${enDash}${rangeInfo.pageTo}`;
+        const lineRange = this.getLineStringFromRange(rangeInfo.lineFrom, rangeInfo.lineTo);
+        typesetterItems.push(...await this.getTsItemsForString(`${pageRange}:${lineRange}`, 'apparatus apparatusLineNumbers', textDirection));
+        typesetterItems.push(this.createPenalty(InfinitePenalty));
+        typesetterItems.push((await this.createGlue('apparatus')).setTextDirection(textDirection));
+      }
+      typesetterItems.push(...await this.getTsItemsForPreLemma(entry));
+      typesetterItems.push(...await this.getTsItemsForLemma(entry));
+      typesetterItems.push(...await this.getTsItemsForPostLemma(entry));
+      typesetterItems.push(...await this.getTsItemsForSeparator(entry));
+
       const subEntriesTs = await Promise.all(entry.subEntries
         .map(async (subEntry) => subEntry.enabled ? await this.getSubEntryTsItems(subEntry) : []));
       for (let subEntryIndex = 0; subEntryIndex < subEntriesTs.length; subEntryIndex++) {
@@ -468,6 +486,62 @@ export class EditionTypesettingHelper {
     outputList.setList(verticalParagraphs);
     console.log(`End note list to typeset`, outputList);
     return outputList;
+  }
+
+  private getEndNoteRangeInfo(entry: ApparatusEntryInterface, pages: TypesetterPage[]): {
+    pageFrom: string,
+    pageTo: string,
+    lineFrom: number,
+    lineTo: number
+  } | null {
+    const lineLocations: {pageInfo: string, lineNumber: number}[] = [];
+    const resetLineNumbersEachPage = this.ss.getStyleDef('default').page?.resetLineNumbersEachPage ?? false;
+
+    pages.forEach((page, pageIndex) => {
+      const pageMetadata = (page.getMetadata(PageFoliation) ?? page.getMetadata(PageNumber) ?? pageIndex + 1) as number | string;
+      const pageInfo = typeof pageMetadata === 'number'
+        ? this.getNumberString(pageMetadata, this.edition.lang)
+        : pageMetadata;
+      const mainTextBlock = page.getItems().find((item) => {
+        return item instanceof ItemList && item.getMetadata(ListType) === MainTextBlockList;
+      });
+      if (!(mainTextBlock instanceof ItemList)) {
+        return;
+      }
+
+      const pageLines = mainTextBlock.getList().filter((item) => {
+        return item instanceof ItemList && item.getMetadata(ListType) === LineList && item.hasMetadata(LineNumber);
+      }) as ItemList[];
+      const firstLineNumber = pageLines.length > 0 ? pageLines[0].getMetadata(LineNumber) as number : 1;
+      pageLines.forEach((line) => {
+        const lineContainsEntry = line.getList().some((item) => {
+          return this.getMainTextIndicesFromItem(item).some((mainTextIndex) => {
+            return mainTextIndex >= entry.from && mainTextIndex <= entry.to;
+          });
+        });
+        if (!lineContainsEntry) {
+          return;
+        }
+        const absoluteLineNumber = line.getMetadata(LineNumber) as number;
+        lineLocations.push({
+          pageInfo,
+          lineNumber: resetLineNumbersEachPage ? absoluteLineNumber - firstLineNumber + 1 : absoluteLineNumber
+        });
+      });
+    });
+
+    if (lineLocations.length === 0) {
+      return null;
+    }
+
+    const firstLocation = lineLocations[0];
+    const lastLocation = lineLocations[lineLocations.length - 1];
+    return {
+      pageFrom: firstLocation.pageInfo,
+      pageTo: lastLocation.pageInfo,
+      lineFrom: firstLocation.lineNumber,
+      lineTo: lastLocation.lineNumber
+    };
   }
 
 

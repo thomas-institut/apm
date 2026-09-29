@@ -55,7 +55,7 @@ import {
 import {FULL_TX} from "../Witness/WitnessType.js";
 import {NormalizerRegister} from "../pages/common/NormalizerRegister.js";
 import {Matrix} from "../lib/Matrix.js";
-import {UpdaterToOnePointSix} from "@/CtData/CtDataUpdater/UpdaterToOnePointSix";
+import {UpdaterToOnePointSix} from "./CtDataUpdater/UpdaterToOnePointSix.js";
 
 
 /*

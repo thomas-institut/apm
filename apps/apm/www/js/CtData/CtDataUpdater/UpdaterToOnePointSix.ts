@@ -1,7 +1,7 @@
 import {CtDataUpdater} from './CtDataUpdater.js';
 import {CtDataInterface} from "../CtDataInterface.js";
-import {EDITION} from "@/constants/CollationTableType";
-import * as ApparatusType from "@/constants/ApparatusType";
+import {EDITION} from "../../constants/CollationTableType.js";
+import * as ApparatusType from "../../constants/ApparatusType.js";
 
 /**
  * Schema 1.4 adds tags to apparatus entries and custom apparatus subentries

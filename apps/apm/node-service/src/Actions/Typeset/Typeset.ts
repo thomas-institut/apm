@@ -122,6 +122,10 @@ export class Typeset implements Action<TypesetInputData, TypesetOutputData> {
       data.options.getMarginaliaForLineRange = (lineFrom: number, lineTo: number) => {
         return editionTypesettingHelper.getMarginaliaForLineRange(lineFrom, lineTo);
       };
+
+      data.options.getEndNotesVerticalListToTypeset = (app, pages) => {
+        return editionTypesettingHelper.generateEndNotesApparatusVerticalListToTypeset(app, pages);
+      }
     }
 
     let typesetter = new BasicTypesetter(data.options);

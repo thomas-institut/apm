@@ -409,12 +409,8 @@ export class EditionTypesettingHelper {
 
     const endNotesApparatus = app;
     if (endNotesApparatus === undefined || endNotesApparatus.entries.length === 0) {
-      console.log("No endnotes apparatus found");
       return outputList;
     }
-
-    console.log("Endnotes apparatus found");
-    console.log(`Using ${pages.length} typeset pages for endnote references`);
 
     // just list the entries for now
     let headerStyleDef: ParagraphStyleDef = await this.ss.getParagraphStyle('endNotesTitle');
@@ -510,7 +506,6 @@ export class EditionTypesettingHelper {
       verticalParagraphs.push(this.createEndNotesSeparatorGlue());
     }
     outputList.setList(verticalParagraphs);
-    console.log(`End note list to typeset`, outputList);
     return outputList;
   }
 
@@ -1354,7 +1349,7 @@ export class EditionTypesettingHelper {
 
       default:
         // custom separator
-        console.log(`Custom separator in entry`, entry.separator);
+        // console.log(`Custom separator in entry`, entry.separator);
         let separator = getPlainText(fromCompactFmtText(entry.separator));
         separator = removeExtraWhiteSpace(separator);
         items.push(...await this.getTsItemsForString(separator, 'apparatus', this.textDirection));

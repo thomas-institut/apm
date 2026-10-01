@@ -134,7 +134,7 @@ export const arabicDeGruyterAmiri: StyleSheetDefinition = {
     },
   endNotesTitle : {
     text: {
-      fontSize: '1.5 em',
+      fontSize: '1.3 em',
       fontWeight: 'bold',
     },
     paragraph: {
@@ -147,12 +147,18 @@ export const arabicDeGruyterAmiri: StyleSheetDefinition = {
   endNotesSubEntry: {
     parent: "default",
     text: {
-      fontSize: "11 pt",
+      fontSize: '10 pt',
+      fontFamily: "FreeSerif"
     },
     paragraph: {
-      lineSkip: "15 pt",
-      indent: '1 em'
-    }
+      lineSkip: '5 pt',
+      indent: '10 pt'
+    },
+    glue: {
+      width: "0.25 em",
+      shrink: "0.02 em",
+      stretch: "0.08 em"
+    },
   },
   endNotesSeparator : {
     verticalGlue: {

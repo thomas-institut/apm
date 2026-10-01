@@ -127,7 +127,12 @@ export const arabicDeGruyterScheherazadeNew: StyleSheetDefinition = {
     paragraph: {
       lineSkip: "15 pt",
       indent: '1 em'
-    }
+    },
+    glue: {
+      width: "0.35 em",
+      shrink: "0.02 em",
+      stretch: "0.08 em"
+    },
   },
   endNotesSeparator : {
     verticalGlue: {

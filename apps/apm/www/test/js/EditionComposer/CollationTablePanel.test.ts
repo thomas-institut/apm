@@ -54,5 +54,12 @@ describe('CollationTablePanel', () => {
       container.querySelector(`th.te-col-${col}`)?.classList.contains('highlight')
     );
     expect(highlightedColumns).toEqual([true, true, true]);
+
+    const header = container.querySelector('th.te-col-80') as HTMLElement;
+    const scrollCalls: ScrollIntoViewOptions[] = [];
+    header.scrollIntoView = options => scrollCalls.push(options ?? {});
+    panel.highlightColumnRange(80);
+
+    expect(scrollCalls).toEqual([{behavior: 'smooth', block: 'center'}]);
   });
 });

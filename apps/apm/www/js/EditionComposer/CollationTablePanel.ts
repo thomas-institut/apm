@@ -950,7 +950,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     if (scrollIntoView) {
       let domElement = $(`${this.containerSelector} table.te-table th.te-col-${colStart}`).get(0);
       if (domElement !== undefined) {
-        domElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const block = domElement.closest('.te-windowed-container') ? 'center' : 'start';
+        domElement.scrollIntoView({ behavior: 'smooth', block });
       }
     }
   }

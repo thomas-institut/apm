@@ -940,6 +940,9 @@ export class CollationTablePanel extends PanelWithToolbar {
       console.warn(`Attempted to highlight invalid column range: ${colStart} to ${colEnd}`);
       return;
     }
+    console.log(`highlightColumnRange: ${colStart} to ${colEnd}`);
+    this.tableEditor.showColumnRange(colStart, colEnd);
+
     this.removeColumnHighlight();
     for (let i = colStart; i <= colEnd; i++) {
       $(`${this.containerSelector} table.te-table th.te-col-${i}`).addClass('highlight');
@@ -947,7 +950,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     if (scrollIntoView) {
       let domElement = $(`${this.containerSelector} table.te-table th.te-col-${colStart}`).get(0);
       if (domElement !== undefined) {
-        domElement.scrollIntoView();
+        domElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
     }
   }

@@ -7,7 +7,7 @@ use APM\System\Events\TranscriptionUpdatedPayload;
 use APM\System\Jobs\UpdateApiSearchTranscribersAndTranscriptionsCacheJob;
 use APM\System\Jobs\UpdateApiSearchTranscriptionsIndexJob;
 use InvalidArgumentException;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 
 /**
  * Schedules search index and transcriber cache refreshes after a transcription update.
@@ -18,9 +18,9 @@ final readonly class TranscriptionSearchListener implements EventListener
     /**
      * Create the transcription search listener.
      *
-     * @param JobQueueManager $jobQueueManager Queue for search refresh jobs.
+     * @param JobQueueManagerInterface $jobQueueManager Queue for search refresh jobs.
      */
-    public function __construct(private JobQueueManager $jobQueueManager)
+    public function __construct(private JobQueueManagerInterface $jobQueueManager)
     {
     }
 

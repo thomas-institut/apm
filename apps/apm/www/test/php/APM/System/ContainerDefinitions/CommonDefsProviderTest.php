@@ -33,7 +33,7 @@ use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use Slim\Views\Twig;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\ToolBox\MySqlHelper;
 use function DI\value;
 
@@ -109,10 +109,10 @@ class CommonDefsProviderTest extends TestCase
      */
     public function testPhpDiResolvesRegisteredEventListeners(): void
     {
-        $jobQueueManager = $this->createMock(JobQueueManager::class);
+        $jobQueueManager = $this->createMock(JobQueueManagerInterface::class);
         $jobQueueManager->expects($this->exactly(5))->method('scheduleJob')->willReturn('');
         $definitions = (new CommonDefsProvider())->getContainerDefs([]);
-        $definitions[JobQueueManager::class] = value($jobQueueManager);
+        $definitions[JobQueueManagerInterface::class] = value($jobQueueManager);
         $builder = new ContainerBuilder();
         $builder->addDefinitions($definitions);
         $container = $builder->build();

@@ -11,7 +11,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use Psr\Log\LoggerInterface;
 use RuntimeException;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
@@ -64,8 +64,8 @@ class ValkeyWorker
         $sm = $ci->get(SystemManager::class);
         $this->systemManager = $sm;
 
-        /** @var JobQueueManager $jm */
-        $jm = $ci->get(JobQueueManager::class);
+        /** @var JobQueueManagerInterface $jm */
+        $jm = $ci->get(JobQueueManagerInterface::class);
         if ($jm instanceof ValkeyJobQueueManager) {
             $this->jobManager = $jm;
         } else {

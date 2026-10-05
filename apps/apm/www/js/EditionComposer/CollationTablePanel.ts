@@ -77,6 +77,7 @@ import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
 import {createDelayer} from "@/toolbox/Delayer";
 import {Matrix} from "@/lib/Matrix";
+import {wait} from "@/toolbox/wait";
 
 
 interface ViewSettings {
@@ -123,6 +124,8 @@ export class CollationTablePanel extends PanelWithToolbar {
   private selectedColumnsTo!: number;
   private variantsMatrix: Matrix<number> | null = null;
   private readonly delayedOnCtDataChange!: (ctData: CtDataInterface) => void;
+  private highlightedColumnRange: [number, number]  = [ -1, -1];
+
 
   constructor(options: CollationTablePanelOptions) {
     super(options);
@@ -266,6 +269,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     if (visible) {
       this._setupPanelContent();
       super.onResize(visible);
+      this.doColumnHighlight(true);
       this.panelIsSetup = true;
     }
   }
@@ -276,6 +280,9 @@ export class CollationTablePanel extends PanelWithToolbar {
       this._setupPanelContent();
       super.onResize(true);
       this.panelIsSetup = true;
+      wait(100).then(() => this.doColumnHighlight(true));
+    } else {
+      this.doColumnHighlight(true);
     }
   }
 
@@ -926,7 +933,8 @@ export class CollationTablePanel extends PanelWithToolbar {
    */
   highlightColumnRange(colStart: number, colEnd: number = -1, scrollIntoView: boolean = true) {
     if (colStart < 0) {
-      this.removeColumnHighlight();
+      this.highlightedColumnRange = [-1, -1];
+      this.doColumnHighlight();
       return;
     }
     let maxCol = this.ctData['collationMatrix'][0].length - 1;
@@ -940,6 +948,22 @@ export class CollationTablePanel extends PanelWithToolbar {
       console.warn(`Attempted to highlight invalid column range: ${colStart} to ${colEnd}`);
       return;
     }
+    console.log(`highlightColumnRange: ${colStart} to ${colEnd}`);
+    this.highlightedColumnRange = [colStart, colEnd];
+    this.doColumnHighlight(scrollIntoView);
+  }
+
+  private doColumnHighlight(scrollIntoView: boolean = true) {
+    const [colStart, colEnd] = this.highlightedColumnRange;
+    if (colStart < 0) {
+      this.removeColumnHighlight();
+      return;
+    }
+    if (this.tableEditor === undefined || this.tableEditor === null) {
+      console.log(`doColumnHighlight: tableEditor is undefined or null`);
+      return;
+    }
+    this.tableEditor.showColumnRange(colStart, colEnd);
     this.removeColumnHighlight();
     for (let i = colStart; i <= colEnd; i++) {
       $(`${this.containerSelector} table.te-table th.te-col-${i}`).addClass('highlight');
@@ -947,7 +971,8 @@ export class CollationTablePanel extends PanelWithToolbar {
     if (scrollIntoView) {
       let domElement = $(`${this.containerSelector} table.te-table th.te-col-${colStart}`).get(0);
       if (domElement !== undefined) {
-        domElement.scrollIntoView();
+        const block = domElement.closest('.te-windowed-container') ? 'center' : 'start';
+        domElement.scrollIntoView({ behavior: 'smooth', block });
       }
     }
   }

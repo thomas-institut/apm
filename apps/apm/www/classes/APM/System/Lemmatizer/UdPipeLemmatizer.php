@@ -95,7 +95,7 @@ class UdPipeLemmatizer implements LemmatizerInterface
             // Remove irrelevant signs and convert each sentence into an array of still encoded tokens
             $sentence = str_replace('\n#', '', $sentence);
 
-            $sentence = explode("\n", $sentence);
+            $sentence = explode("\\n", $sentence);
 
             foreach ($sentence as $key => $token) {
                 if (!str_contains($token, '\t')) {

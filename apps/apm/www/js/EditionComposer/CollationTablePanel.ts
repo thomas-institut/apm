@@ -350,7 +350,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     this.modeToggle = new MultiToggle({
       containerSelector: '#mode-toggle',
-      title: 'Edit: ',
+      title: 'Mode: ',
       buttonClass: 'tb-button',
       initialOption: this.tableEditModeToRestore === EditModeOff ? 'search' : this.tableEditModeToRestore,
       wrapButtonsInDiv: true,

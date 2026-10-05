@@ -857,6 +857,7 @@ export class ApparatusPanel extends PanelWithToolbar {
       this._getClearSelectionButtonElement().addClass('hidden');
       return;
     }
+    console.log('selecting lemma', entryIndex, this.apparatus.entries[entryIndex]);
     this._getLemmaElement(entryIndex).addClass('lemma-selected');
     this._getEditEntryButtonElement().removeClass('hidden');
     this._getAddEntryDropdownElement().removeClass('hidden');
@@ -867,6 +868,8 @@ export class ApparatusPanel extends PanelWithToolbar {
         this.options.highlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], false);
       }
       this.options.highlightMainText(fullEntryArray, true);
+      const [ctFrom, ctTo]  = this.getCtColumnRangeForEntry(this.apparatus.entries[entryIndex]);
+      this.options.highlightCollationTableRange(ctFrom, ctTo);
     }
     this.currentSelectedEntryIndex = entryIndex;
   }
@@ -889,12 +892,13 @@ export class ApparatusPanel extends PanelWithToolbar {
     super.onShown();
     if (this.currentSelectedEntryIndex !== -1) {
       this.options.highlightMainText([this.options.apparatusIndex, this.currentSelectedEntryIndex], true);
-      if (this.apparatusEntryFormIsVisible && this.entryInEditor !== null) {
-
-        this.options.highlightCollationTableRange(this.entryInEditor.metadata['ctGroup'].from, this.entryInEditor.metadata['ctGroup'].to);
-      } else {
-        this.options.highlightCollationTableRange(-1, -1);
-      }
+      const [ctFrom, ctTo]  = this.getCtColumnRangeForEntry(this.apparatus.entries[this.currentSelectedEntryIndex]);
+      this.options.highlightCollationTableRange(ctFrom, ctTo);
+      // if (this.apparatusEntryFormIsVisible && this.entryInEditor !== null) {
+      //   this.options.highlightCollationTableRange(this.entryInEditor.metadata['ctGroup'].from, this.entryInEditor.metadata['ctGroup'].to);
+      // } else {
+      //   this.options.highlightCollationTableRange(-1, -1);
+      // }
     } else {
       if (this.apparatusEntryFormIsVisible && this.entryInEditor !== null) {
         this.options.highlightCollationTableRange(this.entryInEditor.metadata['ctGroup'].from, this.entryInEditor.metadata['ctGroup'].to);
@@ -1478,6 +1482,12 @@ export class ApparatusPanel extends PanelWithToolbar {
     delete theEntry.metadata['ctGroup'];
     theEntry.metadata['ctGroup'] = {from: ctIndexFrom, to: ctIndexTo};
     return theEntry;
+  }
+
+  private getCtColumnRangeForEntry(entry: ApparatusEntry) : [ number, number] {
+    const from = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[entry.from].editionWitnessTokenIndex);
+    const to = CtData.getCtIndexForEditionWitnessTokenIndex(this.ctData, this.edition.mainText[entry.to].editionWitnessTokenIndex);
+    return [from, to];
   }
 
   /**

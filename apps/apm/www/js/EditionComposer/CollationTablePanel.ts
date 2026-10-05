@@ -77,6 +77,7 @@ import {PersonEssentialData} from "@/Api/DataSchema/ApiPeople";
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
 import {createDelayer} from "@/toolbox/Delayer";
 import {Matrix} from "@/lib/Matrix";
+import {wait} from "@/toolbox/wait";
 
 
 interface ViewSettings {
@@ -268,6 +269,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     if (visible) {
       this._setupPanelContent();
       super.onResize(visible);
+      this.doColumnHighlight(true);
       this.panelIsSetup = true;
     }
   }
@@ -277,8 +279,10 @@ export class CollationTablePanel extends PanelWithToolbar {
     if (!this.panelIsSetup) {
       this._setupPanelContent();
       super.onResize(true);
-      this.doColumnHighlight(true);
       this.panelIsSetup = true;
+      wait(100).then(() => this.doColumnHighlight(true));
+    } else {
+      this.doColumnHighlight(true);
     }
   }
 
@@ -954,7 +958,9 @@ export class CollationTablePanel extends PanelWithToolbar {
     if (colStart < 0) {
       this.removeColumnHighlight();
       return;
-    }if (this.tableEditor === undefined || this.tableEditor === null) {
+    }
+    if (this.tableEditor === undefined || this.tableEditor === null) {
+      console.log(`doColumnHighlight: tableEditor is undefined or null`);
       return;
     }
     this.tableEditor.showColumnRange(colStart, colEnd);

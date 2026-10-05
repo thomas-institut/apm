@@ -453,9 +453,13 @@ export class CollationTablePanel extends PanelWithToolbar {
     const witnessOrder = this.ctData.witnessOrder.filter(index =>
       this.ctData.witnesses[index].witnessType !== WitnessType.SOURCE);
     const rows = witnessOrder.map((witnessIndex, row) =>
-      this.tableEditor.matrix.getRow(row).map(ref =>
-        ref === -1 ? '' : this.ctData.witnesses[witnessIndex].tokens[ref]?.text ?? ''));
-    this.searchMatches = findCollationTableSearchMatches(rows, this.searchQuery);
+      this.tableEditor.matrix.getRow(row).map(ref => {
+        const token = ref === -1 ? undefined : this.ctData.witnesses[witnessIndex].tokens[ref];
+        return token?.normalizedText ?? token?.text ?? '';
+      }));
+    const normalizations = this.ctData.automaticNormalizationsApplied ?? [];
+    const normalizedQuery = this.normalizerRegister.applyNormalizerList(normalizations, this.searchQuery);
+    this.searchMatches = findCollationTableSearchMatches(rows, normalizedQuery);
     this.selectedSearchMatch = -1;
     this.doSearchHighlight();
     this.renderSearchControls();

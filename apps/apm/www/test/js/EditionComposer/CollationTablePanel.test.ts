@@ -12,6 +12,11 @@ import {createRoot} from 'react-dom/client';
 Object.assign(globalThis, {$, IS_REACT_ACT_ENVIRONMENT: true});
 
 interface SearchPanelHarness {
+  ctData: {
+    automaticNormalizationsApplied: string[];
+    witnesses: {tokens: {text: string; normalizedText?: string}[]}[];
+  };
+  normalizerRegister: {applyNormalizerList: (normalizers: string[], text: string) => string};
   searchQuery: string;
   searchMatches: CollationTableSearchMatch[];
   selectedSearchMatch: number;
@@ -62,8 +67,10 @@ describe('CollationTablePanel', () => {
       ctData: {
         witnessOrder: [nRows, ...rows.map((_row, index) => index)],
         witnesses: [...rows.map(row => ({witnessType: 'edition', tokens: row.map(text => ({text}))})),
-          {witnessType: 'source', tokens: []}]
+          {witnessType: 'source', tokens: []}],
+        automaticNormalizationsApplied: []
       },
+      normalizerRegister: {applyNormalizerList: (_normalizers: string[], text: string) => text},
       searchQuery: 'in principio',
       searchMatches: [],
       selectedSearchMatch: -1,
@@ -151,6 +158,21 @@ describe('CollationTablePanel', () => {
     expect(panel.searchMatches).toEqual([{row: 1, colFrom: 4, colTo: 5}]);
     expect(panel.selectedSearchMatch).toBe(-1);
     expect(container.querySelectorAll('td.search-match')).toHaveLength(2);
+  });
+
+  it('searches normalized cell text using the selected normalizations', () => {
+    const {panel} = setupSearchPanel();
+    const normalize = (text: string) => text.normalize('NFD').replace(/\p{M}/gu, '');
+    const applyNormalizerList = vi.fn((_normalizers: string[], text: string) => normalize(text));
+    panel.normalizerRegister.applyNormalizerList = applyNormalizerList;
+    panel.ctData.automaticNormalizationsApplied = ['remove-diacritics'];
+    panel.ctData.witnesses[0].tokens[0] = {text: 'amō', normalizedText: 'amo'};
+    panel.searchQuery = 'amō';
+
+    panel.updateSearchMatches();
+
+    expect(applyNormalizerList).toHaveBeenCalledWith(['remove-diacritics'], 'amō');
+    expect(panel.searchMatches).toEqual([{row: 0, colFrom: 0, colTo: 0}]);
   });
 
   it('connects typing, counts, navigation and mode changes to the search controls', async () => {

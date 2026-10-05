@@ -909,7 +909,8 @@ export class ApparatusPanel extends PanelWithToolbar {
   }
 
   _getLemmaIndexFromElement(element: JQuery<HTMLElement>) {
-    let indexes = UiToolBox.getIntArrayIdFromClasses(element, 'lemma-');
+    const lemmaElement = element.closest('.lemma');
+    let indexes = UiToolBox.getIntArrayIdFromClasses(lemmaElement, 'lemma-');
     if (indexes.length < 1) {
       return [-1, -1];
     }

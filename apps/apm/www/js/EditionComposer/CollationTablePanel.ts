@@ -45,6 +45,7 @@ import {
   EditModeOff,
   PreTableDrawnEvent,
   RowDefinition,
+  TableDrawnEvent,
   TableEditor,
   ValueChangeReport
 } from '@/pages/common/TableEditor/TableEditor';
@@ -78,6 +79,10 @@ import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
 import {createDelayer} from "@/toolbox/Delayer";
 import {Matrix} from "@/lib/Matrix";
 import {wait} from "@/toolbox/wait";
+import {createElement} from 'react';
+import {createRoot, Root} from 'react-dom/client';
+import CollationTableSearchControls from '@/EditionComposer/CollationTableSearchControls';
+import {CollationTableSearchMatch, findCollationTableSearchMatches} from '@/EditionComposer/CollationTableSearch';
 
 
 interface ViewSettings {
@@ -125,6 +130,11 @@ export class CollationTablePanel extends PanelWithToolbar {
   private variantsMatrix: Matrix<number> | null = null;
   private readonly delayedOnCtDataChange!: (ctData: CtDataInterface) => void;
   private highlightedColumnRange: [number, number]  = [ -1, -1];
+  private searchQuery: string = '';
+  private searchMatches: CollationTableSearchMatch[] = [];
+  private selectedSearchMatch: number = -1;
+  private searchIsActive: boolean = true;
+  private searchControlsRoot?: Root;
 
 
   constructor(options: CollationTablePanelOptions) {
@@ -225,6 +235,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     return `<div class="panel-toolbar-group">
        <div class="panel-toolbar-group" id="mode-toggle"></div>
+       <div class="panel-toolbar-group" id="ct-search-controls"></div>
        <div class="panel-toolbar-group"><span id="popovers-toggle"></span></div>
        <div class="panel-toolbar-group">
             <span id="normalizations-toggle"></span>
@@ -339,20 +350,23 @@ export class CollationTablePanel extends PanelWithToolbar {
 
     this.modeToggle = new MultiToggle({
       containerSelector: '#mode-toggle',
-      title: 'Edit: ',
+      title: 'Mode: ',
       buttonClass: 'tb-button',
-      initialOption: 'off',
+      initialOption: this.tableEditModeToRestore === EditModeOff ? 'search' : this.tableEditModeToRestore,
       wrapButtonsInDiv: true,
       buttonsDivClass: 'panel-toolbar-item',
-      buttonDef: [{label: 'Off', name: 'off', helpText: 'Turn off editing'}, {
+      buttonDef: [{label: 'Search', name: 'search', helpText: 'Search the collation table'}, {
         label: 'Move', name: 'move', helpText: 'Show controls to move/add/delete cells'
       }, {label: 'Group', name: 'group', helpText: 'Show controls to group columns'},]
     });
 
-    this.modeToggle.on(optionChange, (ev: any) => {
-      this.verbose && console.log('New Edit Mode: ' + ev.detail.currentOption);
-      this.tableEditor.setEditMode(ev.detail.currentOption);
+    this.modeToggle.on(optionChange, (ev: {detail: {currentOption: 'search' | 'move' | 'group'}}) => {
+      this.setPanelMode(ev.detail.currentOption);
     });
+    this.searchControlsRoot?.unmount();
+    this.searchControlsRoot = createRoot($(`${this.containerSelector} #ct-search-controls`).get(0)!);
+    this.searchIsActive = this.tableEditModeToRestore === EditModeOff;
+    this.renderSearchControls();
 
     // POPOVERS
 
@@ -410,6 +424,89 @@ export class CollationTablePanel extends PanelWithToolbar {
         }
       }
     };
+  }
+
+  private setPanelMode(mode: 'search' | 'move' | 'group') {
+    this.searchIsActive = mode === 'search';
+    this.tableEditModeToRestore = mode === 'search' ? EditModeOff : mode;
+    this.tableEditor?.setEditMode(this.tableEditModeToRestore);
+    this.doSearchHighlight();
+    this.renderSearchControls();
+  }
+
+  private renderSearchControls() {
+    this.searchControlsRoot?.render(createElement(CollationTableSearchControls, {
+      visible: this.searchIsActive,
+      query: this.searchQuery,
+      matchCount: this.searchMatches.length,
+      selectedMatch: this.selectedSearchMatch,
+      textDirection: this.textDirection,
+      onQueryChange: (query: string) => {
+        this.searchQuery = query;
+        this.updateSearchMatches();
+      },
+      onNavigate: (direction: -1 | 1) => this.navigateSearchMatch(direction)
+    }));
+  }
+
+  private updateSearchMatches() {
+    const witnessOrder = this.ctData.witnessOrder.filter(index =>
+      this.ctData.witnesses[index].witnessType !== WitnessType.SOURCE);
+    const rows = witnessOrder.map((witnessIndex, row) =>
+      this.tableEditor.matrix.getRow(row).map(ref => {
+        const token = ref === -1 ? undefined : this.ctData.witnesses[witnessIndex].tokens[ref];
+        return token?.normalizedText ?? token?.text ?? '';
+      }));
+    const normalizations = this.ctData.automaticNormalizationsApplied ?? [];
+    const normalizedQuery = this.normalizerRegister.applyNormalizerList(normalizations, this.searchQuery);
+    this.searchMatches = findCollationTableSearchMatches(rows, normalizedQuery);
+    this.selectedSearchMatch = -1;
+    this.doSearchHighlight();
+    this.renderSearchControls();
+  }
+
+  private doSearchHighlight() {
+    const cells = $(`${this.containerSelector} table.te-table td`);
+    cells.filter('.search-match').removeClass('search-match selected');
+    if (!this.searchIsActive || this.tableEditor === undefined) {
+      return;
+    }
+    const matchingCells = new Set<string>();
+    const selectedCells = new Set<string>();
+    this.searchMatches.forEach((match, index) => {
+      for (let col = match.colFrom; col <= match.colTo; col++) {
+        const key = `${match.row}:${col}`;
+        matchingCells.add(key);
+        if (index === this.selectedSearchMatch) {
+          selectedCells.add(key);
+        }
+      }
+    });
+    cells.each((_index, cell) => {
+      const position = this.tableEditor.getCellIndexFromElement(cell);
+      if (position === null) {
+        return;
+      }
+      const key = `${position.row}:${position.col}`;
+      if (matchingCells.has(key)) {
+        $(cell).addClass('search-match').toggleClass('selected', selectedCells.has(key));
+      }
+    });
+  }
+
+  private navigateSearchMatch(direction: -1 | 1) {
+    if (!this.searchIsActive || this.searchMatches.length === 0) {
+      return;
+    }
+    this.selectedSearchMatch = this.selectedSearchMatch === -1
+      ? (direction === 1 ? 0 : this.searchMatches.length - 1)
+      : (this.selectedSearchMatch + direction + this.searchMatches.length) % this.searchMatches.length;
+    const match = this.searchMatches[this.selectedSearchMatch];
+    this.tableEditor.showColumnRange(match.colFrom, match.colTo);
+    this.doSearchHighlight();
+    const cell = $(this.tableEditor.getTdSelector(match.row, match.colFrom)).get(0);
+    cell?.scrollIntoView({behavior: 'smooth', block: 'center'});
+    this.renderSearchControls();
   }
 
   /**
@@ -651,6 +748,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.setupTableEditor();
     this.verbose && console.log(`Setting tableEditor edit mode '${this.tableEditModeToRestore}'`);
     this.tableEditor.setEditMode(this.tableEditModeToRestore, false);
+    this.updateSearchMatches();
   }
 
   setupTableEditor() {
@@ -739,6 +837,7 @@ export class CollationTablePanel extends PanelWithToolbar {
     this.tableEditor.on(PreTableDrawnEvent, () => {
       thisObject.recalculateVariants();
     });
+    this.tableEditor.on(TableDrawnEvent, () => this.doSearchHighlight());
     // handle cell shifts
     this.tableEditor.on(CellPostShiftEvent, this.genOnCellPostShift());
 
@@ -782,6 +881,7 @@ export class CollationTablePanel extends PanelWithToolbar {
 
   private onCollationChanges() {
     this.ctData.collationMatrix = this.getCollationMatrixFromTableEditor();
+    this.updateSearchMatches();
     this.setCsvDownloadFile();
     this.delayedOnCtDataChange(this.ctData);
   }

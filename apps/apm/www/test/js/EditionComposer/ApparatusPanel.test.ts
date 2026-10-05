@@ -32,6 +32,7 @@ describe('ApparatusPanel lemma selection', () => {
 
   function createPanel(apparatusIndex = 0) {
     const highlightCollationTableRange = vi.fn();
+    const mainText = Array.from({length: 10}, (_, editionWitnessTokenIndex) => ({editionWitnessTokenIndex}));
     const panel = Object.assign(Object.create(ApparatusPanel.prototype), {
       containerSelector: '#test-container',
       options: {
@@ -39,10 +40,16 @@ describe('ApparatusPanel lemma selection', () => {
         highlightCollationTableRange,
         highlightMainText: vi.fn()
       },
+      ctData: {
+        type: 'edition',
+        editionWitnessIndex: 0,
+        collationMatrix: [Array.from({length: 10}, (_, index) => index)]
+      },
+      edition: {mainText},
       apparatus: {
         entries: [
-          {metadata: {ctGroup: {from: 3, to: 4}}},
-          {metadata: {ctGroup: {from: 8, to: 9}}}
+          {from: 3, to: 4, metadata: {ctGroup: {from: 3, to: 4}}},
+          {from: 8, to: 9, metadata: {ctGroup: {from: 8, to: 9}}}
         ]
       },
       currentSelectedEntryIndex: -1,

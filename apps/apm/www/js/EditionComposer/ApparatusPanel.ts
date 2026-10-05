@@ -1119,112 +1119,6 @@ export class ApparatusPanel extends PanelWithToolbar {
     return this.mtTsInfoFromCt;
   }
 
-  // private genApparatusHtml() {
-  //   let debug = false;
-  //   let html = '';
-  //   let lastLine = '';
-  //   let sigla = this.edition.getSigla();
-  //   let textDirectionMarker = this.edition.lang === 'la' ? '&lrm;' : '&rlm;';
-  //
-  //   let tsInfo = this.mainTextTypesettingInfo;
-  //   if (this.useCtColNumbers) {
-  //     tsInfo = this.getMainTextTypesettingInfoFromCtTable();
-  //   }
-  //
-  //   if (tsInfo === null) {
-  //     return 'Apparatus coming soon...';
-  //   }
-  //
-  //   this.apparatus.entries.forEach((apparatusEntry, aeIndex) => {
-  //     debug && console.log(`Generating apparatus entry ${aeIndex}`);
-  //     html += `<span class="apparatus-entry apparatus-entry-${this.options.apparatusIndex}-${aeIndex}">`;
-  //     let currentLine = "__UNDEFINED__";
-  //     try {
-  //       currentLine = ApparatusCommon.getLineNumberString(ApparatusEntry.clone(apparatusEntry), tsInfo, this.lang);
-  //     } catch (e) {
-  //       console.error(`Error getting lineNumber string in apparatus entry ${aeIndex}`);
-  //       console.log(apparatusEntry);
-  //     }
-  //
-  //     let lineHtml = `${textDirectionMarker}&nbsp;${this.options.entrySeparator}&nbsp;`;
-  //     if (currentLine !== lastLine) {
-  //       let lineSep = aeIndex !== 0 ? `${this.options.apparatusLineSeparator}&nbsp;` : '';
-  //       lineHtml = `${textDirectionMarker}${lineSep}<b class="apparatus-line-number">${currentLine}</b>`;
-  //       lastLine = currentLine;
-  //     }
-  //     // build lemma section
-  //     let preLemmaSpanHtml = '';
-  //     const preLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.preLemma));
-  //     switch (preLemmaText) {
-  //       case '':
-  //         // do nothing
-  //         break;
-  //
-  //       case 'ante':
-  //       case 'post':
-  //         preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
-  //         break;
-  //
-  //       default:
-  //         preLemmaSpanHtml = ApparatusCommon.getKeywordHtml(preLemmaText, this.edition.lang);
-  //     }
-  //     let preLemmaSpan = preLemmaSpanHtml === '' ? '' : `<span class="pre-lemma">${preLemmaSpanHtml}</span> `;
-  //
-  //
-  //     let lemmaSpan = `<span class="lemma lemma-${this.options.apparatusIndex}-${aeIndex}">${ApparatusCommon.getLemmaHtml(apparatusEntry, tsInfo, this.edition.lang)}</span>`;
-  //
-  //     debug && console.log(`Lemma html: ${lemmaSpan}`);
-  //
-  //     let postLemmaSpan = '';
-  //     const postLemmaText = getPlainText(fromCompactFmtText(apparatusEntry.postLemma));
-  //     if (postLemmaText !== '') {
-  //       let postLemma = ApparatusCommon.getKeywordHtml(postLemmaText, this.edition.lang);
-  //       postLemmaSpan = ` <span class="pre-lemma">${postLemma}</span>`;
-  //     }
-  //
-  //     let separator: CompactFmtText;
-  //
-  //     switch (apparatusEntry.separator) {
-  //       case '':
-  //         if (apparatusEntry.allSubEntriesAreOmissions()) {
-  //           separator = '';
-  //         } else {
-  //           separator = ']';
-  //         }
-  //         break;
-  //
-  //       case 'off':
-  //         separator = '';
-  //         break;
-  //
-  //       case 'colon':
-  //         separator = ':';
-  //         break;
-  //
-  //       default:
-  //         separator = apparatusEntry.separator;
-  //     }
-  //     separator = getPlainText(fromCompactFmtText(separator));
-  //
-  //     html += `${lineHtml} ${preLemmaSpan}${lemmaSpan}${postLemmaSpan}${separator} `;
-  //     apparatusEntry.subEntries.forEach((subEntry, subEntryIndex) => {
-  //       let classes = ['sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`];
-  //       if (!subEntry.enabled) {
-  //         classes.push('sub-entry-disabled');
-  //       }
-  //       html += `<span class="${classes.join(' ')}">
-  //                           ${ApparatusCommon.genSubEntryHtmlContent(this.lang, subEntry, sigla, this.edition.siglaGroups)}
-  //        </span>`;
-  //       html += `<span style="direction: ${this.defaultTextDirection}; unicode-bidi: embed">&nbsp;</span>`;
-  //     });
-  //     html += '</span>';
-  //   });
-  //   if (html === '') {
-  //     html = `<i>... empty ...</i>`;
-  //   }
-  //   return html;
-  // }
-
   /**
    * Generates a VNode for the apparatus div
    *
@@ -1332,7 +1226,6 @@ export class ApparatusPanel extends PanelWithToolbar {
     if (this.currentSelectedEntryIndex === -1) {
       this._getEditEntryButtonElement().addClass('hidden');
     }
-    this.options.highlightCollationTableRange(-1, -1);
     this.apparatusEntryFormIsVisible = false;
     this.fitDivs();
   }

@@ -17,7 +17,7 @@ import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import NiceToggle from "@/ReactAPM/Components/NiceToggle/NiceToggle";
-import ToolbarPageControls from "@/ReactAPM/Pages/MceComposer/ToolbarPageControls";
+import ToolbarPageControls from "@/ReactAPM/Components/ToolbarPageControls";
 
 interface MainTextPanelProps extends TabbableElementProps {
   edition: Edition | null;

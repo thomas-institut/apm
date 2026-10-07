@@ -38,7 +38,7 @@ const Chunk = lazy(() => import('./Pages/Chunk/Chunk.js'));
 // @ts-ignore
 const Person = lazy(() => import('./Pages/Person/Person.js'));
 // @ts-ignore
-const EditionComposer = lazy(() => import('./Pages/EditionComposer.js'));
+const EditionComposer = lazy(() => import('./Pages/EditionComposer/EditionComposer.js'));
 // @ts-ignore
 const Document = lazy(() => import('./Pages/Document/Document.js'));
 // @ts-ignore

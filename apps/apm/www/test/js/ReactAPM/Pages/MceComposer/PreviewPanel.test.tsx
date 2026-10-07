@@ -6,7 +6,7 @@ import React from 'react';
 import {act} from 'react';
 import {createRoot, Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
-import PreviewPanel from '@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel';
+import PreviewPanel from '@/ReactAPM/Components/PreviewPanel/PreviewPanel';
 
 const mockGetTypesetEdition = vi.hoisted(() => vi.fn());
 const mockGetApiPdfData = vi.hoisted(() => vi.fn());

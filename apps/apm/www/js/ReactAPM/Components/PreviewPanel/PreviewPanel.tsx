@@ -10,10 +10,10 @@ import {SystemStyles, SystemStyleSheet} from "@/defaults/EditionStyles/SystemSty
 import TypesetterDocumentViewer from "@/ReactAPM/Components/TypesetterDocumentViewer/TypesetterDocumentViewer";
 import {TypesetterDocument} from "@thomas-inst/typesetter";
 import {Edition} from "@/Edition/Edition";
-import {getApiPdfData, getTypesetEdition} from "@/ReactAPM/Pages/MceComposer/PreviewPanel/EditionTypesettingUtilities";
+import {getApiPdfData, getTypesetEdition} from "@/ReactAPM/Components/PreviewPanel/EditionTypesettingUtilities";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
-import ToolbarPageControls from "@/ReactAPM/Pages/MceComposer/ToolbarPageControls";
-import PreviewZoomControls from "@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewZoomControls";
+import ToolbarPageControls from "@/ReactAPM/Components/ToolbarPageControls";
+import PreviewZoomControls from "@/ReactAPM/Components/PreviewPanel/PreviewZoomControls";
 import {Spinner} from "react-bootstrap";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import {WebStorageKeyCache} from "@/toolbox/KeyCache/WebStorageKeyCache";

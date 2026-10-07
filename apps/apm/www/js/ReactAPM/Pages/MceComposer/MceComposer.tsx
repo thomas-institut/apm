@@ -1,4 +1,4 @@
-import {useParams, useNavigate} from "react-router";
+import {useNavigate, useParams} from "react-router";
 import {cloneElement, JSX, useContext, useEffect, useMemo, useRef, useState} from "react";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
@@ -8,7 +8,8 @@ import {
   Arrow90degRight,
   ArrowCounterclockwise,
   ArrowsAngleContract,
-  ChevronRight, Gear
+  ChevronRight,
+  Gear
 } from "react-bootstrap-icons";
 import {Form, OverlayTrigger, Popover, Spinner} from "react-bootstrap";
 import {MceData} from '@/MceData/MceData';
@@ -44,7 +45,7 @@ import {
 import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/ChangeSiglaGroupAction";
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteSiglaGroupAction";
-import PreviewPanel from "@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel";
+import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
 import {ApiTypesetPdfRequestData} from "@/Api/DataSchema/ApiPdfUrl";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 import {RouteUrls} from "@/ReactAPM/Router/RouteUrls";
@@ -53,9 +54,13 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 import {UpdateChunkAction} from "@/ReactAPM/Pages/MceComposer/Actions/UpdateChunkAction";
 import {AddStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/AddStandardizedStringAction";
 import {DeleteStandardizedStringAction} from "@/ReactAPM/Pages/MceComposer/Actions/DeleteStandardizedStringAction";
-import {SetStandardizedStringInstanceStatusAction} from "@/ReactAPM/Pages/MceComposer/Actions/SetStandardizedStringInstanceStatusAction";
+import {
+  SetStandardizedStringInstanceStatusAction
+} from "@/ReactAPM/Pages/MceComposer/Actions/SetStandardizedStringInstanceStatusAction";
 import {ResetStandardizedStringAllAction} from "@/ReactAPM/Pages/MceComposer/Actions/ResetStandardizedStringAllAction";
-import {AcceptStandardizedStringAllAction} from "@/ReactAPM/Pages/MceComposer/Actions/AcceptStandardizedStringAllAction";
+import {
+  AcceptStandardizedStringAllAction
+} from "@/ReactAPM/Pages/MceComposer/Actions/AcceptStandardizedStringAllAction";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import {parseValidNumericalId} from "@/ReactAPM/ToolBox/ParseValidNumericalId";
 import {OperationalError} from "@/lib/Error/SystemError";
@@ -69,6 +74,7 @@ import {TimeString} from "@/toolbox/TimeString";
 import BugWarningButton from "@/ReactAPM/Pages/MceComposer/BugWarningButton";
 import NotLastVersionWarningButton from "@/ReactAPM/Pages/MceComposer/NotLastVersionWarningButton";
 import ArchivedEditionWarningButton from "@/ReactAPM/Pages/MceComposer/ArchivedEditionWarningButton";
+import {panelsFromSpecs, PanelSpec} from "@/ReactAPM/Components/PanelUI/PanelSpec";
 
 // TODO: for later
 //  - Implement tags panel
@@ -119,17 +125,6 @@ interface InitialMceData {
 interface MceSettings {
   autoRegenerate: boolean;
   layoutOrientation: 'horizontal' | 'vertical';
-}
-
-interface PanelSpec {
-  panel: 'one' | 'two';
-  key: string;
-  title: string;
-  className?: string;
-  expandable?: boolean;
-  closable?: boolean;
-  content: JSX.Element;
-  tabbable?: boolean;
 }
 
 interface PendingEditionGenerationRequest {
@@ -1619,30 +1614,6 @@ export default function MceComposer() {
       </div>
     );
   }
-
-  const panelsFromSpecs = (panelSpecs: PanelSpec[], panel: 'one' | 'two') => {
-    return panelSpecs.filter(panelSpec => panelSpec.panel === panel)
-      .map((panelSpec) => {
-        if (panelSpec.tabbable) {
-          return cloneElement(panelSpec.content, {
-            tabKey: panelSpec.key,
-            tabTitle: panelSpec.title,
-            className: panelSpec.className ?? '',
-            closable: panelSpec.closable ?? false,
-            expandable: panelSpec.expandable ?? false,
-          });
-        } else {
-          return <Panel tabKey={panelSpec.key}
-                        className={panelSpec.className ?? ''}
-                        tabTitle={panelSpec.title}
-                        closable={panelSpec.closable ?? false}
-                        expandable={panelSpec.expandable ?? false}>
-            {panelSpec.content}
-          </Panel>;
-        }
-
-      });
-  };
 
   return (<div className="mce-composer">
     <div className="header">

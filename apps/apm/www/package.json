@@ -1,6 +1,6 @@
 {
   "name": "apm-frontend",
-  "version": "1.5.2",
+  "version": "1.5.3",
   "description": "Averroes Project Manager",
   "directories": {
     "test": "test"

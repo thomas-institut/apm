@@ -14,6 +14,7 @@ import EditableTextField from "@/ReactAPM/Components/EditableTextField";
 import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import CtPanel from "@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel";
+import {CtData} from "@/CtData/CtData";
 
 
 type ComposerStatus = 'start' | 'loading' | 'error' | 'loaded';
@@ -73,7 +74,19 @@ export default function EditionComposer() {
         if (!result) {
           return;
         }
-        setCtData(result.ctData);
+        console.log(`Data for edition ${id}:`, result);
+        try {
+          const cleanCtData = CtData.getCleanAndUpdatedCtData(result.ctData);
+          console.log(`Cleaned CT data for edition ${id}:`, cleanCtData);
+          setCtData(cleanCtData);
+        } catch (error) {
+          console.warn(`Error cleaning CT data for edition ${id}:`, error);
+          // @ts-ignore
+          setErrorMsg("Error loading edition data: " + error.toString());
+          setComposerStatus('error');
+          return;
+        }
+
         setVersions(result.versions);
         setIsLatestVersion(result.isLatestVersion);
         setVersionId(result.versionId);

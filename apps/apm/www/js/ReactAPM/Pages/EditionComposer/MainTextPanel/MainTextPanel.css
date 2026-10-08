@@ -1,0 +1,50 @@
+.main-text-panel {
+
+    padding: 0 1em 1em 1em;
+    height: 100%;
+    overflow: auto;
+
+    .main-text-viewer {
+        padding: 0 3em;
+    }
+
+    .text-la {
+        font-family: var(--latin-apparatus-font-family), serif;
+        font-size: 14pt;
+    }
+
+    p.normal {
+        text-indent: 2em;
+        padding: 0;
+        margin: 0;
+    }
+
+    p.h3, div.fte-editor h3 {
+        font-weight: bold;
+        font-size: 1.1em;
+        padding: 0;
+        margin: 0.5em 0;
+    }
+
+    p.h2, div.fte-editor h2 {
+        font-weight: bold;
+        text-align: center;
+        font-size: 1.2em;
+        padding: 0;
+        margin: 1em 0;
+    }
+
+    p.h1, div.fte-editor h1 {
+        font-weight: bold;
+        text-align: center;
+        font-size: 1.5em;
+        padding: 0;
+        margin: 1em 0;
+    }
+
+    p.paragraph-empty {
+        padding: 0;
+        margin-bottom: 1.5em;
+    }
+
+}

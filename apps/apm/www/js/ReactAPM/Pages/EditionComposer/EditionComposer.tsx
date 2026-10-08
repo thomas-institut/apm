@@ -15,6 +15,10 @@ import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import CtPanel from "@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel";
 import {CtData} from "@/CtData/CtData";
+import {CtDataEditionGenerator} from "@/Edition/EditionGenerator/CtDataEditionGenerator";
+import {Edition} from "@/Edition/Edition";
+import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
+import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
 
 
 type ComposerStatus = 'start' | 'loading' | 'error' | 'loaded';
@@ -26,6 +30,7 @@ export default function EditionComposer() {
   const [composerStatus, setComposerStatus] = useState<ComposerStatus>('start');
   const [errorMsg, setErrorMsg] = useState<string>('');
   const [ctData, setCtData] = useState<CtDataInterface | null>(null);
+  const [edition, setEdition] = useState<Edition | null>(null);
   const [versions, setVersions] = useState<CtVersionInfo[]>([]);
   const [isLatestVersion, setIsLatestVersion] = useState<boolean | null>(null);
   const [versionId, setVersionId] = useState(-1);
@@ -37,7 +42,7 @@ export default function EditionComposer() {
   const appContext = useContext(AppContext);
   const shimWidth = 5;
 
-  const getEditionData = async () => {
+  const getTableData = async () => {
     if (!id) {
       setErrorMsg('Edition ID is missing');
       setComposerStatus('error');
@@ -63,6 +68,17 @@ export default function EditionComposer() {
     }
   };
 
+  const reGenerateEdition = (ctData: CtDataInterface) => {
+    const eg = new CtDataEditionGenerator({ctData: ctData});
+    try {
+      return eg.generateEdition();
+    } catch (error) {
+      setErrorMsg('Failed to generate edition');
+      setComposerStatus('error');
+      return null;
+    }
+  }
+
 
   useEffect(() => {
     if (composerStatus === 'start') {
@@ -70,7 +86,7 @@ export default function EditionComposer() {
       return;
     }
     if (composerStatus === 'loading') {
-      getEditionData().then((result) => {
+      getTableData().then((result) => {
         if (!result) {
           return;
         }
@@ -79,6 +95,8 @@ export default function EditionComposer() {
           const cleanCtData = CtData.getCleanAndUpdatedCtData(result.ctData);
           console.log(`Cleaned CT data for edition ${id}:`, cleanCtData);
           setCtData(cleanCtData);
+          setEdition(reGenerateEdition(cleanCtData));
+
         } catch (error) {
           console.warn(`Error cleaning CT data for edition ${id}:`, error);
           // @ts-ignore
@@ -116,8 +134,8 @@ export default function EditionComposer() {
     return <StatusPage label={'Single Chunk Edition'}>Starting...</StatusPage>;
   }
 
-  if (ctData === null) {
-    setErrorMsg('CtData is null after loading, this is certainly a bug, please report it.');
+  if (ctData === null || edition === null) {
+    setErrorMsg('Unexpected null data after loading. This is certainly a bug, please report it.');
     return <h1>Bug!!</h1>;
   }
 
@@ -131,7 +149,7 @@ export default function EditionComposer() {
       panel: 'one',
       key: 'mainText',
       title: 'Main Text',
-      content: <MainTextPanel ctData={ctData}/>
+      content: <MainTextPanel mainText={edition.mainText} ctData={ctData}/>
     },
     {
       panel: 'one',
@@ -139,14 +157,33 @@ export default function EditionComposer() {
       title: 'Collation',
       content: <CtPanel ctData={ctData}/>
     },
-    {
-      panel: 'two',
-      key: 'admin',
-      title: 'Admin',
-      content: <AdminPanel tableId={ctData.tableId} versionId={versionId} versions={versions}
-                           isLatestVersion={isLatestVersion ?? false}/>
-    }
+
   ];
+
+  edition.apparatuses.forEach( (apparatus) => {
+    panelSpecs.push({
+      panel: 'two',
+      key: `apparatus-${apparatus.type}`,
+      title: apparatus.type,
+      content: <ApparatusPanel apparatus={apparatus}/>
+    })
+  });
+
+  panelSpecs.push({
+    panel: 'two',
+    key: 'preview',
+    title: 'Preview',
+    content: <PreviewPanel editionKey={`edition-${id}`} edition={edition} getPdfUrl={ async () => ''}/>
+    }
+  );
+
+  panelSpecs.push( {
+    panel: 'two',
+    key: 'admin',
+    title: 'Admin',
+    content: <AdminPanel tableId={ctData.tableId} versionId={versionId} versions={versions}
+                         isLatestVersion={isLatestVersion ?? false}/>
+  });
 
   return (<div className="ec-composer">
     <div className="header">

@@ -19,6 +19,8 @@ import {CtDataEditionGenerator} from "@/Edition/EditionGenerator/CtDataEditionGe
 import {Edition} from "@/Edition/Edition";
 import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
 import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
+import {MainTextIndexToLineMap} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
+import sigla from "@/EditionComposer/QuillBlots/Sigla";
 
 
 type ComposerStatus = 'start' | 'loading' | 'error' | 'loaded';
@@ -34,6 +36,7 @@ export default function EditionComposer() {
   const [versions, setVersions] = useState<CtVersionInfo[]>([]);
   const [isLatestVersion, setIsLatestVersion] = useState<boolean | null>(null);
   const [versionId, setVersionId] = useState(-1);
+  const [mainTextIndexToLineNumberMap, setMainTextIndexToLineNumberMap] = useState<MainTextIndexToLineMap | null>(null);
   const [versionTimeStamp, setVersionTimeStamp] = useState('');
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
   const [activeTabPanelOne, setActiveTabPanelOne] = useState('mainText');
@@ -143,13 +146,16 @@ export default function EditionComposer() {
     {!isLatestVersion && <p className={'text-danger'}>This is not the latest version</p>}
   </div>;
 
+  const onLineNumberingChange = (lineNumbering: MainTextIndexToLineMap) => {
+    setMainTextIndexToLineNumberMap(lineNumbering);
+  };
 
   const panelSpecs: PanelSpec[] = [
     {
       panel: 'one',
       key: 'mainText',
       title: 'Main Text',
-      content: <MainTextPanel mainText={edition.mainText} ctData={ctData}/>
+      content: <MainTextPanel mainText={edition.mainText} ctData={ctData} onLineNumberingChange={onLineNumberingChange}/>
     },
     {
       panel: 'one',
@@ -165,7 +171,7 @@ export default function EditionComposer() {
       panel: 'two',
       key: `apparatus-${apparatus.type}`,
       title: apparatus.type,
-      content: <ApparatusPanel apparatus={apparatus}/>
+      content: <ApparatusPanel apparatus={apparatus} lineNumberMap={mainTextIndexToLineNumberMap} sigla={ctData.sigla} lang={ctData.lang}/>
     })
   });
 

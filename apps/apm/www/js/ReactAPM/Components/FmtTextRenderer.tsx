@@ -4,7 +4,6 @@ import {Fragment} from "react";
 
 interface FmtTextRendererProps {
   t: FmtText;
-  index: number;
   tokenClasses?: string[];
   tokenIndexClassPrefix?: string;
   textClasses?: string[];
@@ -12,7 +11,7 @@ interface FmtTextRendererProps {
 }
 
 export default function FmtTextRenderer({t,
-  index,
+
                                           tokenClasses = [],
                                           tokenIndexClassPrefix='',
                                           textClasses = [], glueClasses = []}: FmtTextRendererProps) {
@@ -21,7 +20,7 @@ export default function FmtTextRenderer({t,
     const indexClass = indexPrefix !== '' ? `${indexPrefix}-${index}` : '';
     return [indexClass, ...tokenClasses].filter( c => c !== '').join(' ');
   }
-  return <Fragment key={index}>
+  return <Fragment>
     {
       t.map( (token, tokenIndex) => {
         const key = tokenIndex;

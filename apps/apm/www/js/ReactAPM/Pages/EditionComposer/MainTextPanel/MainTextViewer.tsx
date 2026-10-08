@@ -114,7 +114,7 @@ export default function MainTextViewer({mainText, indexMap, className = '', onLi
           const ctIndex = indexMap[token.editionWitnessTokenIndex];
           const typeClass = token.type === EditionMainTextTokenType.TEXT ? [] : [NL];
            const tokenClasses = [MTT, `${MTT_ORIG}${token.originalIndex}`, `${CTI}${ctIndex}`, ...typeClass];
-          return <span className={tokenClasses.join(' ')} key={key}><FmtTextRenderer t={token.fmtText} index={tokenIndex}/></span>
+          return <span className={tokenClasses.join(' ')} key={key}><FmtTextRenderer t={token.fmtText} key={tokenIndex}/></span>
 
         default:
           return null;

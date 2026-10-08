@@ -1,0 +1,56 @@
+
+.apparatus-panel {
+    padding: 0 1em 1em 1em;
+    height: 100%;
+    overflow: auto;
+
+    .text-la {
+        font-family: var(--latin-apparatus-font-family), serif;
+        font-size: 12pt;
+        line-height: 24pt;
+    }
+
+
+    &.empty-apparatus {
+        padding: 2em;
+        font-style: italic;
+    }
+
+    .range-text {
+        margin-left: 20px;
+        margin-right: 10px;
+        font-weight: bold;
+        font-size: 1.2em;
+    }
+
+    .range-text.first {
+        margin-left: 0;
+    }
+
+    .range-text.cti-range {
+        font-family: sans-serif;
+        font-size: 1.1em;
+    }
+
+    .lemma {
+        margin-left: 15px;
+        margin-right: 5px;
+    }
+
+    .lemma.first {
+        margin-left: 0;
+    }
+
+    .sub-entry {
+        margin-left: 10px;
+    }
+
+    .sub-entry.first {
+        margin-left: 0;
+    }
+
+    .disabled {
+        text-decoration: line-through;
+        color: gray;
+    }
+}

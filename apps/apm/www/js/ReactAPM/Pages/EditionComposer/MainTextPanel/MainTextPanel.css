@@ -5,7 +5,18 @@
     overflow: auto;
 
     .main-text-viewer {
+        position: relative;
         padding: 0 3em;
+    }
+
+    .main-text-line-number {
+        position: absolute;
+        left: 0;
+        width: 2.5em;
+        text-align: right;
+        font-size: 0.75em;
+        color: #6c757d;
+        pointer-events: none;
     }
 
     .text-la {

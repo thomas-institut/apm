@@ -224,7 +224,7 @@ describe('EditionComposer version changes', () => {
       await new Promise(resolve => setTimeout(resolve, 0));
     });
     expect(container.querySelector('[data-testid="edition-title"]')?.textContent).toBe('Edited title');
-    expect(container.querySelector('[data-testid="session-state-1"]')?.textContent).toBe('Update title to Edited title');
+    expect(container.querySelector('[data-testid="session-state-1"]')?.textContent).toBe("Update title to 'Edited title'");
 
     await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Save"]')!.click());
     expect(logSpy).toHaveBeenCalledWith('Save requested for edition 1');

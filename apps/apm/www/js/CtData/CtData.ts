@@ -69,6 +69,53 @@ const schemaVersions = ['0', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5'];
 export class CtData {
 
 
+  static updateSiglum(ctData: CtDataInterface, witnessIndex: number, newSiglum: string) : CtDataInterface {
+    const normalizedSiglum = newSiglum.trim();
+    if (normalizedSiglum.length === 0) {
+      throw new ValidationError('Siglum cannot be empty');
+    }
+    if (witnessIndex < 0 || witnessIndex >= ctData.witnesses.length) {
+      throw new ValidationError('Witness index out of range');
+    }
+    ctData.sigla[witnessIndex] = normalizedSiglum;
+    return ctData;
+  }
+
+  static updateWitnessOrder(ctData: CtDataInterface, newWitnessOrder: number[]) : CtDataInterface {
+    if (newWitnessOrder.length !== ctData.witnesses.length) {
+      throw new ValidationError('New witness order must have the same length as the number of witnesses');
+    }
+    if (newWitnessOrder.some((witnessIndex) => witnessIndex < 0 || witnessIndex >= ctData.witnesses.length)) {
+      throw new ValidationError('Witness index out of range in new witness order');
+    }
+    if (uniq(newWitnessOrder).length !== newWitnessOrder.length) {
+      throw new ValidationError('New witness order must not contain duplicate witness indices');
+    }
+
+    ctData.witnessOrder = newWitnessOrder;
+    if (ctData.type === CollationTableType.COLLATION_TABLE) {
+      // keep the edition witness as the top one in collation tables
+      ctData.editionWitnessIndex = newWitnessOrder[0];
+    }
+    return ctData;
+  }
+
+  static updateIncludeInMarginalFoliationStatus(ctData: CtDataInterface, witnessIndex: number, newIncludeInMarginalFoliationStatus: boolean) : CtDataInterface {
+    if (witnessIndex < 0 || witnessIndex >= ctData.witnesses.length) {
+      throw new ValidationError('Witness index out of range');
+    }
+    const currentStatus = ctData.includeInAutoMarginalFoliation.indexOf(witnessIndex) !== -1;
+    if (currentStatus === newIncludeInMarginalFoliationStatus) {
+      return ctData;
+    }
+    if (newIncludeInMarginalFoliationStatus) {
+      ctData.includeInAutoMarginalFoliation.push(witnessIndex);
+    } else {
+      ctData.includeInAutoMarginalFoliation = ctData.includeInAutoMarginalFoliation.filter((index) => index !== witnessIndex);
+    }
+    return ctData;
+  }
+
   static updateTitle(ctData: CtDataInterface, newTitle: string) : CtDataInterface {
     const normalizedTitle = newTitle.trim();
     if (normalizedTitle.length === 0) {

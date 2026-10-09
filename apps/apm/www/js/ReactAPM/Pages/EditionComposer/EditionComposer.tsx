@@ -33,7 +33,6 @@ export default function EditionComposer() {
   const [edition, setEdition] = useState<Edition | null>(null);
   const [versions, setVersions] = useState<CtVersionInfo[]>([]);
   const [isLatestVersion, setIsLatestVersion] = useState<boolean | null>(null);
-  const [versionId, setVersionId] = useState(-1);
   const [mainTextIndexToLineNumberMap, setMainTextIndexToLineNumberMap] = useState<MainTextIndexToLineMap | null>(null);
   const [versionTimeStamp, setVersionTimeStamp] = useState('');
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
@@ -108,7 +107,6 @@ export default function EditionComposer() {
 
         setVersions(result.versions);
         setIsLatestVersion(result.isLatestVersion);
-        setVersionId(result.versionId);
         setVersionTimeStamp(result.timeStamp);
         setComposerStatus('loaded');
       });
@@ -148,6 +146,11 @@ export default function EditionComposer() {
     setMainTextIndexToLineNumberMap(lineNumbering);
   };
 
+  const archive = async (): Promise<true> => {
+    console.log(`Archive requested for edition ${ctData.tableId}`);
+    return true;
+  };
+
   const panelSpecs: PanelSpec[] = [
     {
       panel: 'one',
@@ -185,8 +188,9 @@ export default function EditionComposer() {
     panel: 'two',
     key: 'admin',
     title: 'Admin',
-    content: <AdminPanel tableId={ctData.tableId} versionId={versionId} versions={versions}
-                         isLatestVersion={isLatestVersion ?? false}/>
+    content: <AdminPanel tableId={ctData.tableId} versionTimeStamp={versionTimeStamp} versions={versions}
+                         isLatestVersion={isLatestVersion ?? false} archive={archive} isArchived={ctData.archived}
+                         archivingEnabled={isLatestVersion ?? false}/>
   });
 
   return (<div className="ec-composer">

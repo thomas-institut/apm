@@ -180,6 +180,13 @@ export default function EditionComposer() {
     };
   }, []);
 
+  useEffect(() => {
+    if (ctData === null) {
+      return;
+    }
+    document.title = `${ctData.title} (${ctData.chunkId})`;
+  }, [ctData]);
+
 
   if (composerStatus === 'error') {
     return <StatusPage label={'Error'}>

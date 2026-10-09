@@ -10,7 +10,7 @@ export class UpdateTitleAction implements StateTransformAction<EditionComposerHi
   private readonly title: string;
 
   constructor(private newTitle: string) {
-    this.title = `Update title to ${this.newTitle}`;
+    this.title = `Update title to '${this.newTitle}'`;
   }
 
   description(): string {

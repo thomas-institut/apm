@@ -396,6 +396,7 @@ export default function EditionComposer() {
       key: 'witnesses',
       title: 'Witnesses',
       content: <WitnessesPanel witnesses={orderedWitnesses}
+                               editionWitnessIndex={ctData.type === 'edition' ? ctData.editionWitnessIndex : null}
                                sigla={ctData.sigla}
                                siglaGroups={ctData.siglaGroups}
                                disabled={!canEdit}

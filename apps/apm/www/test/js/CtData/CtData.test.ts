@@ -13,7 +13,7 @@ function createCtData(type: CtDataInterface['type'] = 'edition'): CtDataInterfac
     })),
     editionWitnessIndex: 2,
     witnessTitles: ['Witness 0', 'Witness 1', 'Witness 2'],
-    witnessOrder: [0, 1, 2],
+    witnessOrder: type === 'edition' ? [2, 0, 1] : [0, 1, 2],
     sigla: ['A', 'B', 'C'],
     siglaGroups: [],
     chunkId: 'chunk-1',
@@ -220,11 +220,20 @@ describe('CtData', () => {
 
     it('updates witness order without changing the edition witness index for editions', () => {
       const ctData = createCtData('edition');
-      const newWitnessOrder = [1, 2, 0];
+      const newWitnessOrder = [2, 1, 0];
 
       CtData.updateWitnessOrder(ctData, newWitnessOrder);
 
       expect(ctData.witnessOrder).toBe(newWitnessOrder);
+      expect(ctData.editionWitnessIndex).toBe(2);
+    });
+
+    it('rejects an edition witness order that moves the edition witness from the first position', () => {
+      const ctData = createCtData('edition');
+
+      expect(() => CtData.updateWitnessOrder(ctData, [1, 2, 0]))
+        .toThrow(new ValidationError('Edition witness must be the first witness in the new witness order'));
+      expect(ctData.witnessOrder).toEqual([2, 0, 1]);
       expect(ctData.editionWitnessIndex).toBe(2);
     });
 

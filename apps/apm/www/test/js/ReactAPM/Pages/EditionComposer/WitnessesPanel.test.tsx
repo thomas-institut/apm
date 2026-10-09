@@ -61,8 +61,16 @@ describe('EditionComposer WitnessesPanel', () => {
             title: 'Witness A',
             excludeFromAutoCriticalApparatus: false,
             includeInAutoMarginalFoliation: true,
+          },
+          {
+            witnessIndex: 1,
+            siglum: 'B',
+            title: 'Witness B',
+            excludeFromAutoCriticalApparatus: false,
+            includeInAutoMarginalFoliation: false,
           }
         ]}
+        editionWitnessIndex={2}
         sigla={['A', 'B', 'C']}
         siglaGroups={[]}
         isSiglumValid={isSiglumValid}
@@ -78,26 +86,62 @@ describe('EditionComposer WitnessesPanel', () => {
 
     const rows = container.querySelectorAll('tbody tr');
     expect(rows).toHaveLength(2);
-    expect(rows[0].textContent).toContain('Witness C');
-    expect(rows[1].textContent).toContain('Witness A');
-    expect((rows[0].querySelector('[aria-label="Move Witness C up"]') as HTMLButtonElement).disabled).toBe(true);
-    expect((rows[0].querySelector('[aria-label="Move Witness C down"]') as HTMLButtonElement).disabled).toBe(false);
-    expect((rows[1].querySelector('[aria-label="Move Witness A up"]') as HTMLButtonElement).disabled).toBe(false);
-    expect((rows[1].querySelector('[aria-label="Move Witness A down"]') as HTMLButtonElement).disabled).toBe(true);
+    expect(rows[0].textContent).toContain('Witness A');
+    expect(rows[1].textContent).toContain('Witness B');
+    expect((rows[0].querySelector('[aria-label="Move Witness A up"]') as HTMLButtonElement).disabled).toBe(true);
+    expect((rows[0].querySelector('[aria-label="Move Witness A down"]') as HTMLButtonElement).disabled).toBe(false);
+    expect((rows[1].querySelector('[aria-label="Move Witness B up"]') as HTMLButtonElement).disabled).toBe(false);
+    expect((rows[1].querySelector('[aria-label="Move Witness B down"]') as HTMLButtonElement).disabled).toBe(true);
     expect(container.querySelector('[data-testid="sigla-groups"]')?.textContent).toBe('A,B,C');
 
     await act(async () => {
-      (rows[0].querySelector('[aria-label="Move Witness C down"]') as HTMLButtonElement).click();
+      (rows[0].querySelector('[aria-label="Move Witness A down"]') as HTMLButtonElement).click();
       (rows[0].querySelector('.confirm-siglum') as HTMLButtonElement).click();
-      (rows[0].querySelector('[title="Click to include Witness C in the automatic critical apparatus"]') as HTMLButtonElement).click();
-      (rows[0].querySelector('[title="Click to include Witness C in auto marginal foliation"]') as HTMLButtonElement).click();
+      (rows[0].querySelector('[title="Click to exclude Witness A from the automatic critical apparatus"]') as HTMLButtonElement).click();
+      (rows[0].querySelector('[title="Click to exclude Witness A from auto marginal foliation"]') as HTMLButtonElement).click();
     });
 
-    expect(onMoveWitness).toHaveBeenCalledWith(2, 'down');
-    expect(onChangeSiglum).toHaveBeenCalledWith(2, 'NEW');
-    expect(isSiglumValid).toHaveBeenCalledWith(2, 'NEW');
-    expect(onChangeExcludeFromAutoCriticalApparatus).toHaveBeenCalledWith(2, false);
-    expect(onChangeIncludeInAutoMarginalFoliation).toHaveBeenCalledWith(2, true);
+    expect(onMoveWitness).toHaveBeenCalledWith(0, 'down');
+    expect(onChangeSiglum).toHaveBeenCalledWith(0, 'NEW');
+    expect(isSiglumValid).toHaveBeenCalledWith(0, 'NEW');
+    expect(onChangeExcludeFromAutoCriticalApparatus).toHaveBeenCalledWith(0, true);
+    expect(onChangeIncludeInAutoMarginalFoliation).toHaveBeenCalledWith(0, false);
+
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
+  it('omits the edition witness from the table', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<WitnessesPanel
+        witnesses={[
+          {witnessIndex: 2, siglum: 'C', title: 'Edition Witness', excludeFromAutoCriticalApparatus: false, includeInAutoMarginalFoliation: false},
+          {witnessIndex: 0, siglum: 'A', title: 'Witness A', excludeFromAutoCriticalApparatus: false, includeInAutoMarginalFoliation: false},
+          {witnessIndex: 1, siglum: 'B', title: 'Witness B', excludeFromAutoCriticalApparatus: false, includeInAutoMarginalFoliation: false}
+        ]}
+        editionWitnessIndex={2}
+        sigla={['A', 'B', 'C']}
+        siglaGroups={[]}
+        isSiglumValid={() => true}
+        isSiglaGroupValid={() => true}
+        onMoveWitness={() => true}
+        onChangeSiglum={() => true}
+        onChangeExcludeFromAutoCriticalApparatus={() => true}
+        onChangeIncludeInAutoMarginalFoliation={() => true}
+        onDeleteSiglaGroup={() => true}
+        onChangeSiglaGroup={() => true}
+      />);
+    });
+
+    const rows = container.querySelectorAll('tbody tr');
+    expect(rows).toHaveLength(2);
+    expect(container.textContent).not.toContain('Edition Witness');
+    expect(rows[0].textContent).toContain('Witness A');
+    expect(rows[1].textContent).toContain('Witness B');
 
     await act(async () => root.unmount());
     container.remove();

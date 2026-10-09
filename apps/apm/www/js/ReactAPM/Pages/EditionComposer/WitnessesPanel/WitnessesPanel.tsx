@@ -18,6 +18,7 @@ type WitnessOrderDirection = 'up' | 'down';
 
 interface WitnessesPanelProps {
   witnesses: EditionWitnessData[];
+  editionWitnessIndex: number | null;
   sigla: string[];
   siglaGroups: SiglaGroupInterface[];
   disabled?: boolean;
@@ -33,6 +34,7 @@ interface WitnessesPanelProps {
 
 export default function WitnessesPanel({
                                          witnesses,
+                                         editionWitnessIndex,
                                          sigla,
                                          siglaGroups,
                                          disabled = false,
@@ -45,6 +47,10 @@ export default function WitnessesPanel({
                                          onDeleteSiglaGroup,
                                          onChangeSiglaGroup
                                        }: WitnessesPanelProps) {
+  const displayedWitnesses = editionWitnessIndex === null ? witnesses : witnesses.filter(
+    witness => witness.witnessIndex !== editionWitnessIndex
+  );
+
   const witnessColumnDefs: NiceTableColumnDef<EditionWitnessData>[] = [
     {
       key: 'n',
@@ -67,7 +73,7 @@ export default function WitnessesPanel({
           <ArrowUp/>
         </button>
         <button type="button" aria-label={`Move ${witness.title} down`} title={`Move ${witness.title} down`}
-                disabled={disabled || rowIndex === witnesses.length - 1}
+                disabled={disabled || rowIndex === displayedWitnesses.length - 1}
                 onClick={() => onMoveWitness(witness.witnessIndex, 'down')}>
           <ArrowDown/>
         </button>
@@ -111,8 +117,8 @@ export default function WitnessesPanel({
     <div className="section witnesses">
       <h1>Witnesses</h1>
       <div className="section-content">
-        {witnesses.length === 0 && <>No witnesses defined</>}
-        {witnesses.length > 0 && <NiceTable columnDefs={witnessColumnDefs} rows={witnesses}/>}
+        {displayedWitnesses.length === 0 && <>No witnesses defined</>}
+        {displayedWitnesses.length > 0 && <NiceTable columnDefs={witnessColumnDefs} rows={displayedWitnesses}/>}
       </div>
     </div>
     <SiglaGroupsPanel

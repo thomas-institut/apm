@@ -129,8 +129,15 @@ export class CtData {
       throw new ValidationError('New witness order must not contain duplicate witness indices');
     }
 
+    if (ctData.type === 'edition') {
+      // edition witness must be the first witnes
+      if (newWitnessOrder[0] !== ctData.editionWitnessIndex) {
+        throw new ValidationError('Edition witness must be the first witness in the new witness order');
+      }
+    }
+
     ctData.witnessOrder = newWitnessOrder;
-    if (ctData.type === CollationTableType.COLLATION_TABLE) {
+    if (ctData.type === 'ctable') {
       // keep the edition witness as the top one in collation tables
       ctData.editionWitnessIndex = newWitnessOrder[0];
     }

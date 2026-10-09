@@ -77,6 +77,24 @@
                 color: #dc3545;
                 animation: mce-composer-bug-flash 1s steps(2, start) infinite;
             }
+
+            button {
+                border: 0;
+                background: transparent;
+                padding: 0;
+                color: var(--icon-btn-color);
+                cursor: pointer;
+                line-height: 1;
+            }
+
+            button:hover:not(:disabled) {
+                color: var(--icon-btn-hover);
+            }
+
+            button:disabled {
+                color: var(--icon-btn-disabled);
+                cursor: default;
+            }
         }
     }
 

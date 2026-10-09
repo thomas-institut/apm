@@ -55,6 +55,7 @@ import {
 import {FULL_TX} from "../Witness/WitnessType.js";
 import {NormalizerRegister} from "../pages/common/NormalizerRegister.js";
 import {Matrix} from "../lib/Matrix.js";
+import {ValidationError} from "@/lib/Error/SystemError";
 
 
 /*
@@ -66,6 +67,16 @@ const schemaVersions = ['0', '1.0', '1.1', '1.2', '1.3', '1.4', '1.5'];
 
 
 export class CtData {
+
+
+  static updateTitle(ctData: CtDataInterface, newTitle: string) : CtDataInterface {
+    const normalizedTitle = newTitle.trim();
+    if (normalizedTitle.length === 0) {
+      throw new ValidationError('Title cannot be empty');
+    }
+    ctData.title = newTitle;
+    return ctData;
+  }
 
   static generateCsv(ctData: CtDataInterface, sep = ',', showNormalizations = false): string {
       let sigla = ctData.sigla;

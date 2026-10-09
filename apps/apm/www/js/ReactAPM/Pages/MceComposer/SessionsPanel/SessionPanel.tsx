@@ -1,5 +1,4 @@
 import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
-import {MceComposerHistoryState} from "@/ReactAPM/Pages/MceComposer/MceComposer";
 import NiceTable, {NiceTableColumnDef} from "@/ReactAPM/Components/NiceTable/NiceTable";
 import {ApmFormats} from "@/pages/common/ApmFormats";
 import {CheckCircleFill, Circle, Save} from "react-bootstrap-icons";
@@ -7,8 +6,8 @@ import React, {useEffect, useState} from "react";
 import {Button} from "react-bootstrap";
 import './SessionPanel.css';
 
-interface SessionPanelProps {
-  history: StateHistory<MceComposerHistoryState>;
+interface SessionPanelProps<T> {
+  history: StateHistory<T>;
   savedStateSignature: string;
   onGoTo: (index: number) => void;
   onClearHistory: () => void;
@@ -25,7 +24,7 @@ interface HistoryTableRow {
   signature: string;
 }
 
-export default function SessionPanel({history, savedStateSignature, onGoTo, onClearHistory, historyVersion}: SessionPanelProps) {
+export default function SessionPanel<T>({history, savedStateSignature, onGoTo, onClearHistory, historyVersion}: SessionPanelProps<T>) {
   const [_refreshTick, setRefreshTick] = useState(0);
 
   // Re-render when history changes externally

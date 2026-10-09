@@ -7,9 +7,11 @@ import {createRoot, Root} from 'react-dom/client';
 import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
 import EditionComposer from '@/ReactAPM/Pages/EditionComposer/EditionComposer';
 import {AppContext, AppContextProps} from '@/ReactAPM/App';
+import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
+import {OperationalError, ValidationError} from '@/lib/Error/SystemError';
 
 interface MockEditionResponse {
-  ctData: {tableId: number, title: string, archived: boolean, sigla: never[], lang: string};
+  ctData: {tableId: number, title: string, archived: boolean, sigla: never[], lang: string, chunkId: string};
   versions: never[];
   isLatestVersion: boolean;
   timeStamp: string;
@@ -29,6 +31,10 @@ vi.mock('react-router', () => ({
 vi.mock('@/CtData/CtData', () => ({
   CtData: {
     getCleanAndUpdatedCtData: (ctData: unknown) => ctData,
+    updateTitle: (ctData: {title: string}, newTitle: string) => {
+      ctData.title = newTitle;
+      return ctData;
+    },
   },
 }));
 
@@ -66,8 +72,33 @@ vi.mock('@/ReactAPM/Pages/MceComposer/StatusPage', () => ({
 
 vi.mock('@/ReactAPM/Components/ApmLogo/ApmLogo', () => ({default: () => null}));
 vi.mock('@/ReactAPM/Components/EditableTextField', () => ({
-  default: ({text, disabled}: {text: string, disabled?: boolean}) =>
-    <h1 data-testid="edition-title" data-disabled={disabled ?? false}>{text}</h1>,
+  default: ({text, disabled, onConfirm, validator}: {
+    text: string,
+    disabled?: boolean,
+    onConfirm: (newText: string) => void,
+    validator?: (text: string) => true | string,
+  }) => <>
+    <h1 data-testid="edition-title" data-disabled={disabled ?? false}>{text}</h1>
+    <button data-testid="confirm-title-edit" disabled={disabled} onClick={() => onConfirm('Edited title')}>Edit title</button>
+    <button data-testid="invalid-title-edit" disabled={disabled} onClick={() => {
+      if (validator?.('   ') === true) {
+        onConfirm('   ');
+      }
+    }}>Invalid title</button>
+  </>,
+}));
+vi.mock('@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel', () => ({
+  default: ({history, onGoTo}: {
+    history: {getHistory: () => {actionDescription: string}[]},
+    onGoTo: (index: number) => void,
+  }) => <div data-testid="session-panel">
+    {history.getHistory().map((item, index) => <button key={index} data-testid={`session-state-${index}`}
+                                                       onClick={() => onGoTo(index)}>{item.actionDescription}</button>)}
+  </div>,
+}));
+vi.mock('@/ReactAPM/Pages/MceComposer/BugWarningButton', () => ({
+  default: ({foundBugDescription}: {foundBugDescription: string}) =>
+    <div data-testid="bug-warning">{foundBugDescription}</div>,
 }));
 vi.mock('@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel', () => ({default: () => null}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel', () => ({default: () => null}));
@@ -89,7 +120,7 @@ describe('EditionComposer version changes', () => {
   let container: HTMLDivElement;
 
   const makeResult = (tableId: number, version: string): MockEditionResponse => ({
-    ctData: {tableId, title: `Edition ${tableId} ${version}`, archived: false, sigla: [], lang: 'en'},
+    ctData: {tableId, title: `Edition ${tableId} ${version}`, archived: false, sigla: [], lang: 'en', chunkId: `chunk-${tableId}`},
     versions: [],
     isLatestVersion: true,
     timeStamp: version,
@@ -115,6 +146,7 @@ describe('EditionComposer version changes', () => {
   afterEach(async () => {
     await act(async () => root.unmount());
     container.remove();
+    vi.restoreAllMocks();
   });
 
   it('keeps the current editor visible and tabs selected until a new version loads', async () => {
@@ -181,5 +213,67 @@ describe('EditionComposer version changes', () => {
 
     await act(async () => resolveNewEdition(makeResult(2, 'v2')));
     expect(container.querySelector('[data-testid="edition-title"]')?.textContent).toBe('Edition 2 v2');
+  });
+
+  it('tracks title edits and supports undo, redo, save requests, and reset', async () => {
+    const logSpy = vi.spyOn(console, 'log').mockImplementation(() => {});
+    await act(async () => renderComposer());
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-testid="confirm-title-edit"]')!.click();
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+    expect(container.querySelector('[data-testid="edition-title"]')?.textContent).toBe('Edited title');
+    expect(container.querySelector('[data-testid="session-state-1"]')?.textContent).toBe('Update title to Edited title');
+
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Save"]')!.click());
+    expect(logSpy).toHaveBeenCalledWith('Save requested for edition 1');
+
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Undo"]')!.click());
+    expect(container.querySelector('[data-testid="edition-title"]')?.textContent).toBe('Edition 1 v1');
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Redo"]')!.click());
+    expect(container.querySelector('[data-testid="edition-title"]')?.textContent).toBe('Edited title');
+    await act(async () => container.querySelector<HTMLButtonElement>('[aria-label="Reset"]')!.click());
+    expect(container.querySelector('[data-testid="edition-title"]')?.textContent).toBe('Edition 1 v1');
+  });
+
+  it('does not send invalid titles to the action', async () => {
+    const historyDoSpy = vi.spyOn(StateHistory.prototype, 'do');
+    await act(async () => renderComposer());
+
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-testid="invalid-title-edit"]')!.click());
+
+    expect(historyDoSpy).not.toHaveBeenCalled();
+    expect(container.querySelector('[data-testid="bug-warning"]')).toBeNull();
+  });
+
+  it('reports operational action errors without marking them as bugs', async () => {
+    vi.spyOn(StateHistory.prototype, 'do').mockImplementation(async () => {
+      throw new OperationalError('temporary issue');
+    });
+    await act(async () => renderComposer());
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-testid="confirm-title-edit"]')!.click();
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(container.querySelector('.action-error-message')?.textContent).toContain('OperationalError: temporary issue');
+    expect(container.querySelector('[data-testid="bug-warning"]')).toBeNull();
+  });
+
+  it('treats action validation errors as bugs', async () => {
+    vi.spyOn(StateHistory.prototype, 'do').mockImplementation(async () => {
+      throw new ValidationError('unexpected invalid title');
+    });
+    await act(async () => renderComposer());
+
+    await act(async () => {
+      container.querySelector<HTMLButtonElement>('[data-testid="confirm-title-edit"]')!.click();
+      await new Promise(resolve => setTimeout(resolve, 0));
+    });
+
+    expect(container.querySelector('[data-testid="bug-warning"]')?.textContent).toContain('UpdateTitleAction failed. ValidationError: unexpected invalid title');
+    expect(container.querySelector('.action-error-message')).toBeNull();
   });
 });

@@ -204,6 +204,7 @@ vi.mock('@/ReactAPM/Components/StatusPage/StatusPage', () => ({
 vi.mock('react-bootstrap-icons', () => {
   const Icon = (props: any) => <span {...props}/>;
   return {
+    ArrowClockwise: Icon,
     Arrow90degLeft: Icon,
     Arrow90degRight: Icon,
     ArrowCounterclockwise: Icon,
@@ -261,7 +262,7 @@ vi.mock('@/ReactAPM/Components/SessionPanel/SessionPanel', () => ({
 }));
 
 // Mock PreviewPanel to avoid stylesheet errors and heavy rendering
-vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPanel', () => ({
+vi.mock('@/ReactAPM/Components/PreviewPanel/PreviewPanel', () => ({
   default: () => <div>preview</div>
 }));
 

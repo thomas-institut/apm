@@ -34,11 +34,11 @@ vi.mock('@/ReactAPM/Components/TypesetterDocumentViewer/TypesetterDocumentViewer
   default: ({doc, placeHolder}: {doc: unknown, placeHolder: React.ReactNode}) => <div>{doc ? <span>Document ready</span> : placeHolder}</div>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewPageControls', () => ({
+vi.mock('@/ReactAPM/Components/ToolbarPageControls', () => ({
   default: () => <div>Page controls</div>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/PreviewZoomControls', () => ({
+vi.mock('@/ReactAPM/Components/PreviewPanel/PreviewZoomControls', () => ({
   default: () => <div>Zoom controls</div>
 }));
 
@@ -49,7 +49,7 @@ vi.mock('@/defaults/EditionStyles/SystemStyleSheet', () => ({
   }
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/PreviewPanel/EditionTypesettingUtilities', () => ({
+vi.mock('@/ReactAPM/Components/PreviewPanel/EditionTypesettingUtilities', () => ({
   getTypesetEdition: (...args: unknown[]) => mockGetTypesetEdition(...args),
   getApiPdfData: (...args: unknown[]) => mockGetApiPdfData(...args),
 }));

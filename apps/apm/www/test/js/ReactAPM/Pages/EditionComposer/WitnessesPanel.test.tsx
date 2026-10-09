@@ -18,13 +18,15 @@ vi.mock('@/ReactAPM/Components/EditableTextField', () => ({
 }));
 
 vi.mock('@/ReactAPM/Components/NiceToggle/NiceToggle', () => ({
-  default: ({isOn, onTitle, offTitle, onClick}: {
+  default: ({isOn, on = 'ON', off = 'OFF', onTitle, offTitle, onClick}: {
     isOn: boolean,
+    on?: string,
+    off?: string,
     onTitle: string,
     offTitle: string,
     onClick?: (newState: boolean) => void | Promise<void>,
   }) => <button type="button" data-is-on={isOn} title={isOn ? onTitle : offTitle}
-                 onClick={() => onClick?.(!isOn)}>Toggle</button>
+                 onClick={() => onClick?.(!isOn)}>{isOn ? on : off}</button>
 }));
 
 vi.mock('@/ReactAPM/Components/SiglaGroupsPanel/SiglaGroupsPanel', () => ({
@@ -121,7 +123,7 @@ describe('EditionComposer WitnessesPanel', () => {
         witnesses={[
           {witnessIndex: 2, siglum: 'C', title: 'Edition Witness', excludeFromAutoCriticalApparatus: false, includeInAutoMarginalFoliation: false},
           {witnessIndex: 0, siglum: 'A', title: 'Witness A', excludeFromAutoCriticalApparatus: false, includeInAutoMarginalFoliation: false},
-          {witnessIndex: 1, siglum: 'B', title: 'Witness B', excludeFromAutoCriticalApparatus: false, includeInAutoMarginalFoliation: false}
+          {witnessIndex: 1, siglum: 'B', title: 'Witness B', excludeFromAutoCriticalApparatus: true, includeInAutoMarginalFoliation: false}
         ]}
         editionWitnessIndex={2}
         sigla={['A', 'B', 'C']}
@@ -140,8 +142,12 @@ describe('EditionComposer WitnessesPanel', () => {
     const rows = container.querySelectorAll('tbody tr');
     expect(rows).toHaveLength(2);
     expect(container.textContent).not.toContain('Edition Witness');
+    expect(container.textContent).toContain('Crit. App');
+    expect(container.textContent).not.toContain('Auto Crit. App.');
     expect(rows[0].textContent).toContain('Witness A');
     expect(rows[1].textContent).toContain('Witness B');
+    expect(rows[0].textContent).toContain('AUTO');
+    expect(rows[1].textContent).toContain('EXCLUDED');
 
     await act(async () => root.unmount());
     container.remove();

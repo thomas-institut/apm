@@ -93,9 +93,11 @@ export default function WitnessesPanel({
     },
     {
       key: 'criticalApparatus',
-      title: 'Auto Crit. App.',
+      title: 'Crit. App',
       cellContent: witness => <NiceToggle
         isOn={witness.excludeFromAutoCriticalApparatus}
+        on="EXCLUDED"
+        off="AUTO"
         onTitle={`Click to include ${witness.title} in the automatic critical apparatus`}
         offTitle={`Click to exclude ${witness.title} from the automatic critical apparatus`}
         onClick={disabled ? undefined : newStatus => onChangeExcludeFromAutoCriticalApparatus(witness.witnessIndex, newStatus)}

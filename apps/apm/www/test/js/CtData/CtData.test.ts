@@ -118,7 +118,7 @@ describe('CtData', () => {
     it('includes a witness and preserves the existing included witnesses', () => {
       const ctData = createCtData();
 
-      const result = CtData.updateIncludeInMarginalFoliationStatus(ctData, 2, true);
+      const result = CtData.updateIncludeInAutoMarginalFoliationStatus(ctData, 2, true);
 
       expect(result).toBe(ctData);
       expect(ctData.includeInAutoMarginalFoliation).toEqual([1, 2]);
@@ -128,7 +128,7 @@ describe('CtData', () => {
       const ctData = createCtData();
       ctData.includeInAutoMarginalFoliation = [0, 1, 2];
 
-      CtData.updateIncludeInMarginalFoliationStatus(ctData, 1, false);
+      CtData.updateIncludeInAutoMarginalFoliationStatus(ctData, 1, false);
 
       expect(ctData.includeInAutoMarginalFoliation).toEqual([0, 2]);
     });
@@ -137,10 +137,10 @@ describe('CtData', () => {
       const ctData = createCtData();
       const existingList = ctData.includeInAutoMarginalFoliation;
 
-      expect(CtData.updateIncludeInMarginalFoliationStatus(ctData, 1, true)).toBe(ctData);
+      expect(CtData.updateIncludeInAutoMarginalFoliationStatus(ctData, 1, true)).toBe(ctData);
       expect(ctData.includeInAutoMarginalFoliation).toBe(existingList);
 
-      expect(CtData.updateIncludeInMarginalFoliationStatus(ctData, 0, false)).toBe(ctData);
+      expect(CtData.updateIncludeInAutoMarginalFoliationStatus(ctData, 0, false)).toBe(ctData);
       expect(ctData.includeInAutoMarginalFoliation).toBe(existingList);
       expect(ctData.includeInAutoMarginalFoliation).toEqual([1]);
     });
@@ -148,9 +148,50 @@ describe('CtData', () => {
     it.each([-1, 3])('rejects witness index %i without changing the included witnesses', (witnessIndex) => {
       const ctData = createCtData();
 
-      expect(() => CtData.updateIncludeInMarginalFoliationStatus(ctData, witnessIndex, true))
+      expect(() => CtData.updateIncludeInAutoMarginalFoliationStatus(ctData, witnessIndex, true))
         .toThrow(new ValidationError('Witness index out of range'));
       expect(ctData.includeInAutoMarginalFoliation).toEqual([1]);
+    });
+  });
+
+  describe('updateExcludeFromAutoCriticalApparatusStatus', () => {
+    it('excludes a witness and preserves the existing excluded witnesses', () => {
+      const ctData = createCtData();
+
+      const result = CtData.updateExcludeFromAutoCriticalApparatusStatus(ctData, 2, true);
+
+      expect(result).toBe(ctData);
+      expect(ctData.excludeFromAutoCriticalApparatus).toEqual([2]);
+    });
+
+    it('includes a witness and preserves the other excluded witnesses', () => {
+      const ctData = createCtData();
+      ctData.excludeFromAutoCriticalApparatus = [0, 1, 2];
+
+      CtData.updateExcludeFromAutoCriticalApparatusStatus(ctData, 1, false);
+
+      expect(ctData.excludeFromAutoCriticalApparatus).toEqual([0, 2]);
+    });
+
+    it('does not change the list when the requested status is already set', () => {
+      const ctData = createCtData();
+      ctData.excludeFromAutoCriticalApparatus = [1];
+      const existingList = ctData.excludeFromAutoCriticalApparatus;
+
+      expect(CtData.updateExcludeFromAutoCriticalApparatusStatus(ctData, 1, true)).toBe(ctData);
+      expect(ctData.excludeFromAutoCriticalApparatus).toBe(existingList);
+
+      expect(CtData.updateExcludeFromAutoCriticalApparatusStatus(ctData, 0, false)).toBe(ctData);
+      expect(ctData.excludeFromAutoCriticalApparatus).toBe(existingList);
+      expect(ctData.excludeFromAutoCriticalApparatus).toEqual([1]);
+    });
+
+    it.each([-1, 3])('rejects witness index %i without changing the excluded witnesses', (witnessIndex) => {
+      const ctData = createCtData();
+
+      expect(() => CtData.updateExcludeFromAutoCriticalApparatusStatus(ctData, witnessIndex, true))
+        .toThrow(new ValidationError('Witness index out of range'));
+      expect(ctData.excludeFromAutoCriticalApparatus).toEqual([]);
     });
   });
 

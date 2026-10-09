@@ -100,7 +100,7 @@ export class CtData {
     return ctData;
   }
 
-  static updateIncludeInMarginalFoliationStatus(ctData: CtDataInterface, witnessIndex: number, newIncludeInMarginalFoliationStatus: boolean) : CtDataInterface {
+  static updateIncludeInAutoMarginalFoliationStatus(ctData: CtDataInterface, witnessIndex: number, newIncludeInMarginalFoliationStatus: boolean) : CtDataInterface {
     if (witnessIndex < 0 || witnessIndex >= ctData.witnesses.length) {
       throw new ValidationError('Witness index out of range');
     }
@@ -112,6 +112,22 @@ export class CtData {
       ctData.includeInAutoMarginalFoliation.push(witnessIndex);
     } else {
       ctData.includeInAutoMarginalFoliation = ctData.includeInAutoMarginalFoliation.filter((index) => index !== witnessIndex);
+    }
+    return ctData;
+  }
+
+  static updateExcludeFromAutoCriticalApparatusStatus(ctData: CtDataInterface, witnessIndex: number, newExcludeFromAutoCriticalApparatusStatus: boolean) : CtDataInterface {
+    if (witnessIndex < 0 || witnessIndex >= ctData.witnesses.length) {
+      throw new ValidationError('Witness index out of range');
+    }
+    const currentStatus = ctData.excludeFromAutoCriticalApparatus.indexOf(witnessIndex) !== -1;
+    if (currentStatus === newExcludeFromAutoCriticalApparatusStatus) {
+      return ctData;
+    }
+    if (newExcludeFromAutoCriticalApparatusStatus) {
+      ctData.excludeFromAutoCriticalApparatus.push(witnessIndex);
+    } else {
+      ctData.excludeFromAutoCriticalApparatus = ctData.excludeFromAutoCriticalApparatus.filter((index) => index !== witnessIndex);
     }
     return ctData;
   }

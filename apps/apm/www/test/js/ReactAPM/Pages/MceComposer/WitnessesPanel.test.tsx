@@ -33,7 +33,7 @@ vi.mock('@/ReactAPM/Components/NiceToggle/NiceToggle', () => ({
     <button type="button" className="nice-toggle-btn" onClick={() => onClick?.(!isOn)}>Toggle</button>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/WitnessesPanel/EditSiglaGroup', () => ({
+vi.mock('@/ReactAPM/Components/SiglaGroupsPanel/EditSiglaGroup', () => ({
   default: ({
               siglaGroup,
               siglaGroupIndex,

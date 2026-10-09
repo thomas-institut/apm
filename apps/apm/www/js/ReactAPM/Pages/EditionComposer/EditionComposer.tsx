@@ -16,6 +16,7 @@ import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import CtPanel from "@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel";
 import {CtData} from "@/CtData/CtData";
+import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {CtDataEditionGenerator} from "@/Edition/EditionGenerator/CtDataEditionGenerator";
 import {Edition} from "@/Edition/Edition";
 import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
@@ -29,6 +30,14 @@ import {UpdateTitleAction} from "@/ReactAPM/Pages/EditionComposer/Actions/Update
 import {OperationalError} from "@/lib/Error/SystemError";
 import BugWarningButton from "@/ReactAPM/Components/BugWarningButton";
 import SessionPanel from "@/ReactAPM/Components/SessionPanel/SessionPanel";
+import WitnessesPanel, {EditionWitnessData} from "@/ReactAPM/Pages/EditionComposer/WitnessesPanel/WitnessesPanel";
+import {UpdateWitnessOrderAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateWitnessOrderAction";
+import {UpdateSiglumAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateSiglumAction";
+import {UpdateExcludeFromAutoCriticalApparatusStatusAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateExcludeFromAutoCriticalApparatusStatusAction";
+import {UpdateIncludeInAutoMarginalFoliationStatusAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateIncludeInAutoMarginalFoliationStatusAction";
+import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/EditionComposer/Actions/ChangeSiglaGroupAction";
+import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/EditionComposer/Actions/DeleteSiglaGroupAction";
+import {StateTransformAction} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
 
 type ComposerStatus = 'start' | 'loading' | 'loadingNewVersion' | 'error' | 'loaded';
 
@@ -210,6 +219,12 @@ export default function EditionComposer() {
     return <h1>Bug!!</h1>;
   }
 
+  const setDisplayedHistoryState = (state: EditionComposerHistoryState) => {
+    setCtData(state.ctData);
+    setEdition(new CtDataEditionGenerator({ctData: state.ctData}).generateEdition());
+    setHistoryVersion(v => v + 1);
+  };
+
   const clearOperationalActionError = () => {
     if (operationalActionErrorTimeoutRef.current !== null) {
       clearTimeout(operationalActionErrorTimeoutRef.current);
@@ -254,8 +269,7 @@ export default function EditionComposer() {
     setIsActionInProgress(true);
     try {
       await history.do(new UpdateTitleAction(newTitle));
-      setCtData(history.getCurrentState().ctData);
-      setHistoryVersion(v => v + 1);
+      setDisplayedHistoryState(history.getCurrentState());
     } catch (error) {
       reportActionError('UpdateTitleAction', error);
     } finally {
@@ -279,6 +293,66 @@ export default function EditionComposer() {
   const undoTitle = canUndo ? `Undo ${historyItems[currentStateIndex].actionDescription}` : 'Undo';
   const redoTitle = canRedo ? `Redo ${historyItems[currentStateIndex + 1].actionDescription}` : 'Redo';
 
+  const runHistoryAction = async (action: StateTransformAction<EditionComposerHistoryState>, actionName: string): Promise<boolean> => {
+    if (!canEdit || actionInProgressRef.current) {
+      return false;
+    }
+    clearOperationalActionError();
+    actionInProgressRef.current = true;
+    setIsActionInProgress(true);
+    try {
+      await history.do(action);
+      setDisplayedHistoryState(history.getCurrentState());
+      return true;
+    } catch (error) {
+      reportActionError(actionName, error);
+      return false;
+    } finally {
+      actionInProgressRef.current = false;
+      setIsActionInProgress(false);
+    }
+  };
+
+  const moveWitness = async (witnessIndex: number, direction: 'up' | 'down'): Promise<boolean> => {
+    const newWitnessOrder = [...history.getCurrentState().ctData.witnessOrder];
+    const currentPosition = newWitnessOrder.indexOf(witnessIndex);
+    const newPosition = currentPosition + (direction === 'up' ? -1 : 1);
+    if (currentPosition < 0 || newPosition < 0 || newPosition >= newWitnessOrder.length) {
+      return false;
+    }
+    [newWitnessOrder[currentPosition], newWitnessOrder[newPosition]] = [newWitnessOrder[newPosition], newWitnessOrder[currentPosition]];
+    return runHistoryAction(new UpdateWitnessOrderAction(newWitnessOrder), 'UpdateWitnessOrderAction');
+  };
+
+  const updateSiglum = (witnessIndex: number, newSiglum: string) =>
+    runHistoryAction(new UpdateSiglumAction(witnessIndex, newSiglum), 'UpdateSiglumAction');
+
+  const updateExcludeFromAutoCriticalApparatusStatus = (witnessIndex: number, newStatus: boolean) =>
+    runHistoryAction(new UpdateExcludeFromAutoCriticalApparatusStatusAction(witnessIndex, newStatus), 'UpdateExcludeFromAutoCriticalApparatusStatusAction');
+
+  const updateIncludeInAutoMarginalFoliationStatus = (witnessIndex: number, newStatus: boolean) =>
+    runHistoryAction(new UpdateIncludeInAutoMarginalFoliationStatusAction(witnessIndex, newStatus), 'UpdateIncludeInAutoMarginalFoliationStatusAction');
+
+  const updateSiglaGroup = (siglaGroupIndex: number, group: SiglaGroupInterface) =>
+    runHistoryAction(new ChangeSiglaGroupAction(siglaGroupIndex, group), 'ChangeSiglaGroupAction');
+
+  const deleteSiglaGroup = (siglaGroupIndex: number) =>
+    runHistoryAction(new DeleteSiglaGroupAction(siglaGroupIndex), 'DeleteSiglaGroupAction');
+
+  const orderedWitnesses: EditionWitnessData[] = ctData.witnessOrder.map(witnessIndex => ({
+    witnessIndex,
+    siglum: ctData.sigla[witnessIndex],
+    title: ctData.witnessTitles[witnessIndex],
+    excludeFromAutoCriticalApparatus: ctData.excludeFromAutoCriticalApparatus.includes(witnessIndex),
+    includeInAutoMarginalFoliation: ctData.includeInAutoMarginalFoliation.includes(witnessIndex)
+  }));
+
+  const isSiglumValid = (witnessIndex: number, siglum: string): true | string =>
+    CtData.isSiglumValid(ctData, witnessIndex, siglum);
+
+  const isSiglaGroupValid = (siglaGroupIndex: number, group: SiglaGroupInterface): true | string =>
+    CtData.isSiglaGroupValid(ctData, siglaGroupIndex, group);
+
   const resetToSavedState = () => {
     if (!canEdit) {
       return;
@@ -286,8 +360,7 @@ export default function EditionComposer() {
     const savedIndex = history.getHistory().findIndex(item => item.signature === savedStateSignature);
     if (savedIndex >= 0) {
       const savedState = history.goToState(savedIndex);
-      setCtData(savedState.ctData);
-      setHistoryVersion(v => v + 1);
+      setDisplayedHistoryState(savedState);
     }
   };
 
@@ -317,6 +390,23 @@ export default function EditionComposer() {
       key: 'cTable',
       title: 'Collation',
       content: <CtPanel ctData={ctData}/>
+    },
+    {
+      panel: 'one',
+      key: 'witnesses',
+      title: 'Witnesses',
+      content: <WitnessesPanel witnesses={orderedWitnesses}
+                               sigla={ctData.sigla}
+                               siglaGroups={ctData.siglaGroups}
+                               disabled={!canEdit}
+                               isSiglumValid={isSiglumValid}
+                               isSiglaGroupValid={isSiglaGroupValid}
+                               onMoveWitness={moveWitness}
+                               onChangeSiglum={updateSiglum}
+                               onChangeExcludeFromAutoCriticalApparatus={updateExcludeFromAutoCriticalApparatusStatus}
+                               onChangeIncludeInAutoMarginalFoliation={updateIncludeInAutoMarginalFoliationStatus}
+                               onDeleteSiglaGroup={deleteSiglaGroup}
+                               onChangeSiglaGroup={updateSiglaGroup}/>
     },
 
   ];
@@ -353,8 +443,7 @@ export default function EditionComposer() {
                                return;
                              }
                              const state = history.goToState(index);
-                             setCtData(state.ctData);
-                             setHistoryVersion(v => v + 1);
+                             setDisplayedHistoryState(state);
                            }}
                            onClearHistory={() => {
                              if (!canEdit) {
@@ -400,16 +489,14 @@ export default function EditionComposer() {
           <button type="button" aria-label="Undo" title={undoTitle} disabled={!canEdit || !canUndo}
                   onClick={() => {
                     const state = history.undo();
-                    setCtData(state.ctData);
-                    setHistoryVersion(v => v + 1);
+                    setDisplayedHistoryState(state);
                   }}>
             <Arrow90degLeft/>
           </button>
           <button type="button" aria-label="Redo" title={redoTitle} disabled={!canEdit || !canRedo}
                   onClick={() => {
                     const state = history.redo();
-                    setCtData(state.ctData);
-                    setHistoryVersion(v => v + 1);
+                    setDisplayedHistoryState(state);
                   }}>
             <Arrow90degRight/>
           </button>

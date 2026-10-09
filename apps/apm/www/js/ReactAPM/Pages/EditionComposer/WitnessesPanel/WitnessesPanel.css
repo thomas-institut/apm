@@ -1,0 +1,29 @@
+.edition-witnesses-panel {
+    overflow: auto;
+    height: 100%;
+    padding: 1em;
+
+    .witness-order-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.25em;
+
+        button {
+            border: 0;
+            background: transparent;
+            padding: 0;
+            color: var(--icon-btn-color, black);
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        button:hover:not(:disabled) {
+            color: var(--icon-btn-hover, #0d6efd);
+        }
+
+        button:disabled {
+            color: var(--icon-btn-disabled, silver);
+            cursor: default;
+        }
+    }
+}

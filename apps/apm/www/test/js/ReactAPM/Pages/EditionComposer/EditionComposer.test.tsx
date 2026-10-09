@@ -11,7 +11,21 @@ import {StateHistory} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {OperationalError, ValidationError} from '@/lib/Error/SystemError';
 
 interface MockEditionResponse {
-  ctData: {tableId: number, title: string, archived: boolean, sigla: never[], lang: string, chunkId: string};
+  ctData: {
+    tableId: number,
+    title: string,
+    archived: boolean,
+    sigla: string[],
+    lang: string,
+    chunkId: string,
+    witnesses: never[],
+    witnessTitles: string[],
+    witnessOrder: number[],
+    siglaGroups: {siglum: string, witnesses: number[]}[],
+    excludeFromAutoCriticalApparatus: number[],
+    includeInAutoMarginalFoliation: number[],
+    type: 'edition',
+  };
   versions: never[];
   isLatestVersion: boolean;
   timeStamp: string;
@@ -101,6 +115,7 @@ vi.mock('@/ReactAPM/Components/BugWarningButton', () => ({
     <div data-testid="bug-warning">{foundBugDescription}</div>,
 }));
 vi.mock('@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel', () => ({default: () => null}));
+vi.mock('@/ReactAPM/Pages/EditionComposer/WitnessesPanel/WitnessesPanel', () => ({default: () => null}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel', () => ({default: () => null}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel', () => ({ApparatusPanel: () => null}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/AdminPanel/AdminPanel', () => ({
@@ -120,7 +135,21 @@ describe('EditionComposer version changes', () => {
   let container: HTMLDivElement;
 
   const makeResult = (tableId: number, version: string): MockEditionResponse => ({
-    ctData: {tableId, title: `Edition ${tableId} ${version}`, archived: false, sigla: [], lang: 'en', chunkId: `chunk-${tableId}`},
+    ctData: {
+      tableId,
+      title: `Edition ${tableId} ${version}`,
+      archived: false,
+      sigla: [],
+      lang: 'en',
+      chunkId: `chunk-${tableId}`,
+      witnesses: [],
+      witnessTitles: [],
+      witnessOrder: [],
+      siglaGroups: [],
+      excludeFromAutoCriticalApparatus: [],
+      includeInAutoMarginalFoliation: [],
+      type: 'edition',
+    },
     versions: [],
     isLatestVersion: true,
     timeStamp: version,

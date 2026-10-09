@@ -1,4 +1,4 @@
-import {describe, expect, it} from 'vitest';
+import {describe, expect, it, vi} from 'vitest';
 import {CtData} from '@/CtData/CtData.js';
 import {CtDataInterface} from '@/CtData/CtDataInterface.js';
 import {ValidationError} from '@/lib/Error/SystemError.js';
@@ -47,7 +47,7 @@ describe('CtData', () => {
         const ctData = createCtData();
 
         expect(() => CtData.updateSiglum(ctData, 1, newSiglum))
-          .toThrow(new ValidationError('Siglum cannot be empty'));
+          .toThrow(new ValidationError('Siglum must have a non-empty value'));
         expect(ctData.sigla).toEqual(['A', 'B', 'C']);
       }
     });
@@ -58,6 +58,54 @@ describe('CtData', () => {
       expect(() => CtData.updateSiglum(ctData, witnessIndex, 'New'))
         .toThrow(new ValidationError('Witness index out of range'));
       expect(ctData.sigla).toEqual(['A', 'B', 'C']);
+    });
+
+    it('rejects a siglum when isSiglumValid returns a validation message', () => {
+      const ctData = createCtData();
+      const validationMessage = 'Siglum is not allowed';
+      const isSiglumValidSpy = vi.spyOn(CtData, 'isSiglumValid').mockReturnValue(validationMessage);
+
+      try {
+        expect(() => CtData.updateSiglum(ctData, 1, 'New'))
+          .toThrow(new ValidationError(validationMessage));
+        expect(ctData.sigla).toEqual(['A', 'B', 'C']);
+      } finally {
+        isSiglumValidSpy.mockRestore();
+      }
+    });
+  });
+
+  describe('isSiglumValid', () => {
+    it.each(['', '   \t\n'])('rejects an empty or whitespace-only siglum', (siglum) => {
+      const ctData = createCtData();
+
+      expect(CtData.isSiglumValid(ctData, 1, siglum)).toBe('Siglum must have a non-empty value');
+    });
+
+    it('rejects a siglum that duplicates another witness siglum after trimming', () => {
+      const ctData = createCtData();
+      ctData.sigla[2] = ' A ';
+
+      expect(CtData.isSiglumValid(ctData, 1, ' A ')).toBe('Siglum is duplicated');
+    });
+
+    it('rejects a siglum that matches a sigla group siglum after trimming', () => {
+      const ctData = createCtData();
+      ctData.siglaGroups = [{siglum: ' Group 1 ', witnesses: [0, 1]}];
+
+      expect(CtData.isSiglumValid(ctData, 1, 'Group 1')).toBe('Siglum is a sigla group siglum');
+    });
+
+    it('accepts a unique siglum after trimming', () => {
+      const ctData = createCtData();
+
+      expect(CtData.isSiglumValid(ctData, 1, '  New  ')).toBe(true);
+    });
+
+    it('allows a witness to keep its existing siglum', () => {
+      const ctData = createCtData();
+
+      expect(CtData.isSiglumValid(ctData, 1, 'B')).toBe(true);
     });
   });
 

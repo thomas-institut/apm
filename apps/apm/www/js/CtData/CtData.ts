@@ -70,15 +70,34 @@ export class CtData {
 
 
   static updateSiglum(ctData: CtDataInterface, witnessIndex: number, newSiglum: string) : CtDataInterface {
-    const normalizedSiglum = newSiglum.trim();
-    if (normalizedSiglum.length === 0) {
-      throw new ValidationError('Siglum cannot be empty');
-    }
     if (witnessIndex < 0 || witnessIndex >= ctData.witnesses.length) {
       throw new ValidationError('Witness index out of range');
     }
-    ctData.sigla[witnessIndex] = normalizedSiglum;
+    const isValid = this.isSiglumValid(ctData, witnessIndex, newSiglum);
+    if (isValid !== true) {
+      throw new ValidationError(isValid);
+    }
+    ctData.sigla[witnessIndex] = newSiglum.trim();
     return ctData;
+  }
+
+  static isSiglumValid(ctData: CtDataInterface, witnessIndex: number, siglum: string): true | string {
+    const trimmedSiglum = siglum.trim();
+
+    if (trimmedSiglum === '') {
+      return 'Siglum must have a non-empty value';
+    }
+
+    const otherSigla = ctData.sigla.filter((_siglum, index) => index !== witnessIndex);
+
+    if (otherSigla.some(existingSiglum => existingSiglum.trim() === trimmedSiglum)) {
+      return 'Siglum is duplicated';
+    }
+
+    if (ctData.siglaGroups.some(group => group.siglum.trim() === trimmedSiglum)) {
+      return 'Siglum is a sigla group siglum';
+    }
+    return true;
   }
 
   static updateWitnessOrder(ctData: CtDataInterface, newWitnessOrder: number[]) : CtDataInterface {

@@ -4,10 +4,12 @@ import {ApmFormats} from "@/pages/common/ApmFormats";
 import {OverlayInjectedProps} from "react-bootstrap/types";
 
 interface NotLastVersionWarningButtonProps {
+  label?: string;
   version: string | null;
+  className?: string;
 }
 
-export default function NotLastVersionWarningButton({version}: NotLastVersionWarningButtonProps) {
+export default function NotLastVersionWarningButton({version, label, className}: NotLastVersionWarningButtonProps) {
   if (version === null)
     return null;
 
@@ -22,6 +24,9 @@ export default function NotLastVersionWarningButton({version}: NotLastVersionWar
     </Popover>
   );
   return <OverlayTrigger placement="bottom" overlay={popover}>
-    <ExclamationTriangleFill className={'text-danger icon-btn'} style={{fontSize: '1.2em'}}/>
-  </OverlayTrigger>
+    <span className={className}>
+      <ExclamationTriangleFill className={'text-danger icon-btn'} style={{fontSize: '1.2em'}}/>
+      {label ? <span className={'text-danger'} style={{marginLeft: '0.25em'}}>{label}</span> : null}
+    </span>
+  </OverlayTrigger>;
 }

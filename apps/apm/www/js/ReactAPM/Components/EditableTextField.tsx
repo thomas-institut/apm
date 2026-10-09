@@ -8,6 +8,7 @@ interface EditableTextFieldProps {
   style?: CSSProperties;
   onConfirm: (newText: string) => void;
   validator?: (text: string) => true | string;
+  disabled?: boolean;
 }
 
 /**
@@ -21,7 +22,8 @@ export default function EditableTextField(props: EditableTextFieldProps) {
     editingClassName,
     style,
     onConfirm,
-    validator
+    validator,
+    disabled = false
   } = props;
 
   const [isEditing, setIsEditing] = useState(false);
@@ -35,6 +37,14 @@ export default function EditableTextField(props: EditableTextFieldProps) {
       setEditedText(text);
     }
   }, [text, isEditing]);
+
+  useEffect(() => {
+    if (disabled) {
+      setIsEditing(false);
+      setEditedText(text);
+      setIsHovered(false);
+    }
+  }, [disabled, text]);
 
   // Focus and move cursor to end when entering edit mode
   useEffect(() => {
@@ -71,7 +81,7 @@ export default function EditableTextField(props: EditableTextFieldProps) {
     }
   };
 
-  if (isEditing) {
+  if (isEditing && !disabled) {
     // Mimic the size logic from the legacy widget
     const size = Math.min(Math.max(editedText.length, 5), 20);
     return (
@@ -120,13 +130,13 @@ export default function EditableTextField(props: EditableTextFieldProps) {
   return (
     <div
       className={`${isHovered ? 'etf-hover' : 'etf-normal'} ${className || ''}`}
-      style={{ ...style, cursor: 'pointer', display: 'inline-flex', alignItems: 'center' }}
-      onMouseEnter={() => setIsHovered(true)}
+      style={{ ...style, cursor: disabled ? 'default' : 'pointer', display: 'inline-flex', alignItems: 'center' }}
+      onMouseEnter={() => !disabled && setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={() => setIsEditing(true)}
+      onClick={() => !disabled && setIsEditing(true)}
     >
-      <span className="theText" title="Click to edit">{text}</span>
-      {isHovered && (
+      <span className="theText" title={disabled ? undefined : "Click to edit"}>{text}</span>
+      {!disabled && isHovered && (
         <>
           &nbsp;
           <Pencil className="editButton" title="Edit" />

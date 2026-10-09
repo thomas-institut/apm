@@ -9,8 +9,8 @@ import AdminPanel from '@/ReactAPM/Pages/EditionComposer/AdminPanel/AdminPanel';
 import {CtVersionInfo} from '@/Api/DataSchema/ApiCollationTable';
 
 vi.mock('@/ReactAPM/Components/EntityLink', () => ({
-  default: ({id, type, version, name}: {id: number, type?: string, version?: string, name?: string}) =>
-    <a data-entity-id={id} data-entity-type={type} data-version={version}>{name ?? `Author ${id}`}</a>,
+  default: ({id, type, version, name, active = true}: {id: number, type?: string, version?: string, name?: string, active?: boolean}) =>
+    active ? <a data-entity-id={id} data-entity-type={type} data-version={version}>{name ?? `Author ${id}`}</a> : <span>{name ?? `Author ${id}`}</span>,
 }));
 
 vi.mock('@/pages/common/ApmFormats', () => ({
@@ -56,7 +56,7 @@ describe('EditionComposer AdminPanel', () => {
     await act(async () => {
       root.render(<AdminPanel tableId={7} versionTimeStamp={versions[0].timeFrom} versions={versions}
                               isLatestVersion={isLatestVersion} archive={archive} isArchived={false}
-                              archivingEnabled={isLatestVersion}/>);
+                              archivingEnabled={isLatestVersion} loadingNewVersion={false}/>);
     });
 
     return {container, root};
@@ -108,6 +108,24 @@ describe('EditionComposer AdminPanel', () => {
 
     expect(container.querySelector<HTMLButtonElement>('button[title="Archive Edition"]')!.disabled).toBe(true);
     expect(container.querySelector('.archive-info')?.textContent).toBe('Only the latest version can be archived');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('disables version and author links while loading a new version', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    await act(async () => {
+      root.render(<AdminPanel tableId={7} versionTimeStamp={versions[0].timeFrom} versions={versions}
+                              isLatestVersion={true} archive={archive} isArchived={false}
+                              archivingEnabled={true} loadingNewVersion={true}/>);
+    });
+
+    expect(container.querySelectorAll('.versions-table a')).toHaveLength(0);
 
     await act(async () => {
       root.unmount();

@@ -2,7 +2,12 @@ import {ExclamationTriangleFill} from "react-bootstrap-icons";
 import {OverlayTrigger, Popover} from "react-bootstrap";
 import {OverlayInjectedProps} from "react-bootstrap/types";
 
-export default function ArchivedEditionWarningButton() {
+interface ArchivedEditionWarningButtonProps {
+  label?: string;
+  className?: string;
+}
+
+export default function ArchivedEditionWarningButton({label, className}: ArchivedEditionWarningButtonProps) {
   const popover = (popoverProps: OverlayInjectedProps) => (
     <Popover {...popoverProps} id="archived-edition-popover" className="archived-edition-popover">
       <Popover.Header className={'text-danger'}><ExclamationTriangleFill/> Archived Edition!</Popover.Header>
@@ -14,6 +19,9 @@ export default function ArchivedEditionWarningButton() {
   );
 
   return <OverlayTrigger placement="bottom" overlay={popover}>
-    <ExclamationTriangleFill className={'text-danger icon-btn'} style={{fontSize: '1.2em'}}/>
+    <span className={className}>
+      <ExclamationTriangleFill className={'text-danger icon-btn'} style={{fontSize: '1.2em'}}/>
+      {label ? <span className={'text-danger'} style={{marginLeft: '0.25em'}}>{label}</span> : null}
+    </span>
   </OverlayTrigger>;
 }

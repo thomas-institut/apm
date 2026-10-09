@@ -18,10 +18,11 @@ interface AdminPanelProps extends TabbableElementProps {
   archive: () => Promise<true | string>;
   isArchived: boolean;
   archivingEnabled: boolean;
+  loadingNewVersion: boolean;
 }
 
 
-export default function AdminPanel({tableId, versionTimeStamp, versions, isLatestVersion, archive, isArchived, archivingEnabled}: AdminPanelProps) {
+export default function AdminPanel({tableId, versionTimeStamp, versions, isLatestVersion, archive, isArchived, archivingEnabled, loadingNewVersion}: AdminPanelProps) {
   const [archiveConfirmationOpen, setArchiveConfirmationOpen] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [archiveResult, setArchiveResult] = useState<string | null>(null);
@@ -55,12 +56,13 @@ export default function AdminPanel({tableId, versionTimeStamp, versions, isLates
       title: 'Time',
       cellContent: (row, index) => index === loadedVersionIndex ? <strong>{ApmFormats.timeString(row.timeFrom)}</strong> : <EntityLink id={tableId}
                                                                                                                                     type={'singleChunkEditionBeta'} version={index === 0 ? undefined : row.timeFrom}
+                                                                                                                                    active={!loadingNewVersion}
                                                                                                                                     name={ApmFormats.timeString(row.timeFrom)}/>
     },
     {
       key: 'author',
       title: 'Author',
-      cellContent: (row) => <EntityLink id={row.authorTid} type={'person'}/>,
+      cellContent: (row) => <EntityLink id={row.authorTid} type={'person'} active={!loadingNewVersion}/>,
     },
     {
       key: 'description',

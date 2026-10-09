@@ -30,9 +30,9 @@
     .header {
         padding: 5px;
         display: grid;
-        grid-template-columns: max-content max-content 1fr max-content;
+        grid-template-columns: max-content max-content max-content 1fr max-content;
         align-items: center;
-        gap: 1em;
+        gap: 2em;
         box-sizing: border-box;
 
         .logo {
@@ -42,6 +42,13 @@
         .title {
             font-size: 1.3em;
             font-weight: bold;
+            padding-right: 2em;
+        }
+
+        .version-loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5em;
         }
 
         .notifications {
@@ -51,26 +58,6 @@
             justify-content: flex-end;
             align-items: center;
             color: #dd8806;
-
-            .chunk-progress-bar {
-                border-radius: 5px;
-                border: 1px solid silver;
-                color: gray;
-
-                .progress-bar-fill {
-                    background: #dddddd;
-                }
-            }
-
-            .edition-generation-progress-bar {
-                border-radius: 5px;
-                border: 1px solid silver;
-                color: #954646;
-
-                .progress-bar-fill {
-                    background: #dddddd;
-                }
-            }
         }
 
         .editing > .textInput {

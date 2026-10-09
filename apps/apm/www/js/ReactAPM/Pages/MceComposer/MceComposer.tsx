@@ -72,8 +72,8 @@ import AdminPanel from "@/ReactAPM/Pages/MceComposer/AdminPanel/AdminPanel";
 import {MceVersionInfo} from "@/Api/DataSchema/ApiMceData";
 import {TimeString} from "@/toolbox/TimeString";
 import BugWarningButton from "@/ReactAPM/Pages/MceComposer/BugWarningButton";
-import NotLastVersionWarningButton from "@/ReactAPM/Pages/MceComposer/NotLastVersionWarningButton";
-import ArchivedEditionWarningButton from "@/ReactAPM/Pages/MceComposer/ArchivedEditionWarningButton";
+import NotLastVersionWarningButton from "@/ReactAPM/Components/NotLastVersionWarningButton";
+import ArchivedEditionWarningButton from "@/ReactAPM/Components/ArchivedEditionWarningButton";
 import {panelsFromSpecs, PanelSpec} from "@/ReactAPM/Components/PanelUI/PanelSpec";
 
 // TODO: for later

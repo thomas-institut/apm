@@ -1,7 +1,7 @@
 import {useParams} from "react-router";
 import './EditionComposer.css';
 import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
-import {useContext, useEffect, useState} from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import {Spinner} from "react-bootstrap";
 import {AppContext} from "@/ReactAPM/App";
 import {CtDataInterface} from "@/CtData/CtDataInterface";
@@ -20,8 +20,10 @@ import {Edition} from "@/Edition/Edition";
 import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
 import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
 import {MainTextIndexToLineMap} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
+import NotLastVersionWarningButton from "@/ReactAPM/Components/NotLastVersionWarningButton";
+import ArchivedEditionWarningButton from "@/ReactAPM/Components/ArchivedEditionWarningButton";
 
-type ComposerStatus = 'start' | 'loading' | 'error' | 'loaded';
+type ComposerStatus = 'start' | 'loading' | 'loadingNewVersion' | 'error' | 'loaded';
 
 
 export default function EditionComposer() {
@@ -41,21 +43,26 @@ export default function EditionComposer() {
 
   const appContext = useContext(AppContext);
   const shimWidth = 5;
+  const previousRoute = useRef({id, version});
 
   useEffect(() => {
     let isCurrentRequest = true;
+    const isLoadingNewVersion = id === previousRoute.current.id && version !== previousRoute.current.version && ctData !== null;
+    previousRoute.current = {id, version};
 
-    setComposerStatus('loading');
+    setComposerStatus(isLoadingNewVersion ? 'loadingNewVersion' : 'loading');
     setErrorMsg('');
-    setCtData(null);
-    setEdition(null);
-    setVersions([]);
-    setIsLatestVersion(null);
-    setMainTextIndexToLineNumberMap(null);
-    setVersionTimeStamp('');
-    setExpandedTab(null);
-    setActiveTabPanelOne('mainText');
-    setActiveTabPanelTwo('admin');
+    if (!isLoadingNewVersion) {
+      setCtData(null);
+      setEdition(null);
+      setVersions([]);
+      setIsLatestVersion(null);
+      setMainTextIndexToLineNumberMap(null);
+      setVersionTimeStamp('');
+      setExpandedTab(null);
+      setActiveTabPanelOne('mainText');
+      setActiveTabPanelTwo('admin');
+    }
 
     const loadTableData = async () => {
       if (!id) {
@@ -97,6 +104,7 @@ export default function EditionComposer() {
         const generatedEdition = new CtDataEditionGenerator({ctData: cleanCtData}).generateEdition();
         setCtData(cleanCtData);
         setEdition(generatedEdition);
+        setMainTextIndexToLineNumberMap(null);
         setVersions(result.versions);
         setIsLatestVersion(result.isLatestVersion);
         setVersionTimeStamp(result.timeStamp);
@@ -109,7 +117,9 @@ export default function EditionComposer() {
       }
     };
 
-    void loadTableData();
+    loadTableData().then(() => {
+      console.log('Edition data loaded');
+    });
 
     return () => {
       isCurrentRequest = false;
@@ -140,7 +150,8 @@ export default function EditionComposer() {
   }
 
   const notificationsDiv = <div>
-    {!isLatestVersion && <p className={'text-danger'}>This is not the latest version</p>}
+    {!isLatestVersion && <NotLastVersionWarningButton version={versionTimeStamp} label={'Outdated Version'}/>}
+    {ctData.archived && <ArchivedEditionWarningButton label={'Archived'}/>}
   </div>;
 
   const onLineNumberingChange = (lineNumbering: MainTextIndexToLineMap) => {
@@ -157,7 +168,8 @@ export default function EditionComposer() {
       panel: 'one',
       key: 'mainText',
       title: 'Main Text',
-      content: <MainTextPanel mainText={edition.mainText} ctData={ctData} onLineNumberingChange={onLineNumberingChange}/>
+      content: <MainTextPanel mainText={edition.mainText} ctData={ctData}
+                              onLineNumberingChange={onLineNumberingChange}/>
     },
     {
       panel: 'one',
@@ -168,40 +180,55 @@ export default function EditionComposer() {
 
   ];
 
-  edition.apparatuses.forEach( (apparatus) => {
+  edition.apparatuses.forEach((apparatus) => {
     panelSpecs.push({
       panel: 'two',
       key: `apparatus-${apparatus.type}`,
       title: apparatus.type,
-      content: <ApparatusPanel apparatus={apparatus} lineNumberMap={mainTextIndexToLineNumberMap} sigla={ctData.sigla} lang={ctData.lang}/>
-    })
+      content: <ApparatusPanel apparatus={apparatus}
+                               lineNumberMap={mainTextIndexToLineNumberMap}
+                               sigla={ctData.sigla}
+                               lang={ctData.lang}/>
+    });
   });
 
   panelSpecs.push({
-    panel: 'two',
-    key: 'preview',
-    title: 'Preview',
-    content: <PreviewPanel editionKey={`edition-${id}`} edition={edition} getPdfUrl={ async () => ''}/>
+      panel: 'two',
+      key: 'preview',
+      title: 'Preview',
+      content: <PreviewPanel editionKey={`edition-${id}`} edition={edition} getPdfUrl={async () => ''}/>
     }
   );
 
-  panelSpecs.push( {
+  panelSpecs.push({
     panel: 'two',
     key: 'admin',
     title: 'Admin',
-    content: <AdminPanel tableId={ctData.tableId} versionTimeStamp={versionTimeStamp} versions={versions}
-                         isLatestVersion={isLatestVersion ?? false} archive={archive} isArchived={ctData.archived}
-                         archivingEnabled={isLatestVersion ?? false}/>
+    content: <AdminPanel tableId={ctData.tableId}
+                         versionTimeStamp={versionTimeStamp}
+                         versions={versions}
+                         isLatestVersion={isLatestVersion ?? false}
+                         archive={archive}
+                         isArchived={ctData.archived}
+                         archivingEnabled={isLatestVersion ?? false}
+                         loadingNewVersion={composerStatus === 'loadingNewVersion'}/>
   });
 
   return (<div className="ec-composer">
     <div className="header">
       <ApmLogo height={30} className={'logo'}/>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={ctData.title}
+                         disabled={composerStatus === 'loadingNewVersion'}
                          onConfirm={() => {
                            console.log('title edited');
                          }}/>
-      {notificationsDiv}
+      <span>{ctData.chunkId}</span>
+      {/* Notification area: only one element must be active, otherwise the layout will break */}
+      {composerStatus !== 'loadingNewVersion' && notificationsDiv}
+      {composerStatus === 'loadingNewVersion' && <span className={'version-loading'}><Spinner size="sm"/> Loading data...</span>}
+
+      {/* Right side controls */}
+      <span></span>
     </div>
     <SplitPanels direction={'vertical'} className="panelContainer" dividerClass="divider"
                  dividerWidth={3}

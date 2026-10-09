@@ -2,7 +2,7 @@ import {MceData} from '@/MceData/MceData';
 import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
-import {getSiglaGroupString} from '@/ReactAPM/Pages/MceComposer/SiglaGroupUtil';
+import {SiglaGroupUtil} from '@/CtData/SiglaGroupUtil';
 import {ValidationError} from "@/lib/Error/SystemError";
 
 export class DeleteSiglaGroupAction implements StateTransformAction<MceComposerHistoryState> {
@@ -21,7 +21,7 @@ export class DeleteSiglaGroupAction implements StateTransformAction<MceComposerH
 
     const newState = deepCopy(state);
     MceData.deleteSiglaGroup(newState.mceData, this.siglaGroupIndex);
-    this.title = `Delete sigla group ${getSiglaGroupString(group, state.mceData.sigla)}`;
+    this.title = `Delete sigla group ${SiglaGroupUtil.getSiglaGroupString(group, state.mceData.sigla)}`;
     return newState;
   }
 

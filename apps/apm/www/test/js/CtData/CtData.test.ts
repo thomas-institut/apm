@@ -32,6 +32,103 @@ function createCtData(type: CtDataInterface['type'] = 'edition'): CtDataInterfac
 }
 
 describe('CtData', () => {
+  describe('sigla groups', () => {
+    it('adds a valid group using a deep copy and returns the same CtData', () => {
+      const ctData = createCtData();
+      const group = {siglum: 'Group 1', witnesses: [0, 1]};
+
+      const result = CtData.addSiglaGroup(ctData, group);
+      group.witnesses.push(2);
+
+      expect(result).toBe(ctData);
+      expect(ctData.siglaGroups).toEqual([{siglum: 'Group 1', witnesses: [0, 1]}]);
+    });
+
+    it('rejects an invalid group when adding it without changing the data', () => {
+      const ctData = createCtData();
+      const group = {siglum: 'Group 1', witnesses: [0]};
+
+      expect(() => CtData.addSiglaGroup(ctData, group)).toThrow(
+        new ValidationError('Invalid sigla group {"siglum":"Group 1","witnesses":[0]}: Sigla group must have at least two witnesses')
+      );
+      expect(ctData.siglaGroups).toEqual([]);
+    });
+
+    it('updates an existing group using a deep copy and returns the same CtData', () => {
+      const ctData = createCtData();
+      ctData.siglaGroups = [{siglum: 'Group 1', witnesses: [0, 1]}];
+      const group = {siglum: 'Group 2', witnesses: [1, 2]};
+
+      const result = CtData.updateSiglaGroup(ctData, 0, group);
+      group.witnesses.push(0);
+
+      expect(result).toBe(ctData);
+      expect(ctData.siglaGroups).toEqual([{siglum: 'Group 2', witnesses: [1, 2]}]);
+    });
+
+    it.each([-1, 1])('rejects invalid update index %i without changing the groups', (siglaGroupIndex) => {
+      const ctData = createCtData();
+      ctData.siglaGroups = [{siglum: 'Group 1', witnesses: [0, 1]}];
+
+      expect(() => CtData.updateSiglaGroup(ctData, siglaGroupIndex, {siglum: 'Group 2', witnesses: [1, 2]}))
+        .toThrow(new ValidationError(`Invalid sigla group index ${siglaGroupIndex}`));
+      expect(ctData.siglaGroups).toEqual([{siglum: 'Group 1', witnesses: [0, 1]}]);
+    });
+
+    it('rejects an invalid replacement group without changing the existing groups', () => {
+      const ctData = createCtData();
+      ctData.siglaGroups = [{siglum: 'Group 1', witnesses: [0, 1]}];
+      const group = {siglum: 'Group 2', witnesses: [0]};
+
+      expect(() => CtData.updateSiglaGroup(ctData, 0, group)).toThrow(
+        new ValidationError('Invalid sigla group {"siglum":"Group 2","witnesses":[0]}: Sigla group must have at least two witnesses')
+      );
+      expect(ctData.siglaGroups).toEqual([{siglum: 'Group 1', witnesses: [0, 1]}]);
+    });
+
+    it('deletes an existing group and returns the same CtData', () => {
+      const ctData = createCtData();
+      ctData.siglaGroups = [
+        {siglum: 'Group 1', witnesses: [0, 1]},
+        {siglum: 'Group 2', witnesses: [1, 2]}
+      ];
+
+      const result = CtData.deleteSiglaGroup(ctData, 0);
+
+      expect(result).toBe(ctData);
+      expect(ctData.siglaGroups).toEqual([{siglum: 'Group 2', witnesses: [1, 2]}]);
+    });
+
+    it.each([-1, 1])('rejects invalid delete index %i without changing the groups', (siglaGroupIndex) => {
+      const ctData = createCtData();
+      ctData.siglaGroups = [{siglum: 'Group 1', witnesses: [0, 1]}];
+
+      expect(() => CtData.deleteSiglaGroup(ctData, siglaGroupIndex))
+        .toThrow(new ValidationError(`Invalid sigla group index ${siglaGroupIndex}`));
+      expect(ctData.siglaGroups).toEqual([{siglum: 'Group 1', witnesses: [0, 1]}]);
+    });
+
+    it('validates group sigla, witness membership, and duplicate groups', () => {
+      const ctData = createCtData();
+      ctData.siglaGroups = [
+        {siglum: 'Group 1', witnesses: [0, 1]},
+        {siglum: 'Group 2', witnesses: [1, 2]}
+      ];
+
+      expect(CtData.isSiglaGroupValid(ctData, -1, {siglum: 'Group 3', witnesses: [0, 2]})).toBe(true);
+      expect(CtData.isSiglaGroupValid(ctData, -1, {siglum: '  ', witnesses: [0, 2]}))
+        .toBe('Sigla group must have a non-empty siglum');
+      expect(CtData.isSiglaGroupValid(ctData, -1, {siglum: 'A', witnesses: [0, 2]}))
+        .toBe('Sigla group siglum is a witness siglum');
+      expect(CtData.isSiglaGroupValid(ctData, -1, {siglum: 'Group 1', witnesses: [0, 2]}))
+        .toBe('Sigla group siglum is duplicated');
+      expect(CtData.isSiglaGroupValid(ctData, -1, {siglum: 'Group 3', witnesses: [1, 2]}))
+        .toBe('Sigla group is duplicated');
+      expect(CtData.isSiglaGroupValid(ctData, -1, {siglum: 'Group 3', witnesses: [0, 3]}))
+        .toBe('Sigla group contains invalid witnesses');
+    });
+  });
+
   describe('updateSiglum', () => {
     it('trims the new siglum, updates only the selected witness and returns the same CtData', () => {
       const ctData = createCtData();

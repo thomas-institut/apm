@@ -635,13 +635,13 @@ describe('MceData', () => {
       mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
       mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
 
-      expect(() => MceData.changeSiglaGroup(mceData, -1, { siglum: 'G2', witnesses: [0, 1] }))
+      expect(() => MceData.updateSiglaGroup(mceData, -1, { siglum: 'G2', witnesses: [0, 1] }))
         .toThrow(ValidationError);
-      expect(() => MceData.changeSiglaGroup(mceData, -1, { siglum: 'G2', witnesses: [0, 1] }))
+      expect(() => MceData.updateSiglaGroup(mceData, -1, { siglum: 'G2', witnesses: [0, 1] }))
         .toThrow('Invalid sigla group index -1');
-      expect(() => MceData.changeSiglaGroup(mceData, 1, { siglum: 'G2', witnesses: [0, 1] }))
+      expect(() => MceData.updateSiglaGroup(mceData, 1, { siglum: 'G2', witnesses: [0, 1] }))
         .toThrow(ValidationError);
-      expect(() => MceData.changeSiglaGroup(mceData, 1, { siglum: 'G2', witnesses: [0, 1] }))
+      expect(() => MceData.updateSiglaGroup(mceData, 1, { siglum: 'G2', witnesses: [0, 1] }))
         .toThrow('Invalid sigla group index 1');
     });
 
@@ -651,7 +651,7 @@ describe('MceData', () => {
       mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
       const newGroup = { siglum: 'G2', witnesses: [1, 2] };
 
-      MceData.changeSiglaGroup(mceData, 0, newGroup);
+      MceData.updateSiglaGroup(mceData, 0, newGroup);
       newGroup.witnesses.push(0);
 
       expect(mceData.siglaGroups).toEqual([{ siglum: 'G2', witnesses: [1, 2] }]);
@@ -662,9 +662,9 @@ describe('MceData', () => {
       mceData.witnesses = [{ witnessId: 'w0' } as any, { witnessId: 'w1' } as any];
       mceData.siglaGroups = [{ siglum: 'G1', witnesses: [0, 1] }];
 
-      expect(() => MceData.changeSiglaGroup(mceData, 0, { siglum: 'G2', witnesses: [0] }))
+      expect(() => MceData.updateSiglaGroup(mceData, 0, { siglum: 'G2', witnesses: [0] }))
         .toThrow(ValidationError);
-      expect(() => MceData.changeSiglaGroup(mceData, 0, { siglum: 'G2', witnesses: [0] }))
+      expect(() => MceData.updateSiglaGroup(mceData, 0, { siglum: 'G2', witnesses: [0] }))
         .toThrow('Invalid sigla group {"siglum":"G2","witnesses":[0]}: Sigla group must have at least two witnesses');
     });
   });

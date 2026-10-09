@@ -3,7 +3,7 @@ import {deepCopy} from '@/toolbox/Util';
 import {StateTransformAction} from '@/ReactAPM/ToolBox/StateHistory/StateHistory';
 import {MceComposerHistoryState} from '@/ReactAPM/Pages/MceComposer/MceComposer';
 import {SiglaGroupInterface} from '@/CtData/CtDataInterface';
-import {getSiglaGroupString} from '@/ReactAPM/Pages/MceComposer/SiglaGroupUtil';
+import {SiglaGroupUtil} from '@/CtData/SiglaGroupUtil';
 
 export class ChangeSiglaGroupAction implements StateTransformAction<MceComposerHistoryState> {
 
@@ -21,14 +21,14 @@ export class ChangeSiglaGroupAction implements StateTransformAction<MceComposerH
 
     if (this.siglaGroupIndex === -1) {
       MceData.addSiglaGroup(newState.mceData, this.newGroup);
-      this.title = `Add sigla group ${getSiglaGroupString(this.newGroup, state.mceData.sigla)}`;
+      this.title = `Add sigla group ${SiglaGroupUtil.getSiglaGroupString(this.newGroup, state.mceData.sigla)}`;
       return newState;
     }
 
     const oldGroup = state.mceData.siglaGroups[this.siglaGroupIndex];
-    MceData.changeSiglaGroup(newState.mceData, this.siglaGroupIndex, this.newGroup);
+    MceData.updateSiglaGroup(newState.mceData, this.siglaGroupIndex, this.newGroup);
 
-    this.title = `Change sigla group ${getSiglaGroupString(oldGroup, state.mceData.sigla)} to ${getSiglaGroupString(this.newGroup, state.mceData.sigla)}`;
+    this.title = `Change sigla group ${SiglaGroupUtil.getSiglaGroupString(oldGroup, state.mceData.sigla)} to ${SiglaGroupUtil.getSiglaGroupString(this.newGroup, state.mceData.sigla)}`;
     return newState;
   }
 

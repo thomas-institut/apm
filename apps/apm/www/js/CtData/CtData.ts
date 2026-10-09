@@ -49,9 +49,11 @@ import {
   CustomApparatusEntryInterface,
   CustomApparatusInterface,
   NonTokenItemIndex,
+  SiglaGroupInterface,
   WitnessInterface,
   WitnessTokenInterface
 } from "./CtDataInterface.js";
+import {SiglaGroupUtil} from "./SiglaGroupUtil.js";
 import {FULL_TX} from "../Witness/WitnessType.js";
 import {NormalizerRegister} from "../pages/common/NormalizerRegister.js";
 import {Matrix} from "../lib/Matrix.js";
@@ -98,6 +100,22 @@ export class CtData {
       return 'Siglum is a sigla group siglum';
     }
     return true;
+  }
+
+  static isSiglaGroupValid(ctData: CtDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface): true | string {
+    return SiglaGroupUtil.isSiglaGroupValid(ctData, siglaGroupIndex, group);
+  }
+
+  static updateSiglaGroup(ctData: CtDataInterface, siglaGroupIndex: number, group: SiglaGroupInterface): CtDataInterface {
+    return SiglaGroupUtil.updateSiglaGroup(ctData, siglaGroupIndex, group, this.isSiglaGroupValid);
+  }
+
+  static addSiglaGroup(ctData: CtDataInterface, group: SiglaGroupInterface): CtDataInterface {
+    return SiglaGroupUtil.addSiglaGroup(ctData, group, this.isSiglaGroupValid);
+  }
+
+  static deleteSiglaGroup(ctData: CtDataInterface, siglaGroupIndex: number): CtDataInterface {
+    return SiglaGroupUtil.deleteSiglaGroup(ctData, siglaGroupIndex);
   }
 
   static updateWitnessOrder(ctData: CtDataInterface, newWitnessOrder: number[]) : CtDataInterface {

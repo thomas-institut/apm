@@ -9,7 +9,7 @@ import {Button} from "react-bootstrap";
 import {useState} from "react";
 import EditSiglaGroup from "@/ReactAPM/Pages/MceComposer/WitnessesPanel/EditSiglaGroup";
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
-import {getSiglaGroupString} from "@/ReactAPM/Pages/MceComposer/SiglaGroupUtil";
+import {SiglaGroupUtil} from "@/CtData/SiglaGroupUtil";
 import {nextTick} from "@/ReactAPM/ToolBox/NextTick";
 import ComponentWithPending from "@/ReactAPM/Components/ComponentWithPending";
 
@@ -213,7 +213,7 @@ export default function WitnessesPanel({
   };
 
   const siglaGroupToDelete = confirmDeleteSiglaGroupIndex === null ? null : siglaGroups[confirmDeleteSiglaGroupIndex] ?? null;
-  const siglaGroupToDeleteLabel = siglaGroupToDelete === null ? '' : getSiglaGroupString(siglaGroupToDelete, sigla);
+  const siglaGroupToDeleteLabel = siglaGroupToDelete === null ? '' : SiglaGroupUtil.getSiglaGroupString(siglaGroupToDelete, sigla);
 
 
   return (

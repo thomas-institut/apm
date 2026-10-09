@@ -69,10 +69,13 @@ export class RouteUrls {
   }
 
   static patternSingleChunkEdition() {
-    return baseUrl + betaPathInfix + '/edition/:id';
+    return baseUrl + betaPathInfix + '/edition/:id/:version?';
   }
 
-  static singleChunkEdition(id: number|string) {
+  static singleChunkEdition(id: number|string, versionTimeString?: string) {
+    if (versionTimeString !== undefined) {
+      return baseUrl + betaPathInfix + '/edition/' + id + '/' + TimeString.compactEncode(versionTimeString);
+    }
     return baseUrl + betaPathInfix + '/edition/' + id;
   }
 

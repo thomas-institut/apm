@@ -12,7 +12,7 @@ import {BoxArrowUpRight} from "react-bootstrap-icons";
 interface EntityLinkProps {
   id: number;
   secondaryId?: number;
-  type?: 'person' | 'work' | 'singleChunkEdition' | 'multiChunkEdition' | 'collationTable' | 'document' | 'docPage' | 'admin';
+  type?: 'person' | 'work' | 'singleChunkEdition' | 'singleChunkEditionBeta' | 'multiChunkEdition' | 'collationTable' | 'document' | 'docPage' | 'admin';
   name?: string;
   label?: string | null;
   title?: string;
@@ -77,9 +77,15 @@ export default function EntityLink(props: EntityLinkProps) {
       break;
 
     case 'singleChunkEdition':
-      // url = RouteUrls.singleChunkEdition(id);
       url = urlGen.siteChunkEdition(id, props.version);
       isReactRoute = false;
+      realTitle = title  ?? `ChunkEdition ${id}`;
+      defaultEntityName = `Edition ${id}`;
+      break;
+
+    case 'singleChunkEditionBeta':
+      url = RouteUrls.singleChunkEdition(id, props.version);
+      isReactRoute = true;
       realTitle = title  ?? `ChunkEdition ${id}`;
       defaultEntityName = `Edition ${id}`;
       break;

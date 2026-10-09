@@ -121,7 +121,7 @@ export class CtData {
     if (normalizedTitle.length === 0) {
       throw new ValidationError('Title cannot be empty');
     }
-    ctData.title = newTitle;
+    ctData.title = normalizedTitle;
     return ctData;
   }
 

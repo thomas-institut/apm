@@ -155,13 +155,13 @@ describe('CtData', () => {
   });
 
   describe('updateTitle', () => {
-    it('updates the title with the supplied value and returns the same CtData', () => {
+    it('updates the title with the normalized value and returns the same CtData', () => {
       const ctData = createCtData();
 
       const result = CtData.updateTitle(ctData, '  New title  ');
 
       expect(result).toBe(ctData);
-      expect(ctData.title).toBe('  New title  ');
+      expect(ctData.title).toBe('New title');
     });
 
     it('rejects an empty or whitespace-only title without changing the data', () => {

@@ -42,78 +42,79 @@ export default function EditionComposer() {
   const appContext = useContext(AppContext);
   const shimWidth = 5;
 
-  const getTableData = async () => {
-    if (!id) {
-      setErrorMsg('Edition ID is missing');
-      setComposerStatus('error');
-      return null;
-    }
-    const tableId = parseInt(id);
-    if (isNaN(tableId)) {
-      setErrorMsg('Edition ID is not a number');
-      setComposerStatus('error');
-      return null;
-    }
-    if (tableId < 0) {
-      setErrorMsg('Edition ID must be a positive number');
-      setComposerStatus('error');
-      return null;
-    }
-    try {
-      return await appContext.apiClient.getSingleChunkData(tableId, version ?? '');
-
-    } catch (error) {
-      setErrorMsg('Failed to load edition data');
-      setComposerStatus('error');
-    }
-  };
-
-  const reGenerateEdition = (ctData: CtDataInterface) => {
-    const eg = new CtDataEditionGenerator({ctData: ctData});
-    try {
-      return eg.generateEdition();
-    } catch (error) {
-      setErrorMsg('Failed to generate edition');
-      setComposerStatus('error');
-      return null;
-    }
-  }
-
-
   useEffect(() => {
-    if (composerStatus === 'start') {
-      setComposerStatus('loading');
-      return;
-    }
-    if (composerStatus === 'loading') {
-      getTableData().then((result) => {
-        if (!result) {
-          return;
-        }
-        console.log(`Data for edition ${id}:`, result);
-        try {
-          const cleanCtData = CtData.getCleanAndUpdatedCtData(result.ctData);
-          console.log(`Cleaned CT data for edition ${id}:`, cleanCtData);
-          setCtData(cleanCtData);
-          setEdition(reGenerateEdition(cleanCtData));
+    let isCurrentRequest = true;
 
-        } catch (error) {
-          console.warn(`Error cleaning CT data for edition ${id}:`, error);
-          // @ts-ignore
-          setErrorMsg("Error loading edition data: " + error.toString());
+    setComposerStatus('loading');
+    setErrorMsg('');
+    setCtData(null);
+    setEdition(null);
+    setVersions([]);
+    setIsLatestVersion(null);
+    setMainTextIndexToLineNumberMap(null);
+    setVersionTimeStamp('');
+    setExpandedTab(null);
+    setActiveTabPanelOne('mainText');
+    setActiveTabPanelTwo('admin');
+
+    const loadTableData = async () => {
+      if (!id) {
+        setErrorMsg('Edition ID is missing');
+        setComposerStatus('error');
+        return;
+      }
+      const tableId = parseInt(id);
+      if (isNaN(tableId)) {
+        setErrorMsg('Edition ID is not a number');
+        setComposerStatus('error');
+        return;
+      }
+      if (tableId < 0) {
+        setErrorMsg('Edition ID must be a positive number');
+        setComposerStatus('error');
+        return;
+      }
+
+      let result;
+      try {
+        result = await appContext.apiClient.getSingleChunkData(tableId, version ?? '');
+      } catch (error) {
+        if (isCurrentRequest) {
+          setErrorMsg('Failed to load edition data');
           setComposerStatus('error');
-          return;
         }
+        return;
+      }
 
+      if (!isCurrentRequest) {
+        return;
+      }
+
+      console.log(`Data for edition ${id}:`, result);
+      try {
+        const cleanCtData = CtData.getCleanAndUpdatedCtData(result.ctData);
+        console.log(`Cleaned CT data for edition ${id}:`, cleanCtData);
+        const generatedEdition = new CtDataEditionGenerator({ctData: cleanCtData}).generateEdition();
+        setCtData(cleanCtData);
+        setEdition(generatedEdition);
         setVersions(result.versions);
         setIsLatestVersion(result.isLatestVersion);
         setVersionTimeStamp(result.timeStamp);
         setComposerStatus('loaded');
-      });
-      return;
-    }
+      } catch (error) {
+        console.warn(`Error cleaning CT data for edition ${id}:`, error);
+        // @ts-ignore
+        setErrorMsg("Error loading edition data: " + error.toString());
+        setComposerStatus('error');
+      }
+    };
 
-  }, [composerStatus]);
+    void loadTableData();
+
+    return () => {
+      isCurrentRequest = false;
+    };
+  }, [id, version, appContext.apiClient]);
 
 
   if (composerStatus === 'error') {

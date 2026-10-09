@@ -1,6 +1,6 @@
 import {useParams} from "react-router";
 import './EditionComposer.css';
-import {StatusPage} from "@/ReactAPM/Pages/MceComposer/StatusPage";
+import {StatusPage} from "@/ReactAPM/Components/StatusPage/StatusPage";
 import {useContext, useEffect, useRef, useState} from "react";
 import {Spinner} from "react-bootstrap";
 import {Arrow90degLeft, Arrow90degRight, ArrowCounterclockwise, Save} from "react-bootstrap-icons";
@@ -27,8 +27,8 @@ import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
 import {deepCopy} from "@/toolbox/Util";
 import {UpdateTitleAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateTitleAction";
 import {OperationalError} from "@/lib/Error/SystemError";
-import BugWarningButton from "@/ReactAPM/Pages/MceComposer/BugWarningButton";
-import SessionPanel from "@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel";
+import BugWarningButton from "@/ReactAPM/Components/BugWarningButton";
+import SessionPanel from "@/ReactAPM/Components/SessionPanel/SessionPanel";
 
 type ComposerStatus = 'start' | 'loading' | 'loadingNewVersion' | 'error' | 'loaded';
 

@@ -197,7 +197,7 @@ vi.mock('@/ReactAPM/Components/ApmLogo/ApmLogo', () => ({
   default: () => <div>logo</div>
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/StatusPage', () => ({
+vi.mock('@/ReactAPM/Components/StatusPage/StatusPage', () => ({
   StatusPage: ({children}: {children: React.ReactNode}) => <div>{children}</div>
 }));
 
@@ -245,7 +245,7 @@ vi.mock('@/ReactAPM/Pages/MceComposer/MainTextPanel/MainTextPanel', () => ({
 }));
 
 // Mock SessionPanel to avoid interval timers in tests
-vi.mock('@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel', () => ({
+vi.mock('@/ReactAPM/Components/SessionPanel/SessionPanel', () => ({
   default: ({onClearHistory, onGoTo, savedStateSignature}: {
     onClearHistory: () => void,
     onGoTo: (index: number) => void,

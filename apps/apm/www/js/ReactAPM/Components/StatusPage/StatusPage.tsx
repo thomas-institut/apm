@@ -8,7 +8,7 @@ interface StatusPageProps {
 }
 
 /**
- * Page to show information about the status of the MCE composer.
+ * Page to show information about the status of an application page.
  *
  * @constructor
  */

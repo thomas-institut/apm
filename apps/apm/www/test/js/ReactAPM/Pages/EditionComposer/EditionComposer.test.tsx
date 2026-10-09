@@ -66,7 +66,7 @@ vi.mock('@/ReactAPM/Components/PanelUI/TabPanel', () => ({
     </div>,
 }));
 
-vi.mock('@/ReactAPM/Pages/MceComposer/StatusPage', () => ({
+vi.mock('@/ReactAPM/Components/StatusPage/StatusPage', () => ({
   StatusPage: ({children}: {children: React.ReactNode}) => <div>{children}</div>,
 }));
 
@@ -87,7 +87,7 @@ vi.mock('@/ReactAPM/Components/EditableTextField', () => ({
     }}>Invalid title</button>
   </>,
 }));
-vi.mock('@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel', () => ({
+vi.mock('@/ReactAPM/Components/SessionPanel/SessionPanel', () => ({
   default: ({history, onGoTo}: {
     history: {getHistory: () => {actionDescription: string}[]},
     onGoTo: (index: number) => void,
@@ -96,7 +96,7 @@ vi.mock('@/ReactAPM/Pages/MceComposer/SessionsPanel/SessionPanel', () => ({
                                                        onClick={() => onGoTo(index)}>{item.actionDescription}</button>)}
   </div>,
 }));
-vi.mock('@/ReactAPM/Pages/MceComposer/BugWarningButton', () => ({
+vi.mock('@/ReactAPM/Components/BugWarningButton', () => ({
   default: ({foundBugDescription}: {foundBugDescription: string}) =>
     <div data-testid="bug-warning">{foundBugDescription}</div>,
 }));

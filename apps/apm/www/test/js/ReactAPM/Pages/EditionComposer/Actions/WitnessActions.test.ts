@@ -18,15 +18,16 @@ const makeState = (): EditionComposerHistoryState => ({
     includeInAutoMarginalFoliation: [],
     siglaGroups: [{siglum: 'G1', witnesses: [0, 1]}],
     type: 'edition',
+    editionWitnessIndex: 0,
   } as unknown as CtDataInterface
 });
 
 describe('EditionComposer witness actions', () => {
   it('updates witness order on a copied CtData state', async () => {
     const state = makeState();
-    const newState = await new UpdateWitnessOrderAction([2, 0, 1]).execute(state);
+    const newState = await new UpdateWitnessOrderAction([0, 2, 1]).execute(state);
 
-    expect(newState.ctData.witnessOrder).toEqual([2, 0, 1]);
+    expect(newState.ctData.witnessOrder).toEqual([0, 2, 1]);
     expect(state.ctData.witnessOrder).toEqual([0, 1, 2]);
   });
 

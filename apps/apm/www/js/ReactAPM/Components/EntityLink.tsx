@@ -78,7 +78,7 @@ export default function EntityLink(props: EntityLinkProps) {
 
     case 'singleChunkEdition':
       // url = RouteUrls.singleChunkEdition(id);
-      url = urlGen.siteChunkEdition(id);
+      url = urlGen.siteChunkEdition(id, props.version);
       isReactRoute = false;
       realTitle = title  ?? `ChunkEdition ${id}`;
       defaultEntityName = `Edition ${id}`;

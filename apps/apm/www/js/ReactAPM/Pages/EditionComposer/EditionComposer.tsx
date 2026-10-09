@@ -20,8 +20,6 @@ import {Edition} from "@/Edition/Edition";
 import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
 import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
 import {MainTextIndexToLineMap} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
-import sigla from "@/EditionComposer/QuillBlots/Sigla";
-
 
 type ComposerStatus = 'start' | 'loading' | 'error' | 'loaded';
 

@@ -188,7 +188,7 @@ export class AdminPanel extends Panel {
       let authorName = authorData.name;
       const editionUrl = i === this.versionInfo.length -1 ?
         urlGen.siteChunkEdition(this.options.tableId):
-        urlGen.siteChunkEdition(this.options.tableId, TimeString.compactEncode(version['timeFrom']));
+        urlGen.siteChunkEdition(this.options.tableId, version['timeFrom']);
       html += '<tr>';
       html += '<td>' + (i + 1) + '</td>';
       html += `<td><a href="${editionUrl}">${version['id']}</a></td>`;

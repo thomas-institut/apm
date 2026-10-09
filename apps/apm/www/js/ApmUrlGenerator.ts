@@ -157,10 +157,15 @@ export class ApmUrlGenerator {
     return `${this.base}/collation-table/${tableId}${postfix}`;
   }
 
-  siteChunkEdition(editionId: number, version: string = '') {
+  /**
+   *
+   * @param editionId
+   * @param versionTimeString will be compact encoded
+   */
+  siteChunkEdition(editionId: number, versionTimeString: string = '') {
     let postfix = '';
-    if (version !== '') {
-      postfix = `/${version}`;
+    if (versionTimeString !== '') {
+      postfix = `/${TimeString.compactEncode(versionTimeString)}`;
     }
     return `${this.base}/chunk-edition/${editionId}${postfix}`;
   }

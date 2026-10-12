@@ -61,7 +61,7 @@ use APM\System\Work\WorkManager;
 use Predis\Client;
 use Slim\Views\Twig;
 use ThomasInstitut\DataTable\PdoProvider\PdoProvider;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\ToolBox\MySqlHelper;
 use function DI\autowire;
 use function DI\factory;
@@ -95,7 +95,7 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             SystemMainDataCache::class => autowire(ValkeySystemMainDataCache::class),
             SystemMemDataCache::class => autowire(ValkeySystemMemDataCache::class),
             SystemDirDataCache::class => autowire(DirectorySystemDirDataCache::class),
-            JobQueueManager::class => factory([JobQueueManagerFactory::class, 'create']),
+            JobQueueManagerInterface::class => factory([JobQueueManagerFactory::class, 'create']),
             PresetManager::class => factory([PresetManagerFactory::class, 'create']),
             CollationTableManager::class => factory([CollationTableManagerFactory::class, 'create']),
             UserManagerInterface::class => factory([UserManagerFactory::class, 'create']),

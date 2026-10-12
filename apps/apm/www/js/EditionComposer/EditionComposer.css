@@ -488,6 +488,15 @@ th.selected.highlight {
     background-color: #f6f669;
 }
 
+
+td.search-match {
+    background-color: #b5ecb5;
+}
+
+td.search-match.selected {
+    background-color: #81acc9;
+}
+
 /* Apparatus Panel */
 
 .lemma {

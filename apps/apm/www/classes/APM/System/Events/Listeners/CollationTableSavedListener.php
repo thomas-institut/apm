@@ -8,7 +8,7 @@ use APM\System\Jobs\UpdateApiSearchEditionsIndexJob;
 use APM\System\Jobs\UpdateApiSearchTranscribersAndTranscriptionsCacheJob;
 use APM\System\Jobs\UpdateApiUsersCtDataForUserJob;
 use InvalidArgumentException;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 
 /**
  * Schedules user and search refreshes after a collation table is saved.
@@ -19,9 +19,9 @@ final readonly class CollationTableSavedListener implements EventListener
     /**
      * Create the collation table listener.
      *
-     * @param JobQueueManager $jobQueueManager Queue for user and search refresh jobs.
+     * @param JobQueueManagerInterface $jobQueueManager Queue for user and search refresh jobs.
      */
-    public function __construct(private JobQueueManager $jobQueueManager)
+    public function __construct(private JobQueueManagerInterface $jobQueueManager)
     {
     }
 

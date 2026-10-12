@@ -14,7 +14,7 @@ use Monolog\Logger;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\NotFoundExceptionInterface;
 use ThomasInstitut\DataCache\ItemNotInCacheException;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 use Throwable;
 
@@ -96,8 +96,8 @@ class ApmDaemon extends ApmCliUtility
      */
     private function scheduleCacheRebuildJobs(): void
     {
-        /** @var JobQueueManager $jobManager */
-        $jobManager = $this->container->get(JobQueueManager::class);
+        /** @var JobQueueManagerInterface $jobManager */
+        $jobManager = $this->container->get(JobQueueManagerInterface::class);
 
         /** @var SystemMainDataCache $cache */
         $cache = $this->container->get(SystemMainDataCache::class);
@@ -143,8 +143,8 @@ class ApmDaemon extends ApmCliUtility
             return;
         }
 
-        /** @var JobQueueManager $jobManager */
-        $jobManager = $this->container->get(JobQueueManager::class);
+        /** @var JobQueueManagerInterface $jobManager */
+        $jobManager = $this->container->get(JobQueueManagerInterface::class);
         if ($jobManager instanceof ValkeyJobQueueManager) {
             $this->logger->info("Running Job Queue Recovery check");
             $recovered = $jobManager->runRecovery(self::JOB_TIMEOUT);

@@ -34,7 +34,7 @@
 
 import {deepCopy} from '@/toolbox/Util';
 import {SequenceWithGroups} from '@/Edition/SequenceWithGroups';
-import {SimpleProfiler} from '@/SimpleProfiler';
+// import {SimpleProfiler} from '@/SimpleProfiler';
 import {OptionalPropsRequired} from "@/toolbox/OptionalProps";
 import {attributesModule, classModule, eventListenersModule, h, init, propsModule, styleModule, VNode} from 'snabbdom';
 
@@ -441,6 +441,32 @@ export class TableEditor<T> {
       this.redrawScheduled = false;
       this.doRedrawTable();
     });
+  }
+
+  showColumnRange(colStart: number, colEnd: number) {
+    if (!this.options.showInMultipleRows || this.matrix.nCols === 0) {
+      return;
+    }
+
+    const columnsPerTable = this.options.columnsPerRow;
+    const totalCells = this.matrix.nRows * this.matrix.nCols;
+    if (totalCells <= WINDOWING_THRESHOLD) {
+      return;
+    }
+
+    const numTables = Math.ceil(this.matrix.nCols / columnsPerTable);
+    const tablesInWindow = Math.max(1, Math.floor(WINDOWING_MAX_CELLS / (this.matrix.nRows * columnsPerTable)));
+    const startTable = Math.floor(colStart / columnsPerTable);
+    const endTable = Math.floor(Math.min(colEnd, this.matrix.nCols - 1) / columnsPerTable);
+    const maxWindowStart = Math.max(0, numTables - tablesInWindow);
+    const nextWindowStart = Math.min(startTable, maxWindowStart);
+    const currentWindowEnd = this.currentWindowStartTableIndex + tablesInWindow;
+
+    if (startTable < this.currentWindowStartTableIndex || endTable >= currentWindowEnd) {
+      console.log(`redrawTable: ${nextWindowStart} to ${nextWindowStart + tablesInWindow}`);
+      this.currentWindowStartTableIndex = nextWindowStart;
+      this.redrawTable(true);
+    }
   }
 
   public redrawHeader(_col: number) {
@@ -1011,7 +1037,7 @@ export class TableEditor<T> {
 
   private doRedrawTable() {
     //console.log("Redrawing table")
-    let profiler = new SimpleProfiler('TableRedraw');
+    // let profiler = new SimpleProfiler('TableRedraw');
     this.dispatchTableDrawnPreEvent();
     if (this.container) {
       const newVNode = this.genTableVNode();

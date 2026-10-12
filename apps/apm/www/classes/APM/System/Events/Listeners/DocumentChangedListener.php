@@ -6,7 +6,7 @@ use APM\System\Events\DocumentChangedPayload;
 use APM\System\Events\EventListener;
 use APM\System\Jobs\UpdateApiDocumentsDataCacheJob;
 use InvalidArgumentException;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 
 /**
  * Schedules document data cache refreshes after document lifecycle changes.
@@ -17,9 +17,9 @@ final readonly class DocumentChangedListener implements EventListener
     /**
      * Create the document change listener.
      *
-     * @param JobQueueManager $jobQueueManager Queue for document data refresh jobs.
+     * @param JobQueueManagerInterface $jobQueueManager Queue for document data refresh jobs.
      */
-    public function __construct(private JobQueueManager $jobQueueManager)
+    public function __construct(private JobQueueManagerInterface $jobQueueManager)
     {
     }
 

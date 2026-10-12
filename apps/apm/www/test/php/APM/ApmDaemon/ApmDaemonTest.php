@@ -7,7 +7,7 @@ use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use ReflectionClass;
 use ReflectionProperty;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ApmDaemonTest extends TestCase
@@ -65,7 +65,7 @@ class ApmDaemonTest extends TestCase
         $daemon = new ApmDaemon($config, 0, []);
         $container = $this->createStub(ContainerInterface::class);
         $container->method('get')->willReturnMap([
-            [JobQueueManager::class, $jobManager],
+            [JobQueueManagerInterface::class, $jobManager],
         ]);
 
         $containerProperty = new ReflectionProperty(ApmCliUtility::class, 'container');

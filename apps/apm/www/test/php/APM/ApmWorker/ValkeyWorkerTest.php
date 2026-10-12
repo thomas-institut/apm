@@ -11,7 +11,7 @@ use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
 use Psr\Log\NullLogger;
 use ThomasInstitut\JobQueue\JobHandlerInterface;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class ValkeyWorkerTest extends TestCase
@@ -41,7 +41,7 @@ class ValkeyWorkerTest extends TestCase
         $this->ci = $this->createStub(ContainerInterface::class);
         $this->ci->method('get')->willReturnMap([
             [SystemManager::class, $this->systemManager],
-            [JobQueueManager::class, $this->jm],
+            [JobQueueManagerInterface::class, $this->jm],
             [LoggerInterface::class, new NullLogger()],
         ]);
     }
@@ -195,7 +195,7 @@ class ValkeyWorkerTest extends TestCase
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
-            [JobQueueManager::class, $jobManager],
+            [JobQueueManagerInterface::class, $jobManager],
             [LoggerInterface::class, new NullLogger()],
         ]);
 
@@ -226,7 +226,7 @@ class ValkeyWorkerTest extends TestCase
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
-            [JobQueueManager::class, $jobManager],
+            [JobQueueManagerInterface::class, $jobManager],
             [LoggerInterface::class, new NullLogger()],
         ]);
 
@@ -244,7 +244,7 @@ class ValkeyWorkerTest extends TestCase
         $ci = $this->createStub(ContainerInterface::class);
         $ci->method('get')->willReturnMap([
             [SystemManager::class, $systemManager],
-            [JobQueueManager::class, $this->jm],
+            [JobQueueManagerInterface::class, $this->jm],
             [LoggerInterface::class, new NullLogger()],
         ]);
         $mins = ValkeyWorker::MinDbResetConnectionIntervalInMinutes;

@@ -6,13 +6,13 @@ use Monolog\Logger;
 use Predis\Client;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 use ThomasInstitut\JobQueue\ValkeyJobQueueManager;
 
 class JobQueueManagerFactory
 {
 
-    public static function create(ContainerInterface $ci, LoggerInterface $logger, Client $valkeyClient): JobQueueManager
+    public static function create(ContainerInterface $ci, LoggerInterface $logger, Client $valkeyClient): JobQueueManagerInterface
     {
 
         if ($logger instanceof Logger) {

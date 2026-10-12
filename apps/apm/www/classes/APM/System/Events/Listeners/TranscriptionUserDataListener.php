@@ -6,7 +6,7 @@ use APM\System\Events\EventListener;
 use APM\System\Events\TranscriptionUpdatedPayload;
 use APM\System\Jobs\UpdateApiUsersTranscribedPagesDataJob;
 use InvalidArgumentException;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 
 /**
  * Schedules a user transcription data refresh after a transcription update.
@@ -17,9 +17,9 @@ final readonly class TranscriptionUserDataListener implements EventListener
     /**
      * Create the transcription user data listener.
      *
-     * @param JobQueueManager $jobQueueManager Queue for user data refresh jobs.
+     * @param JobQueueManagerInterface $jobQueueManager Queue for user data refresh jobs.
      */
-    public function __construct(private JobQueueManager $jobQueueManager)
+    public function __construct(private JobQueueManagerInterface $jobQueueManager)
     {
     }
 

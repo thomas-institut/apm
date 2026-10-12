@@ -35,7 +35,7 @@ use APM\System\Work\WorkNotFoundException;
 use PHPUnit\Framework\TestCase;
 use Psr\Container\ContainerInterface;
 use Psr\Log\LoggerInterface;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 
 /**
  * Test event listeners preserve legacy job scheduling and cache behavior.
@@ -48,7 +48,7 @@ class EventListenersTest extends TestCase
      */
     public function testTranscriptionListenersScheduleOrderedJobsWithLegacyArguments(): void
     {
-        $jobQueueManager = $this->createMock(JobQueueManager::class);
+        $jobQueueManager = $this->createMock(JobQueueManagerInterface::class);
         $scheduledJobs = [];
         $jobQueueManager->expects($this->exactly(5))
             ->method('scheduleJob')
@@ -94,7 +94,7 @@ class EventListenersTest extends TestCase
     public function testPageSettingsAndCollationListenersScheduleExactJobs(): void
     {
         $pageSettingsJobs = [];
-        $pageSettingsQueue = $this->createMock(JobQueueManager::class);
+        $pageSettingsQueue = $this->createMock(JobQueueManagerInterface::class);
         $pageSettingsQueue->expects($this->once())
             ->method('scheduleJob')
             ->willReturnCallback(function (...$arguments) use (&$pageSettingsJobs): string {
@@ -107,7 +107,7 @@ class EventListenersTest extends TestCase
         ], $pageSettingsJobs);
 
         $collationJobs = [];
-        $collationQueue = $this->createMock(JobQueueManager::class);
+        $collationQueue = $this->createMock(JobQueueManagerInterface::class);
         $collationQueue->expects($this->exactly(3))
             ->method('scheduleJob')
             ->willReturnCallback(function (...$arguments) use (&$collationJobs): string {
@@ -127,7 +127,7 @@ class EventListenersTest extends TestCase
      */
     public function testDocumentLifecycleEventsScheduleDocumentCacheRefresh(): void
     {
-        $jobQueueManager = $this->createMock(JobQueueManager::class);
+        $jobQueueManager = $this->createMock(JobQueueManagerInterface::class);
         $scheduledJobs = [];
         $jobQueueManager->expects($this->exactly(3))
             ->method('scheduleJob')
@@ -221,7 +221,7 @@ class EventListenersTest extends TestCase
         $entitySystem = $this->createStub(ApmEntitySystemInterface::class);
         $logger = $this->createMock(LoggerInterface::class);
         $logger->expects($this->once())->method('debug')->with('Invalidated ApiPeople data cache, part 0');
-        $jobQueueManager = $this->createMock(JobQueueManager::class);
+        $jobQueueManager = $this->createMock(JobQueueManagerInterface::class);
         $jobQueueManager->expects($this->once())
             ->method('scheduleJob')
             ->with(UpdateAllPeopleDataCacheJob::class, '', [], 0, 3, 20)

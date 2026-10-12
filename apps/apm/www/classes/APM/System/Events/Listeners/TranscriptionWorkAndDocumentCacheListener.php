@@ -7,7 +7,7 @@ use APM\System\Events\TranscriptionUpdatedPayload;
 use APM\System\Jobs\UpdateApiDocumentsDataCacheJob;
 use APM\System\Jobs\UpdateWorksCacheJob;
 use InvalidArgumentException;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 
 /**
  * Schedules work and document cache refreshes after a transcription update.
@@ -18,9 +18,9 @@ final readonly class TranscriptionWorkAndDocumentCacheListener implements EventL
     /**
      * Create the transcription work and document cache listener.
      *
-     * @param JobQueueManager $jobQueueManager Queue for cache refresh jobs.
+     * @param JobQueueManagerInterface $jobQueueManager Queue for cache refresh jobs.
      */
-    public function __construct(private JobQueueManager $jobQueueManager)
+    public function __construct(private JobQueueManagerInterface $jobQueueManager)
     {
     }
 

@@ -1,6 +1,6 @@
 {
   "name": "apm-node-service",
-  "version": "1.5.1",
+  "version": "1.5.3",
   "type": "module",
   "imports": {
     "#src/*": "./dist/apm/node-service/src/*",

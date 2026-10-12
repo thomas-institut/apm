@@ -10,7 +10,7 @@ use APM\System\Events\PersonDataChangedPayload;
 use APM\System\Jobs\UpdateAllPeopleDataCacheJob;
 use InvalidArgumentException;
 use Psr\Log\LoggerInterface;
-use ThomasInstitut\JobQueue\JobQueueManager;
+use ThomasInstitut\JobQueue\JobQueueManagerInterface;
 
 /**
  * Invalidates affected people data and schedules the aggregate cache rebuild.
@@ -24,13 +24,13 @@ final readonly class PersonDataChangedListener implements EventListener
      * @param ApmEntitySystemInterface $entitySystem Source for people page data.
      * @param SystemMainDataCache $systemMainDataCache Cache containing people page data.
      * @param LoggerInterface $logger Logger for cache invalidation information.
-     * @param JobQueueManager $jobQueueManager Queue for the full people cache rebuild.
+     * @param JobQueueManagerInterface $jobQueueManager Queue for the full people cache rebuild.
      */
     public function __construct(
         private ApmEntitySystemInterface $entitySystem,
         private SystemMainDataCache $systemMainDataCache,
         private LoggerInterface $logger,
-        private JobQueueManager $jobQueueManager
+        private JobQueueManagerInterface $jobQueueManager
     ) {
     }
 

@@ -32,7 +32,6 @@ use ThomasInstitut\DataCache\SimpleCacheAwareTrait;
 use ThomasInstitut\DataTable\Exception\InvalidTimeStringException;
 use Typesense\Client;
 use Typesense\Exceptions\TypesenseClientError;
-use function PHPUnit\Framework\countOf;
 
 class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInterface, CacheAware
 {
@@ -45,7 +44,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
 
 
     const array LanguageCodes = ['ar', 'he', 'la'];
-    const int StringArrayTtl = 3 * 24 * 3600; // 3 days
+    const int ListTtl = 3 * 24 * 3600; // 3 days
 
     public function __construct(
         private readonly Client                   $typesenseClient,
@@ -74,7 +73,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      */
     public function indexTranscription(PageInfo $pageInfo, int $col,
                                        string   $docTitle, string $transcriptionText, string $langCode,
-                                       string   $transcriberId, string $timeFrom): void
+                                       int      $transcriberId, string $timeFrom): void
     {
         $indexName = $this->getIndexName(IndexType::Transcriptions, $langCode);
         $cleanTranscriptionText = $this->encodeForLemmatization($transcriptionText);
@@ -87,8 +86,6 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
         } else {
             $this->logger->debug("Transcription is too short for lemmatization...");
         }
-
-        $transcriberId = ctype_digit((string)$transcriberId) ? (int)$transcriberId : 0;
 
         try {
             $this->getTypesenseClient()->collections[$indexName]->documents->create([
@@ -127,7 +124,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
     /**
      * @inheritDoc
      */
-    public function indexEdition(int $tableId, string $chunk, string $title, string $langCode, string $editionText, string $editorId, string $timeFrom): void
+    public function indexEdition(int $tableId, string $chunk, string $title, string $langCode, string $editionText, int $editorId, string $timeFrom): void
     {
         $indexName = $this->getIndexName(IndexType::Editions, $langCode);
 
@@ -143,7 +140,6 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $this->logger->debug("Text is too short for lemmatization...");
         }
 
-        $editorId = ctype_digit((string)$editorId) ? (int)$editorId : 0;
 
         try {
             $this->getTypesenseClient()->collections[$indexName]->documents->create([
@@ -171,10 +167,10 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      */
     public function getTranscriberNames(): array
     {
-        return $this->getStringArray(CacheKey::ApiSearchTranscribers, 'transcribers');
+        return $this->getCachedList(CacheKey::ApiSearchTranscribers, 'transcribers');
     }
 
-    private function getStringArray(string $cacheKey, $queryKey): array
+    private function getCachedList(string $cacheKey, string $queryKey): array
     {
         try {
             $values = unserialize($this->getDataCache()->get($cacheKey));
@@ -188,22 +184,27 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 true
             );
 
-            // Person lists used to be cached as plain strings. Rebuild those entries
-            // so the frontend can resolve creator IDs to names.
-            if ($isPersonList && !$hasPersonPairs) {
-                $values = $this->getStringArrayFromIndex($queryKey);
-                $this->getDataCache()->set($cacheKey, serialize($values), self::StringArrayTtl);
+            // Rebuild person lists that are empty or not in id/name format
+            if ($isPersonList && (!$hasPersonPairs || $values === [])) {
+                $values = $this->getListFromIndex($queryKey);
+                if ($values !== []) {
+                    $this->getDataCache()->set($cacheKey, serialize($values), self::ListTtl);
+                }
             }
             return $values;
         } catch (ItemNotInCacheException) {
             // so, let's get it from the index
-            $strings = $this->getStringArrayFromIndex($queryKey);
-            $this->getDataCache()->set($cacheKey, serialize($strings), self::StringArrayTtl);
-            return $strings;
+            $values = $this->getListFromIndex($queryKey);
+            $isPersonList = $queryKey === 'transcribers' || $queryKey === 'editors';
+            // Empty person lists are not cached
+            if (!$isPersonList || $values !== []) {
+                $this->getDataCache()->set($cacheKey, serialize($values), self::ListTtl);
+            }
+            return $values;
         }
     }
 
-    private function getStringArrayFromIndex(string $queryKey): array
+    private function getListFromIndex(string $queryKey): array
     {
         // Get names of target indices
         $isPersonList = ($queryKey === 'transcribers' || $queryKey === 'editors');
@@ -289,9 +290,9 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
     /**
      * @inheritDoc
      */
-    public function getEditors(): array
+    public function getEditorNames(): array
     {
-        return $this->getStringArray(CacheKey::ApiSearchEditors, 'editors');
+        return $this->getCachedList(CacheKey::ApiSearchEditors, 'editors');
     }
 
     /**
@@ -299,7 +300,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      */
     public function getTranscribedDocuments(): array
     {
-        return $this->getStringArray(CacheKey::ApiSearchTranscriptions, 'transcriptions');
+        return $this->getCachedList(CacheKey::ApiSearchTranscriptions, 'transcriptions');
     }
 
     /**
@@ -307,7 +308,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
      */
     public function getEditionTitles(): array
     {
-        return $this->getStringArray(CacheKey::ApiSearchEditions, 'editions');
+        return $this->getCachedList(CacheKey::ApiSearchEditions, 'editions');
     }
 
     private function getIndexPrefix(IndexType $indexType): string
@@ -348,7 +349,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 ],
                 [
                     'name' => 'docID',
-                    'type' => 'int32',
+                    'type' => 'int64',
                     'sort' => true
                 ],
                 [
@@ -385,7 +386,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 ],
                 [
                     'name' => 'creator',
-                    'type' => 'int32',
+                    'type' => 'int64',
                     'sort' => true
                 ]
             ],
@@ -432,7 +433,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
                 ],
                 [
                     'name' => 'creator',
-                    'type' => 'int32',
+                    'type' => 'int64',
                     'sort' => true
                 ]
             ],
@@ -503,7 +504,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $edition['title'],
             $edition['lang'],
             $edition['text'],
-            $edition['editorId'] ?? 0,
+            $edition['editorId'],
             $edition['timeFrom']
         );
         return true;
@@ -563,7 +564,7 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             $transcription['title'],
             $transcription['text'],
             $transcription['lang'],
-            $transcription['transcriberId'] ?? 0,
+            $transcription['transcriberId'],
             $transcription['timeFrom']
         );
         return true;
@@ -1124,55 +1125,6 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
     }
 
     /**
-     * Returns the person entity id for a given person name
-     * @param string $personName
-     * @return int
-     */
-    private function getPersonIdByName(string $personName): int
-    {
-        $nameStatements = $this->entitySystem->getStatements(
-            null,
-            Entity::pEntityName,
-            $personName
-        );
-
-        if ($nameStatements === []) {
-            $sortNameStatements = $this->entitySystem->getStatements(
-                null,
-                Entity::pSortName ?? null,
-                $personName
-            );
-            $nameStatements = $sortNameStatements ?? [];
-        }
-
-        if ($nameStatements === []) {
-            return 0;
-        }
-
-        $personTids = [];
-        foreach ($nameStatements as $st) {
-            $tid = $st->subject;
-
-            try {
-                $personTids[] = $tid;
-            } catch (\Throwable) {
-            }
-        }
-
-        if ($personTids === []) {
-            return 0;
-        }
-
-
-        if (count($personTids) > 1) {
-           print ("Found more than one matching person id for the given person name!");
-        }
-
-        sort($personTids);
-        return $personTids[0];
-    }
-
-    /**
      * Converts column elements to the text indexed by Typesense.
      */
     private function getPlainTextFromElements(array $elements): string
@@ -1207,12 +1159,12 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
     /**
      * @throws SearchManagerException
      */
-    public function searchToken(IndexType $indexType, string $lang, string $token, bool $lemmatize, int $page, string $docTitle = '', string $creatorName = '', int $pageSize = 100): SearchQueryResult
+    public function searchToken(IndexType $indexType, string $lang, string $token, bool $lemmatize, int $page, string $docTitle = '', int $creatorId = 0, int $pageSize = 100): SearchQueryResult
     {
 
         $indexName = $this->getIndexName($indexType, $lang);
 
-        $this->logger->debug("Making typesense query", ['index' => $indexName, 'token' => $token, 'title' => $docTitle, 'creator' => $creatorName]);
+        $this->logger->debug("Making typesense query", ['index' => $indexName, 'token' => $token, 'title' => $docTitle, 'creator' => $creatorId]);
 
         // Check "lemmatize" (boolean) and corpus to determine the target of the query
         if ($lemmatize) {
@@ -1247,12 +1199,8 @@ class TypesenseSearchIndexManager implements SearchIndexManager, LoggerAwareInte
             'limit' => $pageSize
         ];
 
-        if ($creatorName !== '') {
-            if (ctype_digit((string)$creatorName)) {
-                $searchParameters['filter_by'] .= ' && creator:=' . (int)$creatorName;
-            } else {
-                // ignorieren (namensbasierte Filter sind nicht mehr unterstützt)
-            }
+        if ($creatorId > 0) {
+            $searchParameters['filter_by'] .= " && creator:=$creatorId";
         }
 
         if ($docTitle !== '') {

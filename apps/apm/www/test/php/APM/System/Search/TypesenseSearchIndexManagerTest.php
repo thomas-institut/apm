@@ -6,6 +6,7 @@ use APM\CollationTable\CollationTableManager;
 use APM\CollationTable\CollationTableVersionInfo;
 use APM\CollationTable\TableInfo;
 use APM\EntitySystem\ApmEntitySystemInterface;
+use APM\System\Cache\CacheKey;
 use APM\System\Cache\SystemMainDataCache;
 use APM\System\Document\DocumentManager;
 use APM\System\LanguageManager;
@@ -14,6 +15,7 @@ use APM\System\Transcription\TranscriptionManager;
 use APM\System\Work\WorkManager;
 use PHPUnit\Framework\TestCase;
 use Psr\Log\LoggerInterface;
+use ThomasInstitut\DataCache\ItemNotInCacheException;
 use Typesense\Client;
 use Typesense\Collection;
 use Typesense\Collections;
@@ -62,11 +64,97 @@ class TypesenseSearchIndexManagerTest extends TestCase
 
         $manager = $this->createManager($this->createTypesenseClient($documents));
 
-        $result = $manager->searchToken(IndexType::Transcriptions, 'ar', 'token', true, 2, 'Title', '123', 20);
+        $result = $manager->searchToken(IndexType::Transcriptions, 'ar', 'token', true, 2, 'Title', 123, 20);
 
         $this->assertSame([['document' => ['id' => '1']]], $result->hits);
         $this->assertSame(2, $result->page);
         $this->assertFalse($result->queryFinished);
+    }
+
+    public function testSearchTokenOmitsCreatorFilterWithoutCreatorId(): void
+    {
+        $documents = $this->createMock(Documents::class);
+        $documents->expects($this->once())
+            ->method('search')
+            ->with($this->callback(function (array $query): bool {
+                return ($query['filter_by'] ?? null) === 'lang:=la';
+            }))
+            ->willReturn(['hits' => []]);
+
+        $manager = $this->createManager($this->createTypesenseClient($documents));
+
+        $result = $manager->searchToken(IndexType::Editions, 'la', 'token', false, 1);
+
+        $this->assertSame([], $result->hits);
+    }
+
+    public function testGetEditorNamesReturnsSortedUniqueIdNamePairsAndCachesThem(): void
+    {
+        $documents = $this->createStub(Documents::class);
+        $documents->method('search')->willReturnOnConsecutiveCalls(
+            ['hits' => [['document' => ['creator' => 2]], ['document' => ['creator' => 1]]]], // editions_la, page 1
+            ['hits' => []],                                                                     // editions_la, page 2
+            ['hits' => [['document' => ['creator' => 2]]]],                                     // editions_ar, page 1
+            ['hits' => []],                                                                     // editions_ar, page 2
+            ['hits' => []],                                                                     // editions_he, page 1
+        );
+
+        $entitySystem = $this->createStub(ApmEntitySystemInterface::class);
+        $entitySystem->method('getEntityName')->willReturnMap([
+            [1, 'Anna'],
+            [2, 'Bert'],
+        ]);
+
+        $expected = [
+            ['id' => 1, 'name' => 'Anna'],
+            ['id' => 2, 'name' => 'Bert'],
+        ];
+
+        $cache = $this->createMock(SystemMainDataCache::class);
+        $cache->method('get')->willThrowException(new ItemNotInCacheException());
+        $cache->expects($this->once())
+            ->method('set')
+            ->with(CacheKey::ApiSearchEditors, serialize($expected), TypesenseSearchIndexManager::ListTtl);
+
+        $manager = $this->createManager($this->createTypesenseClient($documents), null, $entitySystem, $cache);
+
+        $this->assertSame($expected, $manager->getEditorNames());
+    }
+
+    public function testGetTranscriberNamesDoesNotCacheEmptyList(): void
+    {
+        $documents = $this->createStub(Documents::class);
+        $documents->method('search')->willReturn(['hits' => []]);
+
+        $cache = $this->createMock(SystemMainDataCache::class);
+        $cache->method('get')->willThrowException(new ItemNotInCacheException());
+        $cache->expects($this->never())->method('set');
+
+        $manager = $this->createManager($this->createTypesenseClient($documents), null, null, $cache);
+
+        $this->assertSame([], $manager->getTranscriberNames());
+    }
+
+    public function testGetEditorNamesRebuildsCachedListInOldNameFormat(): void
+    {
+        $documents = $this->createStub(Documents::class);
+        $documents->method('search')->willReturnOnConsecutiveCalls(
+            ['hits' => [['document' => ['creator' => 1]]]],
+            ['hits' => []],
+            ['hits' => []],
+            ['hits' => []],
+        );
+
+        $entitySystem = $this->createStub(ApmEntitySystemInterface::class);
+        $entitySystem->method('getEntityName')->willReturn('Anna');
+
+        $cache = $this->createMock(SystemMainDataCache::class);
+        $cache->method('get')->willReturn(serialize(['Anna']));
+        $cache->expects($this->once())->method('set');
+
+        $manager = $this->createManager($this->createTypesenseClient($documents), null, $entitySystem, $cache);
+
+        $this->assertSame([['id' => 1, 'name' => 'Anna']], $manager->getEditorNames());
     }
 
     public function testUpdateIndexDeletesOrphanedEditionEntries(): void
@@ -211,16 +299,18 @@ class TypesenseSearchIndexManagerTest extends TestCase
 
     private function createManager(
         ?Client $client = null,
-        ?CollationTableManager $collationTableManager = null
+        ?CollationTableManager $collationTableManager = null,
+        ?ApmEntitySystemInterface $entitySystem = null,
+        ?SystemMainDataCache $cache = null
     ): TypesenseSearchIndexManager
     {
         return new TypesenseSearchIndexManager(
             $client ?? $this->createTypesenseClient($this->createStub(Documents::class)),
-            $this->createStub(SystemMainDataCache::class),
+            $cache ?? $this->createStub(SystemMainDataCache::class),
             $this->createStub(LoggerInterface::class),
             $this->createStub(DocumentManager::class),
             $this->createStub(TranscriptionManager::class),
-            $this->createStub(ApmEntitySystemInterface::class),
+            $entitySystem ?? $this->createStub(ApmEntitySystemInterface::class),
             $collationTableManager ?? $this->createStub(CollationTableManager::class),
             $this->createStub(WorkManager::class),
             $this->createStub(LemmatizerInterface::class),

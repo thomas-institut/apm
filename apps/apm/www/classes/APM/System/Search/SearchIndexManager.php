@@ -15,14 +15,14 @@ interface SearchIndexManager
      * @param string $docTitle
      * @param string $transcriptionText
      * @param string $langCode
-     * @param string $transcriberName
+     * @param int $transcriberId Entity id of the transcriber
      * @param string $timeFrom
      * @return void
      * @throws SearchManagerException
      */
     public function indexTranscription(PageInfo $pageInfo, int $col,
                                        string   $docTitle, string $transcriptionText, string $langCode,
-                                       string   $transcriberName, string $timeFrom): void;
+                                       int      $transcriberId, string $timeFrom): void;
 
 
     /**
@@ -31,29 +31,27 @@ interface SearchIndexManager
      * @param string $title
      * @param string $langCode
      * @param string $editionText
-     * @param string $editorName
+     * @param int $editorId Entity id of the editor
      * @param string $timeFrom
      * @return void
      * @throws SearchManagerException
      */
     public function indexEdition(int    $tableId, string $chunk, string $title, string $langCode,
-                                 string $editionText, string $editorName, string $timeFrom): void;
+                                 string $editionText, int $editorId, string $timeFrom): void;
 
     /**
-     * Returns an array with the names of the people who have indexed transcriptions in
-     * the system.
+     * Returns the transcribers of all indexed transcriptions as id/name pairs, sorted by name.
      *
-     * @return string[]
+     * @return array<array{id: int, name: string}>
      */
     public function getTranscriberNames(): array;
 
     /**
-     * Returns an array with the names of the people who have editions in
-     * the system.
+     * Returns the editors of all indexed editions as id/name pairs, sorted by name.
      *
-     * @return string[]
+     * @return array<array{id: int, name: string}>
      */
-    public function getEditors(): array;
+    public function getEditorNames(): array;
 
     /**
      * Returns an array with the titles of all documents transcribed in
@@ -169,12 +167,12 @@ interface SearchIndexManager
      * @param bool $lemmatize
      * @param int $page
      * @param string $docTitle
-     * @param string $creatorName
+     * @param int $creatorId Entity id of the creator to filter by, 0 for no filter
      * @param int $pageSize
      * @return SearchQueryResult
      * @throws SearchManagerException
      */
     public function searchToken(IndexType $indexType, string $lang, string $token, bool $lemmatize, int $page,
-                                string    $docTitle = '', string $creatorName = '', int $pageSize = 100): SearchQueryResult;
+                                string    $docTitle = '', int $creatorId = 0, int $pageSize = 100): SearchQueryResult;
 
 }

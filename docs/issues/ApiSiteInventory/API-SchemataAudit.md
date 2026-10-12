@@ -115,9 +115,9 @@
 |---|---|---|---|---|---|
 | `POST /api/search/keyword` | `ApiSearch::search` | ad-hoc `{index, searched_phrase, lemmatize, lemmata, lang, corpus, keywordDistance, tokensForQuery, query, queryPage, queryFinished, serverTime, status}` | None | ❌ No TS interface | Complex response, no PHP DataSchema class |
 | `GET /api/search/transcriptions` | `ApiSearch::getTranscriptionTitles` | ad-hoc `{transcriptions: string[], serverTime, status}` | None | ❌ No TS interface | |
-| `GET /api/search/transcribers` | `ApiSearch::getTranscribers` | ad-hoc `{transcribers: string[], serverTime, status}` | None | ❌ No TS interface | |
+| `GET /api/search/transcribers` | `ApiSearch::getTranscriberNames` | ad-hoc `{transcribers: {id: int, name: string}[], serverTime, status}` | None | ❌ No TS interface | |
 | `GET /api/search/editions` | `ApiSearch::getEditionTitles` | ad-hoc `{editions: string[], serverTime, status}` | None | ❌ No TS interface | |
-| `GET /api/search/editors` | `ApiSearch::getEditors` | ad-hoc `{editors: string[], serverTime, status}` | None | ❌ No TS interface | |
+| `GET /api/search/editors` | `ApiSearch::getEditorNames` | ad-hoc `{editors: {id: int, name: string}[], serverTime, status}` | None | ❌ No TS interface | |
 
 #### Edition Sources
 

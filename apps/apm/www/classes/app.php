@@ -1267,7 +1267,7 @@ function createApiSearchRoutes(RouteCollectorProxy $group): void
      *    ApiClient Method: TBD
      */
     $group->any("/search/transcribers",
-        [ApiSearch::class, 'getTranscribers']);
+        [ApiSearch::class, 'getTranscriberNames']);
 
     /**
      * Returns a list of edition titles
@@ -1297,7 +1297,7 @@ function createApiSearchRoutes(RouteCollectorProxy $group): void
      *    ApiClient Method: TBD
      */
     $group->any("/search/editors",
-        [ApiSearch::class, 'getEditors']);
+        [ApiSearch::class, 'getEditorNames']);
 
 }
 

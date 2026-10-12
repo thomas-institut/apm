@@ -1,3 +1,54 @@
+.main-text-panel-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    padding: 0.35rem 0.5rem;
+}
+
+.main-text-mode-controls, .main-text-view-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.main-text-apparatus-highlight-control {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0;
+}
+
+.main-text-view-controls .form-check {
+    margin-bottom: 0;
+}
+
+.main-text-apparatus-popover {
+    max-width: 32rem;
+}
+
+.main-text-apparatus-popover h4 {
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin: 0.25rem 0;
+}
+
+.main-text-apparatus-entry {
+    margin-bottom: 0.5rem;
+}
+
+.main-text-apparatus-entry-range {
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-right: 0.25rem;
+}
+
+.main-text-apparatus-popover .sub-entry.disabled {
+    color: #6c757d;
+    text-decoration: line-through;
+}
+
 .main-text-panel {
 
     padding: 0 1em 1em 1em;
@@ -7,6 +58,10 @@
     .main-text-viewer {
         position: relative;
         padding: 0 3em;
+    }
+
+    .apparatus-coverage-highlighted {
+        background-color: #fff3cd;
     }
 
     .highlighted-token {

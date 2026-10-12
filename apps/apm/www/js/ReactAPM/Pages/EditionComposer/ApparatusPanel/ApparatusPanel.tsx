@@ -18,12 +18,13 @@ interface ApparatusPanelProps extends TabbableElementProps {
   lang: string;
   sigla: string[];
   onHoverRange: (range: MainTextTokenRange | null) => void;
+  hoveredEntryIndices?: number[];
   selectedLemmaIndex: number | null;
   onSelectLemma: (lemma: SelectedApparatusLemma | null) => void;
 }
 
 export function ApparatusPanel({apparatus, lineNumberMap, sigla, lang, onHoverRange, selectedLemmaIndex,
-                                onSelectLemma}: ApparatusPanelProps) {
+                                onSelectLemma, hoveredEntryIndices = []}: ApparatusPanelProps) {
   const [ useLineNumbers, setUseLineNumbers] = useState(true);
 
   if (apparatus.entries.length === 0) {
@@ -43,6 +44,7 @@ export function ApparatusPanel({apparatus, lineNumberMap, sigla, lang, onHoverRa
     </Toolbar>
     <ApparatusViewer className={viewerClasses.join(' ')} apparatus={apparatus} lineNumberMap={lineNumberMap}
                      useLineNumbers={useLineNumbers} sigla={sigla} onHoverRange={onHoverRange}
-                     selectedLemmaIndex={selectedLemmaIndex} onSelectLemma={onSelectLemma}/>
+                     selectedLemmaIndex={selectedLemmaIndex} hoveredEntryIndices={hoveredEntryIndices}
+                     onSelectLemma={onSelectLemma}/>
   </Panel>;
 }

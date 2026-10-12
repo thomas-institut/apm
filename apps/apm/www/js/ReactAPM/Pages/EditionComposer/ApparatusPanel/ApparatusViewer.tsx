@@ -5,8 +5,7 @@ import {
 } from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {Fragment} from "react";
-import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
-import FmtTextRenderer from "@/ReactAPM/Components/FmtTextRenderer";
+import SubEntry from "@/ReactAPM/Pages/EditionComposer/SubEntry";
 
 
 interface ApparatusViewerProps {
@@ -16,6 +15,7 @@ interface ApparatusViewerProps {
   className?: string;
   sigla: string[];
   onHoverRange: (range: MainTextTokenRange | null) => void;
+  hoveredEntryIndices?: number[];
   selectedLemmaIndex: number | null;
   onSelectLemma: (lemma: SelectedApparatusLemma | null) => void;
 }
@@ -32,7 +32,7 @@ export interface SelectedApparatusLemma {
 }
 
 export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, className, sigla,
-                                 onHoverRange, selectedLemmaIndex, onSelectLemma}: ApparatusViewerProps) {
+                                 onHoverRange, selectedLemmaIndex, hoveredEntryIndices = [], onSelectLemma}: ApparatusViewerProps) {
   const getEntryRanges = (apparatus: Apparatus, lineNumberMap: MainTextIndexToLineMap | null, useLineNumbers: boolean) => {
     const ranges: EntryRange[] = [];
     const usingLineNumbers = lineNumberMap !== null && useLineNumbers;
@@ -85,6 +85,9 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
             if (entryIndex === selectedLemmaIndex) {
               lemmaClasses.push('selected');
             }
+            if (hoveredEntryIndices.includes(entryIndex)) {
+              lemmaClasses.push('main-text-hover');
+            }
             return <Fragment key={index}><span key="lemma"
                                                className={lemmaClasses.join(' ')}
                                                onClick={() => onSelectLemma({
@@ -103,28 +106,4 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
       })
     }
   </div>;
-}
-
-interface SubEntryProps {
-  subEntry: ApparatusSubEntry;
-  isFirst: boolean;
-  sigla: string[];
-}
-
-function SubEntry({subEntry, isFirst, sigla}: SubEntryProps) {
-  const keywords: Map<string, string> = new Map();
-  keywords.set('empty', '');
-  keywords.set('omission', 'om.');
-  keywords.set('addition', 'add.');
-
-  const subEntryClasses = ['sub-entry'];
-  if (isFirst) {
-    subEntryClasses.push('first');
-  }
-  if (!subEntry.enabled) {
-    subEntryClasses.push('disabled');
-  }
-  const witnessDataText = subEntry.witnessData.map((wd) => sigla[wd.witnessIndex]).join('');
-  return <span className={subEntryClasses.join(' ')}><i>{keywords.get(subEntry.type)}</i> <FmtTextRenderer
-    t={subEntry.fmtText}/> {witnessDataText}</span>;
 }

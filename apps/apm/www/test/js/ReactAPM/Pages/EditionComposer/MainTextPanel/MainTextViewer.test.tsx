@@ -5,6 +5,8 @@
 import React, {act} from 'react';
 import {createRoot} from 'react-dom/client';
 import {describe, expect, it, vi} from 'vitest';
+import {Apparatus} from '@/Edition/Apparatus';
+import {ApparatusEntry} from '@/Edition/ApparatusEntry';
 import {MainTextToken} from '@/Edition/MainTextToken';
 import MainTextViewer, {MainTextIndexToLineMap} from '@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer';
 
@@ -63,5 +65,116 @@ describe('MainTextViewer', () => {
     await act(async () => root.unmount());
     container.remove();
     vi.restoreAllMocks();
+  });
+
+  it('selects backwards across whitespace and reports overlapping apparatus coverage', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const first = new Apparatus();
+    first.type = 'critical';
+    const firstEntry = new ApparatusEntry();
+    firstEntry.from = 0;
+    firstEntry.to = 2;
+    firstEntry.mainTextWords = ['one', 'two'];
+    first.entries.push(firstEntry);
+    const second = new Apparatus();
+    second.type = 'marginal';
+    const secondEntry = new ApparatusEntry();
+    secondEntry.from = 0;
+    secondEntry.to = 0;
+    secondEntry.mainTextWords = ['one'];
+    second.entries.push(secondEntry);
+    const glue = new MainTextToken();
+    glue.type = 'glue';
+    const mainText = [new MainTextToken().setText('one', 0), glue, new MainTextToken().setText('two', 1)];
+    const onSelectionChange = vi.fn();
+    const onHoverApparatusEntries = vi.fn();
+
+    await act(async () => root.render(<MainTextViewer mainText={mainText} indexMap={{0: 0, 1: 1}}
+                                                     mode="apparatus" canSelectTokens apparatuses={[first, second]}
+                                                     activeApparatusIndex={0}
+                                                     className="main-text-viewer"
+                                                     onSelectionChange={onSelectionChange}
+                                                     onHoverApparatusEntries={onHoverApparatusEntries}/>));
+
+    const firstToken = container.querySelector<HTMLElement>('.mtt-0')!;
+    const whitespace = container.querySelector<HTMLElement>('.mtt-1')!;
+    const lastToken = container.querySelector<HTMLElement>('.mtt-2')!;
+    await act(async () => {
+      lastToken.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true}));
+      firstToken.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
+    });
+    expect(onSelectionChange).toHaveBeenLastCalledWith({from: 2, to: 0});
+    expect(container.querySelectorAll('.selected-token')).toHaveLength(3);
+    expect(container.querySelectorAll('.apparatus-coverage-highlighted')).toHaveLength(3);
+
+    await act(async () => {
+      container.querySelector('.main-text-viewer')!.dispatchEvent(new MouseEvent('mouseup', {bubbles: true}));
+      firstToken.dispatchEvent(new MouseEvent('mouseout', {bubbles: true}));
+      firstToken.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
+    });
+    expect(onHoverApparatusEntries).toHaveBeenLastCalledWith([
+      {apparatusIndex: 0, entryIndex: 0}, {apparatusIndex: 1, entryIndex: 0}
+    ]);
+
+    await act(async () => {
+      whitespace.dispatchEvent(new MouseEvent('mousedown', {bubbles: true, cancelable: true}));
+    });
+    expect(container.querySelectorAll('.selected-token')).toHaveLength(0);
+    expect(onSelectionChange).toHaveBeenLastCalledWith(null);
+
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
+  it('highlights all, no, active, or explicitly selected apparatus entries', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const first = new Apparatus();
+    first.type = 'critical';
+    const firstEntry = new ApparatusEntry();
+    firstEntry.from = 0;
+    firstEntry.to = 0;
+    first.entries.push(firstEntry);
+    const second = new Apparatus();
+    second.type = 'fontium';
+    const secondEntry = new ApparatusEntry();
+    secondEntry.from = 2;
+    secondEntry.to = 2;
+    second.entries.push(secondEntry);
+    const glue = new MainTextToken();
+    glue.type = 'glue';
+    const mainText = [new MainTextToken().setText('first', 0), glue, new MainTextToken().setText('second', 1)];
+    const apparatuses = [first, second];
+    const highlightedTokenClasses = () => Array.from(container.querySelectorAll('.apparatus-coverage-highlighted'))
+      .map(element => Array.from(element.classList).find(className => className.startsWith('mtt-')));
+
+    const render = async (apparatusHighlightSelection: 'all' | 'none' | 'active' | number,
+                         activeApparatusIndex: number | null = 0) => {
+      await act(async () => root.render(<MainTextViewer mainText={mainText} indexMap={{0: 0, 1: 1}}
+                                                       apparatuses={apparatuses}
+                                                       activeApparatusIndex={activeApparatusIndex}
+                                                       apparatusHighlightSelection={apparatusHighlightSelection}/>));
+    };
+
+    await render('active', 0);
+    expect(highlightedTokenClasses()).toEqual(['mtt-0']);
+
+    await render('active', 1);
+    expect(highlightedTokenClasses()).toEqual(['mtt-2']);
+
+    await render(0, 1);
+    expect(highlightedTokenClasses()).toEqual(['mtt-0']);
+
+    await render('all');
+    expect(highlightedTokenClasses()).toEqual(['mtt-0', 'mtt-2']);
+
+    await render('none');
+    expect(container.querySelectorAll('.apparatus-coverage-highlighted')).toHaveLength(0);
+
+    await act(async () => root.unmount());
+    container.remove();
   });
 });

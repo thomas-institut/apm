@@ -30,11 +30,13 @@ describe('ApparatusViewer', () => {
     await act(async () => {
       root.render(<ApparatusViewer apparatus={apparatus} lineNumberMap={null} useLineNumbers={false} sigla={[]}
                                    onHoverRange={onHoverRange} selectedLemmaIndex={null}
+                                   hoveredEntryIndices={[0]}
                                    onSelectLemma={onSelectLemma}/>);
     });
 
     const lemma = container.querySelector('.lemma');
     expect(lemma).not.toBeNull();
+    expect(lemma!.classList.contains('main-text-hover')).toBe(true);
     await act(async () => {
       lemma!.dispatchEvent(new MouseEvent('mouseover', {bubbles: true}));
     });

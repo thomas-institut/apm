@@ -118,16 +118,30 @@ vi.mock('@/ReactAPM/Components/BugWarningButton', () => ({
     <div data-testid="bug-warning">{foundBugDescription}</div>,
 }));
 vi.mock('@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel', () => ({
-  default: ({selectedTokenRange}: {selectedTokenRange?: {from: number, to: number} | null}) =>
+  default: ({selectedTokenRange, apparatuses, activeApparatusIndex, sigla, canEdit, onHoverApparatusEntries}: {
+    selectedTokenRange?: {from: number, to: number} | null,
+    apparatuses: {type: string, entries: never[]}[],
+    activeApparatusIndex: number | null,
+    sigla: string[],
+    canEdit: boolean,
+    onHoverApparatusEntries: (entries: {apparatusIndex: number, entryIndex: number}[] | null) => void,
+  }) => <>
     <div data-testid="main-text-selection" data-from={selectedTokenRange?.from ?? ''}
-         data-to={selectedTokenRange?.to ?? ''}/>
+         data-to={selectedTokenRange?.to ?? ''} data-can-edit={canEdit}
+         data-apparatus-count={apparatuses.length} data-active-apparatus-index={activeApparatusIndex ?? ''}
+         data-sigla-count={sigla.length}/>
+    <button data-testid="main-text-hover" onMouseEnter={() => onHoverApparatusEntries([
+      {apparatusIndex: 0, entryIndex: 0}, {apparatusIndex: 1, entryIndex: 0}
+    ])} onMouseLeave={() => onHoverApparatusEntries(null)}>Hover apparatus entries</button>
+  </>
 }));
 vi.mock('@/ReactAPM/Pages/EditionComposer/WitnessesPanel/WitnessesPanel', () => ({default: () => null}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel', () => ({default: () => null}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel', () => ({
-  ApparatusPanel: ({apparatus, selectedLemmaIndex, onSelectLemma}: {
+  ApparatusPanel: ({apparatus, selectedLemmaIndex, hoveredEntryIndices = [], onSelectLemma}: {
     apparatus: {type: string},
     selectedLemmaIndex: number | null,
+    hoveredEntryIndices?: number[],
     onSelectLemma: (selection: {entryIndex: number, range: {from: number, to: number}}) => void,
   }) => <div>
     <button className="lemma" data-testid={`${apparatus.type}-lemma`}
@@ -136,6 +150,7 @@ vi.mock('@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel', () => 
       Select lemma
     </button>
     <span data-testid={`${apparatus.type}-selected-lemma`}>{selectedLemmaIndex ?? ''}</span>
+    <span data-testid={`${apparatus.type}-hovered-entries`}>{hoveredEntryIndices.join(',')}</span>
   </div>,
 }));
 vi.mock('@/ReactAPM/Pages/EditionComposer/AdminPanel/AdminPanel', () => ({
@@ -228,6 +243,7 @@ describe('EditionComposer version changes', () => {
     expect(container.querySelector('.version-loading')?.textContent).toContain('Loading data...');
     expect(container.querySelector('.version-loading [data-testid="spinner"]')).not.toBeNull();
     expect(container.querySelector('[data-testid="edition-admin"]')?.getAttribute('data-loading-new-version')).toBe('true');
+    expect(container.querySelector('[data-testid="main-text-selection"]')?.getAttribute('data-can-edit')).toBe('false');
     expect(tabPanels[0].dataset.activeTab).toBe('cTable');
     expect(tabPanels[1].dataset.activeTab).toBe('preview');
 
@@ -249,6 +265,9 @@ describe('EditionComposer version changes', () => {
       {type: 'marginal', entries: []},
     );
     await act(async () => renderComposer());
+    expect(container.querySelector('[data-testid="main-text-selection"]')?.getAttribute('data-can-edit')).toBe('true');
+    expect(container.querySelector('[data-testid="main-text-selection"]')?.getAttribute('data-apparatus-count')).toBe('2');
+    expect(container.querySelector('[data-testid="main-text-selection"]')?.getAttribute('data-sigla-count')).toBe('0');
 
     const tabPanel = container.querySelectorAll<HTMLElement>('[data-testid="tab-panel"]')[1];
     const selectedRange = () => container.querySelector<HTMLElement>('[data-testid="main-text-selection"]')?.dataset.from;
@@ -257,10 +276,17 @@ describe('EditionComposer version changes', () => {
       tabPanel.querySelectorAll<HTMLButtonElement>('.apparatus-tab')[0].click();
       container.querySelector<HTMLButtonElement>('[data-testid="critical-lemma"]')!.click();
     });
+    expect(container.querySelector('[data-testid="main-text-selection"]')?.getAttribute('data-active-apparatus-index')).toBe('0');
     expect(selectedRange()).toBe('2');
     expect(container.querySelector('[data-testid="critical-selected-lemma"]')?.textContent).toBe('0');
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-testid="main-text-hover"]')!.dispatchEvent(
+      new MouseEvent('mouseover', {bubbles: true}),
+    ));
+    expect(container.querySelector('[data-testid="critical-hovered-entries"]')?.textContent).toBe('0');
+    expect(container.querySelector('[data-testid="marginal-hovered-entries"]')?.textContent).toBe('0');
 
     await act(async () => tabPanel.querySelectorAll<HTMLButtonElement>('.apparatus-tab')[1].click());
+    expect(container.querySelector('[data-testid="main-text-selection"]')?.getAttribute('data-active-apparatus-index')).toBe('1');
     expect(selectedRange()).toBe('');
     expect(container.querySelector('[data-testid="critical-selected-lemma"]')?.textContent).toBe('0');
     expect(container.querySelector('[data-testid="marginal-selected-lemma"]')?.textContent).toBe('');

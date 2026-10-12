@@ -38,6 +38,10 @@
         cursor: pointer;
     }
 
+    .lemma.main-text-hover {
+        background-color: lightblue;
+    }
+
     .lemma.selected {
         background-color: yellow;
     }

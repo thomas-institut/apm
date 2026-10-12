@@ -25,6 +25,7 @@ import {
   MainTextTokenRange
 } from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
 import {SelectedApparatusLemma} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusViewer";
+import {MainTextApparatusEntryReference} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextApparatusPopover";
 import NotLastVersionWarningButton from "@/ReactAPM/Components/NotLastVersionWarningButton";
 import ArchivedEditionWarningButton from "@/ReactAPM/Components/ArchivedEditionWarningButton";
 import {StateHistory, StateTransformAction} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
@@ -74,6 +75,7 @@ export default function EditionComposer() {
   const [mainTextIndexToLineNumberMap, setMainTextIndexToLineNumberMap] = useState<MainTextIndexToLineMap | null>(null);
   const [highlightedTokenRange, setHighlightedTokenRange] = useState<MainTextTokenRange | null>(null);
   const [selectedApparatusLemmas, setSelectedApparatusLemmas] = useState<Record<string, SelectedApparatusLemma | null>>({});
+  const [hoveredApparatusEntries, setHoveredApparatusEntries] = useState<MainTextApparatusEntryReference[]>([]);
   const [history, setHistory] = useState<StateHistory<EditionComposerHistoryState> | null>(null);
   const [historyVersion, setHistoryVersion] = useState(0);
   const [savedStateSignature, setSavedStateSignature] = useState<string | null>(null);
@@ -110,6 +112,7 @@ export default function EditionComposer() {
     setOperationalActionErrorMsg(null);
     setHighlightedTokenRange(null);
     setSelectedApparatusLemmas({});
+    setHoveredApparatusEntries([]);
     if (!isLoadingNewVersion) {
       setCtData(null);
       setEdition(null);
@@ -396,6 +399,9 @@ export default function EditionComposer() {
     return true;
   };
 
+  const activeApparatusIndex = edition.apparatuses.findIndex(apparatus =>
+    `apparatus-${apparatus.type}` === activeTabPanelTwo);
+
   const panelSpecs: PanelSpec[] = [
     {
       panel: 'one',
@@ -404,8 +410,12 @@ export default function EditionComposer() {
       tabDescription: 'Main text',
       tabbable: true,
       content: <MainTextPanel mainText={edition.mainText} ctData={ctData}
+                              apparatuses={edition.apparatuses}
+                              activeApparatusIndex={activeApparatusIndex < 0 ? null : activeApparatusIndex}
+                              sigla={ctData.sigla} canEdit={canEdit}
                               highlightedTokenRange={highlightedTokenRange}
                               selectedTokenRange={selectedApparatusLemmas[activeTabPanelTwo]?.range ?? null}
+                              onHoverApparatusEntries={(entries: MainTextApparatusEntryReference[]|null) => setHoveredApparatusEntries(entries ?? [])}
                               onLineNumberingChange={onLineNumberingChange}/>
     },
     {
@@ -455,6 +465,8 @@ export default function EditionComposer() {
                                lineNumberMap={mainTextIndexToLineNumberMap}
                                sigla={ctData.sigla}
                                lang={ctData.lang}
+                               hoveredEntryIndices={hoveredApparatusEntries.filter(entry => entry.apparatusIndex === index)
+                                 .map(entry => entry.entryIndex)}
                                onHoverRange={setHighlightedTokenRange}
                                selectedLemmaIndex={selectedLemma?.entryIndex ?? null}
                                onSelectLemma={(lemma) => setSelectedApparatusLemmas(previous => ({

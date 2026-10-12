@@ -5,7 +5,7 @@ import {useContext, useEffect, useRef, useState} from "react";
 import {Spinner} from "react-bootstrap";
 import {Arrow90degLeft, Arrow90degRight, ArrowCounterclockwise, Save} from "react-bootstrap-icons";
 import {AppContext} from "@/ReactAPM/App";
-import {CtDataInterface} from "@/CtData/CtDataInterface";
+import {CtDataInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
 import {panelsFromSpecs, PanelSpec} from "@/ReactAPM/Components/PanelUI/PanelSpec";
 import MainTextPanel from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel";
@@ -16,7 +16,6 @@ import SplitPanels from "@/ReactAPM/Components/PanelUI/SplitPanels";
 import TabPanel from "@/ReactAPM/Components/PanelUI/TabPanel";
 import CtPanel from "@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel";
 import {CtData} from "@/CtData/CtData";
-import {SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {CtDataEditionGenerator} from "@/Edition/EditionGenerator/CtDataEditionGenerator";
 import {Edition} from "@/Edition/Edition";
 import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
@@ -24,7 +23,7 @@ import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
 import {MainTextIndexToLineMap} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
 import NotLastVersionWarningButton from "@/ReactAPM/Components/NotLastVersionWarningButton";
 import ArchivedEditionWarningButton from "@/ReactAPM/Components/ArchivedEditionWarningButton";
-import {StateHistory} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
+import {StateHistory, StateTransformAction} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
 import {deepCopy} from "@/toolbox/Util";
 import {UpdateTitleAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateTitleAction";
 import {OperationalError} from "@/lib/Error/SystemError";
@@ -33,11 +32,14 @@ import SessionPanel from "@/ReactAPM/Components/SessionPanel/SessionPanel";
 import WitnessesPanel, {EditionWitnessData} from "@/ReactAPM/Pages/EditionComposer/WitnessesPanel/WitnessesPanel";
 import {UpdateWitnessOrderAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateWitnessOrderAction";
 import {UpdateSiglumAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateSiglumAction";
-import {UpdateExcludeFromAutoCriticalApparatusStatusAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateExcludeFromAutoCriticalApparatusStatusAction";
-import {UpdateIncludeInAutoMarginalFoliationStatusAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateIncludeInAutoMarginalFoliationStatusAction";
+import {
+  UpdateExcludeFromAutoCriticalApparatusStatusAction
+} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateExcludeFromAutoCriticalApparatusStatusAction";
+import {
+  UpdateIncludeInAutoMarginalFoliationStatusAction
+} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateIncludeInAutoMarginalFoliationStatusAction";
 import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/EditionComposer/Actions/ChangeSiglaGroupAction";
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/EditionComposer/Actions/DeleteSiglaGroupAction";
-import {StateTransformAction} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
 
 type ComposerStatus = 'start' | 'loading' | 'loadingNewVersion' | 'error' | 'loaded';
 
@@ -52,7 +54,7 @@ const getMessageFromThrownError = (error: unknown): string => {
 };
 
 export interface EditionComposerHistoryState {
-  ctData: CtDataInterface
+  ctData: CtDataInterface;
 }
 
 
@@ -281,7 +283,8 @@ export default function EditionComposer() {
   const notificationsDiv = <div>
     {!isLatestVersion && <NotLastVersionWarningButton version={versionTimeStamp} label={'Outdated Version'}/>}
     {ctData.archived && <ArchivedEditionWarningButton label={'Archived'}/>}
-    {operationalActionErrorMsg !== null && <span className={'text-danger action-error-message'}>{operationalActionErrorMsg}</span>}
+    {operationalActionErrorMsg !== null &&
+      <span className={'text-danger action-error-message'}>{operationalActionErrorMsg}</span>}
   </div>;
 
   const historyItems = history.getHistory();
@@ -382,6 +385,7 @@ export default function EditionComposer() {
       panel: 'one',
       key: 'mainText',
       title: 'Main Text',
+      tabbable: true,
       content: <MainTextPanel mainText={edition.mainText} ctData={ctData}
                               onLineNumberingChange={onLineNumberingChange}/>
     },
@@ -389,12 +393,14 @@ export default function EditionComposer() {
       panel: 'one',
       key: 'cTable',
       title: 'Collation',
+      tabbable: true,
       content: <CtPanel ctData={ctData}/>
     },
     {
       panel: 'one',
       key: 'witnesses',
       title: 'Witnesses',
+      tabbable: true,
       content: <WitnessesPanel witnesses={orderedWitnesses}
                                editionWitnessIndex={ctData.type === 'edition' ? ctData.editionWitnessIndex : null}
                                sigla={ctData.sigla}
@@ -417,6 +423,7 @@ export default function EditionComposer() {
       panel: 'two',
       key: `apparatus-${apparatus.type}`,
       title: apparatus.type,
+      tabbable: true,
       content: <ApparatusPanel apparatus={apparatus}
                                lineNumberMap={mainTextIndexToLineNumberMap}
                                sigla={ctData.sigla}
@@ -428,6 +435,7 @@ export default function EditionComposer() {
       panel: 'two',
       key: 'preview',
       title: 'Preview',
+      tabbable: true,
       content: <PreviewPanel editionKey={`edition-${id}`} edition={edition} getPdfUrl={async () => ''}/>
     }
   );
@@ -436,6 +444,7 @@ export default function EditionComposer() {
     panel: 'two',
     key: 'session',
     title: 'Session',
+    tabbable: true,
     content: <SessionPanel history={history}
                            savedStateSignature={savedStateSignature}
                            historyVersion={historyVersion}
@@ -462,6 +471,7 @@ export default function EditionComposer() {
     panel: 'two',
     key: 'admin',
     title: 'Admin',
+    tabbable: true,
     content: <AdminPanel tableId={ctData.tableId}
                          versionTimeStamp={versionTimeStamp}
                          versions={versions}
@@ -482,7 +492,8 @@ export default function EditionComposer() {
       <span>{ctData.chunkId}</span>
       {/* Notification area: only one element must be active, otherwise the layout will break */}
       {composerStatus !== 'loadingNewVersion' && notificationsDiv}
-      {composerStatus === 'loadingNewVersion' && <span className={'version-loading'}><Spinner size="sm"/> Loading data...</span>}
+      {composerStatus === 'loadingNewVersion' &&
+        <span className={'version-loading'}><Spinner size="sm"/> Loading data...</span>}
 
       {/* Right side controls */}
       <div className={'controls'}>

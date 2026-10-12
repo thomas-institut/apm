@@ -7,23 +7,36 @@ import './MainTextPanel.css';
 import {
   getEditionWitnessIndexToCtIndexMap
 } from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/EditionWitnessIndexToCtIndexMap";
-import {useMemo} from "react";
+import {useMemo, useRef} from "react";
 
 
 interface MainTextPanelProps extends TabbableElementProps {
   ctData: CtDataInterface;
   mainText: MainTextToken[];
-  onLineNumberingChange?: (lineNumbering: MainTextIndexToLineMap) => void | Promise<void>
+  onLineNumberingChange?: (lineNumbering: MainTextIndexToLineMap) => void | Promise<void>;
 }
 
-export default function MainTextPanel({mainText, ctData, onLineNumberingChange}: MainTextPanelProps) {
+export default function MainTextPanel({mainText, ctData, onLineNumberingChange, active}: MainTextPanelProps) {
 
+  const previousLineNumbering = useRef<MainTextIndexToLineMap | null>(null);
   const indexMap = useMemo(() => {
     return getEditionWitnessIndexToCtIndexMap(ctData, mainText.map(token => token.editionWitnessTokenIndex));
   }, [ctData, mainText]);
 
+
+  const callOnLineNumberingChange = (lineNumbering: MainTextIndexToLineMap) => {
+    if (!onLineNumberingChange) {
+      return;
+    }
+
+    if (previousLineNumbering.current === null || active) {
+      previousLineNumbering.current = lineNumbering;
+      onLineNumberingChange(lineNumbering);
+    }
+  }
+
   return (<div className={"main-text-panel"}>
-    <MainTextViewer mainText={mainText} indexMap={indexMap} onLineNumberingChange={onLineNumberingChange}
+    <MainTextViewer mainText={mainText} indexMap={indexMap} onLineNumberingChange={callOnLineNumberingChange}
                     className={['main-text-viewer', `text-${ctData.lang}`].join(' ')}/>
   </div>);
 }

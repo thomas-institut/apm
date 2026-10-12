@@ -134,18 +134,3 @@ export default function SplitPanels(props: SplitPanelsProps) {
     {childTwo}
   </div>;
 }
-
-// function childWithStyle(child: ReactNode, extraStyle: CSSProperties) {
-//   if (!isValidElement(child)) {
-//     return child;
-//   }
-//
-//   return cloneElement(child, {
-//     // @ts-ignore
-//     style: {
-//       // @ts-ignore
-//       ...(child.props.style ?? {}),
-//       ...extraStyle,
-//     },
-//   });
-// }

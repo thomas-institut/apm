@@ -35,6 +35,11 @@
     .lemma {
         margin-left: 15px;
         margin-right: 5px;
+        cursor: pointer;
+    }
+
+    .lemma.selected {
+        background-color: yellow;
     }
 
     .lemma.first {

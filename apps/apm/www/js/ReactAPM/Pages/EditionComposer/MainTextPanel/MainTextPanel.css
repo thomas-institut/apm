@@ -9,6 +9,14 @@
         padding: 0 3em;
     }
 
+    .highlighted-token {
+        background-color: lightblue;
+    }
+
+    .selected-token {
+        background-color: yellow;
+    }
+
     .main-text-line-number {
         position: absolute;
         left: 0;

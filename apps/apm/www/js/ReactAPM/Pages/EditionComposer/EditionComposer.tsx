@@ -1,7 +1,7 @@
 import {useParams} from "react-router";
 import './EditionComposer.css';
 import {StatusPage} from "@/ReactAPM/Components/StatusPage/StatusPage";
-import {useContext, useEffect, useRef, useState} from "react";
+import {useContext, useEffect, useRef, useState, MouseEvent} from "react";
 import {Spinner} from "react-bootstrap";
 import {Arrow90degLeft, Arrow90degRight, ArrowCounterclockwise, Save} from "react-bootstrap-icons";
 import {AppContext} from "@/ReactAPM/App";
@@ -20,7 +20,11 @@ import {CtDataEditionGenerator} from "@/Edition/EditionGenerator/CtDataEditionGe
 import {Edition} from "@/Edition/Edition";
 import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
 import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
-import {MainTextIndexToLineMap} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
+import {
+  MainTextIndexToLineMap,
+  MainTextTokenRange
+} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
+import {SelectedApparatusLemma} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusViewer";
 import NotLastVersionWarningButton from "@/ReactAPM/Components/NotLastVersionWarningButton";
 import ArchivedEditionWarningButton from "@/ReactAPM/Components/ArchivedEditionWarningButton";
 import {StateHistory, StateTransformAction} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
@@ -68,6 +72,8 @@ export default function EditionComposer() {
   const [versions, setVersions] = useState<CtVersionInfo[]>([]);
   const [isLatestVersion, setIsLatestVersion] = useState<boolean | null>(null);
   const [mainTextIndexToLineNumberMap, setMainTextIndexToLineNumberMap] = useState<MainTextIndexToLineMap | null>(null);
+  const [highlightedTokenRange, setHighlightedTokenRange] = useState<MainTextTokenRange | null>(null);
+  const [selectedApparatusLemmas, setSelectedApparatusLemmas] = useState<Record<string, SelectedApparatusLemma | null>>({});
   const [history, setHistory] = useState<StateHistory<EditionComposerHistoryState> | null>(null);
   const [historyVersion, setHistoryVersion] = useState(0);
   const [savedStateSignature, setSavedStateSignature] = useState<string | null>(null);
@@ -102,6 +108,8 @@ export default function EditionComposer() {
       operationalActionErrorTimeoutRef.current = null;
     }
     setOperationalActionErrorMsg(null);
+    setHighlightedTokenRange(null);
+    setSelectedApparatusLemmas({});
     if (!isLoadingNewVersion) {
       setCtData(null);
       setEdition(null);
@@ -375,6 +383,14 @@ export default function EditionComposer() {
     setMainTextIndexToLineNumberMap(lineNumbering);
   };
 
+  const handleComposerClick = (event: MouseEvent<HTMLDivElement>) => {
+    const target = event.target;
+    if (target instanceof Element && (target.closest('.lemma') || target.closest('.apparatus-tab'))) {
+      return;
+    }
+    setSelectedApparatusLemmas({});
+  };
+
   const archive = async (): Promise<true> => {
     console.log(`Archive requested for edition ${ctData.tableId}`);
     return true;
@@ -388,6 +404,8 @@ export default function EditionComposer() {
       tabDescription: 'Main text',
       tabbable: true,
       content: <MainTextPanel mainText={edition.mainText} ctData={ctData}
+                              highlightedTokenRange={highlightedTokenRange}
+                              selectedTokenRange={selectedApparatusLemmas[activeTabPanelTwo]?.range ?? null}
                               onLineNumberingChange={onLineNumberingChange}/>
     },
     {
@@ -424,9 +442,11 @@ export default function EditionComposer() {
   edition.apparatuses.forEach((apparatus, index) => {
     const isLast = index === edition.apparatuses.length - 1;
     const apparatusLabel = capitalizeFirstLetter(apparatus.type);
+    const apparatusKey = `apparatus-${apparatus.type}`;
+    const selectedLemma = selectedApparatusLemmas[apparatusKey] ?? null;
     panelSpecs.push({
       panel: 'two',
-      key: `apparatus-${apparatus.type}` ,
+      key: apparatusKey,
       title: apparatusLabel,
       tabDescription: `Apparatus ${apparatus.type}`,
       tabbable: true,
@@ -434,7 +454,13 @@ export default function EditionComposer() {
       content: <ApparatusPanel apparatus={apparatus}
                                lineNumberMap={mainTextIndexToLineNumberMap}
                                sigla={ctData.sigla}
-                               lang={ctData.lang}/>
+                               lang={ctData.lang}
+                               onHoverRange={setHighlightedTokenRange}
+                               selectedLemmaIndex={selectedLemma?.entryIndex ?? null}
+                               onSelectLemma={(lemma) => setSelectedApparatusLemmas(previous => ({
+                                 ...previous,
+                                 [apparatusKey]: lemma
+                               }))}/>
     });
   });
 
@@ -492,7 +518,7 @@ export default function EditionComposer() {
                          loadingNewVersion={composerStatus === 'loadingNewVersion'}/>
   });
 
-  return (<div className="ec-composer">
+  return (<div className="ec-composer" onClick={handleComposerClick}>
     <div className="header">
       <ApmLogo height={30} className={'logo'}/>
       <EditableTextField className={'title'} editingClassName={'title editing'} text={ctData.title}

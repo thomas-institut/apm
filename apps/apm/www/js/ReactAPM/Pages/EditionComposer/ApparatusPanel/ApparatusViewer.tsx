@@ -1,5 +1,8 @@
 import {Apparatus} from "@/Edition/Apparatus";
-import {MainTextIndexToLineMap} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
+import {
+  MainTextIndexToLineMap,
+  MainTextTokenRange
+} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {Fragment} from "react";
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
@@ -12,6 +15,9 @@ interface ApparatusViewerProps {
   useLineNumbers: boolean;
   className?: string;
   sigla: string[];
+  onHoverRange: (range: MainTextTokenRange | null) => void;
+  selectedLemmaIndex: number | null;
+  onSelectLemma: (lemma: SelectedApparatusLemma | null) => void;
 }
 
 interface EntryRange {
@@ -20,7 +26,13 @@ interface EntryRange {
   entries: ApparatusEntry[];
 }
 
-export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, className, sigla}: ApparatusViewerProps) {
+export interface SelectedApparatusLemma {
+  entryIndex: number;
+  range: MainTextTokenRange;
+}
+
+export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, className, sigla,
+                                 onHoverRange, selectedLemmaIndex, onSelectLemma}: ApparatusViewerProps) {
   const getEntryRanges = (apparatus: Apparatus, lineNumberMap: MainTextIndexToLineMap | null, useLineNumbers: boolean) => {
     const ranges: EntryRange[] = [];
     const usingLineNumbers = lineNumberMap !== null && useLineNumbers;
@@ -50,7 +62,11 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
 
   const entryRanges = getEntryRanges(apparatus, lineNumberMap, useLineNumbers);
 
-  return <div className={className}>
+  return <div className={className} onClick={(event) => {
+    if (!(event.target instanceof Element) || !event.target.closest('.lemma')) {
+      onSelectLemma(null);
+    }
+  }}>
     {
       entryRanges.map((range, index) => {
         const rangeTextClasses = ['range-text', useLineNumbers ? 'line-number-range' : 'cti-range'];
@@ -61,12 +77,22 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
           <span className={rangeTextClasses.join(' ')}>{getRangeText(range)}</span>
           {range.entries.map((entry, index) => {
             const lemmaText = entry.mainTextWords.join(' ');
+            const entryIndex = apparatus.entries.indexOf(entry);
             const lemmaClasses = ['lemma'];
             if (index === 0) {
               lemmaClasses.push('first');
             }
+            if (entryIndex === selectedLemmaIndex) {
+              lemmaClasses.push('selected');
+            }
             return <Fragment key={index}><span key="lemma"
-                                               className={lemmaClasses.join(' ')}>{lemmaText + ']'}</span><span
+                                               className={lemmaClasses.join(' ')}
+                                               onClick={() => onSelectLemma({
+                                                 entryIndex,
+                                                 range: {from: entry.from, to: entry.to}
+                                               })}
+                                               onMouseEnter={() => onHoverRange({from: entry.from, to: entry.to})}
+                                               onMouseLeave={() => onHoverRange(null)}>{lemmaText + ']'}</span><span
               key="subentries">{
               entry.subEntries.map((subEntry, index) => <SubEntry key={index} subEntry={subEntry} isFirst={index === 0}
                                                                   sigla={sigla}/>)

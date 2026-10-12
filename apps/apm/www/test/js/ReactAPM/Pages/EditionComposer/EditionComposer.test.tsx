@@ -31,8 +31,9 @@ interface MockEditionResponse {
   timeStamp: string;
 }
 
-const {mockRouteParams, mockApiClient} = vi.hoisted(() => ({
+const {mockRouteParams, mockApiClient, mockApparatuses} = vi.hoisted(() => ({
   mockRouteParams: {id: '1', version: 'v1' as string | undefined},
+  mockApparatuses: [] as {type: string, entries: never[]}[],
   mockApiClient: {
     getSingleChunkData: vi.fn<(tableId: number, version: string) => Promise<MockEditionResponse>>(),
   },
@@ -57,7 +58,7 @@ vi.mock('@/Edition/EditionGenerator/CtDataEditionGenerator', () => ({
     constructor(private readonly options: {ctData: {title: string}}) {}
 
     generateEdition() {
-      return {mainText: this.options.ctData.title, apparatuses: []};
+      return {mainText: this.options.ctData.title, apparatuses: mockApparatuses};
     }
   },
 }));
@@ -76,6 +77,8 @@ vi.mock('@/ReactAPM/Components/PanelUI/TabPanel', () => ({
     <div data-testid="tab-panel" data-active-tab={activeTabKey}>
       <button onClick={() => onClickTab?.('cTable')}>Select Collation</button>
       <button onClick={() => onClickTab?.('preview')}>Select Preview</button>
+      <button className="apparatus-tab" onClick={() => onClickTab?.('apparatus-critical')}>Select Critical</button>
+      <button className="apparatus-tab" onClick={() => onClickTab?.('apparatus-marginal')}>Select Marginal</button>
       {children}
     </div>,
 }));
@@ -114,10 +117,27 @@ vi.mock('@/ReactAPM/Components/BugWarningButton', () => ({
   default: ({foundBugDescription}: {foundBugDescription: string}) =>
     <div data-testid="bug-warning">{foundBugDescription}</div>,
 }));
-vi.mock('@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel', () => ({default: () => null}));
+vi.mock('@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel', () => ({
+  default: ({selectedTokenRange}: {selectedTokenRange?: {from: number, to: number} | null}) =>
+    <div data-testid="main-text-selection" data-from={selectedTokenRange?.from ?? ''}
+         data-to={selectedTokenRange?.to ?? ''}/>
+}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/WitnessesPanel/WitnessesPanel', () => ({default: () => null}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel', () => ({default: () => null}));
-vi.mock('@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel', () => ({ApparatusPanel: () => null}));
+vi.mock('@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel', () => ({
+  ApparatusPanel: ({apparatus, selectedLemmaIndex, onSelectLemma}: {
+    apparatus: {type: string},
+    selectedLemmaIndex: number | null,
+    onSelectLemma: (selection: {entryIndex: number, range: {from: number, to: number}}) => void,
+  }) => <div>
+    <button className="lemma" data-testid={`${apparatus.type}-lemma`}
+            onClick={() => onSelectLemma({entryIndex: 0, range: {from: apparatus.type === 'critical' ? 2 : 5,
+                                                                   to: apparatus.type === 'critical' ? 2 : 5}})}>
+      Select lemma
+    </button>
+    <span data-testid={`${apparatus.type}-selected-lemma`}>{selectedLemmaIndex ?? ''}</span>
+  </div>,
+}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/AdminPanel/AdminPanel', () => ({
   default: ({tableId, versionTimeStamp, loadingNewVersion}: {tableId: number, versionTimeStamp: string, loadingNewVersion: boolean}) =>
     <div data-testid="edition-admin" data-loading-new-version={loadingNewVersion}>{tableId}:{versionTimeStamp}</div>,
@@ -164,6 +184,7 @@ describe('EditionComposer version changes', () => {
   beforeEach(() => {
     mockRouteParams.id = '1';
     mockRouteParams.version = 'v1';
+    mockApparatuses.length = 0;
     mockApiClient.getSingleChunkData.mockReset();
     mockApiClient.getSingleChunkData.mockImplementation(async (tableId, version) => makeResult(tableId, version));
 
@@ -220,6 +241,38 @@ describe('EditionComposer version changes', () => {
     expect(container.querySelector('.version-loading')).toBeNull();
     expect(tabPanels[0].dataset.activeTab).toBe('cTable');
     expect(tabPanels[1].dataset.activeTab).toBe('preview');
+  });
+
+  it('shows the selected lemma from the active apparatus and clears it outside lemmas', async () => {
+    mockApparatuses.push(
+      {type: 'critical', entries: []},
+      {type: 'marginal', entries: []},
+    );
+    await act(async () => renderComposer());
+
+    const tabPanel = container.querySelectorAll<HTMLElement>('[data-testid="tab-panel"]')[1];
+    const selectedRange = () => container.querySelector<HTMLElement>('[data-testid="main-text-selection"]')?.dataset.from;
+
+    await act(async () => {
+      tabPanel.querySelectorAll<HTMLButtonElement>('.apparatus-tab')[0].click();
+      container.querySelector<HTMLButtonElement>('[data-testid="critical-lemma"]')!.click();
+    });
+    expect(selectedRange()).toBe('2');
+    expect(container.querySelector('[data-testid="critical-selected-lemma"]')?.textContent).toBe('0');
+
+    await act(async () => tabPanel.querySelectorAll<HTMLButtonElement>('.apparatus-tab')[1].click());
+    expect(selectedRange()).toBe('');
+    expect(container.querySelector('[data-testid="critical-selected-lemma"]')?.textContent).toBe('0');
+    expect(container.querySelector('[data-testid="marginal-selected-lemma"]')?.textContent).toBe('');
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-testid="marginal-lemma"]')!.click());
+    expect(selectedRange()).toBe('5');
+    expect(container.querySelector('[data-testid="marginal-selected-lemma"]')?.textContent).toBe('0');
+
+    await act(async () => tabPanel.querySelectorAll<HTMLButtonElement>('.apparatus-tab')[0].click());
+    expect(selectedRange()).toBe('2');
+    expect(container.querySelector('[data-testid="critical-selected-lemma"]')?.textContent).toBe('0');
+    await act(async () => container.querySelector<HTMLElement>('[data-testid="main-text-selection"]')!.click());
+    expect(selectedRange()).toBe('');
   });
 
   it('uses the full loading state when both the ID and version change', async () => {

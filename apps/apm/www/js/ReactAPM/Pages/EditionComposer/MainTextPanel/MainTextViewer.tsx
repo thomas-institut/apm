@@ -14,10 +14,17 @@ import {
  */
 export type MainTextIndexToLineMap = Map<number, number>;
 
+export interface MainTextTokenRange {
+  from: number;
+  to: number;
+}
+
 interface MainTextViewerProps {
   mainText: MainTextToken[],
   indexMap: EditionWitnessIndexToCtIndexMap,
   className?: string,
+  highlightedTokenRange?: MainTextTokenRange | null,
+  selectedTokenRange?: MainTextTokenRange | null,
   onLineNumberingChange?: (lineNumbering: MainTextIndexToLineMap) => void | Promise<void>
 }
 
@@ -39,7 +46,9 @@ const lineNumberingsAreEqual = (first: MainTextIndexToLineMap, second: MainTextI
   return true;
 };
 
-export default function MainTextViewer({mainText, indexMap, className = '', onLineNumberingChange}: MainTextViewerProps) {
+export default function MainTextViewer({mainText, indexMap, className = '', highlightedTokenRange = null,
+                                        selectedTokenRange = null,
+                                        onLineNumberingChange}: MainTextViewerProps) {
   const viewerRef = useRef<HTMLDivElement>(null);
   const previousLineNumbering = useRef<MainTextIndexToLineMap | null>(null);
   const [lineLabels, setLineLabels] = useState<Array<{lineNumber: number, top: number}>>([]);
@@ -103,9 +112,21 @@ export default function MainTextViewer({mainText, indexMap, className = '', onLi
   const getParagraph = (paragraph: MainTextParagraph, parIndex: number) => {
     return paragraph.tokens.map((token, tokenIndex) => {
       const key = [parIndex, tokenIndex].join('-');
+      const isHighlighted = highlightedTokenRange !== null && token.originalIndex !== undefined &&
+        token.originalIndex >= Math.min(highlightedTokenRange.from, highlightedTokenRange.to) &&
+        token.originalIndex <= Math.max(highlightedTokenRange.from, highlightedTokenRange.to);
+      const isSelected = selectedTokenRange !== null && token.originalIndex !== undefined &&
+        token.originalIndex >= Math.min(selectedTokenRange.from, selectedTokenRange.to) &&
+        token.originalIndex <= Math.max(selectedTokenRange.from, selectedTokenRange.to);
       switch (token.type) {
         case EditionMainTextTokenType.GLUE:
           const glueClasses = [MTT, `${MTT_ORIG}${token.originalIndex}`, WS];
+          if (isHighlighted) {
+            glueClasses.push('highlighted-token');
+          }
+          if (isSelected) {
+            glueClasses.push('selected-token');
+          }
           return <span className={glueClasses.join(' ')} key={key}> </span>
 
         case EditionMainTextTokenType.TEXT:
@@ -113,7 +134,13 @@ export default function MainTextViewer({mainText, indexMap, className = '', onLi
         case EditionMainTextTokenType.FOLIATION_CHANGE_MARKER:
           const ctIndex = indexMap[token.editionWitnessTokenIndex];
           const typeClass = token.type === EditionMainTextTokenType.TEXT ? [] : [NL];
-           const tokenClasses = [MTT, `${MTT_ORIG}${token.originalIndex}`, `${CTI}${ctIndex}`, ...typeClass];
+          const tokenClasses = [MTT, `${MTT_ORIG}${token.originalIndex}`, `${CTI}${ctIndex}`, ...typeClass];
+          if (isHighlighted) {
+            tokenClasses.push('highlighted-token');
+          }
+          if (isSelected) {
+            tokenClasses.push('selected-token');
+          }
           return <span className={tokenClasses.join(' ')} key={key}><FmtTextRenderer t={token.fmtText} key={tokenIndex}/></span>
 
         default:

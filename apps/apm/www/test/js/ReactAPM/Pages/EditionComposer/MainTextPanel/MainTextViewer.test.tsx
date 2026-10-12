@@ -19,8 +19,8 @@ describe('MainTextViewer', () => {
     const mainText = Array.from({length: 11}, (_, index) => new MainTextToken().setText(`Token ${index}`, index));
     const onLineNumberingChange = vi.fn<(lineNumbering: MainTextIndexToLineMap) => void>();
     let lineTops = [10, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100];
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function () {
-      const originalIndexClass = Array.from(this.classList).find(className => className.startsWith('mtt-'));
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(function (this: HTMLElement) {
+      const originalIndexClass = this.className.split(/\s+/).find(className => className.startsWith('mtt-'));
       const index = originalIndexClass === undefined ? -1 : Number.parseInt(originalIndexClass.slice(4), 10);
       return {top: lineTops[index] ?? 0} as DOMRect;
     });
@@ -28,7 +28,9 @@ describe('MainTextViewer', () => {
     const render = async (indexMap: Record<number, number>) => {
       await act(async () => {
         root.render(
-          <MainTextViewer mainText={mainText} indexMap={indexMap} onLineNumberingChange={onLineNumberingChange}/>
+          <MainTextViewer mainText={mainText} indexMap={indexMap} highlightedTokenRange={{from: 2, to: 4}}
+                          selectedTokenRange={{from: 4, to: 5}}
+                          onLineNumberingChange={onLineNumberingChange}/>
         );
       });
     };
@@ -41,6 +43,14 @@ describe('MainTextViewer', () => {
     const lineNumberSpans = Array.from(container.querySelectorAll('.main-text-line-number'));
     expect(lineNumberSpans.map(span => span.textContent)).toEqual(['1', '5', '10']);
     expect(lineNumberSpans.map(span => (span as HTMLElement).style.top)).toEqual(['10px', '50px', '100px']);
+    const highlightedTokens = Array.from(container.querySelectorAll('.highlighted-token'));
+    expect(highlightedTokens.map(span => Array.from(span.classList).find(className => className.startsWith('mtt-')))).toEqual([
+      'mtt-2', 'mtt-3', 'mtt-4'
+    ]);
+    const selectedTokens = Array.from(container.querySelectorAll('.selected-token'));
+    expect(selectedTokens.map(span => Array.from(span.classList).find(className => className.startsWith('mtt-')))).toEqual([
+      'mtt-4', 'mtt-5'
+    ]);
 
     await render({0: 0});
     expect(onLineNumberingChange).toHaveBeenCalledTimes(1);

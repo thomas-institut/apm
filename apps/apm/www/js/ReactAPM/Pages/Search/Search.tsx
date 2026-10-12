@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, {useEffect, useMemo, useRef, useState} from 'react';
 import NormalPageContainer from "@/ReactAPM/NormalPageContainer";
 import {LanguageDetector} from '@/toolbox/LanguageDetector';
 import {urlGen} from '@/pages/common/SiteUrlGen';
@@ -18,13 +18,26 @@ export default function SearchPage() {
   const [lemmatize, setLemmatize] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [titleList, setTitleList] = useState<string[]>([]);
-  const [creatorList, setCreatorList] = useState<string[]>([]);
+  type PersonPair = { id: number; name: string };
+  const [personPairs, setPersonPairs] = useState<PersonPair[]>([]);
   const [results, setResults] = useState<any[]>([]);
   const [searchStatus, setSearchStatus] = useState(STATE_INIT);
   const [isIdle, setIsIdle] = useState(true);
   const [globalContext, setGlobalContext] = useState(11);
 
   const isInvalidSearch = keywords.includes('*') && lemmatize;
+
+  // Lookup maps between creator ids and names
+  const idToNameMap = useMemo(() => {
+    const m = new Map<number, string>();
+    personPairs.forEach(p => { if (!m.has(p.id)) m.set(p.id, p.name); });
+    return m;
+  }, [personPairs]);
+  const nameToIdMap = useMemo(() => {
+    const m = new Map<string, number>();
+    personPairs.forEach(p => { if (!m.has(p.name)) m.set(p.name, p.id); });
+    return m;
+  }, [personPairs]);
 
   // reference data
   const storedData = useRef({
@@ -111,8 +124,18 @@ export default function SearchPage() {
   // adjust page to corpus selection
   useEffect(() => {
     document.title = tr('Search');
-    fetchCreatorsAndTitles(corpus);
-    fetchCreatorsAndTitles(corpus === 'transcriptions' ? 'transcribers' : 'editors');
+    // Reset lists of the previous corpus so that they are never shown for the wrong corpus
+    setTitleList([]);
+    setPersonPairs([]);
+    // Responses arriving after a corpus change are ignored (avoids race conditions
+    // in which a slow response for the previous corpus overwrites the current lists)
+    let active = true;
+    const isActive = () => active;
+    fetchCreatorsAndTitles(corpus, isActive);
+    fetchCreatorsAndTitles(corpus === 'transcriptions' ? 'transcribers' : 'editors', isActive);
+    return () => {
+      active = false;
+    };
   }, [corpus]);
 
   /**
@@ -210,7 +233,7 @@ export default function SearchPage() {
    * makes an api call to fetch creators and titles for the selector lists
    * @param category
    */
-  const fetchCreatorsAndTitles = async (category: string) => {
+  const fetchCreatorsAndTitles = async (category: string, isActive: () => boolean = () => true) => {
     let apiUrl = '';
     if (category === 'transcriptions') apiUrl = urlGen.apiSearchTranscriptionTitles(); else if (category === 'transcribers') apiUrl = urlGen.apiSearchTranscribers(); else if (category === 'editors') apiUrl = urlGen.apiSearchEditors(); else if (category === 'editions') apiUrl = urlGen.apiSearchEditionTitles();
 
@@ -218,13 +241,19 @@ export default function SearchPage() {
       const response = await fetch(apiUrl);
       const res = await response.json();
 
+      if (!isActive()) {
+        // corpus has changed in the meantime, ignore this (outdated) response
+        return;
+      }
+
       console.log(`API Response for category [${category}]:`, res);
 
       if (res.status === 'OK') {
         if (category === 'transcriptions' || category === 'editions') {
           setTitleList(res[category] || []);
-        } else {
-          setCreatorList(res[category] || []);
+        } else if (category === 'transcribers' || category === 'editors') {
+          const pairs: PersonPair[] = (res[category] || []) as PersonPair[];
+          setPersonPairs(pairs);
         }
       } else {
         console.warn(`API returned status ${res.status} for ${category}`, res);
@@ -266,12 +295,22 @@ export default function SearchPage() {
   const startSearch = async (page = 1) => {
     const ld = new LanguageDetector('la');
     const detectedLang = ld.detectLang(keywords);
+    // Resolve the creator input (name or id) to a creator id
+    let creatorId = 0;
+    const trimmed = creatorInput.trim();
+    if (trimmed !== '') {
+      if (/^\d+$/.test(trimmed)) {
+        creatorId = parseInt(trimmed, 10);
+      } else if (nameToIdMap.has(trimmed)) {
+        creatorId = nameToIdMap.get(trimmed) || 0;
+      }
+    }
     const inputs = {
       corpus,
       searched_phrase: keywords,
       lang: detectedLang,
       title: titleInput,
-      creator: creatorInput,
+      creatorId: creatorId > 0 ? String(creatorId) : '',
       keywordDistance: Number(distance) + 1,
       lemmatize,
       queryPage: Number(page)
@@ -286,7 +325,9 @@ export default function SearchPage() {
       });
       const res = await response.json();
       if (res.status !== 'OK') {
+        console.error(`Search API returned status '${res.status}'`, res.errorData ?? res);
         setSearchStatus(STATE_INIT);
+        setErrorMessage("Sorry, an error occurred while searching.");
         return;
       }
 
@@ -346,7 +387,7 @@ export default function SearchPage() {
           title: displayTitle,
           fullTitle: match.title,
           identifier: corpus === 'transcriptions' ? match.foliation : match.chunk,
-          user: match.creator,
+          creatorId: match.creatorId,
           link,
           lang: res.lang
         };
@@ -354,6 +395,13 @@ export default function SearchPage() {
       });
     });
     setResults(prev => [...prev, ...newEntries]);
+  };
+
+  // Returns the display name for a creator id ('#id' if unknown)
+  const renderCreator = (creatorId: unknown): string => {
+    const id = Number(creatorId);
+    if (!Number.isFinite(id) || id <= 0) return '';
+    return idToNameMap.get(id) ?? `#${id}`;
   };
 
   /**
@@ -529,7 +577,7 @@ export default function SearchPage() {
         {corpus === 'transcriptions' ? 'Transcriber' : 'Editor'}
         <i
           className="fas fa-info-circle"
-          title="Filters search results by person name. Enter the full name, first name, last name or only the beginning of the first or last name of a person."
+          title="Filters search results by person name. Only full names as provided in the search mask are accepted."
           style={{position: 'absolute', top: '-2px', right: '-10px', fontSize: '0.65em', cursor: 'help', color: '#666'}}
         ></i>
       </span>
@@ -589,12 +637,12 @@ export default function SearchPage() {
             <td>
               <input list="titleList" value={titleInput} onChange={(e) => setTitleInput(e.target.value)}
                      style={inputStyle}/>
-              <datalist id="titleList">{titleList.map(t => <option key={t} value={t}/>)}</datalist>
+              <datalist id="titleList">{titleList.map((t, i) => <option key={`${t}-${i}`} value={t}/>)}</datalist>
             </td>
             <td>
               <input list="creatorList" value={creatorInput} onChange={(e) => setCreatorInput(e.target.value)}
                      style={inputStyle}/>
-              <datalist id="creatorList">{creatorList.map(c => <option key={c} value={c}/>)}</datalist>
+              <datalist id="creatorList">{personPairs.map(p => <option key={p.id} value={p.name}/>)}</datalist>
             </td>
             <td style={{textAlign: 'right', display: 'flex', justifyContent: 'center'}}>
               <button
@@ -654,7 +702,7 @@ export default function SearchPage() {
                   </td>
                   <td className="text-center">{res.title}</td>
                   <td className="text-center">{res.identifier}</td>
-                  <td className="text-center">{res.user}</td>
+                  <td className="text-center">{renderCreator(res.creatorId)}</td>
                   <td className="text-center">
                     <a className="fas fa-external-link-alt" target="_blank" href={res.link} rel="noreferrer"
                        style={{color: '#007bff'}}></a>
@@ -713,7 +761,7 @@ function collectData(query: any[], token: string, tokensForQuery: string[], lemm
         chunk: doc.chunk,
         column: doc.column,
         corpus: corpus,
-        creator: doc.creator,
+        creatorId: doc.creator,
         docID: doc.docID,
         foliation: doc.foliation,
         seq: doc.seq,

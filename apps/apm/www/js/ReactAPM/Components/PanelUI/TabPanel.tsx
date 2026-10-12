@@ -17,6 +17,17 @@ export interface TabbableElementSpecProps {
   tabTitle?: string;
 
   /**
+   * Class name to apply to the tab
+   */
+  tabClassName?: string;
+
+  /**
+   * Description of the tab. If provided, will be used as the tab's title attribute so that it
+   * shows as a tooltip.
+   */
+  tabDescription?: string;
+
+  /**
    * Whether the tab is expandable.
    */
   expandable?: boolean;
@@ -87,6 +98,8 @@ export default function TabPanel(props: TabPanelProps) {
       throw new Error(`TabPanel children must be valid React elements, child ${index} is not`);
     }
     return {
+      tabDescription: child.props.tabDescription ?? '',
+      tabClassName: child.props.tabClassName ?? '',
       tabKey: child.props.tabKey ?? `tab-${index}`,
       tabTitle: child.props.tabTitle ?? `Tab ${index + 1}`,
       expandable: child.props.expandable ?? false,
@@ -109,13 +122,20 @@ export default function TabPanel(props: TabPanelProps) {
       {shimWidth !== 0 && <div className={'shim'} style={{width: shimWidth + 'px'}}></div>}
       {childrenSpecs.map((spec) => {
         const isActive = spec.tabKey === activeTabKey;
+        const tabClasses = [ 'tab-panel-tab'];
+        if (spec.tabClassName !== '') {
+          tabClasses.push(spec.tabClassName);
+        }
+        if (isActive) {
+          tabClasses.push('active');
+        }
         return <div
           key={spec.tabKey}
-          className={'tab-panel-tab' + (isActive ? ' active' : '')}
+          className={tabClasses.join(' ')}
           onMouseEnter={() => setHoveredTabKey(spec.tabKey)}
           onMouseLeave={() => setHoveredTabKey((current) => current === spec.tabKey ? null : current)}
         >
-          <span className={'tab-title'} onClick={() => {
+          <span className={'tab-title'} title={spec.tabDescription} onClick={() => {
             props.onClickTab?.(spec.tabKey);
           }}>
             {spec.tabTitle}

@@ -24,7 +24,7 @@ import {MainTextIndexToLineMap} from "@/ReactAPM/Pages/EditionComposer/MainTextP
 import NotLastVersionWarningButton from "@/ReactAPM/Components/NotLastVersionWarningButton";
 import ArchivedEditionWarningButton from "@/ReactAPM/Components/ArchivedEditionWarningButton";
 import {StateHistory, StateTransformAction} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
-import {deepCopy} from "@/toolbox/Util";
+import {capitalizeFirstLetter, deepCopy} from "@/toolbox/Util";
 import {UpdateTitleAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateTitleAction";
 import {OperationalError} from "@/lib/Error/SystemError";
 import BugWarningButton from "@/ReactAPM/Components/BugWarningButton";
@@ -385,6 +385,7 @@ export default function EditionComposer() {
       panel: 'one',
       key: 'mainText',
       title: 'Main Text',
+      tabDescription: 'Main text',
       tabbable: true,
       content: <MainTextPanel mainText={edition.mainText} ctData={ctData}
                               onLineNumberingChange={onLineNumberingChange}/>
@@ -393,6 +394,7 @@ export default function EditionComposer() {
       panel: 'one',
       key: 'cTable',
       title: 'Collation',
+      tabDescription: 'Collation table',
       tabbable: true,
       content: <CtPanel ctData={ctData}/>
     },
@@ -400,6 +402,7 @@ export default function EditionComposer() {
       panel: 'one',
       key: 'witnesses',
       title: 'Witnesses',
+      tabDescription: 'Witnesses, sigla, sigla groups',
       tabbable: true,
       content: <WitnessesPanel witnesses={orderedWitnesses}
                                editionWitnessIndex={ctData.type === 'edition' ? ctData.editionWitnessIndex : null}
@@ -418,12 +421,16 @@ export default function EditionComposer() {
 
   ];
 
-  edition.apparatuses.forEach((apparatus) => {
+  edition.apparatuses.forEach((apparatus, index) => {
+    const isLast = index === edition.apparatuses.length - 1;
+    const apparatusLabel = capitalizeFirstLetter(apparatus.type);
     panelSpecs.push({
       panel: 'two',
-      key: `apparatus-${apparatus.type}`,
-      title: apparatus.type,
+      key: `apparatus-${apparatus.type}` ,
+      title: apparatusLabel,
+      tabDescription: `Apparatus ${apparatus.type}`,
       tabbable: true,
+      tabClassName: 'apparatus-tab' + (isLast ? ' last' : ''),
       content: <ApparatusPanel apparatus={apparatus}
                                lineNumberMap={mainTextIndexToLineNumberMap}
                                sigla={ctData.sigla}
@@ -435,6 +442,7 @@ export default function EditionComposer() {
       panel: 'two',
       key: 'preview',
       title: 'Preview',
+      tabDescription: 'Preview of the typeset edition',
       tabbable: true,
       content: <PreviewPanel editionKey={`edition-${id}`} edition={edition} getPdfUrl={async () => ''}/>
     }
@@ -444,6 +452,7 @@ export default function EditionComposer() {
     panel: 'two',
     key: 'session',
     title: 'Session',
+    tabDescription: 'Session history and controls',
     tabbable: true,
     content: <SessionPanel history={history}
                            savedStateSignature={savedStateSignature}
@@ -472,6 +481,7 @@ export default function EditionComposer() {
     key: 'admin',
     title: 'Admin',
     tabbable: true,
+    tabDescription: 'Admin functions: archive, switch versions, etc',
     content: <AdminPanel tableId={ctData.tableId}
                          versionTimeStamp={versionTimeStamp}
                          versions={versions}

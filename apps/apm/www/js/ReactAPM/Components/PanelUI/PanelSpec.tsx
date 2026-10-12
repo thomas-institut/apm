@@ -5,6 +5,8 @@ export interface PanelSpec {
   panel: 'one' | 'two';
   key: string;
   title: string;
+  tabClassName?: string;
+  tabDescription?: string;
   className?: string;
   expandable?: boolean;
   closable?: boolean;
@@ -23,6 +25,8 @@ export function panelsFromSpecs(panelSpecs: PanelSpec[], panel: 'one' | 'two') {
     .map((panelSpec) => {
       if (panelSpec.tabbable) {
         return cloneElement(panelSpec.content, {
+          tabClassName: panelSpec.tabClassName,
+          tabDescription: panelSpec.tabDescription,
           tabKey: panelSpec.key,
           tabTitle: panelSpec.title,
           className: panelSpec.className ?? '',

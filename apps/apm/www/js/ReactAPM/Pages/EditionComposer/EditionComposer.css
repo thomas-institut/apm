@@ -98,6 +98,15 @@
         }
     }
 
+    .apparatus-tab {
+
+        &.last {
+            margin-right: 2em;
+        }
+    }
+
+
+
 
     .panelContainer {
         padding: 0 !important;

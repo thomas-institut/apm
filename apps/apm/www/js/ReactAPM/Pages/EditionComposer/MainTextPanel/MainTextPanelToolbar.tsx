@@ -24,7 +24,7 @@ export default function MainTextPanelToolbar({mode, canEdit, apparatuses, appara
     {mode: 'text', label: 'Text', disabled: !canEdit},
   ];
 
-  return <div className="main-text-panel-toolbar">
+  return <div className="panel-toolbar main-text-panel-toolbar">
     <div className="main-text-mode-controls">
       <span>Mode: </span>
       <ButtonGroup size="sm" role="group" aria-label="Main text mode">

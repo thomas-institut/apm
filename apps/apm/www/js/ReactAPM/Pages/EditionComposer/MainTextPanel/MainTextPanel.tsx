@@ -13,7 +13,6 @@ import {
 import {useMemo, useRef, useState} from "react";
 import {Apparatus} from "@/Edition/Apparatus";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
-import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import MainTextPanelToolbar, {
   ApparatusHighlightSelection,
@@ -69,8 +68,7 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
     }
   };
 
-  return <Panel>
-    <Toolbar>
+  return <Panel className={'main-text-panel'}>
       <MainTextPanelToolbar mode={mode} canEdit={canEdit}
                             apparatuses={apparatuses}
                             apparatusHighlightSelection={apparatusHighlightSelection}
@@ -78,18 +76,19 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
                             onModeChange={changeMode}
                             onChangeApparatusHighlightSelection={setApparatusHighlightSelection}
                             onChangeApparatusPopovers={setShowApparatusPopovers}/>
-    </Toolbar>
-    <PanelContent className="main-text-panel">
-      <MainTextViewer mainText={mainText} indexMap={indexMap} onLineNumberingChange={callOnLineNumberingChange}
-                      highlightedTokenRange={highlightedTokenRange}
-                      selectedTokenRange={apparatusSelection ?? selectedTokenRange}
-                      mode={mode} canSelectTokens={canEdit}
-                      apparatuses={apparatuses} activeApparatusIndex={activeApparatusIndex} sigla={sigla}
-                      apparatusHighlightSelection={apparatusHighlightSelection}
-                      showApparatusPopovers={showApparatusPopovers}
-                      onHoverApparatusEntries={onHoverApparatusEntries}
-                      onSelectionChange={setApparatusSelection}
-                      className={['main-text-viewer', `text-${ctData.lang}`, `mode-${mode}`].join(' ')}/>
-    </PanelContent>
+
+     <PanelContent>
+       <MainTextViewer mainText={mainText} indexMap={indexMap} onLineNumberingChange={callOnLineNumberingChange}
+                       highlightedTokenRange={highlightedTokenRange}
+                       selectedTokenRange={apparatusSelection ?? selectedTokenRange}
+                       mode={mode} canSelectTokens={canEdit}
+                       apparatuses={apparatuses} activeApparatusIndex={activeApparatusIndex} sigla={sigla}
+                       apparatusHighlightSelection={apparatusHighlightSelection}
+                       showApparatusPopovers={showApparatusPopovers}
+                       onHoverApparatusEntries={onHoverApparatusEntries}
+                       onSelectionChange={setApparatusSelection}
+                       className={['main-text-viewer', `text-${ctData.lang}`, `mode-${mode}`].join(' ')}/>
+     </PanelContent>
+
   </Panel>;
 }

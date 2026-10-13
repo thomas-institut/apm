@@ -1,11 +1,11 @@
-import {Children, CSSProperties, isValidElement, ReactElement, ReactNode, Fragment} from "react";
+import {Children, CSSProperties, Fragment, isValidElement, ReactElement, ReactNode} from "react";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import './PanelUI.css';
 import {TabbableElementProps} from "@/ReactAPM/Components/PanelUI/TabPanel";
 
 
-interface PanelProps extends TabbableElementProps{
+interface PanelProps extends TabbableElementProps {
   // className to apply to the panel content
   className?: string;
   style?: CSSProperties;
@@ -50,6 +50,7 @@ export default function Panel(props: PanelProps) {
     </div>);
   }
 
-  return <PanelContent className={ 'panel ' + (props.className ?? '')} style={ props.style ?? {}}>{children}</PanelContent>;
+  return <PanelContent className={'panel ' + (props.className ?? '')}
+                       style={props.style ?? {}}>{children}</PanelContent>;
 }
 

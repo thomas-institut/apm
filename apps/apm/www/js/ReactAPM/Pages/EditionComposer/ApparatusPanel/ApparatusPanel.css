@@ -1,6 +1,5 @@
 
 .apparatus-panel {
-    padding: 0 1em 1em 1em;
     height: 100%;
     overflow: auto;
 
@@ -8,6 +7,10 @@
         font-family: var(--latin-apparatus-font-family), serif;
         font-size: 12pt;
         line-height: 24pt;
+    }
+
+    .panel-content {
+        padding: 0.5rem;
     }
 
 

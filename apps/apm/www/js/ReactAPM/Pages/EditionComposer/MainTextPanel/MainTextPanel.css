@@ -1,3 +1,9 @@
+:root {
+    --light-text-highlight-color: #ebf0fd;
+    --darker-text-highlight-color: #dcdcdc;
+    --text-select-color: yellow;
+}
+
 
 .main-text-panel {
 
@@ -14,12 +20,12 @@
         justify-content: space-between;
         gap: 1rem;
         flex-wrap: wrap;
-        padding: 0.35rem 0.5rem;
+
 
         .main-text-mode-controls, .main-text-view-controls {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 1rem;
         }
 
         .main-text-apparatus-highlight-control {
@@ -65,15 +71,15 @@
     }
 
     .apparatus-coverage-highlighted {
-        background-color: #fff3cd;
+        background-color: var(--light-text-highlight-color);
     }
 
     .highlighted-token {
-        background-color: lightblue;
+        background-color:var(--darker-text-highlight-color);
     }
 
     .selected-token {
-        background-color: yellow;
+        background-color: var(--text-select-color);
     }
 
     .main-text-line-number {

@@ -1,5 +1,6 @@
 import {Button, ButtonGroup, Form} from "react-bootstrap";
 import {Apparatus} from "@/Edition/Apparatus";
+import SwitchToggle from "@/ReactAPM/Components/NiceToggle/SwitchToggle";
 
 export type MainTextEditMode = 'off' | 'apparatus' | 'text';
 export type ApparatusHighlightSelection = 'all' | 'none' | 'active' | number;
@@ -59,9 +60,7 @@ export default function MainTextPanelToolbar({mode, canEdit, apparatuses, appara
           </option>)}
         </Form.Select>
       </Form.Group>
-      <Form.Check type="switch" id="main-text-apparatus-popovers" label="Apparatus popovers"
-                  checked={showApparatusPopovers}
-                  onChange={(event) => onChangeApparatusPopovers(event.currentTarget.checked)}/>
+      <div>Popovers: </div><SwitchToggle isOn={showApparatusPopovers} onClick={(state)=>onChangeApparatusPopovers(state)} />
     </div>
   </div>;
 }

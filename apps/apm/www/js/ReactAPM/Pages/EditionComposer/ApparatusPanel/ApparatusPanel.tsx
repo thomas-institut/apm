@@ -10,6 +10,7 @@ import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
 import {useState} from "react";
 import SwitchToggle from "@/ReactAPM/Components/NiceToggle/SwitchToggle";
+import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 
 
 interface ApparatusPanelProps extends TabbableElementProps {
@@ -42,9 +43,12 @@ export function ApparatusPanel({apparatus, lineNumberMap, sigla, lang, onHoverRa
         <span>Show line numbers: </span><SwitchToggle isOn={useLineNumbers} onClick={(state)=>setUseLineNumbers(state)} />
       </div>
     </Toolbar>
-    <ApparatusViewer className={viewerClasses.join(' ')} apparatus={apparatus} lineNumberMap={lineNumberMap}
-                     useLineNumbers={useLineNumbers} sigla={sigla} onHoverRange={onHoverRange}
-                     selectedLemmaIndex={selectedLemmaIndex} hoveredEntryIndices={hoveredEntryIndices}
-                     onSelectLemma={onSelectLemma}/>
+    <PanelContent>
+      <ApparatusViewer className={viewerClasses.join(' ')} apparatus={apparatus} lineNumberMap={lineNumberMap}
+                       useLineNumbers={useLineNumbers} sigla={sigla} onHoverRange={onHoverRange}
+                       selectedLemmaIndex={selectedLemmaIndex} hoveredEntryIndices={hoveredEntryIndices}
+                       onSelectLemma={onSelectLemma}/>
+    </PanelContent>
+
   </Panel>;
 }

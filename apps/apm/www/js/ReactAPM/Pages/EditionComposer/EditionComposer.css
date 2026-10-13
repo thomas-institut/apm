@@ -216,25 +216,6 @@
     }
 }
 
-.mce-composer.expanded {
-    .header {
-        border-bottom: 1px solid #dddddd;
-    }
-
-    .tab-name {
-        font-size: 1em;
-        font-weight: bold;
-    }
-
-    .expanded-tab-title-area {
-        display: flex;
-        flex-direction: row;
-        gap: 1em;
-        align-items: center;
-    }
-}
-
-
 .settings-popover {
     .popover-body {
         display: flex;
@@ -309,10 +290,9 @@
     }
 }
 
-
 .panel-toolbar {
-    background: #f0f0f0;
-    padding: 0.5em;
+    background: #f6f6f6;
+    padding: 0.3rem 0.5rem;
 
     .nice-toggle, .nice-toggle.on, .nice-toggle.off {
         padding: 0;
@@ -320,9 +300,6 @@
         font-size: 1.2em;
 
     }
-
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
 
     .toolbar-group {
         display: flex;

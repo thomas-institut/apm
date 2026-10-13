@@ -51,9 +51,9 @@ describe('MainTextPanelToolbar', () => {
       expect(onChangeApparatusHighlightSelection).toHaveBeenLastCalledWith(selection);
     }
 
-    const switches = Array.from(container.querySelectorAll<HTMLInputElement>('input[type="checkbox"]'));
+    const toggle = container.querySelector<HTMLSpanElement>('.nice-toggle')!;
     await act(async () => {
-      switches[0].click();
+      toggle.click();
     });
     expect(onChangeApparatusPopovers).toHaveBeenCalledWith(false);
 

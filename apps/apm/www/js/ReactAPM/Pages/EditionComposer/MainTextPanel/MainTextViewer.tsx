@@ -66,7 +66,7 @@ const lineNumberingsAreEqual = (first: MainTextIndexToLineMap, second: MainTextI
 
 export default function MainTextViewer({mainText, indexMap, className = '', highlightedTokenRange = null,
                                         selectedTokenRange = null,
-                                        mode = 'off', canSelectTokens = false, apparatuses = [], sigla = [],
+                                        mode = 'view', canSelectTokens = false, apparatuses = [], sigla = [],
                                         activeApparatusIndex = null,
                                         apparatusHighlightSelection = 'active', showApparatusPopovers = true,
                                         onHoverApparatusEntries, onSelectionChange,

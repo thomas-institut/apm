@@ -2,7 +2,7 @@ import {Button, ButtonGroup, Form} from "react-bootstrap";
 import {Apparatus} from "@/Edition/Apparatus";
 import SwitchToggle from "@/ReactAPM/Components/NiceToggle/SwitchToggle";
 
-export type MainTextEditMode = 'off' | 'apparatus' | 'text';
+export type MainTextEditMode = 'view' | 'apparatus' | 'text';
 export type ApparatusHighlightSelection = 'all' | 'none' | 'active' | number;
 
 interface MainTextPanelToolbarProps {
@@ -20,7 +20,7 @@ export default function MainTextPanelToolbar({mode, canEdit, apparatuses, appara
                                                showApparatusPopovers, onModeChange, onChangeApparatusHighlightSelection,
                                                onChangeApparatusPopovers}: MainTextPanelToolbarProps) {
   const modes: Array<{mode: MainTextEditMode, label: string, disabled?: boolean}> = [
-    {mode: 'off', label: 'Off'},
+    {mode: 'view', label: 'View'},
     {mode: 'apparatus', label: 'Apparatus', disabled: !canEdit},
     {mode: 'text', label: 'Text', disabled: !canEdit},
   ];
@@ -36,10 +36,10 @@ export default function MainTextPanelToolbar({mode, canEdit, apparatuses, appara
                                                                  onClick={() => onModeChange(option)}>{label}</Button>)}
       </ButtonGroup>
     </div>
-    <div className="main-text-view-controls">
+    {mode === 'view' && <div className="main-text-view-controls">
       <Form.Group className="main-text-apparatus-highlight-control" controlId="main-text-apparatus-highlights">
-        <Form.Label className="mb-0">Highlight apparatus</Form.Label>
-        <Form.Select aria-label="Highlight apparatus" value={apparatusHighlightSelection}
+        <Form.Label className="mb-0">Highlight App.</Form.Label>
+        <Form.Select aria-label="Highlight" value={apparatusHighlightSelection}
                      className="w-auto"
                      onChange={(event) => {
                        const value = event.currentTarget.value;
@@ -54,13 +54,13 @@ export default function MainTextPanelToolbar({mode, canEdit, apparatuses, appara
                      }}>
           <option value="all">All</option>
           <option value="none">None</option>
-          <option value="active">Active</option>
+          <option value="active">Visible Tab</option>
           {apparatuses.map((apparatus, index) => <option key={`${apparatus.type}-${index}`} value={index}>
             {apparatus.type}
           </option>)}
         </Form.Select>
       </Form.Group>
       <div>Popovers: </div><SwitchToggle isOn={showApparatusPopovers} onClick={(state)=>onChangeApparatusPopovers(state)} />
-    </div>
+    </div>}
   </div>;
 }

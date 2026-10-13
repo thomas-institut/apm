@@ -41,7 +41,7 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
                                        onLineNumberingChange, active}: MainTextPanelProps) {
 
   const previousLineNumbering = useRef<MainTextIndexToLineMap | null>(null);
-  const [mode, setMode] = useState<MainTextEditMode>('off');
+  const [mode, setMode] = useState<MainTextEditMode>('view');
   const [apparatusHighlightSelection, setApparatusHighlightSelection] = useState<ApparatusHighlightSelection>('active');
   const [showApparatusPopovers, setShowApparatusPopovers] = useState(true);
   const [apparatusSelection, setApparatusSelection] = useState<MainTextTokenRange | null>(null);
@@ -64,6 +64,9 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
   const changeMode = (newMode: MainTextEditMode) => {
     if (newMode !== mode) {
       setApparatusSelection(null);
+      if (newMode !== 'view') {
+        onHoverApparatusEntries?.(null);
+      }
       setMode(newMode);
     }
   };
@@ -79,13 +82,13 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
 
      <PanelContent>
        <MainTextViewer mainText={mainText} indexMap={indexMap} onLineNumberingChange={callOnLineNumberingChange}
-                       highlightedTokenRange={highlightedTokenRange}
+                       highlightedTokenRange={mode === 'view' ? highlightedTokenRange : null}
                        selectedTokenRange={apparatusSelection ?? selectedTokenRange}
                        mode={mode} canSelectTokens={canEdit}
                        apparatuses={apparatuses} activeApparatusIndex={activeApparatusIndex} sigla={sigla}
-                       apparatusHighlightSelection={apparatusHighlightSelection}
-                       showApparatusPopovers={showApparatusPopovers}
-                       onHoverApparatusEntries={onHoverApparatusEntries}
+                       apparatusHighlightSelection={mode === 'view' ? apparatusHighlightSelection : 'none'}
+                       showApparatusPopovers={mode === 'view' && showApparatusPopovers}
+                       onHoverApparatusEntries={mode === 'view' ? onHoverApparatusEntries : undefined}
                        onSelectionChange={setApparatusSelection}
                        className={['main-text-viewer', `text-${ctData.lang}`, `mode-${mode}`].join(' ')}/>
      </PanelContent>

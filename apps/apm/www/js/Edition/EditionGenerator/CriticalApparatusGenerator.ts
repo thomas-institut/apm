@@ -76,9 +76,9 @@ export class CriticalApparatusGenerator {
     // console.log(`ctIndexToMainTextMap`)
     // console.log(ctIndexToMainTextMap)
 
-    let excludedWitnesses = ctData['excludeFromAutoCriticalApparatus'] ?? [];
+    let excludedWitnesses = ctData.excludeFromAutoCriticalApparatus;
 
-    let lang = ctData['lang'];
+    let lang = ctData.lang;
 
     let columnGroups = this.getGroupsFromCtData(ctData);
     // TODO: detect a series of empty main text tokens at the beginning of the text and create a group with them

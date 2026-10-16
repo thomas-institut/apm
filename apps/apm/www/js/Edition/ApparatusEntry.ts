@@ -7,6 +7,12 @@ import {ApparatusEntryInterface, cloneMetadata, LemmaType, MetadataInterface} fr
 import {CompactFmtText} from "@thomas-inst/fmt-text";
 
 
+/**
+ * Metadata key under which the generator stores the hashes of an entry's automatic sub-entries
+ * in their natural (not customized) order. Only set for entries that have a customization in CtData.
+ */
+export const NATURAL_AUTO_SUB_ENTRIES_METADATA_KEY = 'naturalAutoSubEntries';
+
 export class ApparatusEntry implements ApparatusEntryInterface {
 
   section?: number[];

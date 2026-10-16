@@ -1,4 +1,4 @@
-import {ApparatusEntry} from "@/Edition/ApparatusEntry";
+import {ApparatusEntry, NATURAL_AUTO_SUB_ENTRIES_METADATA_KEY} from "@/Edition/ApparatusEntry";
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
 import * as SubEntrySource from "@/Edition/SubEntrySource";
 import {
@@ -72,6 +72,56 @@ export function customEntryFromApparatusEntry(entry: ApparatusEntry, ctRange: Ct
         tags: [...subEntry.tags],
       };
     })
+  };
+}
+
+/**
+ * Returns the hashes of the automatic sub-entries of an entry in their natural order: the one recorded
+ * by the edition generator if the entry has customizations or, for an entry without them, the displayed order.
+ */
+export function getNaturalAutoSubEntryHashes(entry: ApparatusEntry, originalEntry?: ApparatusEntry): string[] | null {
+  const recorded = entry.metadata[NATURAL_AUTO_SUB_ENTRIES_METADATA_KEY];
+  if (Array.isArray(recorded)) {
+    return recorded as string[];
+  }
+  if (originalEntry === undefined) {
+    return null;
+  }
+  const originalRecorded = originalEntry.metadata[NATURAL_AUTO_SUB_ENTRIES_METADATA_KEY];
+  if (Array.isArray(originalRecorded)) {
+    return originalRecorded as string[];
+  }
+  return originalEntry.subEntries.filter((se) => se.source === SubEntrySource.AUTO).map((se) => se.hashString());
+}
+
+/**
+ * Removes from a custom entry the customizations of automatic sub-entries that change nothing:
+ * when every automatic sub-entry is enabled, has no tags and sits in its natural position,
+ * all of them are dropped, so that e.g. disabling and re-enabling a sub-entry leaves no residue in CtData.
+ *
+ * The entry is returned unchanged if the natural order is unknown or if any automatic sub-entry
+ * is really customized (partial removal could change the sub-entries' order).
+ */
+export function normalizeCustomEntry(customEntry: CustomApparatusEntryInterface, naturalAutoHashes: string[] | null): CustomApparatusEntryInterface {
+  if (naturalAutoHashes === null) {
+    return customEntry;
+  }
+  const autoSubEntries = customEntry.subEntries.filter((se) => se.type === CUSTOM_APPARATUS_SUB_ENTRY_TYPE_AUTO);
+  if (autoSubEntries.length === 0) {
+    return customEntry;
+  }
+  const allDefault = autoSubEntries.every((se) => {
+    return se.hash !== undefined
+      && se.enabled
+      && se.tags.length === 0
+      && se.position === naturalAutoHashes.indexOf(se.hash);
+  });
+  if (!allDefault) {
+    return customEntry;
+  }
+  return {
+    ...customEntry,
+    subEntries: customEntry.subEntries.filter((se) => se.type !== CUSTOM_APPARATUS_SUB_ENTRY_TYPE_AUTO)
   };
 }
 

@@ -32,7 +32,7 @@ import {EditionGenerator, EditionGeneratorOptions} from './EditionGenerator.js';
 import {CriticalApparatusGenerator} from './CriticalApparatusGenerator.js';
 import {EditionWitnessInfo} from '../EditionWitnessInfo.js';
 import {ApparatusTools} from '../ApparatusTools.js';
-import {ApparatusEntry} from '../ApparatusEntry.js';
+import {ApparatusEntry, NATURAL_AUTO_SUB_ENTRIES_METADATA_KEY} from '../ApparatusEntry.js';
 import {ApparatusSubEntry} from '../ApparatusSubEntry.js';
 import * as SubEntrySource from '../SubEntrySource.js';
 import * as SubEntryType from '../SubEntryType.js';
@@ -229,6 +229,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
           let newEntry = new ApparatusEntry();
           newEntry.from = mainTextFrom;
           newEntry.to = mainTextTo;
+          newEntry.metadata.ctGroup = {from: ctDataCustomEntry.from, to: ctDataCustomEntry.to};
           newEntry.preLemma = ctDataCustomEntry.preLemma;
           newEntry.lemmaType = ApparatusTools.getLemmaTypeFromCtDataCustomApparatusEntry(ctDataCustomEntry.lemma);
           if (newEntry.lemmaType === 'custom') {
@@ -249,6 +250,11 @@ export class CtDataEditionGenerator extends EditionGenerator {
         }
       } else {
         // this.debug && console.log(`Entry belongs to automatic apparatus entry index ${currentEntryIndex}`);
+        // remember the natural order of the automatic sub-entries, it is needed to normalize customizations
+        generatedApparatus.entries[currentEntryIndex].metadata[NATURAL_AUTO_SUB_ENTRIES_METADATA_KEY] =
+          generatedApparatus.entries[currentEntryIndex].subEntries
+          .filter((se) => se.source === SubEntrySource.AUTO)
+          .map((se) => se.hashString());
         if (this.hasEntryCustomizations(ctDataCustomEntry) || customSubEntries.length !== 0) {
           generatedApparatus.entries[currentEntryIndex].preLemma = ctDataCustomEntry.preLemma;
           // generatedApparatus.entries[currentEntryIndex].lemma = ctDataCustomEntry.lemma;
@@ -380,6 +386,7 @@ export class CtDataEditionGenerator extends EditionGenerator {
         }
         theEntry.from = ctIndexToMainTextMap[customEntry.from];
         theEntry.to = ctIndexToMainTextMap[customEntry.to];
+        theEntry.metadata.ctGroup = {from: customEntry.from, to: customEntry.to};
         theEntry.preLemma = customEntry.preLemma;
         theEntry.postLemma = customEntry.postLemma;
         theEntry.separator = customEntry.separator;

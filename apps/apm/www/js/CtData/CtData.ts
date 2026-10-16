@@ -497,7 +497,7 @@ export class CtData {
   }
 
   static isEntryEqualToDefault(entry: CustomApparatusEntryInterface): boolean {
-    if (entry.subEntries.length !== 0) {
+    if (entry.subEntries.length !== 0 || (entry.tags ?? []).length !== 0) {
       return false;
     }
     let vars = ['preLemma', 'lemma', 'postLemma', 'separator'];

@@ -13,11 +13,12 @@ export default function SubEntry({subEntry, subEntryIndex, sigla}: SubEntryProps
   keywords.set('omission', 'om.');
   keywords.set('addition', 'add.');
 
+  const keywordKey = subEntry.type === 'fullCustom' ? subEntry.keyword : subEntry.type;
   const subEntryClasses = ['sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`];
   if (!subEntry.enabled) {
     subEntryClasses.push('sub-entry-disabled');
   }
   const witnessDataText = subEntry.witnessData.map((wd) => sigla[wd.witnessIndex]).join('');
-  return <span className={subEntryClasses.join(' ')}><i>{keywords.get(subEntry.type)}</i> <FmtTextRenderer
+  return <span className={subEntryClasses.join(' ')}><i>{keywords.get(keywordKey)}</i> <FmtTextRenderer
     t={subEntry.fmtText}/> {witnessDataText}</span>;
 }

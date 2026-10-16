@@ -4,6 +4,8 @@ import SwitchToggle from "@/ReactAPM/Components/NiceToggle/SwitchToggle";
 
 export type MainTextEditMode = 'view' | 'apparatus' | 'text';
 export type ApparatusHighlightSelection = 'all' | 'none' | 'active' | number;
+/** The apparatus that receives the entries added from the main text: the visible tab or a specific apparatus */
+export type ApparatusTargetSelection = 'active' | number;
 
 interface MainTextPanelToolbarProps {
   mode: MainTextEditMode;
@@ -11,6 +13,8 @@ interface MainTextPanelToolbarProps {
   apparatuses: Apparatus[];
   apparatusHighlightSelection: ApparatusHighlightSelection;
   showApparatusPopovers: boolean;
+  apparatusTargetSelection?: ApparatusTargetSelection;
+  onChangeApparatusTargetSelection?: (selection: ApparatusTargetSelection) => void;
   onModeChange: (mode: MainTextEditMode) => void;
   onChangeApparatusHighlightSelection: (selection: ApparatusHighlightSelection) => void;
   onChangeApparatusPopovers: (show: boolean) => void;
@@ -18,7 +22,8 @@ interface MainTextPanelToolbarProps {
 
 export default function MainTextPanelToolbar({mode, canEdit, apparatuses, apparatusHighlightSelection,
                                                showApparatusPopovers, onModeChange, onChangeApparatusHighlightSelection,
-                                               onChangeApparatusPopovers}: MainTextPanelToolbarProps) {
+                                               onChangeApparatusPopovers, apparatusTargetSelection = 'active',
+                                               onChangeApparatusTargetSelection}: MainTextPanelToolbarProps) {
   const modes: Array<{mode: MainTextEditMode, label: string, disabled?: boolean}> = [
     {mode: 'view', label: 'View'},
     {mode: 'apparatus', label: 'Apparatus', disabled: !canEdit},
@@ -62,5 +67,28 @@ export default function MainTextPanelToolbar({mode, canEdit, apparatuses, appara
       </Form.Group>
       <div>Popovers: </div><SwitchToggle isOn={showApparatusPopovers} onClick={(state)=>onChangeApparatusPopovers(state)} />
     </div>}
+    {mode === 'apparatus' && onChangeApparatusTargetSelection !== undefined &&
+      <div className="main-text-apparatus-target-control">
+        <Form.Group className="main-text-apparatus-highlight-control" controlId="main-text-apparatus-target">
+          <Form.Label className="mb-0">Add to</Form.Label>
+          <Form.Select aria-label="Add to" value={apparatusTargetSelection} className="w-auto"
+                       onChange={(event) => {
+                         const value = event.currentTarget.value;
+                         if (value === 'active') {
+                           onChangeApparatusTargetSelection('active');
+                         } else {
+                           const index = Number.parseInt(value, 10);
+                           if (Number.isInteger(index)) {
+                             onChangeApparatusTargetSelection(index);
+                           }
+                         }
+                       }}>
+            <option value="active">Visible Tab</option>
+            {apparatuses.map((apparatus, index) => <option key={`${apparatus.type}-${index}`} value={index}>
+              {apparatus.type}
+            </option>)}
+          </Form.Select>
+        </Form.Group>
+      </div>}
   </div>;
 }

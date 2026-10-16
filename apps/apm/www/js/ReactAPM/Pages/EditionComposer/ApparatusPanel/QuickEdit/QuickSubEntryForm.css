@@ -1,0 +1,42 @@
+.quick-sub-entry-form {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin: 0 5px;
+    font-size: 0.85em;
+    position: relative;
+    font-family: sans-serif;
+}
+
+.quick-sub-entry-form button {
+    border: 1px solid #ccc;
+    background: white;
+    padding: 0 3px;
+    line-height: 1.2;
+}
+
+.quick-witness-selector {
+    position: relative;
+}
+
+.quick-witness-list {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    background: white;
+    border: 1px solid #ccc;
+    padding: 3px 6px;
+    z-index: 10;
+    max-height: 15em;
+    overflow-y: auto;
+    white-space: nowrap;
+}
+
+.quick-witness-item {
+    display: block;
+}
+
+.quick-form-message {
+    font-size: 0.8em;
+    margin-left: 5px;
+}

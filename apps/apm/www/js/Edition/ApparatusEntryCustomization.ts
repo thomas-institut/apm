@@ -145,3 +145,21 @@ export function getCtRangeForEntry(ctData: CtDataInterface, mainText: MainTextTo
     to: getCtIndex(entry.to, ctGroup?.to)
   };
 }
+
+/**
+ * Returns the collation table range that corresponds to a range of main text tokens
+ * (the range's ends can be given in any order).
+ */
+export function getCtRangeForMainTextRange(ctData: CtDataInterface, mainText: MainTextToken[], range: {from: number, to: number}): CtRange {
+  const first = Math.min(range.from, range.to);
+  const last = Math.max(range.from, range.to);
+  const firstToken = mainText[first];
+  const lastToken = mainText[last];
+  if (firstToken === undefined || lastToken === undefined) {
+    throw new Error(`Invalid main text range ${first}-${last}`);
+  }
+  return {
+    from: CtData.getCtIndexForEditionWitnessTokenIndex(ctData, firstToken.editionWitnessTokenIndex),
+    to: CtData.getCtIndexForEditionWitnessTokenIndex(ctData, lastToken.editionWitnessTokenIndex)
+  };
+}

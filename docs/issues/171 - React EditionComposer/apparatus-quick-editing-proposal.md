@@ -573,10 +573,11 @@ in the composer). With the fast path this is mostly moot, but it avoids lost cli
    `ctGroup.to` bug, stamp `metadata.ctGroup` on all generated entries), quick operations,
    `QuickApparatusEditAction`. Unit tests against CtData fixtures; refactor vanilla panel to use the
    converter.
-3. **UI**: `ApparatusEntryView`, `SubEntryQuickControls`, `AddSubEntryButton`, `QuickSubEntryForm`,
+3. **UI** — **done**: `ApparatusEntryView`, `SubEntryQuickControls`, `AddSubEntryButton`, `QuickSubEntryForm`,
    `WitnessSelector` (with sigla groups); memoization and keys in the viewer; disabled sub-entries greyed.
    At this point the feature works, using the full generator.
-3b. **Main text quick add**: "Add to" target select (Visible Tab / specific apparatus) in
+3b. **Main text quick add** — **done** (including the "Edit entry" button, which opens the full editor through an
+   `entryEditRequest` prop): "Add to" target select (Visible Tab / specific apparatus) in
    `MainTextPanelToolbar`, selection overlay with the quick add button in `MainTextPanel`,
    `addSubEntryToRange` operation and `getCtRangeForMainTextRange()`. The "Edit entry" button (vanilla
    flow) is added when the full entry editor is ported to the React `ApparatusPanel`.

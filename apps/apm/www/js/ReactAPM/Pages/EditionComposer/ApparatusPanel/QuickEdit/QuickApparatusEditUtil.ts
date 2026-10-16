@@ -5,6 +5,11 @@ import * as SubEntryType from "@/Edition/SubEntryType";
 import * as SubEntrySource from "@/Edition/SubEntrySource";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {removeExtraWhiteSpace} from "@/toolbox/Util";
+import {MainTextToken} from "@/Edition/MainTextToken";
+import {Apparatus} from "@/Edition/Apparatus";
+import {CtDataInterface} from "@/CtData/CtDataInterface";
+import {CtRange, getCtRangeForEntry} from "@/Edition/ApparatusEntryCustomization";
+import {MainTextTokenRange} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
 import {
   moveSubEntry,
   setSubEntryEnabled
@@ -24,6 +29,17 @@ export type QuickEditResult = { entry: ApparatusEntry } | { error: string };
 
 export const IDENTICAL_SUB_ENTRY_ERROR = 'Identical to an existing sub-entry';
 
+/**
+ * An operation on one entry, as emitted by the apparatus viewer (the entry is identified separately)
+ */
+export type QuickEntryOperation =
+  | { kind: 'toggleSubEntry'; subEntryIndex: number }
+  | { kind: 'moveSubEntry'; subEntryIndex: number; direction: 'backward' | 'forward' }
+  | { kind: 'addSubEntry'; subEntry: QuickSubEntryData };
+
+/** Resolves to true if the edit was applied, otherwise to an error message */
+export type QuickEditOutcome = true | string;
+
 export type QuickApparatusEdit =
   | { kind: 'toggleSubEntry'; apparatusIndex: number; entryIndex: number; subEntryIndex: number }
   | {
@@ -33,7 +49,8 @@ export type QuickApparatusEdit =
   subEntryIndex: number;
   direction: 'backward' | 'forward'
 }
-  | { kind: 'addSubEntry'; apparatusIndex: number; entryIndex: number; subEntry: QuickSubEntryData };
+  | { kind: 'addSubEntry'; apparatusIndex: number; entryIndex: number; subEntry: QuickSubEntryData }
+  | { kind: 'addSubEntryToRange'; apparatusType: string; mainTextRange: MainTextTokenRange; subEntry: QuickSubEntryData };
 
 function normalizedText(text: string): string {
   return removeExtraWhiteSpace(text).trim();
@@ -127,5 +144,39 @@ export function applyQuickEdit(entry: ApparatusEntry, edit: QuickApparatusEdit):
 
     case 'addSubEntry':
       return addQuickSubEntry(entry, edit.subEntry);
+
+    case 'addSubEntryToRange':
+      return addQuickSubEntry(entry, edit.subEntry);
   }
+}
+
+/**
+ * Returns the index of the entry of the apparatus that refers to the given collation table range, or -1
+ */
+export function findEntryIndexForCtRange(ctData: CtDataInterface, mainText: MainTextToken[], apparatus: Apparatus, ctRange: CtRange): number {
+  return apparatus.entries.findIndex((entry) => {
+    try {
+      const entryRange = getCtRangeForEntry(ctData, mainText, entry);
+      return entryRange.from === ctRange.from && entryRange.to === ctRange.to;
+    } catch (e) {
+      return false;
+    }
+  });
+}
+
+/**
+ * Builds an empty entry (no sub-entries) for a range of main text tokens, with the defaults
+ * the full entry editor uses for a new custom entry.
+ */
+export function buildEmptyEntryForRange(mainText: MainTextToken[], range: MainTextTokenRange, ctRange: CtRange): ApparatusEntry {
+  const from = Math.min(range.from, range.to);
+  const to = Math.max(range.from, range.to);
+  const entry = new ApparatusEntry();
+  entry.from = from;
+  entry.to = to;
+  entry.mainTextWords = mainText.slice(from, to + 1)
+    .filter((token) => token.type === 'text')
+    .map((token) => token.getPlainText());
+  entry.metadata['ctGroup'] = {...ctRange};
+  return entry;
 }

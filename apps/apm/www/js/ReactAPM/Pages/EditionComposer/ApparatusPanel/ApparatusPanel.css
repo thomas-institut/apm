@@ -76,3 +76,47 @@
         color: var(--dimmed-apparatus-text-color);
     }
 }
+.apparatus-panel {
+    .sub-entry-wrapper {
+        position: relative;
+        display: inline-block;
+    }
+
+    .sub-entry-controls, .quick-add-sub-entry {
+        visibility: hidden;
+        position: absolute;
+        top: -1.3em;
+        left: 0;
+        white-space: nowrap;
+        background: white;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        z-index: 5;
+    }
+
+    .quick-add-sub-entry {
+        top: auto;
+        bottom: -1.3em;
+        padding: 0 3px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .sub-entry-wrapper:hover .sub-entry-controls,
+    .sub-entry-wrapper:hover .quick-add-sub-entry {
+        visibility: visible;
+    }
+
+    .sub-entry-controls button {
+        border: none;
+        background: transparent;
+        padding: 0 2px;
+        line-height: 1;
+        cursor: pointer;
+    }
+
+    .quick-edit-error {
+        font-size: 0.8em;
+        margin-left: 5px;
+    }
+}

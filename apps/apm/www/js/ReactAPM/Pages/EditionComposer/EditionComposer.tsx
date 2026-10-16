@@ -19,7 +19,14 @@ import {CtData} from "@/CtData/CtData";
 import {CtDataEditionGenerator} from "@/Edition/EditionGenerator/CtDataEditionGenerator";
 import {Edition} from "@/Edition/Edition";
 import {UpdateApparatusEntryAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateApparatusEntryAction";
-import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
+import {QuickApparatusEditAction} from "@/ReactAPM/Pages/EditionComposer/Actions/QuickApparatusEditAction";
+import {prepareQuickEdit} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickApparatusEditPreparation";
+import {
+  QuickApparatusEdit,
+  QuickEditOutcome,
+  QuickEntryOperation
+} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickApparatusEditUtil";
+import {ApparatusPanel, EntryEditRequest} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
 import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
 import {
   MainTextIndexToLineMap,
@@ -89,6 +96,7 @@ export default function EditionComposer() {
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
   const [activeTabPanelOne, setActiveTabPanelOne] = useState('mainText');
   const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('admin');
+  const [entryEditRequest, setEntryEditRequest] = useState<(EntryEditRequest & { apparatusType: string }) | null>(null);
 
   const appContext = useContext(AppContext);
   const shimWidth = 5;
@@ -349,6 +357,29 @@ export default function EditionComposer() {
   const updateApparatusEntry = (apparatusType: string, customEntry: CustomApparatusEntryInterface, lemmaText: string) =>
     runHistoryAction(new UpdateApparatusEntryAction(apparatusType, customEntry, lemmaText), 'UpdateApparatusEntryAction');
 
+  const applyQuickApparatusEdit = async (edit: QuickApparatusEdit): Promise<QuickEditOutcome> => {
+    const result = prepareQuickEdit(history.getCurrentState().ctData, edition, edit);
+    if ('error' in result) {
+      return result.error;
+    }
+    const applied = await runHistoryAction(new QuickApparatusEditAction(result.prepared), 'QuickApparatusEditAction');
+    return applied ? true : 'The edit could not be applied';
+  };
+
+  const quickEditApparatusEntry = (apparatusType: string, entryIndex: number, operation: QuickEntryOperation) => {
+    const apparatusIndex = edition.apparatuses.findIndex((apparatus) => apparatus.type === apparatusType);
+    return applyQuickApparatusEdit({...operation, apparatusIndex, entryIndex});
+  };
+
+  const editApparatusEntryForRange = (apparatusIndex: number, range: MainTextTokenRange) => {
+    const apparatus = edition.apparatuses[apparatusIndex];
+    if (apparatus === undefined) {
+      return;
+    }
+    setActiveTabPanelTwo(`apparatus-${apparatus.type}`);
+    setEntryEditRequest({apparatusType: apparatus.type, range, nonce: Date.now()});
+  };
+
   const updateSiglum = (witnessIndex: number, newSiglum: string) =>
     runHistoryAction(new UpdateSiglumAction(witnessIndex, newSiglum), 'UpdateSiglumAction');
 
@@ -424,6 +455,9 @@ export default function EditionComposer() {
                               apparatuses={edition.apparatuses}
                               activeApparatusIndex={activeApparatusIndex < 0 ? null : activeApparatusIndex}
                               sigla={ctData.sigla} canEdit={canEdit}
+                              siglaGroups={edition.siglaGroups}
+                              onQuickEdit={applyQuickApparatusEdit}
+                              onEditApparatusEntry={editApparatusEntryForRange}
                               highlightedTokenRange={highlightedTokenRange}
                               selectedTokenRange={selectedApparatusLemmas[activeTabPanelTwo]?.range ?? null}
                               onHoverApparatusEntries={(entries: MainTextApparatusEntryReference[]|null) => setHoveredApparatusEntries(entries ?? [])}
@@ -480,6 +514,9 @@ export default function EditionComposer() {
                                mainText={edition.mainText}
                                canEdit={canEdit}
                                onUpdateEntry={updateApparatusEntry}
+                               onQuickEdit={quickEditApparatusEntry}
+                               entryEditRequest={entryEditRequest?.apparatusType === apparatus.type ? entryEditRequest : null}
+                               onEntryEditRequestHandled={() => setEntryEditRequest(null)}
                                lang={ctData.lang}
                                hoveredEntryIndices={hoveredApparatusEntries.filter(entry => entry.apparatusIndex === index)
                                  .map(entry => entry.entryIndex)}

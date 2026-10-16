@@ -36,6 +36,8 @@ interface MainTextViewerProps {
   selectedTokenRange?: MainTextTokenRange | null,
   mode?: MainTextEditMode,
   canSelectTokens?: boolean,
+  /** Changing this value clears the viewer's token selection */
+  clearSelectionSignal?: number,
   apparatuses?: Apparatus[],
   activeApparatusIndex?: number | null,
   apparatusHighlightSelection?: ApparatusHighlightSelection,
@@ -66,7 +68,7 @@ const lineNumberingsAreEqual = (first: MainTextIndexToLineMap, second: MainTextI
 
 export default function MainTextViewer({mainText, indexMap, className = '', highlightedTokenRange = null,
                                         selectedTokenRange = null,
-                                        mode = 'view', canSelectTokens = false, apparatuses = [], sigla = [],
+                                        mode = 'view', canSelectTokens = false, clearSelectionSignal = 0, apparatuses = [], sigla = [],
                                         activeApparatusIndex = null,
                                         apparatusHighlightSelection = 'active', showApparatusPopovers = true,
                                         onHoverApparatusEntries, onSelectionChange,
@@ -90,6 +92,12 @@ export default function MainTextViewer({mainText, indexMap, className = '', high
       updateDragSelection(null);
     }
   }, [mode]);
+
+  useEffect(() => {
+    selectionAnchor.current = null;
+    updateDragSelection(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clearSelectionSignal]);
 
   useLayoutEffect(() => {
     const viewer = viewerRef.current;

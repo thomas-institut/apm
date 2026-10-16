@@ -8,7 +8,7 @@ import './ApparatusPanel.css';
 import {ApparatusViewer, SelectedApparatusLemma} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusViewer";
 import Panel from "@/ReactAPM/Components/PanelUI/Panel";
 import Toolbar from "@/ReactAPM/Components/PanelUI/Toolbar";
-import {useEffect, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import SwitchToggle from "@/ReactAPM/Components/NiceToggle/SwitchToggle";
 import PanelContent from "@/ReactAPM/Components/PanelUI/PanelContent";
 import {CtDataInterface, CustomApparatusEntryInterface} from "@/CtData/CtDataInterface";
@@ -18,11 +18,28 @@ import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {
   CtRange,
   customEntryFromApparatusEntry,
-  getCtRangeForEntry
+  getCtRangeForEntry,
+  getCtRangeForMainTextRange
 } from "@/Edition/ApparatusEntryCustomization";
+import {addCustomSubEntry} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/EntryEditor/ApparatusEntryEditorUtil";
+import {
+  buildEmptyEntryForRange,
+  findEntryIndexForCtRange,
+  QuickEditOutcome,
+  QuickEntryOperation
+} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickApparatusEditUtil";
 import ApparatusEntryEditor
   from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/EntryEditor/ApparatusEntryEditor";
 
+
+/**
+ * A request to open the full entry editor for a range of main text tokens, with a new custom sub-entry
+ * (the vanilla "select text, choose apparatus" flow)
+ */
+export interface EntryEditRequest {
+  range: MainTextTokenRange;
+  nonce: number;
+}
 
 interface ApparatusPanelProps extends TabbableElementProps {
   apparatus: Apparatus;
@@ -42,6 +59,10 @@ interface ApparatusPanelProps extends TabbableElementProps {
    * Must return true if the change was applied.
    */
   onUpdateEntry?: (apparatusType: string, customEntry: CustomApparatusEntryInterface, lemmaText: string) => Promise<boolean>;
+  entryEditRequest?: EntryEditRequest | null;
+  onEntryEditRequestHandled?: () => void;
+  /** Called for the quick edit operations (enable/disable, move, add a sub-entry) */
+  onQuickEdit?: (apparatusType: string, entryIndex: number, operation: QuickEntryOperation) => Promise<QuickEditOutcome>;
 }
 
 interface EditedEntryInfo {
@@ -52,17 +73,43 @@ interface EditedEntryInfo {
 
 export function ApparatusPanel({
                                  apparatus, lineNumberMap, sigla, siglaGroups, lang, ctData, mainText, canEdit = false,
-                                 onHoverRange, selectedLemmaIndex, onSelectLemma, hoveredEntryIndices = [], onUpdateEntry
+                                 onHoverRange, selectedLemmaIndex, onSelectLemma, hoveredEntryIndices = [], onUpdateEntry,
+                                 onQuickEdit, entryEditRequest = null, onEntryEditRequestHandled
                                }: ApparatusPanelProps) {
   const [useLineNumbers, setUseLineNumbers] = useState(true);
   const [editedEntryInfo, setEditedEntryInfo] = useState<EditedEntryInfo | null>(null);
+  const onQuickEditRef = useRef(onQuickEdit);
+  onQuickEditRef.current = onQuickEdit;
 
   // a new apparatus (after an update, undo, redo...) invalidates the entry in the editor
   useEffect(() => {
     setEditedEntryInfo(null);
   }, [apparatus]);
 
-  if (apparatus.entries.length === 0) {
+  useEffect(() => {
+    if (entryEditRequest === null) {
+      return;
+    }
+    if (canEdit && onUpdateEntry !== undefined) {
+      try {
+        const ctRange = getCtRangeForMainTextRange(ctData, mainText, entryEditRequest.range);
+        const entryIndex = findEntryIndexForCtRange(ctData, mainText, apparatus, ctRange);
+        const baseEntry = entryIndex !== -1 ? ApparatusEntry.clone(apparatus.entries[entryIndex]) :
+          buildEmptyEntryForRange(mainText, entryEditRequest.range, ctRange);
+        setEditedEntryInfo({entryIndex, entry: addCustomSubEntry(baseEntry), ctRange});
+      } catch (e) {
+        console.warn('Cannot open the entry editor for the requested range', e);
+      }
+    }
+    onEntryEditRequestHandled?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [entryEditRequest]);
+
+  const quickEdit = useCallback((entryIndex: number, operation: QuickEntryOperation) => {
+    return onQuickEditRef.current!(apparatus.type, entryIndex, operation);
+  }, [apparatus.type]);
+
+  if (apparatus.entries.length === 0 && editedEntryInfo === null) {
     return <div className="apparatus-panel empty-apparatus">No apparatus entries</div>;
   }
 
@@ -107,6 +154,8 @@ export function ApparatusPanel({
     <PanelContent>
       <ApparatusViewer className={viewerClasses.join(' ')} apparatus={apparatus} lineNumberMap={lineNumberMap}
                        useLineNumbers={useLineNumbers} sigla={sigla} onHoverRange={onHoverRange}
+                       witnessOrder={ctData.witnessOrder} siglaGroups={siglaGroups} lang={lang} canEdit={canEdit}
+                       onQuickEdit={onQuickEdit === undefined ? undefined : quickEdit}
                        selectedLemmaIndex={selectedLemmaIndex} hoveredEntryIndices={hoveredEntryIndices}
                        editingEntryIndex={editedEntryInfo?.entryIndex ?? null}
                        onSelectLemma={onSelectLemma} onEditLemma={editEntry}/>

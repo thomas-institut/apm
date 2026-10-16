@@ -30,8 +30,17 @@
         margin-top: 0.75rem;
     }
 
+    .move-up-btn {
+        border: none;
+    }
+
+    .move-down-btn {
+        border: none;
+    }
+
     .sub-entry-editor-row {
-        border-bottom: 1px solid #eee;
+        margin-left: 2rem;
+        /*border-bottom: 1px solid #eee;*/
         padding: 0.2rem 0;
     }
 
@@ -52,6 +61,10 @@
         display: flex;
         flex-direction: column;
         gap: 0.3rem;
+    }
+
+    .add-custom-sub-entry-btn {
+       margin: 1rem 2rem;
     }
 
     .witness-data-selector {

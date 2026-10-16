@@ -239,7 +239,7 @@ export default function ApparatusEntryEditor({
             onFmtTextChange={(fmtText) => updateEntry(e => setSubEntryFmtText(e, index, fmtText))}
             onWitnessDataChange={(witnessData) => updateEntry(e => setSubEntryWitnessData(e, index, witnessData))}/>;
         })}
-        <button type="button" className="btn btn-sm add-custom-sub-entry-btn" onClick={addSubEntry}>Add Custom</button>
+        <button type="button" className="btn btn-sm btn-outline-secondary add-custom-sub-entry-btn" onClick={addSubEntry}>Add Custom</button>
       </div>
     </div>
     <div className="form-footer">

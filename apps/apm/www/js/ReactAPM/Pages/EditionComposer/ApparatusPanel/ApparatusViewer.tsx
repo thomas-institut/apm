@@ -17,6 +17,7 @@ interface ApparatusViewerProps {
   onHoverRange: (range: MainTextTokenRange | null) => void;
   hoveredEntryIndices?: number[];
   selectedLemmaIndex: number | null;
+  editingEntryIndex?: number | null;
   onSelectLemma: (lemma: SelectedApparatusLemma | null) => void;
   onEditLemma?: (entryIndex: number) => void;
 }
@@ -33,7 +34,8 @@ export interface SelectedApparatusLemma {
 }
 
 export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, className, sigla,
-                                 onHoverRange, selectedLemmaIndex, hoveredEntryIndices = [], onSelectLemma,
+                                 onHoverRange, selectedLemmaIndex, editingEntryIndex = null,
+                                 hoveredEntryIndices = [], onSelectLemma,
                                  onEditLemma}: ApparatusViewerProps) {
   const getEntryRanges = (apparatus: Apparatus, lineNumberMap: MainTextIndexToLineMap | null, useLineNumbers: boolean) => {
     const ranges: EntryRange[] = [];
@@ -65,7 +67,7 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
   const entryRanges = getEntryRanges(apparatus, lineNumberMap, useLineNumbers);
 
   return <div className={className} onClick={(event) => {
-    if (!(event.target instanceof Element) || !event.target.closest('.lemma')) {
+    if (editingEntryIndex === null && (!(event.target instanceof Element) || !event.target.closest('.lemma'))) {
       onSelectLemma(null);
     }
   }}>
@@ -84,24 +86,35 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
             if (index === 0) {
               lemmaClasses.push('first');
             }
-            if (entryIndex === selectedLemmaIndex) {
+            if (entryIndex === (editingEntryIndex ?? selectedLemmaIndex)) {
               lemmaClasses.push('selected');
             }
-            if (hoveredEntryIndices.includes(entryIndex)) {
+            if (editingEntryIndex === null && hoveredEntryIndices.includes(entryIndex)) {
               lemmaClasses.push('main-text-hover');
             }
             return <Fragment key={index}><span key="lemma"
                                                className={lemmaClasses.join(' ')}
-                                               onClick={() => onSelectLemma({
-                                                 entryIndex,
-                                                 range: {from: entry.from, to: entry.to}
-                                               })}
-                                               onDoubleClick={() => onEditLemma?.(entryIndex)}
+                                               onMouseDown={(event) => event.preventDefault()}
+                                               onClick={(event) => {
+                                                 event.preventDefault();
+                                                 event.stopPropagation();
+                                                 if (editingEntryIndex === null) {
+                                                   onSelectLemma({
+                                                     entryIndex,
+                                                     range: {from: entry.from, to: entry.to}
+                                                   });
+                                                 }
+                                               }}
+                                               onDoubleClick={(event) => {
+                                                 event.preventDefault();
+                                                 event.stopPropagation();
+                                                 onEditLemma?.(entryIndex);
+                                               }}
                                                onMouseEnter={() => onHoverRange({from: entry.from, to: entry.to})}
                                                onMouseLeave={() => onHoverRange(null)}>{lemmaText + ']'}</span><span
               key="subentries">{
-              entry.subEntries.map((subEntry, index) => <SubEntry key={index} subEntry={subEntry} isFirst={index === 0}
-                                                                  sigla={sigla}/>)
+              entry.subEntries.map((subEntry, index) => <SubEntry key={index} subEntry={subEntry}
+                                                                  subEntryIndex={index} sigla={sigla}/>)
             }</span></Fragment>;
           })}
 

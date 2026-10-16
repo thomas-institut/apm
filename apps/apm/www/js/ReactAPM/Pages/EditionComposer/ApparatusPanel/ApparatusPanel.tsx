@@ -108,6 +108,7 @@ export function ApparatusPanel({
       <ApparatusViewer className={viewerClasses.join(' ')} apparatus={apparatus} lineNumberMap={lineNumberMap}
                        useLineNumbers={useLineNumbers} sigla={sigla} onHoverRange={onHoverRange}
                        selectedLemmaIndex={selectedLemmaIndex} hoveredEntryIndices={hoveredEntryIndices}
+                       editingEntryIndex={editedEntryInfo?.entryIndex ?? null}
                        onSelectLemma={onSelectLemma} onEditLemma={editEntry}/>
       {editedEntryInfo !== null &&
         <ApparatusEntryEditor

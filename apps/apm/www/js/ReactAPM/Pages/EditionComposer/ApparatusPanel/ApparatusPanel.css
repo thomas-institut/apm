@@ -1,13 +1,15 @@
+.text-la {
+    font-family: var(--latin-apparatus-font-family), serif;
+    font-size: 12pt;
+    line-height: 24pt;
+}
+
 
 .apparatus-panel {
     height: 100%;
     overflow: auto;
 
-    .text-la {
-        font-family: var(--latin-apparatus-font-family), serif;
-        font-size: 12pt;
-        line-height: 24pt;
-    }
+
 
     .panel-content {
         padding: 0.5rem;
@@ -54,15 +56,23 @@
     }
 
     .sub-entry {
-        margin-left: 10px;
+        padding-left: 0.25em;
     }
 
-    .sub-entry.first {
-        margin-left: 0;
+    .text-la .sub-entry {
+        padding-right: 0.5em;
     }
 
-    .disabled {
+    .sub-entry-disabled {
+        color: silver;
         text-decoration: line-through;
-        color: gray;
+    }
+
+    .sub-entry-source-user {
+        color: #1875b1;
+    }
+
+    .sub-entry-source-auto {
+        color: var(--dimmed-apparatus-text-color);
     }
 }

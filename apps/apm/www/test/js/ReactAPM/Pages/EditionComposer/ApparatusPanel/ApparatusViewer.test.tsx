@@ -7,6 +7,7 @@ import {createRoot} from 'react-dom/client';
 import {describe, expect, it, vi} from 'vitest';
 import {Apparatus} from '@/Edition/Apparatus';
 import {ApparatusEntry} from '@/Edition/ApparatusEntry';
+import {ApparatusSubEntry} from '@/Edition/ApparatusSubEntry';
 import {ApparatusViewer} from '@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusViewer';
 import {MainTextTokenRange} from '@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer';
 
@@ -62,6 +63,73 @@ describe('ApparatusViewer', () => {
   });
 });
 describe('ApparatusViewer editing', () => {
+  it('keeps the edited lemma selected and ignores lemma clicks while editing', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const apparatus = new Apparatus();
+    const firstEntry = new ApparatusEntry();
+    firstEntry.from = 0;
+    firstEntry.to = 0;
+    firstEntry.mainTextWords = ['first'];
+    const secondEntry = new ApparatusEntry();
+    secondEntry.from = 1;
+    secondEntry.to = 1;
+    secondEntry.mainTextWords = ['second'];
+    apparatus.entries.push(firstEntry, secondEntry);
+    const onSelectLemma = vi.fn();
+
+    await act(async () => {
+      root.render(<ApparatusViewer apparatus={apparatus} lineNumberMap={null} useLineNumbers={false} sigla={[]}
+                                   onHoverRange={vi.fn()} selectedLemmaIndex={1} editingEntryIndex={0}
+                                   onSelectLemma={onSelectLemma}/>);
+    });
+
+    const lemmas = container.querySelectorAll('.lemma');
+    expect(lemmas[0].classList.contains('selected')).toBe(true);
+    expect(lemmas[1].classList.contains('selected')).toBe(false);
+    await act(async () => {
+      lemmas[1].dispatchEvent(new MouseEvent('click', {bubbles: true}));
+    });
+    expect(onSelectLemma).not.toHaveBeenCalled();
+    expect(lemmas[0].classList.contains('selected')).toBe(true);
+    expect(lemmas[1].classList.contains('selected')).toBe(false);
+
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
+  it('uses the vanilla sub-entry style classes', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const apparatus = new Apparatus();
+    const entry = new ApparatusEntry();
+    entry.from = 0;
+    entry.to = 0;
+    entry.mainTextWords = ['word'];
+    const subEntry = new ApparatusSubEntry();
+    subEntry.type = 'variant';
+    subEntry.source = 'auto';
+    subEntry.enabled = false;
+    entry.subEntries.push(subEntry);
+    apparatus.entries.push(entry);
+
+    await act(async () => {
+      root.render(<ApparatusViewer apparatus={apparatus} lineNumberMap={null} useLineNumbers={false} sigla={[]}
+                                   onHoverRange={vi.fn()} selectedLemmaIndex={null} onSelectLemma={vi.fn()}/>);
+    });
+
+    const renderedSubEntry = container.querySelector('.sub-entry');
+    expect(renderedSubEntry?.classList.contains('sub-entry-0')).toBe(true);
+    expect(renderedSubEntry?.classList.contains('sub-entry-type-variant')).toBe(true);
+    expect(renderedSubEntry?.classList.contains('sub-entry-source-auto')).toBe(true);
+    expect(renderedSubEntry?.classList.contains('sub-entry-disabled')).toBe(true);
+
+    await act(async () => root.unmount());
+    container.remove();
+  });
+
   it('requests the entry editor when a lemma is double clicked', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
@@ -79,10 +147,37 @@ describe('ApparatusViewer editing', () => {
                                    onHoverRange={vi.fn()} selectedLemmaIndex={null}
                                    onSelectLemma={vi.fn()} onEditLemma={onEditLemma}/>);
     });
+    const doubleClickEvent = new MouseEvent('dblclick', {bubbles: true, cancelable: true});
     await act(async () => {
-      container.querySelector('.lemma')!.dispatchEvent(new MouseEvent('dblclick', {bubbles: true}));
+      container.querySelector('.lemma')!.dispatchEvent(doubleClickEvent);
     });
     expect(onEditLemma).toHaveBeenCalledWith(0);
+    expect(doubleClickEvent.defaultPrevented).toBe(true);
     await act(async () => root.unmount());
+  });
+
+  it('prevents the browser from selecting lemma text on mouse down', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const apparatus = new Apparatus();
+    const entry = new ApparatusEntry();
+    entry.from = 1;
+    entry.to = 1;
+    entry.mainTextWords = ['one'];
+    apparatus.entries.push(entry);
+
+    await act(async () => {
+      root.render(<ApparatusViewer apparatus={apparatus} lineNumberMap={null} useLineNumbers={false} sigla={[]}
+                                   onHoverRange={vi.fn()} selectedLemmaIndex={null} onSelectLemma={vi.fn()}/>);
+    });
+    const mouseDownEvent = new MouseEvent('mousedown', {bubbles: true, cancelable: true});
+    await act(async () => {
+      container.querySelector('.lemma')!.dispatchEvent(mouseDownEvent);
+    });
+    expect(mouseDownEvent.defaultPrevented).toBe(true);
+
+    await act(async () => root.unmount());
+    container.remove();
   });
 });

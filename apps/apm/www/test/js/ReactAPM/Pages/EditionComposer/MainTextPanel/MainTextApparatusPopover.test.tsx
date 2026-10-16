@@ -67,7 +67,7 @@ describe('MainTextApparatusPopover', () => {
     expect(container.textContent).toContain('om.');
     expect(container.textContent).toContain('A');
     expect(container.querySelectorAll('.main-text-apparatus-entry ul > li').length).toBe(2);
-    expect(container.querySelector('.main-text-apparatus-popover .sub-entry.disabled.first')).not.toBeNull();
+    expect(container.querySelector('.main-text-apparatus-popover .sub-entry.sub-entry-disabled.sub-entry-0')).not.toBeNull();
 
     await act(async () => root.unmount());
     container.remove();

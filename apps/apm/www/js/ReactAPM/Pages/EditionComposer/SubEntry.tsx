@@ -3,22 +3,19 @@ import FmtTextRenderer from "@/ReactAPM/Components/FmtTextRenderer";
 
 interface SubEntryProps {
   subEntry: ApparatusSubEntryData;
-  isFirst: boolean;
+  subEntryIndex: number;
   sigla: string[];
 }
 
-export default function SubEntry({subEntry, isFirst, sigla}: SubEntryProps) {
+export default function SubEntry({subEntry, subEntryIndex, sigla}: SubEntryProps) {
   const keywords: Map<string, string> = new Map();
   keywords.set('empty', '');
   keywords.set('omission', 'om.');
   keywords.set('addition', 'add.');
 
-  const subEntryClasses = ['sub-entry'];
-  if (isFirst) {
-    subEntryClasses.push('first');
-  }
+  const subEntryClasses = ['sub-entry', `sub-entry-${subEntryIndex}`, `sub-entry-type-${subEntry.type}`, `sub-entry-source-${subEntry.source}`];
   if (!subEntry.enabled) {
-    subEntryClasses.push('disabled');
+    subEntryClasses.push('sub-entry-disabled');
   }
   const witnessDataText = subEntry.witnessData.map((wd) => sigla[wd.witnessIndex]).join('');
   return <span className={subEntryClasses.join(' ')}><i>{keywords.get(subEntry.type)}</i> <FmtTextRenderer

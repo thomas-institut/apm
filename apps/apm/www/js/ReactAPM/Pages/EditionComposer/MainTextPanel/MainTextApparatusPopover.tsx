@@ -64,7 +64,7 @@ export default function MainTextApparatusPopover({apparatuses, entryReferences, 
           </div>
           <ul>
             {entry.subEntries.map((subEntry, subEntryIndex) => <li key={subEntryIndex}>
-              <SubEntry subEntry={subEntry} isFirst={subEntryIndex === 0} sigla={sigla}/>
+              <SubEntry subEntry={subEntry} subEntryIndex={subEntryIndex} sigla={sigla}/>
             </li>)}
           </ul>
         </div>)}

@@ -47,6 +47,7 @@ import * as MainTextTokenType from "../MainTextTokenType.js";
 import {Punctuation} from "../../defaults/Punctuation.js";
 import {Apparatus} from "../../Edition/Apparatus.js";
 import {fromCompactFmtText, getPlainText} from "@thomas-inst/fmt-text";
+import {perfMeasure} from "../../toolbox/PerfMeasure.js";
 
 interface CtDataEditionGeneratorOptions extends EditionGeneratorOptions {
   ctData: CtDataInterface;
@@ -74,6 +75,10 @@ export class CtDataEditionGenerator extends EditionGenerator {
 
 
   generateEdition() {
+    return perfMeasure('edition.generate', () => this.generateEditionImpl());
+  }
+
+  private generateEditionImpl() {
     let edition = super.generateEdition();
 
     let baseWitnessIndex = this.ctData.editionWitnessIndex ?? this.ctData.witnessOrder[0];
@@ -98,30 +103,35 @@ export class CtDataEditionGenerator extends EditionGenerator {
 
     // const foliationChanges = marginalFoliationGenerator.getCurrentFoliationChanges();
 
-    edition.setMainText(this.generateMainText(baseWitnessTokens));
+    edition.setMainText(perfMeasure('edition.generate.mainText', () => this.generateMainText(baseWitnessTokens)));
     // Automatic apparatus criticus
     let apparatusGenerator = new CriticalApparatusGenerator();
-    let generatedCriticalApparatus = apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText);
+    let generatedCriticalApparatus = perfMeasure('edition.generate.autoCriticalApparatus',
+      () => apparatusGenerator.generateCriticalApparatusFromCtData(this.ctData, baseWitnessIndex, edition.mainText));
 
-    let theMap = CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, edition.mainText);
-    generatedCriticalApparatus = this.mergeCustomApparatusEntries(ApparatusType.CRITICUS, generatedCriticalApparatus, baseWitnessTokens, theMap, edition.mainText);
+    let theMap = perfMeasure('edition.generate.ctIndexToMainTextMap',
+      () => CriticalApparatusGenerator.calcCtIndexToMainTextMap(baseWitnessTokens.length, edition.mainText));
+    generatedCriticalApparatus = perfMeasure('edition.generate.mergeCustomCriticus',
+      () => this.mergeCustomApparatusEntries(ApparatusType.CRITICUS, generatedCriticalApparatus, baseWitnessTokens, theMap, edition.mainText));
 
     // Automatic marginalia
     const marginalFoliationGenerator = new MarginalFoliationGenerator(this.ctData, this.lastFoliationChanges);
-    const autoMarginaliaApparatus = marginalFoliationGenerator.generateMarginaliaApparatus(edition.mainText);
+    const autoMarginaliaApparatus = perfMeasure('edition.generate.autoMarginalia',
+      () => marginalFoliationGenerator.generateMarginaliaApparatus(edition.mainText));
 
-    let mergedMarginaliaApparatus = this.mergeCustomApparatusEntries(ApparatusType.MARGINALIA, autoMarginaliaApparatus, baseWitnessTokens, theMap, edition.mainText);
+    let mergedMarginaliaApparatus = perfMeasure('edition.generate.mergeCustomMarginalia',
+      () => this.mergeCustomApparatusEntries(ApparatusType.MARGINALIA, autoMarginaliaApparatus, baseWitnessTokens, theMap, edition.mainText));
     edition.apparatuses = [generatedCriticalApparatus, mergedMarginaliaApparatus];
     edition.foliationChanges = marginalFoliationGenerator.getCurrentFoliationChanges();
 
-    edition.apparatuses.push(...this.getCustomApparatuses(theMap, edition.mainText));
-    edition.apparatuses = edition.apparatuses.map((a) => {
+    edition.apparatuses.push(...perfMeasure('edition.generate.customApparatuses', () => this.getCustomApparatuses(theMap, edition.mainText)));
+    edition.apparatuses = perfMeasure('edition.generate.sortAndOrder', () => edition.apparatuses.map((a) => {
       let appWithSortedEntries = ApparatusTools.sortEntries(a);
       appWithSortedEntries.entries = appWithSortedEntries.entries.map((entry: ApparatusEntry) => {
         return ApparatusEntry.orderSubEntries(entry);
       });
       return appWithSortedEntries;
-    });
+    }));
     return edition;
   }
 

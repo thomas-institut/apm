@@ -31,6 +31,7 @@ import NotLastVersionWarningButton from "@/ReactAPM/Components/NotLastVersionWar
 import ArchivedEditionWarningButton from "@/ReactAPM/Components/ArchivedEditionWarningButton";
 import {StateHistory, StateTransformAction} from "@/ReactAPM/ToolBox/StateHistory/StateHistory";
 import {capitalizeFirstLetter, deepCopy} from "@/toolbox/Util";
+import {perfBegin, perfEnd} from "@/toolbox/PerfMeasure";
 import {UpdateTitleAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateTitleAction";
 import {OperationalError} from "@/lib/Error/SystemError";
 import BugWarningButton from "@/ReactAPM/Components/BugWarningButton";
@@ -210,6 +211,11 @@ export default function EditionComposer() {
     document.title = `${ctData.title} (${ctData.chunkId})`;
   }, [ctData]);
 
+  useEffect(() => {
+    // closes the measurement opened in runHistoryAction: action start to committed render
+    perfEnd('composer.action.total');
+  }, [historyVersion]);
+
 
   if (composerStatus === 'error') {
     return <StatusPage label={'Error'}>
@@ -315,6 +321,7 @@ export default function EditionComposer() {
     clearOperationalActionError();
     actionInProgressRef.current = true;
     setIsActionInProgress(true);
+    perfBegin('composer.action.total');
     try {
       await history.do(action);
       setDisplayedHistoryState(history.getCurrentState());

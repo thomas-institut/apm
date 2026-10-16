@@ -16,8 +16,10 @@
  *
  */
 
+import {perfMeasure} from "./PerfMeasure";
+
 export function deepCopy<T>(someVariable: T): T {
-  return JSON.parse(JSON.stringify(someVariable));
+  return perfMeasure('util.deepCopy', () => JSON.parse(JSON.stringify(someVariable)));
 }
 
 export function removeWhiteSpace(someString: string): string {

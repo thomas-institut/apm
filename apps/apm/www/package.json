@@ -10,6 +10,7 @@
     "test:api-integration": "set -a; source .env.it; set +a; vitest run test/js/Api/ApmApiClient.integration.test.ts",
     "test:playwright": "playwright test --workers=1",
     "test:run": "vitest run",
+    "bench": "vitest bench --run test/js/benchmark",
     "test:watch": "vitest",
     "build:dev": "vite build --base=/dist",
     "build": "vite build",

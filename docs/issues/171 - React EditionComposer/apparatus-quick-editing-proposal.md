@@ -1,6 +1,7 @@
 # Apparatus Quick Editing in the React EditionComposer — Proposal
 
-Status: proposal, revision 3 (incorporates the answers to the open questions of revisions 1 and 2, see §10)
+Status: proposal, revision 4 (incorporates the phase-1 benchmark results, see §6.1; revision 3 incorporated the
+answers to the open questions of revisions 1 and 2, see §10)
 Scope: `ReactAPM/Pages/EditionComposer/ApparatusPanel/*`, `SubEntry.tsx`, `MainTextPanel/*`, `EditionComposer.tsx`,
 `Edition/EditionGenerator/CtDataEditionGenerator.ts`, `toolbox/Memoizer.ts`, `ReactAPM/ToolBox/StateHistory`.
 
@@ -111,6 +112,10 @@ the move arrow three times) are silently dropped if the pipeline is slow.
 
 Fixing only (1) will not be enough; the proposal addresses all three.
 
+The phase-1 measurements (§6.1) quantify these cost centres: the automatic critical apparatus accounts for
+about 90% of edition generation, and `deepCopy` + signature together cost as much as generation for a
+medium edition and more than it for a large one (~365 ms vs ~300 ms at 24 MB).
+
 ---
 
 ## 3. Proposal overview
@@ -123,7 +128,9 @@ Fixing only (1) will not be enough; the proposal addresses all three.
 | History signature | Per-slice cached hashes (WeakMap keyed by object reference) instead of hashing the full state. |
 | React | `React.memo` components per entry and sub-entry relying on stable object identity; hover controls in CSS. |
 
-The pieces are independent and can be delivered incrementally (see §8); each step is useful by itself.
+The pieces can be delivered incrementally (see §8). The UI and domain layers work on top of the full
+generator; the three performance reductions (structural sharing, incremental generation, slice-hashed
+signatures) are only expected to meet the target together (§6.1), so they form a single milestone.
 
 ---
 
@@ -378,15 +385,53 @@ user sees, that is safe.
 
 ## 6. Responsiveness
 
-### 6.1 Measure first
+### 6.1 Measurements (phase 1, done)
 
-Before optimizing, add `performance.mark/measure` (dev only) around: `deepCopy` in actions,
-`StateHistory.do` signature, `generateEdition` (and its stages), and React commit (React Profiler) and
-record them for a small, a medium and the largest available edition. This tells which of the three cost
-centres in §2.3 dominates and validates each phase. A Vitest micro-benchmark with a large CtData fixture
-can keep regressions in check.
+The instrumentation is in place:
 
-### 6.2 Structural sharing in actions (prerequisite for cheap memoization)
+- `js/toolbox/PerfMeasure.ts`: dev-only measurement points (`perfMeasure`, `perfMeasureAsync`,
+  `perfBegin`/`perfEnd`) recorded as `performance.measure` entries and readable with `getPerfRecords()` /
+  `getPerfSummary()`; console logging is enabled with `localStorage['apm.perf'] = '1'`. Production builds
+  pass through with no cost.
+- Measurement points: `util.deepCopy`, `history.action.execute`, `history.signature`, `edition.generate`
+  and its stages (`mainText`, `autoCriticalApparatus`, `ctIndexToMainTextMap`, `mergeCustomCriticus`,
+  `autoMarginalia`, `mergeCustomMarginalia`, `customApparatuses`, `sortAndOrder`), and
+  `composer.action.total` (from `runHistoryAction` to the effect after the render commit).
+- Benchmark: `test/js/benchmark/EditionPipeline.bench.ts` against the deterministic synthetic fixtures of
+  `test/js/benchmark/LargeCtDataFixture.ts`, run with `npm run bench` (from `apps/apm/www`).
+
+Results per single custom sub-entry toggle (synthetic fixtures, developer machine):
+
+| Size | `deepCopy` | signature | `generateEdition` | whole pipeline |
+|---|---|---|---|---|
+| Small (0.8 MB) | ~8 ms | ~4 ms | ~16 ms | ~23 ms |
+| Medium (5.4 MB) | ~48 ms | ~29 ms | ~80–130 ms | ~113 ms |
+| Large (24 MB) | ~223 ms | ~142 ms | ~300 ms | ~650 ms |
+
+Per-stage breakdown of `generateEdition`: the **automatic critical apparatus is ~90%** of the time;
+`mainText`, `sortAndOrder`, `mergeCustomCriticus` and the remaining stages are each a few ms or less.
+React commit time is not part of the benchmark; it is only covered by `composer.action.total` in the
+running app.
+
+Conclusions:
+
+1. **Stage A must cache the automatic critical apparatus** (§6.3). Everything else in generation is
+   already cheap, so an incremental generator is only worth it if it skips
+   `CriticalApparatusGenerator.generateCriticalApparatusFromCtData()` when its inputs are unchanged.
+2. **State copy and signature are first-class costs.** Together they are ~77 ms (medium) and ~365 ms
+   (large), as much as or more than generation. Even a perfectly memoized generator would leave the large
+   edition at ~365 ms, so structural sharing (§6.2) and slice-hashed signatures (§6.4) are required.
+3. **All three reductions are needed to reach the < 50 ms target** (§1). With structural sharing (copy ≈
+   O(change)), slice-hashed signatures (≈ O(change)) and a Stage A cache hit, a sub-entry edit costs Stage B
+   for one apparatus plus the React commit, which is projected to stay in the few-ms range even at 24 MB.
+
+The fixtures are synthetic; the benchmark should be re-run on a real large edition when one is available,
+and is kept to catch regressions.
+
+### 6.2 Structural sharing in actions (required)
+
+Structural sharing is a required reduction in its own right, not only a prerequisite for cheap memoization:
+`deepCopy` alone measures ~223 ms per action at 24 MB (§6.1), several times the whole target budget.
 
 Today every action does `deepCopy(state)`, so after an action **every** sub-object of CtData is a new
 reference and the memoizer would need `deepEqual` over the whole CtData — as expensive as the current
@@ -413,8 +458,8 @@ for the lifetime of a loaded edition (e.g. `useRef` in `EditionComposer`, reset 
 Stage A  "base"      input: {witnesses, collationMatrix, groupedColumns, editionWitnessIndex,
                              witnessOrder, lang, excludeFromAutoCriticalApparatus,
                              includeInAutoMarginalFoliation}               (Object.is per field)
-                     output: baseWitnessTokens, mainText, ctIndexToMainTextMap,
-                             autoCriticalApparatus, autoMarginaliaApparatus, foliationChanges
+                     output: autoCriticalApparatus (the ~90% cost), baseWitnessTokens, mainText,
+                             ctIndexToMainTextMap, autoMarginaliaApparatus, foliationChanges
 
 Stage B  "merge"     per apparatus type; input: {stageA result, customApparatus of that type}
                      output: merged, sorted Apparatus with ordered sub-entries
@@ -424,6 +469,11 @@ Stage C  "entry"     (optional, inside B) per custom entry; keyed by CT range;
 
 Stage D  "edition"   assemble Edition: sigla, witnesses, siglaGroups, info, metadata (cheap, always)
 ```
+
+Stage A's primary payload is the **automatic critical apparatus**: it is ~90% of generation time (§6.1),
+while main text, map, marginalia and sorting are each a few ms. Stage A is worth having only because it
+skips `CriticalApparatusGenerator.generateCriticalApparatusFromCtData()`; caching only the main text or the
+sort step would save almost nothing.
 
 - A sub-entry toggle changes one `customApparatuses` element → Stage A is a cache hit (the heavy part),
   Stage B reruns only for the affected apparatus type; other apparatuses are returned **by reference**.
@@ -439,21 +489,26 @@ Stage D  "edition"   assemble Edition: sigla, witnesses, siglaGroups, info, meta
 **Mutation pitfall:** `mergeCustomApparatusEntries()` and
 `applyCustomAutoSubEntriesToGeneratedSubEntries()` mutate the generated apparatus and its sub-entries in
 place, and `sortEntries()` sorts in place. If Stage A output is memoized these mutations would corrupt the
-cache (e.g. a sub-entry disabled once would stay disabled after undo). The merge code must be rewritten to
-be non-mutating (clone the touched entry / sub-entries, build new arrays), which is a good change anyway.
+cache (e.g. a sub-entry disabled once would stay disabled after undo). Since the cached automatic critical
+apparatus is exactly what these functions mutate, the merge code must be rewritten to be non-mutating
+(clone the touched entry / sub-entries, build new arrays) before Stage A is enabled; it is a good change
+anyway.
 A test should run generation twice with different custom data on the same generator and compare with
 `CtDataEditionGenerator` output.
 
 Correctness check during development: in dev builds, optionally run the full generator in an idle
 callback and `deepEqual` its output with the incremental one, logging differences.
 
-### 6.4 Cheaper history signatures
+### 6.4 Cheaper history signatures (required)
+
+The full-state signature measures ~142 ms per action at 24 MB (§6.1), so this is required to reach the
+target, not an optional refinement.
 
 `StateHistory.getStateSignature()` hashes `JSON.stringify(state)`. With structural sharing it can compute
 a signature as a hash of per-slice signatures, caching each slice signature in a `WeakMap<object, string>`
 (e.g. per witness, per custom apparatus, per scalar group). Unchanged slices are free, so the cost of an
-action becomes proportional to what changed. This can be implemented as an optional
-`signatureFunction` passed to the `StateHistory` constructor so the generic class stays generic.
+action becomes proportional to what changed. It can be implemented as a `signatureFunction` passed to the
+`StateHistory` constructor (defaulting to the current full hash) so the generic class stays generic.
 
 ### 6.5 React rendering
 
@@ -469,14 +524,18 @@ action becomes proportional to what changed. This can be implemented as an optio
 - `MainTextPanel` receives `edition.mainText` which, thanks to Stage A, keeps its reference; only parts that
   depend on `apparatuses` need recomputing.
 
-### 6.6 Optional: optimistic update
+### 6.6 Last-resort fallback: optimistic update
+
+Not planned. With structural sharing, slice-hashed signatures and the Stage A cache in place, the
+incremental path is projected to be well under the < 50 ms target even at 24 MB (§6.1), so this is kept only
+as a fallback in case measurements on real editions contradict that projection.
 
 If measurements show that even the incremental path is too slow for the largest editions, the composer can
 apply the quick operation directly to the displayed `Edition` (replace one `ApparatusEntry` in one
 `Apparatus`, everything else by reference) and schedule the regeneration with `startTransition`. Since
 the quick operations are defined as `ApparatusEntry → ApparatusEntry`, the optimistic result equals what
-regeneration produces for toggle/move/add. This is not recommended as a first step because it introduces
-two sources of truth; the incremental generator should make it unnecessary.
+regeneration produces for toggle/move/add. It is not recommended because it introduces two sources of
+truth; the three reductions above should make it unnecessary.
 
 ### 6.7 Rapid clicks
 
@@ -509,7 +568,7 @@ in the composer). With the fast path this is mostly moot, but it avoids lost cli
 
 ## 8. Implementation phases
 
-1. **Instrumentation** (§6.1) and baseline numbers.
+1. **Instrumentation** and baseline numbers — **done**; results and conclusions in §6.1.
 2. **Domain layer**: extract `customEntryFromApparatusEntry` / `getCtRangeForEntry` (+ fix the
    `ctGroup.to` bug, stamp `metadata.ctGroup` on all generated entries), quick operations,
    `QuickApparatusEditAction`. Unit tests against CtData fixtures; refactor vanilla panel to use the
@@ -521,13 +580,27 @@ in the composer). With the fast path this is mostly moot, but it avoids lost cli
    `MainTextPanelToolbar`, selection overlay with the quick add button in `MainTextPanel`,
    `addSubEntryToRange` operation and `getCtRangeForMainTextRange()`. The "Edit entry" button (vanilla
    flow) is added when the full entry editor is ported to the React `ApparatusPanel`.
-4. **Structural sharing** in actions and immutable `CtData` custom-apparatus update.
-5. **Incremental generator** Stage A + B (+ non-mutating merge); equivalence tests vs.
-   `CtDataEditionGenerator`.
-6. **History signature** with cached slice hashes.
-7. If still needed: Stage C (entry-level keyed memo), optimistic updates, action queue, keyboard shortcuts.
 
-Phases 4–6 also speed up every other composer action (sigla, witness order, title …).
+Phases 2, 3 and 3b are unchanged and can land first on top of the full generator; they are functionally
+complete without phase 4, only slower on large editions.
+
+4. **Responsiveness milestone (required)**. The measurements (§6.1) show that copy, signature and
+   generation each exceed the < 50 ms budget on large editions, so the three reductions must ship together
+   to reach the target; any one alone leaves the large edition at hundreds of ms:
+   - 4a. **Structural sharing** in actions and immutable `CtData` custom-apparatus update (§6.2).
+   - 4b. **Incremental generator** Stage A + B with non-mutating merge, Stage A caching the automatic
+     critical apparatus (§6.3); equivalence tests vs. `CtDataEditionGenerator`.
+   - 4c. **History signature** with cached slice hashes (§6.4).
+
+   4a is a prerequisite for 4b and 4c (`Object.is` change detection and `WeakMap` slice caching both rely
+   on shared references). The milestone is validated by re-running `npm run bench` and checking
+   `composer.action.total` in the running app.
+5. **Optional tail**, only if measurements after phase 4 call for it: Stage C (entry-level keyed memo,
+   §6.3), action queue for rapid clicks (§6.7), keyboard shortcuts (§4.2), and as a last resort
+   optimistic updates (§6.6). Stage C is optional because Stage B reruns only the affected apparatus and
+   the measured cost of merging custom entries and sorting is a few ms even at 24 MB.
+
+Phase 4 also speeds up every other composer action (sigla, witness order, title …).
 
 ## 9. Testing
 
@@ -571,3 +644,8 @@ Answers to the open questions of revisions 1 and 2:
 7. **Vanilla main text flow kept**: select text → choose apparatus → full entry editor in that panel is still
    offered, next to the quick add (§4.4.1, §4.4.3).
 8. **Identical sub-entries are rejected**, both in the form and in the domain operation (§5.2).
+
+Revision 4 (2026-10-16): the phase-1 measurements (§6.1) validated the responsiveness strategy of §6 and set
+the phase priorities in §8 (structural sharing, incremental generation and slice-hashed signatures as one
+required milestone; Stage C, action queue and optimistic updates optional). No scope or decision above was
+reversed.

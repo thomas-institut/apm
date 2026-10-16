@@ -1,4 +1,5 @@
 import {hashString} from "@/ReactAPM/ToolBox/Hash";
+import {perfMeasure, perfMeasureAsync} from "@/toolbox/PerfMeasure";
 
 export interface StateTransformAction<T> {
   /**
@@ -151,7 +152,7 @@ export class StateHistory<T> {
 
   async do(action: StateTransformAction<T>): Promise<T> {
     const initialState = this.getCurrentState();
-    const newState = await action.execute(initialState);
+    const newState = await perfMeasureAsync('history.action.execute', () => action.execute(initialState));
     const newSignature = this.getStateSignature(newState);
     const newActionDescription = action.description(initialState);
 
@@ -215,7 +216,7 @@ export class StateHistory<T> {
   }
 
   private getStateSignature(state: T): string {
-    return hashString(JSON.stringify(state));
+    return perfMeasure('history.signature', () => hashString(JSON.stringify(state)));
   }
 
 }

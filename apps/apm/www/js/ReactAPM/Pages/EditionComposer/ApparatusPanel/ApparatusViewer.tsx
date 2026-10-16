@@ -18,6 +18,7 @@ interface ApparatusViewerProps {
   hoveredEntryIndices?: number[];
   selectedLemmaIndex: number | null;
   onSelectLemma: (lemma: SelectedApparatusLemma | null) => void;
+  onEditLemma?: (entryIndex: number) => void;
 }
 
 interface EntryRange {
@@ -32,7 +33,8 @@ export interface SelectedApparatusLemma {
 }
 
 export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, className, sigla,
-                                 onHoverRange, selectedLemmaIndex, hoveredEntryIndices = [], onSelectLemma}: ApparatusViewerProps) {
+                                 onHoverRange, selectedLemmaIndex, hoveredEntryIndices = [], onSelectLemma,
+                                 onEditLemma}: ApparatusViewerProps) {
   const getEntryRanges = (apparatus: Apparatus, lineNumberMap: MainTextIndexToLineMap | null, useLineNumbers: boolean) => {
     const ranges: EntryRange[] = [];
     const usingLineNumbers = lineNumberMap !== null && useLineNumbers;
@@ -94,6 +96,7 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
                                                  entryIndex,
                                                  range: {from: entry.from, to: entry.to}
                                                })}
+                                               onDoubleClick={() => onEditLemma?.(entryIndex)}
                                                onMouseEnter={() => onHoverRange({from: entry.from, to: entry.to})}
                                                onMouseLeave={() => onHoverRange(null)}>{lemmaText + ']'}</span><span
               key="subentries">{

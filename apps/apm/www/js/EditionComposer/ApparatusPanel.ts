@@ -39,16 +39,14 @@ import {SiglaGroup} from '@/Edition/SiglaGroup';
 import * as ArrayUtil from '../lib/ToolBox/ArrayUtil';
 import {ConfirmDialog} from '@/pages/common/ConfirmDialog';
 import {WitnessDataEditor} from './WitnessDataEditor';
+import {customEntryFromApparatusEntry} from '@/Edition/ApparatusEntryCustomization';
 import {ApparatusEntry} from '@/Edition/ApparatusEntry';
 import {TagEditor} from '@/widgets/TagEditor';
 import {getStringVal, UiToolBox} from '@/toolbox/UiToolBox';
 import {horizontalMode, verticalMode} from '@/MultiPanelUI/MultiPanelUI';
 import {
   CtDataInterface,
-  CUSTOM_APPARATUS_SUB_ENTRY_TYPE_AUTO,
-  CUSTOM_APPARATUS_SUB_ENTRY_TYPE_FULL_CUSTOM,
   CustomApparatusEntryInterface,
-  CustomApparatusSubEntryInterface
 } from "@/CtData/CtDataInterface";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import {Apparatus} from "@/Edition/Apparatus";
@@ -1252,63 +1250,9 @@ export class ApparatusPanel extends PanelWithToolbar {
       let infoDiv = $(`${this.getApparatusEntryFormSelector()} div.info-div`);
       infoDiv.html(`Updating edition...`);
 
-      let customLemma: string;
-      switch (this.editedEntry.lemmaType) {
-        case 'auto':
-          customLemma = '';
-          break;
-
-        case 'custom':
-          customLemma = this.editedEntry.customLemmaText ?? '';
-          break;
-
-        default:
-          customLemma = this.editedEntry.lemmaType;
-      }
-
-
-      let customApparatusEntryForCtData: CustomApparatusEntryInterface = {
-        subEntries: [],
+      const customApparatusEntryForCtData: CustomApparatusEntryInterface = customEntryFromApparatusEntry(this.editedEntry, {
         from: this.editedEntry.metadata['ctGroup'].from,
-        to: this.editedEntry.metadata['ctGroup'].to,
-        preLemma: this.editedEntry.preLemma,
-        lemma: customLemma,
-        postLemma: this.editedEntry.postLemma,
-        separator: this.editedEntry.separator,
-        tags: [...this.editedEntry.tags]
-      };
-
-      customApparatusEntryForCtData.subEntries = this.editedEntry.subEntries.map((subEntry): CustomApparatusSubEntryInterface => {
-        if (subEntry.source === SubEntrySource.AUTO) {
-          // build a temporary ApparatusSubEntry object
-          // in order to get a valid hash
-          let se = new ApparatusSubEntry();
-          se.fmtText = subEntry.fmtText;
-          se.source = subEntry.source;
-          se.type = subEntry.type;
-          se.witnessData = subEntry.witnessData;
-          se.position = subEntry.position;
-          se.keyword = subEntry.keyword;
-          se.tags = [...subEntry.tags];
-          return {
-            type: CUSTOM_APPARATUS_SUB_ENTRY_TYPE_AUTO,
-            enabled: subEntry.enabled,
-            position: subEntry.position,
-            tags: [...subEntry.tags],
-            hash: se.hashString()
-          };
-        } else {
-          // custom entry
-          return {
-            type: CUSTOM_APPARATUS_SUB_ENTRY_TYPE_FULL_CUSTOM,
-            enabled: subEntry.enabled,
-            position: subEntry.position,
-            fmtText: subEntry.fmtText,
-            witnessData: subEntry.witnessData,
-            keyword: subEntry.keyword,
-            tags: [...subEntry.tags],
-          };
-        }
+        to: this.editedEntry.metadata['ctGroup'].to
       });
 
       console.log(`Entry for CT data: `, customApparatusEntryForCtData);
@@ -1365,7 +1309,7 @@ export class ApparatusPanel extends PanelWithToolbar {
     }
     if (to === -1) {
       if (theEntry.metadata['ctGroup'] !== undefined) {
-        ctIndexTo = theEntry.metadata['ctGroup'].from;
+        ctIndexTo = theEntry.metadata['ctGroup'].to;
       } else {
         console.warn(`Undefined collation table indexes for existing apparatus entry`);
         console.log(theEntry);

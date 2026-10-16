@@ -1,0 +1,87 @@
+.apparatus-entry-editor {
+    padding: 0.5rem;
+    border-top: 2px solid silver;
+    font-family: sans-serif;
+    font-size: 0.9rem;
+
+    .form-title {
+        margin-bottom: 0.5rem;
+    }
+
+    .aei-field-row {
+        display: grid;
+        grid-template-columns: 9rem 1fr;
+        align-items: center;
+        margin-bottom: 0.3rem;
+    }
+
+    .aei-field-content {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .multi-toggle {
+        font-size: 0.9em;
+    }
+
+    .sub-entries {
+        margin-top: 0.75rem;
+    }
+
+    .sub-entry-editor-row {
+        border-bottom: 1px solid #eee;
+        padding: 0.2rem 0;
+    }
+
+    .sub-entry-editor-main {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .sub-entry-type-label {
+        min-width: 8rem;
+        font-size: 0.75rem;
+        color: gray;
+    }
+
+    .sub-entry-edit-div {
+        margin: 0.3rem 0 0.3rem 2rem;
+        display: flex;
+        flex-direction: column;
+        gap: 0.3rem;
+    }
+
+    .witness-data-selector {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+    }
+
+    .witness-data-item {
+        display: flex;
+        align-items: center;
+        gap: 0.2rem;
+    }
+
+    .form-footer {
+        margin-top: 0.75rem;
+        display: flex;
+        gap: 0.5rem;
+        align-items: center;
+    }
+
+    .entry-tags-editor {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 0.3rem;
+    }
+
+    .entry-tag-remove {
+        font-size: 0.5rem;
+        margin-left: 0.3rem;
+    }
+}

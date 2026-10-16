@@ -5,7 +5,7 @@ import {useContext, useEffect, useRef, useState, MouseEvent} from "react";
 import {Spinner} from "react-bootstrap";
 import {Arrow90degLeft, Arrow90degRight, ArrowCounterclockwise, Save} from "react-bootstrap-icons";
 import {AppContext} from "@/ReactAPM/App";
-import {CtDataInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
+import {CtDataInterface, CustomApparatusEntryInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
 import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
 import {panelsFromSpecs, PanelSpec} from "@/ReactAPM/Components/PanelUI/PanelSpec";
 import MainTextPanel from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel";
@@ -18,6 +18,7 @@ import CtPanel from "@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel";
 import {CtData} from "@/CtData/CtData";
 import {CtDataEditionGenerator} from "@/Edition/EditionGenerator/CtDataEditionGenerator";
 import {Edition} from "@/Edition/Edition";
+import {UpdateApparatusEntryAction} from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateApparatusEntryAction";
 import {ApparatusPanel} from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel";
 import PreviewPanel from "@/ReactAPM/Components/PreviewPanel/PreviewPanel";
 import {
@@ -338,6 +339,9 @@ export default function EditionComposer() {
     return runHistoryAction(new UpdateWitnessOrderAction(newWitnessOrder), 'UpdateWitnessOrderAction');
   };
 
+  const updateApparatusEntry = (apparatusType: string, customEntry: CustomApparatusEntryInterface, lemmaText: string) =>
+    runHistoryAction(new UpdateApparatusEntryAction(apparatusType, customEntry, lemmaText), 'UpdateApparatusEntryAction');
+
   const updateSiglum = (witnessIndex: number, newSiglum: string) =>
     runHistoryAction(new UpdateSiglumAction(witnessIndex, newSiglum), 'UpdateSiglumAction');
 
@@ -464,6 +468,11 @@ export default function EditionComposer() {
       content: <ApparatusPanel apparatus={apparatus}
                                lineNumberMap={mainTextIndexToLineNumberMap}
                                sigla={ctData.sigla}
+                               siglaGroups={edition.siglaGroups}
+                               ctData={ctData}
+                               mainText={edition.mainText}
+                               canEdit={canEdit}
+                               onUpdateEntry={updateApparatusEntry}
                                lang={ctData.lang}
                                hoveredEntryIndices={hoveredApparatusEntries.filter(entry => entry.apparatusIndex === index)
                                  .map(entry => entry.entryIndex)}

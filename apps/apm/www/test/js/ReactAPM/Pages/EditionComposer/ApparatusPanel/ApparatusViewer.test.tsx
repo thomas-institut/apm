@@ -61,3 +61,28 @@ describe('ApparatusViewer', () => {
     container.remove();
   });
 });
+describe('ApparatusViewer editing', () => {
+  it('requests the entry editor when a lemma is double clicked', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const apparatus = new Apparatus();
+    const entry = new ApparatusEntry();
+    entry.from = 1;
+    entry.to = 1;
+    entry.mainTextWords = ['one'];
+    apparatus.entries.push(entry);
+    const onEditLemma = vi.fn();
+
+    await act(async () => {
+      root.render(<ApparatusViewer apparatus={apparatus} lineNumberMap={null} useLineNumbers={false} sigla={[]}
+                                   onHoverRange={vi.fn()} selectedLemmaIndex={null}
+                                   onSelectLemma={vi.fn()} onEditLemma={onEditLemma}/>);
+    });
+    await act(async () => {
+      container.querySelector('.lemma')!.dispatchEvent(new MouseEvent('dblclick', {bubbles: true}));
+    });
+    expect(onEditLemma).toHaveBeenCalledWith(0);
+    await act(async () => root.unmount());
+  });
+});

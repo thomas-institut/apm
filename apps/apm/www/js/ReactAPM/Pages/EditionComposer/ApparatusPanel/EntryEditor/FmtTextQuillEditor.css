@@ -1,0 +1,51 @@
+.fmt-text-quill-editor {
+    .fte-toolbar {
+        padding: 3px;
+        background: lightgray;
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 2px;
+    }
+
+    .fte-toolbar button {
+        background: none;
+        border: 1px solid lightgray;
+        padding-left: 3px;
+        padding-right: 3px;
+        font-family: sans-serif;
+    }
+
+    .fte-toolbar button.on {
+        background: #cccfd3;
+        border: 1px solid gray;
+    }
+
+    .fte-icon {
+        font-family: serif;
+        font-size: 0.8em;
+    }
+
+    .fte-editor {
+        border: 1px solid silver;
+    }
+
+    .ql-editor {
+        padding: 3px;
+        font-size: 1rem;
+    }
+
+    .ql-editor p {
+        padding: 0;
+        margin-bottom: 0.1rem;
+    }
+
+    &.text-la .ql-editor {
+        font-family: var(--latin-apparatus-font-family), serif;
+        font-size: 1.1rem;
+    }
+
+    &.text-ar .ql-editor, &.text-he .ql-editor {
+        text-align: right;
+    }
+}

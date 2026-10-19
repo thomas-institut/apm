@@ -17,22 +17,24 @@ import {QuickEntryOperation} from '@/ReactAPM/Pages/EditionComposer/ApparatusPan
 // @ts-expect-error test-only global binding
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
-function buildApparatus(): Apparatus {
+function buildApparatus(entryCount = 1): Apparatus {
   const apparatus = new Apparatus();
-  const entry = new ApparatusEntry();
-  entry.from = 1;
-  entry.to = 1;
-  entry.mainTextWords = ['word'];
-  ['one', 'two'].forEach((text, index) => {
-    const subEntry = new ApparatusSubEntry();
-    subEntry.type = 'variant';
-    subEntry.source = 'auto';
-    subEntry.fmtText = [{type: 'text', text}] as never;
-    subEntry.witnessData = [new WitnessDataItem().setWitnessIndex(index).setHand(0)];
-    subEntry.position = index;
-    entry.subEntries.push(subEntry);
-  });
-  apparatus.entries.push(entry);
+  for (let entryIndex = 0; entryIndex < entryCount; entryIndex++) {
+    const entry = new ApparatusEntry();
+    entry.from = entryIndex + 1;
+    entry.to = entryIndex + 1;
+    entry.mainTextWords = [`word${entryIndex}`];
+    ['one', 'two'].forEach((text, index) => {
+      const subEntry = new ApparatusSubEntry();
+      subEntry.type = 'variant';
+      subEntry.source = 'auto';
+      subEntry.fmtText = [{type: 'text', text}] as never;
+      subEntry.witnessData = [new WitnessDataItem().setWitnessIndex(index).setHand(0)];
+      subEntry.position = index;
+      entry.subEntries.push(subEntry);
+    });
+    apparatus.entries.push(entry);
+  }
   return apparatus;
 }
 
@@ -53,7 +55,7 @@ function change(el: Element, value: string) {
 describe('ApparatusViewer quick edit controls', () => {
   const baseProps = {
     lineNumberMap: null, useLineNumbers: false, sigla: ['A', 'B'], onHoverRange: () => undefined,
-    selectedLemmaIndex: null, onSelectLemma: () => undefined
+    selectedLemmaIndex: 0, onSelectLemma: () => undefined
   };
 
   it('shows no controls unless editing is available', async () => {
@@ -82,6 +84,19 @@ describe('ApparatusViewer quick edit controls', () => {
       wrappers[0].querySelector<HTMLElement>('.quick-move-forward')!.click();
     });
     expect(onQuickEdit).toHaveBeenLastCalledWith(0, {kind: 'moveSubEntry', subEntryIndex: 0, direction: 'forward'});
+  });
+
+  it('shows quick edit controls and a light background only for the selected entry', async () => {
+    const container = await render(<ApparatusViewer {...baseProps} apparatus={buildApparatus(2)} canEdit
+                                                    selectedLemmaIndex={1} onQuickEdit={vi.fn()}/>);
+    const subEntries = container.querySelectorAll('.sub-entries');
+
+    expect(subEntries).toHaveLength(2);
+    expect(subEntries[0].classList.contains('selected-entry')).toBe(false);
+    expect(subEntries[0].querySelector('.sub-entry-controls')).toBeNull();
+    expect(subEntries[1].classList.contains('selected-entry')).toBe(true);
+    expect(subEntries[1].querySelectorAll('.sub-entry-controls')).toHaveLength(2);
+    expect(subEntries[1].querySelector('.quick-add-sub-entry')).not.toBeNull();
   });
 
   it('adds a sub-entry through the quick form and rejects an identical one', async () => {

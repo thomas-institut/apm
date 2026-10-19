@@ -22,7 +22,7 @@ export interface ApparatusEntryViewProps {
   witnessOrder: number[];
   siglaGroups: SiglaGroup[];
   lang: string;
-  /** If true, the hover controls and the quick add form are available */
+  /** If true, the quick-edit controls and the quick add form are available */
   canQuickEdit: boolean;
   onHoverRange: (range: MainTextTokenRange | null) => void;
   onClickLemma: (entryIndex: number, entry: ApparatusEntry) => void;
@@ -53,6 +53,10 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
   }
   const rtl = getTextDirectionForLang(lang) === 'rtl';
   const showControls = canQuickEdit && onQuickEdit !== undefined;
+  const subEntriesClasses = ['sub-entries'];
+  if (isSelected) {
+    subEntriesClasses.push('selected-entry');
+  }
 
   const runOperation = async (operation: QuickEntryOperation): Promise<boolean> => {
     if (onQuickEdit === undefined) {
@@ -84,7 +88,7 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
           }}
           onMouseEnter={() => onHoverRange({from: entry.from, to: entry.to})}
           onMouseLeave={() => onHoverRange(null)}>{lemmaText + ']'}</span>
-    <span className="sub-entries">{
+    <span className={subEntriesClasses.join(' ')}>{
       entry.subEntries.map((subEntry, index) => <span key={index} className="sub-entry-wrapper">
         <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>
         {showControls && <SubEntryQuickControls enabled={subEntry.enabled} isFirst={index === 0}

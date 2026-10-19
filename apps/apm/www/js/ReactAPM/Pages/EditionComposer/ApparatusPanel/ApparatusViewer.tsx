@@ -116,7 +116,7 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
             isSelected={entryIndex === selectedIndex}
             isHovered={editingEntryIndex === null && hoveredEntryIndices.includes(entryIndex)}
             sigla={sigla} witnessOrder={effectiveWitnessOrder} siglaGroups={siglaGroups} lang={lang}
-            canQuickEdit={canQuickEdit}
+            canQuickEdit={canQuickEdit && entryIndex === selectedIndex}
             onHoverRange={stableHoverRange} onClickLemma={stableClickLemma}
             onEditLemma={stableEditLemma}
             onQuickEdit={onQuickEdit === undefined ? undefined : stableQuickEdit}/>)}

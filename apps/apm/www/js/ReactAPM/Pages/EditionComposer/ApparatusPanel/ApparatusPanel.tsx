@@ -125,6 +125,7 @@ export function ApparatusPanel({
     }
     try {
       const ctRange = getCtRangeForEntry(ctData, mainText, entry);
+      onSelectLemma({entryIndex, range: {from: entry.from, to: entry.to}});
       setEditedEntryInfo({entryIndex, entry: ApparatusEntry.clone(entry), ctRange});
     } catch (e) {
       console.warn(`Cannot edit apparatus entry ${entryIndex}`, e);

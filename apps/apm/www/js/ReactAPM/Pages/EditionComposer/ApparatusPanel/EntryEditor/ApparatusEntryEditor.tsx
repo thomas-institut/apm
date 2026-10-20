@@ -187,7 +187,7 @@ export default function ApparatusEntryEditor({
     }));
   };
 
-  return <div className={`aei-form apparatus-entry-editor text-${lang}`}>
+  return <div className={`aei-form apparatus-entry-editor text-${lang}`} onClick={(event) => event.stopPropagation()}>
     <div className="form-header">
       <h5 className="form-title">Apparatus Entry</h5>
     </div>

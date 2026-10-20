@@ -38,12 +38,15 @@ async function renderEditor(onUpdate = vi.fn(), onCancel = vi.fn()) {
   const container = document.createElement('div');
   document.body.appendChild(container);
   const root = createRoot(container);
+  const onParentClick = vi.fn();
   await act(async () => {
-    root.render(<ApparatusEntryEditor entry={buildEntry()} ctRange={{from: 2, to: 3}} lang="la"
-                                      sigla={['A', 'B']} siglaGroups={[]}
-                                      onUpdate={onUpdate} onCancel={onCancel}/>);
+    root.render(<div onClick={onParentClick}>
+      <ApparatusEntryEditor entry={buildEntry()} ctRange={{from: 2, to: 3}} lang="la"
+                            sigla={['A', 'B']} siglaGroups={[]}
+                            onUpdate={onUpdate} onCancel={onCancel}/>
+    </div>);
   });
-  return {container, root, onUpdate, onCancel};
+  return {container, root, onUpdate, onCancel, onParentClick};
 }
 
 const click = async (element: Element | null) => {
@@ -70,6 +73,17 @@ describe('ApparatusEntryEditor', () => {
     expect(onUpdate).toHaveBeenCalledTimes(1);
     const edited = onUpdate.mock.calls[0][0] as ApparatusEntry;
     expect(edited.subEntries[0].enabled).toBe(false);
+    await act(async () => root.unmount());
+  });
+
+  it('does not bubble cancel or commit clicks to the composer', async () => {
+    const {container, root, onParentClick} = await renderEditor();
+    await click(container.querySelector('.sub-entry-enabled-checkbox'));
+    onParentClick.mockClear();
+    await click(container.querySelector('.update-btn'));
+    expect(onParentClick).not.toHaveBeenCalled();
+    await click(container.querySelector('.cancel-btn'));
+    expect(onParentClick).not.toHaveBeenCalled();
     await act(async () => root.unmount());
   });
 

@@ -94,8 +94,8 @@ export default function EditionComposer() {
   const [isActionInProgress, setIsActionInProgress] = useState(false);
   const [versionTimeStamp, setVersionTimeStamp] = useState('');
   const [expandedTab, setExpandedTab] = useState<string | null>(null);
-  const [activeTabPanelOne, setActiveTabPanelOne] = useState('mainText');
-  const [activeTabPanelTwo, setActiveTabPanelTwo] = useState('admin');
+  const [activeTabPanelOne, setActiveTabPanelOne] = useState<string|null>(null);
+  const [activeTabPanelTwo, setActiveTabPanelTwo] = useState<string|null>(null);
   const [entryEditRequest, setEntryEditRequest] = useState<(EntryEditRequest & { apparatusType: string }) | null>(null);
 
   const appContext = useContext(AppContext);
@@ -134,8 +134,8 @@ export default function EditionComposer() {
       setMainTextIndexToLineNumberMap(null);
       setVersionTimeStamp('');
       setExpandedTab(null);
-      setActiveTabPanelOne('mainText');
-      setActiveTabPanelTwo('admin');
+      setActiveTabPanelOne(null);
+      setActiveTabPanelTwo(null);
     }
 
     const loadTableData = async () => {
@@ -459,7 +459,7 @@ export default function EditionComposer() {
                               onQuickEdit={applyQuickApparatusEdit}
                               onEditApparatusEntry={editApparatusEntryForRange}
                               highlightedTokenRange={highlightedTokenRange}
-                              selectedTokenRange={selectedApparatusLemmas[activeTabPanelTwo]?.range ?? null}
+                              selectedTokenRange={selectedApparatusLemmas[activeTabPanelTwo ?? -1]?.range ?? null}
                               onHoverApparatusEntries={(entries: MainTextApparatusEntryReference[]|null) => setHoveredApparatusEntries(entries ?? [])}
                               onLineNumberingChange={onLineNumberingChange}/>
     },

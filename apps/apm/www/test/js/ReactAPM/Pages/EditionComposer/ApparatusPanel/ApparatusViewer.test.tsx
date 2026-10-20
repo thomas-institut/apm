@@ -54,6 +54,16 @@ describe('ApparatusViewer', () => {
     expect(onSelectLemma).toHaveBeenLastCalledWith({entryIndex: 0, range: {from: 2, to: 4}});
 
     await act(async () => {
+      root.render(<ApparatusViewer apparatus={apparatus} lineNumberMap={null} useLineNumbers={false} sigla={[]}
+                                   onHoverRange={onHoverRange} selectedLemmaIndex={0}
+                                   hoveredEntryIndices={[0]} onSelectLemma={onSelectLemma}/>);
+    });
+    await act(async () => {
+      container.querySelector('.lemma')!.dispatchEvent(new MouseEvent('click', {bubbles: true}));
+    });
+    expect(onSelectLemma).toHaveBeenLastCalledWith(null);
+
+    await act(async () => {
       container.querySelector('.range-text')!.dispatchEvent(new MouseEvent('click', {bubbles: true}));
     });
     expect(onSelectLemma).toHaveBeenLastCalledWith(null);

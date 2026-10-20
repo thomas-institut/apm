@@ -53,12 +53,15 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
                                  hoveredEntryIndices = [], onSelectLemma,
                                  onEditLemma}: ApparatusViewerProps) {
   // the callbacks are kept in a ref so that the entry views receive stable functions and can be memoized
-  const callbacks = useRef({onHoverRange, onSelectLemma, onEditLemma, onQuickEdit, editingEntryIndex});
-  callbacks.current = {onHoverRange, onSelectLemma, onEditLemma, onQuickEdit, editingEntryIndex};
+  const callbacks = useRef({onHoverRange, onSelectLemma, onEditLemma, onQuickEdit, editingEntryIndex, selectedLemmaIndex});
+  callbacks.current = {onHoverRange, onSelectLemma, onEditLemma, onQuickEdit, editingEntryIndex, selectedLemmaIndex};
   const stableHoverRange = useCallback((range: MainTextTokenRange | null) => callbacks.current.onHoverRange(range), []);
   const stableClickLemma = useCallback((entryIndex: number, entry: ApparatusEntry) => {
     if (callbacks.current.editingEntryIndex === null) {
-      callbacks.current.onSelectLemma({entryIndex, range: {from: entry.from, to: entry.to}});
+      callbacks.current.onSelectLemma(callbacks.current.selectedLemmaIndex === entryIndex ? null : {
+        entryIndex,
+        range: {from: entry.from, to: entry.to}
+      });
     }
   }, []);
   const stableEditLemma = useCallback((entryIndex: number) => callbacks.current.onEditLemma?.(entryIndex), []);

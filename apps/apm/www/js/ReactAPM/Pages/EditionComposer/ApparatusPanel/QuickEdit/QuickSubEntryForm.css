@@ -40,3 +40,36 @@
     font-size: 0.8em;
     margin-left: 5px;
 }
+
+.quick-sub-entry-popover .quick-sub-entry-form {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    margin: 0;
+}
+
+.popover.quick-sub-entry-popover {
+    width: 24rem;
+    max-width: calc(100vw - 1rem);
+}
+
+.quick-sub-entry-popover .quick-sub-entry-form > input {
+    flex: 1 1 8em;
+    min-width: 0;
+    max-width: 100%;
+}
+
+.quick-sub-entry-popover .quick-witness-list {
+    max-width: min(20rem, calc(100vw - 3rem));
+    white-space: normal;
+    overflow-wrap: anywhere;
+}
+
+.quick-sub-entry-popover .quick-form-message,
+.quick-sub-entry-popover .quick-edit-error {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}

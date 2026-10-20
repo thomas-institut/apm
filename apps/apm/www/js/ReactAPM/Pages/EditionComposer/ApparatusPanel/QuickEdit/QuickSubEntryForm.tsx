@@ -9,6 +9,7 @@ import {
   QuickSubEntryData,
   QuickSubEntryType
 } from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickApparatusEditUtil";
+import {Button} from "react-bootstrap";
 
 interface QuickSubEntryFormProps {
   sigla: string[];
@@ -24,7 +25,7 @@ interface QuickSubEntryFormProps {
 }
 
 /**
- * Compact inline form for adding a variant, omission or addition. Hand 0 only.
+ * Compact form for adding a variant, omission or addition. Hand 0 only.
  */
 export default function QuickSubEntryForm({sigla, witnessOrder, siglaGroups, targetEntry, lang, onConfirm, onCancel,
                                             onEnableExisting}: QuickSubEntryFormProps) {
@@ -44,7 +45,7 @@ export default function QuickSubEntryForm({sigla, witnessOrder, siglaGroups, tar
     }
   };
 
-  return <span className={`quick-sub-entry-form text-${lang}`} onClick={(event) => event.stopPropagation()}
+  return <div className={`quick-sub-entry-form text-${lang}`} onClick={(event) => event.stopPropagation()}
                onDoubleClick={(event) => event.stopPropagation()}
                onKeyDown={(event) => {
                  if (event.key === 'Enter') {
@@ -65,9 +66,9 @@ export default function QuickSubEntryForm({sigla, witnessOrder, siglaGroups, tar
            autoFocus={true} size={12} onChange={(event) => setText(event.currentTarget.value)}/>
     <WitnessSelector sigla={sigla} witnessOrder={witnessOrder} siglaGroups={siglaGroups}
                      selected={witnesses} onChange={setWitnesses}/>
-    <button type="button" className="quick-confirm" aria-label="Confirm" disabled={!isValid}
-            onClick={confirm}><Check/></button>
-    <button type="button" className="quick-cancel" aria-label="Cancel" onClick={onCancel}><X/></button>
+    <Button className="quick-confirm btn-primary" aria-label="Confirm" disabled={!isValid}
+            onClick={confirm}><Check/></Button>
+    <Button className="quick-cancel btn btn-outline-primary" aria-label="Cancel" onClick={onCancel}><X/></Button>
     {identicalIndex !== -1 && <span className="quick-form-message text-danger">
       {identicalIsDisabled ? 'Identical to a disabled sub-entry' : 'Identical to an existing sub-entry'}
       {identicalIsDisabled && onEnableExisting !== undefined &&
@@ -76,5 +77,5 @@ export default function QuickSubEntryForm({sigla, witnessOrder, siglaGroups, tar
           onEnableExisting(identicalIndex);
         }}>Enable it</a></>}
     </span>}
-  </span>;
+  </div>;
 }

@@ -4,12 +4,13 @@ import {SiglaGroup} from "@/Edition/SiglaGroup";
 import SubEntry from "@/ReactAPM/Pages/EditionComposer/SubEntry";
 import {MainTextTokenRange} from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
 import SubEntryQuickControls from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/SubEntryQuickControls";
-import AddSubEntryButton from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/AddSubEntryButton";
-import QuickSubEntryForm from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickSubEntryForm";
+import QuickSubEntryPopover from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickSubEntryPopover";
 import {
   QuickEditOutcome,
-  QuickEntryOperation
+  QuickEntryOperation,
+  QuickSubEntryData
 } from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickApparatusEditUtil";
+import {PlusLg} from "react-bootstrap-icons";
 import {getTextDirectionForLang} from "@/toolbox/Util";
 
 export interface ApparatusEntryViewProps {
@@ -37,7 +38,6 @@ export interface ApparatusEntryViewProps {
 function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelected, isHovered, sigla, witnessOrder,
                                        siglaGroups, lang, canQuickEdit, onHoverRange, onClickLemma, onEditLemma,
                                        onQuickEdit}: ApparatusEntryViewProps) {
-  const [isAdding, setIsAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const lemmaText = entry.mainTextWords.join(' ');
@@ -71,6 +71,12 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
     return false;
   };
 
+  const runFormOperation = (operation: QuickEntryOperation): Promise<QuickEditOutcome> =>
+    onQuickEdit === undefined ? Promise.resolve('Quick edit is unavailable') : onQuickEdit(entryIndex, operation);
+
+  const addSubEntry = (data: QuickSubEntryData) => runFormOperation({kind: 'addSubEntry', subEntry: data});
+  const enableExistingSubEntry = (subEntryIndex: number) => runFormOperation({kind: 'toggleSubEntry', subEntryIndex});
+
   const lastIndex = entry.subEntries.length - 1;
 
   return <Fragment>
@@ -102,31 +108,24 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
                                                   subEntryIndex: index,
                                                   direction
                                                 })}/>}
-        {showControls && index === lastIndex && !isAdding &&
-          <AddSubEntryButton onClick={() => setIsAdding(true)}/>}
+        {showControls && index === lastIndex && <QuickSubEntryPopover triggerContent={<PlusLg/>}
+                                                                         triggerClassName="quick-add-sub-entry"
+                                                                         triggerLabel="Add sub-entry"
+                                                                         sigla={sigla} witnessOrder={witnessOrder}
+                                                                         siglaGroups={siglaGroups} lemma={lemmaText}
+                                                                         targetEntry={entry}
+                                                                         lang={lang} onQuickAdd={addSubEntry}
+                                                                         onEnableExisting={enableExistingSubEntry}/>}
       </span>)
     }
-      {showControls && entry.subEntries.length === 0 && !isAdding &&
-        <AddSubEntryButton onClick={() => setIsAdding(true)}/>}
-      {showControls && isAdding && <QuickSubEntryForm sigla={sigla} witnessOrder={witnessOrder}
-                                                      siglaGroups={siglaGroups} targetEntry={entry} lang={lang}
-                                                      onCancel={() => {
-                                                        setIsAdding(false);
-                                                        setError(null);
-                                                      }}
-                                                      onEnableExisting={async (subEntryIndex) => {
-                                                        if (await runOperation({
-                                                          kind: 'toggleSubEntry',
-                                                          subEntryIndex
-                                                        })) {
-                                                          setIsAdding(false);
-                                                        }
-                                                      }}
-                                                      onConfirm={async (subEntry) => {
-                                                        if (await runOperation({kind: 'addSubEntry', subEntry})) {
-                                                          setIsAdding(false);
-                                                        }
-                                                      }}/>}
+      {showControls && entry.subEntries.length === 0 && <QuickSubEntryPopover triggerContent={<PlusLg/>}
+                                                                                triggerClassName="quick-add-sub-entry"
+                                                                                triggerLabel="Add sub-entry"
+                                                                                sigla={sigla} witnessOrder={witnessOrder}
+                                                                                siglaGroups={siglaGroups} lemma={lemmaText}
+                                                                                targetEntry={entry}
+                                                                                lang={lang} onQuickAdd={addSubEntry}
+                                                                                onEnableExisting={enableExistingSubEntry}/>}
       {error !== null && <span className="quick-edit-error text-danger">{error}</span>}
     </span>
   </Fragment>;

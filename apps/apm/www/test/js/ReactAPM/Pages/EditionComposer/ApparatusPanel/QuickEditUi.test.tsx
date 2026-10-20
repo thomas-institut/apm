@@ -103,26 +103,31 @@ describe('ApparatusViewer quick edit controls', () => {
     const onQuickEdit = vi.fn<(i: number, op: QuickEntryOperation) => Promise<true | string>>().mockResolvedValue(true);
     const container = await render(<ApparatusViewer {...baseProps} apparatus={buildApparatus()} canEdit
                                                     onQuickEdit={onQuickEdit}/>);
+    expect(container.querySelector('.quick-sub-entry-form')).toBeNull();
     await act(async () => {
       container.querySelector<HTMLElement>('.quick-add-sub-entry')!.click();
     });
-    const confirm = container.querySelector<HTMLButtonElement>('.quick-confirm')!;
+    const popover = document.querySelector('.quick-sub-entry-popover');
+    expect(popover).not.toBeNull();
+    expect(popover!.querySelector('.popover-header')?.textContent).toContain('Quick add: word0');
+    expect(popover!.querySelector('.popover-body .quick-sub-entry-form')).not.toBeNull();
+    const confirm = popover!.querySelector<HTMLButtonElement>('.quick-confirm')!;
     expect(confirm.disabled).toBe(true);
 
-    await act(async () => change(container.querySelector('input[aria-label="Sub-entry text"]')!, 'one'));
-    await act(async () => container.querySelector<HTMLElement>('.quick-witness-toggle')!.click());
-    await act(async () => container.querySelectorAll<HTMLInputElement>('.quick-witness-item input')[0].click());
+    await act(async () => change(popover!.querySelector('input[aria-label="Sub-entry text"]')!, 'one'));
+    await act(async () => popover!.querySelector<HTMLElement>('.quick-witness-toggle')!.click());
+    await act(async () => popover!.querySelectorAll<HTMLInputElement>('.quick-witness-item input')[0].click());
     // same text and witness (A) as the first sub-entry
-    expect(container.querySelector('.quick-form-message')?.textContent).toContain('Identical to an existing sub-entry');
-    expect(container.querySelector<HTMLButtonElement>('.quick-confirm')!.disabled).toBe(true);
+    expect(popover!.querySelector('.quick-form-message')?.textContent).toContain('Identical to an existing sub-entry');
+    expect(popover!.querySelector<HTMLButtonElement>('.quick-confirm')!.disabled).toBe(true);
 
-    await act(async () => change(container.querySelector('input[aria-label="Sub-entry text"]')!, 'three'));
-    expect(container.querySelector<HTMLButtonElement>('.quick-confirm')!.disabled).toBe(false);
-    await act(async () => container.querySelector<HTMLElement>('.quick-confirm')!.click());
+    await act(async () => change(popover!.querySelector('input[aria-label="Sub-entry text"]')!, 'three'));
+    expect(popover!.querySelector<HTMLButtonElement>('.quick-confirm')!.disabled).toBe(false);
+    await act(async () => popover!.querySelector<HTMLElement>('.quick-confirm')!.click());
     expect(onQuickEdit).toHaveBeenLastCalledWith(0, {
       kind: 'addSubEntry', subEntry: {type: 'variant', text: 'three', witnesses: [0]}
     });
-    expect(container.querySelector('.quick-sub-entry-form')).toBeNull();
+    expect(document.querySelector('.quick-sub-entry-popover')).toBeNull();
   });
 
   it('keeps the form open and shows the error when the edit is refused', async () => {
@@ -130,12 +135,13 @@ describe('ApparatusViewer quick edit controls', () => {
     const container = await render(<ApparatusViewer {...baseProps} apparatus={buildApparatus()} canEdit
                                                     onQuickEdit={onQuickEdit}/>);
     await act(async () => container.querySelector<HTMLElement>('.quick-add-sub-entry')!.click());
-    await act(async () => change(container.querySelector('select[aria-label="Sub-entry type"]')!, 'omission'));
-    await act(async () => container.querySelector<HTMLElement>('.quick-witness-toggle')!.click());
-    await act(async () => container.querySelectorAll<HTMLInputElement>('.quick-witness-item input')[1].click());
-    await act(async () => container.querySelector<HTMLElement>('.quick-confirm')!.click());
-    expect(container.querySelector('.quick-sub-entry-form')).not.toBeNull();
-    expect(container.querySelector('.quick-edit-error')?.textContent).toBe('Some error');
+    const popover = document.querySelector('.quick-sub-entry-popover')!;
+    await act(async () => change(popover.querySelector('select[aria-label="Sub-entry type"]')!, 'omission'));
+    await act(async () => popover.querySelector<HTMLElement>('.quick-witness-toggle')!.click());
+    await act(async () => popover.querySelectorAll<HTMLInputElement>('.quick-witness-item input')[1].click());
+    await act(async () => popover.querySelector<HTMLElement>('.quick-confirm')!.click());
+    expect(popover.querySelector('.quick-sub-entry-form')).not.toBeNull();
+    expect(popover.querySelector('.quick-edit-error')?.textContent).toBe('Some error');
   });
 
   it('hides the controls while the full entry editor is open', async () => {

@@ -65,6 +65,10 @@ describe('MainTextPanel quick add', () => {
     expect(popover!.textContent).toContain('one two');
     expect(popover!.textContent).toContain('marginalia');
     await act(async () => popover!.querySelector<HTMLElement>('.quick-add-buttons button')!.click());
+    const quickAddPopover = document.querySelector('.quick-sub-entry-popover');
+    expect(quickAddPopover).not.toBeNull();
+    expect(quickAddPopover!.querySelector('.popover-header')?.textContent).toContain('Quick add: one two');
+    expect(quickAddPopover!.querySelector('.popover-body .quick-sub-entry-form')).not.toBeNull();
     await act(async () => change(document.querySelector('input[aria-label="Sub-entry text"]')!, 'word'));
     await act(async () => document.querySelector<HTMLElement>('.quick-witness-toggle')!.click());
     await act(async () => document.querySelectorAll<HTMLInputElement>('.quick-witness-item input')[1].click());

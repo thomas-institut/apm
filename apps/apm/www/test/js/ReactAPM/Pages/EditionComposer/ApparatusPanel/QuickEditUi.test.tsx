@@ -62,6 +62,7 @@ describe('ApparatusViewer quick edit controls', () => {
     const container = await render(<ApparatusViewer {...baseProps} apparatus={buildApparatus()}/>);
     expect(container.querySelector('.sub-entry-controls')).toBeNull();
     expect(container.querySelector('.quick-add-sub-entry')).toBeNull();
+    expect(container.querySelector('.quick-edit-entry')).toBeNull();
   });
 
   it('emits toggle and move operations, without back arrow on the first and forward arrow on the last sub-entry', async () => {
@@ -75,6 +76,15 @@ describe('ApparatusViewer quick edit controls', () => {
     expect(wrappers[1].querySelector('.quick-move-forward')).toBeNull();
     expect(wrappers[0].querySelector('.quick-add-sub-entry')).toBeNull();
     expect(wrappers[1].querySelector('.quick-add-sub-entry')).not.toBeNull();
+
+    const firstControls = wrappers[0].querySelector('.sub-entry-controls')!;
+    expect(firstControls.children[0].classList.contains('sub-entry')).toBe(true);
+    expect(firstControls.children[1].classList.contains('quick-toggle')).toBe(true);
+    expect(firstControls.children[2].classList.contains('quick-move-forward')).toBe(true);
+    const secondControls = wrappers[1].querySelector('.sub-entry-controls')!;
+    expect(secondControls.children[0].classList.contains('quick-move-backward')).toBe(true);
+    expect(secondControls.children[1].classList.contains('sub-entry')).toBe(true);
+    expect(secondControls.children[2].classList.contains('quick-toggle')).toBe(true);
 
     await act(async () => {
       wrappers[1].querySelector<HTMLElement>('.quick-toggle')!.click();
@@ -97,6 +107,30 @@ describe('ApparatusViewer quick edit controls', () => {
     expect(subEntries[1].classList.contains('selected-entry')).toBe(true);
     expect(subEntries[1].querySelectorAll('.sub-entry-controls')).toHaveLength(2);
     expect(subEntries[1].querySelector('.quick-add-sub-entry')).not.toBeNull();
+  });
+
+  it.each([true, false])('shows an edit button next to quick add and invokes the edit callback (subentries: %s)', async (hasSubEntries) => {
+    const apparatus = buildApparatus();
+    if (!hasSubEntries) {
+      apparatus.entries[0].subEntries = [];
+    }
+    const onEditLemma = vi.fn();
+    const onSelectLemma = vi.fn();
+    const container = await render(<ApparatusViewer {...baseProps} apparatus={apparatus} canEdit
+                                                    selectedLemmaIndex={0}
+                                                    onQuickEdit={vi.fn().mockResolvedValue(true)}
+                                                    onEditLemma={onEditLemma} onSelectLemma={onSelectLemma}/>);
+    const quickAdd = container.querySelector('.quick-add-sub-entry');
+    const editButton = container.querySelector('.quick-edit-entry');
+    expect(quickAdd).not.toBeNull();
+    expect(container.querySelectorAll('.quick-edit-entry')).toHaveLength(1);
+    expect(quickAdd?.nextElementSibling).toBe(editButton);
+
+    await act(async () => {
+      (editButton as HTMLElement).click();
+    });
+    expect(onEditLemma).toHaveBeenCalledWith(0);
+    expect(onSelectLemma).not.toHaveBeenCalled();
   });
 
   it('adds a sub-entry through the quick form and rejects an identical one', async () => {

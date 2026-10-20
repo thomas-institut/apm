@@ -99,4 +99,48 @@ describe('ApparatusPanel entry edit request', () => {
     await act(async () => root.unmount());
     container.remove();
   });
+
+  it('opens the full editor from the quick edit button and keeps the lemma selected', async () => {
+    const container = document.createElement('div');
+    document.body.appendChild(container);
+    const root = createRoot(container);
+    const apparatus = new Apparatus();
+    const entry = new ApparatusEntry();
+    entry.from = 0;
+    entry.to = 0;
+    entry.mainTextWords = ['word'];
+    apparatus.entries.push(entry);
+    const token = new MainTextToken().setText('word', 0);
+    token.originalIndex = 0;
+
+    function TestPanel() {
+      const [selectedLemmaIndex, setSelectedLemmaIndex] = useState<number | null>(null);
+      return <ApparatusPanel apparatus={apparatus} lineNumberMap={null} lang="la" sigla={['A']} siglaGroups={[]}
+                             ctData={{type: 'ctable', lang: 'la'} as unknown as CtDataInterface}
+                             mainText={[token]} canEdit onHoverRange={() => undefined}
+                             selectedLemmaIndex={selectedLemmaIndex}
+                             onSelectLemma={(lemma) => setSelectedLemmaIndex(lemma?.entryIndex ?? null)}
+                             onQuickEdit={async () => true} onUpdateEntry={async () => true}/>;
+    }
+
+    await act(async () => root.render(<TestPanel/>));
+    await act(async () => {
+      container.querySelector<HTMLElement>('.lemma')!.click();
+    });
+    expect(container.querySelector('.lemma')!.classList.contains('selected')).toBe(true);
+    expect(container.querySelector('.quick-add-sub-entry')?.nextElementSibling).toBe(container.querySelector('.quick-edit-entry'));
+
+    await act(async () => {
+      container.querySelector<HTMLElement>('.quick-edit-entry')!.click();
+    });
+    expect(container.querySelector('.apparatus-entry-editor')).not.toBeNull();
+    expect(container.querySelector('.lemma')!.classList.contains('selected')).toBe(true);
+
+    await act(async () => {
+      container.querySelector<HTMLElement>('.cancel-btn')!.click();
+    });
+    expect(container.querySelector('.lemma')!.classList.contains('selected')).toBe(true);
+    await act(async () => root.unmount());
+    container.remove();
+  });
 });

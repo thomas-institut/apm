@@ -10,7 +10,7 @@ import {
   QuickEntryOperation,
   QuickSubEntryData
 } from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickApparatusEditUtil";
-import {PlusLg} from "react-bootstrap-icons";
+import {Pencil, PlusLg} from "react-bootstrap-icons";
 import {getTextDirectionForLang} from "@/toolbox/Util";
 
 export interface ApparatusEntryViewProps {
@@ -78,6 +78,14 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
   const enableExistingSubEntry = (subEntryIndex: number) => runFormOperation({kind: 'toggleSubEntry', subEntryIndex});
 
   const lastIndex = entry.subEntries.length - 1;
+  const editEntryButton = showControls && onEditLemma !== undefined ? (
+    <button type="button" className="quick-edit-entry" aria-label="Edit apparatus entry"
+            title="Edit apparatus entry" onClick={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+              onEditLemma(entryIndex);
+            }}><Pencil/></button>
+  ) : null;
 
   return <Fragment>
     <span className={lemmaClasses.join(' ')}
@@ -96,26 +104,30 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
           onMouseLeave={() => onHoverRange(null)}>{lemmaText + ']'}</span>
     <span className={subEntriesClasses.join(' ')}>{
       entry.subEntries.map((subEntry, index) => <span key={index} className="sub-entry-wrapper">
-        <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>
-        {showControls && <SubEntryQuickControls enabled={subEntry.enabled} isFirst={index === 0}
-                                                isLast={index === lastIndex} rtl={rtl}
-                                                onToggle={() => runOperation({
-                                                  kind: 'toggleSubEntry',
-                                                  subEntryIndex: index
-                                                })}
-                                                onMove={(direction) => runOperation({
-                                                  kind: 'moveSubEntry',
-                                                  subEntryIndex: index,
-                                                  direction
-                                                })}/>}
-        {showControls && index === lastIndex && <QuickSubEntryPopover triggerContent={<PlusLg/>}
-                                                                         triggerClassName="quick-add-sub-entry"
-                                                                         triggerLabel="Add sub-entry"
-                                                                         sigla={sigla} witnessOrder={witnessOrder}
-                                                                         siglaGroups={siglaGroups} lemma={lemmaText}
-                                                                         targetEntry={entry}
-                                                                         lang={lang} onQuickAdd={addSubEntry}
-                                                                         onEnableExisting={enableExistingSubEntry}/>}
+        {showControls ? <SubEntryQuickControls enabled={subEntry.enabled} isFirst={index === 0}
+                                               isLast={index === lastIndex} rtl={rtl}
+                                               onToggle={() => runOperation({
+                                                 kind: 'toggleSubEntry',
+                                                 subEntryIndex: index
+                                               })}
+                                               onMove={(direction) => runOperation({
+                                                 kind: 'moveSubEntry',
+                                                 subEntryIndex: index,
+                                                 direction
+                                               })}>
+          <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>
+        </SubEntryQuickControls> : <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>}
+        {showControls && index === lastIndex && <>
+          <QuickSubEntryPopover triggerContent={<PlusLg/>}
+                                triggerClassName="quick-add-sub-entry"
+                                triggerLabel="Add sub-entry"
+                                sigla={sigla} witnessOrder={witnessOrder}
+                                siglaGroups={siglaGroups} lemma={lemmaText}
+                                targetEntry={entry}
+                                lang={lang} onQuickAdd={addSubEntry}
+                                onEnableExisting={enableExistingSubEntry}/>
+          {editEntryButton}
+        </>}
       </span>)
     }
       {showControls && entry.subEntries.length === 0 && <QuickSubEntryPopover triggerContent={<PlusLg/>}
@@ -126,6 +138,7 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
                                                                                 targetEntry={entry}
                                                                                 lang={lang} onQuickAdd={addSubEntry}
                                                                                 onEnableExisting={enableExistingSubEntry}/>}
+      {entry.subEntries.length === 0 && editEntryButton}
       {error !== null && <span className="quick-edit-error text-danger">{error}</span>}
     </span>
   </Fragment>;

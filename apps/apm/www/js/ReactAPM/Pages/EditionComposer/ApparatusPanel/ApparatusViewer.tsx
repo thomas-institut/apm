@@ -4,7 +4,7 @@ import {
   MainTextTokenRange
 } from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
-import {Fragment, useCallback, useMemo, useRef} from "react";
+import {Fragment, useCallback, useMemo, useRef, useState} from "react";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import ApparatusEntryView from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusEntryView";
 import {
@@ -52,19 +52,30 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
                                  onHoverRange, selectedLemmaIndex, editingEntryIndex = null,
                                  hoveredEntryIndices = [], onSelectLemma,
                                  onEditLemma}: ApparatusViewerProps) {
+  // index of the entry whose quick add form is open: while it is open, the selection must not change
+  const [quickFormEntryIndex, setQuickFormEntryIndex] = useState<number | null>(null);
   // the callbacks are kept in a ref so that the entry views receive stable functions and can be memoized
-  const callbacks = useRef({onHoverRange, onSelectLemma, onEditLemma, onQuickEdit, editingEntryIndex, selectedLemmaIndex});
-  callbacks.current = {onHoverRange, onSelectLemma, onEditLemma, onQuickEdit, editingEntryIndex, selectedLemmaIndex};
+  const callbacks = useRef({onHoverRange, onSelectLemma, onEditLemma, onQuickEdit, editingEntryIndex, selectedLemmaIndex,
+    quickFormEntryIndex});
+  callbacks.current = {onHoverRange, onSelectLemma, onEditLemma, onQuickEdit, editingEntryIndex, selectedLemmaIndex,
+    quickFormEntryIndex};
+  const stableQuickFormOpenChange = useCallback((entryIndex: number, isOpen: boolean) => {
+    setQuickFormEntryIndex((current) => isOpen ? entryIndex : (current === entryIndex ? null : current));
+  }, []);
   const stableHoverRange = useCallback((range: MainTextTokenRange | null) => callbacks.current.onHoverRange(range), []);
   const stableClickLemma = useCallback((entryIndex: number, entry: ApparatusEntry) => {
-    if (callbacks.current.editingEntryIndex === null) {
+    if (callbacks.current.editingEntryIndex === null && callbacks.current.quickFormEntryIndex === null) {
       callbacks.current.onSelectLemma(callbacks.current.selectedLemmaIndex === entryIndex ? null : {
         entryIndex,
         range: {from: entry.from, to: entry.to}
       });
     }
   }, []);
-  const stableEditLemma = useCallback((entryIndex: number) => callbacks.current.onEditLemma?.(entryIndex), []);
+  const stableEditLemma = useCallback((entryIndex: number) => {
+    if (callbacks.current.quickFormEntryIndex === null) {
+      callbacks.current.onEditLemma?.(entryIndex);
+    }
+  }, []);
   const stableQuickEdit = useCallback((entryIndex: number, operation: QuickEntryOperation) => {
     return callbacks.current.onQuickEdit!(entryIndex, operation);
   }, []);
@@ -98,10 +109,11 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
   };
 
   const canQuickEdit = canEdit && editingEntryIndex === null && onQuickEdit !== undefined;
-  const selectedIndex = editingEntryIndex ?? selectedLemmaIndex;
+  const selectedIndex = editingEntryIndex ?? quickFormEntryIndex ?? selectedLemmaIndex;
 
   return <div className={className} onClick={(event) => {
-    if (editingEntryIndex === null && (!(event.target instanceof Element) || !event.target.closest('.lemma'))) {
+    if (editingEntryIndex === null && quickFormEntryIndex === null &&
+        (!(event.target instanceof Element) || !event.target.closest('.lemma'))) {
       onSelectLemma(null);
     }
   }}>
@@ -121,7 +133,7 @@ export function ApparatusViewer({apparatus, lineNumberMap, useLineNumbers, class
             sigla={sigla} witnessOrder={effectiveWitnessOrder} siglaGroups={siglaGroups} lang={lang}
             canQuickEdit={canQuickEdit && entryIndex === selectedIndex}
             onHoverRange={stableHoverRange} onClickLemma={stableClickLemma}
-            onEditLemma={stableEditLemma}
+            onEditLemma={stableEditLemma} onQuickFormOpenChange={stableQuickFormOpenChange}
             onQuickEdit={onQuickEdit === undefined ? undefined : stableQuickEdit}/>)}
         </Fragment>;
       })

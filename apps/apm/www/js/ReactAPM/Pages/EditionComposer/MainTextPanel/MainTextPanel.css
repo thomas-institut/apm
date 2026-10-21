@@ -132,3 +132,48 @@
     }
 
 }
+.main-text-quick-add-popover {
+    .main-text-quick-sub-entries {
+        border-collapse: collapse;
+        margin: 0.25rem 0;
+
+        td {
+            padding: 0 0.3em;
+            vertical-align: middle;
+        }
+
+        .quick-moves, .quick-controls {
+            white-space: nowrap;
+        }
+    }
+
+    .sub-entry-disabled {
+        color: silver;
+        text-decoration: line-through;
+    }
+
+    .sub-entry-source-user {
+        color: #1875b1;
+    }
+
+    .main-text-quick-sub-entries button, .quick-add-sub-entry {
+        border: none;
+        background: transparent;
+        padding: 0;
+        color: #813c38;
+        cursor: pointer;
+        display: inline-block;
+    }
+
+    .main-text-quick-sub-entries button:disabled {
+        visibility: hidden;
+    }
+
+    .quick-add-sub-entry {
+        color: #0b1695;
+    }
+
+    .quick-edit-error {
+        font-size: 0.8em;
+    }
+}

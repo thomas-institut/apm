@@ -30,6 +30,7 @@ export interface ApparatusEntryViewProps {
   onClickLemma: (entryIndex: number, entry: ApparatusEntry) => void;
   onEditLemma?: (entryIndex: number) => void;
   onQuickEdit?: (entryIndex: number, operation: QuickEntryOperation) => Promise<QuickEditOutcome>;
+  onQuickFormOpenChange?: (entryIndex: number, isOpen: boolean) => void;
 }
 
 /**
@@ -38,7 +39,7 @@ export interface ApparatusEntryViewProps {
  */
 function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelected, isHovered, sigla, witnessOrder,
                                        siglaGroups, lang, canQuickEdit, onHoverRange, onClickLemma, onEditLemma,
-                                       onQuickEdit}: ApparatusEntryViewProps) {
+                                       onQuickEdit, onQuickFormOpenChange}: ApparatusEntryViewProps) {
   const [error, setError] = useState<string | null>(null);
 
   const lemmaText = entry.mainTextWords.join(' ');
@@ -126,6 +127,7 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
                                 siglaGroups={siglaGroups} lemma={lemmaText}
                                 targetEntry={entry}
                                 lang={lang} onQuickAdd={addSubEntry}
+                                onOpenChange={(isOpen) => onQuickFormOpenChange?.(entryIndex, isOpen)}
                                 onEnableExisting={enableExistingSubEntry}/>
           {editEntryButton}
         </>}
@@ -138,6 +140,7 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
                                                                                 siglaGroups={siglaGroups} lemma={lemmaText}
                                                                                 targetEntry={entry}
                                                                                 lang={lang} onQuickAdd={addSubEntry}
+                                                                                onOpenChange={(isOpen) => onQuickFormOpenChange?.(entryIndex, isOpen)}
                                                                                 onEnableExisting={enableExistingSubEntry}/>}
       {entry.subEntries.length === 0 && editEntryButton}
       {error !== null && <span className="quick-edit-error text-danger">{error}</span>}

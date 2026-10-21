@@ -1,4 +1,4 @@
-import {ReactNode, useId, useState} from "react";
+import {ReactNode, useEffect, useId, useRef, useState} from "react";
 import type {ComponentProps} from "react";
 import {Button, OverlayTrigger, Popover} from "react-bootstrap";
 import {OverlayInjectedProps} from "react-bootstrap/types";
@@ -26,15 +26,28 @@ interface QuickSubEntryPopoverProps {
   lang: string;
   onQuickAdd: (data: QuickSubEntryData) => Promise<QuickEditOutcome>;
   onEnableExisting?: (subEntryIndex: number) => Promise<QuickEditOutcome>;
+  /** Called with true when the form is shown and with false when it is closed (or the component unmounts) */
+  onOpenChange?: (isOpen: boolean) => void;
 }
 
 /** A quick-add button with its form displayed in a popover. */
 export default function QuickSubEntryPopover({triggerContent, triggerClassName, triggerSize, triggerVariant, triggerLabel,
                                                triggerTitle, disabled = false, sigla, witnessOrder, siglaGroups, lemma,
-                                               targetEntry, lang, onQuickAdd, onEnableExisting}: QuickSubEntryPopoverProps) {
+                                               targetEntry, lang, onQuickAdd, onEnableExisting,
+                                               onOpenChange}: QuickSubEntryPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const id = useId();
+  const onOpenChangeRef = useRef(onOpenChange);
+  onOpenChangeRef.current = onOpenChange;
+
+  useEffect(() => {
+    if (!isOpen) {
+      return;
+    }
+    onOpenChangeRef.current?.(true);
+    return () => onOpenChangeRef.current?.(false);
+  }, [isOpen]);
 
   const close = () => {
     setIsOpen(false);
@@ -64,7 +77,8 @@ export default function QuickSubEntryPopover({triggerContent, triggerClassName, 
     </Popover>
   );
 
-  return <OverlayTrigger trigger={["click"]} placement="bottom" rootClose show={isOpen} onToggle={setIsOpen}
+  return <OverlayTrigger trigger={["click"]} placement="bottom" show={isOpen}
+                         onToggle={(nextShow) => nextShow && setIsOpen(true)}
                          overlay={popover}>
     <Button size={triggerSize} variant={triggerVariant} className={triggerClassName} aria-label={triggerLabel}
             title={triggerTitle ?? triggerLabel} disabled={disabled}

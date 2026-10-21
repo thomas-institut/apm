@@ -91,6 +91,20 @@ describe('quick operations', () => {
     expect(added.witnessData.map((w) => [w.witnessIndex, w.hand])).toEqual([[7, 0], [8, 0]]);
   });
 
+  it('adds the sub-entry last even if existing sub-entries have no position', () => {
+    const entry = buildEntry();
+    entry.subEntries.forEach((se) => {
+      se.position = -1;
+    });
+    const result = addQuickSubEntry(entry, {type: 'variant', text: 'new', witnesses: [9]});
+    if ('error' in result) {
+      throw new Error(result.error);
+    }
+    expect(result.entry.subEntries.map((se) => se.position)).toEqual([0, 1, 2, 3, 4]);
+    const ordered = ApparatusEntry.orderSubEntries(result.entry);
+    expect(ordered.subEntries[4].witnessData[0].witnessIndex).toBe(9);
+  });
+
   it('rejects identical, empty and witness-less sub-entries', () => {
     const entry = buildEntry();
     expect(addQuickSubEntry(entry, {type: 'variant', text: 'foo', witnesses: [1, 2]})).toEqual({error: IDENTICAL_SUB_ENTRY_ERROR});

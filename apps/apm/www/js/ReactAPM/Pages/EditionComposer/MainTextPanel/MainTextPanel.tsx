@@ -67,6 +67,8 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
   const [apparatusTargetSelection, setApparatusTargetSelection] = useState<ApparatusTargetSelection>('active');
   const [anchor, setAnchor] = useState<HTMLElement | null>(null);
   const [clearSelectionSignal, setClearSelectionSignal] = useState(0);
+  // while the quick add form is open, the selection must not change
+  const [quickFormOpen, setQuickFormOpen] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
   const lineNumberingRef = useRef<MainTextIndexToLineMap | null>(null);
   const indexMap = useMemo(() => {
@@ -157,8 +159,25 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
     return outcome;
   };
 
+  const quickEditExistingEntry = async (operation: {kind: 'toggleSubEntry', subEntryIndex: number} |
+    {kind: 'moveSubEntry', subEntryIndex: number, direction: 'backward' | 'forward'}): Promise<QuickEditOutcome> => {
+    if (onQuickEdit === undefined || targetApparatusIndex === null || selectionInfo === null) {
+      return 'No target apparatus';
+    }
+    const entryIndex = selectionInfo.targetEntry === null ? -1 :
+      (targetApparatus?.entries.indexOf(selectionInfo.targetEntry) ?? -1);
+    if (entryIndex === -1) {
+      return 'The apparatus entry does not exist anymore';
+    }
+    return onQuickEdit({...operation, apparatusIndex: targetApparatusIndex, entryIndex});
+  };
+
+  const toggleSubEntry = (subEntryIndex: number) => quickEditExistingEntry({kind: 'toggleSubEntry', subEntryIndex});
+  const moveSubEntry = (subEntryIndex: number, direction: 'backward' | 'forward') =>
+    quickEditExistingEntry({kind: 'moveSubEntry', subEntryIndex, direction});
+
   const changeMode = (newMode: MainTextEditMode) => {
-    if (newMode !== mode) {
+    if (newMode !== mode && !quickFormOpen) {
       setApparatusSelection(null);
       if (newMode !== 'view') {
         onHoverApparatusEntries?.(null);
@@ -184,10 +203,11 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
        <MainTextViewer mainText={mainText} indexMap={indexMap} onLineNumberingChange={callOnLineNumberingChange}
                        highlightedTokenRange={mode === 'view' ? highlightedTokenRange : null}
                        selectedTokenRange={apparatusSelection ?? selectedTokenRange}
-                       mode={mode} canSelectTokens={canEdit} clearSelectionSignal={clearSelectionSignal}
+                       mode={mode} canSelectTokens={canEdit && !quickFormOpen} clearSelectionSignal={clearSelectionSignal}
                        apparatuses={apparatuses} activeApparatusIndex={activeApparatusIndex} sigla={sigla}
                        siglaGroups={siglaGroups} lang={ctData.lang}
-                       apparatusHighlightSelection={mode === 'view' ? apparatusHighlightSelection : 'none'}
+                       apparatusHighlightSelection={mode === 'view' ? apparatusHighlightSelection :
+                         (mode === 'apparatus' && targetApparatusIndex !== null ? targetApparatusIndex : 'none')}
                        showApparatusPopovers={mode === 'view' && showApparatusPopovers}
                        onHoverApparatusEntries={mode === 'view' ? onHoverApparatusEntries : undefined}
                        onSelectionChange={setApparatusSelection}
@@ -201,6 +221,7 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
          sigla={sigla} witnessOrder={ctData.witnessOrder ?? NO_WITNESS_ORDER} siglaGroups={siglaGroups} lang={ctData.lang}
          targetEntry={selectionInfo.targetEntry}
          onQuickAdd={quickAdd} onEnableExisting={enableExisting}
+         onToggleSubEntry={toggleSubEntry} onMoveSubEntry={moveSubEntry} onFormOpenChange={setQuickFormOpen}
          onEditEntry={onEditApparatusEntry === undefined || targetApparatusIndex === null ? undefined : () => {
            onEditApparatusEntry(targetApparatusIndex, {from: selectionInfo.first, to: selectionInfo.last});
            clearSelection();

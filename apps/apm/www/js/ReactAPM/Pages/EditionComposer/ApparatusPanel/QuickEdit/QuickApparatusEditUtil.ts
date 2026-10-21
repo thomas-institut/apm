@@ -126,8 +126,11 @@ export function addQuickSubEntry(entry: ApparatusEntry, data: QuickSubEntryData)
   subEntry.keyword = data.type === 'variant' ? '' : data.type;
   subEntry.fmtText = data.type === 'omission' ? [] : fromString(normalizedText(data.text));
   subEntry.witnessData = [...new Set(data.witnesses)].map((w) => new WitnessDataItem().setWitnessIndex(w).setHand(0));
-  subEntry.position = newEntry.subEntries.length;
   newEntry.subEntries.push(subEntry);
+  // rewrite all positions so that they match the displayed order and the new sub-entry is last
+  newEntry.subEntries.forEach((se, i) => {
+    se.position = i;
+  });
   return {entry: newEntry};
 }
 

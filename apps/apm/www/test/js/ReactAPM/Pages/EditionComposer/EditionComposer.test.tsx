@@ -160,7 +160,10 @@ vi.mock('@/ReactAPM/Pages/EditionComposer/AdminPanel/AdminPanel', () => ({
 vi.mock('@/ReactAPM/Components/PreviewPanel/PreviewPanel', () => ({
   default: ({edition}: {edition: {mainText: string}}) => <div data-testid="edition-preview">{edition.mainText}</div>,
 }));
-vi.mock('react-bootstrap', () => ({Spinner: () => <span data-testid="spinner"/>}));
+vi.mock('react-bootstrap', () => ({
+  Spinner: () => <span data-testid="spinner"/>,
+  Button: ({children, ...props}: any) => <button {...props}>{children}</button>,
+}));
 
 // @ts-expect-error test-only global binding
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;

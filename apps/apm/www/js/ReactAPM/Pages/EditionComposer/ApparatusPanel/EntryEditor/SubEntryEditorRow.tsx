@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {Button} from "react-bootstrap";
 import {ArrowDown, ArrowUp, Pencil, Trash} from "react-bootstrap-icons";
 import {FmtText} from "@thomas-inst/fmt-text";
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
@@ -74,10 +75,10 @@ export default function SubEntryEditorRow({
   return <div className="sub-entry-editor-row">
     <div className="sub-entry-editor-main">
       <span className="order-buttons">
-        <button type="button" className="btn btn-sm move-up-btn" title="Move up" aria-label="Move up"
-                disabled={index === 0} onClick={() => onMove('up')}><ArrowUp/></button>
-        <button type="button" className="btn btn-sm move-down-btn" title="Move down" aria-label="Move down"
-                disabled={index === numSubEntries - 1} onClick={() => onMove('down')}><ArrowDown/></button>
+        <Button size="sm" className="move-btn move-up-btn" title="Move up" aria-label="Move up"
+                disabled={index === 0} onClick={() => onMove('up')}><ArrowUp/></Button>
+        <Button size="sm" className="move-btn move-down-btn" title="Move down" aria-label="Move down"
+                disabled={index === numSubEntries - 1} onClick={() => onMove('down')}><ArrowDown/></Button>
       </span>
       <span className="sub-entry-type-label">{getTypeLabel(subEntry)}</span>
       <span className="form-check sub-entry-enabled-check">
@@ -88,11 +89,11 @@ export default function SubEntryEditorRow({
                dangerouslySetInnerHTML={{__html: previewHtml}}/>
       </span>
       {isCustom && <span className="sub-entry-buttons">
-        <button type="button" className="btn btn-sm sub-entry-edit-btn" title="Show/Hide Editor"
+        <Button size="sm" className="sub-entry-edit-btn" title="Show/Hide Editor"
                 aria-label="Show/Hide Editor"
-                onClick={() => setEditorVisible(visible => !visible)}><Pencil/></button>
-        <button type="button" className="btn btn-sm sub-entry-delete-btn" title="Delete" aria-label="Delete"
-                onClick={() => setShowDeleteConfirm(true)}><Trash/></button>
+                onClick={() => setEditorVisible(visible => !visible)}><Pencil/></Button>
+        <Button size="sm" className="sub-entry-delete-btn" title="Delete" aria-label="Delete"
+                onClick={() => setShowDeleteConfirm(true)}><Trash/></Button>
       </span>}
     </div>
     {isCustom && subEntry.type === SubEntryType.FULL_CUSTOM && editorVisible && <div className="sub-entry-edit-div">

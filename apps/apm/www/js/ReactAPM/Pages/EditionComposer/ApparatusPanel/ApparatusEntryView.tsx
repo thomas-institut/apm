@@ -12,6 +12,7 @@ import {
 } from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/QuickEdit/QuickApparatusEditUtil";
 import {Pencil, PlusLg} from "react-bootstrap-icons";
 import {getTextDirectionForLang} from "@/toolbox/Util";
+import {Button} from "react-bootstrap";
 
 export interface ApparatusEntryViewProps {
   entry: ApparatusEntry;
@@ -79,12 +80,12 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
 
   const lastIndex = entry.subEntries.length - 1;
   const editEntryButton = showControls && onEditLemma !== undefined ? (
-    <button type="button" className="quick-edit-entry" aria-label="Edit apparatus entry"
+    <Button className="quick-edit-entry" aria-label="Edit apparatus entry"
             title="Edit apparatus entry" onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
               onEditLemma(entryIndex);
-            }}><Pencil/></button>
+            }}><Pencil/></Button>
   ) : null;
 
   return <Fragment>

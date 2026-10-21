@@ -56,11 +56,11 @@
     }
 
     .sub-entry {
-        padding-left: 0.25em;
+        padding: 0 0.15em;
     }
 
     .text-la .sub-entry {
-        padding-right: 0.5em;
+        /*padding-right: 0.5em;*/
     }
 
     .sub-entry-disabled {
@@ -80,10 +80,11 @@
     .sub-entry-wrapper {
         position: relative;
         display: inline-block;
+        padding:0 0.5em;
     }
 
     .sub-entries.selected-entry {
-        background-color: #f5f5f5;
+        background-color: #fdfbe9;
     }
 
     .sub-entry-controls, .quick-add-sub-entry, .quick-edit-entry {
@@ -97,6 +98,11 @@
     .quick-add-sub-entry, .quick-edit-entry {
         border: none;
         cursor: pointer;
+        background: transparent;
+        padding: 0;
+        margin: 0 0.25em;
+        color: #0b1695;
+        display: inline-block;
     }
 
     .quick-add-sub-entry {
@@ -111,8 +117,10 @@
         border: none;
         background: transparent;
         padding: 0;
-        line-height: 1;
+        color: #813c38;
         cursor: pointer;
+        display: inline-block;
+
     }
 
     .quick-edit-error {

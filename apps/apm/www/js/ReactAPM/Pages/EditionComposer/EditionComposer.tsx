@@ -2,7 +2,7 @@ import {useParams} from "react-router";
 import './EditionComposer.css';
 import {StatusPage} from "@/ReactAPM/Components/StatusPage/StatusPage";
 import {useContext, useEffect, useRef, useState, MouseEvent} from "react";
-import {Spinner} from "react-bootstrap";
+import {Button, Spinner} from "react-bootstrap";
 import {Arrow90degLeft, Arrow90degRight, ArrowCounterclockwise, Save} from "react-bootstrap-icons";
 import {AppContext} from "@/ReactAPM/App";
 import {CtDataInterface, CustomApparatusEntryInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
@@ -599,28 +599,28 @@ export default function EditionComposer() {
       {/* Right side controls */}
       <div className={'controls'}>
         {!foundBug && <>
-          <button type="button" aria-label="Undo" title={undoTitle} disabled={!canEdit || !canUndo}
+          <Button aria-label="Undo" title={undoTitle} disabled={!canEdit || !canUndo}
                   onClick={() => {
                     const state = history.undo();
                     setDisplayedHistoryState(state);
                   }}>
             <Arrow90degLeft/>
-          </button>
-          <button type="button" aria-label="Redo" title={redoTitle} disabled={!canEdit || !canRedo}
+          </Button>
+          <Button aria-label="Redo" title={redoTitle} disabled={!canEdit || !canRedo}
                   onClick={() => {
                     const state = history.redo();
                     setDisplayedHistoryState(state);
                   }}>
             <Arrow90degRight/>
-          </button>
-          <button type="button" aria-label="Save" title="Save edition changes"
+          </Button>
+          <Button aria-label="Save" title="Save edition changes"
                   disabled={!canEdit || !hasUnsavedChanges} onClick={handleOnClickSaveButton}>
             <Save/>
-          </button>
-          <button type="button" aria-label="Reset" title="Reset to last saved version"
+          </Button>
+          <Button aria-label="Reset" title="Reset to last saved version"
                   disabled={!canEdit || !hasUnsavedChanges} onClick={resetToSavedState}>
             <ArrowCounterclockwise/>
-          </button>
+          </Button>
         </>}
         {foundBug && <BugWarningButton foundBugDescription={foundBugDescription}/>}
       </div>

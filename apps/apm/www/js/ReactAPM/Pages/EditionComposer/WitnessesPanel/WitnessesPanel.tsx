@@ -1,4 +1,5 @@
 import {ArrowDown, ArrowUp} from 'react-bootstrap-icons';
+import {Button} from 'react-bootstrap';
 import {SiglaGroupInterface} from '@/CtData/CtDataInterface';
 import EditableTextField from '@/ReactAPM/Components/EditableTextField';
 import NiceTable, {NiceTableColumnDef} from '@/ReactAPM/Components/NiceTable/NiceTable';
@@ -68,15 +69,15 @@ export default function WitnessesPanel({
       title: 'Order',
       width: '4em',
       cellContent: (witness, rowIndex) => <div className="witness-order-controls">
-        <button type="button" aria-label={`Move ${witness.title} up`} title={`Move ${witness.title} up`}
+        <Button aria-label={`Move ${witness.title} up`} title={`Move ${witness.title} up`}
                 disabled={disabled || rowIndex === 0} onClick={() => onMoveWitness(witness.witnessIndex, 'up')}>
           <ArrowUp/>
-        </button>
-        <button type="button" aria-label={`Move ${witness.title} down`} title={`Move ${witness.title} down`}
+        </Button>
+        <Button aria-label={`Move ${witness.title} down`} title={`Move ${witness.title} down`}
                 disabled={disabled || rowIndex === displayedWitnesses.length - 1}
                 onClick={() => onMoveWitness(witness.witnessIndex, 'down')}>
           <ArrowDown/>
-        </button>
+        </Button>
       </div>
     },
     {

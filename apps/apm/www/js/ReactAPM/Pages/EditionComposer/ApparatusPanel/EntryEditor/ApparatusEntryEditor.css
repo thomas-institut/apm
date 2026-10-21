@@ -97,4 +97,10 @@
         font-size: 0.5rem;
         margin-left: 0.3rem;
     }
+
+    .move-btn {
+        border: none;
+        background-color: transparent;
+        color: inherit;
+    }
 }

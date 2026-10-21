@@ -1,5 +1,6 @@
 import {ReactNode, useId, useState} from "react";
-import {OverlayTrigger, Popover} from "react-bootstrap";
+import type {ComponentProps} from "react";
+import {Button, OverlayTrigger, Popover} from "react-bootstrap";
 import {OverlayInjectedProps} from "react-bootstrap/types";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
@@ -11,7 +12,9 @@ import {
 
 interface QuickSubEntryPopoverProps {
   triggerContent: ReactNode;
-  triggerClassName: string;
+  triggerClassName?: string;
+  triggerSize?: ComponentProps<typeof Button>['size'];
+  triggerVariant?: ComponentProps<typeof Button>['variant'];
   triggerLabel: string;
   triggerTitle?: string;
   disabled?: boolean;
@@ -26,9 +29,9 @@ interface QuickSubEntryPopoverProps {
 }
 
 /** A quick-add button with its form displayed in a popover. */
-export default function QuickSubEntryPopover({triggerContent, triggerClassName, triggerLabel, triggerTitle, disabled = false,
-                                               sigla, witnessOrder, siglaGroups, lemma, targetEntry, lang, onQuickAdd,
-                                               onEnableExisting}: QuickSubEntryPopoverProps) {
+export default function QuickSubEntryPopover({triggerContent, triggerClassName, triggerSize, triggerVariant, triggerLabel,
+                                               triggerTitle, disabled = false, sigla, witnessOrder, siglaGroups, lemma,
+                                               targetEntry, lang, onQuickAdd, onEnableExisting}: QuickSubEntryPopoverProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const id = useId();
@@ -63,12 +66,12 @@ export default function QuickSubEntryPopover({triggerContent, triggerClassName, 
 
   return <OverlayTrigger trigger={["click"]} placement="bottom" rootClose show={isOpen} onToggle={setIsOpen}
                          overlay={popover}>
-    <button type="button" className={triggerClassName} aria-label={triggerLabel}
+    <Button size={triggerSize} variant={triggerVariant} className={triggerClassName} aria-label={triggerLabel}
             title={triggerTitle ?? triggerLabel} disabled={disabled}
             onClick={(event) => {
               event.preventDefault();
               event.stopPropagation();
               setError(null);
-            }}>{triggerContent}</button>
+            }}>{triggerContent}</Button>
   </OverlayTrigger>;
 }

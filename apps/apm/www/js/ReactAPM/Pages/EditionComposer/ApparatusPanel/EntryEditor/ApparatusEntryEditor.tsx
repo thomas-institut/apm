@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {Button} from "react-bootstrap";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {LemmaType} from "@/Edition/EditionInterface";
@@ -239,14 +240,14 @@ export default function ApparatusEntryEditor({
             onFmtTextChange={(fmtText) => updateEntry(e => setSubEntryFmtText(e, index, fmtText))}
             onWitnessDataChange={(witnessData) => updateEntry(e => setSubEntryWitnessData(e, index, witnessData))}/>;
         })}
-        <button type="button" className="btn btn-sm btn-outline-secondary add-custom-sub-entry-btn" onClick={addSubEntry}>Add Custom</button>
+        <Button size="sm" variant="outline-secondary" className="add-custom-sub-entry-btn" onClick={addSubEntry}>Add Custom</Button>
       </div>
     </div>
     <div className="form-footer">
-      {hasChanges && <button type="button" className="btn btn-sm btn-danger update-btn" disabled={updating}
-                             onClick={handleUpdate}>Update Apparatus</button>}
-      <button type="button" className="btn btn-sm btn-primary cancel-btn" disabled={updating}
-              onClick={onCancel}>Cancel</button>
+      {hasChanges && <Button size="sm" variant="danger" className="update-btn" disabled={updating}
+                             onClick={handleUpdate}>Update Apparatus</Button>}
+      <Button variant="primary" className="cancel-btn" disabled={updating}
+              onClick={onCancel}>Cancel</Button>
       {updating && <span className="info-div">Updating edition...</span>}
     </div>
   </div>;

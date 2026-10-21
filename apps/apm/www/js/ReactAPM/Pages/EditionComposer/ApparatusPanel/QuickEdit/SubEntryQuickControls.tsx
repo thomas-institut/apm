@@ -1,5 +1,6 @@
 import {ReactNode} from "react";
 import {ArrowLeftShort, ArrowRightShort, Eye, EyeSlash} from "react-bootstrap-icons";
+import {Button} from "react-bootstrap";
 
 interface SubEntryQuickControlsProps {
   enabled: boolean;
@@ -22,14 +23,14 @@ export default function SubEntryQuickControls({enabled, children, isFirst, isLas
     fn();
   };
   return <span className="sub-entry-controls">
-    {!isFirst && <button type="button" className="quick-move-backward"
+    {!isFirst && <Button className="quick-move-backward"
                          aria-label="Move backward" title="Move backward"
-                         onClick={stop(() => onMove('backward'))}>{rtl ? <ArrowRightShort/> : <ArrowLeftShort/>}</button>}
+                         onClick={stop(() => onMove('backward'))}>{rtl ? <ArrowRightShort/> : <ArrowLeftShort/>}</Button>}
     {children}
-    <button type="button" className="quick-toggle" aria-label={enabled ? 'Disable sub-entry' : 'Enable sub-entry'}
-            title={enabled ? 'Disable' : 'Enable'} onClick={stop(onToggle)}>{enabled ? <Eye/> : <EyeSlash/>}</button>
-    {!isLast && <button type="button" className="quick-move-forward"
+    <Button className="quick-toggle" aria-label={enabled ? 'Disable sub-entry' : 'Enable sub-entry'}
+            title={enabled ? 'Disable' : 'Enable'} onClick={stop(onToggle)}>{enabled ? <Eye/> : <EyeSlash/>}</Button>
+    {!isLast && <Button className="quick-move-forward"
                         aria-label="Move forward" title="Move forward"
-                        onClick={stop(() => onMove('forward'))}>{rtl ? <ArrowLeftShort/> : <ArrowRightShort/>}</button>}
+                        onClick={stop(() => onMove('forward'))}>{rtl ? <ArrowLeftShort/> : <ArrowRightShort/>}</Button>}
   </span>;
 }

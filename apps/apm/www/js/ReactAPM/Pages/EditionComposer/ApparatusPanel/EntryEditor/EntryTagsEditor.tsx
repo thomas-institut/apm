@@ -1,4 +1,5 @@
 import {useId, useState} from "react";
+import {Button} from "react-bootstrap";
 
 const defaultTagHints = ['revise', 'remove', 'disjunctive error'];
 
@@ -26,7 +27,7 @@ export default function EntryTagsEditor({tags, hints = defaultTagHints, onChange
   return <div className="entry-tags-editor">
     {tags.map(tag => <span key={tag} className="badge bg-secondary entry-tag">
       {tag}
-      <button type="button" className="btn-close btn-close-white entry-tag-remove" aria-label={`Remove tag ${tag}`}
+      <Button className="btn-close btn-close-white entry-tag-remove" aria-label={`Remove tag ${tag}`}
               onClick={() => onChange(tags.filter(t => t !== tag))}/>
     </span>)}
     <input type="text" list={listId} value={newTag} placeholder="Add tag" aria-label="New tag"
@@ -40,6 +41,6 @@ export default function EntryTagsEditor({tags, hints = defaultTagHints, onChange
     <datalist id={listId}>
       {hints.filter(hint => !tags.includes(hint)).map(hint => <option key={hint} value={hint}/>)}
     </datalist>
-    <button type="button" className="btn btn-sm btn-outline-secondary" onClick={addTag}>Add</button>
+    <Button variant="outline-secondary" size='sm' onClick={addTag}>Add</Button>
   </div>;
 }

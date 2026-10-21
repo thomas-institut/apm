@@ -1,4 +1,5 @@
 import {useState} from "react";
+import {Button} from "react-bootstrap";
 import {SiglaGroup} from "@/Edition/SiglaGroup";
 
 interface WitnessSelectorProps {
@@ -34,9 +35,9 @@ export default function WitnessSelector({sigla, witnessOrder, siglaGroups, selec
   const summary = orderedSelected.length === 0 ? 'Witnesses' : orderedSelected.map((w) => sigla[w]).join('');
 
   return <span className="quick-witness-selector">
-    <button type="button" className="quick-witness-toggle" aria-expanded={open}
+    <Button className="quick-witness-toggle" aria-expanded={open}
             aria-label="Select witnesses" onClick={() => setOpen(!open)}>{summary} ▾
-    </button>
+    </Button>
     {open && <div className="quick-witness-list" role="group" aria-label="Witnesses">
       {witnessOrder.map((witnessIndex) => <label key={`w-${witnessIndex}`} className="quick-witness-item">
         <input type="checkbox" checked={selected.includes(witnessIndex)}

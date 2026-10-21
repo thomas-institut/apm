@@ -46,7 +46,7 @@ export default function MainTextQuickAddOverlay({anchor, targetApparatusType, le
       <Popover.Body>
         <div className="quick-add-buttons">
           <QuickSubEntryPopover triggerContent={<><PlusLg/> Quick add{noTarget ? '' : ` ${targetApparatusType}`}</>}
-                                triggerClassName="btn btn-sm btn-outline-secondary" triggerLabel="Quick add"
+                                triggerSize="sm" triggerVariant="outline-secondary" triggerLabel="Quick add"
                                 triggerTitle={noTarget ? 'No apparatus visible: choose a specific apparatus' : 'Quick add'}
                                 disabled={noTarget} sigla={sigla} witnessOrder={witnessOrder} siglaGroups={siglaGroups}
                                 lemma={lemmaText} targetEntry={targetEntry} lang={lang} onQuickAdd={onQuickAdd}

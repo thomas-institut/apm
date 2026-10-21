@@ -66,9 +66,9 @@ export default function QuickSubEntryForm({sigla, witnessOrder, siglaGroups, tar
            autoFocus={true} size={12} onChange={(event) => setText(event.currentTarget.value)}/>
     <WitnessSelector sigla={sigla} witnessOrder={witnessOrder} siglaGroups={siglaGroups}
                      selected={witnesses} onChange={setWitnesses}/>
-    <Button className="quick-confirm btn-primary" aria-label="Confirm" disabled={!isValid}
+    <Button className="quick-confirm" variant="primary" aria-label="Confirm" disabled={!isValid}
             onClick={confirm}><Check/></Button>
-    <Button className="quick-cancel btn btn-outline-primary" aria-label="Cancel" onClick={onCancel}><X/></Button>
+    <Button className="quick-cancel" variant="outline-primary" aria-label="Cancel" onClick={onCancel}><X/></Button>
     {identicalIndex !== -1 && <span className="quick-form-message text-danger">
       {identicalIsDisabled ? 'Identical to a disabled sub-entry' : 'Identical to an existing sub-entry'}
       {identicalIsDisabled && onEnableExisting !== undefined &&

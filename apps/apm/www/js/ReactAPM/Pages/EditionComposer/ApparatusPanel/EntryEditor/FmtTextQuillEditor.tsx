@@ -1,4 +1,5 @@
 import {JSX, useEffect, useRef, useState} from "react";
+import {Button} from "react-bootstrap";
 import {TypeBold, TypeItalic} from "react-bootstrap-icons";
 import 'quill/dist/quill.core.css';
 import Quill from '@/QuillLoader';
@@ -119,17 +120,17 @@ export default function FmtTextQuillEditor({lang, initialText, onChange}: FmtTex
   return <div className={`fmt-text-quill-editor text-${lang}`}>
     <div className="fte-toolbar">
       {formatButtons.map(({format, title, content}) =>
-        <button key={format} type="button" title={title}
+        <Button key={format} type="button" title={title}
                 className={`${format}-btn${activeFormats[format] ? ' on' : ''}`}
                 onMouseDown={(ev) => ev.preventDefault()}
-                onClick={() => toggleFormat(format)}>{content}</button>)}
+                onClick={() => toggleFormat(format)}>{content}</Button>)}
       <span className="mte-tb-sep">&nbsp;</span>
       {Object.keys(characters).map((key) => {
         const definition = characters[key];
         const character = isRtl(lang) && definition.rtlVersion !== undefined ? definition.rtlVersion : definition.character;
-        return <button key={key} type="button" title={definition.title} className={`${key}-btn`}
+        return <Button key={key} type="button" title={definition.title} className={`${key}-btn`}
                        onMouseDown={(ev) => ev.preventDefault()}
-                       onClick={() => insertCharacter(definition.character)}>{character}</button>;
+                       onClick={() => insertCharacter(definition.character)}>{character}</Button>;
       })}
     </div>
     <div ref={editorElementRef} className={`fte-editor text-${lang}`}></div>

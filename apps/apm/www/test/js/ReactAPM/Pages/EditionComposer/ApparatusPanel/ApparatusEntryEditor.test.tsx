@@ -42,7 +42,7 @@ async function renderEditor(onUpdate = vi.fn(), onCancel = vi.fn()) {
   await act(async () => {
     root.render(<div onClick={onParentClick}>
       <ApparatusEntryEditor entry={buildEntry()} ctRange={{from: 2, to: 3}} lang="la"
-                            sigla={['A', 'B']} siglaGroups={[]}
+                            sigla={['A', 'B']}
                             onUpdate={onUpdate} onCancel={onCancel}/>
     </div>);
   });
@@ -63,6 +63,7 @@ describe('ApparatusEntryEditor', () => {
     expect(container.querySelector('.ct-table-cols')!.textContent).toBe('3\u20134');
     expect(container.querySelector('.update-btn')).toBeNull();
     expect(container.querySelectorAll('.sub-entry-editor-row')).toHaveLength(1);
+    expect(container.querySelector('.sub-entry-preview .sub-entry')).not.toBeNull();
     await act(async () => root.unmount());
   });
 

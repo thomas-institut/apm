@@ -1,7 +1,6 @@
 import {useState} from "react";
 import {Button} from "react-bootstrap";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
-import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {LemmaType} from "@/Edition/EditionInterface";
 import {ApparatusCommon} from "@/EditionComposer/ApparatusCommon";
 import {varsAreEqual} from "@/lib/ToolBox/ArrayUtil";
@@ -34,7 +33,6 @@ interface ApparatusEntryEditorProps {
   ctRange: CtRange;
   lang: string;
   sigla: string[];
-  siglaGroups: SiglaGroup[];
   /** Called with the edited entry when the user clicks on 'Update Apparatus'. */
   onUpdate: (editedEntry: ApparatusEntry) => void | Promise<void>;
   onCancel: () => void;
@@ -96,7 +94,7 @@ function getCtColumnsText(ctRange: CtRange): string {
  * clicks on the 'Update Apparatus' button.
  */
 export default function ApparatusEntryEditor({
-                                               entry, ctRange, lang, sigla, siglaGroups, onUpdate, onCancel
+                                               entry, ctRange, lang, sigla, onUpdate, onCancel
                                              }: ApparatusEntryEditorProps) {
   const [originalEntry] = useState(() => ApparatusEntry.clone(entry));
   const [state, setState] = useState<EditorState>(() => getInitialState(ApparatusEntry.clone(entry)));
@@ -231,7 +229,6 @@ export default function ApparatusEntryEditor({
             numSubEntries={edited.subEntries.length}
             lang={lang}
             sigla={sigla}
-            siglaGroups={siglaGroups}
             initiallyEditing={rowKey === state.newRowKey}
             onEnabledChange={(enabled) => updateEntry(e => setSubEntryEnabled(e, index, enabled))}
             onMove={(direction) => move(index, direction)}

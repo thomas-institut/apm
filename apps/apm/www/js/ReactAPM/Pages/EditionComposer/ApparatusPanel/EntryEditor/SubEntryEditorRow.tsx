@@ -3,13 +3,12 @@ import {Button} from "react-bootstrap";
 import {ArrowDown, ArrowUp, Pencil, Trash} from "react-bootstrap-icons";
 import {FmtText} from "@thomas-inst/fmt-text";
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
-import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import * as SubEntryType from "@/Edition/SubEntryType";
 import {ApparatusCommon} from "@/EditionComposer/ApparatusCommon";
-import {trimWhiteSpace} from "@/toolbox/Util";
 import MultiToggle from "@/ReactAPM/Components/MultiToggle/MultiToggle";
 import ConfirmDialog from "@/ReactAPM/Components/ConfirmDialog";
+import SubEntry from "@/ReactAPM/Pages/EditionComposer/SubEntry";
 import FmtTextQuillEditor from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/EntryEditor/FmtTextQuillEditor";
 import WitnessDataSelector from "@/ReactAPM/Pages/EditionComposer/ApparatusPanel/EntryEditor/WitnessDataSelector";
 
@@ -19,7 +18,6 @@ interface SubEntryEditorRowProps {
   numSubEntries: number;
   lang: string;
   sigla: string[];
-  siglaGroups: SiglaGroup[];
   initiallyEditing?: boolean;
   onEnabledChange: (enabled: boolean) => void;
   onMove: (direction: 'up' | 'down') => void;
@@ -55,18 +53,13 @@ function getTypeLabel(subEntry: ApparatusSubEntry): string {
 }
 
 export default function SubEntryEditorRow({
-                                            subEntry, index, numSubEntries, lang, sigla, siglaGroups, initiallyEditing = false,
+                                            subEntry, index, numSubEntries, lang, sigla, initiallyEditing = false,
                                             onEnabledChange, onMove, onDelete, onKeywordChange, onFmtTextChange,
                                             onWitnessDataChange
                                           }: SubEntryEditorRowProps) {
   const [editorVisible, setEditorVisible] = useState(initiallyEditing);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const isCustom = subEntry.source === 'user';
-
-  let previewHtml = trimWhiteSpace(ApparatusCommon.genSubEntryHtmlContent(lang, subEntry, sigla, siglaGroups, true));
-  if (previewHtml === '') {
-    previewHtml = '<span class="empty-sub-entry">--empty--</span>';
-  }
 
   const omissionLabel = ApparatusCommon.getKeywordString('omission', lang);
   const additionLabel = ApparatusCommon.getKeywordString('addition', lang);
@@ -85,8 +78,9 @@ export default function SubEntryEditorRow({
         <input id={checkboxId} className="form-check-input sub-entry-enabled-checkbox" type="checkbox"
                checked={subEntry.enabled} aria-label="Enabled"
                onChange={(ev) => onEnabledChange(ev.target.checked)}/>
-        <label htmlFor={checkboxId} className={`form-check-label apparatus text-${lang} sub-entry-preview`}
-               dangerouslySetInnerHTML={{__html: previewHtml}}/>
+        <label htmlFor={checkboxId} className={`form-check-label apparatus text-${lang} sub-entry-preview`}>
+          <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>
+        </label>
       </span>
       {isCustom && <span className="sub-entry-buttons">
         <Button size="sm" className="sub-entry-edit-btn" title="Show/Hide Editor"
@@ -116,8 +110,9 @@ export default function SubEntryEditorRow({
                    acceptButtonLabel="Delete" cancelButtonLabel="Cancel"
                    body={<>
                      <p>Are you sure you want to delete this custom entry?</p>
-                     <p className={`apparatus text-${lang} sub-entry-delete-preview`}
-                        dangerouslySetInnerHTML={{__html: previewHtml}}/>
+                     <p className={`apparatus text-${lang} sub-entry-delete-preview`}>
+                       <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>
+                     </p>
                      <p>You can just disable it in case you change your mind about displaying it in the apparatus</p>
                    </>}/>
   </div>;

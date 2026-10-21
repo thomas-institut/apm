@@ -167,6 +167,7 @@ export function ApparatusPanel({
           ctRange={editedEntryInfo.ctRange}
           lang={lang}
           sigla={sigla}
+          siglaGroups={siglaGroups}
           onUpdate={updateEntry}
           onCancel={() => setEditedEntryInfo(null)}/>}
     </PanelContent>

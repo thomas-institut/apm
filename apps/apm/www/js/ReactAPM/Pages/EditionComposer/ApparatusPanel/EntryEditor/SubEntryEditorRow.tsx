@@ -3,6 +3,7 @@ import {Button} from "react-bootstrap";
 import {ArrowDown, ArrowUp, Pencil, Trash} from "react-bootstrap-icons";
 import {FmtText} from "@thomas-inst/fmt-text";
 import {ApparatusSubEntry} from "@/Edition/ApparatusSubEntry";
+import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {WitnessDataItem} from "@/Edition/WitnessDataItem";
 import * as SubEntryType from "@/Edition/SubEntryType";
 import {ApparatusCommon} from "@/EditionComposer/ApparatusCommon";
@@ -18,6 +19,7 @@ interface SubEntryEditorRowProps {
   numSubEntries: number;
   lang: string;
   sigla: string[];
+  siglaGroups: SiglaGroup[];
   initiallyEditing?: boolean;
   onEnabledChange: (enabled: boolean) => void;
   onMove: (direction: 'up' | 'down') => void;
@@ -53,7 +55,7 @@ function getTypeLabel(subEntry: ApparatusSubEntry): string {
 }
 
 export default function SubEntryEditorRow({
-                                            subEntry, index, numSubEntries, lang, sigla, initiallyEditing = false,
+                                            subEntry, index, numSubEntries, lang, sigla, siglaGroups, initiallyEditing = false,
                                             onEnabledChange, onMove, onDelete, onKeywordChange, onFmtTextChange,
                                             onWitnessDataChange
                                           }: SubEntryEditorRowProps) {
@@ -79,7 +81,8 @@ export default function SubEntryEditorRow({
                checked={subEntry.enabled} aria-label="Enabled"
                onChange={(ev) => onEnabledChange(ev.target.checked)}/>
         <label htmlFor={checkboxId} className={`form-check-label apparatus text-${lang} sub-entry-preview`}>
-          <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>
+          <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla} lang={lang}
+                    siglaGroups={siglaGroups} fullSiglaInBrackets={true}/>
         </label>
       </span>
       {isCustom && <span className="sub-entry-buttons">
@@ -111,7 +114,8 @@ export default function SubEntryEditorRow({
                    body={<>
                      <p>Are you sure you want to delete this custom entry?</p>
                      <p className={`apparatus text-${lang} sub-entry-delete-preview`}>
-                       <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>
+                       <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla} lang={lang}
+                    siglaGroups={siglaGroups} fullSiglaInBrackets={true}/>
                      </p>
                      <p>You can just disable it in case you change your mind about displaying it in the apparatus</p>
                    </>}/>

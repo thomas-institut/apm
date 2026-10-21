@@ -42,7 +42,7 @@ async function renderEditor(onUpdate = vi.fn(), onCancel = vi.fn()) {
   await act(async () => {
     root.render(<div onClick={onParentClick}>
       <ApparatusEntryEditor entry={buildEntry()} ctRange={{from: 2, to: 3}} lang="la"
-                            sigla={['A', 'B']}
+                            sigla={['A', 'B']} siglaGroups={[]}
                             onUpdate={onUpdate} onCancel={onCancel}/>
     </div>);
   });

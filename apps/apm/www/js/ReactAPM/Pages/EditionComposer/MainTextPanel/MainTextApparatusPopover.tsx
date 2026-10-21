@@ -2,6 +2,7 @@ import {fromCompactFmtText} from "@thomas-inst/fmt-text";
 import {Apparatus} from "@/Edition/Apparatus";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import FmtTextRenderer from "@/ReactAPM/Components/FmtTextRenderer";
+import {SiglaGroup} from "@/Edition/SiglaGroup";
 import SubEntry from "@/ReactAPM/Pages/EditionComposer/SubEntry";
 import {Popover} from "react-bootstrap";
 import {OverlayInjectedProps} from "react-bootstrap/types";
@@ -15,6 +16,8 @@ interface MainTextApparatusPopoverProps extends Partial<OverlayInjectedProps> {
   apparatuses: Apparatus[];
   entryReferences: MainTextApparatusEntryReference[];
   sigla: string[];
+  siglaGroups?: SiglaGroup[];
+  lang?: string;
   tokenIndex: number;
   tokenText: string;
   lineNumber?: number;
@@ -46,7 +49,7 @@ const getGroupedEntries = (apparatuses: Apparatus[], references: MainTextApparat
 const getLemma = (entry: ApparatusEntry): string =>
   entry.lemmaType === 'custom' ? entry.customLemmaText : entry.mainTextWords.join(' ');
 
-export default function MainTextApparatusPopover({apparatuses, entryReferences, sigla, tokenIndex,
+export default function MainTextApparatusPopover({apparatuses, entryReferences, sigla, siglaGroups, lang, tokenIndex,
                                                   tokenText, lineNumber, ...overlayProps}: MainTextApparatusPopoverProps) {
   const groupedEntries = getGroupedEntries(apparatuses, entryReferences);
 
@@ -64,7 +67,8 @@ export default function MainTextApparatusPopover({apparatuses, entryReferences, 
           </div>
           <ul>
             {entry.subEntries.map((subEntry, subEntryIndex) => <li key={subEntryIndex}>
-              <SubEntry subEntry={subEntry} subEntryIndex={subEntryIndex} sigla={sigla}/>
+              <SubEntry subEntry={subEntry} subEntryIndex={subEntryIndex} sigla={sigla} lang={lang}
+                        siglaGroups={siglaGroups}/>
             </li>)}
           </ul>
         </div>)}

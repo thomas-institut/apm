@@ -186,6 +186,7 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
                        selectedTokenRange={apparatusSelection ?? selectedTokenRange}
                        mode={mode} canSelectTokens={canEdit} clearSelectionSignal={clearSelectionSignal}
                        apparatuses={apparatuses} activeApparatusIndex={activeApparatusIndex} sigla={sigla}
+                       siglaGroups={siglaGroups} lang={ctData.lang}
                        apparatusHighlightSelection={mode === 'view' ? apparatusHighlightSelection : 'none'}
                        showApparatusPopovers={mode === 'view' && showApparatusPopovers}
                        onHoverApparatusEntries={mode === 'view' ? onHoverApparatusEntries : undefined}

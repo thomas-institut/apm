@@ -27,7 +27,7 @@ describe('MainTextApparatusPopover', () => {
     subEntry.type = 'omission';
     subEntry.enabled = false;
     subEntry.fmtText = fromString('missing words');
-    subEntry.witnessData.push(new WitnessDataItem().setWitnessIndex(0));
+    subEntry.witnessData.push(new WitnessDataItem().setWitnessIndex(0).setHand(0));
     criticalEntry.subEntries.push(subEntry);
     const secondSubEntry = new ApparatusSubEntry();
     secondSubEntry.type = 'addition';
@@ -62,7 +62,8 @@ describe('MainTextApparatusPopover', () => {
     expect(container.textContent).toContain('2–3');
     expect(container.textContent).toContain('[lorem ipsum]');
     expect(container.textContent).toContain('[custom lemma]');
-    expect(container.textContent).toContain('missing words');
+    expect(container.textContent).toContain('om. A');
+    expect(container.textContent).not.toContain('missing words');
     expect(container.textContent).toContain('added words');
     expect(container.textContent).toContain('om.');
     expect(container.textContent).toContain('A');

@@ -116,8 +116,8 @@ function ApparatusEntryViewComponent({entry, entryIndex, isFirstInRange, isSelec
                                                  subEntryIndex: index,
                                                  direction
                                                })}>
-          <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>
-        </SubEntryQuickControls> : <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla}/>}
+          <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla} lang={lang} siglaGroups={siglaGroups}/>
+        </SubEntryQuickControls> : <SubEntry subEntry={subEntry} subEntryIndex={index} sigla={sigla} lang={lang} siglaGroups={siglaGroups}/>}
         {showControls && index === lastIndex && <>
           <QuickSubEntryPopover triggerContent={<PlusLg/>}
                                 triggerClassName="quick-add-sub-entry"

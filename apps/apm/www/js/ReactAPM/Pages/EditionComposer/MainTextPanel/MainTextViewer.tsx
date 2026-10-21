@@ -1,3 +1,4 @@
+import {SiglaGroup} from "@/Edition/SiglaGroup";
 import {MainText} from "@/Edition/MainText";
 import {MainTextToken} from "@/Edition/MainTextToken";
 import {MainTextParagraph} from "@/Edition/MainTextParagraph";
@@ -42,6 +43,8 @@ interface MainTextViewerProps {
   activeApparatusIndex?: number | null,
   apparatusHighlightSelection?: ApparatusHighlightSelection,
   sigla?: string[],
+  siglaGroups?: SiglaGroup[],
+  lang?: string,
   showApparatusPopovers?: boolean,
   onHoverApparatusEntries?: (entries: MainTextApparatusEntryReference[] | null) => void,
   onSelectionChange?: (range: MainTextTokenRange | null) => void,
@@ -68,7 +71,7 @@ const lineNumberingsAreEqual = (first: MainTextIndexToLineMap, second: MainTextI
 
 export default function MainTextViewer({mainText, indexMap, className = '', highlightedTokenRange = null,
                                         selectedTokenRange = null,
-                                        mode = 'view', canSelectTokens = false, clearSelectionSignal = 0, apparatuses = [], sigla = [],
+                                        mode = 'view', canSelectTokens = false, clearSelectionSignal = 0, apparatuses = [], sigla = [], siglaGroups, lang,
                                         activeApparatusIndex = null,
                                         apparatusHighlightSelection = 'active', showApparatusPopovers = true,
                                         onHoverApparatusEntries, onSelectionChange,
@@ -222,7 +225,7 @@ export default function MainTextViewer({mainText, indexMap, className = '', high
         return <OverlayTrigger key={key} trigger={['hover', 'focus']} placement="bottom"
                               overlay={<MainTextApparatusPopover apparatuses={apparatuses}
                                                                 entryReferences={apparatusEntries}
-                                                                sigla={sigla} tokenIndex={originalIndex ?? -1}
+                                                                sigla={sigla} siglaGroups={siglaGroups} lang={lang} tokenIndex={originalIndex ?? -1}
                                                                 tokenText={token.getPlainText()}
                                                                 lineNumber={originalIndex === undefined ? undefined :
                                                                   lineNumbersByToken.get(originalIndex)}/>}>{element}</OverlayTrigger>;

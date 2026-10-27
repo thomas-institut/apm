@@ -65,7 +65,9 @@ class ApiSearch extends ApiController
         $corpus = $postParams['corpus'];
         $searchedPhrase = $this->removeSpaces(strtolower($postParams['searched_phrase'])); // Lower-case and without additional blanks
         $title = $postParams['title'];
-        $creator = $postParams['creator'];
+        $creatorId = isset($postParams['creatorId']) && $postParams['creatorId'] !== ''
+            ? (int)$postParams['creatorId']
+            : 0;
         $keywordDistance = $postParams['keywordDistance'];
         $lemmatize = filter_var($postParams['lemmatize'], FILTER_VALIDATE_BOOLEAN);
         $lang = $postParams['lang'] ?? 'detect';
@@ -115,7 +117,7 @@ class ApiSearch extends ApiController
                 $lemmatize,
                 $queryPage,
                 $title,
-                $creator,
+                $creatorId,
                 $pageSize
             );
         } catch (SearchManagerException $e) {
@@ -286,19 +288,25 @@ class ApiSearch extends ApiController
             $transcriptions = $searchIndexManager->getTranscribedDocuments();
             $transcribers = $searchIndexManager->getTranscriberNames();
             $cache->set(CacheKey::ApiSearchTranscriptions, serialize($transcriptions));
-            $cache->set(CacheKey::ApiSearchTranscribers, serialize($transcribers));
+            // Empty person lists are not cached
+            if ($transcribers !== []) {
+                $cache->set(CacheKey::ApiSearchTranscribers, serialize($transcribers));
+            }
 
         } else if ($whichIndex === 'editions') {
             $editions = $searchIndexManager->getEditionTitles();
-            $editors = $searchIndexManager->getEditors();
+            $editors = $searchIndexManager->getEditorNames();
             $cache->set(CacheKey::ApiSearchEditions, serialize($editions));
-            $cache->set(CacheKey::ApiSearchEditors, serialize($editors));
+            // Empty person lists are not cached
+            if ($editors !== []) {
+                $cache->set(CacheKey::ApiSearchEditors, serialize($editors));
+            }
         }
 
         return true;
     }
 
-    private function getStringArray(Request $request, Response $response, string $cacheKey): Response
+    private function getListResponse(Request $request, Response $response, string $cacheKey): Response
     {
 
         $sm = $this->searchManager;
@@ -320,7 +328,7 @@ class ApiSearch extends ApiController
                 break;
 
             case CacheKey::ApiSearchEditors:
-                $data = $sm->getEditors();
+                $data = $sm->getEditorNames();
                 $dataTitle = 'editors';
                 break;
 
@@ -347,19 +355,19 @@ class ApiSearch extends ApiController
     public function getTranscriptionTitles(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        return $this->getStringArray($request, $response, CacheKey::ApiSearchTranscriptions);
+        return $this->getListResponse($request, $response, CacheKey::ApiSearchTranscriptions);
     }
 
     /**
-     * returns all transcriber names from the cache or the corresponding indices
+     * returns all transcribers as id/name pairs from the cache or the corresponding indices
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function getTranscribers(Request $request, Response $response): Response
+    public function getTranscriberNames(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        return $this->getStringArray($request, $response, CacheKey::ApiSearchTranscribers);
+        return $this->getListResponse($request, $response, CacheKey::ApiSearchTranscribers);
     }
 
     /**
@@ -371,19 +379,19 @@ class ApiSearch extends ApiController
     public function getEditionTitles(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        return $this->getStringArray($request, $response, CacheKey::ApiSearchEditions);
+        return $this->getListResponse($request, $response, CacheKey::ApiSearchEditions);
     }
 
     /**
-     * returns all editor names from the cache or the corresponding indices
+     * returns all editors as id/name pairs from the cache or the corresponding indices
      * @param Request $request
      * @param Response $response
      * @return Response
      */
-    public function getEditors(Request $request, Response $response): Response
+    public function getEditorNames(Request $request, Response $response): Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        return $this->getStringArray($request, $response, CacheKey::ApiSearchEditors);
+        return $this->getListResponse($request, $response, CacheKey::ApiSearchEditors);
     }
 
 }

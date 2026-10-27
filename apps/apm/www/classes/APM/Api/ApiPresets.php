@@ -22,22 +22,19 @@ namespace APM\Api;
 
 use APM\System\Person\PersonManagerInterface;
 use APM\System\Person\PersonNotFoundException;
-
 use APM\System\Preset\Preset;
 use APM\System\Preset\PresetManager;
-use APM\System\SystemManager;
+use APM\System\PresetFactory;
 use APM\System\WitnessSystemId;
 use APM\System\WitnessType;
 use APM\ToolBox\HttpStatus;
+use APM\ToolBox\Set;
 use InvalidArgumentException;
 use Psr\Container\ContainerExceptionInterface;
 use Psr\Container\ContainerInterface;
 use Psr\Container\NotFoundExceptionInterface;
-use Psr\Http\Message\ServerRequestInterface as Request;
 use Psr\Http\Message\ResponseInterface as Response;
-
-use APM\ToolBox\Set;
-use APM\System\PresetFactory;
+use Psr\Http\Message\ServerRequestInterface as Request;
 
 /**
  * Description of ApiPresets
@@ -72,7 +69,6 @@ class ApiPresets extends ApiController
     }
 
 
-
     /**
      * API call to get all the presets by tool
      *
@@ -92,57 +88,59 @@ class ApiPresets extends ApiController
      * @param Response $response
      * @return Response
      */
-    public function  getPresets(Request $request,  Response $response) : Response{
+    public function getPresets(Request $request, Response $response): Response
+    {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        
+
         $inputData = $this->checkAndGetInputData($request, $response, ['tool', 'userId', 'keyArrayToMatch']);
         if (!is_array($inputData)) {
             return $inputData;
         }
-        
+
+        $this->logger->debug("Input data received", ['inputData' => $inputData]);
+
         $tool = $inputData['tool'];
         $userId = intval($inputData['userId']);
         $keyArrayToMatch = $inputData['keyArrayToMatch'];
 
         $presetManager = $this->presetManager;
-        
+
         // Check that the input parameters make sense
-        if (!is_string($tool) || $tool==='') {
+        if (!is_string($tool) || $tool === '') {
             $this->logger->error("Field 'tool' must be a non-empty string",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_WRONG_TYPE,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_WRONG_TYPE,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
-        
+
         if (!$presetManager->isToolValid($tool)) {
             $this->logger->error("Unrecognized tool",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_UNRECOGNIZED_TOOL], 409);
         }
-        
-        
+
+
         if (!is_array($keyArrayToMatch)) {
             $this->logger->error("Field 'keyArrayToMatch' must be an array",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_WRONG_TYPE,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_WRONG_TYPE,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
 
 
-        
         if ($userId < 0) {
             $presets = $presetManager->getPresetsByToolAndKeys($tool, $keyArrayToMatch);
         } else {
             $presets = $presetManager->getPresetsByToolUserIdAndKeys($tool, $userId, $keyArrayToMatch);
         }
-        
+
         $presetsInArrayForm = [];
-        foreach($presets as $preset) {
+        foreach ($presets as $preset) {
             /** @var Preset $preset */
             $presetsInArrayForm[] = [
                 'presetId' => $preset->getPresetId(),
@@ -152,9 +150,9 @@ class ApiPresets extends ApiController
             ];
         }
 
-        return $this->responseWithJson($response,[
+        return $this->responseWithJson($response, [
             'presets' => $presetsInArrayForm,
-            ]);
+        ]);
     }
 
     /**
@@ -176,7 +174,7 @@ class ApiPresets extends ApiController
      * @throws ContainerExceptionInterface
      * @throws NotFoundExceptionInterface
      */
-    public function  getAutomaticCollationPresets(Request $request, Response $response): Response
+    public function getAutomaticCollationPresets(Request $request, Response $response): Response
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -187,40 +185,38 @@ class ApiPresets extends ApiController
             return $this->responseWithJson($response, ['error' => self::API_ERROR_BAD_REQUEST], HttpStatus::BAD_REQUEST);
         }
 
-        foreach (['userId', 'lang', 'witnesses'] as $var){
+        foreach (['userId', 'lang', 'witnesses'] as $var) {
             if (!isset($inputData[$var])) {
                 $this->logger->error("Required field '$var' not present");
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_BAD_REQUEST], HttpStatus::BAD_REQUEST);
             }
         }
         $tool = PresetManager::TOOL_AUTOMATIC_COLLATION;
-        
+
         $userId = intval($inputData['userId']);
         $lang = $inputData['lang'];
         $requestedWitnesses = $inputData['witnesses'];
 
 
-
-        
         // Check that the input parameters make sense
         if (!is_array($requestedWitnesses)) {
             $this->logger->error("Field 'witnesses' must be an array",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_WRONG_TYPE,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_WRONG_TYPE,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
-        
+
         if (count($requestedWitnesses) < 2) {
             $this->logger->error("Field 'witnesses' must have 2 or more elements",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_NOT_ENOUGH_WITNESSES,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_NOT_ENOUGH_WITNESSES,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_ENOUGH_WITNESSES], 409);
         }
         // deal with old code calling using only docIds as witnesses
         $witnesses = [];
-        foreach($requestedWitnesses as $requestedWitness) {
+        foreach ($requestedWitnesses as $requestedWitness) {
             if (is_int($requestedWitnesses)) {
                 $witnesses[] = 'fullTx-' . $requestedWitness . '-A';
                 $this->logger->warning('Old code requesting preset for doc ' . $requestedWitness);
@@ -237,11 +233,11 @@ class ApiPresets extends ApiController
         } else {
             $presets = $presetManager->getPresetsByToolUserIdAndKeys($tool, $userId, ['lang' => $lang]);
         }
-        
+
         // filter using the witness list
         $filteredPresets = [];
         $witnessSet = new Set($witnesses);
-        foreach($presets as $preset) {
+        foreach ($presets as $preset) {
             $presetWitnessesSet = new Set($preset->getData()['witnesses']);
             if ($presetWitnessesSet->isSubsetOf($witnessSet)) {
                 $filteredPresets[] = $preset;
@@ -251,7 +247,7 @@ class ApiPresets extends ApiController
         /** @var PersonManagerInterface $personManager */
         $personManager = $this->container->get(PersonManagerInterface::class);
         $presetsInArrayForm = [];
-        foreach($filteredPresets as $preset) {
+        foreach ($filteredPresets as $preset) {
             $userId = $preset->getUserId();
             $userInfo = $personManager->getPersonEssentialData($userId);
             $presetsInArrayForm[] = [
@@ -263,10 +259,10 @@ class ApiPresets extends ApiController
             ];
         }
 
-        return $this->responseWithJson($response,[
+        return $this->responseWithJson($response, [
             'presets' => $presetsInArrayForm,
 //            'runTime' => $this->getProfilerTotalTime()
-            ]);
+        ]);
     }
 
 
@@ -291,7 +287,7 @@ class ApiPresets extends ApiController
      * @throws NotFoundExceptionInterface
      * @throws PersonNotFoundException
      */
-    public function  getSiglaPresets(Request $request, Response $response): Response
+    public function getSiglaPresets(Request $request, Response $response): Response
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
@@ -304,25 +300,25 @@ class ApiPresets extends ApiController
         // Check that the input parameters make sense
         if ($lang === null || $requestedWitnesses === null) {
             $this->logger->error("No 'lang' or 'witnesses' field present in POST data",
-                [ 'apiUserId' => $this->apiUserId,
+                ['apiUserId' => $this->apiUserId,
                     'apiError' => self::API_ERROR_WRONG_TYPE,
-                    'data' => $inputData ]);
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
 
         if (!is_array($requestedWitnesses)) {
             $this->logger->error("Field 'witnesses' must be an array",
-                [ 'apiUserId' => $this->apiUserId,
+                ['apiUserId' => $this->apiUserId,
                     'apiError' => self::API_ERROR_WRONG_TYPE,
-                    'data' => $inputData ]);
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_WRONG_TYPE], 409);
         }
 
-        $this->codeDebug('Getting sigla presets', [ 'lang' => $lang, 'userId' => $userId, 'witnesses' => $requestedWitnesses]);
+        $this->codeDebug('Getting sigla presets', ['lang' => $lang, 'userId' => $userId, 'witnesses' => $requestedWitnesses]);
 
         // convert requestedWitnesses Ids to short form
-        $witnessesToLookUp  = [];
-        foreach($requestedWitnesses as $witnessId) {
+        $witnessesToLookUp = [];
+        foreach ($requestedWitnesses as $witnessId) {
             $witnessType = WitnessSystemId::getType($witnessId);
             // only fullTx for now
             if ($witnessType === WitnessType::FULL_TRANSCRIPTION) {
@@ -344,7 +340,7 @@ class ApiPresets extends ApiController
         // filter using the witness list
         $filteredPresets = [];
         $witnessSet = new Set($witnessesToLookUp);
-        foreach($presets as $preset) {
+        foreach ($presets as $preset) {
             $newPresetData = $this->getPresetDataWithNewDocIds($preset);
             $presetWitnessesSet = new Set(array_keys($newPresetData['witnesses']));
             if ($presetWitnessesSet->isSubsetOf($witnessSet)) {
@@ -355,7 +351,7 @@ class ApiPresets extends ApiController
         /** @var PersonManagerInterface $personManager */
         $personManager = $this->container->get(PersonManagerInterface::class);
         $presetsInArrayForm = [];
-        foreach($filteredPresets as $preset) {
+        foreach ($filteredPresets as $preset) {
             $userId = $preset->getUserId();
             $userInfo = $personManager->getPersonEssentialData($preset->getUserId());
             $presetsInArrayForm[] = [
@@ -366,17 +362,19 @@ class ApiPresets extends ApiController
                 'data' => $preset->getData()
             ];
         }
-        return $this->responseWithJson($response,[
+        return $this->responseWithJson($response, [
             'presets' => $presetsInArrayForm,
         ]);
     }
 
-    private function convertFullTxIdToSiglaPresetId(string $longFormId) : string {
+    private function convertFullTxIdToSiglaPresetId(string $longFormId): string
+    {
         $info = WitnessSystemId::getFullTxInfo($longFormId);
-        return implode('-', [ 'fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
+        return implode('-', ['fullTx', $info->typeSpecificInfo['docId'], $info->typeSpecificInfo['localWitnessId']]);
     }
 
-    private function getPresetDataWithNewDocIds(Preset $preset): array {
+    private function getPresetDataWithNewDocIds(Preset $preset): array
+    {
         return $preset->getData();
     }
 
@@ -406,7 +404,7 @@ class ApiPresets extends ApiController
     public function saveSiglaPreset(Request $request, Response $response): array|Response
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-        
+
         $inputData = $this->checkAndGetInputData($request, $response, ['command', 'lang', 'witnesses']);
         if (!is_array($inputData)) {
             return $inputData;
@@ -418,48 +416,48 @@ class ApiPresets extends ApiController
         $lang = $inputData['lang'];
         // get short form witnesses
         $witnesses = [];
-        foreach($inputData['witnesses'] as $witnessId => $siglum) {
+        foreach ($inputData['witnesses'] as $witnessId => $siglum) {
             if (WitnessSystemId::getType($witnessId) === WitnessType::FULL_TRANSCRIPTION) {
                 $witnesses[$this->convertFullTxIdToSiglaPresetId($witnessId)] = $siglum;
             }
         }
-        $presetData = [ 'lang' => $lang, 'witnesses' => $witnesses];
+        $presetData = ['lang' => $lang, 'witnesses' => $witnesses];
 
-        switch($inputData['command']) {
+        switch ($inputData['command']) {
             case self::COMMAND_NEW:
                 if (!isset($inputData['title'])) {
                     $this->logger->error("Required field 'title' not present",
-                        [ 'apiUserId' => $this->apiUserId,
+                        ['apiUserId' => $this->apiUserId,
                             'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
-                            'data' => $inputData ]);
+                            'data' => $inputData]);
                     return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
                 }
-                if (!is_string($inputData['title']) || $inputData['title'] === '' ){
+                if (!is_string($inputData['title']) || $inputData['title'] === '') {
                     $this->logger->error("Required field 'title' is not a string or is empty",
-                        [ 'apiUserId' => $this->apiUserId,
+                        ['apiUserId' => $this->apiUserId,
                             'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
-                            'data' => $inputData ]);
+                            'data' => $inputData]);
                     return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
                 }
                 $title = $inputData['title'];
 
-                $this->codeDebug('New Sigla Preset', [ 'apiUserId' => $apiUserId, 'title' => $title, 'presetData' => $presetData]);
+                $this->codeDebug('New Sigla Preset', ['apiUserId' => $apiUserId, 'title' => $title, 'presetData' => $presetData]);
 
 
                 $preset = $pf->create(PresetManager::TOOL_SIGLA, $apiUserId, $title, $presetData);
                 if ($pm->correspondingPresetExists($preset)) {
                     $this->logger->error("Preset already exists",
-                        [ 'apiUserId' => $this->apiUserId,
+                        ['apiUserId' => $this->apiUserId,
                             'apiError' => self::API_ERROR_PRESET_ALREADY_EXISTS,
-                            'data' => $inputData ]);
+                            'data' => $inputData]);
                     return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_ALREADY_EXISTS], 409);
                 }
                 if (!$pm->addPreset($preset)) {
                     // @codeCoverageIgnoreStart
                     $this->logger->error("Could not save new preset",
-                        [ 'apiUserId' => $this->apiUserId,
+                        ['apiUserId' => $this->apiUserId,
                             'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
-                            'data' => $inputData ]);
+                            'data' => $inputData]);
                     return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_SAVE_PRESET], 409);
                     // @codeCoverageIgnoreEnd
                 }
@@ -470,26 +468,26 @@ class ApiPresets extends ApiController
             case self::COMMAND_UPDATE:
                 if (!isset($inputData['presetId'])) {
                     $this->logger->error("Required field 'presetId' not present",
-                        [ 'apiUserId' => $this->apiUserId,
+                        ['apiUserId' => $this->apiUserId,
                             'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
-                            'data' => $inputData ]);
+                            'data' => $inputData]);
                     return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
                 }
                 $presetId = intval($inputData['presetId']);
                 if ($presetId === 0) {
                     $this->logger->error("Required field 'presetId' not a valid Id",
-                        [ 'apiUserId' => $this->apiUserId,
+                        ['apiUserId' => $this->apiUserId,
                             'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
-                            'data' => $inputData ]);
+                            'data' => $inputData]);
                     return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
                 }
                 $currentPreset = $pm->getPresetById($presetId);
                 // check that userId is the same as the current preset's userId
                 if ($this->apiUserId !== $currentPreset->getUserId()) {
                     $this->logger->error("API user not authorized to update preset",
-                        [ 'apiUserId' => $this->apiUserId,
+                        ['apiUserId' => $this->apiUserId,
                             'apiError' => self::API_ERROR_NOT_AUTHORIZED,
-                            'data' => $inputData ]);
+                            'data' => $inputData]);
                     return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_AUTHORIZED], 409);
                 }
                 $title = $currentPreset->getTitle();
@@ -501,9 +499,9 @@ class ApiPresets extends ApiController
                 if (!$pm->updatePresetById($presetId, $updatedPreset)) {
                     // @codeCoverageIgnoreStart
                     $this->logger->error("Could not update preset",
-                        [ 'apiUserId' => $this->apiUserId,
+                        ['apiUserId' => $this->apiUserId,
                             'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
-                            'data' => $inputData ]);
+                            'data' => $inputData]);
                     return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_SAVE_PRESET], 409);
                     // @codeCoverageIgnoreEnd
                 }
@@ -513,19 +511,20 @@ class ApiPresets extends ApiController
 
             default:
                 $this->logger->error("Unknown command " . $inputData['command'],
-                    [ 'apiUserId' => $this->apiUserId,
+                    ['apiUserId' => $this->apiUserId,
                         'apiError' => self::API_ERROR_UNKNOWN_COMMAND,
-                        'data' => $inputData ]);
+                        'data' => $inputData]);
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_UNKNOWN_COMMAND], 409);
         }
     }
 
-    
-    public function  savePreset(Request $request, Response $response) : Response {
+
+    public function savePreset(Request $request, Response $response): Response
+    {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         
-        $inputData = $this->checkAndGetInputData($request, $response, ['command', 'tool', 'title', 'presetId', 'presetData']);
+        $inputData = $this->checkAndGetInputData($request, $response, ['command', 'tool', 'title', 'id', 'presetData']);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -533,37 +532,37 @@ class ApiPresets extends ApiController
         // check that command is valid
         if ($command !== self::COMMAND_NEW && $command !== self::COMMAND_UPDATE) {
             $this->logger->error("Unknown command " . $command,
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_UNKNOWN_COMMAND,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_UNKNOWN_COMMAND,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_UNKNOWN_COMMAND], 409);
         }
-        
+
         $tool = $inputData['tool'];
         $title = $inputData['title'];
 
 
         $pm = $this->presetManager;
-        
+
         // check that tool is valid
-        if (!$pm->isToolValid($tool)){
+        if (!$pm->isToolValid($tool)) {
             $this->logger->error("Unrecognized tool " . $tool,
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_UNRECOGNIZED_TOOL,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_UNRECOGNIZED_TOOL], 409);
         }
         
         
-        $presetId = intval($inputData['presetId']);
+        $presetId = intval($inputData['id']);
         $data = $inputData['presetData'];
-        
+
         // check that preset data is an array and that is not empty
-        if (!is_array($data) || count($data)===0) {
+        if (!is_array($data) || count($data) === 0) {
             $this->logger->error("Invalid preset data",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_INVALID_PRESET_DATA,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_INVALID_PRESET_DATA], 409);
         }
 
@@ -576,17 +575,17 @@ class ApiPresets extends ApiController
             //print_r($preset);
             if ($pm->correspondingPresetExists($preset)) {
                 $this->logger->error("Preset already exists",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_PRESET_ALREADY_EXISTS,
-                      'data' => $inputData ]);
+                    ['apiUserId' => $this->apiUserId,
+                        'apiError' => self::API_ERROR_PRESET_ALREADY_EXISTS,
+                        'data' => $inputData]);
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_ALREADY_EXISTS], 409);
             }
             if (!$pm->addPreset($preset)) {
                 // @codeCoverageIgnoreStart
                 $this->logger->error("Could not save new preset",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
-                      'data' => $inputData ]);
+                    ['apiUserId' => $this->apiUserId,
+                        'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
+                        'data' => $inputData]);
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_SAVE_PRESET], 409);
                 // @codeCoverageIgnoreEnd
             }
@@ -594,14 +593,14 @@ class ApiPresets extends ApiController
             $newId = $pm->getPreset($tool, $apiUserId, $title)->getPresetId();
             return $this->responseWithJson($response, ['presetId' => $newId], 200);
         }
-        
+
         // command = update preset
 
         if (!$pm->presetExistsById($presetId)) {
             $this->logger->error("Preset with given Id does not exist",
-                [ 'apiUserId' => $this->apiUserId,
+                ['apiUserId' => $this->apiUserId,
                     'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
-                    'data' => $inputData ]);
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST], 409);
         }
 
@@ -609,42 +608,43 @@ class ApiPresets extends ApiController
         // check that userId is the same as the current preset's userId
         if ($this->apiUserId !== $currentPreset->getUserId()) {
             $this->logger->error("API user not authorized to update preset",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_NOT_AUTHORIZED,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_NOT_AUTHORIZED,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_AUTHORIZED], 409);
         }
 
         $updatedPreset = $pf->create($tool, $this->apiUserId, $title, $data);
-        $this->codeDebug('Updated preset', [ 'id' => $currentPreset->getPresetId(), 'data' => $updatedPreset->getData()]);
+        $this->codeDebug('Updated preset', ['id' => $currentPreset->getPresetId(), 'data' => $updatedPreset->getData()]);
         if (!$pm->updatePresetById($presetId, $updatedPreset)) {
             // @codeCoverageIgnoreStart
             $this->logger->error("Could not update preset",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
-                      'data' => $inputData ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_CANNOT_SAVE_PRESET,
+                    'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_SAVE_PRESET], 409);
             // @codeCoverageIgnoreEnd
         }
-        
+
         // success
         return $this->responseWithJson($response, ['presetId' => $presetId], 200);
     }
-    
-     public function deletePreset(Request $request, Response $response) : Response {
+
+    public function deletePreset(Request $request, Response $response): Response
+    {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $presetId = intval($request->getAttribute('id'));
-        
+
         $presetsManager = $this->presetManager;
 
         try {
             $currentPreset = $presetsManager->getPresetById($presetId);
-        } catch( InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             if ($e->getCode() === PresetManager::ERROR_PRESET_NOT_FOUND) {
                 $this->logger->error("Preset with given Id does not exist",
-                    [ 'apiUserId' => $this->apiUserId,
+                    ['apiUserId' => $this->apiUserId,
                         'apiError' => self::API_ERROR_PRESET_DOES_NOT_EXIST,
-                        'presetId'  => $presetId ]);
+                        'presetId' => $presetId]);
                 return $this->responseWithJson($response, ['error' => self::API_ERROR_PRESET_DOES_NOT_EXIST], 409);
             }
             // some other error, rethrow exception
@@ -653,19 +653,19 @@ class ApiPresets extends ApiController
 
         if ($currentPreset->getUserId() !== $this->apiUserId) {
             $this->logger->error("API user not authorized to delete preset",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_NOT_AUTHORIZED,
-                      'presetUserId' => $currentPreset->getUserId()
-                    ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_NOT_AUTHORIZED,
+                    'presetUserId' => $currentPreset->getUserId()
+                ]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_NOT_AUTHORIZED], 409);
         }
-        
+
         if (!$presetsManager->erasePresetById($presetId)) {
             // @codeCoverageIgnoreStart
             $this->logger->error("Cannot delete preset",
-                    [ 'apiUserId' => $this->apiUserId,
-                      'apiError' => self::API_ERROR_CANNOT_DELETE,
-                      'presetId'  => $presetId ]);
+                ['apiUserId' => $this->apiUserId,
+                    'apiError' => self::API_ERROR_CANNOT_DELETE,
+                    'presetId' => $presetId]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_CANNOT_DELETE], 409);
             // @codeCoverageIgnoreEnd
         }
@@ -674,7 +674,6 @@ class ApiPresets extends ApiController
     }
 
 
-    
 }
 
 

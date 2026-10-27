@@ -11,6 +11,7 @@ final readonly class UrlConfig
                                 public string $bilderberg = 'https://bilderberg.uni-koeln.de',
                                 public string $uniKoeln = 'https://www.uni-koeln.de/',
                                 public string $localImageRepository = 'https://averroes.uni-koeln.de/localrep',
+                                public string $fontCss = 'https://averroes.uni-koeln.de/fonts/css/all.css',
                                 public string $thomasInstitut = 'https://www.thomasinstitut.uni-koeln.de/')
     {
     }

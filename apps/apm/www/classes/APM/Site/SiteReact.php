@@ -30,10 +30,11 @@ class SiteReact extends SiteController
     protected function renderReactPage(ResponseInterface $response, string $title, string $viteEntryPoint): ResponseInterface
     {
         $baseUrl = $this->getBaseUrl();
-
-        // all imports are handled by Vite
+        // load fonts CSS
+        $fontCssHtml = "<link rel=\"stylesheet\" type=\"text/css\" href=\"{$this->systemConfig->url->fontCss}\"/>";
+        // all other imports are handled by Vite
         [$viteJsImportsHtml, $viteCssImportsHtml] = $this->getViteImportHtml([$viteEntryPoint]);
-        $html = $this->getStandardPageHtml($baseUrl, $title, $viteJsImportsHtml . $viteCssImportsHtml, '');
+        $html = $this->getStandardPageHtml($baseUrl, $title, $viteJsImportsHtml . $fontCssHtml . $viteCssImportsHtml, '');
         $response->getBody()->write($html);
         SystemProfiler::lap('Response ready');
         $this->logger->debug(sprintf("SITE PROFILER %s Finished in %.3f ms", SystemProfiler::getName(), SystemProfiler::getTotalTimeInMs()),

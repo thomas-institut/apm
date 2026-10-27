@@ -395,6 +395,9 @@ END;
             return "<link rel=\"stylesheet\" type=\"text/css\" href=\"$baseUrl/$cssItem\"/>";
         }, $cssItems));
 
+        // load fonts CSS
+        $cssHtml .= "<link rel=\"stylesheet\" type=\"text/css\" href=\"{$this->systemConfig->url->fontCss}\"/>";
+
         $jsHtml = implode("\n", array_map(function ($js) use ($baseUrl) {
             return "<script type=\"text/javascript\" src=\"$baseUrl/$js\"></script>";
         }, $jsItems));

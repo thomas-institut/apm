@@ -24,24 +24,41 @@ class ApiSearchTest extends TestCase
         $searchManager = $this->createMock(SearchIndexManager::class);
         $searchManager->expects($this->once())
             ->method('searchToken')
-            ->with(IndexType::Transcriptions, 'ar', 'second', false, 2, '', '', 10)
+            ->with(IndexType::Transcriptions, 'ar', 'second', false, 2, '', 0, 10)
             ->willReturn(new SearchQueryResult([['document' => ['id' => '1']]], 2, false));
 
+        $controller = new ApiSearch($this->createContainer($searchManager));
+
+        $controller->search($this->createSearchRequest(''), new Response());
+    }
+
+    public function testSearchPassesCreatorIdToSearchIndexManager(): void
+    {
+        $searchManager = $this->createMock(SearchIndexManager::class);
+        $searchManager->expects($this->once())
+            ->method('searchToken')
+            ->with(IndexType::Transcriptions, 'ar', 'second', false, 2, '', 1466467653105, 10)
+            ->willReturn(new SearchQueryResult([], 2, true));
+
+        $controller = new ApiSearch($this->createContainer($searchManager));
+
+        $controller->search($this->createSearchRequest('1466467653105'), new Response());
+    }
+
+    private function createSearchRequest(string $creatorId): Request
+    {
         $request = $this->createStub(Request::class);
         $request->method('getParsedBody')->willReturn([
             'corpus' => 'transcriptions',
             'searched_phrase' => 'first second',
             'title' => '',
-            'creator' => '',
+            'creatorId' => $creatorId,
             'keywordDistance' => 0,
             'lemmatize' => false,
             'lang' => 'ar',
             'queryPage' => 2,
         ]);
-
-        $controller = new ApiSearch($this->createContainer($searchManager));
-
-        $controller->search($request, new Response());
+        return $request;
     }
 
     private function createContainer(SearchIndexManager $searchManager): ContainerInterface

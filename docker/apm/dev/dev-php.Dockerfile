@@ -4,7 +4,7 @@
 #
 # Created: 2025-05-21
 #
-FROM php:8.3-fpm
+FROM php:8.3.36-fpm
 LABEL authors="Rafael Nájera"
 RUN docker-php-ext-configure pcntl --enable-pcntl \
   && docker-php-ext-install pcntl;

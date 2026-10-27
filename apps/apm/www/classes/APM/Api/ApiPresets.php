@@ -523,8 +523,8 @@ class ApiPresets extends ApiController
     {
 
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
-
-        $inputData = $this->checkAndGetInputData($request, $response, ['command', 'tool', 'title', 'presetId', 'presetData']);
+        
+        $inputData = $this->checkAndGetInputData($request, $response, ['command', 'tool', 'title', 'id', 'presetData']);
         if (!is_array($inputData)) {
             return $inputData;
         }
@@ -552,9 +552,9 @@ class ApiPresets extends ApiController
                     'data' => $inputData]);
             return $this->responseWithJson($response, ['error' => self::API_ERROR_UNRECOGNIZED_TOOL], 409);
         }
-
-
-        $presetId = intval($inputData['presetId']);
+        
+        
+        $presetId = intval($inputData['id']);
         $data = $inputData['presetData'];
 
         // check that preset data is an array and that is not empty

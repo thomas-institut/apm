@@ -65,6 +65,8 @@ services:
 
   fonts:
     container_name: apm-fonts
+    ports:
+      - "4567:80"
     image: nginx:latest
     volumes:
       - ${REPO_ROOT}/${DEV_TMP}/apm/apm-fonts:/usr/share/nginx/html:ro

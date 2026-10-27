@@ -1,5 +1,3 @@
-@import url('../../css/fonts.css');
-
 :root {
     /* DEFAULT FONT */
     --default-font-family: var(--bs-font-sans-serif), sans-serif;

@@ -23,6 +23,7 @@ docker compose -f docker/apm/dev/compose.yaml build php
 docker compose -f docker/apm/dev/compose.yaml build node
 docker compose -f docker/apm/dev/compose.yaml build collatex
 docker compose -f docker/apm/dev/compose.yaml up -d collatex mysql nginx node php typesense valkey
+docker compose -f docker/apm/dev/compose.yaml restart nginx
 docker exec -w /opt/apm/www apm-php /opt/composer/composer install --no-interaction --prefer-dist
 
 healthcheck() {

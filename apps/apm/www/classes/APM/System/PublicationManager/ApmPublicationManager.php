@@ -8,6 +8,7 @@ use APM\System\ApmImageType;
 use APM\NodeService\GenEditionPublicationInputData;
 use APM\NodeService\NodeServiceClient;
 use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\System\Document\DocumentManager;
 use APM\System\Document\Exception\DocumentNotFoundException;
 use APM\System\Document\Exception\PageNotFoundException;
@@ -49,19 +50,23 @@ class ApmPublicationManager implements PublicationManager
                                 private readonly NodeServiceClient        $nodeServiceClient,
                                 private readonly LoggerInterface          $logger,
                                 private readonly array                    $imageSources,
-                                private readonly Client                   $valkeyClient
+                                private readonly Client                   $valkeyClient,
+                                private readonly ApmEntitySystemInterface $entitySystem
     )
     {
 
     }
 
-    public function list(): array
+    public function list(int $publisherId): array
     {
+        if ($publisherId <= 0) {
+            return [];
+        }
         $ids = $this->valkeyClient->smembers(self::valkeyPrefix . 'pubs');
         $listings = [];
         foreach ($ids as $id) {
             $pubFields = $this->valkeyClient->hgetall(self::valkeyPrefix . 'pub:' . $id);
-            if ($pubFields) {
+            if ($pubFields && $this->publicationHasPublisher($pubFields, $publisherId)) {
                 $listing = new PublicationListing();
                 $listing->id = (int)$id;
                 $listing->type = PublicationType::from($pubFields['type']);
@@ -74,13 +79,29 @@ class ApmPublicationManager implements PublicationManager
         return $listings;
     }
 
-    public function getPublication(int $id): PublicationData
+    public function getPublication(int $id, int $publisherId): PublicationData
     {
-        $data = $this->valkeyClient->hget(self::valkeyPrefix . 'pub:' . $id, 'data');
-        if (!$data) {
+        $pubFields = $this->valkeyClient->hgetall(self::valkeyPrefix . 'pub:' . $id);
+        if (!$pubFields || !isset($pubFields['data']) || !$this->publicationHasPublisher($pubFields, $publisherId)) {
             throw new PublicationNotFoundException("Publication with ID $id not found");
         }
-        return unserialize($data);
+        return unserialize($pubFields['data']);
+    }
+
+    /**
+     * Checks whether a publication is associated with the requested publisher.
+     *
+     * @param array $pubFields
+     * @param int $publisherId
+     * @return bool
+     */
+    private function publicationHasPublisher(array $pubFields, int $publisherId): bool
+    {
+        if ($publisherId <= 0 || !isset($pubFields['publisherIds'])) {
+            return false;
+        }
+        $publisherIds = json_decode($pubFields['publisherIds'], true);
+        return is_array($publisherIds) && in_array($publisherId, $publisherIds, true);
     }
 
     public function updatePublication(int $id, string $version = 'current'): void
@@ -144,8 +165,9 @@ class ApmPublicationManager implements PublicationManager
         };
     }
 
-    public function createPublication(string $type, int $resourceId, string $version = 'current', bool $dryRun = false): PublicationData
+    public function createPublication(string $type, int $resourceId, array $publisherIds, string $version = 'current', bool $dryRun = false): PublicationData
     {
+        $publisherIds = $this->validatePublisherIds($publisherIds);
         if ($type === PublicationType::Transcription->value) {
             try {
                 $data = $this->getTranscriptionDataForDocument($resourceId, $version);
@@ -155,7 +177,7 @@ class ApmPublicationManager implements PublicationManager
                     return $data;
                 }
 
-                $this->valkeyClient->transaction(function ($tx) use ($id, $data, $type, $resourceId) {
+                $this->valkeyClient->transaction(function ($tx) use ($id, $data, $type, $resourceId, $publisherIds) {
                     $pubKey = self::valkeyPrefix . 'pub:' . $id;
                     $tx->hset($pubKey, 'data', serialize($data));
                     $tx->hset($pubKey, 'type', $type);
@@ -163,6 +185,7 @@ class ApmPublicationManager implements PublicationManager
                     $tx->hset($pubKey, 'title', $data->title);
                     $tx->hset($pubKey, 'versionTimeString', $data->versionTimeString);
                     $tx->hset($pubKey, 'description', $data->description ?? '');
+                    $tx->hset($pubKey, 'publisherIds', json_encode($publisherIds, JSON_THROW_ON_ERROR));
 
                     $tx->sadd(self::valkeyPrefix . 'pubs', [$id]);
                 });
@@ -185,7 +208,7 @@ class ApmPublicationManager implements PublicationManager
                     return $publicationData;
                 }
 
-                $this->valkeyClient->transaction(function ($tx) use ($id, $publicationData, $type, $resourceId) {
+                $this->valkeyClient->transaction(function ($tx) use ($id, $publicationData, $type, $resourceId, $publisherIds) {
                     $pubKey = self::valkeyPrefix . 'pub:' . $id;
                     $tx->hset($pubKey, 'data', serialize($publicationData));
                     $tx->hset($pubKey, 'type', $type);
@@ -193,6 +216,7 @@ class ApmPublicationManager implements PublicationManager
                     $tx->hset($pubKey, 'title', $publicationData->title);
                     $tx->hset($pubKey, 'versionTimeString', $publicationData->versionTimeString);
                     $tx->hset($pubKey, 'description', $publicationData->description ?? '');
+                    $tx->hset($pubKey, 'publisherIds', json_encode($publisherIds, JSON_THROW_ON_ERROR));
 
                     $tx->sadd(self::valkeyPrefix . 'pubs', [$id]);
                 });
@@ -204,6 +228,29 @@ class ApmPublicationManager implements PublicationManager
         }
 
         throw new InvalidArgumentException("Publication type '$type' is not supported");
+    }
+
+    /**
+     * Validates and normalizes publication target publisher IDs.
+     *
+     * @param array $publisherIds
+     * @return int[]
+     */
+    private function validatePublisherIds(array $publisherIds): array
+    {
+        if ($publisherIds === []) {
+            throw new InvalidArgumentException('At least one publisher ID is required');
+        }
+
+        $validatedIds = [];
+        foreach ($publisherIds as $publisherId) {
+            if (!is_int($publisherId) || $publisherId <= 0 ||
+                !$this->entitySystem->validateEntity($publisherId, Entity::tPublisher)) {
+                throw new InvalidArgumentException('Invalid publisher ID');
+            }
+            $validatedIds[$publisherId] = $publisherId;
+        }
+        return array_values($validatedIds);
     }
 
     /**

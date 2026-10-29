@@ -8,6 +8,7 @@ use Monolog\Handler\NullHandler;
 use Monolog\Logger;
 use PHPUnit\Framework\TestCase;
 use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Server\RequestHandlerInterface;
 use ReflectionClass;
 use ReflectionException;
 use ReflectionMethod;
@@ -128,6 +129,49 @@ class AuthenticatorTest extends TestCase
         $response = new Response();
 
         $result = $authenticator->apiLogin($request, $response);
+
+        $this->assertSame(401, $result->getStatusCode());
+    }
+
+    public function testAuthenticatePublisherRequestSetsPublisherIdForValidBearerToken(): void
+    {
+        $authenticator = $this->createAuthenticatorWithoutConstructor();
+        $tokenManager = $this->createMock(PublisherTokenManager::class);
+        $tokenManager->expects($this->once())
+            ->method('getPublisherIdForToken')
+            ->with('123.' . str_repeat('a', 64))
+            ->willReturn(123);
+        $this->setProperty($authenticator, 'publisherTokenManager', $tokenManager);
+
+        $request = (new ServerRequestFactory())->createServerRequest('GET', '/api/publication/list')
+            ->withHeader('Authorization', 'Bearer 123.' . str_repeat('a', 64));
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects($this->once())
+            ->method('handle')
+            ->with($this->callback(fn($request) => $request->getAttribute('publisherId') === 123))
+            ->willReturn(new Response());
+
+        $result = $authenticator->authenticatePublisherRequest($request, $handler);
+
+        $this->assertSame(200, $result->getStatusCode());
+    }
+
+    public function testAuthenticatePublisherRequestRejectsInvalidBearerToken(): void
+    {
+        $authenticator = $this->createAuthenticatorWithoutConstructor();
+        $tokenManager = $this->createMock(PublisherTokenManager::class);
+        $tokenManager->expects($this->once())
+            ->method('getPublisherIdForToken')
+            ->with('invalid')
+            ->willReturn(-1);
+        $this->setProperty($authenticator, 'publisherTokenManager', $tokenManager);
+
+        $request = (new ServerRequestFactory())->createServerRequest('GET', '/api/publication/list')
+            ->withHeader('Authorization', 'Bearer invalid');
+        $handler = $this->createMock(RequestHandlerInterface::class);
+        $handler->expects($this->never())->method('handle');
+
+        $result = $authenticator->authenticatePublisherRequest($request, $handler);
 
         $this->assertSame(401, $result->getStatusCode());
     }

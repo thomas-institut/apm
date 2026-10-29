@@ -193,7 +193,7 @@ function createApiUnauthenticatedRoutes(App $app, ContainerInterface $container)
          */
         $group->post('/login', [Authenticator::class, 'apiLogin']);
 
-        createApiPublicationRoutes($group);
+        createApiPublicationRoutes($group, $container);
     });
 }
 
@@ -1083,11 +1083,13 @@ function createApiPresetsRoutes(RouteCollectorProxy $group): void
 }
 
 
-function createApiPublicationRoutes(RouteCollectorProxy $group): void
+function createApiPublicationRoutes(RouteCollectorProxy $group, ContainerInterface $container): void
 {
     $prefix = '/publication';
-    $group->get($prefix . '/list', [ApiPublication::class, 'list']);
-    $group->get($prefix . '/{id}/get', [ApiPublication::class, 'get']);
+    $publisherAuthentication = fn(Request $request, RequestHandlerInterface $handler): Response =>
+        (new Authenticator($container))->authenticatePublisherRequest($request, $handler);
+    $group->get($prefix . '/list', [ApiPublication::class, 'list'])->add($publisherAuthentication);
+    $group->get($prefix . '/{id}/get', [ApiPublication::class, 'get'])->add($publisherAuthentication);
 }
 
 /**

@@ -27,16 +27,17 @@ class PublicationToolTest extends TestCase
      *
      * @param PublicationTool $tool
      * @param string $format
+     * @param int $publisherId
      * @param int $pubId
      * @return int
      * @throws \ReflectionException
      */
-    private function invokeExport(PublicationTool $tool, string $format, int $pubId): int
+    private function invokeExport(PublicationTool $tool, string $format, int $publisherId, int $pubId): int
     {
         $method = (new ReflectionClass(PublicationTool::class))->getMethod('export');
         $method->setAccessible(true);
 
-        return $method->invoke($tool, $format, $pubId);
+        return $method->invoke($tool, $format, $publisherId, $pubId);
     }
 
     /**
@@ -49,7 +50,7 @@ class PublicationToolTest extends TestCase
 
         $help = $tool->getUsage();
 
-        $this->assertStringContainsString('export json|evt <id>', $help);
+        $this->assertStringContainsString('export json|evt <publisherId> <id>', $help);
         $this->assertStringContainsString('only for editions', $help);
     }
 
@@ -65,13 +66,13 @@ class PublicationToolTest extends TestCase
         $publicationManager = $this->createMock(PublicationManager::class);
         $publicationManager->expects($this->once())
             ->method('getPublication')
-            ->with(123)
+            ->with(123, 42)
             ->willReturn($publication);
 
         $tool = $this->createPublicationTool($publicationManager);
 
         ob_start();
-        $result = $this->invokeExport($tool, 'tei', 123);
+        $result = $this->invokeExport($tool, 'tei', 42, 123);
         $output = ob_get_clean();
 
         $this->assertSame(1, $result);

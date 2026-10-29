@@ -378,6 +378,9 @@ class Entity implements TidDefiner
     const int pDarePersonId = 14001;
     const int pLegacyApmDatabaseId = 14002;
 
+    // Publisher authentication
+    const int pPublisherTokenHash = 15001;
+
     // Languages
 
     const int LangArabic = 20001;

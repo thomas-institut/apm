@@ -3,6 +3,7 @@
 namespace APM\System\Factories;
 
 use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
 use APM\NodeService\NodeServiceClient;
 use APM\System\Document\DocumentManager;
@@ -24,6 +25,7 @@ class PublicationManagerFactory
                                   Client                   $valkeyClient,
                                   NodeServiceClient        $nodeServiceClient,
                                   MultiChunkEditionManager $mceManager,
+                                  ApmEntitySystemInterface $entitySystem,
                                   LoggerInterface          $logger): PublicationManager
     {
         return new ApmPublicationManager(
@@ -35,7 +37,8 @@ class PublicationManagerFactory
             $nodeServiceClient,
             $logger,
             $sm->getImageSources(),
-            $valkeyClient
+            $valkeyClient,
+            $entitySystem
         );
     }
 }

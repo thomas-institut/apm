@@ -11,6 +11,7 @@ use APM\System\ApmContainerKey;
 use APM\System\ApmLanguageManager;
 use APM\System\ApmPdoProvider;
 use APM\System\ApmSystemManager;
+use APM\System\Auth\PublisherTokenManager;
 use APM\System\ApmTableNames;
 use APM\System\Cache\DirectorySystemDirDataCache;
 use APM\System\Cache\SystemDirDataCache;
@@ -87,6 +88,7 @@ class CommonDefsProvider implements ApmContainerDefsProvider
             EventManager::class => autowire(EventManager::class),
             LanguageManager::class => autowire(ApmLanguageManager::class),
             PublicationManager::class => factory([PublicationManagerFactory::class, 'create']),
+            PublisherTokenManager::class => autowire(PublisherTokenManager::class),
             Client::class => factory([ValkeyClientFactory::class, 'create']),
             NodeServiceClient::class => factory([NodeServiceClientFactory::class, 'create']),
             EdNoteManager::class => autowire(EdNoteManager::class),

@@ -3,6 +3,7 @@
 namespace APM\System\PublicationManager;
 
 use APM\CollationTable\CollationTableManager;
+use APM\EntitySystem\ApmEntitySystemInterface;
 use APM\EntitySystem\Schema\Entity;
 use APM\MultiChunkEdition\MceSystemData;
 use APM\MultiChunkEdition\MultiChunkEditionManager;
@@ -34,6 +35,7 @@ class ApmPublicationManagerTest extends TestCase
     private MockObject&NodeServiceClient $nodeServiceClient;
     private MockObject&LoggerInterface $logger;
     private MockObject&Client $valkeyClient;
+    private MockObject&ApmEntitySystemInterface $entitySystem;
     private ApmPublicationManager $manager;
 
     protected function setUp(): void
@@ -46,6 +48,8 @@ class ApmPublicationManagerTest extends TestCase
         $this->nodeServiceClient = $this->createMock(NodeServiceClient::class);
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->valkeyClient = $this->createMock(Client::class);
+        $this->entitySystem = $this->createMock(ApmEntitySystemInterface::class);
+        $this->entitySystem->method('validateEntity')->willReturn(true);
 
         $this->manager = new ApmPublicationManager(
             $this->dm,
@@ -56,7 +60,8 @@ class ApmPublicationManagerTest extends TestCase
             $this->nodeServiceClient,
             $this->logger,
             ['source1'],
-            $this->valkeyClient
+            $this->valkeyClient,
+            $this->entitySystem
         );
     }
 
@@ -68,7 +73,7 @@ class ApmPublicationManagerTest extends TestCase
             ->with('smembers', ['APM:PublicationManager:pubs'])
             ->willReturn([]);
 
-        $this->assertEquals([], $this->manager->list());
+        $this->assertEquals([], $this->manager->list(42));
     }
 
     #[AllowMockObjectsWithoutExpectations]
@@ -85,7 +90,8 @@ class ApmPublicationManagerTest extends TestCase
                             'type' => PublicationType::Transcription->value,
                             'title' => 'Pub 1',
                             'versionTimeString' => '2023-01-01 00:00:00.000000',
-                            'description' => ''
+                            'description' => '',
+                            'publisherIds' => '[42,43]'
                         ];
                     }
                     if ($args[0] === 'APM:PublicationManager:pub:2') {
@@ -93,20 +99,19 @@ class ApmPublicationManagerTest extends TestCase
                             'type' => PublicationType::Transcription->value,
                             'title' => 'Pub 2',
                             'versionTimeString' => '2023-01-01 00:00:00.000000',
-                            'description' => ''
+                            'description' => '',
+                            'publisherIds' => '[43]'
                         ];
                     }
                 }
                 return null;
             });
 
-        $result = $this->manager->list();
-        $this->assertCount(2, $result);
+        $result = $this->manager->list(42);
+        $this->assertCount(1, $result);
         $this->assertInstanceOf(PublicationListing::class, $result[0]);
         $this->assertEquals(1, $result[0]->id);
         $this->assertEquals('Pub 1', $result[0]->title);
-        $this->assertInstanceOf(PublicationListing::class, $result[1]);
-        $this->assertEquals(2, $result[1]->id);
     }
 
     /**
@@ -121,10 +126,13 @@ class ApmPublicationManagerTest extends TestCase
 
         $this->valkeyClient->expects($this->once())
             ->method('__call')
-            ->with('hget', ['APM:PublicationManager:pub:123', 'data'])
-            ->willReturn(serialize($pub));
+            ->with('hgetall', ['APM:PublicationManager:pub:123'])
+            ->willReturn([
+                'data' => serialize($pub),
+                'publisherIds' => '[42]'
+            ]);
 
-        $result = $this->manager->getPublication(123);
+        $result = $this->manager->getPublication(123, 42);
         $this->assertEquals(123, $result->id);
         $this->assertEquals('Test Pub', $result->title);
     }
@@ -134,11 +142,14 @@ class ApmPublicationManagerTest extends TestCase
     {
         $this->valkeyClient->expects($this->once())
             ->method('__call')
-            ->with('hget', ['APM:PublicationManager:pub:123', 'data'])
-            ->willReturn(null);
+            ->with('hgetall', ['APM:PublicationManager:pub:123'])
+            ->willReturn([
+                'data' => serialize(new TranscriptionData()),
+                'publisherIds' => '[41]'
+            ]);
 
         $this->expectException(PublicationNotFoundException::class);
-        $this->manager->getPublication(123);
+        $this->manager->getPublication(123, 42);
     }
 
     /**
@@ -212,12 +223,13 @@ class ApmPublicationManagerTest extends TestCase
         $capturedPubKey = null;
         $capturedResourceId = null;
         $capturedType = null;
+        $capturedPublisherIds = null;
 
         $this->valkeyClient->expects($this->once())
             ->method('transaction')
-            ->willReturnCallback(function ($callback) use (&$capturedPubKey, &$capturedResourceId, &$capturedType) {
+            ->willReturnCallback(function ($callback) use (&$capturedPubKey, &$capturedResourceId, &$capturedType, &$capturedPublisherIds) {
                 $tx = $this->createMock(Client::class);
-                $tx->method('__call')->willReturnCallback(function ($method, $args) use (&$capturedPubKey, &$capturedResourceId, &$capturedType) {
+                $tx->method('__call')->willReturnCallback(function ($method, $args) use (&$capturedPubKey, &$capturedResourceId, &$capturedType, &$capturedPublisherIds) {
                     if ($method === 'hset') {
                         $capturedPubKey = $args[0];
                         if ($args[1] === 'resourceId') {
@@ -225,6 +237,9 @@ class ApmPublicationManagerTest extends TestCase
                         }
                         if ($args[1] === 'type') {
                             $capturedType = $args[2];
+                        }
+                        if ($args[1] === 'publisherIds') {
+                            $capturedPublisherIds = $args[2];
                         }
                     } elseif ($method === 'sadd') {
                         $this->assertEquals('APM:PublicationManager:pubs', $args[0]);
@@ -234,12 +249,13 @@ class ApmPublicationManagerTest extends TestCase
                 $callback($tx);
             });
 
-        $result = $this->manager->createPublication(PublicationType::Transcription->value, $docId);
+        $result = $this->manager->createPublication(PublicationType::Transcription->value, $docId, [42]);
         $this->assertNotEquals($docId, $result->id);
         $this->assertEquals(PublicationType::Transcription, $result->type);
         $this->assertEquals('APM:PublicationManager:pub:' . $result->id, $capturedPubKey);
         $this->assertEquals((string)$docId, $capturedResourceId);
         $this->assertEquals(PublicationType::Transcription->value, $capturedType);
+        $this->assertEquals('[42]', $capturedPublisherIds);
     }
 
     /**
@@ -267,9 +283,17 @@ class ApmPublicationManagerTest extends TestCase
         $this->valkeyClient->expects($this->never())
             ->method('transaction');
 
-        $result = $this->manager->createPublication(PublicationType::Transcription->value, $docId, 'current', true);
+        $result = $this->manager->createPublication(PublicationType::Transcription->value, $docId, [42], 'current', true);
         $this->assertNotEquals($docId, $result->id);
         $this->assertEquals(PublicationType::Transcription, $result->type);
+    }
+
+    public function testCreatePublicationRejectsNonPublisherEntity(): void
+    {
+        $this->entitySystem->method('validateEntity')->willReturn(false);
+
+        $this->expectException(\InvalidArgumentException::class);
+        $this->manager->createPublication(PublicationType::Transcription->value, 456, [42]);
     }
 
     /**
@@ -392,7 +416,7 @@ class ApmPublicationManagerTest extends TestCase
                 $callback($tx);
             });
 
-        $result = $this->manager->createPublication(PublicationType::Edition->value, $mceId);
+        $result = $this->manager->createPublication(PublicationType::Edition->value, $mceId, [42]);
 
         $this->assertInstanceOf(PublicationData::class, $result);
         $this->assertEquals('Edition Title', $result->title);

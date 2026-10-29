@@ -89,6 +89,7 @@ class Authenticator
     //Constructor
 
     private UserManagerInterface $userManager;
+    private PublisherTokenManager $publisherTokenManager;
 
     private ApiResponseFactory $responseFactory;
 
@@ -107,6 +108,7 @@ class Authenticator
         }
         $this->router = $ci->get(RouteParserInterface::class);
         $this->userManager = $ci->get(UserManagerInterface::class);
+        $this->publisherTokenManager = $ci->get(PublisherTokenManager::class);
 
         $logger = $ci->get(LoggerInterface::class);
         if ($logger instanceof Logger) {
@@ -329,6 +331,28 @@ class Authenticator
         $this->debug('API : Success, go ahead!');
         $this->container->set(ApmContainerKey::API_USER_ID, $userId);
         return $handler->handle($request);
+    }
+
+    /**
+     * Authenticates a publication API request using a Publisher-specific bearer token.
+     *
+     * @param ServerRequestInterface $request
+     * @param RequestHandlerInterface $handler
+     * @return ResponseInterface
+     */
+    public function authenticatePublisherRequest(ServerRequestInterface $request, RequestHandlerInterface $handler): ResponseInterface
+    {
+        $authorization = $request->getHeaderLine('Authorization');
+        if (!preg_match('/^Bearer\s+(\S+)$/i', trim($authorization), $matches)) {
+            return (new Response())->withStatus(HttpStatus::UNAUTHORIZED);
+        }
+
+        $publisherId = $this->publisherTokenManager->getPublisherIdForToken($matches[1]);
+        if ($publisherId <= 0) {
+            return (new Response())->withStatus(HttpStatus::UNAUTHORIZED);
+        }
+
+        return $handler->handle($request->withAttribute('publisherId', $publisherId));
     }
 
     /**

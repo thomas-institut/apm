@@ -23,7 +23,7 @@ use ThomasInstitut\ValkeyDataCache\ValkeyDataCache;
 class ApmEntitySystemFactory
 {
     // Entity system Data ID: key for entity system caches
-    const string ES_DATA_ID = '0010'; // 2026 Jan 9
+    const string ES_DATA_ID = '0011'; // Publisher token hash predicate
 
     private const string MemCachePrefix_Apm_ES = 'Es';
     const string MemCachePrefix_TypedMultiStorage_ES = 'MsEs';

@@ -56,8 +56,10 @@ class ApiPublicationTest extends TestCase
     public function testList(): void
     {
         $listings = [new PublicationListing()];
+        $this->request->method('getAttribute')->with('publisherId', 0)->willReturn(42);
         $this->publicationManager->expects($this->once())
             ->method('list')
+            ->with(42)
             ->willReturn($listings);
 
         $this->controller->list($this->request, $this->response);
@@ -67,12 +69,18 @@ class ApiPublicationTest extends TestCase
     public function testGetSuccess(): void
     {
         $id = 123;
-        $this->request->method('getAttribute')->with('id')->willReturn((string)$id);
+        $this->request->method('getAttribute')->willReturnCallback(
+            fn($attribute, $default = null) => match ($attribute) {
+                'id' => (string)$id,
+                'publisherId' => 42,
+                default => $default,
+            }
+        );
 
         $pubData = $this->createMock(PublicationData::class);
         $this->publicationManager->expects($this->once())
             ->method('getPublication')
-            ->with($id)
+            ->with($id, 42)
             ->willReturn($pubData);
 
         $this->controller->get($this->request, $this->response);
@@ -82,11 +90,17 @@ class ApiPublicationTest extends TestCase
     public function testGetNotFound(): void
     {
         $id = 123;
-        $this->request->method('getAttribute')->with('id')->willReturn((string)$id);
+        $this->request->method('getAttribute')->willReturnCallback(
+            fn($attribute, $default = null) => match ($attribute) {
+                'id' => (string)$id,
+                'publisherId' => 42,
+                default => $default,
+            }
+        );
 
         $this->publicationManager->expects($this->once())
             ->method('getPublication')
-            ->with($id)
+            ->with($id, 42)
             ->willThrowException(new PublicationNotFoundException("Not found"));
 
         $this->controller->get($this->request, $this->response);

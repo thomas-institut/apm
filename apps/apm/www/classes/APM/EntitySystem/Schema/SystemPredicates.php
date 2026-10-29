@@ -423,6 +423,20 @@ const LanguagePredicateDefs = [
     ]
 ];
 
+const PublisherPredicateDefs = [
+    [
+        'id' => Entity::pPublisherTokenHash,
+        'type' => Entity::tAttribute,
+        'name' => 'Publisher API Token Hash',
+        'descr' => 'A non-reversible hash of the publisher API bearer token',
+        'allowedSubjectTypes' => [ Entity::tPublisher ],
+        'allowedObjectTypes' => null,
+        'canBeCancelled' => true,
+        'singleProperty' => true,
+        'flags' => [ PredicateFlag::SystemPredicate ]
+    ]
+];
+
 class SystemPredicates implements PredicateDefiner
 {
 
@@ -447,6 +461,7 @@ class SystemPredicates implements PredicateDefiner
             StatementQualificationPredicateDefs,
             IdPredicatesDefs,
             LanguagePredicateDefs,
+            PublisherPredicateDefs,
         ];
 
         $totalDefs = [];

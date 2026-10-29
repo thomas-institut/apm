@@ -19,6 +19,7 @@ class ApmCtl extends MultiToolCliUtilityManager
             JobQueueTool::class,
             WorkTool::class,
             UserTool::class,
+            PublisherTool::class,
             TranscriptionTool::class,
             PublicationTool::class,
             SearchIndexTool::class,

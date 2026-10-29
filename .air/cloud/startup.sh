@@ -37,7 +37,9 @@ fi
 
 if [[ "${AIR_STARTUP_MODE:-}" == "warmup" ]]; then
   npm ci
-  docker compose -f docker/apm/dev/compose.yaml pull nginx mysql valkey typesense
+  until docker compose -f docker/apm/dev/compose.yaml pull nginx mysql valkey typesense; do
+    sleep 5
+  done
   docker compose -f docker/apm/dev/compose.yaml build php
   docker compose -f docker/apm/dev/compose.yaml build node
   docker compose -f docker/apm/dev/compose.yaml build collatex

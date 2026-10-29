@@ -13,7 +13,7 @@ import {GenerateEditionPublicationFromMceData} from "#src/Actions/GenerateEditio
 import {getDurationInMs} from "#src/util/getDurationInMs.js";
 import {createErrorHandler} from "#src/util/createErrorHandler.js";
 
-const VERSION = '1.5.4c';
+const VERSION = '1.5.5';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;

@@ -17,7 +17,6 @@ mkdir -p \
   "$DEV_TMP/apm/typesense-data"
 
 npm ci
-npm run build --workspace apps/apm/www
 
 docker compose -f docker/apm/dev/compose.yaml pull nginx mysql valkey typesense
 docker compose -f docker/apm/dev/compose.yaml build php node collatex

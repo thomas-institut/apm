@@ -16,15 +16,34 @@ mkdir -p \
   "$DEV_TMP/apm/valkey-data" \
   "$DEV_TMP/apm/typesense-data"
 
-npm ci
+if [[ ! -f "$APM_SRC/www/config.yaml" ]]; then
+  cat > "$APM_SRC/www/config.yaml" <<'EOF'
+db:
+  host: mysql
+  user: root
+  pwd: ''
+  db: apm
+nodeService:
+  url: http://node:4711
+url:
+  collatexHttp: http://collatex:7369
+valkey:
+  host: valkey
+typesense:
+  host: typesense
+  key: devel1234
+EOF
+fi
 
-docker compose -f docker/apm/dev/compose.yaml pull nginx mysql valkey typesense
-docker compose -f docker/apm/dev/compose.yaml build php
-docker compose -f docker/apm/dev/compose.yaml build node
-docker compose -f docker/apm/dev/compose.yaml build collatex
+if [[ "${AIR_STARTUP_MODE:-}" == "warmup" ]]; then
+  npm ci
+  docker compose -f docker/apm/dev/compose.yaml pull nginx mysql valkey typesense
+  docker compose -f docker/apm/dev/compose.yaml build php
+  docker compose -f docker/apm/dev/compose.yaml build node
+  docker compose -f docker/apm/dev/compose.yaml build collatex
+fi
+
 docker compose -f docker/apm/dev/compose.yaml up -d collatex mysql nginx node php typesense valkey
-docker compose -f docker/apm/dev/compose.yaml restart nginx
-docker exec -w /opt/apm/www apm-php /opt/composer/composer install --no-interaction --prefer-dist
 
 healthcheck() {
   until docker info >/dev/null 2>&1; do
@@ -38,9 +57,13 @@ healthcheck() {
 
   until curl --fail --silent --show-error http://127.0.0.1:8888/ -o /tmp/apm-healthcheck.html 2>/dev/null && \
     grep -qi '<html' /tmp/apm-healthcheck.html && \
-    ! grep -qi 'xdebug-error\|Fatal error\|Warning:' /tmp/apm-healthcheck.html; do
+    ! grep -qi 'SERVER ERROR\|Fatal error\|Warning:' /tmp/apm-healthcheck.html; do
     sleep 2
   done
 }
 
-healthcheck
+if [[ "${AIR_STARTUP_MODE:-}" == "warmup" ]]; then
+  docker compose -f docker/apm/dev/compose.yaml restart nginx
+  docker exec -w /opt/apm/www apm-php /opt/composer/composer install --no-interaction --prefer-dist
+  healthcheck
+fi

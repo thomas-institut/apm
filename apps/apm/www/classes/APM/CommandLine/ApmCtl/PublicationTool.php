@@ -32,12 +32,12 @@ class PublicationTool implements MultiToolCliUtility
     public static function getUsage(): string
     {
         $options = [
-            'list' => 'prints current publications',
-            'add <type> <id> [version]' => 'adds a publication of type <type> for resource id <id> (version is a timestring and is optional, defaults to the current version)',
+            'list <publisherId>' => 'prints publications available to a publisher',
+            'add <type> <id> <publisherIds> [version]' => 'adds a publication for comma-separated publisher IDs (version is optional)',
             'update <id> [version]' => 'updates a publication by id (version is a timestring and is optional, defaults to the current version)',
             'del <id>' => 'removes a publication by id',
-            'show <id>' => 'shows a publication by id',
-            'export json|evt <id>' => 'exports a publication by id as JSON or EVT-compatible TEI-XML (only for editions)',
+            'show <publisherId> <id>' => 'shows a publication available to a publisher',
+            'export json|evt <publisherId> <id>' => 'exports a publication available to a publisher as JSON or EVT-compatible TEI-XML (only for editions)',
         ];
         return implode("\n", array_map(function ($key, $value) {
             return "  $key: $value";
@@ -60,17 +60,17 @@ class PublicationTool implements MultiToolCliUtility
         $option = $argv[1] ?? '';
 
         return match ($option) {
-            'list' => $this->list(),
-            'add' => $this->add($argv[2], (int)$argv[3], $argv[4] ?? 'current'),
+            'list' => $this->list((int)$argv[2]),
+            'add' => $this->add($argv[2], (int)$argv[3], $this->parsePublisherIds($argv[4]), $argv[5] ?? 'current'),
             'update' => $this->update((int)$argv[2], $argv[3] ?? 'current'),
             'del' => $this->remove((int)$argv[2]),
-            'show' => $this->show((int)$argv[2]),
-            'export' => $this->export($argv[2], (int)$argv[3]),
+            'show' => $this->show((int)$argv[2], (int)$argv[3]),
+            'export' => $this->export($argv[2], (int)$argv[3], (int)$argv[4]),
             default => 0,
         };
     }
 
-    private function add(string $type, int $resourceId, string $version): int
+    private function add(string $type, int $resourceId, array $publisherIds, string $version): int
     {
         if ($resourceId <= 0) {
             print "Error: resource id must be greater than 0\n";
@@ -89,13 +89,30 @@ class PublicationTool implements MultiToolCliUtility
         }
         try {
             $pm = $this->publicationManager;
-            $data = $pm->createPublication($type, $resourceId, $version);
+            $data = $pm->createPublication($type, $resourceId, $publisherIds, $version);
             print "Publication $data->id created\n";
             return 0;
         } catch (ResourceNotFoundException $e) {
             print "Error: resource not found" . $e->getMessage() . "\n";
             return 1;
+        } catch (\InvalidArgumentException $e) {
+            print "Error: " . $e->getMessage() . "\n";
+            return 1;
         }
+    }
+
+    /**
+     * Parses a comma-separated list of publisher IDs.
+     *
+     * @param string $publisherIds
+     * @return int[]
+     */
+    private function parsePublisherIds(string $publisherIds): array
+    {
+        if ($publisherIds === '') {
+            return [];
+        }
+        return array_map('intval', explode(',', $publisherIds));
     }
 
     private function update(int $pubId, string $version): int
@@ -118,10 +135,10 @@ class PublicationTool implements MultiToolCliUtility
     }
 
 
-    private function list(): int
+    private function list(int $publisherId): int
     {
         $pm = $this->publicationManager;
-        $listings = $pm->list();
+        $listings = $pm->list($publisherId);
         if (count($listings) === 0) {
             print "No publications found\n";
             return 0;
@@ -149,7 +166,7 @@ class PublicationTool implements MultiToolCliUtility
         }
     }
 
-    private function show(int $pubId): int
+    private function show(int $publisherId, int $pubId): int
     {
         if ($pubId <= 0) {
             print "Error: publication id must be greater than 0\n";
@@ -157,7 +174,7 @@ class PublicationTool implements MultiToolCliUtility
         }
         try {
             $pm = $this->publicationManager;
-            $data = $pm->getPublication($pubId);
+            $data = $pm->getPublication($pubId, $publisherId);
             if ($data->type === PublicationType::Transcription) {
                 /** @var TranscriptionData $data */
                 $this->printTranscriptionData($data);
@@ -175,7 +192,7 @@ class PublicationTool implements MultiToolCliUtility
     }
 
 
-    private function export(string $format, int $pubId): int
+    private function export(string $format, int $publisherId, int $pubId): int
     {
         if ($pubId <= 0) {
             print "Error: publication id must be greater than 0\n";
@@ -189,7 +206,7 @@ class PublicationTool implements MultiToolCliUtility
 
         try {
             $pm = $this->publicationManager;
-            $pubData = $pm->getPublication($pubId);
+            $pubData = $pm->getPublication($pubId, $publisherId);
 
 
             if ($format === 'tei' && $pubData->type !== PublicationType::Edition) {

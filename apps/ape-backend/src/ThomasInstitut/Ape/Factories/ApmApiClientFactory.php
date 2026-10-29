@@ -32,7 +32,11 @@ class ApmApiClientFactory
             }
         }
 
-        $httpClient = new Client();
+        $httpClient = new Client([
+            'headers' => [
+                'Authorization' => 'Bearer ' . $systemConfig->apm->token
+            ]
+        ]);
         $requestFactory = new HttpFactory();
         $baseUrl = $systemConfig->apm->apiUrl;
         if ($logger !== null) {

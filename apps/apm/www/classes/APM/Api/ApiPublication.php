@@ -29,7 +29,8 @@ class ApiPublication extends ApiController
     {
         $this->setApiCallName(self::CLASS_NAME . ':' . __FUNCTION__);
         $apiResponse = new PublicationApiListResponse();
-        $apiResponse->publications = $this->publicationManager->list();
+        $publisherId = (int)$request->getAttribute('publisherId', 0);
+        $apiResponse->publications = $this->publicationManager->list($publisherId);
 
         return $this->responseFactory->success($response, $apiResponse);
     }
@@ -43,10 +44,11 @@ class ApiPublication extends ApiController
             return $this->responseFactory->badRequest($response, 'No publication id provided');
         }
         $id = intval($requestedId);
+        $publisherId = (int)$request->getAttribute('publisherId', 0);
 
         try {
             $apiResponse = new PublicationApiGetResponse();
-            $apiResponse->publicationData = $this->publicationManager->getPublication($id);
+            $apiResponse->publicationData = $this->publicationManager->getPublication($id, $publisherId);
             return $this->responseFactory->success($response, $apiResponse);
         } catch (PublicationNotFoundException) {
             return $this->responseFactory->notFound($response, "Publication $id not found");

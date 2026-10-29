@@ -21,6 +21,7 @@ npm ci
 docker compose -f docker/apm/dev/compose.yaml pull nginx mysql valkey typesense
 docker compose -f docker/apm/dev/compose.yaml build php node collatex
 docker compose -f docker/apm/dev/compose.yaml up -d collatex mysql nginx node php typesense valkey
+docker exec -w /opt/apm/www apm-php /opt/composer/composer install --no-interaction --prefer-dist
 
 healthcheck() {
   until docker info >/dev/null 2>&1; do
@@ -33,7 +34,8 @@ healthcheck() {
   done
 
   until curl --fail --silent --show-error http://127.0.0.1:8888/ -o /tmp/apm-healthcheck.html 2>/dev/null && \
-    grep -qi '<html' /tmp/apm-healthcheck.html; do
+    grep -qi '<html' /tmp/apm-healthcheck.html && \
+    ! grep -qi 'xdebug-error\|Fatal error\|Warning:' /tmp/apm-healthcheck.html; do
     sleep 2
   done
 }

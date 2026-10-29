@@ -1,7 +1,7 @@
 /**
  * @vitest-environment happy-dom
  */
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { TableEditor } from '@/pages/common/TableEditor/TableEditor';
 
 describe('TableEditor', () => {
@@ -72,6 +72,65 @@ describe('TableEditor', () => {
     
     // Check if move buttons are present now
     expect(container.querySelector('.button-move-mode')).toBeTruthy();
+  });
+
+  it('should forward edit requests without mutating its matrix or column groups', () => {
+    const onShiftCellsRequest = vi.fn();
+    const onColumnAddRequest = vi.fn();
+    const onColumnDeleteRequest = vi.fn();
+    const onColumnGroupToggleRequest = vi.fn();
+    const te = new TableEditor({
+      id: 'test-container',
+      rowDefinition: [{title: 'Row 1', values: [100, -1], isEditable: true}],
+      getEmptyValue: () => -1,
+      isEmptyValue: (_row: number, _col: number, value: number) => value === -1,
+      generateCellContent: (_row: number, _col: number, value: number) => value.toString(),
+      generateCellContentEditMode: (_row: number, _col: number, value: number) => value.toString(),
+      onCellConfirmEdit: (_row: number, _col: number, value: string) => ({valueChange: true, value: parseInt(value)}),
+      cellValidationFunction: () => ({isValid: true, warnings: [], errors: []}),
+      onShiftCellsRequest,
+      onColumnAddRequest,
+      onColumnDeleteRequest,
+      onColumnGroupToggleRequest
+    });
+    te.setEditMode('move', false);
+    te.redrawTable(true);
+
+    container.querySelector<HTMLElement>('.move-cell-right-button')?.click();
+    container.querySelector<HTMLElement>('.te-th-0 .add-column-left-button')?.click();
+    container.querySelector<HTMLElement>('.te-th-1 .delete-column-button')?.click();
+
+    expect(onShiftCellsRequest).toHaveBeenCalledWith(0, 0, 0, 'right', 1);
+    expect(onColumnAddRequest).toHaveBeenCalledWith(-1);
+    expect(onColumnDeleteRequest).toHaveBeenCalledWith(1);
+    expect(te.matrix.getRow(0)).toEqual([100, -1]);
+    expect(te.columnSequence.getGroupedNumbers()).toEqual([]);
+
+    te.setEditMode('group', false);
+    te.redrawTable(true);
+    container.querySelector<HTMLElement>('.link-button-0')?.click();
+
+    expect(onColumnGroupToggleRequest).toHaveBeenCalledWith(0, true);
+    expect(te.columnSequence.getGroupedNumbers()).toEqual([]);
+  });
+
+  it('should preserve local edits when intent request hooks are omitted', () => {
+    const te = new TableEditor({
+      id: 'test-container',
+      rowDefinition: [{title: 'Row 1', values: [100, -1], isEditable: true}],
+      getEmptyValue: () => -1,
+      isEmptyValue: (_row: number, _col: number, value: number) => value === -1,
+      generateCellContent: (_row: number, _col: number, value: number) => value.toString(),
+      generateCellContentEditMode: (_row: number, _col: number, value: number) => value.toString(),
+      onCellConfirmEdit: (_row: number, _col: number, value: string) => ({valueChange: true, value: parseInt(value)}),
+      cellValidationFunction: () => ({isValid: true, warnings: [], errors: []})
+    });
+    te.setEditMode('move', false);
+    te.redrawTable(true);
+
+    container.querySelector<HTMLElement>('.move-cell-right-button')?.click();
+
+    expect(te.matrix.getRow(0)).toEqual([-1, 100]);
   });
 
   it('should activate windowing for large matrices', async () => {

@@ -159,6 +159,10 @@ interface TableEditorOptions<T> {
   onColumnAdd?: (newCol: number) => void;
   onColumnDelete?: (deletedCol: number, isLastDeletedColumnInOperation: boolean) => void;
   onColumnUngroupEventHandler?: (column: number) => void;
+  onShiftCellsRequest?: ((row: number, firstCol: number, lastCol: number, direction: 'left' | 'right', numCols: number) => void) | null;
+  onColumnAddRequest?: ((afterCol: number) => void) | null;
+  onColumnDeleteRequest?: ((col: number) => void) | null;
+  onColumnGroupToggleRequest?: ((col: number, groupWithNext: boolean) => void) | null;
   onCellCancelEdit?: (row: number, col: number, editorTextValue: string) => void;
 
   // a function to be called when the user clicks on the confirm edit button in edit mode
@@ -297,6 +301,10 @@ export class TableEditor<T> {
       },
       onColumnUngroupEventHandler: () => {
       },
+      onShiftCellsRequest: null,
+      onColumnAddRequest: null,
+      onColumnDeleteRequest: null,
+      onColumnGroupToggleRequest: null,
       onCellCancelEdit: () => {
       },
       emptyCellHtml: '&mdash;',
@@ -1228,42 +1236,15 @@ export class TableEditor<T> {
       const col = this.getThIndexFromElement(th);
       if (col !== -1) {
         if (target.closest(`.${addColumnLeftButtonClass}`)) {
-          this.currentYScroll = window.scrollY;
-          this.currentXScroll = window.scrollX;
-          this.waitingForScrollZero = true;
-          this.insertColumnAfter(col - 1);
-          if (this.options.onColumnAdd) {
-            this.options.onColumnAdd(col);
-          }
-          this.redrawTable();
-          this.forceRestoreScroll(250);
-          ev.preventDefault();
-          return;
-        }
-        if (target.closest(`.${addColumnRightButtonClass}`)) {
-          this.currentYScroll = window.scrollY;
-          this.currentXScroll = window.scrollX;
-          this.waitingForScrollZero = true;
-          this.insertColumnAfter(col);
-          if (this.options.onColumnAdd) {
-            this.options.onColumnAdd(col + 1);
-          }
-          this.redrawTable();
-          this.forceRestoreScroll(250);
-          ev.preventDefault();
-          return;
-        }
-        if (target.closest(`.${deleteColumnButtonClass}`)) {
-          if (this.canDeleteColumn(col)) {
-            if (this.container) {
-              this.container.querySelector(this.getThSelector(col))?.classList.add('te-deleting');
-            }
+          if (this.options.onColumnAddRequest) {
+            this.options.onColumnAddRequest(col - 1);
+          } else {
             this.currentYScroll = window.scrollY;
             this.currentXScroll = window.scrollX;
             this.waitingForScrollZero = true;
-            this.deleteSingleColumnData(col);
-            if (this.options.onColumnDelete) {
-              this.options.onColumnDelete(col, true);
+            this.insertColumnAfter(col - 1);
+            if (this.options.onColumnAdd) {
+              this.options.onColumnAdd(col);
             }
             this.redrawTable();
             this.forceRestoreScroll(250);
@@ -1271,20 +1252,63 @@ export class TableEditor<T> {
           ev.preventDefault();
           return;
         }
+        if (target.closest(`.${addColumnRightButtonClass}`)) {
+          if (this.options.onColumnAddRequest) {
+            this.options.onColumnAddRequest(col);
+          } else {
+            this.currentYScroll = window.scrollY;
+            this.currentXScroll = window.scrollX;
+            this.waitingForScrollZero = true;
+            this.insertColumnAfter(col);
+            if (this.options.onColumnAdd) {
+              this.options.onColumnAdd(col + 1);
+            }
+            this.redrawTable();
+            this.forceRestoreScroll(250);
+          }
+          ev.preventDefault();
+          return;
+        }
+        if (target.closest(`.${deleteColumnButtonClass}`)) {
+          if (this.canDeleteColumn(col)) {
+            if (this.options.onColumnDeleteRequest) {
+              this.options.onColumnDeleteRequest(col);
+            } else {
+              if (this.container) {
+                this.container.querySelector(this.getThSelector(col))?.classList.add('te-deleting');
+              }
+              this.currentYScroll = window.scrollY;
+              this.currentXScroll = window.scrollX;
+              this.waitingForScrollZero = true;
+              this.deleteSingleColumnData(col);
+              if (this.options.onColumnDelete) {
+                this.options.onColumnDelete(col, true);
+              }
+              this.redrawTable();
+              this.forceRestoreScroll(250);
+            }
+          }
+          ev.preventDefault();
+          return;
+        }
         if (target.closest(`.${linkButtonClass}`)) {
           if (this.tableEditMode === EditModeGroup) {
             let grouped = this.isColumnGroupedWithNext(col);
-            if (grouped) {
-              this.columnSequence.ungroupWithNext(col);
+            if (this.options.onColumnGroupToggleRequest) {
+              this.options.onColumnGroupToggleRequest(col, !grouped);
             } else {
-              this.columnSequence.groupWithNext(col);
-            }
-            this.dispatchColumnGroupChangeEvent(col, !grouped);
+              if (grouped) {
+                this.columnSequence.ungroupWithNext(col);
+              } else {
+                this.columnSequence.groupWithNext(col);
+              }
+              this.dispatchColumnGroupChangeEvent(col, !grouped);
 
-            this.redrawHeader(col);
-            for (let r = 0; r < this.matrix.nRows; r++) {
-              this.refreshCellClasses(r, col);
-              this.refreshCellClasses(r, col + 1);
+              this.redrawHeader(col);
+              for (let r = 0; r < this.matrix.nRows; r++) {
+                this.refreshCellClasses(r, col);
+                this.refreshCellClasses(r, col + 1);
+              }
             }
 
             ev.preventDefault();
@@ -1325,24 +1349,40 @@ export class TableEditor<T> {
 
         // Move/Edit buttons
         if (target.closest(`.${moveCellLeftButtonClass}`)) {
-          this.shiftCells(row, col, col, 'left', 1);
+          if (this.options.onShiftCellsRequest) {
+            this.options.onShiftCellsRequest(row, col, col, 'left', 1);
+          } else {
+            this.shiftCells(row, col, col, 'left', 1);
+          }
           ev.preventDefault();
           return;
         }
         if (target.closest(`.${moveCellRightButtonClass}`)) {
-          this.shiftCells(row, col, col, 'right', 1);
+          if (this.options.onShiftCellsRequest) {
+            this.options.onShiftCellsRequest(row, col, col, 'right', 1);
+          } else {
+            this.shiftCells(row, col, col, 'right', 1);
+          }
           ev.preventDefault();
           return;
         }
         if (target.closest(`.${pushCellsLeftButtonClass}`)) {
           const emptyCol = this.getFirstEmptyCellToTheLeft(row, col);
-          this.shiftCells(row, emptyCol + 1, col, 'left', 1);
+          if (this.options.onShiftCellsRequest) {
+            this.options.onShiftCellsRequest(row, emptyCol + 1, col, 'left', 1);
+          } else {
+            this.shiftCells(row, emptyCol + 1, col, 'left', 1);
+          }
           ev.preventDefault();
           return;
         }
         if (target.closest(`.${pushCellsRightButtonClass}`)) {
           const emptyCol = this.getFirstEmptyCellToTheRight(row, col);
-          this.shiftCells(row, col, emptyCol - 1, 'right', 1);
+          if (this.options.onShiftCellsRequest) {
+            this.options.onShiftCellsRequest(row, col, emptyCol - 1, 'right', 1);
+          } else {
+            this.shiftCells(row, col, emptyCol - 1, 'right', 1);
+          }
           ev.preventDefault();
           return;
         }

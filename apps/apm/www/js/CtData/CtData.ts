@@ -54,10 +54,29 @@ import {
   WitnessTokenInterface
 } from "./CtDataInterface.js";
 import {SiglaGroupUtil} from "./SiglaGroupUtil.js";
-import {FULL_TX} from "../Witness/WitnessType.js";
+import {FULL_TX, SOURCE} from "../Witness/WitnessType.js";
 import {NormalizerRegister} from "../pages/common/NormalizerRegister.js";
 import {Matrix} from "../lib/Matrix.js";
 import {ValidationError} from "@/lib/Error/SystemError";
+import {FmtText, fromString, getPlainText} from '@thomas-inst/fmt-text';
+import * as FmtTextTokenType from '@thomas-inst/fmt-text/FmtTextTokenType';
+import {EditionWitnessTokenStringParser} from '../toolbox/EditionWitnessTokenStringParser.js';
+import {trimWhiteSpace} from '../toolbox/Util.js';
+
+export interface CtCellShift {
+  witnessIndex: number;
+  firstCol: number;
+  lastCol: number;
+  direction: 'left' | 'right';
+  numCols?: number;
+}
+
+export interface CtTokenTextEdit {
+  witnessIndex: number;
+  tokenIndex: number;
+  newText: string;
+  normalizerRegister: NormalizerRegister;
+}
 
 
 /*
@@ -697,18 +716,277 @@ export class CtData {
     return m;
   }
 
-  static insertColumnsAfter(ctData: CtDataInterface, col: number, numCols: number): CtDataInterface {
-    if (numCols <= 0) {
-      // nothing to do
+  static getCtRowWitnessIndexes(ctData: CtDataInterface): number[] {
+    return ctData.witnessOrder.filter((witnessIndex) => {
+      return ctData.witnesses[witnessIndex]?.witnessType !== SOURCE;
+    });
+  }
+
+  static canShiftCells(ctData: CtDataInterface, shift: CtCellShift): boolean {
+    const numCols = shift.numCols ?? 1;
+    const numTableColumns = ctData.collationMatrix[0]?.length ?? 0;
+    if (!Number.isInteger(shift.witnessIndex) ||
+      !this.getCtRowWitnessIndexes(ctData).includes(shift.witnessIndex) ||
+      ctData.collationMatrix[shift.witnessIndex]?.length !== numTableColumns ||
+      !Number.isInteger(shift.firstCol) || !Number.isInteger(shift.lastCol) ||
+      !Number.isInteger(numCols) || numCols < 1 ||
+      shift.firstCol < 0 || shift.lastCol < shift.firstCol || shift.lastCol >= numTableColumns ||
+      (shift.direction !== 'left' && shift.direction !== 'right')) {
+      return false;
+    }
+
+    const targetStart = shift.direction === 'left' ? shift.firstCol - numCols : shift.lastCol + 1;
+    const targetEnd = shift.direction === 'left' ? shift.firstCol - 1 : shift.lastCol + numCols;
+    if (targetStart < 0 || targetEnd >= numTableColumns) {
+      return false;
+    }
+    for (let col = targetStart; col <= targetEnd; col++) {
+      if (!this.isCtCellEmpty(ctData, shift.witnessIndex, col)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  static shiftCells(ctData: CtDataInterface, shift: CtCellShift): CtDataInterface {
+    if (!this.canShiftCells(ctData, shift)) {
+      throw new ValidationError('Cannot shift cells into the requested range');
+    }
+
+    const numCols = shift.numCols ?? 1;
+    const row = ctData.collationMatrix[shift.witnessIndex].slice();
+    const originalRow = row.slice();
+    if (shift.direction === 'right') {
+      for (let col = shift.firstCol; col < shift.firstCol + numCols; col++) {
+        row[col] = -1;
+      }
+      for (let col = shift.firstCol + numCols; col <= shift.lastCol + numCols; col++) {
+        row[col] = originalRow[col - numCols];
+      }
+    } else {
+      for (let col = shift.lastCol; col > shift.lastCol - numCols; col--) {
+        row[col] = -1;
+      }
+      for (let col = shift.lastCol - numCols; col >= shift.firstCol - numCols; col--) {
+        row[col] = originalRow[col + numCols];
+      }
+    }
+
+    if (ctData.type === CollationTableType.EDITION && shift.witnessIndex === ctData.editionWitnessIndex) {
+      const tokens = ctData.witnesses[shift.witnessIndex].tokens;
+      if (tokens === undefined) {
+        throw new ValidationError(`Edition witness ${shift.witnessIndex} has no tokens`);
+      }
+      const reorderedTokens = row.map((tokenRef) => {
+        if (tokenRef === -1) {
+          return emptyEditionWitnessToken();
+        }
+        if (tokens[tokenRef] === undefined) {
+          throw new ValidationError(`Edition witness token reference ${tokenRef} is invalid`);
+        }
+        return tokens[tokenRef];
+      });
+      ctData.witnesses[shift.witnessIndex].tokens = reorderedTokens;
+      ctData.collationMatrix[shift.witnessIndex] = reorderedTokens.map((_token, index) => index);
+      ctData.customApparatuses = this.fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(
+        ctData,
+        shift.firstCol,
+        shift.lastCol,
+        numCols,
+        shift.direction
+      );
+    } else {
+      ctData.collationMatrix[shift.witnessIndex] = row;
+    }
+    return ctData;
+  }
+
+  static setColumnGroupedWithNext(ctData: CtDataInterface, col: number, grouped: boolean): CtDataInterface {
+    const numColumns = ctData.collationMatrix[0]?.length ?? 0;
+    if (!Number.isInteger(col) || col < 0 || col >= numColumns - 1) {
+      throw new ValidationError(`Invalid column index ${col} for grouping`);
+    }
+    const sequence = new SequenceWithGroups(numColumns, ctData.groupedColumns);
+    if (grouped) {
+      sequence.groupWithNext(col);
+    } else {
+      sequence.ungroupWithNext(col);
+    }
+    ctData.groupedColumns = sequence.getGroupedNumbers();
+    return ctData;
+  }
+
+  static isColumnEmpty(ctData: CtDataInterface, col: number): boolean {
+    if (!Number.isInteger(col) || col < 0 || col >= (ctData.collationMatrix[0]?.length ?? 0)) {
+      throw new ValidationError(`Invalid column index ${col}`);
+    }
+    return this.getCtRowWitnessIndexes(ctData).every((witnessIndex) => {
+      return this.isCtCellEmpty(ctData, witnessIndex, col);
+    });
+  }
+
+  static canDeleteColumn(ctData: CtDataInterface, col: number): boolean {
+    const numColumns = ctData.collationMatrix[0]?.length ?? 0;
+    if (!Number.isInteger(col) || col < 0 || col >= numColumns) {
+      return false;
+    }
+    return this.isColumnEmpty(ctData, col);
+  }
+
+  static deleteColumn(ctData: CtDataInterface, col: number): CtDataInterface {
+    if (!this.canDeleteColumn(ctData, col)) {
+      throw new ValidationError(`Column ${col} cannot be deleted`);
+    }
+    if (ctData.type === CollationTableType.EDITION &&
+      ctData.witnesses[ctData.editionWitnessIndex]?.tokens === undefined) {
+      throw new ValidationError(`Edition witness ${ctData.editionWitnessIndex} has no tokens`);
+    }
+
+    const numColumns = ctData.collationMatrix[0].length;
+    const columnSequence = new SequenceWithGroups(numColumns, ctData.groupedColumns);
+    columnSequence.removeNumber(col);
+    const matrix = this.getCollationMatrix(ctData);
+    matrix.deleteColumn(col);
+    ctData.collationMatrix = getRawCollationMatrixFromMatrixHelper(matrix);
+    ctData.groupedColumns = columnSequence.getGroupedNumbers();
+
+    if (ctData.type === CollationTableType.EDITION) {
+      const editionWitnessIndex = ctData.editionWitnessIndex;
+      const oldTokens = ctData.witnesses[editionWitnessIndex].tokens;
+      if (oldTokens === undefined) {
+        throw new ValidationError(`Edition witness ${editionWitnessIndex} has no tokens`);
+      }
+      const newTokens = ctData.collationMatrix[editionWitnessIndex].map((tokenRef) => {
+        if (tokenRef === -1) {
+          return emptyEditionWitnessToken();
+        }
+        if (oldTokens[tokenRef] === undefined) {
+          throw new ValidationError(`Edition witness token reference ${tokenRef} is invalid`);
+        }
+        return oldTokens[tokenRef];
+      });
+      ctData.witnesses[editionWitnessIndex].tokens = newTokens;
+      ctData.collationMatrix[editionWitnessIndex] = newTokens.map((_token, index) => index);
+    }
+    ctData.customApparatuses = this.fixReferencesInCustomApparatusesAfterColumnDelete(ctData, col);
+    return ctData;
+  }
+
+  static getDeletableColumns(ctData: CtDataInterface): number[] {
+    const numColumns = ctData.collationMatrix[0]?.length ?? 0;
+    return Array.from({length: numColumns}, (_unused, col) => col).filter((col) => {
+      return this.canDeleteColumn(ctData, col);
+    });
+  }
+
+  static compactTable(ctData: CtDataInterface): CtDataInterface {
+    this.getDeletableColumns(ctData).reverse().forEach((col) => {
+      this.deleteColumn(ctData, col);
+    });
+    return ctData;
+  }
+
+  static editWitnessTokenText(ctData: CtDataInterface, edit: CtTokenTextEdit): CtDataInterface {
+    const {witnessIndex, tokenIndex, normalizerRegister} = edit;
+    const witness = ctData.witnesses[witnessIndex];
+    if (ctData.type !== CollationTableType.EDITION || witnessIndex !== ctData.editionWitnessIndex ||
+      witness === undefined || witness.witnessType !== 'edition' || !Number.isInteger(tokenIndex) ||
+      tokenIndex < 0 || witness.tokens[tokenIndex] === undefined ||
+      witness.tokens[tokenIndex].tokenType === WitnessTokenType.FORMAT_MARK) {
+      throw new ValidationError(`Invalid edition witness token ${witnessIndex}:${tokenIndex}`);
+    }
+
+    const newText = trimWhiteSpace(edit.newText);
+    const currentToken = witness.tokens[tokenIndex];
+    if (currentToken.text === newText) {
       return ctData;
+    }
+    if (newText === '') {
+      return this.emptyWitnessToken(ctData, witnessIndex, tokenIndex);
+    }
+
+    const tokenType = Punctuation.stringIsAllPunctuation(newText, ctData.lang)
+      ? WitnessTokenType.PUNCTUATION
+      : WitnessTokenType.WORD;
+    if (currentToken.fmtText === undefined) {
+      currentToken.text = newText;
+    } else {
+      const newFmtText = fmtTextChangePlainText(currentToken.fmtText, newText);
+      currentToken.fmtText = newFmtText;
+      currentToken.text = getPlainText(newFmtText);
+    }
+    currentToken.tokenType = tokenType;
+    if (tokenType === WitnessTokenType.WORD) {
+      let normalizedText: string | undefined;
+      let normalizationSource: string | undefined;
+      if (ctData.automaticNormalizationsApplied.length !== 0) {
+        normalizedText = normalizerRegister.applyNormalizerList(ctData.automaticNormalizationsApplied, newText);
+        normalizationSource = NormalizationSource.COLLATION_EDITOR_AUTOMATIC;
+      }
+      const parsedTokens = EditionWitnessTokenStringParser.parse(newText, ctData.lang, true, true);
+      if (parsedTokens.length === 1 && parsedTokens[0].normalizedText !== '') {
+        normalizedText = parsedTokens[0].normalizedText;
+        normalizationSource = NormalizationSource.PARSER_NORMALIZER;
+      }
+      if (newText !== normalizedText) {
+        currentToken.normalizedText = normalizedText;
+        currentToken.normalizationSource = normalizationSource;
+      } else if (currentToken.normalizationSource === NormalizationSource.COLLATION_EDITOR_AUTOMATIC ||
+        currentToken.normalizationSource === NormalizationSource.PARSER_NORMALIZER) {
+        delete currentToken.normalizedText;
+        delete currentToken.normalizationSource;
+      }
+    }
+    return ctData;
+  }
+
+  private static isCtCellEmpty(ctData: CtDataInterface, witnessIndex: number, col: number): boolean {
+    const tokenRef = ctData.collationMatrix[witnessIndex]?.[col];
+    if (tokenRef === -1) {
+      return true;
+    }
+    if (tokenRef === undefined) {
+      return false;
+    }
+    const witnessToken = ctData.witnesses[witnessIndex]?.tokens[tokenRef];
+    return witnessToken?.tokenType === WitnessTokenType.EMPTY;
+  }
+
+  private static fixReferencesInCustomApparatusesAfterColumnDelete(ctData: CtDataInterface, deletedCol: number): CustomApparatusInterface[] {
+    return ctData.customApparatuses.map((apparatus) => {
+      const newApparatus = deepCopy(apparatus);
+      newApparatus.entries = apparatus.entries.flatMap((entry) => {
+        if (entry.from === deletedCol && entry.to === deletedCol) {
+          return [];
+        }
+        const newEntry = deepCopy(entry);
+        if (newEntry.from > deletedCol) {
+          newEntry.from--;
+        }
+        if (newEntry.to >= deletedCol) {
+          newEntry.to--;
+        }
+        return [newEntry];
+      });
+      return newApparatus;
+    });
+  }
+
+  static insertColumnsAfter(ctData: CtDataInterface, col: number, numCols: number): CtDataInterface {
+    if (!Number.isInteger(numCols) || numCols < 1) {
+      throw new ValidationError(`Invalid number of columns to insert: ${numCols}`);
     }
     // 1. insert columns in collation table
     let collationMatrix = this.getCollationMatrix(ctData);
+    if (!Number.isInteger(col) || col < -1 || col >= collationMatrix.nCols) {
+      throw new ValidationError(`Invalid column index ${col} for insertion`);
+    }
     if (collationMatrix.nRows === 0) {
       return ctData;
     }
-    if (col >= collationMatrix.nCols) {
-      return ctData;
+    if (ctData.type === CollationTableType.EDITION &&
+      ctData.witnesses[ctData.editionWitnessIndex]?.tokens === undefined) {
+      throw new ValidationError(`Edition witness ${ctData.editionWitnessIndex} has no tokens`);
     }
     let columnSequence = new SequenceWithGroups(collationMatrix.nCols, ctData['groupedColumns']);
     for (let i = 0; i < numCols; i++) {
@@ -948,5 +1226,27 @@ function getRawCollationMatrixFromMatrixHelper(m: Matrix<number>): number[][] {
   }
 
   return rawMatrix;
+}
+
+function emptyEditionWitnessToken(): WitnessTokenInterface {
+  return {
+    tokenClass: WitnessType.EDITION,
+    tokenType: WitnessTokenType.EMPTY,
+    text: '',
+    fmtText: []
+  };
+}
+
+function fmtTextChangePlainText(fmtText: FmtText, newPlainText: string): FmtText {
+  if (fmtText.length === 0) {
+    return fromString(newPlainText);
+  }
+  const textTokens = fmtText.filter((token) => token.type === FmtTextTokenType.TOKEN_TYPE_TEXT);
+  if (textTokens.length === 0) {
+    return fmtText;
+  }
+  const textToken = deepCopy(textTokens[0]);
+  textToken.text = newPlainText;
+  return [textToken];
 }
 

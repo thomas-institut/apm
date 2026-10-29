@@ -1,7 +1,7 @@
 import {useParams} from "react-router";
 import './EditionComposer.css';
 import {StatusPage} from "@/ReactAPM/Components/StatusPage/StatusPage";
-import {useContext, useEffect, useRef, useState, MouseEvent} from "react";
+import {useContext, useEffect, useMemo, useRef, useState, MouseEvent} from "react";
 import {Button, Spinner} from "react-bootstrap";
 import {Arrow90degLeft, Arrow90degRight, ArrowCounterclockwise, Save} from "react-bootstrap-icons";
 import {AppContext} from "@/ReactAPM/App";
@@ -54,6 +54,7 @@ import {
 } from "@/ReactAPM/Pages/EditionComposer/Actions/UpdateIncludeInAutoMarginalFoliationStatusAction";
 import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/EditionComposer/Actions/ChangeSiglaGroupAction";
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/EditionComposer/Actions/DeleteSiglaGroupAction";
+import {createStandardNormalizerRegister} from "@/normalizers/StandardNormalizers";
 
 type ComposerStatus = 'start' | 'loading' | 'loadingNewVersion' | 'error' | 'loaded';
 
@@ -99,6 +100,7 @@ export default function EditionComposer() {
   const [entryEditRequest, setEntryEditRequest] = useState<(EntryEditRequest & { apparatusType: string }) | null>(null);
 
   const appContext = useContext(AppContext);
+  const normalizerRegister = useMemo(() => createStandardNormalizerRegister(ctData?.lang ?? ''), [ctData?.lang]);
   const shimWidth = 5;
   const previousRoute = useRef({id, version});
   const actionInProgressRef = useRef(false);
@@ -469,7 +471,9 @@ export default function EditionComposer() {
       title: 'Collation',
       tabDescription: 'Collation table',
       tabbable: true,
-      content: <CtPanel ctData={ctData}/>
+      content: <CtPanel ctData={ctData} mainText={edition.mainText} canEdit={canEdit}
+                        normalizerRegister={normalizerRegister} onAction={runHistoryAction}
+                        onEditApparatusEntry={editApparatusEntryForRange}/>
     },
     {
       panel: 'one',

@@ -1,0 +1,80 @@
+.ct-panel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.ct-panel-toolbar {
+  align-items: center;
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  padding: 0.3rem;
+}
+
+.ct-panel-toolbar .panel-toolbar-group {
+  align-items: center;
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.2rem;
+}
+
+.ct-panel-toolbar .ct-toolbar-toggle {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.3rem;
+  margin: 0;
+  white-space: nowrap;
+}
+
+.ct-panel-toolbar .ct-toolbar-toggle input {
+  margin: 0;
+}
+
+.ct-panel-toolbar .ct-export-csv {
+  align-items: center;
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem 0.4rem;
+}
+
+.ct-table-editor {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ct-table-editor td.search-match {
+  background-color: rgba(255, 215, 0, 0.3);
+}
+
+.ct-table-editor td.search-match.selected {
+  background-color: rgba(255, 165, 0, 0.45);
+  outline: 2px solid rgba(210, 120, 0, 0.8);
+  outline-offset: -2px;
+}
+
+.ct-token-popover {
+  background: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-radius: 0.25rem;
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.2);
+  max-height: 24rem;
+  max-width: 32rem;
+  overflow: auto;
+  padding: 0.6rem;
+  z-index: 1070;
+}
+
+.ct-normalization-option {
+  margin-bottom: 0.8rem;
+}
+
+.ct-normalizer-help {
+  color: #666;
+  font-size: 0.9em;
+  margin-left: 1.6rem;
+}

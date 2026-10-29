@@ -47,14 +47,8 @@ import {EditableTextField} from '@/widgets/EditableTextField';
 
 // Normalizations
 import {NormalizerRegister} from '@/pages/common/NormalizerRegister';
-import {ToLowerCaseNormalizer} from '@/normalizers/TokenNormalizer/ToLowerCaseNormalizer';
-import {IgnoreArabicVocalizationNormalizer} from '@/normalizers/TokenNormalizer/IgnoreArabicVocalizationNormalizer';
-import {IgnoreShaddaNormalizer} from '@/normalizers/TokenNormalizer/IgnoreShaddaNormalizer';
-import {
-  RemoveHamzahMaddahFromAlifWawYahNormalizer
-} from '@/normalizers/TokenNormalizer/RemoveHamzahMaddahFromAlifWawYahNormalizer';
-import {IgnoreTatwilNormalizer} from '@/normalizers/TokenNormalizer/IgnoreTatwilNormalizer';
-import {IgnoreIsolatedHamzaNormalizer} from '@/normalizers/TokenNormalizer/IgnoreIsolatedHamzaNormalizer';
+import {createStandardNormalizerRegister} from '@/normalizers/StandardNormalizers';
+import {getPeopleMentionedInCtData} from '@/CtData/CtDataPeopleUtil';
 
 // CtData and Edition core
 import {CtData} from '@/CtData/CtData';
@@ -286,8 +280,7 @@ export class EditionComposer extends ApmPage {
     this.chunkNumber = Number(chunkNumber);
 
     // Normalizers
-    this.normalizerRegister = new NormalizerRegister();
-    this.registerStandardNormalizers();
+    this.normalizerRegister = createStandardNormalizerRegister(this.ctData.lang);
     this.lastSavedCtData = Util.deepCopy(this.ctData);
 
 
@@ -594,50 +587,6 @@ export class EditionComposer extends ApmPage {
     $(`#apparatus-${apparatusIndex}-tab`).tab('show');
   }
 
-  registerStandardNormalizers() {
-    switch (this.ctData.lang) {
-      case 'la':
-        this.normalizerRegister.registerNormalizer('toLowerCase', new ToLowerCaseNormalizer(), {
-          lang: 'la', label: 'Ignore Letter Case', help: 'E.g., \'Et\' and \'et\' will be taken to be the same word'
-        });
-        // this.normalizerRegister.registerNormalizer(
-        //   'ignoreHyphen',
-        //   new IgnoreHyphen(),
-        //   {
-        //     lang: 'la',
-        //     label: 'Ignore Hyphens',
-        //     help: "E.g., 'cor-de' and 'corde' will be taken to be the same word"
-        //   }
-        // )
-        break;
-
-      case 'ar':
-        this.normalizerRegister.registerNormalizer('removeHamzahMaddahFromAlifWawYah', new RemoveHamzahMaddahFromAlifWawYahNormalizer(), {
-          lang: 'ar',
-          label: 'Ignore hamzah and maddah in ʾalif, wāw and yāʾ',
-          help: 'آ , أ, إ &larr; ا      ؤ &larr; و      ئ &larr; ي'
-
-        });
-
-        this.normalizerRegister.registerNormalizer('ignoreVocalization', new IgnoreArabicVocalizationNormalizer(), {
-          lang: 'ar', label: 'Ignore Vocalization', help: 'Ignore vocal diacritics, e.g., الْحُرُوف &larr; الحروف'
-
-        });
-        this.normalizerRegister.registerNormalizer('ignoreShadda', new IgnoreShaddaNormalizer(), {
-          lang: 'ar', label: 'Ignore shaddah', help: 'Ignore shaddah, e.g., درّس &larr; درس'
-        });
-        this.normalizerRegister.registerNormalizer('ignoreTatwil', new IgnoreTatwilNormalizer(), {
-          lang: 'ar', label: 'Ignore taṭwīl', help: 'Ignore taṭwīl'
-        });
-        this.normalizerRegister.registerNormalizer('ignoreIsolatedHamza', new IgnoreIsolatedHamzaNormalizer(), {
-          lang: 'ar', label: 'Ignore isolated hamza', help: 'Ignore isolated hamza'
-        });
-        break;
-
-      case 'he':
-        break;
-    }
-  }
 
   async _updateDataInPanels(updateWitnessInfo = false) {
     if (this.errorDetected) {
@@ -1307,21 +1256,7 @@ function getEditionAppIndexFromCtDataAppIndex(ctDataAppIndex: number, ctData: Ct
 }
 
 
-export function getPeopleMentionedInCtData(ctData: CtDataInterface) : number[] {
-  const authors: number[] = [];
-  ctData.witnesses.forEach(witness => {
-    if (witness.witnessType === FULL_TX && witness.items !== undefined) {
-       witness.items.forEach( (item)=> {
-         if (item.notes !== undefined) {
-           item.notes.forEach( (note) => {
-             authors.push(note.authorTid)
-           })
-         }
-       })
-    }
-  });
-  return authors;
-}
+export {getPeopleMentionedInCtData};
 
 function getPrenderMessage(msg: string) : string {
   return `<div class="prerender-msg"><b>Edition Composer</b>: ${msg}  <span class="prerender-spinner"></span></div>`;

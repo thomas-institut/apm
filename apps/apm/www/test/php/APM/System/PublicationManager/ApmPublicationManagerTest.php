@@ -49,7 +49,6 @@ class ApmPublicationManagerTest extends TestCase
         $this->logger = $this->createMock(LoggerInterface::class);
         $this->valkeyClient = $this->createMock(Client::class);
         $this->entitySystem = $this->createMock(ApmEntitySystemInterface::class);
-        $this->entitySystem->method('validateEntity')->willReturn(true);
 
         $this->manager = new ApmPublicationManager(
             $this->dm,
@@ -188,6 +187,8 @@ class ApmPublicationManagerTest extends TestCase
     #[AllowMockObjectsWithoutExpectations]
     public function testCreatePublication(): void
     {
+        $this->entitySystem->method('validateEntity')->willReturn(true);
+
         $docId = 456;
         $docInfo = new DocInfo();
         $docInfo->id = $docId;
@@ -264,6 +265,8 @@ class ApmPublicationManagerTest extends TestCase
     #[AllowMockObjectsWithoutExpectations]
     public function testCreatePublicationDryRun(): void
     {
+        $this->entitySystem->method('validateEntity')->willReturn(true);
+
         $docId = 456;
         $docInfo = new DocInfo();
         $docInfo->id = $docId;
@@ -288,6 +291,7 @@ class ApmPublicationManagerTest extends TestCase
         $this->assertEquals(PublicationType::Transcription, $result->type);
     }
 
+    #[AllowMockObjectsWithoutExpectations]
     public function testCreatePublicationRejectsNonPublisherEntity(): void
     {
         $this->entitySystem->method('validateEntity')->willReturn(false);
@@ -367,6 +371,8 @@ class ApmPublicationManagerTest extends TestCase
     #[AllowMockObjectsWithoutExpectations]
     public function testCreateEditionPublication(): void
     {
+        $this->entitySystem->method('validateEntity')->willReturn(true);
+
         $mceId = 123;
         $mceDataInfo = new MceSystemData();
         $mceDataInfo->validFrom = '2023-01-01 00:00:00.000000';

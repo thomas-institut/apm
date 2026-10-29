@@ -20,7 +20,7 @@ npm ci
 
 docker compose -f docker/apm/dev/compose.yaml pull nginx mysql valkey typesense
 docker compose -f docker/apm/dev/compose.yaml build php node collatex
-docker compose -f docker/apm/dev/compose.yaml up -d
+docker compose -f docker/apm/dev/compose.yaml up -d collatex mysql nginx node php typesense valkey
 
 healthcheck() {
   until docker info >/dev/null 2>&1; do
@@ -28,7 +28,7 @@ healthcheck() {
   done
 
   until docker compose -f docker/apm/dev/compose.yaml ps --status running --services | \
-    sort | diff - <(printf '%s\n' collatex fonts mysql nginx node php typesense valkey | sort); do
+    sort | diff - <(printf '%s\n' collatex mysql nginx node php typesense valkey | sort); do
     sleep 2
   done
 

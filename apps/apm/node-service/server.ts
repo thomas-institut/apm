@@ -11,8 +11,9 @@ import {GeneratePdf} from "#src/Actions/GeneratePdf/GeneratePdf.js";
 import {formatDuration} from "#src/util/formatDuration.js";
 import {GenerateEditionPublicationFromMceData} from "#src/Actions/GenerateEditionPublication/GenerateEditionPublicationFromMceData.js";
 import {getDurationInMs} from "#src/util/getDurationInMs.js";
+import {createErrorHandler} from "#src/util/createErrorHandler.js";
 
-const VERSION = '1.5.4';
+const VERSION = '1.5.4c';
 const USAGE = `Usage: node server.js  /absolute/path/to/config.yaml`;
 
 const DEFAULT_PORT = 4711;
@@ -59,7 +60,7 @@ logger.debug(`PdfRenderer: ${PdfRenderer}`);
 logger.setFileName(LogFile);
 
 const nodeServiceServer = express();
-nodeServiceServer.use(bodyParser.json({limit: '256mb'}));
+nodeServiceServer.use(bodyParser.json({limit: '512mb'}));
 
 nodeServiceServer.get('/api/measure', (req, res) => {
   let text = req.query.text?.toString() ?? 'Sample string';
@@ -162,6 +163,8 @@ nodeServiceServer.post('/api/edition/publication/fromMceData', async (req, res) 
 
   res.json(generateEditionOutput.edition);
 });
+
+nodeServiceServer.use(createErrorHandler(logger));
 
 const httpServer = nodeServiceServer.listen(Port, () => {
   logger.info(`Server is listening at http://localhost:${Port}`);

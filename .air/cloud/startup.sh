@@ -55,9 +55,12 @@ healthcheck() {
     sleep 2
   done
 
-  until curl --fail --silent --show-error http://127.0.0.1:8888/ -o /tmp/apm-healthcheck.html 2>/dev/null && \
-    grep -qi '<html' /tmp/apm-healthcheck.html && \
-    ! grep -qi 'SERVER ERROR\|Fatal error\|Warning:' /tmp/apm-healthcheck.html; do
+  until docker exec apm-mysql mysqladmin ping -h 127.0.0.1 --silent >/dev/null 2>&1; do
+    sleep 2
+  done
+
+  until [[ "$(curl --silent --show-error --output /dev/null --write-out '%{http_code}' \
+    http://127.0.0.1:8888/api/whoami 2>/dev/null)" == "401" ]]; do
     sleep 2
   done
 }
@@ -65,5 +68,13 @@ healthcheck() {
 if [[ "${AIR_STARTUP_MODE:-}" == "warmup" ]]; then
   docker compose -f docker/apm/dev/compose.yaml restart nginx
   docker exec -w /opt/apm/www apm-php /opt/composer/composer install --no-interaction --prefer-dist
+  until docker exec apm-mysql mysqladmin ping -h 127.0.0.1 --silent >/dev/null 2>&1; do
+    sleep 2
+  done
+  docker exec apm-mysql mysql -uroot -e 'CREATE DATABASE IF NOT EXISTS apm'
+  if ! docker exec apm-mysql mysql -uroot apm -Nse "SHOW TABLES LIKE 'ap_settings'" | grep -q '^ap_settings$'; then
+    docker exec -i apm-mysql mysql -uroot apm < "$APM_SRC/db/db37-creation.sql"
+  fi
+  docker exec apm-mysql mysql -uroot apm -e "UPDATE ap_settings SET value='38' WHERE setting='DatabaseVersion'"
   healthcheck
 fi

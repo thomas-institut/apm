@@ -547,7 +547,9 @@ describe('MceComposer', () => {
     expect(mockedAdminPanel.archivingEnabled).toBe(false);
     expect(mockedEditorHandlers.saveDisabled).toBe(true);
     expect(container.textContent).toContain('This edition is archived');
-    await expect(mockedEditorHandlers.changeTitle!('Changed title')).resolves.toBe(false);
+    await act(async () => {
+      await expect(mockedEditorHandlers.changeTitle!('Changed title')).resolves.toBe(false);
+    });
     expect(apiMceSave).not.toHaveBeenCalled();
 
     await act(async () => {

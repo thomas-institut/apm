@@ -13,10 +13,21 @@ globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 describe('NotLastVersionWarningButton', () => {
   afterEach(() => {
     vi.useRealTimers();
+    vi.restoreAllMocks();
     document.body.innerHTML = '';
   });
 
   it('updates the time ago message each time the popover is displayed', async () => {
+    const actWarnings: string[] = [];
+    const originalConsoleError = console.error;
+    vi.spyOn(console, 'error').mockImplementation((...args) => {
+      originalConsoleError(...args);
+      const message = args.map(String).join(' ');
+      if (message.includes('not wrapped in act')) {
+        actWarnings.push(message);
+      }
+    });
+
     vi.useFakeTimers();
     vi.setSystemTime(new Date('2023-01-01T12:00:00Z'));
 
@@ -45,6 +56,9 @@ describe('NotLastVersionWarningButton', () => {
     });
     expect(document.querySelector('.not-last-version-popover')?.textContent).toContain('1 min ago');
 
-    root.unmount();
+    await act(async () => {
+      root.unmount();
+    });
+    expect(actWarnings).toEqual([]);
   });
 });

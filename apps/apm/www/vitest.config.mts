@@ -1,6 +1,4 @@
-import { defineConfig } from 'vitest/config'
-
-export default defineConfig({
+export default {
     test: {
         setupFiles: ['test/js/setup/webLocks.polyfill.ts'],
       alias: {
@@ -8,4 +6,4 @@ export default defineConfig({
         '@/': new URL('./js/', import.meta.url).pathname,
       }
     }
-})
+}

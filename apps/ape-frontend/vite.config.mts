@@ -1,10 +1,8 @@
-// @ts-ignore
-import {defineConfig} from 'vite';
-import {resolve} from 'path';
-// @ts-ignore
+import {resolve} from 'node:path';
 import react from '@vitejs/plugin-react';
+import type {UserConfig} from 'vite';
 
-export default defineConfig({
+export default {
   server: {
     port: 5180
   },
@@ -16,7 +14,7 @@ export default defineConfig({
     rollupOptions: {
       input: {
         // Main
-        Main: resolve(__dirname, 'index.html'),
+        Main: resolve(import.meta.dirname, 'index.html'),
       },
       output: {
         entryFileNames: '[name]-[hash].js',
@@ -33,6 +31,6 @@ export default defineConfig({
   resolve: {
     tsconfigPaths: true,
   },
-});
+} as UserConfig;
 
 

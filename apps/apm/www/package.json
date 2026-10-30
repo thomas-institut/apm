@@ -27,7 +27,7 @@
     "@tanstack/react-table": "^8.21",
     "@thomas-inst/fmt-text": "1.1.1",
     "@thomas-inst/optionschecker": "1.1.4",
-    "@thomas-inst/typesetter": "1.0.5",
+    "@thomas-inst/typesetter": "1.2.1",
     "@tiptap/core": "^3.22.3",
     "@tiptap/extension-bold": "^3.22.3",
     "@tiptap/extension-italic": "^3.22.3",
@@ -69,11 +69,11 @@
     "@types/react-dom": "^19.2",
     "@vitejs/plugin-react": "^6.0",
     "fake-indexeddb": "^6.1.0",
-    "happy-dom": "20.9",
+    "happy-dom": "21.0.4",
     "lorem-ipsum": "^2.0.8",
     "standard": "^17.0.0",
     "typescript": "^6",
-    "vite": "^8.0",
+    "vite": "^8.3",
     "vitest": "^4.1"
   }
 }

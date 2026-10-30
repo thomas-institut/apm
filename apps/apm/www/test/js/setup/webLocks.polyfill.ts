@@ -1,3 +1,6 @@
+// @ts-expect-error test-only global binding
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 type LockMode = 'exclusive' | 'shared';
 
 type LockCallback<T> = () => Promise<T> | T;

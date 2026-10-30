@@ -455,7 +455,7 @@ export default function EditionComposer() {
       tabbable: true,
       content: <MainTextPanel mainText={edition.mainText} ctData={ctData}
                               apparatuses={edition.apparatuses}
-                              activeApparatusIndex={activeApparatusIndex < 0 ? null : activeApparatusIndex}
+                              activeApparatusIndex={activeApparatusIndex < 0 ? 0 : activeApparatusIndex}
                               sigla={ctData.sigla} canEdit={canEdit}
                               siglaGroups={edition.siglaGroups}
                               onQuickEdit={applyQuickApparatusEdit}

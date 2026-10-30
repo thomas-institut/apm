@@ -170,7 +170,8 @@ export function CtTableEditor(props: CtTableEditorProps) {
     }
   }, [props.searchMatches, props.selectedSearchMatch]);
 
-  return <div id={id} ref={containerRef} className="ct-table-editor"></div>;
+  const directionClass = isRtl(props.ctData.lang) ? 'rtltext' : 'ltrtext';
+  return <div id={id} ref={containerRef} className={`ct-table-editor ${directionClass}`}></div>;
 }
 
 function applySearchHighlights(

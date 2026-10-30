@@ -137,6 +137,21 @@ describe('CtPanel', () => {
     expect(editor?.textContent).toContain('changed');
   });
 
+  it('sets the table wrapper direction class from the language', async () => {
+    const ctData = createCtData();
+    await renderPanel(ctData);
+
+    const editor = container.querySelector('.ct-table-editor');
+    expect(editor?.classList.contains('ltrtext')).toBe(true);
+
+    for (const lang of ['ar', 'he']) {
+      await renderPanel({...ctData, lang});
+
+      expect(editor?.classList.contains('rtltext')).toBe(true);
+      expect(editor?.classList.contains('ltrtext')).toBe(false);
+    }
+  });
+
   it('shows non-normalized text in the table and CSV when normalizations are applied', async () => {
     const ctData = createCtData();
     ctData.automaticNormalizationsApplied = ['lower'];

@@ -402,6 +402,18 @@ td.te-row-title {
     font-weight: 600;
 }
 
+.te-table a.group-icon-float-left {
+    float: left;
+    padding: 0 1rem 0 0;
+    margin-left: -0.5em;
+}
+
+.te-table a.group-icon-float-right {
+    float: right;
+    padding: 0 0 0 1rem;
+    margin-right: -0.5em;
+}
+
 /*td.token-class-edition.text-la {*/
 /*    font-family: var(--latin-apparatus-font-family);*/
 /*    font-size: 1.2em;*/

@@ -216,7 +216,7 @@ export default function CtPanel(props: CtPanelProps) {
                     showPopovers={showPopovers} showNormalizations={showNormalizations}
                     normalizationsAvailable={availableNormalizers.length > 0}
                     toolbarCharacters={toolbarCharacters}
-                    csvContent={CtData.generateCsv(props.ctData, ',', showNormalizations)}
+                    csvContent={CtData.generateCsv(props.ctData)}
                     deletableColumnCount={deletableColumnCount}
                     apparatuses={props.ctData.customApparatuses}
                     hasColumnSelection={selectedColumns !== null}
@@ -235,7 +235,7 @@ export default function CtPanel(props: CtPanelProps) {
                     onCompact={() => setShowCompactConfirmation(true)}
                     onAddApparatusEntry={handleAddApparatusEntry}/>
     <CtTableEditor ctData={props.ctData} renderer={renderer} editMode={editMode}
-                   showWitnessTitles={false} showNormalizations={showNormalizations}
+                   showWitnessTitles={false} showNormalizations={false}
                    searchMatches={mode === 'search' ? searchMatches : []}
                    selectedSearchMatch={selectedSearchMatch}
                    onShiftCells={(shift: CtCellShift) => runAction(new ShiftCtCellsAction(shift))}

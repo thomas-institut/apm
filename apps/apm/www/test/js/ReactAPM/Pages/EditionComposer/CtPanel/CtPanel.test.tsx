@@ -137,6 +137,18 @@ describe('CtPanel', () => {
     expect(editor?.textContent).toContain('changed');
   });
 
+  it('shows non-normalized text in the table and CSV when normalizations are applied', async () => {
+    const ctData = createCtData();
+    ctData.automaticNormalizationsApplied = ['lower'];
+    ctData.witnesses[2].tokens[0].normalizedText = 'NORMALIZED';
+    ctData.witnesses[2].tokens[0].sourceItems = [{index: 0, charRange: {from: 0, to: 2}}];
+    await renderPanel(ctData);
+
+    expect(container.querySelector('.ct-table-editor')?.textContent).not.toContain('NORMALIZED');
+    expect(container.querySelector('.ct-table-editor')?.textContent).toContain('foo');
+    expect(container.querySelector<HTMLAnchorElement>('.ct-export-csv')?.href).not.toContain('NORMALIZED');
+  });
+
   it('opens the apparatus editor for the main-text range of selected columns', async () => {
     const onEditApparatusEntry = vi.fn();
     const mainText = [

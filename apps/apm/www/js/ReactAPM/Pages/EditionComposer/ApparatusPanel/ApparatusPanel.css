@@ -1,14 +1,15 @@
-.text-la {
-    font-family: var(--latin-apparatus-font-family), serif;
-    font-size: 12pt;
-    line-height: 24pt;
-}
+
 
 
 .apparatus-panel {
     height: 100%;
     overflow: auto;
 
+    .text-la {
+        font-family: var(--latin-apparatus-font-family), serif;
+        font-size: 12pt;
+        line-height: 24pt;
+    }
 
 
     .panel-content {

@@ -97,20 +97,20 @@
         font-size: 14pt;
     }
 
-    p.normal {
+    .paragraph.normal {
         text-indent: 2em;
         padding: 0;
         margin: 0;
     }
 
-    p.h3, div.fte-editor h3 {
+    .paragraph.h3, div.fte-editor h3 {
         font-weight: bold;
         font-size: 1.1em;
         padding: 0;
         margin: 0.5em 0;
     }
 
-    p.h2, div.fte-editor h2 {
+    .paragraph.h2, div.fte-editor h2 {
         font-weight: bold;
         text-align: center;
         font-size: 1.2em;
@@ -118,7 +118,7 @@
         margin: 1em 0;
     }
 
-    p.h1, div.fte-editor h1 {
+    .paragraph.h1, div.fte-editor h1 {
         font-weight: bold;
         text-align: center;
         font-size: 1.5em;
@@ -126,7 +126,7 @@
         margin: 1em 0;
     }
 
-    p.paragraph-empty {
+    .paragraph.paragraph-empty {
         padding: 0;
         margin-bottom: 1.5em;
     }

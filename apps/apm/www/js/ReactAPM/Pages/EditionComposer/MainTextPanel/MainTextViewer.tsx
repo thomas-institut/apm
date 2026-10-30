@@ -288,7 +288,7 @@ export default function MainTextViewer({mainText, indexMap, className = '', high
               onMouseLeave={() => { selectionAnchor.current = null; onHoverApparatusEntries?.(null); }}>
     {lineLabels.map(({lineNumber, top}) => <span className="main-text-line-number" key={lineNumber} style={{top}}>{lineNumber}</span>)}
     {paragraphs.map((paragraph, index) => {
-      return <p className={paragraph.type} key={index}>{getParagraph(paragraph, index)}</p>;
+      return <div className={['paragraph', paragraph.type].join(' ')} key={index}>{getParagraph(paragraph, index)}</div>;
     })}
   </div>
 

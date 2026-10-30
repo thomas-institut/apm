@@ -16,7 +16,7 @@
  *
  */
 
-import {perfMeasure} from "./PerfMeasure";
+import {perfMeasure} from "./PerfMeasure.js";
 
 export function deepCopy<T>(someVariable: T): T {
   return perfMeasure('util.deepCopy', () => JSON.parse(JSON.stringify(someVariable)));

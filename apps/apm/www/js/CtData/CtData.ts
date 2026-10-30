@@ -57,7 +57,7 @@ import {SiglaGroupUtil} from "./SiglaGroupUtil.js";
 import {FULL_TX, SOURCE} from "../Witness/WitnessType.js";
 import {NormalizerRegister} from "../pages/common/NormalizerRegister.js";
 import {Matrix} from "../lib/Matrix.js";
-import {ValidationError} from "@/lib/Error/SystemError";
+import {ValidationError} from "../lib/Error/SystemError.js";
 import {FmtText, fromString, getPlainText} from '@thomas-inst/fmt-text';
 import * as FmtTextTokenType from '@thomas-inst/fmt-text/FmtTextTokenType';
 import {EditionWitnessTokenStringParser} from '../toolbox/EditionWitnessTokenStringParser.js';

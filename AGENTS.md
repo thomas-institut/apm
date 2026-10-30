@@ -16,7 +16,7 @@ APM consists of:
 - a PHP web application for API handling and frontend serving
 - a TypeScript/React frontend
 - a background daemon and workers for periodic tasks
-- a Node.js service for typesetting and PDF generation
+- a Node.js service for typesetting, publication and PDF generation
 
 APE consists of:
 - a PHP backend
@@ -68,9 +68,31 @@ Frontend code:
 - JavaScript/TypeScript code: `src/www/js`
 - React SPA: `src/www/js/ReactAPM`
 
-Typesetting service:
+Node backend service:
 
-- Service code: `src/www/typesetting-service`
+- Service code: `src/www/node-service`
+
+> **(!) Attention** when working on APM's Typescript files: some files require imports with full paths because
+they are shared with the Node backend service, which  uses a different module resolution strategy. The
+affected files have a `// noinspection ES6PreferShortImport` at the top. 
+
+#### Validating Node service compatibility
+
+When changing files under `apps/apm/www/js`, check that the Node service builds and starts if any changed file is not a `.tsx` file. Changes limited to `.tsx` files do not require this check.
+
+From the repository root, build the service:
+
+```sh
+cd apps/apm/node-service && npm run build
+```
+
+With the `apm-node24` development container running and `/opt/apm/node-service/config.yaml` present, start the compiled service:
+
+```sh
+docker exec -it -w /opt/apm/node-service apm-node24 node dist/apm/node-service/server.js /opt/apm/node-service/config.yaml
+```
+
+If the service is already running in `apm-node24` because the user manually started it from an earlier build, first shut it down by sending it a `SIGINT` signal. Confirm that the newly started service logs `listening on http://localhost:4711`, then stop the foreground service with `Ctrl-C`.
 
 ### APE
 

@@ -127,6 +127,7 @@ describe('MainTextPanel', () => {
     });
 
     expect(container.querySelector('.main-text-panel.no-edition')?.textContent).toContain('No main text to show yet');
+    expect(container.querySelector('.main-text-panel.no-edition > .paragraph')?.tagName).toBe('DIV');
     expect(container.querySelector('.main-text-content')).toBeNull();
   });
 
@@ -182,11 +183,13 @@ describe('MainTextPanel', () => {
       maxParsPerPage: 15
     });
 
-    const paragraphs = container.querySelectorAll('.main-text-content p');
+    const paragraphs = container.querySelectorAll('.main-text-content > .paragraph');
     expect(paragraphs).toHaveLength(2);
-    expect(paragraphs[0].className).toBe('edition-center');
+    expect(paragraphs[0].tagName).toBe('DIV');
+    expect(paragraphs[0].className).toBe('paragraph edition-center');
     expect(paragraphs[0].textContent).toContain('First paragraph');
-    expect(paragraphs[1].className).toBe('');
+    expect(paragraphs[1].tagName).toBe('DIV');
+    expect(paragraphs[1].className).toBe('paragraph');
     expect(paragraphs[1].textContent).toContain('Second paragraph');
 
     const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
@@ -293,7 +296,7 @@ describe('MainTextPanel', () => {
       makeFullContainedPageLabel('AW47-21', 'AW47-28')
     ]);
 
-    const paragraphs = container.querySelectorAll('.main-text-content p');
+    const paragraphs = container.querySelectorAll('.main-text-content > .paragraph');
     expect(paragraphs).toHaveLength(10);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 1');
     expect(container.querySelector('.main-text-content')?.textContent).not.toContain('Paragraph 11');
@@ -346,21 +349,21 @@ describe('MainTextPanel', () => {
     await act(async () => {
       (container.querySelector('[data-page-control="next"]') as HTMLElement).click();
     });
-    let paragraphTexts = Array.from(container.querySelectorAll('.main-text-content p')).map((paragraph) => paragraph.textContent ?? '');
+    let paragraphTexts = Array.from(container.querySelectorAll('.main-text-content > .paragraph')).map((paragraph) => paragraph.textContent ?? '');
     expect(paragraphTexts[0]).toContain('Paragraph 11');
     expect(paragraphTexts).not.toContain('Paragraph 1');
 
     await act(async () => {
       (container.querySelector('[data-page-control="last"]') as HTMLElement).click();
     });
-    expect(container.querySelectorAll('.main-text-content p')).toHaveLength(8);
+    expect(container.querySelectorAll('.main-text-content > .paragraph')).toHaveLength(8);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 28');
     expect(container.querySelector('.main-text-content')?.textContent).not.toContain('Paragraph 20');
 
     await act(async () => {
       (container.querySelector('[data-page-control="first"]') as HTMLElement).click();
     });
-    paragraphTexts = Array.from(container.querySelectorAll('.main-text-content p')).map((paragraph) => paragraph.textContent ?? '');
+    paragraphTexts = Array.from(container.querySelectorAll('.main-text-content > .paragraph')).map((paragraph) => paragraph.textContent ?? '');
     expect(paragraphTexts[0]).toContain('Paragraph 1');
     expect(paragraphTexts).not.toContain('Paragraph 11');
   });
@@ -388,7 +391,7 @@ describe('MainTextPanel', () => {
     await act(async () => {
       (container.querySelector('[data-page-control="last"]') as HTMLElement).click();
     });
-    expect(container.querySelectorAll('.main-text-content p')).toHaveLength(1);
+    expect(container.querySelectorAll('.main-text-content > .paragraph')).toHaveLength(1);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 31');
   });
 
@@ -418,7 +421,7 @@ describe('MainTextPanel', () => {
     const select = container.querySelector('.toolbar-group.center select') as HTMLSelectElement;
     expect(select.options).toHaveLength(1);
     expect(select.options[0].textContent).toBe(makeFullContainedPageLabel('AW47-1', 'AW47-2'));
-    expect(container.querySelectorAll('.main-text-content p')).toHaveLength(3);
+    expect(container.querySelectorAll('.main-text-content > .paragraph')).toHaveLength(3);
   });
 
   it('shows page select for many pages and jumps to selected page', async () => {
@@ -444,7 +447,7 @@ describe('MainTextPanel', () => {
       select.dispatchEvent(new Event('change', {bubbles: true}));
     });
 
-    expect(container.querySelectorAll('.main-text-content p')).toHaveLength(10);
+    expect(container.querySelectorAll('.main-text-content > .paragraph')).toHaveLength(10);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 51');
     expect(container.querySelector('.main-text-content')?.textContent).not.toContain('Paragraph 41');
   });
@@ -465,7 +468,7 @@ describe('MainTextPanel', () => {
     expect(select).not.toBeNull();
     expect(select.options).toHaveLength(1);
     expect(select.options[0].textContent).toBe(makeFullContainedPageLabel('AW47-1', 'AW47-60'));
-    expect(container.querySelectorAll('.main-text-content p')).toHaveLength(60);
+    expect(container.querySelectorAll('.main-text-content > .paragraph')).toHaveLength(60);
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 1');
     expect(container.querySelector('.main-text-content')?.textContent).toContain('Paragraph 60');
   });

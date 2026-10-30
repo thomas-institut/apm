@@ -377,7 +377,8 @@ export default function MainTextPanel({
   };
 
   const ParagraphComponent = (props: { p: Paragraph }) => {
-    return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
+    const className = ['paragraph', props.p.style].filter(Boolean).join(' ');
+    return <div className={className}>{getParagraphText(props.p)}</div>;
   };
   const paragraphs = useMemo(() => edition === null ? [] : getParagraphs(edition), [edition]);
   const paragraphPages = useMemo(() => getParagraphPages(paragraphs), [paragraphs, standardizedData, paginationThreshold, minParsPerPage, maxParsPerPage]);
@@ -394,7 +395,7 @@ export default function MainTextPanel({
   }, [currentPage, pageCount]);
 
   if (edition === null) {
-    return <div className={'main-text-panel no-edition'}><p>No main text to show yet</p></div>;
+    return <div className={'main-text-panel no-edition'}><div className={'paragraph'}>No main text to show yet</div></div>;
   }
 
   const goToPage = (page: number) => {

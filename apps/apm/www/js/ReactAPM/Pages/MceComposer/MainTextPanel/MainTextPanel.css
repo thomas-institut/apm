@@ -53,16 +53,17 @@
     }
 
 
-    p.h1 {
+    .paragraph.h1 {
         font-size: 1.2em;
         font-weight: bold;
         text-align: center;
         margin: 2em 0 1em 0;
     }
 
-    p {
+    .paragraph {
         text-align: justify;
         position: relative;
+        margin: 1em 0;
     }
 
     .main-text {

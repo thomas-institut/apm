@@ -89,6 +89,36 @@ describe('CtPanel', () => {
     expect(onAction.mock.calls[0][1]).toBe('Shift cell right');
   });
 
+  it('keeps the selected edit mode after actions temporarily disable editing', async () => {
+    const ctData = createCtData();
+    await renderPanel(ctData);
+    const moveButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent === 'Move');
+    await act(async () => moveButton?.click());
+    await act(async () => container.querySelector<HTMLElement>('.move-cell-right-button')?.click());
+
+    await renderPanel(ctData, false);
+    await renderPanel(ctData);
+
+    const currentMoveButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent === 'Move');
+    expect(currentMoveButton?.getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('.move-cell-right-button')).not.toBeNull();
+
+    const groupButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent === 'Group');
+    await act(async () => groupButton?.click());
+    await act(async () => container.querySelector<HTMLElement>('.link-button-0')?.click());
+
+    await renderPanel(ctData, false);
+    await renderPanel(ctData);
+
+    const currentGroupButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
+      .find((button) => button.textContent === 'Group');
+    expect(currentGroupButton?.getAttribute('aria-pressed')).toBe('true');
+    expect(container.querySelector('.link-button-0')).not.toBeNull();
+  });
+
   it('disables edit modes and does not dispatch edits when editing is unavailable', async () => {
     await renderPanel(createCtData(), false);
     const moveButton = [...container.querySelectorAll<HTMLButtonElement>('button')]

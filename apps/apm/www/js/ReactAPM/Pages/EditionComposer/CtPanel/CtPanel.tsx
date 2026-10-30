@@ -114,12 +114,6 @@ export default function CtPanel(props: CtPanelProps) {
   }, [peopleInfo, renderer]);
 
   useEffect(() => {
-    if (!props.canEdit && mode !== 'search') {
-      setMode('search');
-    }
-  }, [mode, props.canEdit]);
-
-  useEffect(() => {
     setSelectedSearchMatch(-1);
   }, [props.ctData, searchQuery]);
 

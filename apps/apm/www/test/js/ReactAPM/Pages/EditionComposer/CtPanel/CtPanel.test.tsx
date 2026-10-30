@@ -17,6 +17,8 @@ import CtPanel from '@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel.js';
 import {ShiftCtCellsAction} from '@/ReactAPM/Pages/EditionComposer/Actions/ShiftCtCellsAction.js';
 import {ApplyAutomaticNormalizationsAction} from '@/ReactAPM/Pages/EditionComposer/Actions/ApplyAutomaticNormalizationsAction.js';
 
+globalThis.IS_REACT_ACT_ENVIRONMENT = true;
+
 function createToken(text: string, tokenClass: string): WitnessTokenInterface {
   return {tokenClass, tokenType: WitnessTokenType.WORD, text, fmtText: fromString(text)};
 }
@@ -67,26 +69,28 @@ describe('CtPanel', () => {
     document.body.removeChild(container);
   });
 
-  const renderPanel = (ctData: CtDataInterface, canEdit = true, normalizerRegister = new NormalizerRegister()) => {
-    act(() => root.render(<CtPanel ctData={ctData} mainText={[]} canEdit={canEdit}
-                                  normalizerRegister={normalizerRegister} onAction={onAction}
-                                  onEditApparatusEntry={() => {}}/>));
+  const renderPanel = async (ctData: CtDataInterface, canEdit = true, normalizerRegister = new NormalizerRegister()) => {
+    await act(async () => {
+      root.render(<CtPanel ctData={ctData} mainText={[]} canEdit={canEdit}
+                           normalizerRegister={normalizerRegister} onAction={onAction}
+                           onEditApparatusEntry={() => {}}/>);
+    });
   };
 
-  it('dispatches a shift as one history action', () => {
-    renderPanel(createCtData());
+  it('dispatches a shift as one history action', async () => {
+    await renderPanel(createCtData());
     const moveButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent === 'Move');
-    act(() => moveButton?.click());
-    act(() => container.querySelector<HTMLElement>('.move-cell-right-button')?.click());
+    await act(async () => moveButton?.click());
+    await act(async () => container.querySelector<HTMLElement>('.move-cell-right-button')?.click());
 
     expect(onAction).toHaveBeenCalledTimes(1);
     expect(onAction.mock.calls[0][0]).toBeInstanceOf(ShiftCtCellsAction);
     expect(onAction.mock.calls[0][1]).toBe('Shift cell right');
   });
 
-  it('disables edit modes and does not dispatch edits when editing is unavailable', () => {
-    renderPanel(createCtData(), false);
+  it('disables edit modes and does not dispatch edits when editing is unavailable', async () => {
+    await renderPanel(createCtData(), false);
     const moveButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent === 'Move');
     const groupButton = [...container.querySelectorAll<HTMLButtonElement>('button')]
@@ -98,14 +102,14 @@ describe('CtPanel', () => {
     expect(onAction).not.toHaveBeenCalled();
   });
 
-  it('highlights search matches and generates a CSV download link', () => {
-    renderPanel(createCtData());
+  it('highlights search matches and generates a CSV download link', async () => {
+    await renderPanel(createCtData());
     const searchInput = container.querySelector<HTMLInputElement>('input[type="search"]');
     expect(searchInput).not.toBeNull();
     if (searchInput === null) {
       return;
     }
-    act(() => {
+    await act(async () => {
       const valueSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')?.set;
       valueSetter?.call(searchInput, 'foo');
       searchInput.dispatchEvent(new Event('input', {bubbles: true}));
@@ -118,80 +122,82 @@ describe('CtPanel', () => {
     expect(csvLink?.download).toBe('ApmCollationTable.csv');
   });
 
-  it('redraws the existing editor when the ctData prop changes', () => {
+  it('redraws the existing editor when the ctData prop changes', async () => {
     const firstCtData = createCtData();
-    renderPanel(firstCtData);
+    await renderPanel(firstCtData);
     const editor = container.querySelector('.ct-table-editor');
     expect(editor?.textContent).toContain('foo');
 
     const changedCtData = structuredClone(firstCtData);
     changedCtData.witnesses[0].tokens[0].text = 'changed';
     changedCtData.witnesses[0].tokens[0].fmtText = fromString('changed');
-    renderPanel(changedCtData);
+    await renderPanel(changedCtData);
 
     expect(container.querySelector('.ct-table-editor')).toBe(editor);
     expect(editor?.textContent).toContain('changed');
   });
 
-  it('opens the apparatus editor for the main-text range of selected columns', () => {
+  it('opens the apparatus editor for the main-text range of selected columns', async () => {
     const onEditApparatusEntry = vi.fn();
     const mainText = [
       {editionWitnessTokenIndex: 0},
       {editionWitnessTokenIndex: 1}
     ];
-    act(() => root.render(<CtPanel ctData={createCtData()} mainText={mainText as never}
-                                  canEdit normalizerRegister={new NormalizerRegister()} onAction={onAction}
-                                  onEditApparatusEntry={onEditApparatusEntry}/>));
+    await act(async () => {
+      root.render(<CtPanel ctData={createCtData()} mainText={mainText as never}
+                           canEdit normalizerRegister={new NormalizerRegister()} onAction={onAction}
+                           onEditApparatusEntry={onEditApparatusEntry}/>);
+    });
     const table = container.querySelector('.ct-table-editor');
-    act(() => table?.dispatchEvent(new CustomEvent(ColumnSelectEvent, {detail: {from: 0, to: 1}, bubbles: true})));
+    await act(async () => table?.dispatchEvent(new CustomEvent(ColumnSelectEvent, {detail: {from: 0, to: 1}, bubbles: true})));
     const dropdownToggle = container.querySelector<HTMLButtonElement>('[aria-label="Add apparatus entry"]');
     expect(dropdownToggle?.disabled).toBe(false);
-    act(() => dropdownToggle?.click());
+    await act(async () => dropdownToggle?.click());
     const apparatusItem = [...container.querySelectorAll<HTMLButtonElement>('.dropdown-item')]
       .find((button) => button.textContent?.trim() === 'criticus');
-    act(() => apparatusItem?.click());
+    await act(async () => apparatusItem?.click());
 
     expect(onEditApparatusEntry).toHaveBeenCalledWith(0, {from: 0, to: 1});
   });
 
-  it('shows token popovers while enabled and closes them when toggled off', () => {
-    renderPanel(createCtData());
+  it('shows token popovers while enabled and closes them when toggled off', async () => {
+    await renderPanel(createCtData());
     const editionCell = container.querySelector<HTMLElement>('td.te-cell');
     expect(editionCell).not.toBeNull();
-    act(() => editionCell?.dispatchEvent(new MouseEvent('mouseover', {bubbles: true})));
+    await act(async () => editionCell?.dispatchEvent(new MouseEvent('mouseover', {bubbles: true})));
 
     expect(document.body.querySelector('.ct-token-popover')?.textContent).toContain('foo');
     const popoversToggle = container.querySelector<HTMLInputElement>('.ct-toolbar-toggle input');
-    act(() => popoversToggle?.click());
+    await act(async () => popoversToggle?.click());
     expect(document.body.querySelector('.ct-token-popover')).toBeNull();
   });
 
-  it('applies and changes normalization settings, with an empty selection turning them off', () => {
+  it('applies and changes normalization settings, with an empty selection turning them off', async () => {
     const normalizerRegister = new NormalizerRegister();
     normalizerRegister.registerNormalizer('lower', new ToLowerCaseNormalizer(), {
       label: 'Ignore letter case',
       help: 'Match uppercase and lowercase forms'
     });
     const ctData = createCtData();
-    renderPanel(ctData, true, normalizerRegister);
+    await renderPanel(ctData, true, normalizerRegister);
 
     const normalizationsToggle = container.querySelector<HTMLInputElement>('.ct-normalization-controls input');
-    act(() => normalizationsToggle?.click());
+    await act(async () => normalizationsToggle?.click());
     expect(onAction).toHaveBeenCalledTimes(1);
     expect(onAction.mock.calls[0][0]).toBeInstanceOf(ApplyAutomaticNormalizationsAction);
     expect(onAction.mock.calls[0][1]).toBe('Apply automatic normalizations');
 
     const activeCtData = structuredClone(ctData);
     activeCtData.automaticNormalizationsApplied = ['lower'];
-    renderPanel(activeCtData, true, normalizerRegister);
+    await renderPanel(activeCtData, true, normalizerRegister);
     const settingsButton = container.querySelector<HTMLButtonElement>('[aria-label="Normalization settings"]');
-    act(() => settingsButton?.click());
+    await act(async () => settingsButton?.click());
     const normalizerCheckbox = document.body.querySelector<HTMLInputElement>('#ct-normalizer-lower');
     expect(normalizerCheckbox?.checked).toBe(true);
-    act(() => normalizerCheckbox?.click());
+    await act(async () => normalizerCheckbox?.click());
     const applyButton = [...document.body.querySelectorAll<HTMLButtonElement>('button')]
       .find((button) => button.textContent?.trim() === 'Apply');
-    act(() => applyButton?.click());
+    await act(async () => applyButton?.click());
 
     expect(onAction).toHaveBeenCalledTimes(2);
     expect(onAction.mock.calls[1][0]).toBeInstanceOf(ApplyAutomaticNormalizationsAction);

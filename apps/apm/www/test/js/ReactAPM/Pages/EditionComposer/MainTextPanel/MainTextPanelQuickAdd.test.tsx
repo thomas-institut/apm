@@ -64,7 +64,7 @@ describe('MainTextPanel quick add', () => {
     expect(popover).not.toBeNull();
     expect(popover!.textContent).toContain('one two');
     expect(popover!.textContent).toContain('marginalia');
-    await act(async () => popover!.querySelector<HTMLElement>('.quick-add-buttons button')!.click());
+    await act(async () => popover!.querySelector<HTMLElement>('.quick-add-sub-entry')!.click());
     const quickAddPopover = document.querySelector('.quick-sub-entry-popover');
     expect(quickAddPopover).not.toBeNull();
     expect(quickAddPopover!.querySelector('.popover-header')?.textContent).toContain('Quick add: one two');
@@ -92,7 +92,7 @@ describe('MainTextPanel quick add', () => {
     });
     await selectTokens(container);
     expect(document.querySelector('.main-text-quick-add-popover')!.textContent).toContain('criticus');
-    await act(async () => document.querySelector<HTMLElement>('.quick-add-buttons button')!.click());
+    await act(async () => document.querySelector<HTMLElement>('.quick-add-sub-entry')!.click());
     await act(async () => change(document.querySelector('input[aria-label="Sub-entry text"]')!, 'word'));
     await act(async () => document.querySelector<HTMLElement>('.quick-witness-toggle')!.click());
     await act(async () => document.querySelectorAll<HTMLInputElement>('.quick-witness-item input')[0].click());
@@ -103,16 +103,18 @@ describe('MainTextPanel quick add', () => {
   it('disables the add actions when the visible tab is not an apparatus', async () => {
     const {container} = await renderPanel(null);
     await selectTokens(container);
-    const buttons = document.querySelectorAll<HTMLButtonElement>('.main-text-quick-add-popover .quick-add-buttons button');
-    expect(buttons.length).toBeGreaterThan(0);
-    buttons.forEach((button) => expect(button.disabled).toBe(true));
+    const quickAddButton = document.querySelector<HTMLButtonElement>('.main-text-quick-add-popover .quick-add-sub-entry');
+    const editButton = document.querySelector<HTMLButtonElement>('.main-text-quick-add-popover .quick-add-buttons button');
+    expect(quickAddButton).not.toBeNull();
+    expect(editButton).toBeNull();
+    expect(quickAddButton!.disabled).toBe(true);
   });
 
   it('opens the full editor for the selection and target apparatus', async () => {
     const {container, onEditApparatusEntry} = await renderPanel(1);
     await selectTokens(container);
     const edit = Array.from(document.querySelectorAll<HTMLButtonElement>('.quick-add-buttons button'))
-      .find((b) => b.textContent!.includes('Edit entry'))!;
+      .find((b) => b.textContent!.includes('Edit New Entry'))!;
     await act(async () => edit.click());
     expect(onEditApparatusEntry).toHaveBeenCalledWith(1, {from: 0, to: 1});
   });

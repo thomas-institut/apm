@@ -15,7 +15,7 @@ import MainTextPanel from '@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTe
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 
 describe('MainTextPanel', () => {
-  it('disables highlights, popovers, and hover highlights outside view mode', async () => {
+  it('shows apparatus coverage highlights in apparatus mode but not text mode', async () => {
     const container = document.createElement('div');
     document.body.appendChild(container);
     const root = createRoot(container);
@@ -39,14 +39,14 @@ describe('MainTextPanel', () => {
     expect(container.querySelectorAll('.highlighted-token')).toHaveLength(1);
     expect(container.querySelectorAll('.apparatus-coverage-highlighted')).toHaveLength(1);
 
-    for (const mode of ['Apparatus', 'Text']) {
+    for (const [mode, expectedApparatusHighlights] of [['Apparatus', 1], ['Text', 0]] as const) {
       const modeButton = Array.from(container.querySelectorAll<HTMLButtonElement>('button'))
         .find(button => button.textContent === mode)!;
       await act(async () => modeButton.click());
 
       expect(container.querySelector('.main-text-view-controls')).toBeNull();
       expect(container.querySelectorAll('.highlighted-token')).toHaveLength(0);
-      expect(container.querySelectorAll('.apparatus-coverage-highlighted')).toHaveLength(0);
+      expect(container.querySelectorAll('.apparatus-coverage-highlighted')).toHaveLength(expectedApparatusHighlights);
 
       onHoverApparatusEntries.mockClear();
       await act(async () => container.querySelector<HTMLElement>('.mtt-0')!

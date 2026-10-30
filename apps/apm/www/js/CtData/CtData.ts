@@ -459,8 +459,8 @@ export class CtData {
    * in EditionComposer's ApparatusPanel
    */
   static updateCustomApparatuses(ctData: CtDataInterface, apparatusType: string, editedEntry: CustomApparatusEntryInterface): CtDataInterface {
-    console.log(`Updating customs apparatuses for apparatus '${apparatusType}'`, editedEntry);
-    console.log(editedEntry);
+    // console.log(`Updating customs apparatuses for apparatus '${apparatusType}'`, editedEntry);
+    // console.log(editedEntry);
 
     // First, let's get the right apparatus
     let apparatusIndex = ctData.customApparatuses.map((app) => {
@@ -484,30 +484,30 @@ export class CtData {
     newEntry.subEntries.push(...editedEntry.subEntries.filter((subEntry) => {
       return subEntry.type !== 'auto';
     }));
-    console.log(`New Entry`);
-    console.log(deepCopy(newEntry));
+    // console.log(`New Entry`);
+    // console.log(deepCopy(newEntry));
 
     // Does the entry exist already?
     let entryIndex = customApparatus.entries.map((entry) => {
       return `${entry.from}-${entry.to}`;
     }).indexOf(`${editedEntry.from}-${editedEntry.to}`);
-    console.log(`Entry Index: ${entryIndex}`);
+    // console.log(`Entry Index: ${entryIndex}`);
 
     // Is this an entry that actually changes anything?
     if (this.isEntryEqualToDefault(newEntry)) {
-      console.log(`New entry is equal to default`);
+      // console.log(`New entry is equal to default`);
       if (entryIndex !== -1) {
-        console.log(`Deleting entry that is now equal to default`);
+        // console.log(`Deleting entry that is now equal to default`);
         ctData.customApparatuses[apparatusIndex].entries = ctData.customApparatuses[apparatusIndex].entries.filter((_entry, index) => {
           return index !== entryIndex;
         });
       }
     } else {
       if (entryIndex === -1) {
-        console.log(`Adding new entry`);
+        // console.log(`Adding new entry`);
         ctData.customApparatuses[apparatusIndex].entries.push(newEntry);
       } else {
-        console.log(`Replacing existing entry ${entryIndex}`);
+        // console.log(`Replacing existing entry ${entryIndex}`);
         ctData.customApparatuses[apparatusIndex].entries[entryIndex] = newEntry;
       }
     }
@@ -1040,7 +1040,7 @@ export class CtData {
    */
   static fixReferencesInCustomApparatusesAfterEditionWitnessCellShift(ctData: CtDataInterface, fromCol: number, toCol: number, numCols: number, direction: string): CustomApparatusInterface[] {
 
-    console.log(`Fixing custom apparatus references after cell shift: ${fromCol}-${toCol}, by ${numCols} cols, ${direction}`);
+    // console.log(`Fixing custom apparatus references after cell shift: ${fromCol}-${toCol}, by ${numCols} cols, ${direction}`);
     return ctData.customApparatuses.map((app) => {
       let newApp = deepCopy(app);
       let shift = numCols;
@@ -1059,12 +1059,12 @@ export class CtData {
         newEntry.from = entry.from;
         if (entry.from >= fromCol && entry.from <= toCol) {
           newEntry.from = entry.from + shift;
-          console.log(`Shifting app. ${app.type} entry ${i} 'from' index: ${entry.from} by ${shift} to ${newEntry.from}`);
+          // console.log(`Shifting app. ${app.type} entry ${i} 'from' index: ${entry.from} by ${shift} to ${newEntry.from}`);
         }
         newEntry.to = entry.to;
         if (entry.to >= fromCol && entry.to <= toCol) {
           newEntry.to = entry.to + shift;
-          console.log(`Shifting app. ${app.type} entry ${i} 'to' index: ${entry.to} by ${shift} to ${newEntry.to}`);
+          // console.log(`Shifting app. ${app.type} entry ${i} 'to' index: ${entry.to} by ${shift} to ${newEntry.to}`);
         }
         return newEntry;
       });

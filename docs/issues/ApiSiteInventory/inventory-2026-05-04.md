@@ -56,14 +56,6 @@ Date: 2026-05-04
 | /api/presets/sigla/save | Saves a sigla preset | POST | user token | no | no | TBD | TBD | TBD |  |
 | /api/presets/act/get | Returns an automatic collation preset | POST | user token | no | no | TBD | TBD | TBD | can't this be a simple GET request? (Issue #321) |
 | /api/presets/post | Saves a preset | POST | user token | no | no | TBD | TBD | TBD | this should be renamed to 'api/preset/save' and perhaps merge all other saves into it (Issue #321) |
-| /api/images/mark/{size} | Create API image routes | GET | user token | no | no | TBD | TBD | TBD | Find a way to generate images in the frontend and get rid of this (Issue #322) |
-| /api/images/nowb/{size} | Returns a no word break image | GET | user token | no | no | TBD | TBD | TBD |  |
-| /api/images/illegible/{size}/{length} | Returns an 'illegible' image | GET | user token | no | no | TBD | TBD | TBD |  |
-| /api/images/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size} | Returns a chunk mark image | GET | user token | no | no | TBD | TBD | TBD |  |
-| /api/images/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size} | Returns a chapter mark image | GET | user token | no | no | TBD | TBD | TBD |  |
-| /api/images/linegap/{count}/{size} | Returns a line gap image | GET | user token | no | no | TBD | TBD | TBD |  |
-| /api/images/charactergap/{length}/{size} | Returns a character gap image | GET | user token | no | no | TBD | TBD | TBD |  |
-| /api/images/paragraphmark/{size} | Returns a paragraph mark image | GET | user token | no | no | TBD | TBD | TBD |  |
 | /api/search/keyword | Searches for a keyword | POST | user token | no | no | TBD | TBD | TBD |  |
 | /api/search/transcriptions | Searches in transcriptions | POST | user token | no | no | TBD | TBD | TBD |  |
 | /api/search/transcribers | Returns a list of transcribers | POST | user token | no | no | TBD | TBD | TBD |  |

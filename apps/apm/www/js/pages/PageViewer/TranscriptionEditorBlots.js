@@ -186,7 +186,7 @@ export class SimpleImgBlot extends BlockEmbed {
     node.setAttribute('alt', this.imageAlt)
     node.setAttribute('title', this.title)
     const size = Math.round(((this.size-1)*0.2+1)*14)
-    node.setAttribute('src', this.getImageUrl(TranscriptionEditor.baseUrl, size, value))
+    node.setAttribute('src', this.getImageSrc(size, value))
     if (this.withPopover) {
       let popoverSecondaryHtml = ''
       if (this.getPopoverText !== false) {

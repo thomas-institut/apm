@@ -38,6 +38,17 @@ import {
   ELEMENT_SUBSTITUTION, Element
 } from './Element'
 import { MarginalBlockBlot, SimpleBlockBlot, SimpleFormatBlot, SimpleImgBlot } from './TranscriptionEditorBlots'
+import {
+  chapterMarkSvg,
+  characterGapSvg,
+  chunkMarkSvg,
+  illegibleSvg,
+  lineGapSvg,
+  markSvg,
+  noWordBreakSvg,
+  paragraphMarkSvg,
+  svgToDataUri
+} from './EditorSvgImages'
 
 //
 // BOT CLASSES
@@ -188,8 +199,8 @@ export function configureTranscriptionEditorBlots() {
     title: 'Non word-breaking dash',
     icon: '<i class="fas fa-minus"></i>',
     imageAlt:'[-]',
-    getImageUrl: function (baseUrl, size, value) {
-      return baseUrl + '/api/images/nowb/' + size
+    getImageSrc: function (size, value) {
+      return svgToDataUri(noWordBreakSvg(size))
     }
   })
 
@@ -200,8 +211,8 @@ export function configureTranscriptionEditorBlots() {
     title: 'Paragraph Mark',
     icon: '¶',
     imageAlt:'[¶]',
-    getImageUrl: function (baseUrl, size, value) {
-      return baseUrl + '/api/images/paragraphmark/' + size
+    getImageSrc: function (size, value) {
+      return svgToDataUri(paragraphMarkSvg(size))
     }
   })
 
@@ -213,8 +224,8 @@ export function configureTranscriptionEditorBlots() {
     icon: '<i class="far fa-square"></i>',
     imageAlt:'[...]',
     thelength: { default: 5 },
-    getImageUrl: function (baseUrl, size, value) {
-      return baseUrl + '/api/images/charactergap/' + value.thelength + '/' + size
+    getImageSrc: function (size, value) {
+      return svgToDataUri(characterGapSvg(size, value.thelength))
     }
   })
 
@@ -228,8 +239,8 @@ export function configureTranscriptionEditorBlots() {
     withEditOnDoubleClick: true,
     icon: 'M',
     imageAlt:'[note]',
-    getImageUrl: function (baseUrl, size, value) {
-      return baseUrl + '/api/images/mark/' + size
+    getImageSrc: function (size, value) {
+      return svgToDataUri(markSvg(size))
     }
   })
 
@@ -247,8 +258,8 @@ export function configureTranscriptionEditorBlots() {
     withEditOnDoubleClick: true,
     extrainfo: { title: 'Reason', options : Item.getValidIllegibleReasons(), default: 'illegible'},
     thelength: { title: 'Length', default: 5,  min: 1, max: 5 },
-    getImageUrl: function (baseUrl, size, value) {
-      return baseUrl + '/api/images/illegible/' + size + '/' + value.thelength
+    getImageSrc: function (size, value) {
+      return svgToDataUri(illegibleSvg(size, value.thelength))
     }
   })
 
@@ -269,15 +280,15 @@ export function configureTranscriptionEditorBlots() {
     extrainfo: { title: 'Local Id', options: [ 'A', 'B', 'C'], default: 'A'},
     thelength: { default: 1 },
     noButton: true,
-    getImageUrl: function (baseUrl, size, value) {
-      return baseUrl +
-        '/api/images/chunkmark/' +
-        value.text + '/' +
-        value.target + '/' +
-        value.extrainfo + '/' +
-        value.thelength + '/' +
-        value.alttext + '/ltr/' +
-        size
+    getImageSrc: function (size, value) {
+      return svgToDataUri(chunkMarkSvg({
+        size: size,
+        workId: value.text,
+        chunkNumber: value.target,
+        localWitnessId: value.extrainfo ?? 'A',
+        segment: value.thelength,
+        type: value.alttext === 'start' ? 'start' : 'end'
+      }))
     }
   })
 
@@ -304,17 +315,14 @@ export function configureTranscriptionEditorBlots() {
     extrainfo: {  default: 'AW00'},
     thelength: { default: 1 },
     noButton: true,
-    getImageUrl: function (baseUrl, size, value) {
-      let fields = value.text.split("\t")
-      let appellation = fields[0]
-      let chapterTitle = fields[1]
-      return baseUrl +
-        '/api/images/chaptermark/' +
-        value.extrainfo + '/' +
-        value.thelength + '/' +
-        value.target + '/' +
-        value.alttext + '/ltr/' +
-        size
+    getImageSrc: function (size, value) {
+      return svgToDataUri(chapterMarkSvg({
+        size: size,
+        workId: value.extrainfo,
+        level: value.thelength,
+        number: value.target,
+        type: value.alttext === 'start' ? 'start' : 'end'
+      }))
     }
   })
 
@@ -378,8 +386,8 @@ export function configureTranscriptionEditorBlots() {
     noButton: true,
     renumberLinesOnImageLoad: true,
     thelength: { default: 5 },
-    getImageUrl: function (baseUrl, size, value) {
-      return baseUrl + '/api/images/linegap/' + value.thelength + '/' + size
+    getImageSrc: function (size, value) {
+      return svgToDataUri(lineGapSvg(size, value.thelength))
     }
   })
 

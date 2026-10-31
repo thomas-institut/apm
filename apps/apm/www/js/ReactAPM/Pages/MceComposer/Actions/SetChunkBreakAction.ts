@@ -7,6 +7,8 @@ import {InvalidDataStructureError, ValidationError} from "@/lib/Error/SystemErro
 const BreakLabels : Record<string, string> = {
     '': 'None',
     'paragraph': 'Paragraph',
+    'section': 'Section',
+    'page': 'Page',
 }
 
 export class SetChunkBreakAction implements StateTransformAction<MceComposerHistoryState> {

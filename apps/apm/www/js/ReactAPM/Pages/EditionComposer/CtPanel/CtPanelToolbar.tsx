@@ -3,6 +3,7 @@ import {CollationTableSearchMatch} from '@/EditionComposer/CollationTableSearch'
 import CollationTableSearchControls from '@/EditionComposer/CollationTableSearchControls';
 import {ToolbarCharacter} from '@/EditionComposer/ToolbarCharactersDefinition';
 import {CustomApparatusInterface} from '@/CtData/CtDataInterface';
+import {EraserFill} from "react-bootstrap-icons";
 
 export type CtPanelMode = 'search' | 'move' | 'group';
 
@@ -88,15 +89,16 @@ export default function CtPanelToolbar(props: CtPanelToolbarProps) {
       </Dropdown.Menu>
     </Dropdown>}
 
-    <Button type="button" variant="outline-secondary" size="sm" title="Delete all empty columns"
+    <Button type="button" variant="outline-secondary" size="sm" title="Delete all empty columns" className={'tb-button'}
+
             aria-label="Compact table" disabled={!props.canEdit || props.deletableColumnCount === 0}
             onClick={props.onCompact}>
-      <i className="bi bi-eraser-fill"/> Compact
+      <EraserFill/>
     </Button>
 
     <div className="panel-toolbar-group ct-toolbar-characters">
       {props.toolbarCharacters.map((character, index) => <Button type="button" variant="outline-secondary" size="sm"
-                                                                   className={`text-button text-${props.lang} tb-ch-button-${index}`}
+                                                                   className={`text-button text-${props.lang} tb-ch-button-${index} tb-button`}
                                                                    key={`${character.title}-${index}`}
                                                                    title={`${character.title} (click to copy)`}
                                                                    onClick={() => navigator.clipboard.writeText(character.character)}>

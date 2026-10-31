@@ -144,11 +144,21 @@ export class MceDataEditionGenerator {
           break;
 
         case 'page':
-          // TODO: implement page break
+          if (chunkOrderIndex !== mceData.chunkOrder.length - 1) {
+            // end the paragraph and force a page break if not the last chunk
+            edition.mainText.push(MainTextTokenFactory.createParagraphEnd());
+            edition.mainText.push(MainTextTokenFactory.createPageBreak());
+            nextChunkShift += 2;
+          }
           break;
 
         case 'section':
-          // TODO: implement section break
+          if (chunkOrderIndex !== mceData.chunkOrder.length - 1) {
+            // end the paragraph and add a section break if not the last chunk
+            edition.mainText.push(MainTextTokenFactory.createParagraphEnd());
+            edition.mainText.push(MainTextTokenFactory.createSectionBreak());
+            nextChunkShift += 2;
+          }
           break;
 
         default:

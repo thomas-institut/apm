@@ -74,7 +74,7 @@ export interface WitnessInMceData {
   tid?: number,
 }
 
-export const ValidChunkBreaks = ['', 'paragraph'];
+export const ValidChunkBreaks = ['', 'paragraph', 'section', 'page'];
 
 export interface ChunkInMceData {
   /**

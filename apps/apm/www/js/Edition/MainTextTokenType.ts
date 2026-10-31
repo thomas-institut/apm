@@ -23,3 +23,5 @@ export const GLUE = 'glue';
 export const PARAGRAPH_END = 'paragraph_end';
 export const NUMBERING_LABEL = 'numbering_label';
 export const FOLIATION_CHANGE_MARKER = 'foliation_change_marker';
+export const SECTION_BREAK = 'section_break';
+export const PAGE_BREAK = 'page_break';

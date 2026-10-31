@@ -63,6 +63,8 @@ export type MainTextTokenType =
   | 'foliation_change_marker'
   | 'chunk_start'
   | 'chunk_end'
+  | 'section_break'
+  | 'page_break'
   ;
 
 export interface MetadataInterface {

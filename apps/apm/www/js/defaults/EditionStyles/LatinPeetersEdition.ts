@@ -71,6 +71,11 @@ export const latinPeetersEdition: StyleSheetDefinition =  {
       stretch: "0.08 em"
     }
   },
+  sectionBreak: {
+    parent: '', glue: {
+      width: '13 pt', stretch: '0', shrink: '0'
+    }
+  },
   small:  {
     parent: "",
     text: {

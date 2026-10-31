@@ -58,6 +58,11 @@ export const arabicDeGruyterScheherazadeNew: StyleSheetDefinition = {
       width: '1 em', shrink: '0.02 em', stretch: '0.08 em'
     }
   },
+  sectionBreak: {
+    parent: '', glue: {
+      width: '20 pt', stretch: '0', shrink: '0'
+    }
+  },
   small: {
     parent: '', text: {
       fontSize: '0.8 em'

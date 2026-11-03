@@ -34,7 +34,7 @@ import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWit
 import {numericSort, varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import {CtData} from '@/CtData/CtData';
 import {capitalizeFirstLetter, deepCopy, trimWhiteSpace} from '@/toolbox/Util';
-import {EditionMainTextEditor} from './EditionMainTextEditor';
+import {EditionMainTextEditor, EditionMainTextEditorFormatState} from './EditionMainTextEditor';
 import {AsyncMyersDiff} from '@/toolbox/MyersDiff/AysncMyersDiff';
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark';
@@ -57,6 +57,9 @@ import {
   fmtTextToEditionWitnessTokens,
   MainTextEditChange
 } from '@/Edition/MainTextEditChanges';
+import {createElement} from 'react';
+import {createRoot, Root} from 'react-dom/client';
+import MainTextEditorToolbar from '@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextEditorToolbar';
 
 const EDIT_MODE_OFF = 'off';
 const EDIT_MODE_APPARATUS = 'apparatus';
@@ -65,6 +68,7 @@ const EDIT_MODE_TEXT = 'text';
 const typesetInfoDelay = 200;
 
 const betaEditorDivId = 'text-editor';
+const betaEditorToolbarDivId = 'text-editor-toolbar';
 const betaEditorInfoDiv = 'text-editor-info';
 
 const icons = {
@@ -125,6 +129,7 @@ export class MainTextPanel extends PanelWithToolbar {
   private numberingLabelsToggle: any;
   private ignoreIntraWordQuotesToggle: any;
   private freeTextEditor!: EditionMainTextEditor;
+  private textEditorToolbarRoot: Root | null = null;
   private betaEditorInfoDiv!: JQuery<HTMLElement>;
   private commitedFreeText: any;
   private changes: ChangeInterface[] = [];
@@ -511,6 +516,8 @@ export class MainTextPanel extends PanelWithToolbar {
       case EDIT_MODE_APPARATUS:
         this.currentEditMode = newEditMode;
         if (previousEditMode === EDIT_MODE_TEXT) {
+          this.textEditorToolbarRoot?.unmount();
+          this.textEditorToolbarRoot = null;
           $(this.getContentAreaSelector()).html(this.getMainTextHtmlVersion());
           $(`${this.containerSelector} .popover-toolbar-group`).removeClass('force-hidden');
           $(`${this.containerSelector} .highlight-toolbar-group`).removeClass('force-hidden');
@@ -582,16 +589,21 @@ export class MainTextPanel extends PanelWithToolbar {
 
   _setupTextEditMode() {
     // console.log(`--- Setting up text edit mode ---`)
+    this.textEditorToolbarRoot?.unmount();
+    this.textEditorToolbarRoot = null;
     this.removeApparatusPopovers();
     $(`${this.containerSelector} .popover-toolbar-group`).addClass('force-hidden');
     $(`${this.containerSelector} .highlight-toolbar-group`).addClass('force-hidden');
     $(this.getContentAreaSelector()).html(this._getMainTextBetaEditor());
+    this.textEditorToolbarRoot = createRoot(document.querySelector<HTMLElement>(`#${betaEditorToolbarDivId}`)!);
     this.freeTextEditor = new EditionMainTextEditor({
       containerSelector: `#${betaEditorDivId}`,
       lang: this.lang,
       onChange: this._genOnChangeMainTextFreeTextEditor(),
+      onFormatStateChange: formatState => this.renderTextEditorToolbar(formatState),
       debug: true
     });
+    this.renderTextEditorToolbar(this.freeTextEditor.getFormatState());
 
     this.numberingLabelsToggle = new NiceToggle({
       containerSelector: 'div.numbering-labels-toggle',
@@ -1342,7 +1354,17 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _getMainTextBetaEditor() {
-    return `<div id="${betaEditorDivId}">Editor will be here</div><div id="${betaEditorInfoDiv}" >Info will be here </div>`;
+    return `<div id="${betaEditorToolbarDivId}"></div><div id="${betaEditorDivId}">Editor will be here</div><div id="${betaEditorInfoDiv}" >Info will be here </div>`;
+  }
+
+  private renderTextEditorToolbar(formatState: EditionMainTextEditorFormatState) {
+    this.textEditorToolbarRoot?.render(createElement(MainTextEditorToolbar, {
+      lang: this.lang,
+      formatState,
+      onToggleFormat: format => this.freeTextEditor.toggleFormat(format),
+      onToggleHeading: headingNumber => this.freeTextEditor.toggleHeading(headingNumber),
+      onInsertCharacter: characterKey => this.freeTextEditor.insertCharacter(characterKey)
+    }));
   }
 
   private getMainTextHtmlVersion(): string {

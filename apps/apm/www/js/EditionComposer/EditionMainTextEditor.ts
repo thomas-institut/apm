@@ -18,7 +18,6 @@
 
 // @ts-ignore
 import Inline from 'quill/blots/inline';
-import {isRtl} from '@/toolbox/Util';
 import {toolbarCharactersDefinition} from './ToolbarCharactersDefinition';
 import Quill from '../QuillLoader';
 import Small from './QuillBlots/Small';
@@ -30,16 +29,26 @@ import {CompactFmtText, fromCompactFmtText} from "@thomas-inst/fmt-text";
 import {QuillRange} from "@/lib/types/Quill";
 
 
-const simpleFormats = ['bold', 'italic', 'numberingLabel', 'small',  'superscript'];
+export const simpleFormats = ['bold', 'italic', 'numberingLabel', 'small', 'superscript'] as const;
+export type EditionMainTextEditorFormat = typeof simpleFormats[number];
+
+export interface EditionMainTextEditorFormatState {
+  bold: boolean;
+  italic: boolean;
+  numberingLabel: boolean;
+  small: boolean;
+  superscript: boolean;
+  heading: number | null;
+}
 
 
 Inline.order = ['cursor', 'inline',   // Must be lower
   'underline', 'strike', 'italic', 'bold', 'numberingLabel', 'script', 'link', 'code'        // Must be higher
 ];
 
-const headingDepth = 3;
+export const headingDepth = 3;
 
-const formatButtons: { [key: string]: { icon: string, title: string } } = {
+export const formatButtons: Record<EditionMainTextEditorFormat, { icon: string, title: string }> = {
   bold: {icon: '<i class="bi bi-type-bold"></i>', title: 'Bold'},
   italic: {icon: '<i class="bi bi-type-italic"></i>', title: 'Italic'},
   numberingLabel: {icon: '<small class="fte-icon">x.y</small>', title: 'Numbering Label'},
@@ -47,17 +56,16 @@ const formatButtons: { [key: string]: { icon: string, title: string } } = {
   superscript: { icon: '<small class="fte-icon">x<sup>2</sup>', title: 'Superscript'}
 };
 
-const headingIcons = ['', '<span class="mte-icon">H<sub>1</sub></span>', '<span class="mte-icon">H<sub>2</sub></span>', '<span class="mte-icon">H<sub>3</sub></span>'];
+export const headingIcons = ['', '<span class="mte-icon">H<sub>1</sub></span>', '<span class="mte-icon">H<sub>2</sub></span>', '<span class="mte-icon">H<sub>3</sub></span>'];
 
-const toolbarSeparator = '<span class="mte-tb-sep">&nbsp;</span>';
-
-interface EditionMainTextEditorOptions {
+export interface EditionMainTextEditorOptions {
   containerSelector: string,
   lang: string,
   verbose?: boolean,
   debug?: boolean,
   initialText?: CompactFmtText,
-  onChange: (text: string) => void
+  onChange: (text: string) => void,
+  onFormatStateChange?: (formatState: EditionMainTextEditorFormatState) => void
 }
 
 /**
@@ -71,6 +79,7 @@ export class EditionMainTextEditor {
   private container: HTMLElement;
   private readonly quillEditor: Quill;
   private readonly onChange: (text: string) => void;
+  private readonly onFormatStateChange: (formatState: EditionMainTextEditorFormatState) => void;
   private quillDeltaRenderer: QuillDeltaRenderer;
   private quillDeltaConverter: GenericQuillDeltaConverter;
 
@@ -90,6 +99,7 @@ export class EditionMainTextEditor {
     this.container.innerHTML = this._getHtml();
     this.quillEditor = new Quill(this.container.querySelector<HTMLElement>('.fte-editor')!, {});
     this.onChange = options.onChange;
+    this.onFormatStateChange = options.onFormatStateChange ?? (() => {});
     this.quillDeltaRenderer = new QuillDeltaRenderer({
       classToAttrTranslators: {
         numberingLabel: (attr: any) => {
@@ -116,37 +126,52 @@ export class EditionMainTextEditor {
       this.onChange(this.getText());
     });
 
-    simpleFormats.forEach((fmt) => {
-      let btnSelector = this._getBtnSelectorFormat(fmt);
-      addClickListener(this._getButtons(btnSelector), this._genOnClickFormat(fmt, this.quillEditor, btnSelector));
-    });
-
-    for (let i = 0; i < headingDepth; i++) {
-      addClickListener(this._getButtons(this._getBtnSelectorHeading(i + 1)), this._genOnClickHeadingButton(i + 1, this.quillEditor));
-    }
-
-    Object.keys(toolbarCharactersDefinition[this.lang]).forEach((key) => {
-      let btnSelector = this._getBtnSelectorCharacter(key);
-      addClickListener(this._getButtons(btnSelector), this._genOnClickCharacter(key, this.quillEditor));
-    });
-
     this.quillEditor.on('selection-change', (range: QuillRange | null) => {
       if (range === null) {
         this.debug && console.log(`Editor out of focus`);
+        this.onFormatStateChange(this.getFormatState());
         return;
       }
       // if (oldRange === null) {
       //   oldRange = {index: -1, length: -1};
       // }
       // this.debug && console.log(`Selection change from ${oldRange.index}:${oldRange.length} to ${range.index}:${range.length}, source ${source}`)
-      let currentFormat = this.quillEditor.getFormat();
-      simpleFormats.forEach((fmt) => {
-        setButtonState(this._getButtons(this._getBtnSelectorFormat(fmt)), currentFormat[fmt]);
-      });
-      for (let i = 0; i < headingDepth; i++) {
-        setButtonState(this._getButtons(this._getBtnSelectorHeading(i + 1)), currentFormat.header === i + 1);
-      }
+      this.onFormatStateChange(this.getFormatState());
     });
+  }
+
+  getFormatState(): EditionMainTextEditorFormatState {
+    const currentFormat = this.quillEditor.getFormat();
+    return {
+      bold: !!currentFormat.bold,
+      italic: !!currentFormat.italic,
+      numberingLabel: !!currentFormat.numberingLabel,
+      small: !!currentFormat.small,
+      superscript: !!currentFormat.superscript,
+      heading: typeof currentFormat.header === 'number' ? currentFormat.header : null
+    };
+  }
+
+  toggleFormat(format: EditionMainTextEditorFormat) {
+    const currentFormat = this.quillEditor.getFormat();
+    this.quillEditor.format(format, !currentFormat[format]);
+    this.onFormatStateChange(this.getFormatState());
+  }
+
+  toggleHeading(headingNumber: number) {
+    const currentFormat = this.quillEditor.getFormat();
+    const currentHeading = currentFormat.header !== undefined ? currentFormat.header : null;
+    this.quillEditor.format('header', currentHeading === headingNumber ? false : headingNumber);
+    this.onFormatStateChange(this.getFormatState());
+  }
+
+  insertCharacter(characterKey: string) {
+    const range = this.quillEditor.getSelection();
+    if (range === null) {
+      return;
+    }
+    this.quillEditor.deleteText(range.index, range.length);
+    this.quillEditor.insertText(range.index, toolbarCharactersDefinition[this.lang][characterKey].character);
   }
 
   getText() {
@@ -174,104 +199,9 @@ export class EditionMainTextEditor {
     this.quillEditor.setContents(newDelta, source);
   }
 
-  _getButtons(selector: string): HTMLElement[] {
-    return Array.from(this.container.querySelectorAll<HTMLElement>(selector));
-  }
-
-  _getBtnSelectorFormat(format: string) {
-    return `.${format}-btn`;
-  }
-
-  _getBtnSelectorCharacter(characterKey: string) {
-    return `.${characterKey}-btn`;
-  }
-
-
-  _getBtnSelectorHeading(headingNumber: number) {
-    return `.heading${headingNumber}-btn`;
-  }
-
-  _genOnClickFormat(format: string, quill: Quill, buttonSelector: string) {
-    return (ev: any) => {
-      ev.preventDefault();
-      let currentFormat = quill.getFormat();
-      let currentState = false;
-      if (currentFormat[format] !== undefined) {
-        currentState = currentFormat[format];
-      }
-      // console.log(`Click on format ${format}`)
-      // console.log(`Current state: ${currentState}`)
-      let btn = this._getButtons(buttonSelector);
-      quill.format(format, !currentState);
-      currentState = !currentState;
-      setButtonState(btn, currentState);
-    };
-  }
-
-  _genOnClickCharacter(characterKey: string, quill: Quill) {
-    return (ev: any) => {
-      ev.preventDefault();
-      let range = quill.getSelection();
-      if (range === null) {
-        return;
-      }
-      quill.deleteText(range.index, range.length);
-      quill.insertText(range.index, toolbarCharactersDefinition[this.lang][characterKey].character);
-    };
-  }
-
-  _genOnClickHeadingButton(headingNumber: number, quill: Quill) {
-    return (ev: any) => {
-      ev.preventDefault();
-      let currentFormat = quill.getFormat();
-      let currentHeading = currentFormat['header'] !== undefined ? currentFormat['header'] : -1;
-      if (currentHeading === headingNumber) {
-        // turn off heading
-        this.verbose && console.log(`Turning off heading ${currentHeading}`);
-        quill.format('header', false);
-        setButtonState(this._getButtons(this._getBtnSelectorHeading(currentHeading)), false);
-      } else {
-        this.verbose && console.log(`Setting heading ${headingNumber}`);
-        quill.format('header', headingNumber);
-        for (let i = 0; i < headingDepth; i++) {
-          let buttonState = headingNumber === i + 1;
-          setButtonState(this._getButtons(this._getBtnSelectorHeading(i + 1)), buttonState);
-        }
-      }
-    };
-  }
-
-
   _getHtml() {
-
-    let buttonsHtml = simpleFormats
-    .map((fmt) => {
-      return `<button class="${fmt}-btn" title="${formatButtons[fmt].title}">${formatButtons[fmt].icon}</button>`;
-    })
-    .join('');
-    let headingButtonsHtml = '';
-    for (let i = 0; i < headingDepth; i++) {
-      headingButtonsHtml += `<button class="heading${i + 1}-btn" title="Heading ${i + 1}">${headingIcons[i + 1]}</button>`;
-    }
-
-    let characterButtonsHtml = Object.keys(toolbarCharactersDefinition[this.lang]).map((key) => {
-      let btnDef = toolbarCharactersDefinition[this.lang][key];
-      let char = isRtl(this.lang) && btnDef['rtlVersion'] !== undefined ? btnDef['rtlVersion'] : btnDef.character;
-      return `<button class="${key}-btn" title="${btnDef.title}">${char}</button>`;
-    }).join('');
-    return `<div class="fte-toolbar text-${this.lang}">${buttonsHtml}${toolbarSeparator}${headingButtonsHtml}${toolbarSeparator}${characterButtonsHtml}</div>
-<div class="fte-editor text-${this.lang}"></div>`;
+    return `<div class="fte-editor text-${this.lang}"></div>`;
   }
-}
-
-
-function setButtonState(buttons: HTMLElement[], state: boolean) {
-  // force a boolean: classList.toggle with an undefined second argument would toggle instead of removing
-  buttons.forEach((btn) => btn.classList.toggle('on', !!state));
-}
-
-function addClickListener(buttons: HTMLElement[], listener: (ev: MouseEvent) => void) {
-  buttons.forEach((btn) => btn.addEventListener('click', listener));
 }
 
 // Initialization

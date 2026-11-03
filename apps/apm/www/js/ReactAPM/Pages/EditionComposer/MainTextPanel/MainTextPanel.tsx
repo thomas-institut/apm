@@ -194,7 +194,7 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
 
   return <Panel className={'main-text-panel'}>
       <MainTextPanelToolbar mode={mode} canEdit={canEdit}
-                            apparatuses={apparatuses}
+                                                   apparatuses={apparatuses}
                             apparatusHighlightSelection={apparatusHighlightSelection}
                             showApparatusPopovers={showApparatusPopovers}
                             onModeChange={changeMode}

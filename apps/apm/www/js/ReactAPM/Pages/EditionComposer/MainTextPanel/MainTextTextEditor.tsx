@@ -15,6 +15,8 @@ import {deepCopy} from '@/toolbox/Util';
 import {AsyncMyersDiff} from '@/toolbox/MyersDiff/AysncMyersDiff';
 import EditionMainTextEditorWrapper from '@/ReactAPM/Pages/EditionComposer/MainTextPanel/EditionMainTextEditorWrapper';
 import MainTextEditChangesInfo from '@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextEditChangesInfo';
+import MainTextEditorToolbar from '@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextEditorToolbar';
+import {EditionMainTextEditor, EditionMainTextEditorFormatState} from '@/EditionComposer/EditionMainTextEditor';
 
 interface MainTextTextEditorProps {
   mainText: MainTextToken[];
@@ -24,6 +26,10 @@ interface MainTextTextEditorProps {
 }
 
 export default function MainTextTextEditor({mainText, ctData, editionWitnessTokenNormalizer, onCommit}: MainTextTextEditorProps) {
+  const [formatState, setFormatState] = useState<EditionMainTextEditorFormatState>({
+    bold: false, italic: false, numberingLabel: false, small: false, superscript: false, heading: null
+  });
+  const editorRef = useRef<EditionMainTextEditor | null>(null);
   const [baseTokens] = useState(() => deepCopy(ctData.witnesses[ctData.editionWitnessIndex]?.tokens ?? []));
   const [initialFmtText] = useState(() => convertMainTextToFmtText(mainText));
   const [editorKey, setEditorKey] = useState(0);
@@ -45,6 +51,15 @@ export default function MainTextTextEditor({mainText, ctData, editionWitnessToke
   const requestIdRef = useRef(0);
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestFmtTextRef = useRef(initialFmtText);
+
+  const handleEditorReady = useCallback((editor: EditionMainTextEditor | null) => {
+    editorRef.current = editor;
+    if (editor === null) {
+      setFormatState({bold: false, italic: false, numberingLabel: false, small: false, superscript: false, heading: null});
+    } else {
+      setFormatState(editor.getFormatState());
+    }
+  }, []);
 
   const calculateChanges = useCallback(async (requestId: number, fmtText: FmtText) => {
     try {
@@ -178,8 +193,13 @@ export default function MainTextTextEditor({mainText, ctData, editionWitnessToke
                                              scheduleCalculation(latestFmtTextRef.current);
                                            }}/>}
     </div>
+    <MainTextEditorToolbar lang={ctData.lang} formatState={formatState}  useLegacyFormatIcons={false}
+                           onToggleFormat={format => editorRef.current?.toggleFormat(format)}
+                           onToggleHeading={headingNumber => editorRef.current?.toggleHeading(headingNumber)}
+                           onInsertCharacter={characterKey => editorRef.current?.insertCharacter(characterKey)}/>
     <EditionMainTextEditorWrapper key={editorKey} initialText={initialFmtText} lang={ctData.lang}
-                                  onChange={scheduleCalculation}/>
+                                  onChange={scheduleCalculation} onEditorReady={handleEditorReady}
+                                  onFormatStateChange={setFormatState}/>
     <div className="main-text-text-editor-status" aria-live="polite">
       {isCalculating && <span>Calculating changes... <Spinner animation="border" size="sm" role="status"/>
         {showProgress && ` ${progress.iterations} calculations of max. ${progress.maxIterations}`}</span>}

@@ -72,7 +72,7 @@
 
     .main-text-text-editor {
         display: grid;
-        grid-template-rows: auto minmax(12rem, 1fr) minmax(0, 1fr) auto;
+        grid-template-rows: auto auto 1fr minmax(0, 10em) auto;
         gap: 0.75rem;
         height: 100%;
         min-height: 0;
@@ -88,12 +88,24 @@
 
     .edition-main-text-editor {
         display: flex;
-        min-height: 12rem;
         flex-direction: column;
+        border: 1px solid silver;
+        margin-bottom: 1em;
+        padding: 0;
     }
 
-    .edition-main-text-editor .fte-toolbar {
-        flex: 0 0 auto;
+    .main-text-text-editor > .fte-toolbar {
+        background-color: var(--tool-bar-bg-color);
+        margin: 0;
+        padding: 0.25em;
+
+        button {
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            margin: 0 0.25em;
+            padding: 0;
+        }
     }
 
     .edition-main-text-editor .fte-editor {

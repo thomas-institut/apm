@@ -345,7 +345,6 @@ export class EditionTypesettingHelper {
           break;
 
         case 'section':
-          verticalItems.push(this.createPenalty(ReallyGoodPointForBreak));
           verticalItems.push(await this.createSectionBreakGlue());
           break;
       }

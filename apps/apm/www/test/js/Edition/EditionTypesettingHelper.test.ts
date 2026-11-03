@@ -5,13 +5,11 @@ import {
   ItemList,
   MinusInfinitePenalty,
   Penalty,
-  ReallyGoodPointForBreak,
   StyleSheet,
   StyleSheetDefinition,
   TextBox,
   TextBoxMeasurer,
-  TypesetterItem,
-  VerticalItemDirection
+  TypesetterItem
 } from '@thomas-inst/typesetter';
 import {EditionTypesettingHelper} from '@/Edition/EditionTypesettingHelper';
 import {Edition} from '@/Edition/Edition';
@@ -78,24 +76,11 @@ describe('EditionTypesettingHelper section and page breaks', () => {
     expect((items[0] as Penalty).getPenalty()).toBe(MinusInfinitePenalty);
   });
 
-  it('adds a really good break penalty followed by vertical glue after a section break', async () => {
-    const items = await getItemsAfterFirstParagraph(twoParagraphs('', MainTextTokenFactory.createSectionBreak()));
-    expect(items).toHaveLength(2);
-    expect(items[0]).toBeInstanceOf(Penalty);
-    expect((items[0] as Penalty).getPenalty()).toBe(ReallyGoodPointForBreak);
-    expect(items[1]).toBeInstanceOf(Glue);
-    const glue = items[1] as Glue;
-    expect(glue.getDirection()).toBe(VerticalItemDirection);
-    expect(glue.getHeight()).toBeCloseTo(Dimension.getPixelValue('18 pt', 12));
-    expect(glue.getStretch()).toBe(0);
-    expect(glue.getShrink()).toBe(0);
-  });
-
   it('uses the sectionBreak style glue for the section break space', async () => {
     const ssDef = deepCopy(defaultLatinEditionStyle);
     ssDef.sectionBreak = {parent: '', glue: {width: '30 pt', stretch: '2 pt', shrink: '1 pt'}};
     const items = await getItemsAfterFirstParagraph(twoParagraphs('', MainTextTokenFactory.createSectionBreak()), ssDef);
-    const glue = items[1] as Glue;
+    const glue = items[0] as Glue;
     expect(glue.getHeight()).toBeCloseTo(Dimension.getPixelValue('30 pt', 12));
     expect(glue.getStretch()).toBeCloseTo(Dimension.getPixelValue('2 pt', 12));
     expect(glue.getShrink()).toBeCloseTo(Dimension.getPixelValue('1 pt', 12));
@@ -106,8 +91,8 @@ describe('EditionTypesettingHelper section and page breaks', () => {
     delete ssDef.sectionBreak;
     ssDef.default.paragraph!.lineSkip = '20 pt';
     const items = await getItemsAfterFirstParagraph(twoParagraphs('', MainTextTokenFactory.createSectionBreak()), ssDef);
-    expect(items).toHaveLength(2);
-    expect((items[1] as Glue).getHeight()).toBeCloseTo(Dimension.getPixelValue('20 pt', 12));
+    expect(items).toHaveLength(1);
+    expect((items[0] as Glue).getHeight()).toBeCloseTo(Dimension.getPixelValue('20 pt', 12));
   });
 
   it('does not add a never break penalty for keepWithNext paragraphs with a break', async () => {

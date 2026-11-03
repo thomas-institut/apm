@@ -146,7 +146,7 @@ export class MceDataEditionGenerator {
         case 'page':
           if (chunkOrderIndex !== mceData.chunkOrder.length - 1) {
             // end the paragraph and force a page break if not the last chunk
-            edition.mainText.push(MainTextTokenFactory.createParagraphEnd());
+            edition.mainText.push(MainTextTokenFactory.createParagraphEnd('normal'));
             edition.mainText.push(MainTextTokenFactory.createPageBreak());
             nextChunkShift += 2;
           }
@@ -155,7 +155,7 @@ export class MceDataEditionGenerator {
         case 'section':
           if (chunkOrderIndex !== mceData.chunkOrder.length - 1) {
             // end the paragraph and add a section break if not the last chunk
-            edition.mainText.push(MainTextTokenFactory.createParagraphEnd());
+            edition.mainText.push(MainTextTokenFactory.createParagraphEnd('normal'));
             edition.mainText.push(MainTextTokenFactory.createSectionBreak());
             nextChunkShift += 2;
           }

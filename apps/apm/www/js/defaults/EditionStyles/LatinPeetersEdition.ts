@@ -41,7 +41,7 @@ export const latinPeetersEdition: StyleSheetDefinition =  {
       lineNumbersToTextDistance: "0.5 cm",
       lineNumbersFontSize: "0.8 em",
       lineNumbersPosition: "right",
-      resetLineNumbersEachPage: false
+      resetLineNumbersEachPage: true
     },
     paragraph: {
       lineSkip: "13 pt",

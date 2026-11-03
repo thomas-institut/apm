@@ -29,42 +29,34 @@ import {MultiToggle} from '@/widgets/MultiToggle';
 import {ApparatusCommon, MainTextTypesettingInfo} from './ApparatusCommon';
 import * as EditionMainTextTokenType from '../Edition/MainTextTokenType.js';
 import {Edition} from '@/Edition/Edition';
-import {HtmlRenderer, MARK_TYPE_PARAGRAPH, TOKEN_TYPE_GLUE, TOKEN_TYPE_MARK} from '@thomas-inst/fmt-text';
+import {HtmlRenderer} from '@thomas-inst/fmt-text';
 import {PanelWithToolbar, PanelWithToolbarOptions} from '@/MultiPanelUI/PanelWithToolbar';
-import {arraysAreEqual, numericSort, varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
+import {numericSort, varsAreEqual} from '@/lib/ToolBox/ArrayUtil';
 import {CtData} from '@/CtData/CtData';
 import {capitalizeFirstLetter, deepCopy, trimWhiteSpace} from '@/toolbox/Util';
 import {EditionMainTextEditor} from './EditionMainTextEditor';
-import {EditionWitnessTokenStringParser} from '@/toolbox/EditionWitnessTokenStringParser';
 import {AsyncMyersDiff} from '@/toolbox/MyersDiff/AysncMyersDiff';
 import * as WitnessTokenType from '../Witness/WitnessTokenType';
 import * as EditionWitnessFormatMarkType from '../Witness/EditionWitnessFormatMark';
-import * as EditionWitnessParagraphStyle from '../Witness/EditionWitnessParagraphStyle';
 
 import {WitnessToken} from '@/Witness/WitnessToken';
 import {CollapsePanel} from '@/widgets/CollapsePanel';
-import {EditionWitnessToken} from '@/Witness/EditionWitnessToken';
 import {MainText} from '@/Edition/MainText';
-import {TokenMatchScorer} from '@/Edition/TokenMatchScorer';
 import {NiceToggle, toggleEvent} from '@/widgets/NiceToggle';
 import {EventThrottle} from '@/toolbox/EventThrottle';
-import {PARSER_NORMALIZER} from '@/constants/NormalizationSource';
 import {UiToolBox} from '@/toolbox/UiToolBox';
 import {SimpleProfiler} from '@/SimpleProfiler';
 import {ApparatusPanel} from "@/EditionComposer/ApparatusPanel";
 import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
-import {ADD, DEL, EditCommand, KEEP} from "@/toolbox/MyersDiff/MyersDiff";
-import {
-  FmtText,
-  fromString,
-  getCleanFmtText,
-  getNormalizedFmtText,
-  getPlainText,
-  newGlueToken,
-  newMarkToken
-} from "@thomas-inst/fmt-text";
 import {ApparatusEntry} from "@/Edition/ApparatusEntry";
 import {Apparatus} from "@/Edition/Apparatus";
+import {
+  applyMainTextChangesToCtData,
+  calculateMainTextChanges,
+  convertMainTextToFmtText,
+  fmtTextToEditionWitnessTokens,
+  MainTextEditChange
+} from '@/Edition/MainTextEditChanges';
 
 const EDIT_MODE_OFF = 'off';
 const EDIT_MODE_APPARATUS = 'apparatus';
@@ -83,11 +75,6 @@ const icons = {
   toggleOn: '<i class="fas fa-toggle-on"></i>',
   toggleOff: '<i class="fas fa-toggle-off"></i>'
 };
-
-const numberingLabelFmtTextClass = 'numberingLabel';
-
-const FAKE_END_COMMAND = 12345678;
-
 interface MainTextPanelOptions extends PanelWithToolbarOptions {
   ctData: CtDataInterface;
   edition: Edition;
@@ -102,13 +89,7 @@ interface MainTextPanelOptions extends PanelWithToolbarOptions {
   highlightEnabled?: boolean;
 }
 
-interface ChangeInterface {
-  newToken?: WitnessTokenInterface;
-  currentToken: WitnessTokenInterface | null;
-  index: number;
-  index2?: number;
-  change: string;
-}
+type ChangeInterface = MainTextEditChange;
 
 export class MainTextPanel extends PanelWithToolbar {
 
@@ -646,7 +627,7 @@ export class MainTextPanel extends PanelWithToolbar {
     }
 
     // console.log(` - Setting text in free text editor -`)
-    this.freeTextEditor.setText(this._convertMainTextToFmtText(), true);
+    this.freeTextEditor.setText(convertMainTextToFmtText(this.edition.mainText), true);
     // console.log(` - updating no changes label - `)
     this.betaEditorInfoDiv = $(`#${betaEditorInfoDiv}`).html('No changes');
     this.changesInfoDivConstructed = false;
@@ -728,7 +709,8 @@ export class MainTextPanel extends PanelWithToolbar {
       // this.debug && console.log(`fmtText from editor`)
       // this.debug && console.log(newFmtText)
 
-      let witnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText);
+      let witnessTokens = fmtTextToEditionWitnessTokens(newFmtText, this.edition.lang, this.detectNumberingLabels,
+        this.detectIntraWordQuotationMarks, this.options.editionWitnessTokenNormalizer);
       // this.debug && console.log(`Current witness tokens`, currentWitnessTokens)
       // this.debug && console.log(`Witness tokens from editor`, witnessTokens);
 
@@ -835,33 +817,7 @@ export class MainTextPanel extends PanelWithToolbar {
   }
 
   _getChangesInTextEditor(currentWitnessTokens: WitnessTokenInterface[], newWitnessTokens: WitnessTokenInterface[]): Promise<ChangeInterface[] | null> {
-
-    return new Promise(async (resolve) => {
-      await wait(1);
-      let workingCurrentWitnessTokens = deepCopy(currentWitnessTokens);
-      workingCurrentWitnessTokens = workingCurrentWitnessTokens
-      .map((token: WitnessTokenInterface, index: number) => {
-        // keep the original index
-        token.originalIndex = index;
-        return token;
-      })
-      .filter((token: WitnessTokenInterface) => {
-        return token.tokenType !== 'empty';
-      });
-      let editScript = await this.getEditScript(workingCurrentWitnessTokens, newWitnessTokens);
-      if (editScript === null) {
-        // aborted operation
-        console.log('Aborted getEditScript');
-        resolve(null);
-        return;
-      }
-      console.log(`Edit script`);
-      console.log(editScript);
-      let changeList = this.__getChangeList(workingCurrentWitnessTokens, newWitnessTokens, editScript);
-      console.log(`Change List`);
-      console.log(changeList);
-      resolve(changeList);
-    });
+    return calculateMainTextChanges(this.diffEngine, currentWitnessTokens, newWitnessTokens);
 
   }
 
@@ -882,7 +838,8 @@ export class MainTextPanel extends PanelWithToolbar {
       // }
       this.verbose && console.log(`There are changes, now it's almost for real`);
       this.textEditRevertDiv.addClass('hidden');
-      let newWitnessTokens = this.__fmtTextToEditionWitnessTokens(newFmtText);
+      let newWitnessTokens = fmtTextToEditionWitnessTokens(newFmtText, this.edition.lang, this.detectNumberingLabels,
+        this.detectIntraWordQuotationMarks, this.options.editionWitnessTokenNormalizer);
       this.debug && console.log('New witness tokens');
       this.debug && console.log(newWitnessTokens);
       // TODO: show something if there are more than, say, 5 affected columns
@@ -896,41 +853,7 @@ export class MainTextPanel extends PanelWithToolbar {
     let changes = this.changes;
     // console.log(`Changes`)
     // console.log(changes)
-    let columnsAdded = 0;
-    changes.forEach((change, changeIndex) => {
-      // console.log(`About to process change ${changeIndex}, ${columnsAdded} column(s) added`)
-      switch (change.change) {
-        case 'replace':
-          if (change.newToken === undefined) {
-            throw new Error(`Found a replacement with a null or undefined new token`);
-          }
-          this.ctData.witnesses[this.ctData.editionWitnessIndex].tokens[change.index + columnsAdded] = change.newToken;
-          break;
-
-        case 'delete':
-          // in the current schema, we just empty the token
-          this.ctData.witnesses[this.ctData.editionWitnessIndex].tokens[change.index + columnsAdded] = {
-            tokenClass: 'edition', tokenType: WitnessTokenType.EMPTY, text: ""
-          };
-          break;
-
-        case 'add':
-          // console.log(`Change is ADD at index ${change.index}`)
-          // this is the problem case, it should be left to the CtData class
-          this.ctData = CtData.insertColumnsAfter(this.ctData, change.index + columnsAdded, 1);
-          // console.log(`CtData after inserting 1 column`)
-          // console.log(deepCopy(this.ctData))
-          columnsAdded = columnsAdded + 1;
-          if (change.newToken === undefined) {
-            throw new Error(`Found an addition with an undefined new token`);
-          }
-          this.ctData['witnesses'][this.ctData['editionWitnessIndex']].tokens[change.index + columnsAdded] = deepCopy(change.newToken);
-          break;
-
-        default:
-          throw new Error(`Unknown change type '${change.change}', changeIndex: ${changeIndex}`);
-      }
-    });
+    this.ctData = applyMainTextChangesToCtData(this.ctData, changes);
     p.lap(`changes processed`);
     this.changes = [];
     this.lastMainTextTypesettingInfo = null;
@@ -944,291 +867,6 @@ export class MainTextPanel extends PanelWithToolbar {
     // console.log(`onCtDataChange finished`)
     p.stop(`onCtDataChange finished`);
   }
-
-  /**
-   *
-   * @param oldTokens
-   * @param newTokens
-   * @param {EditCommand[]}editScript
-   * @return {*[]}
-   * @private
-   */
-  __getChangeList(oldTokens: WitnessTokenInterface[], newTokens: WitnessTokenInterface[], editScript: EditCommand[]): ChangeInterface[] {
-    const debugStateMachine = false;
-    debugStateMachine && console.log(`Get change list state machine`);
-
-    let state = 0;
-    let changeList: ChangeInterface[] = [];
-    let lastKeptOrReplaced = -1;
-    let deleteStack: number[] = [];
-    let addStack: number[] = [];
-    let tokenMatchScorer = new TokenMatchScorer();
-
-
-    // add a fake END command
-    editScript.push({command: FAKE_END_COMMAND, index: -1, seq: -1});
-
-
-    editScript.forEach((editScriptItem, i) => {
-
-      switch (state) {
-        case 0:
-          switch (editScriptItem.command) {
-            case KEEP:
-              // nothing to do
-              // debugStateMachine && console.log(`KEEP command in edit script (state = 0)`)
-              lastKeptOrReplaced = editScriptItem.index;
-              break;
-
-            case ADD:
-              debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`);
-              debugStateMachine && console.log(`ADD command in edit script (state = 0), pushing an ADD to change list`);
-              changeList.push({
-                change: 'add',
-                index: lastKeptOrReplaced,
-                currentToken: lastKeptOrReplaced >= 0 ? oldTokens[lastKeptOrReplaced] : null,
-                index2: editScriptItem.seq,
-                newToken: newTokens[editScriptItem.seq]
-              });
-              break;
-
-            case DEL:
-              // need to wait for further ADDs and DELs
-              debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`);
-              debugStateMachine && console.log(`DEL command in edit script (state = 0)`);
-              debugStateMachine && console.log(`-- adding item to the empty deleteStack`);
-              deleteStack.push(editScriptItem.index);
-              debugStateMachine && console.log(`-- State -> 1`);
-              state = 1;
-              break;
-
-            case FAKE_END_COMMAND:
-              debugStateMachine && console.log(`INPUT editScriptItem ${i}: END command in state 0`);
-              break;
-          }
-          break;
-
-        case 1: // waiting for ADDs and DELs to handle replacements
-          switch (editScriptItem.command) {
-            case KEEP:
-            case FAKE_END_COMMAND:
-              debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`);
-              if (editScriptItem.command === KEEP) {
-                debugStateMachine && console.log(`KEEP command in edit script (state = 1)`);
-              } else {
-                debugStateMachine && console.log(`END command in state 1`);
-              }
-              debugStateMachine && console.log(`-- processing deleteStack (${deleteStack.length} items) and addStack (${addStack.length} items)`);
-              // try to match deleted token with added tokens
-              deleteStack.forEach((deleteIndex, i) => {
-                debugStateMachine && console.log(`---- deleteIndex ${i}: ${deleteIndex}`);
-                let bestMatch = -1;
-                let bestScore = -1;
-                addStack.forEach((seqIndex, j) => {
-                  let score = tokenMatchScorer.getMatchScore(oldTokens[deleteIndex], newTokens[seqIndex]);
-                  if (score > bestScore) {
-                    bestMatch = j;
-                    bestScore = score;
-                  }
-                });
-                debugStateMachine && console.log(`------ best match is ${bestMatch} with a score of ${bestScore}`);
-                if (bestMatch === -1) {
-                  // no match, just push a deletion to the changeList
-                  debugStateMachine && console.log(`------ pushing a delete to change list`);
-                  changeList.push({
-                    change: 'delete',
-                    index: oldTokens[deleteIndex].originalIndex ?? -1,
-                    currentToken: oldTokens[deleteIndex]
-                  });
-
-                } else {
-                  // push all adds before the best match to the change list
-                  for (let j = 0; j < bestMatch; j++) {
-                    let addIndex = addStack.shift();
-                    if (addIndex === undefined) {
-                      throw new Error(`Found undefined addIndex`);
-                    }
-                    debugStateMachine && console.log(`------ pushing ADD ${j} to change list, addIndex ${addIndex}`);
-                    changeList.push({
-                      change: 'add',
-                      index: lastKeptOrReplaced,
-                      currentToken: lastKeptOrReplaced >= 0 ? oldTokens[lastKeptOrReplaced] : null,
-                      index2: addIndex,
-                      newToken: newTokens[addIndex]
-                    });
-                  }
-                  // push a REPLACE command
-                  let addIndex = addStack.shift();
-                  if (addIndex === undefined) {
-                    throw new Error(`Found undefined addIndex`);
-                  }
-                  debugStateMachine && console.log(`------ pushing REPLACE to change list, deleteIndex ${deleteIndex}, addIndex ${addIndex}`);
-                  changeList.push({
-                    change: 'replace',
-                    index: oldTokens[deleteIndex].originalIndex ?? -1,
-                    currentToken: oldTokens[deleteIndex],
-                    index2: addIndex,
-                    newToken: newTokens[addIndex]
-                  });
-                  lastKeptOrReplaced = deleteIndex;
-                  debugStateMachine && console.log(`------ addStack now has ${addStack.length} items`);
-                }
-              });
-              // reset the deleteStack
-              deleteStack = [];
-              // push all remaining ADDs
-              addStack.forEach((addIndex, j) => {
-                debugStateMachine && console.log(`------ pushing ADD ${j} to change list, addIndex ${addIndex}`);
-                changeList.push({
-                  change: 'add',
-                  index: lastKeptOrReplaced,
-                  currentToken: lastKeptOrReplaced >= 0 ? oldTokens[lastKeptOrReplaced] : null,
-                  index2: addIndex,
-                  newToken: newTokens[addIndex]
-                });
-              });
-              addStack = [];
-              // now take care of the keep: just update the lastKeptOrReplaced index
-              if (editScriptItem.command === KEEP) {
-                lastKeptOrReplaced = editScriptItem.index;
-              }
-              debugStateMachine && console.log(`-- State -> 0`);
-              state = 0;
-              break;
-
-            case DEL:
-              // push it to deleteStack
-              debugStateMachine && console.log(`INPUT editScriptItem ${i}:  command ${editScriptItem.command}, index ${editScriptItem.index}, seq ${editScriptItem.seq}`);
-              debugStateMachine && console.log(`DEL command in edit script (state = 1)`);
-              deleteStack.push(editScriptItem.index);
-              debugStateMachine && console.log(`-- adding index to the deleteStack, which now has ${deleteStack.length} items`);
-              break;
-
-            case ADD:
-              // push it to addStack
-              debugStateMachine && console.log(`ADD command in edit script (state = 1)`);
-              addStack.push(editScriptItem.seq);
-              debugStateMachine && console.log(`-- adding seq to the addStack, which now has ${addStack.length} item(s)`);
-              break;
-          }
-      }
-    });
-    // State should ALWAYS be zero here, and add/delete stacks should be empty
-    if (state !== 0 || addStack.length !== 0 || deleteStack.length !== 0) {
-      console.error(`Error in get change list logic: state = ${state}, addStack: ${addStack.length}, deleteStack: ${deleteStack.length}`);
-    }
-
-
-    // now fix the indexes to make them correspond to the original token array
-    changeList = changeList.map((change) => {
-      if (change.index !== -1) {
-        change.index = change.currentToken?.originalIndex ?? -1;
-      }
-      return change;
-    });
-
-    return changeList;
-  }
-
-  async getEditScript(oldTokens: WitnessTokenInterface[], newTokens: WitnessTokenInterface[]) {
-    const attributesToCompare = ['fontWeight', 'fontStyle'];
-    this.diffEngine.setDebugMode(true);
-    let waitForEngine = false;
-    if (this.diffEngine.isRunning()) {
-      console.log(`Aborting diff engine`);
-      this.diffEngine.abort();
-      waitForEngine = true;
-    }
-    // wait a bit until the engine stops
-    if (waitForEngine) {
-      let tickTime = 5;
-      for (let attempts = 0; attempts < 100; attempts++) {
-        if (!this.diffEngine.isRunning()) {
-          console.log(`Diff engine free to run again, waited ${attempts} ticks of ${tickTime} ms each`);
-          break;
-        }
-        await wait(tickTime);
-      }
-    }
-    // deal with some low-hanging fruit scenarios
-    // 1. oldTokens is empty
-    if (oldTokens.length === 0) {
-      return newTokens.map((token, index) => {
-        return {index: index, command: 1, seq: index};
-      });
-    }
-    // 2. newTokens is empty
-    if (newTokens.length === 0) {
-      return oldTokens.map((token, index) => {
-        return {index: index, command: -1, seq: -1};
-      });
-    }
-
-    return await this.diffEngine.calculate(oldTokens, newTokens, function (a: WitnessTokenInterface, b: WitnessTokenInterface) {
-      if (a.tokenType !== b.tokenType) {
-        return false;
-      }
-      if (a.tokenType === WitnessTokenType.FORMAT_MARK) {
-        // compare mark type, styles and formats
-        if (a.markType !== b.markType) {
-          return false;
-        }
-        if (a.style !== b.style) {
-          return false;
-        }
-        if (a.formats === undefined) {
-          return b.formats === undefined;
-        }
-        if (b.formats === undefined) {
-          return false;
-        }
-        return arraysAreEqual(a.formats, b.formats);
-      }
-      // other types: word, space, punctuation, numbering label
-      if (a.text !== b.text) {
-        return false;
-      }
-
-      if (a.tokenType === WitnessTokenType.WORD) {
-        let normalizationA = a.normalizedText ?? '';
-        let normalizationB = b.normalizedText ?? '';
-        if (normalizationA !== normalizationB) {
-          return false;
-        }
-      }
-      if (a.fmtText === undefined && b.fmtText === undefined) {
-        return true;
-      }
-
-      if (a.fmtText === undefined && b.fmtText !== undefined) {
-        return false;
-      }
-      if (a.fmtText !== undefined && b.fmtText === undefined) {
-        return false;
-      }
-
-      if (a.fmtText !== undefined && b.fmtText !== undefined) {
-        if (!arraysAreEqual(a.fmtText, b.fmtText, (x, y) => {
-          let fmtTokensAreEqual = true;
-          attributesToCompare.forEach((attribute) => {
-            // an empty string is the same as undefined for the attribute's we're comparing
-            const xAttr = x[attribute] === undefined ? '' : x[attribute];
-            const yAttr = y[attribute] === undefined ? '' : x[attribute];
-            // const xAttr = x[attribute];
-            // const yAttr = y[attribute];
-            if (xAttr !== yAttr) {
-              fmtTokensAreEqual = false;
-            }
-          });
-          return fmtTokensAreEqual;
-        })) {
-          return false;
-        }
-      }
-      return true;
-    });
-  }
-
   _getLemmaFromSelection() {
     if (this.isSelectionEmpty()) {
       return '';
@@ -1819,139 +1457,6 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
     // }
     return token.text;
   }
-
-  private consolidateTokens(tokens: WitnessTokenInterface[]) {
-    let theToken = new WitnessToken();
-    if (tokens.length === 0) {
-      return theToken;
-    }
-    let type = tokens[0].tokenType;
-    let newText: FmtText = [];
-    tokens.forEach((t) => {
-      const tokenFmtText = t.fmtText ?? fromString(t.text);
-      newText.push(...tokenFmtText);
-    });
-
-    theToken.tokenType = type;
-    theToken.fmtText = newText;
-    theToken.text = getPlainText(newText);
-
-    return theToken;
-  }
-
-  private __fmtTextToEditionWitnessTokens(fmtText: FmtText): WitnessToken[] {
-    const attributesToCopy = ['fontWeight', 'fontStyle', 'fontSize', 'verticalAlign'];
-    let witnessTokens: WitnessToken[] = [];
-    console.log(`Processing fmtText`);
-    console.log(fmtText);
-
-    // Get all tokens
-    fmtText.forEach((fmtTextToken) => {
-      if (fmtTextToken.type === 'empty') {
-        return;
-      }
-      if (fmtTextToken.type === TOKEN_TYPE_GLUE) {
-        witnessTokens.push((new WitnessToken()).setWhitespace());
-        return;
-      }
-      if (fmtTextToken.type === TOKEN_TYPE_MARK) {
-        // only paragraphs recognized for now
-        if (fmtTextToken.markType === 'par') {
-          let style = EditionWitnessParagraphStyle.NORMAL;
-          if (fmtTextToken.style !== '') {
-            console.log(`Found par style '${fmtTextToken.style}'`)
-            // TODO: implement a style translator so that I can use different names in fmtText and in Edition
-            //  Witness Tokens
-            style = fmtTextToken.style || 'normal';
-          }
-          witnessTokens.push((new EditionWitnessToken()).setParagraphEnd(style));
-        }
-        return;
-      }
-      // text
-      if (fmtTextToken.classList === 'numberingLabel') {
-        witnessTokens.push((new EditionWitnessToken()).setNumberingLabel(fmtTextToken?.text ?? ''));
-        return;
-      }
-      let methodDebug = false;
-
-
-      let tmpWitnessTokens = EditionWitnessTokenStringParser.parse(fmtTextToken?.text ?? '', this.edition.lang, this.detectNumberingLabels, this.detectIntraWordQuotationMarks)
-      .map((witnessToken) => {
-        witnessToken.fmtText = fromString(witnessToken.text).map((token) => {
-          attributesToCopy.forEach((attribute) => {
-            // @ts-expect-error using string to access object properties
-            if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
-              // @ts-expect-error using string to access object properties
-              token[attribute] = fmtTextToken[attribute];
-            }
-          });
-          return token;
-        });
-        return witnessToken;
-      });
-      if (methodDebug && tmpWitnessTokens.length > 1) {
-        console.log(`Parser returned ${tmpWitnessTokens.length} tokens`);
-        console.log(tmpWitnessTokens);
-      }
-      witnessTokens.push(...tmpWitnessTokens);
-    });
-    // console.log(`Intermediate tokens, before consolidation`)
-    // console.log(witnessTokens)
-    // consolidate text tokens: change sequences of identically formatted word token into single tokens
-    let consolidatedWitnessTokens: WitnessToken[] = [];
-    let tokensToConsolidate: WitnessToken[] = [];
-    witnessTokens.forEach((token) => {
-      if (token.tokenType === WitnessTokenType.WORD && token.normalizationSource !== PARSER_NORMALIZER) {
-        tokensToConsolidate.push(token);
-      } else {
-        if (tokensToConsolidate.length > 0) {
-          // flush token heap
-          consolidatedWitnessTokens.push(this.consolidateTokens(tokensToConsolidate));
-          tokensToConsolidate = [];
-        }
-        consolidatedWitnessTokens.push(token);
-      }
-    });
-    if (tokensToConsolidate.length > 0) {
-      // flush token heap
-      consolidatedWitnessTokens.push(this.consolidateTokens(tokensToConsolidate));
-    }
-    let tokensToReturn = consolidatedWitnessTokens.filter((token) => {
-      // filter out empty and whitespace tokens
-      return token.tokenType !== WitnessTokenType.EMPTY && token.tokenType !== WitnessTokenType.WHITESPACE;
-    }).map((token) => {
-      // make it an edition witness token
-      token.tokenClass = 'edition';
-      if (token.normalizationSource !== PARSER_NORMALIZER) {
-        // apply normalizations if the token has not been normalized by the parser already
-        token = this.options.editionWitnessTokenNormalizer(token);
-      } else {
-        // token is normalized already
-        // console.log(`Token normalized by parser`)
-        // console.log(token)
-      }
-
-      // simplify text: only include fmtText if there are formats
-      if (token.fmtText !== undefined && token.fmtText.length === 1) {
-        let hasFormats = false;
-        let fmtTextToken = token.fmtText[0];
-        attributesToCopy.forEach((attribute) => {
-          // @ts-expect-error using string to access object properties
-          if (fmtTextToken[attribute] !== undefined && fmtTextToken[attribute] !== '') {
-            hasFormats = true;
-          }
-        });
-        if (!hasFormats) {
-          delete token.fmtText;
-        }
-      }
-      return token;
-    });
-    console.log(`Done`);
-    return tokensToReturn;
-  }
-
   /**
    *
    * @private
@@ -1981,38 +1486,5 @@ font-size: ${mainTextFontSize * lineNumberFontSizeFactor}px;">${lineString}</div
       this._stopSelecting();
 
     };
-  }
-
-  private _convertMainTextToFmtText(): FmtText {
-    // this.debug && console.log(`Converting Main Text to Fmt Text`)
-    // this.debug && console.log( this.edition.mainText)
-    const fmtText: FmtText = [];
-
-    this.edition.mainText.forEach((token) => {
-      switch (token.type) {
-        case EditionMainTextTokenType.GLUE:
-          fmtText.push(newGlueToken());
-          break;
-
-        case EditionMainTextTokenType.NUMBERING_LABEL:
-          fmtText.push(...token.fmtText.map((t) => {
-            if (t.type === 'text') {
-              t.classList = numberingLabelFmtTextClass;
-            } else {
-              console.warn(`Unexpected main text token type ${t.type} converting numbering label  to FmtText`);
-            }
-            return t;
-          }));
-          break;
-
-        case EditionMainTextTokenType.TEXT:
-          fmtText.push(...getNormalizedFmtText(token.fmtText));
-          break;
-
-        case EditionMainTextTokenType.PARAGRAPH_END:
-          fmtText.push(newMarkToken(MARK_TYPE_PARAGRAPH, token.style));
-      }
-    });
-    return getCleanFmtText(fmtText);
   }
 }

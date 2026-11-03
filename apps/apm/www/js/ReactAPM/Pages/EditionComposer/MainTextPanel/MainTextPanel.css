@@ -70,6 +70,47 @@
         padding: 0 3em;
     }
 
+    .main-text-text-editor {
+        display: grid;
+        grid-template-rows: auto minmax(12rem, 1fr) minmax(0, 1fr) auto;
+        gap: 0.75rem;
+        height: 100%;
+        min-height: 0;
+        overflow: auto;
+        padding: 0.75rem 1rem;
+    }
+
+    .main-text-text-editor-controls, .main-text-text-editor-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+    }
+
+    .edition-main-text-editor {
+        display: flex;
+        min-height: 12rem;
+        flex-direction: column;
+    }
+
+    .edition-main-text-editor .fte-toolbar {
+        flex: 0 0 auto;
+    }
+
+    .edition-main-text-editor .fte-editor {
+        flex: 1 1 auto;
+        min-height: 8rem;
+        overflow-y: auto;
+    }
+
+    .main-text-text-editor-status {
+        min-height: 0;
+        overflow: auto;
+    }
+
+    .main-text-edit-changes-info details {
+        margin: 0.35rem 0;
+    }
+
     .apparatus-coverage-highlighted {
         background-color: var(--light-text-highlight-color);
     }

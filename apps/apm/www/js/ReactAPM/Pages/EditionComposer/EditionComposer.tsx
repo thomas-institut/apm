@@ -5,7 +5,7 @@ import {useContext, useEffect, useMemo, useRef, useState, MouseEvent} from "reac
 import {Button, Spinner} from "react-bootstrap";
 import {Arrow90degLeft, Arrow90degRight, ArrowCounterclockwise, Save} from "react-bootstrap-icons";
 import {AppContext} from "@/ReactAPM/App";
-import {CtDataInterface, CustomApparatusEntryInterface, SiglaGroupInterface} from "@/CtData/CtDataInterface";
+import {CtDataInterface, CustomApparatusEntryInterface, SiglaGroupInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import {CtVersionInfo} from "@/Api/DataSchema/ApiCollationTable";
 import {panelsFromSpecs, PanelSpec} from "@/ReactAPM/Components/PanelUI/PanelSpec";
 import MainTextPanel from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel";
@@ -55,6 +55,9 @@ import {
 import {ChangeSiglaGroupAction} from "@/ReactAPM/Pages/EditionComposer/Actions/ChangeSiglaGroupAction";
 import {DeleteSiglaGroupAction} from "@/ReactAPM/Pages/EditionComposer/Actions/DeleteSiglaGroupAction";
 import {createStandardNormalizerRegister} from "@/normalizers/StandardNormalizers";
+import {EditMainTextAction} from "@/ReactAPM/Pages/EditionComposer/Actions/EditMainTextAction";
+import {MainTextEditChange, applyAutomaticNormalizationsToWitnessToken} from "@/Edition/MainTextEditChanges";
+import {WitnessToken} from "@/Witness/WitnessToken";
 
 type ComposerStatus = 'start' | 'loading' | 'loadingNewVersion' | 'error' | 'loaded';
 
@@ -397,6 +400,12 @@ export default function EditionComposer() {
   const deleteSiglaGroup = (siglaGroupIndex: number) =>
     runHistoryAction(new DeleteSiglaGroupAction(siglaGroupIndex), 'DeleteSiglaGroupAction');
 
+  const commitMainTextEdit = (changes: MainTextEditChange[], baseTokens: WitnessTokenInterface[]) =>
+    runHistoryAction(new EditMainTextAction(changes, baseTokens), 'EditMainTextAction');
+
+  const normalizeMainTextWitnessToken = (token: WitnessToken) =>
+    applyAutomaticNormalizationsToWitnessToken(token, ctData, normalizerRegister);
+
   const orderedWitnesses: EditionWitnessData[] = ctData.witnessOrder.map(witnessIndex => ({
     witnessIndex,
     siglum: ctData.sigla[witnessIndex],
@@ -458,6 +467,8 @@ export default function EditionComposer() {
                               activeApparatusIndex={activeApparatusIndex < 0 ? 0 : activeApparatusIndex}
                               sigla={ctData.sigla} canEdit={canEdit}
                               siglaGroups={edition.siglaGroups}
+                              onCommitTextEdit={commitMainTextEdit}
+                              editionWitnessTokenNormalizer={normalizeMainTextWitnessToken}
                               onQuickEdit={applyQuickApparatusEdit}
                               onEditApparatusEntry={editApparatusEntryForRange}
                               highlightedTokenRange={highlightedTokenRange}

@@ -68,7 +68,7 @@ export class EditionMainTextEditor {
   private readonly verbose: boolean;
   private readonly debug: boolean;
   private readonly containerSelector: string;
-  private container: JQuery<HTMLElement>;
+  private container: HTMLElement;
   private readonly quillEditor: Quill;
   private readonly onChange: (text: string) => void;
   private quillDeltaRenderer: QuillDeltaRenderer;
@@ -82,9 +82,13 @@ export class EditionMainTextEditor {
       this.verbose = true;
     }
     this.containerSelector = options.containerSelector;
-    this.container = $(this.containerSelector);
-    this.container.html(this._getHtml());
-    this.quillEditor = new Quill(`${this.containerSelector} .fte-editor`, {});
+    const container = document.querySelector<HTMLElement>(this.containerSelector);
+    if (container === null) {
+      throw new Error(`Container '${this.containerSelector}' not found`);
+    }
+    this.container = container;
+    this.container.innerHTML = this._getHtml();
+    this.quillEditor = new Quill(this.container.querySelector<HTMLElement>('.fte-editor')!, {});
     this.onChange = options.onChange;
     this.quillDeltaRenderer = new QuillDeltaRenderer({
       classToAttrTranslators: {
@@ -114,16 +118,16 @@ export class EditionMainTextEditor {
 
     simpleFormats.forEach((fmt) => {
       let btnSelector = this._getBtnSelectorFormat(fmt);
-      $(btnSelector).on('click', this._genOnClickFormat(fmt, this.quillEditor, btnSelector));
+      addClickListener(this._getButtons(btnSelector), this._genOnClickFormat(fmt, this.quillEditor, btnSelector));
     });
 
     for (let i = 0; i < headingDepth; i++) {
-      $(this._getBtnSelectorHeading(i + 1)).on('click', this._genOnClickHeadingButton(i + 1, this.quillEditor));
+      addClickListener(this._getButtons(this._getBtnSelectorHeading(i + 1)), this._genOnClickHeadingButton(i + 1, this.quillEditor));
     }
 
     Object.keys(toolbarCharactersDefinition[this.lang]).forEach((key) => {
       let btnSelector = this._getBtnSelectorCharacter(key);
-      $(btnSelector).on('click', this._genOnClickCharacter(key, this.quillEditor));
+      addClickListener(this._getButtons(btnSelector), this._genOnClickCharacter(key, this.quillEditor));
     });
 
     this.quillEditor.on('selection-change', (range: QuillRange | null) => {
@@ -137,10 +141,10 @@ export class EditionMainTextEditor {
       // this.debug && console.log(`Selection change from ${oldRange.index}:${oldRange.length} to ${range.index}:${range.length}, source ${source}`)
       let currentFormat = this.quillEditor.getFormat();
       simpleFormats.forEach((fmt) => {
-        setButtonState($(this._getBtnSelectorFormat(fmt)), currentFormat[fmt]);
+        setButtonState(this._getButtons(this._getBtnSelectorFormat(fmt)), currentFormat[fmt]);
       });
       for (let i = 0; i < headingDepth; i++) {
-        setButtonState($(this._getBtnSelectorHeading(i + 1)), currentFormat.header === i + 1);
+        setButtonState(this._getButtons(this._getBtnSelectorHeading(i + 1)), currentFormat.header === i + 1);
       }
     });
   }
@@ -170,17 +174,21 @@ export class EditionMainTextEditor {
     this.quillEditor.setContents(newDelta, source);
   }
 
+  _getButtons(selector: string): HTMLElement[] {
+    return Array.from(this.container.querySelectorAll<HTMLElement>(selector));
+  }
+
   _getBtnSelectorFormat(format: string) {
-    return `${this.containerSelector} .${format}-btn`;
+    return `.${format}-btn`;
   }
 
   _getBtnSelectorCharacter(characterKey: string) {
-    return `${this.containerSelector} .${characterKey}-btn`;
+    return `.${characterKey}-btn`;
   }
 
 
   _getBtnSelectorHeading(headingNumber: number) {
-    return `${this.containerSelector} .heading${headingNumber}-btn`;
+    return `.heading${headingNumber}-btn`;
   }
 
   _genOnClickFormat(format: string, quill: Quill, buttonSelector: string) {
@@ -193,7 +201,7 @@ export class EditionMainTextEditor {
       }
       // console.log(`Click on format ${format}`)
       // console.log(`Current state: ${currentState}`)
-      let btn = $(buttonSelector);
+      let btn = this._getButtons(buttonSelector);
       quill.format(format, !currentState);
       currentState = !currentState;
       setButtonState(btn, currentState);
@@ -221,13 +229,13 @@ export class EditionMainTextEditor {
         // turn off heading
         this.verbose && console.log(`Turning off heading ${currentHeading}`);
         quill.format('header', false);
-        setButtonState($(this._getBtnSelectorHeading(currentHeading)), false);
+        setButtonState(this._getButtons(this._getBtnSelectorHeading(currentHeading)), false);
       } else {
         this.verbose && console.log(`Setting heading ${headingNumber}`);
         quill.format('header', headingNumber);
         for (let i = 0; i < headingDepth; i++) {
           let buttonState = headingNumber === i + 1;
-          setButtonState($(this._getBtnSelectorHeading(i + 1)), buttonState);
+          setButtonState(this._getButtons(this._getBtnSelectorHeading(i + 1)), buttonState);
         }
       }
     };
@@ -257,12 +265,13 @@ export class EditionMainTextEditor {
 }
 
 
-function setButtonState(btn: JQuery<Element>, state: boolean) {
-  if (state) {
-    btn.addClass('on');
-  } else {
-    btn.removeClass('on');
-  }
+function setButtonState(buttons: HTMLElement[], state: boolean) {
+  // force a boolean: classList.toggle with an undefined second argument would toggle instead of removing
+  buttons.forEach((btn) => btn.classList.toggle('on', !!state));
+}
+
+function addClickListener(buttons: HTMLElement[], listener: (ev: MouseEvent) => void) {
+  buttons.forEach((btn) => btn.addEventListener('click', listener));
 }
 
 // Initialization

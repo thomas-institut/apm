@@ -5,8 +5,11 @@ import MainTextViewer, {
   MainTextIndexToLineMap,
   MainTextTokenRange
 } from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextViewer";
-import {CtDataInterface} from "@/CtData/CtDataInterface";
+import {CtDataInterface, WitnessTokenInterface} from "@/CtData/CtDataInterface";
 import './MainTextPanel.css';
+import {WitnessToken} from '@/Witness/WitnessToken';
+import {MainTextEditChange} from '@/Edition/MainTextEditChanges';
+import MainTextTextEditor from '@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextTextEditor';
 import {
   getEditionWitnessIndexToCtIndexMap
 } from "@/ReactAPM/Pages/EditionComposer/MainTextPanel/EditionWitnessIndexToCtIndexMap";
@@ -49,6 +52,8 @@ interface MainTextPanelProps extends TabbableElementProps {
   /** Called to open the full entry editor of an apparatus for a main text range (the vanilla flow) */
   onEditApparatusEntry?: (apparatusIndex: number, range: MainTextTokenRange) => void;
   onLineNumberingChange?: (lineNumbering: MainTextIndexToLineMap) => void | Promise<void>;
+  onCommitTextEdit?: (changes: MainTextEditChange[], baseTokens: WitnessTokenInterface[]) => Promise<boolean>;
+  editionWitnessTokenNormalizer?: (token: WitnessToken) => WitnessToken;
 }
 
 const NO_SIGLA_GROUPS: SiglaGroup[] = [];
@@ -57,7 +62,8 @@ const NO_WITNESS_ORDER: number[] = [];
 export default function MainTextPanel({mainText, ctData, apparatuses, activeApparatusIndex, sigla, canEdit, highlightedTokenRange,
                                        selectedTokenRange = null, onHoverApparatusEntries, siglaGroups = NO_SIGLA_GROUPS,
                                        onQuickEdit, onEditApparatusEntry,
-                                       onLineNumberingChange, active}: MainTextPanelProps) {
+                                       onLineNumberingChange, onCommitTextEdit, editionWitnessTokenNormalizer,
+                                       active}: MainTextPanelProps) {
 
   const previousLineNumbering = useRef<MainTextIndexToLineMap | null>(null);
   const [mode, setMode] = useState<MainTextEditMode>('view');
@@ -199,6 +205,16 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
                             onChangeApparatusPopovers={setShowApparatusPopovers}/>
 
      <PanelContent>
+       {mode === 'text' && ctData.type === 'edition' && onCommitTextEdit !== undefined &&
+       editionWitnessTokenNormalizer !== undefined ? <MainTextTextEditor
+         mainText={mainText} ctData={ctData} editionWitnessTokenNormalizer={editionWitnessTokenNormalizer}
+         onCommit={async (changes, baseTokens) => {
+           const committed = await onCommitTextEdit(changes, baseTokens);
+           if (committed) {
+             setMode('view');
+           }
+           return committed;
+         }}/> : <>
        <div ref={contentRef} style={{display: 'contents'}}>
        <MainTextViewer mainText={mainText} indexMap={indexMap} onLineNumberingChange={callOnLineNumberingChange}
                        highlightedTokenRange={mode === 'view' ? highlightedTokenRange : null}
@@ -226,6 +242,7 @@ export default function MainTextPanel({mainText, ctData, apparatuses, activeAppa
            onEditApparatusEntry(targetApparatusIndex, {from: selectionInfo.first, to: selectionInfo.last});
            clearSelection();
          }}/>}
+       </>}
      </PanelContent>
 
   </Panel>;

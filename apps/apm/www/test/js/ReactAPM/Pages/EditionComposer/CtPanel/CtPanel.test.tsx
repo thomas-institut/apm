@@ -69,13 +69,60 @@ describe('CtPanel', () => {
     document.body.removeChild(container);
   });
 
-  const renderPanel = async (ctData: CtDataInterface, canEdit = true, normalizerRegister = new NormalizerRegister()) => {
+  const renderPanel = async (
+    ctData: CtDataInterface,
+    canEdit = true,
+    normalizerRegister = new NormalizerRegister(),
+    highlightedTokenRange: {from: number; to: number} | null = null,
+    mainText: Array<{editionWitnessTokenIndex: number}> = []
+  ) => {
     await act(async () => {
-      root.render(<CtPanel ctData={ctData} mainText={[]} canEdit={canEdit}
+      root.render(<CtPanel ctData={ctData} mainText={mainText as never} canEdit={canEdit}
+                           highlightedTokenRange={highlightedTokenRange}
                            normalizerRegister={normalizerRegister} onAction={onAction}
                            onEditApparatusEntry={() => {}}/>);
     });
   };
+
+  it('highlights the collation columns for the selected main-text range', async () => {
+    const mainText = [{editionWitnessTokenIndex: 0}, {editionWitnessTokenIndex: 1}];
+    await renderPanel(createCtData(), true, new NormalizerRegister(), {from: 0, to: 1}, mainText);
+
+    expect(container.querySelectorAll('th.highlight')).toHaveLength(2);
+    expect(container.querySelector('th.te-col-0')?.classList.contains('highlight')).toBe(true);
+    expect(container.querySelector('th.te-col-1')?.classList.contains('highlight')).toBe(true);
+  });
+
+  it('clears the collation column highlight when the selected range is cleared', async () => {
+    const ctData = createCtData();
+    const mainText = [{editionWitnessTokenIndex: 0}, {editionWitnessTokenIndex: 1}];
+    await renderPanel(ctData, true, new NormalizerRegister(), {from: 0, to: 1}, mainText);
+    await renderPanel(ctData, true, new NormalizerRegister(), null, mainText);
+
+    expect(container.querySelectorAll('th.highlight')).toHaveLength(0);
+  });
+
+  it('keeps the collation column highlight when the panel becomes active', async () => {
+    const ctData = createCtData();
+    const mainText = [{editionWitnessTokenIndex: 0}, {editionWitnessTokenIndex: 1}];
+    for (const active of [false, true]) {
+      await act(async () => {
+        root.render(<CtPanel ctData={ctData} mainText={mainText as never} canEdit={true} active={active}
+                             highlightedTokenRange={{from: 0, to: 1}}
+                             normalizerRegister={new NormalizerRegister()} onAction={onAction}
+                             onEditApparatusEntry={() => {}}/>);
+      });
+    }
+
+    expect(container.querySelectorAll('th.highlight')).toHaveLength(2);
+  });
+
+  it('does not highlight columns when a range token is not in the collation table', async () => {
+    const mainText = [{editionWitnessTokenIndex: 0}, {editionWitnessTokenIndex: 2}];
+    await renderPanel(createCtData(), true, new NormalizerRegister(), {from: 0, to: 1}, mainText);
+
+    expect(container.querySelectorAll('th.highlight')).toHaveLength(0);
+  });
 
   it('dispatches a shift as one history action', async () => {
     await renderPanel(createCtData());

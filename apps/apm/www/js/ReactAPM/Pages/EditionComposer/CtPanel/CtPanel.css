@@ -14,11 +14,10 @@
 
 
 .ct-panel {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
+    height: 100%;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    overflow: hidden;
 }
 
 .ct-panel-toolbar {
@@ -57,9 +56,13 @@
 }
 
 .ct-table-editor {
-  flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+}
+
+.ct-table-editor th.highlight {
+  background-color: #f6f669;
+  color: black;
 }
 
 .ct-table-editor td.search-match {

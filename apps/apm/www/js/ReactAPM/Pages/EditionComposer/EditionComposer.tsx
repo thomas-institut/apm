@@ -452,8 +452,12 @@ export default function EditionComposer() {
     return true;
   };
 
+  const visiblePanelTwoTabKey = activeTabPanelTwo ?? (edition.apparatuses.length > 0
+    ? `apparatus-${edition.apparatuses[0].type}`
+    : 'preview');
   const activeApparatusIndex = edition.apparatuses.findIndex(apparatus =>
-    `apparatus-${apparatus.type}` === activeTabPanelTwo);
+    `apparatus-${apparatus.type}` === visiblePanelTwoTabKey);
+  const selectedLemmaRange = selectedApparatusLemmas[visiblePanelTwoTabKey]?.range ?? null;
 
   const panelSpecs: PanelSpec[] = [
     {
@@ -472,7 +476,7 @@ export default function EditionComposer() {
                               onQuickEdit={applyQuickApparatusEdit}
                               onEditApparatusEntry={editApparatusEntryForRange}
                               highlightedTokenRange={highlightedTokenRange}
-                              selectedTokenRange={selectedApparatusLemmas[activeTabPanelTwo ?? -1]?.range ?? null}
+                              selectedTokenRange={selectedLemmaRange}
                               onHoverApparatusEntries={(entries: MainTextApparatusEntryReference[]|null) => setHoveredApparatusEntries(entries ?? [])}
                               onLineNumberingChange={onLineNumberingChange}/>
     },
@@ -481,8 +485,10 @@ export default function EditionComposer() {
       key: 'cTable',
       title: 'Collation',
       tabDescription: 'Collation table',
+      className: 'collation-table-panel',
       tabbable: true,
       content: <CtPanel ctData={ctData} mainText={edition.mainText} canEdit={canEdit}
+                        highlightedTokenRange={selectedLemmaRange}
                         normalizerRegister={normalizerRegister} onAction={runHistoryAction}
                         onEditApparatusEntry={editApparatusEntryForRange}/>
     },

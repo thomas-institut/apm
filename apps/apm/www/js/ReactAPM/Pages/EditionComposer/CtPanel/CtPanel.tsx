@@ -36,6 +36,7 @@ export interface CtPanelProps extends TabbableElementProps {
   normalizerRegister: NormalizerRegister;
   onAction: (action: StateTransformAction<EditionComposerHistoryState>, name: string) => Promise<boolean>;
   onEditApparatusEntry: (apparatusIndex: number, range: MainTextTokenRange) => void;
+  highlightedTokenRange?: MainTextTokenRange | null;
 }
 
 export default function CtPanel(props: CtPanelProps) {
@@ -82,6 +83,28 @@ export default function CtPanel(props: CtPanelProps) {
   const deletableColumnCount = CtData.getDeletableColumns(props.ctData).length;
   const toolbarCharacters = Object.values(toolbarCharactersDefinition[props.ctData.lang] ?? {});
   const peopleIdsKey = [...new Set(getPeopleMentionedInCtData(props.ctData))].join(',');
+  const highlightedColumnRange = useMemo<[number, number] | null>(() => {
+    const range = props.highlightedTokenRange;
+    if (range === null || range === undefined) {
+      return null;
+    }
+    const fromTokenIndex = props.mainText[range.from]?.editionWitnessTokenIndex;
+    const toTokenIndex = props.mainText[range.to]?.editionWitnessTokenIndex;
+    if (fromTokenIndex === undefined || toTokenIndex === undefined) {
+      return null;
+    }
+    const fromColumn = CtData.getCtIndexForEditionWitnessTokenIndex(props.ctData, fromTokenIndex);
+    const toColumn = CtData.getCtIndexForEditionWitnessTokenIndex(props.ctData, toTokenIndex);
+    const maxColumn = (props.ctData.collationMatrix[0]?.length ?? 0) - 1;
+    if (fromColumn < 0 || toColumn < 0 || maxColumn < 0) {
+      return null;
+    }
+    const firstColumn = Math.min(fromColumn, toColumn);
+    if (firstColumn > maxColumn) {
+      return null;
+    }
+    return [firstColumn, Math.min(maxColumn, Math.max(fromColumn, toColumn))];
+  }, [props.ctData, props.highlightedTokenRange, props.mainText]);
 
   useEffect(() => {
     let isCurrent = true;
@@ -230,6 +253,7 @@ export default function CtPanel(props: CtPanelProps) {
                     onAddApparatusEntry={handleAddApparatusEntry}/>
     <CtTableEditor ctData={props.ctData} renderer={renderer} editMode={editMode}
                    showWitnessTitles={false} showNormalizations={false}
+                   highlightedColumnRange={highlightedColumnRange} active={props.active}
                    searchMatches={mode === 'search' ? searchMatches : []}
                    selectedSearchMatch={selectedSearchMatch}
                    onShiftCells={(shift: CtCellShift) => runAction(new ShiftCtCellsAction(shift))}

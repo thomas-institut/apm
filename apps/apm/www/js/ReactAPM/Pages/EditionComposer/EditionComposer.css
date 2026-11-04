@@ -23,7 +23,7 @@
 
     display: grid;
     grid-template-rows: auto 1fr;
-    height: 100dvh;
+    height: 100%;
     overflow: hidden;
     box-sizing: border-box;
 

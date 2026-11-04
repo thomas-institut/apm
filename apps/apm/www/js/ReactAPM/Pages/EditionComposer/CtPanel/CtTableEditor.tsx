@@ -25,6 +25,8 @@ export interface CtTableEditorProps {
   editMode: EditMode;
   showWitnessTitles: boolean;
   showNormalizations: boolean;
+  highlightedColumnRange: [number, number] | null;
+  active?: boolean;
   searchMatches: CollationTableSearchMatch[];
   selectedSearchMatch: number;
   onShiftCells: (shift: CtCellShift) => void;
@@ -42,6 +44,9 @@ export function CtTableEditor(props: CtTableEditorProps) {
   const tableEditorRef = useRef<TableEditor<number> | null>(null);
   const propsRef = useRef(props);
   propsRef.current = props;
+  const previousCtDataRef = useRef(props.ctData);
+  const previousHighlightedColumnRangeRef = useRef<[number, number] | null>(null);
+  const previousActiveRef = useRef(false);
   const rendererRef = useRef(props.renderer);
   rendererRef.current = props.renderer;
 
@@ -57,6 +62,12 @@ export function CtTableEditor(props: CtTableEditorProps) {
       const tableEditor = tableEditorRef.current;
       if (tableEditor !== null) {
         applySearchHighlights(tableEditor, container, getProps().searchMatches, getProps().selectedSearchMatch);
+      }
+    };
+    const redrawColumnHighlights = () => {
+      const tableEditor = tableEditorRef.current;
+      if (tableEditor !== null) {
+        applyColumnHighlights(tableEditor, container, getProps().highlightedColumnRange, getProps().ctData, false);
       }
     };
     let tableEditor: TableEditor<number>;
@@ -95,7 +106,10 @@ export function CtTableEditor(props: CtTableEditorProps) {
       onColumnAddRequest: (afterCol) => getProps().onInsertColumn(afterCol),
       onColumnDeleteRequest: (col) => getProps().onDeleteColumn(col),
       onColumnGroupToggleRequest: (col, grouped) => getProps().onToggleGroup(col, grouped),
-      onTableDrawnEventHandler: redrawSearchHighlights
+      onTableDrawnEventHandler: () => {
+        redrawSearchHighlights();
+        redrawColumnHighlights();
+      }
     });
     tableEditorRef.current = tableEditor;
 
@@ -170,6 +184,31 @@ export function CtTableEditor(props: CtTableEditorProps) {
     }
   }, [props.searchMatches, props.selectedSearchMatch]);
 
+  useEffect(() => {
+    const previousRange = previousHighlightedColumnRangeRef.current;
+    const currentRange = props.highlightedColumnRange;
+    const rangeChanged = currentRange === null
+      ? previousRange !== null
+      : previousRange === null || previousRange[0] !== currentRange[0] || previousRange[1] !== currentRange[1];
+    const ctDataChanged = previousCtDataRef.current !== props.ctData;
+    const becameActive = props.active === true && !previousActiveRef.current;
+    previousCtDataRef.current = props.ctData;
+    previousHighlightedColumnRangeRef.current = currentRange;
+    previousActiveRef.current = props.active === true;
+
+    const tableEditor = tableEditorRef.current;
+    const container = containerRef.current;
+    if (tableEditor !== null && container !== null) {
+      applyColumnHighlights(
+        tableEditor,
+        container,
+        props.highlightedColumnRange,
+        props.ctData,
+        props.active === true && (becameActive || (rangeChanged && !ctDataChanged))
+      );
+    }
+  }, [props.active, props.ctData, props.highlightedColumnRange?.[0], props.highlightedColumnRange?.[1]]);
+
   const directionClass = isRtl(props.ctData.lang) ? 'rtltext' : 'ltrtext';
   return <div id={id} ref={containerRef} className={`ct-table-editor ${directionClass}`}></div>;
 }
@@ -211,6 +250,46 @@ function applySearchHighlights(
     const selectedCell = document.querySelector<HTMLElement>(tableEditor.getTdSelector(selectedMatch.row, selectedMatch.colFrom));
     if (selectedCell !== null && typeof selectedCell.scrollIntoView === 'function') {
       selectedCell.scrollIntoView({behavior: 'smooth', block: 'center'});
+    }
+  }
+}
+
+function applyColumnHighlights(
+  tableEditor: TableEditor<number>,
+  container: HTMLElement,
+  highlightedColumnRange: [number, number] | null,
+  ctData: CtDataInterface,
+  scrollIntoView: boolean
+): void {
+  container.querySelectorAll('th.highlight').forEach((header) => header.classList.remove('highlight'));
+  if (highlightedColumnRange === null) {
+    return;
+  }
+
+  const maxColumn = (ctData.collationMatrix[0]?.length ?? 0) - 1;
+  const [rangeStart, rangeEnd] = highlightedColumnRange;
+  if (!Number.isInteger(rangeStart) || !Number.isInteger(rangeEnd) || maxColumn < 0) {
+    return;
+  }
+  const firstColumn = Math.min(rangeStart, rangeEnd);
+  if (firstColumn < 0 || firstColumn > maxColumn) {
+    return;
+  }
+  const lastColumn = Math.min(maxColumn, Math.max(rangeStart, rangeEnd));
+
+  tableEditor.showColumnRange(firstColumn, lastColumn);
+  for (let column = firstColumn; column <= lastColumn; column++) {
+    container.querySelectorAll<HTMLElement>(`th.te-col-${column}`).forEach((header) => {
+      header.classList.add('highlight');
+    });
+  }
+
+  if (scrollIntoView) {
+    const firstHeader = container.querySelector<HTMLElement>(`th.te-col-${firstColumn}`);
+    if (firstHeader !== null) {
+      const block = 'center';
+      // const block = firstHeader.closest('.te-windowed-container') === null ? 'start' : 'center';
+      firstHeader.scrollIntoView?.({behavior: 'smooth', block: 'center', inline: 'nearest'});
     }
   }
 }

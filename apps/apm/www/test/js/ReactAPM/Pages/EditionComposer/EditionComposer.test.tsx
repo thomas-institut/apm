@@ -136,7 +136,11 @@ vi.mock('@/ReactAPM/Pages/EditionComposer/MainTextPanel/MainTextPanel', () => ({
   </>
 }));
 vi.mock('@/ReactAPM/Pages/EditionComposer/WitnessesPanel/WitnessesPanel', () => ({default: () => null}));
-vi.mock('@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel', () => ({default: () => null}));
+vi.mock('@/ReactAPM/Pages/EditionComposer/CtPanel/CtPanel', () => ({
+  default: ({highlightedTokenRange}: {highlightedTokenRange?: {from: number, to: number} | null}) =>
+    <div data-testid="ct-selection" data-from={highlightedTokenRange?.from ?? ''}
+         data-to={highlightedTokenRange?.to ?? ''}/>,
+}));
 vi.mock('@/ReactAPM/Pages/EditionComposer/ApparatusPanel/ApparatusPanel', () => ({
   ApparatusPanel: ({apparatus, selectedLemmaIndex, hoveredEntryIndices = [], onSelectLemma}: {
     apparatus: {type: string},
@@ -275,12 +279,10 @@ describe('EditionComposer version changes', () => {
     const tabPanel = container.querySelectorAll<HTMLElement>('[data-testid="tab-panel"]')[1];
     const selectedRange = () => container.querySelector<HTMLElement>('[data-testid="main-text-selection"]')?.dataset.from;
 
-    await act(async () => {
-      tabPanel.querySelectorAll<HTMLButtonElement>('.apparatus-tab')[0].click();
-      container.querySelector<HTMLButtonElement>('[data-testid="critical-lemma"]')!.click();
-    });
+    await act(async () => container.querySelector<HTMLButtonElement>('[data-testid="critical-lemma"]')!.click());
     expect(container.querySelector('[data-testid="main-text-selection"]')?.getAttribute('data-active-apparatus-index')).toBe('0');
     expect(selectedRange()).toBe('2');
+    expect(container.querySelector('[data-testid="ct-selection"]')?.getAttribute('data-from')).toBe('2');
     expect(container.querySelector('[data-testid="critical-selected-lemma"]')?.textContent).toBe('0');
     await act(async () => container.querySelector<HTMLButtonElement>('[data-testid="main-text-hover"]')!.dispatchEvent(
       new MouseEvent('mouseover', {bubbles: true}),
@@ -291,17 +293,21 @@ describe('EditionComposer version changes', () => {
     await act(async () => tabPanel.querySelectorAll<HTMLButtonElement>('.apparatus-tab')[1].click());
     expect(container.querySelector('[data-testid="main-text-selection"]')?.getAttribute('data-active-apparatus-index')).toBe('1');
     expect(selectedRange()).toBe('');
+    expect(container.querySelector('[data-testid="ct-selection"]')?.getAttribute('data-from')).toBe('');
     expect(container.querySelector('[data-testid="critical-selected-lemma"]')?.textContent).toBe('0');
     expect(container.querySelector('[data-testid="marginal-selected-lemma"]')?.textContent).toBe('');
     await act(async () => container.querySelector<HTMLButtonElement>('[data-testid="marginal-lemma"]')!.click());
     expect(selectedRange()).toBe('5');
+    expect(container.querySelector('[data-testid="ct-selection"]')?.getAttribute('data-from')).toBe('5');
     expect(container.querySelector('[data-testid="marginal-selected-lemma"]')?.textContent).toBe('0');
 
     await act(async () => tabPanel.querySelectorAll<HTMLButtonElement>('.apparatus-tab')[0].click());
     expect(selectedRange()).toBe('2');
+    expect(container.querySelector('[data-testid="ct-selection"]')?.getAttribute('data-from')).toBe('2');
     expect(container.querySelector('[data-testid="critical-selected-lemma"]')?.textContent).toBe('0');
     await act(async () => container.querySelector<HTMLElement>('[data-testid="main-text-selection"]')!.click());
     expect(selectedRange()).toBe('');
+    expect(container.querySelector('[data-testid="ct-selection"]')?.getAttribute('data-from')).toBe('');
   });
 
   it('uses the full loading state when both the ID and version change', async () => {

@@ -9,14 +9,13 @@
 # Created: 17 Jun 2025
 # Modified: 29 May 2026
 #
-name: apm-dev
+name: ${COMPOSE_PROJECT_NAME}
 
 services:
   nginx:
-    container_name: apm-nginx
     image: nginx:latest
     ports:
-      - "8888:80"
+      - "${NGINX_PORT}:80"
     volumes:
       - ${REPO_ROOT}/${APM_SRC}:/opt/apm
       - ./nginx-dev.conf:/etc/nginx/conf.d/default.conf:ro
@@ -26,10 +25,7 @@ services:
       - php
 
   mysql:
-    container_name: apm-mysql
     image: mysql:8.0
-    ports:
-      - "4306:3306" # so that it can be accessed from the host machine!
     environment:
         MYSQL_ALLOW_EMPTY_PASSWORD: yes
         MYSQL_ROOT_PASSWORD:
@@ -42,7 +38,6 @@ services:
   # It is also possible, of course, to create an empty database and initialize with the SQL scripts in src/db
 
   php:
-    container_name: apm-php
     build:
       context: .
       dockerfile: dev-php.Dockerfile
@@ -53,50 +48,53 @@ services:
       - mysql
 
   node:
-    container_name: apm-node24
     build:
       context: .
       dockerfile: dev-node24.Dockerfile
-    ports:
-      - "4711:4711"
     volumes:
       - ${REPO_ROOT}/${APM_SRC}:/opt/apm
       - ${REPO_ROOT}/${DEV_TMP}/apm:/var/apm
+    depends_on:
+      fonts-download:
+        condition: service_completed_successfully
+
+  fonts-download:
+    image: alpine:3.22
+    environment:
+      FONTS_ZIP_URL: ${FONTS_ZIP_URL}
+    volumes:
+      - ${REPO_ROOT}/${DEV_TMP}/apm:/var/apm
+      - ./download-fonts.sh:/usr/local/bin/download-fonts.sh:ro
+    entrypoint: ["/bin/sh", "/usr/local/bin/download-fonts.sh"]
 
   fonts:
-    container_name: apm-fonts
     ports:
-      - "4567:80"
+      - "${FONTS_PORT}:80"
     image: nginx:latest
+    depends_on:
+      fonts-download:
+        condition: service_completed_successfully
     volumes:
       - ./fonts-nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ${REPO_ROOT}/${DEV_TMP}/apm/apm-fonts:/usr/share/nginx/html:ro
-      - ${REPO_ROOT}/${APM_SRC}/font-css:/usr/share/nginx/html/css:ro
+      - ${REPO_ROOT}/${DEV_TMP}/apm/fontserver:/usr/share/nginx/html:ro
 
   #
-  # The configuration should be finished manually the first time the container is started:
+  # Set FONTS_ZIP_URL in .env to the fontserver ZIP URL before starting the containers.
   #
-  # 1. Install APM fonts:
-  #    In the host machine, copy the contents of the fontserver to ${DEV_TMP}/apm/apm-fonts
-  #    (the symlink in the container /usr/share/fonts/apm-fonts is already created)
-  #
-  # 2. Index data in Typesense (see below)
+  # Index data in Typesense (see below) after starting the containers.
   #
 
 
   collatex:
-    container_name: apm-collatex
     build: ../collatex-http
 
   valkey:
-    container_name: apm-valkey
     image: valkey/valkey:8.1-alpine
     volumes:
       - ${REPO_ROOT}/${DEV_TMP}/apm/valkey-data:/data
     command: valkey-server --save 60 1 --loglevel warning --dir /data
 
   typesense:
-    container_name: apm-typesense
     image: typesense/typesense:28.0
     volumes:
       - ${REPO_ROOT}/${DEV_TMP}/apm/typesense-data:/data

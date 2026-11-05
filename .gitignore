@@ -41,4 +41,5 @@ app-settings.json
 .~lock*
 .phpunit.cache/
 .env.dist*
+/docker/apm/dev/.env
 /.junie/

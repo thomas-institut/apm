@@ -1,6 +1,6 @@
 {
   "name": "apm-node-service",
-  "version": "1.5.4",
+  "version": "1.5.5",
   "type": "module",
   "imports": {
     "#src/*": "./dist/apm/node-service/src/*",
@@ -9,6 +9,7 @@
   },
   "scripts": {
     "build": "rm -fr dist; tsc",
+    "test": "npm run build && node --test test/*.test.js",
     "tsc:version": "tsc --version"
   },
   "prettier": {
@@ -23,7 +24,7 @@
     "@thomas-inst/matrix": "1.0.1",
     "@thomas-inst/typesetter": "1.2.1",
     "@thomas-inst/optionschecker": "^1.1.4",
-    "body-parser": "^2.2.0",
+    "body-parser": "2.4.0",
     "express": "^5.2",
     "kleur": "^4.1.5",
     "node-gtk": "^4.1.1",

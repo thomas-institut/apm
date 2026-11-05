@@ -24,7 +24,7 @@ RUN apt install -y nodejs
 RUN pip3 install PyGObject simplejson==3.18.0 --break-system-packages
 
 # Create font symlink
-RUN mkdir -p /usr/share/fonts && ln -s /var/apm/apm-fonts /usr/share/fonts/apm-fonts
+RUN mkdir -p /usr/share/fonts && ln -s /var/apm/fontserver /usr/share/fonts/apm-fonts
 
 COPY entrypoint-node.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint-node.sh

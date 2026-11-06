@@ -24,6 +24,7 @@ import { configureTranscriptionEditorBlots } from './TranscriptionEditorBlotConf
 import * as Entity from '../../constants/Entity'
 import { getLangCodeFromLangId, getLangIdFromLangCode } from '../../constants/TranscriptionLanguages'
 import {ApmFormats} from "../common/ApmFormats";
+import { svgToDataUri } from './EditorSvgImages'
 
 
 
@@ -2791,8 +2792,8 @@ export class TranscriptionEditor
     if (options.renumberLinesOnImageLoad === undefined) {
       options.renumberLinesOnImageLoad= false
     }
-    if (options.getImageUrl === undefined) {
-      options.getImageUrl = function () { return 'urlnotset'}
+    if (options.getImageSrc === undefined) {
+      options.getImageSrc = function () { return svgToDataUri('<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>') }
     }
     if (options.getPopoverText === undefined) {
       options.getPopoverText = false
@@ -2802,7 +2803,7 @@ export class TranscriptionEditor
     theBlot.imageAlt = options.imageAlt
     theBlot.withPopover = options.withPopover
     theBlot.renumberLinesOnImageLoad = options.renumberLinesOnImageLoad
-    theBlot.getImageUrl = options.getImageUrl
+    theBlot.getImageSrc = options.getImageSrc
     theBlot.getPopoverText = options.getPopoverText
     
     if (options.text) {

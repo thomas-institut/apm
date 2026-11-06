@@ -5,7 +5,6 @@ use APM\Api\ApiDocuments;
 use APM\Api\ApiEditionSources;
 use APM\Api\ApiElements;
 use APM\Api\ApiEntity;
-use APM\Api\ApiIcons;
 use APM\Api\ApiLog;
 use APM\Api\ApiMultiChunkEdition;
 use APM\Api\ApiPeople;
@@ -207,8 +206,6 @@ function createApiAuthenticatedRoutes(App $app, ContainerInterface $container): 
         createApiEntityRoutes($group, $container);
         // search
         createApiSearchRoutes($group);
-        // images
-        createApiImageRoutes($group);
         // transcriptions
         createApiTranscriptionRoutes($group);
         // work, works
@@ -1088,138 +1085,6 @@ function createApiPublicationRoutes(RouteCollectorProxy $group): void
     $prefix = '/publication';
     $group->get($prefix . '/list', [ApiPublication::class, 'list']);
     $group->get($prefix . '/{id}/get', [ApiPublication::class, 'get']);
-}
-
-/**
- * Create API image routes
- *
- * TODO: Find a way to generate images in the frontend and get rid of this (Issue #322)
- *
- * @param RouteCollectorProxy $group
- * @return void
- */
-function createApiImageRoutes(RouteCollectorProxy $group): void
-{
-
-    /**
-     * Returns a mark image
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get("/images/mark/{size}",
-        [ApiIcons::class, 'generateMarkIcon']);
-
-    /**
-     * Returns a no word break image
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get("/images/nowb/{size}",
-        [ApiIcons::class, 'generateNoWordBreakIcon']);
-
-    /**
-     * Returns an 'illegible' image
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get("/images/illegible/{size}/{length}",
-        [ApiIcons::class, 'generateIllegibleIcon']);
-
-    /**
-     * Returns a chunk mark image
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get("/images/chunkmark/{dareid}/{chunkno}/{lwid}/{segment}/{type}/{dir}/{size}",
-        [ApiIcons::class, 'generateChunkMarkIcon']);
-
-    /**
-     * Returns a chapter mark image
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get("/images/chaptermark/{work}/{level}/{number}/{type}/{dir}/{size}",
-        [ApiIcons::class, 'generateChapterMarkIcon']);
-
-    /**
-     * Returns a line gap image
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get("/images/linegap/{count}/{size}",
-        [ApiIcons::class, 'generateLineGapImage']);
-
-    /**
-     * Returns a character gap image
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get("/images/charactergap/{length}/{size}",
-        [ApiIcons::class, 'generateCharacterGapImage']);
-
-    /**
-     * Returns a paragraph mark image
-     *
-     * API Inventory:
-     *    Method: GET
-     *    Authentication: user token
-     *    Uses action: no
-     *    PHP Unit Test: no
-     *    PHP Input Schema: TBD
-     *    PHP Output Schema: TBD
-     *    ApiClient Method: TBD
-     */
-    $group->get("/images/paragraphmark/{size}",
-        [ApiIcons::class, 'generateParagraphMarkIcon']);
 }
 
 function createApiSearchRoutes(RouteCollectorProxy $group): void

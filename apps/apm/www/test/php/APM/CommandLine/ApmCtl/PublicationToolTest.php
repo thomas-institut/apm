@@ -34,7 +34,7 @@ class PublicationToolTest extends TestCase
     private function invokeExport(PublicationTool $tool, string $format, int $pubId): int
     {
         $method = (new ReflectionClass(PublicationTool::class))->getMethod('export');
-        $method->setAccessible(true);
+//        $method->setAccessible(true);
 
         return $method->invoke($tool, $format, $pubId);
     }

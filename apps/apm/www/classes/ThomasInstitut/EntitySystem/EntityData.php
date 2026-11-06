@@ -66,7 +66,7 @@ class EntityData
      * @param string|int|null $qualification
      * @return StatementData|null
      */
-    public function getStatementForPredicate(int $predicate, int $qualificationPredicate = null, string|int|null $qualification = null) : StatementData|null {
+    public function getStatementForPredicate(int $predicate, int|null $qualificationPredicate = null, string|int|null $qualification = null) : StatementData|null {
         foreach($this->statements as $statement) {
             if ($statement->predicate === $predicate && !$statement->isCancelled()) {
                 if ($qualificationPredicate !== null) {

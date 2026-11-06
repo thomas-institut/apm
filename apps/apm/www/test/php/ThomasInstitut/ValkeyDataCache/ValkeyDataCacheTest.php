@@ -19,7 +19,6 @@
 
 namespace ThomasInstitut\ValkeyDataCache;
 
-use Exception;
 use PHPUnit\Framework\TestCase;
 use Predis\Client;
 use ThomasInstitut\DataCache\Reference\DataCacheReferenceTest;
@@ -28,20 +27,12 @@ use ThomasInstitut\DataCache\Reference\DataCacheReferenceTest;
 class ValkeyDataCacheTest extends TestCase
 {
 
-    /**
-     * @throws Exception
-     */
     public function testStandardTests() {
 
         $tester = new DataCacheReferenceTest('Valkey');
 
-        $config = yaml_parse_file(__DIR__ . '/valkey.config.yaml');
-        if ($config === false) {
-            throw new Exception('Error parsing config file');
-        }
-
-        $host = $config['host'] ?? 'localhost';
-        $port = $config['port'] ?? 6379;
+        $host = getenv('VALKEY_HOST') ?: 'valkey';
+        $port = (int) (getenv('VALKEY_PORT') ?: 6379);
 
         $prefix = "test_" . rand(1000000, 9999990) . ':';
         $valkeyClient = new Client(['host' => $host, 'port' => $port]);
@@ -49,17 +40,9 @@ class ValkeyDataCacheTest extends TestCase
         $tester->runAllTests(new ValkeyDataCache($prefix, $valkeyClient), 'ValkeyDataCache');
     }
 
-    /**
-     * @throws Exception
-     */
     public function testFlushOnlyDeletesPrefixedKeys() {
-        $config = yaml_parse_file(__DIR__ . '/valkey.config.yaml');
-        if ($config === false) {
-            throw new Exception('Error parsing config file');
-        }
-
-        $host = $config['host'] ?? 'localhost';
-        $port = $config['port'] ?? 6379;
+        $host = getenv('VALKEY_HOST') ?: 'valkey';
+        $port = (int) (getenv('VALKEY_PORT') ?: 6379);
 
         $prefix = "test_prefix_" . rand(1000000, 9999990) . ':';
         $valkeyClient = new Client(['host' => $host, 'port' => $port]);
@@ -89,17 +72,9 @@ class ValkeyDataCacheTest extends TestCase
         $valkeyClient->del($otherKey);
     }
 
-    /**
-     * @throws Exception
-     */
     public function testGetInfo() {
-        $config = yaml_parse_file(__DIR__ . '/valkey.config.yaml');
-        if ($config === false) {
-            throw new Exception('Error parsing config file');
-        }
-
-        $host = $config['host'] ?? 'localhost';
-        $port = $config['port'] ?? 6379;
+        $host = getenv('VALKEY_HOST') ?: 'valkey';
+        $port = (int) (getenv('VALKEY_PORT') ?: 6379);
 
         $prefix = "test_info_" . rand(1000000, 9999990) . ':';
         $valkeyClient = new Client(['host' => $host, 'port' => $port]);

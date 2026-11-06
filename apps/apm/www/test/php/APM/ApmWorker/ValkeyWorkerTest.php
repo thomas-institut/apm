@@ -25,8 +25,9 @@ class ValkeyWorkerTest extends TestCase
     protected function setUp(): void
     {
         $host = getenv('VALKEY_HOST') ?: 'valkey';
+        $port = (int) (getenv('VALKEY_PORT') ?: 6379);
         $this->prefix = 'TestWorker:' . rand(1000, 9999) . ':';
-        $this->valkey = new Client(['host' => $host, 'port' => 6379]);
+        $this->valkey = new Client(['host' => $host, 'port' => $port]);
 
         try {
             $this->valkey->connect();

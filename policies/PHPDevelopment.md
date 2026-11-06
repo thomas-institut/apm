@@ -15,8 +15,11 @@
 
 ## Test Locations and Execution
 
-- **APM**: Tests are in `apps/apm/src/www/test/php`. Use `scripts/apm-composer test` to run all tests. 
+- **APM**: Tests are in `apps/apm/www/test/php`. Use `scripts/apm-composer test` to run all tests. 
 - **APE Backend**: Tests are in `apps/ape-backend/test`. Use `scripts/ape-backend-composer test` to run all tests. 
 
-Note: Feel free to run php and composer from the containers using `docker exec` or a similar command. If you cannot
-find the `docker` executable, try adding `/usr/local/bin` to your PATH.
+**Important**: 
+- Feel free to run `php` and `composer` from the containers using `docker exec` or a similar command
+- If you cannot find the `docker` executable, try adding `/usr/local/bin` to your PATH. 
+- The actual docker container depends on the configuration in `docker/apm/dev/.env`; this is automatically
+  detected in the convenience scripts (e.g. `scripts/apm-composer`)

@@ -51,35 +51,14 @@ services:
     build:
       context: .
       dockerfile: dev-node24.Dockerfile
+      args:
+        FONTS_ZIP_URL: ${FONTS_ZIP_URL}
     volumes:
       - ${REPO_ROOT}/${APM_SRC}:/opt/apm
       - ${REPO_ROOT}/${DEV_TMP}/apm:/var/apm
-    depends_on:
-      fonts-download:
-        condition: service_completed_successfully
-
-  fonts-download:
-    image: alpine:3.22
-    environment:
-      FONTS_ZIP_URL: ${FONTS_ZIP_URL}
-    volumes:
-      - ${REPO_ROOT}/${DEV_TMP}/apm:/var/apm
-      - ./download-fonts.sh:/usr/local/bin/download-fonts.sh:ro
-    entrypoint: ["/bin/sh", "/usr/local/bin/download-fonts.sh"]
-
-  fonts:
-    ports:
-      - "${FONTS_PORT}:80"
-    image: nginx:latest
-    depends_on:
-      fonts-download:
-        condition: service_completed_successfully
-    volumes:
-      - ./fonts-nginx.conf:/etc/nginx/conf.d/default.conf:ro
-      - ${REPO_ROOT}/${DEV_TMP}/apm/fontserver:/usr/share/nginx/html:ro
 
   #
-  # Set FONTS_ZIP_URL in .env to the fontserver ZIP URL before starting the containers.
+  # Set FONTS_ZIP_URL in .env to the fontserver ZIP URL before building the node image.
   #
   # Index data in Typesense (see below) after starting the containers.
   #

@@ -54,23 +54,23 @@ Root Folder: `apps/apm`
 
 Frontend and backend are served by PHP app:
 
-- Main PHP code: `src/www/classes`
-- API code: `src/www/classes/APM/Api`
-- Frontend-serving PHP code: `src/www/classes/APM/Site`
-- Daemon code: `src/www/classes/APM/ApmDaemon`
-- Workers code: `src/www/classes/APM/ApmWorker`
-- CLI utilities: `src/www/classes/APM/CommandLine`
-- Utility scripts: `src/www/utilities`
+- Main PHP code: `www/classes`
+- API code: `www/classes/APM/Api`
+- Frontend-serving PHP code: `www/classes/APM/Site`
+- Daemon code: `www/classes/APM/ApmDaemon`
+- Workers code: `www/classes/APM/ApmWorker`
+- CLI utilities: `www/classes/APM/CommandLine`
+- Utility scripts: `www/utilities`
 
 
 Frontend code:
 
-- JavaScript/TypeScript code: `src/www/js`
-- React SPA: `src/www/js/ReactAPM`
+- JavaScript/TypeScript code: `www/js`
+- React SPA: `www/js/ReactAPM`
 
 Typesetting service:
 
-- Service code: `src/www/typesetting-service`
+- Service code: `node-service`
 
 ### APE
 

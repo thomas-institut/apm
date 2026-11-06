@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail
+
+if [[ $# -ne 1 ]]; then
+    echo "Usage: $(basename -- "$0") WORKER_NUMBER" >&2
+    exit 2
+fi
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/apm-container"
+
+php_container="$(apm_resolve_container php "${APM_PHP_CONTAINER:-}" APM_PHP_CONTAINER)"
+exec docker exec -w /opt/apm/bin "$php_container" php apm-worker "$1"

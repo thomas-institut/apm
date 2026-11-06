@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/apm-container"
+
+php_container="$(apm_resolve_container php "${APM_PHP_CONTAINER:-}" APM_PHP_CONTAINER)"
+exec docker exec -w /opt/apm/bin "$php_container" php apmd

@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+
+script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+source "$script_dir/apm-container"
+
+node_container="$(apm_resolve_container node "${APM_NODE_CONTAINER:-}" APM_NODE_CONTAINER)"
+if [[ -t 0 ]]; then
+    exec docker exec -it -w /opt/apm/node-service "$node_container" node dist/apm/node-service/server.js /opt/apm/node-service/config.yaml
+else
+    exec docker exec -w /opt/apm/node-service "$node_container" node dist/apm/node-service/server.js /opt/apm/node-service/config.yaml
+fi

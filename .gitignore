@@ -42,4 +42,5 @@ app-settings.json
 .phpunit.cache/
 .env.dist*
 /docker/apm/dev/.env
+/docker/fontserver/.env
 /.junie/

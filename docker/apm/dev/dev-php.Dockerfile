@@ -12,7 +12,7 @@ RUN apt-get update && apt-get upgrade -y
 RUN apt-get install -y nodejs
 RUN apt-get install -y zip
 ADD --chmod=0755 https://github.com/mlocati/docker-php-extension-installer/releases/latest/download/install-php-extensions /usr/local/bin/
-RUN install-php-extensions gd yaml pdo pdo_mysql intl mbstring iconv zlib sockets posix xdebug
+RUN install-php-extensions yaml pdo pdo_mysql intl mbstring iconv zlib posix xdebug
 # Override default PHP config
 RUN echo "memory_limit=2028M" > /usr/local/etc/php/conf.d/memory-limit.ini
 RUN echo "post_max_size=512M" >/usr/local/etc/php/conf.d/post-size.ini

@@ -1,0 +1,30 @@
+apm_resolve_container() {
+    local service="$1"
+    local container_override="$2"
+    local override_name="$3"
+    local container
+    local running
+
+    if [[ -n "$container_override" ]]; then
+        container="$container_override"
+    else
+        local compose_dir
+        compose_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/../docker/apm/dev" && pwd)"
+        if ! container="$(docker compose --project-directory "$compose_dir" ps -q "$service")"; then
+            echo "Could not determine the APM $service container; check docker/apm/dev/.env and Docker Compose." >&2
+            return 1
+        fi
+    fi
+
+    if [[ -z "$container" ]]; then
+        echo "The APM $service container is not running. Start it with Docker Compose or set $override_name." >&2
+        return 1
+    fi
+
+    if ! running="$(docker inspect --format '{{.State.Running}}' "$container" 2>/dev/null)" || [[ "$running" != "true" ]]; then
+        echo "The configured APM $service container '$container' is not running." >&2
+        return 1
+    fi
+
+    printf '%s\n' "$container"
+}

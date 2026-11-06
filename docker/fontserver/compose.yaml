@@ -1,0 +1,11 @@
+name: ${COMPOSE_PROJECT_NAME:-fontserver}
+
+services:
+  fonts:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        FONTS_ZIP_URL: ${FONTS_ZIP_URL}
+    ports:
+      - "${FONTS_PORT:-4567}:80"

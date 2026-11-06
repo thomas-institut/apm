@@ -22,9 +22,7 @@
     "ext-zlib": "*",
     "ext-pcntl": "*",
     "ext-posix": "*",
-    "ext-sockets": "*",
     "ext-yaml": "*",
-    "ext-gd": "*",
     "ext-iconv": "*",
     "thomas-institut/php-backend-common": "0.0.2",
     "thomas-institut/standard-api": "^1.0.0",
@@ -52,6 +50,9 @@
     "phpstan/phpstan": "^2.1"
   },
   "config": {
+    "platform": {
+      "php": "8.3.36"
+    },
     "optimize-autoloader": true,
     "prepend-autoloader": false,
     "allow-plugins": {

@@ -331,13 +331,22 @@ export class EditionTypesettingHelper {
       paragraphToTypeset.pushItem(Glue.createLineFillerGlue().setTextDirection(this.textDirection));
       paragraphToTypeset.pushItem(Penalty.createForcedBreakPenalty());
       verticalItems.push(paragraphToTypeset);
-      if (paragraphStyleDef.keepWithNext) {
+      if (paragraphStyleDef.keepWithNext && mainTextParagraph.breakAfter === undefined) {
         // console.log(`keepWithNext paragraph style detected, adding never break penalty, style: ${paragraphStyle}`);
         verticalItems.push(Penalty.createNeverBreakPenalty());
       }
       const spaceAfter = Dimension.getPixelValue(paragraphStyleDef.spaceAfter ?? null, 12);
       if (spaceAfter !== 0) {
         verticalItems.push((new Glue(VerticalItemDirection)).setHeight(spaceAfter));
+      }
+      switch (mainTextParagraph.breakAfter) {
+        case 'page':
+          verticalItems.push(Penalty.createForcedBreakPenalty());
+          break;
+
+        case 'section':
+          verticalItems.push(await this.createSectionBreakGlue());
+          break;
       }
     }
     let verticalListToTypeset = new ItemList(VerticalItemDirection);
@@ -926,6 +935,22 @@ export class EditionTypesettingHelper {
    */
   createPenalty(value: number): Penalty {
     return (new Penalty()).setPenalty(value);
+  }
+
+  /**
+   * Creates the vertical glue to be added after a section break.
+   *
+   * The size of the glue is taken from the horizontal glue defined in the 'sectionBreak' style. If
+   * that style is not defined in the stylesheet, the normal paragraph's lineSkip is used.
+   */
+  private async createSectionBreakGlue(): Promise<Glue> {
+    const verticalGlue = new Glue(VerticalItemDirection);
+    if (this.ss.styleExists('sectionBreak')) {
+      const glue = await this.createGlue('sectionBreak');
+      return verticalGlue.setHeight(glue.getWidth()).setStretch(glue.getStretch()).setShrink(glue.getShrink());
+    }
+    const normalParagraphStyleDef = await this.ss.getParagraphStyle('normal');
+    return verticalGlue.setHeight(Dimension.getPixelValue(normalParagraphStyleDef.lineSkip ?? null, 12));
   }
 
   /**

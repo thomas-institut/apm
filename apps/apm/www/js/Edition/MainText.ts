@@ -45,6 +45,11 @@ export class MainText {
         currentParagraph.type = token.style === '' ? 'normal' : token.style;
         paragraphs.push(currentParagraph);
         currentParagraph = {type: '', tokens: []};
+      } else if (token.type === EditionMainTextTokenType.SECTION_BREAK || token.type === EditionMainTextTokenType.PAGE_BREAK) {
+        // attach the break to the previous paragraph, if any
+        if (paragraphs.length > 0) {
+          paragraphs[paragraphs.length - 1].breakAfter = token.type === EditionMainTextTokenType.SECTION_BREAK ? 'section' : 'page';
+        }
       } else {
         token.originalIndex = tokenIndex;
         currentParagraph.tokens.push(token);

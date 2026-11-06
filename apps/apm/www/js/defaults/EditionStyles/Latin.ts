@@ -65,6 +65,11 @@ export const defaultLatinEditionStyle: StyleSheetDefinition =  {
     }
   },
 
+  sectionBreak: {
+    parent: '', glue: {
+      width: '18 pt', stretch: '0', shrink: '0'
+    }
+  },
   small:  {
     parent: "",
     text: {

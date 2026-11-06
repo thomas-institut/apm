@@ -70,6 +70,18 @@ export class MainTextTokenFactory {
     return t.setStyle(style);
   }
 
+  static createSectionBreak() {
+    let t = new MainTextToken();
+    t.type = EditionMainTextTokenType.SECTION_BREAK;
+    return t;
+  }
+
+  static createPageBreak() {
+    let t = new MainTextToken();
+    t.type = EditionMainTextTokenType.PAGE_BREAK;
+    return t;
+  }
+
   static createChunkStart(chunkId: string) {
     let t = new MainTextToken();
     t.type = 'chunk_start';

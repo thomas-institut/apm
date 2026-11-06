@@ -15,7 +15,10 @@ vi.mock('@/ReactAPM/Components/EntityLink', () => ({
 }));
 
 vi.mock('@/ReactAPM/Components/MultiToggle/MultiToggle', () => ({
-  default: ({onChange}: {onChange: (val: string) => void}) => <button type="button" className="break-toggle" onClick={() => onChange('page')}>Break toggle</button>
+  default: ({onChange, options}: {onChange: (val: string) => void; options: {key: string; label: string}[]}) => <>
+    <button type="button" className="break-toggle" onClick={() => onChange('page')}>Break toggle</button>
+    <span className="break-toggle-options">{options.map((option) => `${option.key}:${option.label}`).join(',')}</span>
+  </>
 }));
 
 vi.mock('@/ReactAPM/Components/ConfirmDialog', () => ({
@@ -169,6 +172,40 @@ describe('ChunksPanel', () => {
 
     expect(container.textContent).toContain('C1');
     expect(container.textContent).not.toContain('Chunks and CtDataStatusArray length mismatch!');
+
+    await act(async () => {
+      root.unmount();
+    });
+  });
+
+  it('shows None, Paragraph, Section and Page break options and sets the selected break', async () => {
+    document.body.innerHTML = '<div id="root"></div>';
+    const container = document.getElementById('root')!;
+    const root = createRoot(container);
+
+    const chunk1 = buildChunk();
+    const chunk2 = {...buildChunk(), chunkId: 'C2', chunkEditionTableId: 102};
+    const setChunkBreak = vi.fn().mockResolvedValue(true);
+
+    await act(async () => {
+      root.render(
+        <ChunksPanel
+          chunks={[chunk1, chunk2]}
+          chunkOrder={[0, 1]}
+          ctDataStatusArray={[buildCtDataStatus(chunk1), buildCtDataStatus(chunk2)]}
+          setChunkBreak={setChunkBreak}
+        />
+      );
+    });
+
+    const options = container.querySelector('.break-toggle-options') as HTMLSpanElement;
+    expect(options.textContent).toBe('none:None,paragraph:Paragraph,section:Section,page:Page');
+
+    const breakToggle = container.querySelector('.break-toggle') as HTMLButtonElement;
+    await act(async () => {
+      breakToggle.click();
+    });
+    expect(setChunkBreak).toHaveBeenCalledWith(0, 'page');
 
     await act(async () => {
       root.unmount();

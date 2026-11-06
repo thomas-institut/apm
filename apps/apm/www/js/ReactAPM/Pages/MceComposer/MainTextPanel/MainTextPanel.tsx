@@ -237,6 +237,26 @@ export default function MainTextPanel({
           currentParagraph.tokenIndices.push(index);
           break;
 
+        case 'page_break':
+        case 'section_break':
+          paragraphs.push(currentParagraph);
+          currentParagraph = {
+            style: '',
+            tokens: [],
+            chunks: [],
+            tokenIndices: []
+          };
+          currentParagraph.tokens.push(token);
+          currentParagraph.tokenIndices.push(index);
+          paragraphs.push(currentParagraph);
+          currentParagraph = {
+            style: '',
+            tokens: [],
+            chunks: [],
+            tokenIndices: []
+          };
+          break;
+
         case 'paragraph_end':
           currentParagraph.style = token.style;
           paragraphs.push(currentParagraph);
@@ -372,13 +392,21 @@ export default function MainTextPanel({
           </span>
         );
       }
+
+      if (token.type === 'page_break') {
+        elementArray.push(<div className={'break page-break'} key={`page-break-${i}`}>[ PAGE BREAK ]</div>);
+      }
+      if (token.type === 'section_break') {
+        elementArray.push(<div className={'break section-break'} key={`section-break-${i}`}>[ SECTION BREAK ]</div>);
+      }
     });
     return elementArray;
   };
 
   const ParagraphComponent = (props: { p: Paragraph }) => {
-    return <p className={props.p.style}>{getParagraphText(props.p)}</p>;
+    return <div className={'paragraph ' + props.p.style}>{getParagraphText(props.p)}</div>;
   };
+
   const paragraphs = useMemo(() => edition === null ? [] : getParagraphs(edition), [edition]);
   const paragraphPages = useMemo(() => getParagraphPages(paragraphs), [paragraphs, standardizedData, paginationThreshold, minParsPerPage, maxParsPerPage]);
   const isPaginated = paginationThreshold > 0 && paragraphs.length > paginationThreshold;

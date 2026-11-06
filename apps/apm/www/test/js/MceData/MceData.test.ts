@@ -955,6 +955,20 @@ describe('MceData', () => {
       expect(mceData.chunks[1].break).toBe('');
     });
 
+    it('accepts section and page breaks', () => {
+      const mceData = MceData.createEmpty();
+      mceData.chunks = [{ break: '' } as any];
+
+      MceData.setChunkBreak(mceData, 0, 'section');
+      expect(mceData.chunks[0].break).toBe('section');
+
+      MceData.setChunkBreak(mceData, 0, 'page');
+      expect(mceData.chunks[0].break).toBe('page');
+
+      expect(() => MceData.setChunkBreak(mceData, 0, 'foo')).toThrow(ValidationError);
+      expect(mceData.chunks[0].break).toBe('page');
+    });
+
     it('throws when chunkIndex is negative', () => {
       const mceData = MceData.createEmpty();
       mceData.chunks = [{ break: 'paragraph' } as any];

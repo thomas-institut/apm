@@ -421,6 +421,86 @@ describe('MceDataEditionGenerator', () => {
       ]);
     });
 
+    it.each([
+      ['section', 'section_break'],
+      ['page', 'page_break'],
+    ])('adds paragraph-end and %s break tokens between non-final chunks', async (breakType, tokenType) => {
+      const mceData = buildMceData({
+        chunks: [
+          {
+            chunkId: 'c1',
+            break: breakType,
+            chunkEditionTableId: 100,
+            lineNumbersRestart: false,
+            title: 'Chunk 1',
+            version: 'v1',
+            witnessIndices: [0],
+          },
+          {
+            chunkId: 'c2',
+            break: breakType,
+            chunkEditionTableId: 101,
+            lineNumbersRestart: false,
+            title: 'Chunk 2',
+            version: 'v1',
+            witnessIndices: [0],
+          }
+        ],
+        chunkOrder: [0, 1],
+        witnesses: [{title: 'Witness A', witnessId: 'A'}],
+        sigla: ['A'],
+      });
+
+      mockCtDataGeneratorState.generatedEditionsQueue.push(
+        makeSingleChunkEdition({tokenIndices: [0]}),
+        makeSingleChunkEdition({tokenIndices: [0]}),
+      );
+
+      const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
+      const edition = await generator.generate(mceData, 1);
+
+      // no break tokens after the last chunk
+      expect(edition.mainText.map((t) => t.type)).toEqual([
+        'chunk_start',
+        'text',
+        'chunk_end',
+        'paragraph_end',
+        tokenType,
+        'chunk_start',
+        'text',
+        'chunk_end',
+      ]);
+      expect(edition.mainText[6].editionWitnessTokenIndex).toBe(6);
+    });
+
+    it.each(['section', 'page'])('shifts apparatus entries in chunks following a %s break', async (breakType) => {
+      const apparatus = new Apparatus();
+      apparatus.type = 'critical';
+      const entry = new ApparatusEntry();
+      entry.from = 0;
+      entry.to = 0;
+      entry.mainTextWords = ['t0'];
+      const subEntry = new ApparatusSubEntry();
+      subEntry.witnessData = [new WitnessDataItem().setWitnessIndex(0).setHand(0)];
+      entry.subEntries = [subEntry];
+      apparatus.entries = [entry];
+
+      const first = makeSingleChunkEdition({tokenIndices: [0, 1]});
+      const second = makeSingleChunkEdition({tokenIndices: [0], apparatuses: [apparatus]});
+      const mceData = buildMceData();
+      mceData.chunks[0].break = breakType;
+
+      mockCtDataGeneratorState.generatedEditionsQueue.push(first, second);
+
+      const generator = new MceDataEditionGenerator({ctDataGetter: vi.fn().mockResolvedValue({})});
+      const edition = await generator.generate(mceData, 1);
+
+      // chunk_start, t0, t1, chunk_end, paragraph_end, break, chunk_start, t0
+      expect(edition.apparatuses[0].entries[0].from).toBe(7);
+      expect(edition.apparatuses[0].entries[0].to).toBe(7);
+      expect(getPlainText(edition.mainText[7].fmtText)).toBe('t0');
+    });
+
     it('shifts mainText editionWitnessTokenIndex by cumulative output length', async () => {
       const first = makeSingleChunkEdition({tokenIndices: [0, 1]});
       const second = makeSingleChunkEdition({tokenIndices: [0]});

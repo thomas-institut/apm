@@ -63,6 +63,11 @@ export const arabicDeGruyterAmiri: StyleSheetDefinition = {
       width: '1 em', shrink: '0.02 em', stretch: '0.08 em'
     }
   },
+  sectionBreak: {
+    parent: '', glue: {
+      width: '20 pt', stretch: '0', shrink: '0'
+    }
+  },
   small:  {
       parent: "",
       text: {

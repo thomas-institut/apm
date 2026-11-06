@@ -41,7 +41,7 @@ export const latinPeetersEdition: StyleSheetDefinition =  {
       lineNumbersToTextDistance: "0.5 cm",
       lineNumbersFontSize: "0.8 em",
       lineNumbersPosition: "right",
-      resetLineNumbersEachPage: false
+      resetLineNumbersEachPage: true
     },
     paragraph: {
       lineSkip: "13 pt",
@@ -69,6 +69,11 @@ export const latinPeetersEdition: StyleSheetDefinition =  {
       width: "1 em",
       shrink: "0.02 em",
       stretch: "0.08 em"
+    }
+  },
+  sectionBreak: {
+    parent: '', glue: {
+      width: '13 pt', stretch: '0', shrink: '0'
     }
   },
   small:  {

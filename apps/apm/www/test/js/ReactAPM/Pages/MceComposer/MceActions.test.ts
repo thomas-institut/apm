@@ -105,6 +105,25 @@ describe('MCE Actions', () => {
       const result = await action.execute(state);
       expect(result.mceData.chunks[1].break).toBe('paragraph');
     });
+
+    it.each([
+      ['section', 'Section'],
+      ['page', 'Page'],
+    ])('should set %s break and describe it with its label', async (newBreak, label) => {
+      const mceData: MceDataInterface = {
+        ...makeBaseMceData(),
+        chunks: [
+          { chunkId: '1', break: '', chunkEditionTableId: 10, version: '1', title: 'C1', witnessIndices: [] as number[] } as any,
+          { chunkId: '2', break: '', chunkEditionTableId: 20, version: '1', title: 'C2', witnessIndices: [] as number[] } as any
+        ],
+        chunkOrder: [0, 1],
+      };
+
+      const action = new SetChunkBreakAction(0, newBreak);
+      const result = await action.execute(makeState(mceData));
+      expect(result.mceData.chunks[0].break).toBe(newBreak);
+      expect(action.description()).toBe(`Set break for chunk 1 (at position 1) to '${label}'`);
+    });
   });
 
   describe('AddChunkAction', () => {

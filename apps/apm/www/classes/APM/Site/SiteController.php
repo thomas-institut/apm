@@ -54,8 +54,6 @@ use ThomasInstitut\Profiler\SystemProfiler;
 class SiteController
 {
 
-    const string VITE_DEV_BASE = 'http://localhost:5173';
-
     // Default components for all controllers
     protected ApmSystemConfig $systemConfig;
     protected LoggerInterface $logger;
@@ -432,6 +430,11 @@ END;
         return $response;
     }
 
+    protected function getViteDevServerBaseUrl(): string
+    {
+        return sprintf('http://localhost:%d', $this->systemConfig->general->viteDevServerPort);
+    }
+
     protected function getReactPluginModuleHtml(): string
     {
         if ($this->systemConfig->general->devMode) {
@@ -444,7 +447,7 @@ END;
   window.__vite_plugin_react_preamble_installed__ = true
 </script>
 END;
-            return sprintf($html, self::VITE_DEV_BASE);
+            return sprintf($html, $this->getViteDevServerBaseUrl());
         }
         return '';
     }
@@ -463,12 +466,12 @@ END;
         if ($this->systemConfig->general->devMode) {
             $viteJsImportsHtml = sprintf(
                 "<script type=\"module\" src=\"%s/@vite/client\"></script>\n",
-                self::VITE_DEV_BASE
+                $this->getViteDevServerBaseUrl()
             );
             foreach ($viteEntryPoints as $viteEntryPoint) {
                 $viteJsImportsHtml .= sprintf(
                     "<script type=\"module\" src=\"%s/$viteEntryPoint\"></script>\n",
-                    self::VITE_DEV_BASE
+                    $this->getViteDevServerBaseUrl()
                 );
             }
         } else {

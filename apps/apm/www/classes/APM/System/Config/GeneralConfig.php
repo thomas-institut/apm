@@ -11,6 +11,7 @@ final readonly class GeneralConfig
         public string $subDir = '',
         public string $defaultTimezone = 'UTC',
         public bool   $devMode = false,
+        public int    $viteDevServerPort = 5173,
         public string $dbTablePrefix = 'ap_',
         public string $copyrightNotice =
         '2016-26, <a href="https://www.thomasinstitut.uni-koeln.de/">Thomas-Institut</a>, <a href="https://www.uni-koeln.de/"> Universität zu Köln </a>',

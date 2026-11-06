@@ -1,5 +1,3 @@
-name: ${COMPOSE_PROJECT_NAME:-fontserver}
-
 services:
   fonts:
     build:
